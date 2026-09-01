@@ -842,6 +842,15 @@ WinUI, while the normal CMake target rebuild remains blocked by the existing
 MSBuild FileTracker `UnauthorizedAccessException`, so no CMake-generated
 current-binary lifecycle result is claimed.
 
+The retained Qt teacher and class-information validators now route
+normalization, phone formatting, nested schedule conversion, and validation
+through the Qt-free engine contracts. Direct VS 2026/v145 Qt compile checks
+passed, the focused `ClassMngrSharedPolicyTests` selection passed 1/1, and the
+current engine CTest lane passed all 43 available executables; nine generated
+targets were absent and therefore not run. The normal Qt CMake target build
+remains blocked by the existing MSBuild FileTracker
+`UnauthorizedAccessException`.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -861,6 +870,8 @@ file-backed profile preparation and schema migration, with the Qt schema
 initializer retained only for exact `:memory:` compatibility.
 The personal-details settings service and retained adapter now share the
 engine settings boundary for file-backed reads and writes as well.
+The retained Qt teacher and class-information validators now share the
+extracted engine validation boundaries as well.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

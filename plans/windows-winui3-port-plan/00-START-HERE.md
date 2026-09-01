@@ -180,6 +180,8 @@ file-backed reads and writes through that boundary while keeping Qt image
 preparation and presentation conversions at the edge. The next active gate is
 connecting the remaining retained adapters, while extending fixture evidence
 across each migrated persistence slice.
+The retained Qt teacher and class-information validators now route their
+normalization and validation through the Qt-free engine validators as well.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -923,6 +925,19 @@ After meaningful work:
   is claimed. Phase 2 remains open for the other retained adapters,
   report/export adapter/model migration, and broader per-slice fixture
   coverage.
+
+- **2026-09-02 — Teacher and class-information validation adapters connected.**
+  The retained Qt `TeacherValidator` and `ClassInfoValidator` now convert
+  models and nested schedule values through UTF-8/std-library engine contracts.
+  Normalization, phone formatting, validation, and notes policy are engine-owned
+  while Qt diagnostics retain field/severity/row/column mapping and length
+  message metadata. Direct VS 2026/v145 Qt compile checks passed; the focused
+  `ClassMngrSharedPolicyTests` selection passed 1/1; and the current engine CTest
+  lane passed all 43 available executables, with nine generated targets absent
+  and therefore not run. The normal Qt CMake target build remains blocked by
+  the existing MSBuild FileTracker `UnauthorizedAccessException`. Phase 2
+  remains open for remaining report/export adapters and broader fixture
+  evidence.
 
 ## Shared Completion Rules
 

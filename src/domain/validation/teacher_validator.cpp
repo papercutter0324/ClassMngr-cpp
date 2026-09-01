@@ -1,12 +1,13 @@
 #include "teacher_validator.h"
 
-#include "core/utils/student_name_utils.h"
-#include "domain/validation/shared_validation.h"
-#include "domain/validation/validation_rules.h"
+#include "classmngr/engine/teacher_validator.h"
 
-#include <QDate>
-#include <QRegularExpression>
-#include <QStringList>
+#include <QByteArray>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
 
 namespace
 {
@@ -17,279 +18,179 @@ constexpr qsizetype CredentialMaximumLength = 128;
 constexpr qsizetype PasswordMaximumLength = 256;
 constexpr qsizetype NotesMaximumLength = 10000;
 
-const QStringList InternetTypes{
-    QStringLiteral("WiFi"),
-    QStringLiteral("LAN"),
-    QStringLiteral("Both"),
-    QStringLiteral("N/A")
-};
-
-const QStringList ProjectionTypes{
-    QStringLiteral("HDMI"),
-    QStringLiteral("Zoom"),
-    QStringLiteral("Any"),
-    QStringLiteral("N/A")
-};
-
-QString canonicalChoice(const QString& value, const QStringList& choices)
+std::string toUtf8(const QString& value)
 {
-    const QString trimmed = value.trimmed();
-    for (const QString& choice : choices)
-    {
-        if (choice.compare(trimmed, Qt::CaseInsensitive) == 0)
-        {
-            return choice;
-        }
-    }
-
-    // Preserve unknown values for the validator instead of quietly replacing
-    // them with a default that means something else.
-    return trimmed;
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-QString normalizedPreferredName(const QString& value, const Teacher& teacher)
+QString fromUtf8(std::string_view value)
 {
-    return canonicalChoice(value, teacher.preferredNameChoices());
-}
-
-ValidationLocation field(const QString& name)
-{
-    return {.field = name};
-}
-
-bool birthdayIsValid(const QString& value)
-{
-    const QString birthday = value.trimmed();
-    if (birthday.isEmpty())
-    {
-        return true;
-    }
-
-    static const QRegularExpression format(
-        QStringLiteral("^\\d{2}-\\d{2}$")
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
-    if (!format.match(birthday).hasMatch())
-    {
-        return false;
-    }
-
-    return QDate::fromString(
-        QStringLiteral("2000-%1").arg(birthday),
-        QStringLiteral("yyyy-MM-dd")
-        ).isValid();
 }
 
-ValidationResult textLength(
-    const QString& value,
-    qsizetype maximumLength,
-    const QString& name
+classmngr::engine::Teacher toEngine(const Teacher& teacher)
+{
+    classmngr::engine::Teacher result;
+    result.id = teacher.id;
+    result.teacherKr = toUtf8(teacher.teacherKr);
+    result.teacherEn = toUtf8(teacher.teacherEn);
+    result.preferredRomanization = toUtf8(teacher.preferredRomanization);
+    result.preferredName = toUtf8(teacher.preferredName);
+    result.roomNumber = toUtf8(teacher.roomNumber);
+    result.birthday = toUtf8(teacher.birthday);
+    result.phoneNumber = toUtf8(teacher.phoneNumber);
+    result.wifiName = toUtf8(teacher.wifiName);
+    result.wifiPassword = toUtf8(teacher.wifiPassword);
+    result.internetType = toUtf8(teacher.internetType);
+    result.zoomId = toUtf8(teacher.zoomId);
+    result.zoomPassword = toUtf8(teacher.zoomPassword);
+    result.projectionType = toUtf8(teacher.projectionType);
+    result.notes = toUtf8(teacher.notes);
+    return result;
+}
+
+Teacher fromEngine(const classmngr::engine::Teacher& teacher)
+{
+    Teacher result;
+    result.id = teacher.id;
+    result.teacherKr = fromUtf8(teacher.teacherKr);
+    result.teacherEn = fromUtf8(teacher.teacherEn);
+    result.preferredRomanization = fromUtf8(teacher.preferredRomanization);
+    result.preferredName = fromUtf8(teacher.preferredName);
+    result.roomNumber = fromUtf8(teacher.roomNumber);
+    result.birthday = fromUtf8(teacher.birthday);
+    result.phoneNumber = fromUtf8(teacher.phoneNumber);
+    result.wifiName = fromUtf8(teacher.wifiName);
+    result.wifiPassword = fromUtf8(teacher.wifiPassword);
+    result.internetType = fromUtf8(teacher.internetType);
+    result.zoomId = fromUtf8(teacher.zoomId);
+    result.zoomPassword = fromUtf8(teacher.zoomPassword);
+    result.projectionType = fromUtf8(teacher.projectionType);
+    result.notes = fromUtf8(teacher.notes);
+    return result;
+}
+
+void restoreLengthArguments(
+    ValidationIssue& issue,
+    const Teacher& teacher
     )
 {
-    return ValidationRules::textLength(value, 0, maximumLength, field(name));
+    if (issue.code != QStringLiteral("validation.length.out_of_bounds"))
+    {
+        return;
+    }
+
+    const QString* value = nullptr;
+    qsizetype maximum = 0;
+    if (issue.field == QStringLiteral("roomNumber"))
+    {
+        value = &teacher.roomNumber;
+        maximum = RoomNumberMaximumLength;
+    }
+    else if (issue.field == QStringLiteral("birthday"))
+    {
+        value = &teacher.birthday;
+        maximum = BirthdayMaximumLength;
+    }
+    else if (issue.field == QStringLiteral("phoneNumber"))
+    {
+        value = &teacher.phoneNumber;
+        maximum = PhoneNumberMaximumLength;
+    }
+    else if (issue.field == QStringLiteral("wifiName"))
+    {
+        value = &teacher.wifiName;
+        maximum = CredentialMaximumLength;
+    }
+    else if (issue.field == QStringLiteral("wifiPassword"))
+    {
+        value = &teacher.wifiPassword;
+        maximum = PasswordMaximumLength;
+    }
+    else if (issue.field == QStringLiteral("zoomId"))
+    {
+        value = &teacher.zoomId;
+        maximum = CredentialMaximumLength;
+    }
+    else if (issue.field == QStringLiteral("zoomPassword"))
+    {
+        value = &teacher.zoomPassword;
+        maximum = PasswordMaximumLength;
+    }
+    else if (issue.field == QStringLiteral("notes"))
+    {
+        value = &teacher.notes;
+        maximum = NotesMaximumLength;
+    }
+
+    if (value == nullptr)
+    {
+        return;
+    }
+
+    issue.arguments = {
+        {QStringLiteral("length"), static_cast<qlonglong>(value->size())},
+        {QStringLiteral("minimum"), 0},
+        {QStringLiteral("maximum"), static_cast<qlonglong>(maximum)}
+    };
 }
+
+ValidationResult fromEngine(
+    const classmngr::engine::ValidationResult& validation,
+    const Teacher* teacher = nullptr
+    )
+{
+    ValidationResult result;
+    for (const classmngr::engine::ValidationIssue& source :
+         validation.issues())
+    {
+        ValidationIssue issue{
+            .code = fromUtf8(source.code),
+            .field = fromUtf8(source.field),
+            .row = source.row,
+            .column = source.column,
+            .severity = source.isWarning()
+                ? ValidationSeverity::Warning
+                : ValidationSeverity::Error
+        };
+        if (teacher != nullptr)
+        {
+            restoreLengthArguments(issue, *teacher);
+        }
+        result.add(std::move(issue));
+    }
+
+    return result;
 }
+} // namespace
 
 Teacher TeacherValidator::normalized(const Teacher& teacher)
 {
-    Teacher normalized = teacher;
-
-    normalized.teacherKr =
-        StudentNameUtils::normalizeKoreanName(teacher.teacherKr);
-    normalized.teacherEn =
-        StudentNameUtils::normalizeEnglishName(teacher.teacherEn);
-    normalized.preferredRomanization =
-        StudentNameUtils::normalizeEnglishName(teacher.preferredRomanization);
-    normalized.preferredName = normalizedPreferredName(
-        teacher.preferredName,
-        normalized
+    return fromEngine(
+        classmngr::engine::TeacherValidator::normalized(toEngine(teacher))
         );
-
-    normalized.roomNumber = teacher.roomNumber.trimmed();
-    normalized.birthday = teacher.birthday.trimmed();
-    normalized.phoneNumber = normalizedPhoneNumber(teacher.phoneNumber);
-    normalized.wifiName = teacher.wifiName.trimmed();
-    normalized.wifiPassword = teacher.wifiPassword.trimmed();
-    normalized.internetType = canonicalChoice(teacher.internetType, InternetTypes);
-    normalized.zoomId = teacher.zoomId.trimmed();
-    normalized.zoomPassword = teacher.zoomPassword.trimmed();
-    normalized.projectionType = canonicalChoice(
-        teacher.projectionType,
-        ProjectionTypes
-        );
-    normalized.notes = teacher.notes.trimmed();
-
-    return normalized;
 }
 
 QString TeacherValidator::normalizedPhoneNumber(const QString& value)
 {
-    const QString trimmed = value.trimmed();
-    if (trimmed.isEmpty())
-    {
-        return {};
-    }
-
-    QString digits;
-    bool sawLeadingPlus = false;
-    for (const QChar character : trimmed)
-    {
-        if (character.isDigit())
-        {
-            digits.append(character);
-        }
-        else if (character == QChar(u'+') && digits.isEmpty() && !sawLeadingPlus)
-        {
-            sawLeadingPlus = true;
-        }
-        else if (character != QChar(u' ')
-                 && character != QChar(u'-')
-                 && character != QChar(u'(')
-                 && character != QChar(u')'))
-        {
-            // Do not transform an invalid value into a different, seemingly
-            // valid number. Validation will report it unchanged.
-            return trimmed;
-        }
-    }
-
-    if (digits.isEmpty())
-    {
-        return trimmed;
-    }
-
-    if (!sawLeadingPlus && digits.size() == 11 && digits.startsWith("010"))
-    {
-        return QStringLiteral("%1-%2-%3")
-            .arg(digits.first(3), digits.mid(3, 4), digits.last(4));
-    }
-
-    if (!sawLeadingPlus && digits.size() == 10 && digits.startsWith("02"))
-    {
-        return QStringLiteral("%1-%2-%3")
-            .arg(digits.first(2), digits.mid(2, 4), digits.last(4));
-    }
-
-    return sawLeadingPlus ? QStringLiteral("+%1").arg(digits) : digits;
+    const std::string normalized =
+        classmngr::engine::TeacherValidator::normalizedPhoneNumber(
+            toUtf8(value)
+            );
+    return fromUtf8(normalized);
 }
 
 ValidationResult TeacherValidator::validate(const Teacher& teacher)
 {
-    ValidationResult result;
-
-    if (teacher.teacherKr.trimmed().isEmpty()
-        && teacher.teacherEn.trimmed().isEmpty()
-        && teacher.preferredRomanization.trimmed().isEmpty())
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("teacher.name.required"),
-            field(QStringLiteral("teacherEn"))
-            ));
-    }
-
-    result.merge(SharedValidation::koreanName(
-        teacher.teacherKr,
-        field(QStringLiteral("teacherKr"))
-        ));
-    result.merge(SharedValidation::englishName(
-        teacher.teacherEn,
-        field(QStringLiteral("teacherEn"))
-        ));
-    result.merge(SharedValidation::englishName(
-        teacher.preferredRomanization,
-        field(QStringLiteral("preferredRomanization"))
-        ));
-
-    const QString preferredName = teacher.preferredName.trimmed();
-    if (!preferredName.isEmpty()
-        && !teacher.preferredNameChoices().contains(preferredName))
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("teacher.preferred_name.invalid_choice"),
-            field(QStringLiteral("preferredName")),
-            ValidationSeverity::Error,
-            {{QStringLiteral("value"), preferredName},
-             {QStringLiteral("allowedValues"), teacher.preferredNameChoices()}}
-            ));
-    }
-
-    result.merge(textLength(
-        teacher.roomNumber,
-        RoomNumberMaximumLength,
-        QStringLiteral("roomNumber")
-        ));
-    result.merge(textLength(
-        teacher.birthday,
-        BirthdayMaximumLength,
-        QStringLiteral("birthday")
-        ));
-    result.merge(textLength(
-        teacher.phoneNumber,
-        PhoneNumberMaximumLength,
-        QStringLiteral("phoneNumber")
-        ));
-    result.merge(textLength(
-        teacher.wifiName,
-        CredentialMaximumLength,
-        QStringLiteral("wifiName")
-        ));
-    result.merge(textLength(
-        teacher.wifiPassword,
-        PasswordMaximumLength,
-        QStringLiteral("wifiPassword")
-        ));
-    result.merge(textLength(
-        teacher.zoomId,
-        CredentialMaximumLength,
-        QStringLiteral("zoomId")
-        ));
-    result.merge(textLength(
-        teacher.zoomPassword,
-        PasswordMaximumLength,
-        QStringLiteral("zoomPassword")
-        ));
-    result.merge(textLength(
-        teacher.notes,
-        NotesMaximumLength,
-        QStringLiteral("notes")
-        ));
-
-    if (!birthdayIsValid(teacher.birthday))
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("teacher.birthday.invalid"),
-            field(QStringLiteral("birthday"))
-            ));
-    }
-
-    static const QRegularExpression phoneCharacters(
-        QStringLiteral("^\\+?[0-9() -]+$")
+    return fromEngine(
+        classmngr::engine::TeacherValidator::validate(toEngine(teacher)),
+        &teacher
         );
-    const QString phone = teacher.phoneNumber.trimmed();
-    if (!phone.isEmpty())
-    {
-        QString digits = phone;
-        digits.remove(QRegularExpression(QStringLiteral("[^0-9]")));
-        if (!phoneCharacters.match(phone).hasMatch()
-            || digits.size() < 7
-            || digits.size() > 15)
-        {
-            result.add(ValidationRules::issue(
-                QStringLiteral("teacher.phone.invalid"),
-                field(QStringLiteral("phoneNumber"))
-                ));
-        }
-    }
-
-    result.merge(ValidationRules::stringEnumValue(
-        teacher.internetType,
-        InternetTypes,
-        field(QStringLiteral("internetType"))
-        ));
-    result.merge(ValidationRules::stringEnumValue(
-        teacher.projectionType,
-        ProjectionTypes,
-        field(QStringLiteral("projectionType"))
-        ));
-
-    return result;
 }
