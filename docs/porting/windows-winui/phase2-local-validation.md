@@ -85,6 +85,13 @@ class/teacher labels and ordering. The retained Qt `SidebarNodeNaming` file is
 now a conversion adapter, so package planning and the existing Qt screens use
 the same UTF-8 naming rules.
 
+The class-tab navigation slice now includes a Qt-free
+`ClassTabNavigationService` for adaptive/forced grade grouping, catalog-ordered
+class tabs, schedule and day-label formatting, duplicate-label disambiguation,
+and regular/intensive day filtering. The retained Qt model keeps its existing
+`QList`/`QSet` API and translation behavior while converting values at the
+presentation boundary.
+
 The upcoming-birthday slice now includes a Qt-free
 `UpcomingBirthdaySchedule`. It owns birthday parsing, the today/this-week/
 next-week date windows, calendar-year rollover, non-leap-year February 29
@@ -896,6 +903,12 @@ validators now share the extracted engine validation boundaries as well.
 The retained Qt `ClassInfoConfig` catalog adapter now shares the extracted
 engine grade, level, and book configuration while preserving its existing Qt
 lookup API as well.
+The retained Qt `ClassTabNavigation` model now shares the extracted engine
+grouping, ordering, schedule-label, duplicate-label, and day-filter rules while
+preserving its existing Qt model shape and localized fallback labels as well.
+The focused native class-tab navigation test passed in both x64 and x86 Debug
+WinUI lanes, and the retained Qt `ClassTabNavigationModelTests` target built
+and passed 1/1 in the x64 Debug Qt lane.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

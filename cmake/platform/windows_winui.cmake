@@ -209,6 +209,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineClassNamingServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineClassTabNavigationServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineClassTabNavigationServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineUpcomingBirthdayScheduleTests)
         add_dependencies(
             ${classmngr_winui_target}

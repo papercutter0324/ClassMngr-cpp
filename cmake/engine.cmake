@@ -86,6 +86,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/class_info_config.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info_config.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_tab_navigation_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_tab_navigation.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_time_validator.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_time_validator.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_info_validator.cpp"
@@ -437,6 +439,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineClassNamingServiceTests
         COMMAND ClassMngrEngineClassNamingServiceTests
+    )
+
+    add_executable(ClassMngrEngineClassTabNavigationServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/class_tab_navigation_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineClassTabNavigationServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineClassTabNavigationServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineClassTabNavigationServiceTests
+        COMMAND ClassMngrEngineClassTabNavigationServiceTests
     )
 
     add_executable(ClassMngrEngineUpcomingBirthdayScheduleTests
