@@ -333,6 +333,14 @@ and inspected through the engine, and a temporary engine-written profile is
 opened and inspected through Qt `QSQLITE` queries. Both checks assert the
 schema version and bilingual teacher/class values.
 
+The application-settings slice now has a Qt-free
+`ApplicationSettingsService` for prepared upserts, SQLite value conversion,
+single reads, and transactional batch rollback. The retained Qt
+`SettingsRepository` converts its QVariant API through a cached file-backed
+engine connection; teacher-import and schedule-import app-settings access now
+uses the same service. The existing `app_settings.value TEXT` schema is
+preserved, including its numeric-to-text affinity behavior.
+
 ## Local validation
 
 | Lane | Result |
@@ -369,6 +377,10 @@ schema version and bilingual teacher/class values.
 | Windows x86 Debug campus-record service test | Passed: direct VS 2026/v145 compile, link, and run; CMake target build is blocked by the existing MSBuild FileTracker access failure |
 | Windows x86 Release campus-record service test | Passed: direct VS 2026/v145 compile, link, and run |
 | Retained Windows Qt campus-record adapter smoke | Passed: Qt 6.11/MSVC file-backed UTF-8 save/load/update/list/delete link-level smoke |
+| Windows x64 application-settings service test | Passed: direct VS 2026/v145 compile, link, and run |
+| Windows x86 application-settings service test | Passed: direct VS 2026/v145 compile, link, and run |
+| Retained Windows Qt settings adapter smoke | Passed: Qt 6.11/MSVC file-backed UTF-8 save/load, QVariant conversion, and cross-connection batch-rollback link-level smoke |
+| Application-settings import call-site compile check | Passed: direct VS 2026/v145 x64 and x86 compile-only checks for teacher-import and schedule-import services |
 | Windows x64 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x64 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x86 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
@@ -775,6 +787,18 @@ normal target builds remain blocked by the existing MSBuild FileTracker
 `UnauthorizedAccessException` during `ZERO_CHECK`/compile tracking; no
 CMake-generated current-binary campus test result is claimed.
 
+The application-settings service test was then compiled, linked, and run
+successfully in direct VS 2026/v145 x64 and x86 lanes. It covers UTF-8 text,
+TEXT-column numeric affinity, BLOB and NULL values, upsert replacement,
+missing-setting behavior, malformed duplicate rows, and transactional batch
+rollback. The retained Qt settings adapter and both changed import call sites
+passed direct Qt 6.11/MSVC compile-only checks; a link-level file-backed Qt
+smoke passed UTF-8 settings, QVariant integer/bool conversion, and rollback
+across the separate Qt and engine SQLite connections. The normal Qt CMake
+target build remains blocked by the existing MSBuild FileTracker
+`UnauthorizedAccessException`, so no CMake-generated current-binary settings
+regression is claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -786,7 +810,9 @@ teacher, class-transfer, calendar-event, intensive-slot-state, speaking-
 evaluation, and teacher-import adapters now share extracted engine use cases.
 The testing-class and testing-block repositories now share extracted engine
 use cases as well. The campus-record repository now shares the extracted
-engine campus-record use case as well.
+engine campus-record use case as well. The application-settings repository,
+teacher-import service, and schedule-import service now share the extracted
+engine application-settings use case as well.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

@@ -28,6 +28,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/database_file_format.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sqlite_database.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sqlite_database.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/application_settings_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/application_settings_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/database_schema.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/database_schema.h"
     "${PROJECT_SOURCE_DIR}/src/engine/open_database.cpp"
@@ -280,6 +282,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineSqliteDatabaseTests
         COMMAND ClassMngrEngineSqliteDatabaseTests
+    )
+
+    add_executable(ClassMngrEngineApplicationSettingsServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/application_settings_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineApplicationSettingsServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineApplicationSettingsServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineApplicationSettingsServiceTests
+        COMMAND ClassMngrEngineApplicationSettingsServiceTests
     )
 
     add_executable(ClassMngrEngineDatabaseSchemaTests

@@ -1,5 +1,6 @@
 #include "classmngr/engine/teacher_import_service.h"
 
+#include "classmngr/engine/application_settings_service.h"
 #include "classmngr/engine/sqlite_database.h"
 
 #include <algorithm>
@@ -973,56 +974,38 @@ Status updateLatestDate(
     std::string_view sourceDateText
     )
 {
-    const auto rows = database.query(
-        "SELECT value FROM app_settings WHERE key=?",
-        SqliteParameters{
-            SqliteValue{
-                std::string(TeacherImportService::LatestSourceDateSetting)
-            }
-        }
+    ApplicationSettingsService settings(database);
+    const Result<SettingValue> current = settings.load(
+        TeacherImportService::LatestSourceDateSetting
         );
-    if (!rows)
+    if (!current)
     {
-        return std::unexpected(rows.error());
+        return std::unexpected(current.error());
     }
-    if (rows->rows.size() > 1
-        || (!rows->rows.empty() && rows->rows.front().values.size() != 1))
+
+    std::string currentText;
+    if (const auto* text = std::get_if<std::string>(&*current))
+    {
+        currentText = *text;
+    }
+    else if (!std::holds_alternative<std::monostate>(*current))
     {
         return std::unexpected(makeError(
             ErrorCode::Schema,
-            "SQLite returned an unexpected previous teacher import date."
+            "SQLite returned a non-text teacher import setting value."
             ));
     }
 
-    if (!rows->rows.empty())
+    IsoDate currentDate;
+    if (parseIsoDate(currentText, currentDate)
+        && dateLessOrEqual(sourceDate, currentDate))
     {
-        const Result<std::string> currentText = textFromValue(
-            rows->rows.front().values.front(),
-            "teacher import setting",
-            "value"
-            );
-        if (!currentText)
-        {
-            return std::unexpected(currentText.error());
-        }
-
-        IsoDate currentDate;
-        if (parseIsoDate(*currentText, currentDate)
-            && dateLessOrEqual(sourceDate, currentDate))
-        {
-            return {};
-        }
+        return {};
     }
 
-    return database.execute(
-        "INSERT INTO app_settings (key, value) VALUES (?, ?) "
-        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-        SqliteParameters{
-            SqliteValue{
-                std::string(TeacherImportService::LatestSourceDateSetting)
-            },
-            SqliteValue{std::string(sourceDateText)}
-        }
+    return settings.save(
+        TeacherImportService::LatestSourceDateSetting,
+        SettingValue{std::string(sourceDateText)}
         );
 }
 } // namespace

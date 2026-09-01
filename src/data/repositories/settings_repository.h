@@ -7,12 +7,20 @@
 #include <QVariant>
 #include <QVariantMap>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class SettingsRepository
 {
 public:
     explicit SettingsRepository(
         QSqlDatabase& database
         );
+    ~SettingsRepository();
 
     [[nodiscard]] Status saveSetting(
         const QString& key,
@@ -28,5 +36,12 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation,
+        const QString& settingContext = {}
+        );
+
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

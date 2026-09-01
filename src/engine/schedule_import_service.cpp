@@ -1,5 +1,6 @@
 #include "classmngr/engine/schedule_import_service.h"
 
+#include "classmngr/engine/application_settings_service.h"
 #include "classmngr/engine/class_info_config.h"
 #include "classmngr/engine/class_repository.h"
 #include "classmngr/engine/class_schedule_service.h"
@@ -756,25 +757,6 @@ std::string courseLabel(
         result += trimmedLevel;
     }
     return result;
-}
-
-Result<std::string> textValue(
-    const SqliteValue& value,
-    std::string_view column
-    )
-{
-    if (const auto* text = std::get_if<std::string>(&value))
-    {
-        return *text;
-    }
-    if (std::holds_alternative<std::monostate>(value))
-    {
-        return std::string{};
-    }
-    return std::unexpected(error(
-        ErrorCode::Schema,
-        "SQLite returned a non-text " + std::string(column) + " value."
-        ));
 }
 
 Result<int> integerValue(
@@ -1957,26 +1939,24 @@ Result<ScheduleImportSummary> ScheduleImportService::importSchedule(
 
     if (plan.saveProfileNameIfBlank || plan.updateProfileName)
     {
-        const auto current = m_database.query(
-            "SELECT value FROM app_settings WHERE key='myInfo/name'"
-            );
+        ApplicationSettingsService settings(m_database);
+        const Result<SettingValue> current = settings.load("myInfo/name");
         if (!current)
         {
             return std::unexpected(current.error());
         }
 
         std::string existingName;
-        if (!current->rows.empty() && !current->rows.front().values.empty())
+        if (const auto* text = std::get_if<std::string>(&*current))
         {
-            const Result<std::string> value = textValue(
-                current->rows.front().values.front(),
-                "app_settings.value"
-                );
-            if (!value)
-            {
-                return std::unexpected(value.error());
-            }
-            existingName = trimAsciiWhitespace(*value);
+            existingName = trimAsciiWhitespace(*text);
+        }
+        else if (!std::holds_alternative<std::monostate>(*current))
+        {
+            return std::unexpected(error(
+                ErrorCode::Schema,
+                "SQLite returned a non-text app_settings value."
+                ));
         }
 
         const std::string selectedName = trimAsciiWhitespace(
@@ -1985,10 +1965,9 @@ Result<ScheduleImportSummary> ScheduleImportService::importSchedule(
         if ((existingName.empty() || plan.updateProfileName)
             && !selectedName.empty())
         {
-            const Status updated = m_database.execute(
-                "INSERT INTO app_settings (key, value) VALUES ('myInfo/name', ?) "
-                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                SqliteParameters{SqliteValue{selectedName}}
+            const Status updated = settings.save(
+                "myInfo/name",
+                SettingValue{selectedName}
                 );
             if (!updated)
             {
