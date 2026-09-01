@@ -341,6 +341,13 @@ engine connection; teacher-import and schedule-import app-settings access now
 uses the same service. The existing `app_settings.value TEXT` schema is
 preserved, including its numeric-to-text affinity behavior.
 
+The retained Qt `DatabaseSession` now routes ordinary file-backed profile path
+preparation and schema migration through engine `OpenDatabase` before creating
+the Qt `QSQLITE` connection. Exact `:memory:` sessions retain the Qt schema
+compatibility path, and the Qt connection still enables foreign-key
+enforcement. The focused lifecycle coverage verifies a legacy file-backed
+profile is migrated and readable through the retained Qt connection.
+
 ## Local validation
 
 | Lane | Result |
@@ -381,6 +388,7 @@ preserved, including its numeric-to-text affinity behavior.
 | Windows x86 application-settings service test | Passed: direct VS 2026/v145 compile, link, and run |
 | Retained Windows Qt settings adapter smoke | Passed: Qt 6.11/MSVC file-backed UTF-8 save/load, QVariant conversion, and cross-connection batch-rollback link-level smoke |
 | Application-settings import call-site compile check | Passed: direct VS 2026/v145 x64 and x86 compile-only checks for teacher-import and schedule-import services |
+| Retained Windows Qt DatabaseSession boundary | Source compilation passed; focused lifecycle target rebuild is blocked by the existing MSBuild FileTracker `UnauthorizedAccessException` during `ZERO_CHECK`/compile tracking |
 | Windows x64 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x64 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x86 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
@@ -799,6 +807,16 @@ target build remains blocked by the existing MSBuild FileTracker
 `UnauthorizedAccessException`, so no CMake-generated current-binary settings
 regression is claimed for this slice.
 
+The retained Qt `DatabaseSession` was then connected to the portable database
+boundary. Ordinary file-backed opens now use engine `OpenDatabase` for UTF-8
+path normalization, parent-directory preparation, and schema migration before
+the Qt `QSQLITE` connection is created; exact `:memory:` opens retain the Qt
+schema initializer and Qt-side foreign-key setup. The focused lifecycle source
+compiled and `git diff --check` passed. A current CMake target rebuild was
+attempted, but the existing MSBuild FileTracker `UnauthorizedAccessException`
+recurred during `ZERO_CHECK`/compile tracking, so no current-binary lifecycle
+pass is claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -813,6 +831,9 @@ use cases as well. The campus-record repository now shares the extracted
 engine campus-record use case as well. The application-settings repository,
 teacher-import service, and schedule-import service now share the extracted
 engine application-settings use case as well.
+The retained Qt `DatabaseSession` now uses engine `OpenDatabase` for ordinary
+file-backed profile preparation and schema migration, with the Qt schema
+initializer retained only for exact `:memory:` compatibility.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

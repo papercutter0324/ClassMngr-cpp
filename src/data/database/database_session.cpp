@@ -1,5 +1,7 @@
 #include "database_session.h"
 
+#include "classmngr/engine/open_database.h"
+
 #include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/campus_record_repository.h"
@@ -18,9 +20,11 @@
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
 
-#include <QDir>
-#include <QFileInfo>
+#include <QByteArray>
 #include <QSqlError>
+
+#include <cstddef>
+#include <string_view>
 
 DatabaseSession::DatabaseSession()
     : m_connectionName(
@@ -45,25 +49,45 @@ Status DatabaseSession::open(const QString& databasePath)
             );
     }
 
-    const QFileInfo databaseInfo(databasePath);
-    const QString normalizedPath = databaseInfo.absoluteFilePath();
     close();
 
-    if (normalizedPath.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QStringLiteral("Teacher Profile path could not be resolved.")
-            );
-    }
+    const bool isMemoryDatabase = databasePath == QStringLiteral(":memory:");
+    QString normalizedPath;
 
-    if (
-        !databaseInfo.absolutePath().isEmpty()
-        && !QDir().mkpath(databaseInfo.absolutePath())
-        )
+    if (isMemoryDatabase)
     {
-        return std::unexpected(
-            QStringLiteral("Unable to create Teacher Profile directory:\n%1")
-                .arg(databaseInfo.absolutePath())
+        normalizedPath = databasePath;
+    }
+    else
+    {
+        const QByteArray utf8Path = databasePath.toUtf8();
+        auto engineDatabase = classmngr::engine::OpenDatabase::execute(
+            std::string_view(
+                utf8Path.constData(),
+                static_cast<std::size_t>(utf8Path.size())
+                )
+            );
+
+        if (!engineDatabase)
+        {
+            const std::string& engineError = engineDatabase.error().message;
+            return std::unexpected(
+                QStringLiteral("Unable to initialize Teacher Profile:\n%1\n\n%2")
+                    .arg(
+                        databasePath,
+                        QString::fromUtf8(
+                            engineError.data(),
+                            static_cast<qsizetype>(engineError.size())
+                            )
+                        )
+                );
+        }
+
+        const std::string_view enginePath =
+            (*engineDatabase)->databasePath();
+        normalizedPath = QString::fromUtf8(
+            enginePath.data(),
+            static_cast<qsizetype>(enginePath.size())
             );
     }
 
@@ -84,8 +108,9 @@ Status DatabaseSession::open(const QString& databasePath)
             );
     }
 
-    const Status schemaStatus =
-        DatabaseSchemaManager::ensureSchema(m_database);
+    const Status schemaStatus = isMemoryDatabase
+        ? DatabaseSchemaManager::ensureSchema(m_database)
+        : DatabaseSchemaManager::enableForeignKeyEnforcement(m_database);
     if (!schemaStatus)
     {
         const QString schemaError = schemaStatus.error();

@@ -1,4 +1,5 @@
 #include "data/data_service.h"
+#include "data/database/database_schema_manager.h"
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
@@ -222,6 +223,7 @@ private slots:
     void applicationServicesOwnDatabaseFileOperations();
     void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
+    void fileBackedSessionUsesEngineSchemaPipeline();
     void schemaFailureClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
     void teacherDeleteFailureRollsBackClassAssignments();
@@ -305,6 +307,62 @@ void DataServiceLifecycleTests::schemaFailureClosesDatabaseSession()
     QVERIFY(session.databasePath().isEmpty());
     QCOMPARE(session.settingsRepository(), nullptr);
     QCOMPARE(session.campusRecordRepository(), nullptr);
+}
+
+void DataServiceLifecycleTests::fileBackedSessionUsesEngineSchemaPipeline()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString path = directory.filePath(
+        QStringLiteral("engine-preflight.db")
+        );
+    const QString connectionName =
+        QStringLiteral("engine-schema-seed");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE teachers ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "teacher_en TEXT"
+            ")"
+            )));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO teachers (teacher_en) VALUES ('Legacy Teacher')"
+            )));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    DatabaseSession session;
+    QVERIFY(session.open(path).has_value());
+    QCOMPARE(
+        session.databasePath(),
+        QFileInfo(path).absoluteFilePath()
+        );
+
+    QSqlQuery versionQuery(session.database());
+    QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version")));
+    QVERIFY(versionQuery.next());
+    QCOMPARE(
+        versionQuery.value(0).toInt(),
+        DatabaseSchemaManager::LatestSchemaVersion
+        );
+
+    QSqlQuery columnQuery(session.database());
+    QVERIFY(columnQuery.exec(QStringLiteral(
+        "SELECT preferred_name FROM teachers"
+        )));
+    QVERIFY(columnQuery.next());
+    QCOMPARE(columnQuery.value(0).toString(), QString());
 }
 
 void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
