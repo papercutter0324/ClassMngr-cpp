@@ -14,7 +14,7 @@ ClassMngr is built with CMake, C++23, and Qt 6. Release installs run Qt's deploy
 ## Requirements
 
 * CMake 3.25 or newer
-* Qt 6.11.1 or newer, built for the compiler you are using
+* Qt 6.12 or newer, built for the compiler you are using
 * A C++23 compiler
 * zlib development files (Windows builds can use Qt's bundled fallback)
 * Ninja for Linux and macOS preset builds
@@ -25,9 +25,9 @@ ClassMngr is built with CMake, C++23, and Qt 6. Release installs run Qt's deploy
 When configuring CMake, set `CMAKE_PREFIX_PATH` to the Qt kit directory that contains `lib/cmake/Qt6`. Common examples are:
 
 ```text
-C:/Qt/6.11.1/msvc2022_64
-/Users/you/Qt/6.11.1/macos
-$HOME/Qt/6.11.1/gcc_64
+C:/Qt/6.12.0/msvc2022_64
+/Users/you/Qt/6.12.0/macos
+$HOME/Qt/6.12.0/gcc_64
 ```
 
 ## Windows
@@ -62,12 +62,12 @@ Open VS Code and install these extensions:
 * C/C++ (`ms-vscode.cpptools`)
 * CMake Tools (`ms-vscode.cmake-tools`)
 
-Install the Qt Windows desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.11.1 MSVC desktop kit matching your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
+Install the Qt Windows desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12.0 MSVC desktop kit matching your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
 Set `QT_MSVC_X64_PREFIX` to the Qt kit directory on each Windows machine. The same presets work regardless of where that kit is installed:
 
 ```powershell
-$qtX64Prefix = "D:\Development\Qt\6.11.1\msvc2022_64"
+$qtX64Prefix = "D:\Development\Qt\6.12.0\msvc2022_64"
 [Environment]::SetEnvironmentVariable(
     "QT_MSVC_X64_PREFIX",
     $qtX64Prefix,
@@ -76,7 +76,7 @@ $qtX64Prefix = "D:\Development\Qt\6.11.1\msvc2022_64"
 $env:QT_MSVC_X64_PREFIX = $qtX64Prefix
 ```
 
-Use the local path for the machine, such as `C:\Qt\6.11.1\msvc2022_64` on a different installation. On a resource-constrained machine, set `CMAKE_BUILD_PARALLEL_LEVEL` locally or pass `--parallel 4` to `cmake --build`; the shared presets do not impose a job limit.
+Use the local path for the machine, such as `C:\Qt\6.12.0\msvc2022_64` on a different installation. On a resource-constrained machine, set `CMAKE_BUILD_PARALLEL_LEVEL` locally or pass `--parallel 4` to `cmake --build`; the shared presets do not impose a job limit.
 
 The `msvc2022_*` Qt kit names are Qt package identifiers and do not select the
 Visual Studio generator. Windows builds use the VS 2026 `v145` toolset described
@@ -174,12 +174,12 @@ Install the command-line build tools used by the CMake presets. Homebrew is the 
 brew install cmake ninja git
 ```
 
-Install the Qt macOS desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.11.1 `macos` desktop kit. If you use another Qt installation, make sure it is Qt 6.11.1 or newer and includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
+Install the Qt macOS desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12 `macos` desktop kit. If you use another Qt installation, make sure it is Qt 6.12 or newer and includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
 Set `QT_MACOS_PREFIX` to that Qt kit. The same presets then work regardless of where Qt is installed. The macOS release preset builds a universal `arm64;x86_64` app bundle targeting macOS 13.0 or newer.
 
 ```sh
-export QT_MACOS_PREFIX="$HOME/Qt/6.11.1/macos"
+export QT_MACOS_PREFIX="$HOME/Qt/6.12.0/macos"
 
 cmake --preset macos-clang-release
 cmake --build --preset macos-clang-release
@@ -292,13 +292,13 @@ sudo zypper install \
   xcb-util-wm-devel
 ```
 
-Install the Qt Linux desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.11.1 `gcc_64` desktop kit, because many distro repositories ship an older Qt 6 than this project requires. If your distro provides Qt 6.11.1 or newer, distro Qt packages are fine too as long as they include Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
+Install the Qt Linux desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12 `gcc_64` desktop kit, because many distro repositories ship an older Qt 6 than this project requires. If your distro provides Qt 6.12 or newer, distro Qt packages are fine too as long as they include Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
 The checked-in Linux preset contains a maintainer-specific default Qt path. Override it with the Qt kit installed on your machine:
 
 ```sh
 cmake --preset linux-gcc-release \
-  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.11.1/gcc_64"
+  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.12.0/gcc_64"
 cmake --build --preset linux-gcc-release
 
 cmake --install build/linux-gcc-release \

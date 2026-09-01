@@ -10,9 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  QT_VERSION: "6.11.1"
-
 jobs:
   baseline:
     name: ${{ matrix.name }}
@@ -28,18 +25,24 @@ jobs:
             build_dir: build/windows-x64-debug
             configuration: Debug
             report: windows-x64-debug
+            qt_version: "6.12.0"
           - name: Linux x64 Debug
             runner: ubuntu-24.04
             preset: linux-gcc-debug
             build_dir: build/linux-gcc-debug
             configuration: ""
             report: linux-gcc-debug
+            qt_version: "6.12.0"
           - name: macOS universal Debug
             runner: macos-15-intel
             preset: macos-clang-debug
             build_dir: build/macos-clang-debug
             configuration: ""
             report: macos-clang-debug
+            qt_version: "6.12.0"
+
+    env:
+      QT_VERSION: ${{ matrix.qt_version }}
 
     steps:
       - name: Check out repository
@@ -90,7 +93,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
-          # Qt Declarative and the command-line tools are in the Qt 6.11 base
+          # Qt Declarative and the command-line tools are in the Qt 6.12 base
           # package; Qt Pdf is the only extension required by this build.
           python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
             --outputdir "${GITHUB_WORKSPACE}/Qt" \

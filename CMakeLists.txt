@@ -190,7 +190,9 @@ message(STATUS "ClassMngr Windows Qt transition: ${CLASSMNGR_BUILD_WINDOWS_QT_TR
 include(cmake/engine.cmake)
 
 if(CLASSMNGR_BUILD_QT_DESKTOP)
-    find_package(Qt6 6.11.1 REQUIRED COMPONENTS
+    set(CLASSMNGR_QT_MIN_VERSION 6.12.0)
+
+    find_package(Qt6 ${CLASSMNGR_QT_MIN_VERSION} REQUIRED COMPONENTS
         Concurrent
         Core
         Gui
@@ -208,7 +210,7 @@ if(CLASSMNGR_BUILD_QT_DESKTOP)
     )
 
     macro(classmngr_try_qt_zlib_fallback)
-        find_package(Qt6ZlibPrivate 6.11.1 QUIET)
+        find_package(Qt6ZlibPrivate ${CLASSMNGR_QT_MIN_VERSION} QUIET)
         if(TARGET Qt6::ZlibPrivate AND NOT TARGET ZLIB::ZLIB)
             add_library(ZLIB::ZLIB ALIAS Qt6::ZlibPrivate)
             set(ZLIB_FOUND TRUE)
@@ -270,7 +272,7 @@ if(CLASSMNGR_BUILD_QT_DESKTOP)
     include(cmake/platform/macos.cmake)
     include(cmake/platform/windows.cmake)
     if(BUILD_TESTING)
-        find_package(Qt6 6.11.1 REQUIRED COMPONENTS
+        find_package(Qt6 ${CLASSMNGR_QT_MIN_VERSION} REQUIRED COMPONENTS
             Test
         )
 
