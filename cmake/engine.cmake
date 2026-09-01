@@ -135,6 +135,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_document.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_package_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_package.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/evaluation_default_selection.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/evaluation_default_selection.h"
     "${PROJECT_SOURCE_DIR}/src/engine/academic_calendar.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/academic_calendar.h"
     "${PROJECT_SOURCE_DIR}/src/engine/calendar_event_rules.cpp"
@@ -983,6 +985,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineAcademicCalendarTests
         COMMAND ClassMngrEngineAcademicCalendarTests
+    )
+
+    add_executable(ClassMngrEngineEvaluationDefaultSelectionTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/evaluation_default_selection_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineEvaluationDefaultSelectionTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineEvaluationDefaultSelectionTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineEvaluationDefaultSelectionTests
+        COMMAND ClassMngrEngineEvaluationDefaultSelectionTests
     )
 
     add_executable(ClassMngrEngineCalendarEventRulesTests

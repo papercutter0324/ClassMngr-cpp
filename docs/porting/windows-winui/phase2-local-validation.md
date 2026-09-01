@@ -92,6 +92,14 @@ and regular/intensive day filtering. The retained Qt model keeps its existing
 `QList`/`QSet` API and translation behavior while converting values at the
 presentation boundary.
 
+The evaluation-default selection slice now includes a Qt-free
+`EvaluationDefaultSelection` policy for term-name mapping, current/previous
+term fallback, populated-row detection, and M1/M2/M3 school-level
+classification. The retained Qt helpers convert terms and evaluation rows
+through UTF-8 while keeping calendar lookup, settings policy, service
+availability, and localized presentation at the adapter edge. The portable
+blank-value contract treats standard ASCII whitespace as blank.
+
 The upcoming-birthday slice now includes a Qt-free
 `UpcomingBirthdaySchedule`. It owns birthday parsing, the today/this-week/
 next-week date windows, calendar-year rollover, non-leap-year February 29
@@ -927,6 +935,12 @@ preserving its existing Qt model shape and localized fallback labels as well.
 The focused native class-tab navigation test passed in both x64 and x86 Debug
 WinUI lanes, and the retained Qt `ClassTabNavigationModelTests` target built
 and passed 1/1 in the x64 Debug Qt lane.
+The retained Qt evaluation-default selection helpers now share the extracted
+engine term naming, population, fallback, and grade-classification policy.
+The focused `ClassMngrEngineEvaluationDefaultSelectionTests` target built and
+passed 1/1 in x64/x86 Debug and Release WinUI lanes. The retained Qt target was
+not rebuilt because this host exposes Qt 6.11.1 while the project requires Qt
+6.12.0; no current-binary Qt parity result is claimed.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

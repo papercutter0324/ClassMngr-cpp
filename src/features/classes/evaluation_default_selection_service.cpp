@@ -1,6 +1,7 @@
 #include "features/classes/evaluation_default_selection.h"
 
 #include "app/services/feature_services.h"
+#include "classmngr/engine/evaluation_default_selection.h"
 #include "core/application_services.h"
 #include "domain/models/class_info.h"
 #include "features/calendar/ui/academic_calendar_provider.h"
@@ -8,14 +9,7 @@
 
 namespace
 {
-
-bool isMiddleSchoolGrade(const QString& grade)
-{
-    const QString normalized = grade.trimmed().toUpper();
-    return normalized == QStringLiteral("M1")
-        || normalized == QStringLiteral("M2")
-        || normalized == QStringLiteral("M3");
-}
+using EngineSelection = classmngr::engine::EvaluationDefaultSelection;
 
 } // namespace
 
@@ -55,13 +49,17 @@ QString forClass(
         return {};
     }
 
-    const SchoolLevel schoolLevel = isMiddleSchoolGrade(
-        classService->classInfo(classId)
-            .value_or(ClassInfo{})
-            .classGrade
-        )
-        ? SchoolLevel::Middle
-        : SchoolLevel::Elementary;
+    const QString grade = classService->classInfo(classId)
+        .value_or(ClassInfo{})
+        .classGrade;
+    const classmngr::engine::SchoolLevel engineSchoolLevel =
+        EngineSelection::schoolLevelForGrade(
+            grade.toUtf8().toStdString()
+            );
+    const SchoolLevel schoolLevel =
+        engineSchoolLevel == classmngr::engine::SchoolLevel::Middle
+            ? SchoolLevel::Middle
+            : SchoolLevel::Elementary;
     AcademicCalendarProvider calendar(settingsService);
     if (!calendar.schedule().hasSavedSchedules())
     {

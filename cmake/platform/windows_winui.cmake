@@ -383,6 +383,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineAcademicCalendarTests
         )
     endif()
+    if(TARGET ClassMngrEngineEvaluationDefaultSelectionTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineEvaluationDefaultSelectionTests
+        )
+    endif()
     if(TARGET ClassMngrEngineCalendarEventRulesTests)
         add_dependencies(
             ${classmngr_winui_target}
