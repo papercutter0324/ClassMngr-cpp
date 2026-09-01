@@ -220,13 +220,17 @@ std::string fieldName(
 void addIssue(
     ValidationResult& result,
     std::string_view code,
-    std::string field
+    std::string field,
+    int row = -1,
+    int column = -1
     )
 {
     result.add(ValidationIssue{
         std::string(code),
         std::move(field),
-        ValidationSeverity::Error
+        ValidationSeverity::Error,
+        row,
+        column
     });
 }
 } // namespace
@@ -281,19 +285,37 @@ ValidationResult validate(
         const auto weekday = canonicalWeekday(time.day);
         if (!weekday)
         {
-            addIssue(result, "schedule.weekday.invalid", dayField);
+            addIssue(
+                result,
+                "schedule.weekday.invalid",
+                dayField,
+                static_cast<int>(row),
+                0
+                );
         }
 
         const auto start = parseClassTime(time.startTime);
         if (!start)
         {
-            addIssue(result, "schedule.time.invalid_format", startField);
+            addIssue(
+                result,
+                "schedule.time.invalid_format",
+                startField,
+                static_cast<int>(row),
+                1
+                );
         }
 
         const auto end = parseClassTime(time.endTime);
         if (!end)
         {
-            addIssue(result, "schedule.time.invalid_format", endField);
+            addIssue(
+                result,
+                "schedule.time.invalid_format",
+                endField,
+                static_cast<int>(row),
+                2
+                );
         }
 
         if (start && end && *end <= *start)
@@ -301,7 +323,9 @@ ValidationResult validate(
             addIssue(
                 result,
                 "schedule.time.end_not_after_start",
-                endField
+                endField,
+                static_cast<int>(row),
+                2
                 );
         }
 
@@ -328,7 +352,9 @@ ValidationResult validate(
             addIssue(
                 result,
                 "class_time.duplicate_slot",
-                fieldName(fieldPrefix, row, "startTime")
+                fieldName(fieldPrefix, row, "startTime"),
+                static_cast<int>(row),
+                1
                 );
         }
     }

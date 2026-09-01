@@ -11,6 +11,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "domain/validation/class_info_validator.h"
+#include "domain/validation/class_time_validator.h"
 #include "domain/validation/roster_validator.h"
 #include "domain/validation/speaking_eval_validator.h"
 #include "domain/validation/teacher_validator.h"
@@ -834,6 +835,50 @@ void SharedPolicyTests::classInfoValidatorChecksCurriculumAndSchedule()
              QStringLiteral("color.invalid_hex"));
     QVERIFY(!errors.forField(QStringLiteral("classTimes[0].endTime")).isEmpty());
     QVERIFY(!errors.forField(QStringLiteral("classTimes[1].startTime")).isEmpty());
+
+    const ValidationIssues classInfoOrderIssues =
+        errors.forField(QStringLiteral("classTimes[0].endTime"));
+    const ValidationIssue& classInfoOrderIssue = classInfoOrderIssues.first();
+    QCOMPARE(classInfoOrderIssue.row, 0);
+    QCOMPARE(classInfoOrderIssue.column, 2);
+
+    const ValidationResult timeErrors = ClassTimeValidator::validate(
+        invalid.classTimes,
+        QStringLiteral("classTimes")
+        );
+    const ValidationIssues orderIssues =
+        timeErrors.forField(QStringLiteral("classTimes[0].endTime"));
+    const ValidationIssue& orderIssue = orderIssues.first();
+    QCOMPARE(orderIssue.arguments.value(QStringLiteral("start")).toString(),
+             QStringLiteral("4:00 PM"));
+    QCOMPARE(orderIssue.arguments.value(QStringLiteral("end")).toString(),
+             QStringLiteral("3:50 PM"));
+
+    const ValidationIssues duplicateIssues =
+        timeErrors.forField(QStringLiteral("classTimes[0].startTime"));
+    const ValidationIssue& duplicateIssue = duplicateIssues.first();
+    QCOMPARE(duplicateIssue.row, 0);
+    QCOMPARE(duplicateIssue.column, 1);
+    QCOMPARE(
+        duplicateIssue.arguments.value(QStringLiteral("duplicateRows")).toList(),
+        QVariantList({0, 1})
+        );
+
+    const ValidationResult malformedTime = ClassTimeValidator::validate(
+        {{QStringLiteral("Funday"), QStringLiteral("4:00 PM"),
+          QStringLiteral("not-a-time")}},
+        QStringLiteral("classTimes")
+        );
+    const ValidationIssues weekdayIssues =
+        malformedTime.forField(QStringLiteral("classTimes[0].day"));
+    const ValidationIssue& weekdayIssue = weekdayIssues.first();
+    QCOMPARE(weekdayIssue.arguments.value(QStringLiteral("value")).toString(),
+             QStringLiteral("Funday"));
+    const ValidationIssues formatIssues =
+        malformedTime.forField(QStringLiteral("classTimes[0].endTime"));
+    const ValidationIssue& formatIssue = formatIssues.first();
+    QCOMPARE(formatIssue.arguments.value(QStringLiteral("value")).toString(),
+             QStringLiteral("not-a-time"));
 }
 
 void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()

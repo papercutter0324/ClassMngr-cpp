@@ -851,6 +851,17 @@ targets were absent and therefore not run. The normal Qt CMake target build
 remains blocked by the existing MSBuild FileTracker
 `UnauthorizedAccessException`.
 
+The standalone retained Qt `ClassTimeValidator` was then converted to a UTF-8
+adapter over the same Qt-free engine validator. The engine class-time issues
+now carry their portable row/column metadata; the Qt adapter restores the
+legacy invalid-value, end-order, and duplicate-row argument maps at the
+presentation boundary. Direct VS 2026/v145 Qt and engine compile checks passed.
+A manually linked Qt 6.11/MSVC `ClassMngrSharedPolicyTests` binary passed with
+explicit normalization, row/column, and diagnostic-argument assertions. The
+normal Qt CMake target build remains blocked by the existing MSBuild FileTracker
+`UnauthorizedAccessException`, so no CMake-generated current-binary gate is
+claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -870,8 +881,8 @@ file-backed profile preparation and schema migration, with the Qt schema
 initializer retained only for exact `:memory:` compatibility.
 The personal-details settings service and retained adapter now share the
 engine settings boundary for file-backed reads and writes as well.
-The retained Qt teacher and class-information validators now share the
-extracted engine validation boundaries as well.
+The retained Qt teacher, class-information, and standalone class-time
+validators now share the extracted engine validation boundaries as well.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.
