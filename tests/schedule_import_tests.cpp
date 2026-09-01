@@ -478,13 +478,17 @@ void ScheduleImportTests::appliesIntensiveSlotStatesSnapshot()
     const QString connectionName =
         QStringLiteral("schedule-import-intensive-states-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
@@ -906,13 +910,17 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
     const QString connectionName =
         QStringLiteral("schedule-import-matching-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
@@ -1164,13 +1172,17 @@ void ScheduleImportTests::reportsScheduleInventoryStates()
     const QString connectionName =
         QStringLiteral("schedule-import-inventory-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
@@ -1253,13 +1265,17 @@ void ScheduleImportTests::regularImportMatchesIntensiveOnlyClasses()
     const QString connectionName =
         QStringLiteral("schedule-import-cross-kind-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
@@ -1386,13 +1402,17 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
     const QString connectionName =
         QStringLiteral("schedule-import-intensive-mode-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
@@ -1568,13 +1588,17 @@ void ScheduleImportTests::fullSnapshotPreservesUnrelatedData()
     const QString connectionName =
         QStringLiteral("schedule-import-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
@@ -1817,13 +1841,17 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
     const QString connectionName =
         QStringLiteral("schedule-import-skip-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
@@ -1977,13 +2005,17 @@ void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
     const QString connectionName =
         QStringLiteral("schedule-import-duplicate-target-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
@@ -2023,13 +2055,17 @@ void ScheduleImportTests::conflictsRollBackBeforeWrites()
     const QString connectionName =
         QStringLiteral("schedule-import-conflict-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
@@ -2106,13 +2142,17 @@ void ScheduleImportTests::writeFailureRollsBackEveryChange()
     const QString connectionName =
         QStringLiteral("schedule-import-rollback-%1")
             .arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDir;
+    QVERIFY(temporaryDir.isValid());
     {
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDir.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 

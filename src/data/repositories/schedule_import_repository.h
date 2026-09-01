@@ -5,12 +5,20 @@
 
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class ScheduleImportRepository
 {
 public:
     explicit ScheduleImportRepository(
         QSqlDatabase& database
         );
+    ~ScheduleImportRepository();
 
     [[nodiscard]] Result<ScheduleImportPreview> preview(
         const ScheduleImportUserBlock& user,
@@ -22,5 +30,11 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        );
+
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

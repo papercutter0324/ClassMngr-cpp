@@ -607,6 +607,17 @@ again remained blocked by the existing regeneration / MSBuild FileTracker
 stall, so no current-binary retained-Qt directory regression is claimed for
 this slice.
 
+The retained Qt schedule-import repository was then converted to a UTF-8
+adapter over the engine `ScheduleImportService`. Its nested preview and plan
+models now cross the boundary through explicit string, collection, and enum
+conversions, while matching, validation, intensive-mode handling, and
+transactional writes remain engine-owned. Static adapter checks passed, and
+the existing `ClassMngrEngineScheduleImportServiceTests` executable passed in
+all four x64/x86 Debug/Release WinUI lanes. The regular Qt CMake rebuild again
+remained blocked by the existing regeneration / MSBuild FileTracker stall, so
+no current-binary retained-Qt schedule-import regression is claimed for this
+slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
