@@ -1,53 +1,94 @@
 #include "campus_record_repository.h"
 
-#include "data/database/sql_query_utils.h"
+#include "classmngr/engine/campus_record_service.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
 
+#include <QByteArray>
 #include <QObject>
-#include <QSqlQuery>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-CampusRecord campusFromQuery(
-    const QSqlQuery& query
+using EngineCampusRecord = classmngr::engine::CampusRecord;
+using EngineCampusRecordService = classmngr::engine::CampusRecordService;
+using EngineError = classmngr::engine::Error;
+
+std::string toUtf8(
+    const QString& value
     )
 {
-    CampusRecord campus;
-
-    campus.id =
-        query.value("id").toInt();
-    campus.name =
-        query.value("name").toString();
-    campus.buildingName =
-        query.value("building_name").toString();
-    campus.address =
-        query.value("address").toString();
-    campus.phoneNumber =
-        query.value("phone_number").toString();
-    campus.officeNumber =
-        query.value("office_number").toString();
-    campus.transitSteps =
-        query.value("transit_steps").toString();
-    campus.arrivalInfo =
-        query.value("arrival_info").toString();
-    campus.imagePath =
-        query.value("image_path").toString();
-    campus.officeWifi =
-        query.value("office_wifi").toString();
-    campus.officeWifiPassword =
-        query.value("office_wifi_password").toString();
-    campus.printerName =
-        query.value("printer_name").toString();
-    campus.printerSteps =
-        query.value("printer_steps").toString();
-    campus.photocopierCode =
-        query.value("photocopier_code").toString();
-    campus.housingLocations =
-        query.value("housing_locations").toString();
-
-    return campus;
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-QString campusIdentity(const CampusRecord& campus)
+QString fromUtf8(
+    std::string_view value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+EngineCampusRecord toEngineCampus(
+    const CampusRecord& source
+    )
+{
+    EngineCampusRecord result;
+    result.id = source.id;
+    result.name = toUtf8(source.name);
+    result.buildingName = toUtf8(source.buildingName);
+    result.address = toUtf8(source.address);
+    result.phoneNumber = toUtf8(source.phoneNumber);
+    result.officeNumber = toUtf8(source.officeNumber);
+    result.transitSteps = toUtf8(source.transitSteps);
+    result.arrivalInfo = toUtf8(source.arrivalInfo);
+    result.imagePath = toUtf8(source.imagePath);
+    result.officeWifi = toUtf8(source.officeWifi);
+    result.officeWifiPassword = toUtf8(source.officeWifiPassword);
+    result.printerName = toUtf8(source.printerName);
+    result.printerSteps = toUtf8(source.printerSteps);
+    result.photocopierCode = toUtf8(source.photocopierCode);
+    result.housingLocations = toUtf8(source.housingLocations);
+    return result;
+}
+
+CampusRecord fromEngineCampus(
+    const EngineCampusRecord& source
+    )
+{
+    CampusRecord result;
+    result.id = source.id;
+    result.name = fromUtf8(source.name);
+    result.buildingName = fromUtf8(source.buildingName);
+    result.address = fromUtf8(source.address);
+    result.phoneNumber = fromUtf8(source.phoneNumber);
+    result.officeNumber = fromUtf8(source.officeNumber);
+    result.transitSteps = fromUtf8(source.transitSteps);
+    result.arrivalInfo = fromUtf8(source.arrivalInfo);
+    result.imagePath = fromUtf8(source.imagePath);
+    result.officeWifi = fromUtf8(source.officeWifi);
+    result.officeWifiPassword = fromUtf8(source.officeWifiPassword);
+    result.printerName = fromUtf8(source.printerName);
+    result.printerSteps = fromUtf8(source.printerSteps);
+    result.photocopierCode = fromUtf8(source.photocopierCode);
+    result.housingLocations = fromUtf8(source.housingLocations);
+    return result;
+}
+
+QString campusIdentity(
+    const CampusRecord& campus
+    )
 {
     if (campus.id > 0)
     {
@@ -56,7 +97,78 @@ QString campusIdentity(const CampusRecord& campus)
 
     return QObject::tr("campus '%1'").arg(campus.name.trimmed());
 }
+
+QString campusIdentity(
+    int campusId
+    )
+{
+    return QObject::tr("campus id %1").arg(campusId);
 }
+
+QString invalidCampusIdError(
+    const QString& operation,
+    int campusId
+    )
+{
+    return QObject::tr("%1 failed: invalid campus id %2.")
+        .arg(operation)
+        .arg(campusId);
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& campusContext,
+    const QString& detail
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+
+    if (!campusContext.trimmed().isEmpty())
+    {
+        message += QObject::tr(" for %1").arg(campusContext);
+    }
+
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const QString& campusContext,
+    const EngineError& error
+    )
+{
+    return operationFailure(
+        operation,
+        campusContext,
+        engineErrorDetail(error)
+        );
+}
+} // namespace
 
 CampusRecordRepository::CampusRecordRepository(
     QSqlDatabase& database
@@ -65,229 +177,188 @@ CampusRecordRepository::CampusRecordRepository(
 {
 }
 
+CampusRecordRepository::~CampusRecordRepository() = default;
+
+Status CampusRecordRepository::ensureEngineDatabase(
+    const QString& operation,
+    const QString& campusContext
+    )
+{
+    if (!m_database.isValid() || !m_database.isOpen())
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                campusContext,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_database.databaseName();
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                campusContext,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        toUtf8(databasePath)
+        );
+    if (!opened)
+    {
+        return std::unexpected(
+            engineFailure(operation, campusContext, opened.error())
+            );
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                campusContext,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
+}
+
 Result<int> CampusRecordRepository::saveCampus(
     const CampusRecord& campus
     )
 {
-    QSqlQuery query(m_database);
-
-    if (campus.id > 0)
+    const QString operation = campus.id > 0
+        ? QObject::tr("Updating campus")
+        : QObject::tr("Creating campus");
+    const QString identity = campusIdentity(campus);
+    const Status engineReady = ensureEngineDatabase(operation, identity);
+    if (!engineReady)
     {
-        query.prepare(R"(
-            UPDATE campuses
-            SET
-                name=?,
-                building_name=?,
-                address=?,
-                phone_number=?,
-                office_number=?,
-                transit_steps=?,
-                arrival_info=?,
-                image_path=?,
-                office_wifi=?,
-                office_wifi_password=?,
-                printer_name=?,
-                printer_steps=?,
-                photocopier_code=?,
-                housing_locations=?
-            WHERE id=?
-        )");
-
-        query.addBindValue(campus.name);
-        query.addBindValue(campus.buildingName);
-        query.addBindValue(campus.address);
-        query.addBindValue(campus.phoneNumber);
-        query.addBindValue(campus.officeNumber);
-        query.addBindValue(campus.transitSteps);
-        query.addBindValue(campus.arrivalInfo);
-        query.addBindValue(campus.imagePath);
-        query.addBindValue(campus.officeWifi);
-        query.addBindValue(campus.officeWifiPassword);
-        query.addBindValue(campus.printerName);
-        query.addBindValue(campus.printerSteps);
-        query.addBindValue(campus.photocopierCode);
-        query.addBindValue(campus.housingLocations);
-        query.addBindValue(campus.id);
-
-        const auto executed = SqlQueryUtils::executePrepared(
-            query,
-            QObject::tr("Updating campus"),
-            campusIdentity(campus)
-            );
-        if (!executed)
-        {
-            return std::unexpected(executed.error().userMessage());
-        }
-
-        if (query.numRowsAffected() == 0)
-        {
-            return std::unexpected(
-                QObject::tr("Updating %1 failed: no matching record exists.")
-                    .arg(campusIdentity(campus))
-                );
-        }
-
-        return campus.id;
+        return std::unexpected(engineReady.error());
     }
 
-    query.prepare(R"(
-        INSERT INTO campuses (
-            name,
-            building_name,
-            address,
-            phone_number,
-            office_number,
-            transit_steps,
-            arrival_info,
-            image_path,
-            office_wifi,
-            office_wifi_password,
-            printer_name,
-            printer_steps,
-            photocopier_code,
-            housing_locations
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    )");
-
-    query.addBindValue(campus.name);
-    query.addBindValue(campus.buildingName);
-    query.addBindValue(campus.address);
-    query.addBindValue(campus.phoneNumber);
-    query.addBindValue(campus.officeNumber);
-    query.addBindValue(campus.transitSteps);
-    query.addBindValue(campus.arrivalInfo);
-    query.addBindValue(campus.imagePath);
-    query.addBindValue(campus.officeWifi);
-    query.addBindValue(campus.officeWifiPassword);
-    query.addBindValue(campus.printerName);
-    query.addBindValue(campus.printerSteps);
-    query.addBindValue(campus.photocopierCode);
-    query.addBindValue(campus.housingLocations);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Creating campus"),
-        campusIdentity(campus)
+    EngineCampusRecordService service(*m_engineDatabase);
+    const classmngr::engine::Result<int> saved = service.save(
+        toEngineCampus(campus)
         );
-    if (!executed)
-    {
-        return std::unexpected(executed.error().userMessage());
-    }
-
-    const int campusId = query.lastInsertId().toInt();
-    if (campusId <= 0)
+    if (!saved)
     {
         return std::unexpected(
-            QObject::tr(
-                "Creating %1 failed: the database did not return a valid "
-                "record id."
-                ).arg(campusIdentity(campus))
+            engineFailure(operation, identity, saved.error())
             );
     }
 
-    return campusId;
+    return *saved;
 }
 
 Result<CampusRecord> CampusRecordRepository::getCampus(
     int campusId
     )
 {
+    const QString operation = QObject::tr("Loading campus");
     if (campusId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading campus failed: invalid campus id %1.")
-                .arg(campusId)
-            );
+        return std::unexpected(invalidCampusIdError(operation, campusId));
     }
 
-    QSqlQuery query(m_database);
+    const QString identity = campusIdentity(campusId);
+    const Status engineReady = ensureEngineDatabase(operation, identity);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
 
-    query.prepare("SELECT * FROM campuses WHERE id=?");
-    query.addBindValue(campusId);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading campus"),
-        QObject::tr("campus id %1").arg(campusId)
+    EngineCampusRecordService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineCampusRecord> loaded = service.get(
+        campusId
         );
-    if (!executed)
-    {
-        return std::unexpected(executed.error().userMessage());
-    }
-
-    if (!query.next())
+    if (!loaded)
     {
         return std::unexpected(
-            QObject::tr(
-                "Loading campus failed for campus id %1: no matching "
-                "record exists."
-                ).arg(campusId)
+            engineFailure(operation, identity, loaded.error())
             );
     }
 
-    return campusFromQuery(query);
+    return fromEngineCampus(*loaded);
 }
 
 Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
 {
-    QList<CampusRecord> campuses;
-
-    QSqlQuery query(m_database);
-
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QStringLiteral(R"(
-        SELECT *
-        FROM campuses
-        ORDER BY name
-    )"),
-        QObject::tr("Loading campuses")
-        );
-    if (!executed)
+    const QString operation = QObject::tr("Loading campuses");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(engineReady.error());
     }
 
-    while (query.next())
+    EngineCampusRecordService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineCampusRecord>> loaded =
+        service.list();
+    if (!loaded)
     {
-        campuses.append(
-            campusFromQuery(query)
+        return std::unexpected(
+            engineFailure(operation, {}, loaded.error())
             );
     }
 
-    return campuses;
+    QList<CampusRecord> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineCampusRecord& campus : *loaded)
+    {
+        result.append(fromEngineCampus(campus));
+    }
+
+    return result;
 }
 
 Status CampusRecordRepository::deleteCampus(
     int campusId
     )
 {
+    const QString operation = QObject::tr("Deleting campus");
     if (campusId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Deleting campus failed: invalid campus id %1.")
-                .arg(campusId)
-            );
+        return std::unexpected(invalidCampusIdError(operation, campusId));
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        DELETE FROM campuses
-        WHERE id=?
-    )");
-
-    query.addBindValue(campusId);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Deleting campus"),
-        QObject::tr("campus id %1").arg(campusId)
-        );
-    if (!executed)
+    const QString identity = campusIdentity(campusId);
+    const Status engineReady = ensureEngineDatabase(operation, identity);
+    if (!engineReady)
     {
-        return std::unexpected(executed.error().userMessage());
+        return engineReady;
+    }
+
+    EngineCampusRecordService service(*m_engineDatabase);
+    const classmngr::engine::Status deleted = service.remove(campusId);
+    if (!deleted)
+    {
+        return std::unexpected(
+            engineFailure(operation, identity, deleted.error())
+            );
     }
 
     return {};

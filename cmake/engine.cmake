@@ -34,6 +34,9 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/open_database.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_repository.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_repository.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/campus_record_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/campus_record.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/campus_record_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/testing_class_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/testing_class.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/testing_class_service.h"
@@ -311,6 +314,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineClassRepositoryTests
         COMMAND ClassMngrEngineClassRepositoryTests
+    )
+
+    add_executable(ClassMngrEngineCampusRecordServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/campus_record_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineCampusRecordServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineCampusRecordServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineCampusRecordServiceTests
+        COMMAND ClassMngrEngineCampusRecordServiceTests
     )
 
     add_executable(ClassMngrEngineTestingClassServiceTests

@@ -364,6 +364,11 @@ schema version and bilingual teacher/class values.
 | Windows x86 Release testing-block service test | Passed: `ClassMngrEngineTestingBlockServiceTests` |
 | Retained Windows Qt testing-class repository regression | Passed: `ClassMngrTestingClassRepositoryTests` |
 | Retained Windows Qt testing-block repository regression | Passed: `ClassMngrTestingBlockRepositoryTests` |
+| Windows x64 Debug campus-record service test | Passed: direct VS 2026/v145 compile, link, and run; CMake target build is blocked by the existing MSBuild FileTracker access failure |
+| Windows x64 Release campus-record service test | Passed: direct VS 2026/v145 compile, link, and run |
+| Windows x86 Debug campus-record service test | Passed: direct VS 2026/v145 compile, link, and run; CMake target build is blocked by the existing MSBuild FileTracker access failure |
+| Windows x86 Release campus-record service test | Passed: direct VS 2026/v145 compile, link, and run |
+| Retained Windows Qt campus-record adapter smoke | Passed: Qt 6.11/MSVC file-backed UTF-8 save/load/update/list/delete link-level smoke |
 | Windows x64 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x64 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x86 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
@@ -756,6 +761,20 @@ engine SQLite connections exercise the same database. The testing-block
 fixture also verifies that class-over-plain replacement retains the existing
 explicit-confirmation behavior.
 
+The retained Qt campus-record repository was then converted to a UTF-8
+adapter over the Qt-free `CampusRecordService`. The service owns all fourteen
+campus text fields, CRUD/save behavior, name ordering, typed invalid-id,
+not-found, and schema errors, while the adapter preserves the Qt-facing
+result and diagnostic shapes. The focused native service source compiled,
+linked, and ran successfully in direct VS 2026/v145 x64 and x86 Debug/Release
+lanes.
+The adapter source compiled against Qt 6.11/MSVC, and a temporary file-backed
+Qt smoke harness passed UTF-8 save/load/update/list/delete through the adapter.
+Both Windows CMake trees reconfigured and regenerated the new target, but
+normal target builds remain blocked by the existing MSBuild FileTracker
+`UnauthorizedAccessException` during `ZERO_CHECK`/compile tracking; no
+CMake-generated current-binary campus test result is claimed.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -766,7 +785,8 @@ connected to the extracted engine use case, and the class-information, class,
 teacher, class-transfer, calendar-event, intensive-slot-state, speaking-
 evaluation, and teacher-import adapters now share extracted engine use cases.
 The testing-class and testing-block repositories now share extracted engine
-use cases as well.
+use cases as well. The campus-record repository now shares the extracted
+engine campus-record use case as well.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

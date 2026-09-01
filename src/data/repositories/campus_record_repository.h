@@ -6,12 +6,20 @@
 #include <QList>
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class CampusRecordRepository
 {
 public:
     explicit CampusRecordRepository(
         QSqlDatabase& database
         );
+    ~CampusRecordRepository();
 
     [[nodiscard]] Result<int> saveCampus(
         const CampusRecord& campus
@@ -28,5 +36,12 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation,
+        const QString& campusContext = {}
+        );
+
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };
