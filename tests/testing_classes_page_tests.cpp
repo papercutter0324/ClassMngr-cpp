@@ -218,10 +218,7 @@ void TestingClassesPageTests
             &editor,
             "showRosterContextMenu",
             Qt::DirectConnection,
-            Q_ARG(
-                QPoint,
-                table->visualRect(firstCell).center()
-                )
+            table->visualRect(firstCell).center()
             )
         );
     QVERIFY(foundRemoveAction);

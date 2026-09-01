@@ -743,8 +743,8 @@ void ScheduleWidgetTests
             &widget,
             "onCellClicked",
             Qt::DirectConnection,
-            Q_ARG(int, 0),
-            Q_ARG(int, 1)
+            0,
+            1
             )
         );
     QCOMPARE(

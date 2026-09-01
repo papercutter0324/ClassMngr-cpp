@@ -79,6 +79,7 @@
 #include <QTableView>
 #include <QThreadPool>
 #include <QStringList>
+#include <QTimeZone>
 #include <QWidget>
 #include <QWindow>
 
@@ -313,7 +314,7 @@ ClassTransferPackage captureClassTransferPackage()
     package.exportedAtUtc = QDateTime(
         QDate(2026, 8, 28),
         QTime(9, 0),
-        Qt::UTC
+        QTimeZone::UTC
         );
 
     ClassTransferClass transferClass;

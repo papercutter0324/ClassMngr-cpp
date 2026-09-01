@@ -169,7 +169,7 @@ protected:
 
                 setHoveredIndex(
                     m_list->indexAt(
-                        mouseEvent->pos()
+                        mouseEvent->position().toPoint()
                         )
                     );
             }

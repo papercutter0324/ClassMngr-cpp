@@ -1,6 +1,6 @@
 # Qt 6.11/6.12 Deprecated and Legacy API Audit
 
-Status: Audit complete; implementation intentionally deferred.
+Status: Formal Qt 6 deprecation migration complete; legacy cleanup follow-up remains.
 
 This document records the Qt API audit that should be used as input for a future cleanup plan. The requested directory name is retained as `remove-depreciated-code`, while the Qt terminology below uses the correct spelling, `deprecated`.
 
@@ -143,29 +143,46 @@ The `setTextAlignment(Qt::AlignCenter)` calls at `src/features/teacher/ui/staff_
 
 The reviewed QML uses modern patterns including unversioned imports, required properties, and `pragma ComponentBehavior: Bound`. No obsolete `Qt.include`, string `Qt.atob`/`Qt.btoa`, or `Text.doLayout` usage was found.
 
-## Validation evidence
+## Initial audit validation evidence
 
 - CMake configured successfully against local Qt 6.12.0. Unrelated optional Qt6Positioning/WebEngine plugin warnings were present.
 - An isolated build was configured with `QT_DISABLE_DEPRECATED_UP_TO=0x060C00`.
 - Production targets compiled until the known `QDateTime` call failed against the Qt 6.12.0 headers. No additional production deprecation compile errors were observed in the scan/build.
 - The test targets did not reach translation-unit compilation because the production data target failed first; the test findings are confirmed by the Qt 6.12.0 headers, official obsolete-API documentation, and source inspection.
-- No source code was changed as part of this audit.
+- No source code was changed as part of the initial audit.
 
-## Proposed implementation order
+## Implementation evidence (2026-09-02)
 
-1. Migrate the two `QDateTime` calls and add explicit `QTimeZone` includes.
-2. Migrate the two `QMouseEvent::pos()` calls.
-3. Migrate the seven test `QMetaObject::invokeMethod` calls and remove their `Q_ARG(...)` usage.
-4. Rebuild production and test targets with `QT_DISABLE_DEPRECATED_UP_TO=0x060C00` and run the affected test suites.
-5. Review string-based connections separately, converting only statically type-safe cases and documenting any QML boundary exceptions.
-6. Assess `QDialog::exec()` conversions as a behavior-sensitive follow-up, using asynchronous dialog completion where practical.
-7. Keep `QQuickWidget` unchanged unless performance profiling justifies a separate rendering architecture task.
+- The three formal deprecation groups were migrated in the nine audited source
+  and test files: `QTimeZone::UTC` replaces the old UTC time-spec overloads,
+  `QMouseEvent::position().toPoint()` replaces `pos()`, and all seven fixed-
+  argument `QMetaObject::invokeMethod` calls now use typed variadic arguments.
+- The Qt 6.12.0 Debug audit build uses
+  `QT_DISABLE_DEPRECATED_UP_TO=0x060C00`. `ClassMngrData`, `ClassMngrUiShared`,
+  the five affected Qt test targets, and the enabled Windows visual-capture
+  target all compile successfully.
+- `ClassMngrUpdaterTests`, `ClassMngrTeacherInfoPageTests`,
+  `ClassMngrSidebarStructureTests`, `ClassMngrTestingClassesPageTests`, and
+  `ClassMngrScheduleWidgetTests` each passed 1/1 through CTest. Scoped audits
+  report no remaining `Q_ARG`, `Qt::UTC`, or audited mouse-position calls.
+- `ClassMngrClassTransferTests` requires a matching Qt runtime. Launching the
+  Qt 6.12-built executable with the machine-wide Qt 6.11.1 DLL path produces
+  the reported `QPdfView::wheelEvent` entry-point error. With Qt 6.12.0 on the
+  runtime path, the executable loads; its current run reaches 8 passing and 7
+  database-dependent setup failures, so no clean class-transfer runtime pass
+  is claimed for this slice.
+
+## Remaining cleanup follow-up
+
+1. Review string-based connections separately, converting only statically type-safe cases and documenting any QML boundary exceptions.
+2. Assess `QDialog::exec()` conversions as a behavior-sensitive follow-up, using asynchronous dialog completion where practical.
+3. Keep `QQuickWidget` unchanged unless performance profiling justifies a separate rendering architecture task.
 
 ## Plan-ready checklist
 
-- [ ] Create a focused implementation branch/commit for the three formal deprecation groups.
-- [ ] Preserve UTC semantics, mouse coordinate semantics, and queued/direct invocation behavior.
-- [ ] Add or update regression tests for each changed behavior where coverage is missing.
+- [x] Create a focused implementation branch/commit for the three formal deprecation groups.
+- [x] Preserve UTC semantics, mouse coordinate semantics, and queued/direct invocation behavior.
+- [x] Add or update regression tests for each changed behavior where coverage is missing.
 - [ ] Verify a clean build with Qt 6.11.1 and Qt 6.12.0, if both SDKs remain supported.
 - [ ] Add a CI compile check with `QT_DISABLE_DEPRECATED_UP_TO=0x060C00` to prevent regression.
-- [ ] Record remaining legacy patterns and their rationale in the final cleanup plan.
+- [x] Record remaining legacy patterns and their rationale in the final cleanup plan.

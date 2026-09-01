@@ -7,6 +7,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QObject>
+#include <QTimeZone>
 
 #include <chrono>
 #include <cstddef>
@@ -96,7 +97,7 @@ std::optional<QDateTime> fromEngineTimePoint(
 
     const QDateTime result = QDateTime::fromMSecsSinceEpoch(
         static_cast<qint64>(count),
-        Qt::UTC
+        QTimeZone::UTC
         );
     if (!result.isValid())
     {

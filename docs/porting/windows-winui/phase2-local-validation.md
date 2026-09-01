@@ -879,6 +879,24 @@ remains blocked by the existing MSBuild FileTracker
 `UnauthorizedAccessException`, so no current-binary Qt parity result is
 claimed for this slice.
 
+## Qt formal deprecation gate — 2026-09-02
+
+The three formal Qt 6 deprecation groups from the companion audit are now
+migrated: UTC conversions use `QTimeZone::UTC`, mouse handlers use
+`position().toPoint()`, and the seven fixed-argument `invokeMethod` calls use
+typed variadic arguments. The Qt 6.12.0 Debug audit build uses
+`QT_DISABLE_DEPRECATED_UP_TO=0x060C00`; `ClassMngrData`, `ClassMngrUiShared`,
+the five affected Qt test targets, and the enabled Windows visual-capture test
+all compiled successfully. The five focused CTest selections passed 1/1.
+
+The retained `ClassMngrClassTransferTests` executable must run with the same
+Qt version used to build it. The machine-wide Qt 6.11.1 PATH caused the
+reported `QPdfView::wheelEvent` entry-point error for the Qt 6.12 build. With
+Qt 6.12.0 on PATH the executable loads, but its current run has 8 passing and
+7 database-dependent setup failures; no clean class-transfer runtime pass is
+claimed here. The next Phase 2 work remains the report/export adapters,
+remaining retained adapters, and broader fixture coverage.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed

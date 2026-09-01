@@ -1054,8 +1054,8 @@ void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
             &availableDialog,
             "handleDownloadProgress",
             Qt::DirectConnection,
-            Q_ARG(qint64, 61),
-            Q_ARG(qint64, 123)
+            qint64(61),
+            qint64(123)
             )
         );
     QCOMPARE(
@@ -1072,7 +1072,7 @@ void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
             &availableDialog,
             "handleDownloadSucceeded",
             Qt::DirectConnection,
-            Q_ARG(QString, QStringLiteral("C:/temp/ClassMngr-update.exe"))
+            QStringLiteral("C:/temp/ClassMngr-update.exe")
             )
         );
     QVERIFY(availableProgressText->isHidden());

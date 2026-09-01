@@ -190,6 +190,9 @@ as well.
 The retained Qt class-tab navigation model now delegates grouping, ordering,
 schedule-label, duplicate-label, and day-filter rules to the Qt-free engine
 service while retaining its Qt-facing model and localization boundary.
+The Qt 6.12 formal deprecation gate is now clean; the next active gate remains
+connecting the other retained adapters, extending report/export coverage, and
+expanding cross-platform fixture evidence.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -979,6 +982,18 @@ After meaningful work:
   `ClassMngrClassTabNavigationModelTests` CMake target passed 1/1 in the x64
   Debug Qt lane. Phase 2 remains open for the remaining report/export
   adapters, other retained adapters, and broader per-slice fixture coverage.
+- **2026-09-02 — Qt formal deprecation gate completed.** The three formal Qt
+  deprecation groups were migrated across the nine audited files: UTC calls now
+  use `QTimeZone::UTC`, mouse handlers use `position().toPoint()`, and fixed-
+  argument `invokeMethod` calls use typed variadic arguments. The Qt 6.12.0
+  Debug audit build with `QT_DISABLE_DEPRECATED_UP_TO=0x060C00` compiled the
+  production targets, five affected Qt test targets, and the Windows visual-
+  capture target; all five focused CTest selections passed 1/1. The retained
+  class-transfer executable requires the matching Qt 6.12 runtime; the global
+  Qt 6.11 PATH causes the entry-point error, and the matched-runtime run still
+  exposes seven database-dependent setup failures. Phase 2 remains open for
+  report/export adapters, other retained adapters, and broader fixture
+  evidence.
 
 ## Shared Completion Rules
 
