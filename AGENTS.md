@@ -1,9 +1,13 @@
 # Agent orchestration
 
-The parent agent is the orchestrator and final authority.
+Sol must be the parent/orchestrating agent for this workflow.
+
+The parent agent is the orchestrator and final authority. Do not delegate
+overall orchestration, architecture ownership, integration, review, or final
+acceptance away from Sol.
 
 Use this routing by default:
-- Sol: planning, architecture, decomposition, integration, review and final acceptance.
+- Sol: parent/orchestrator; planning, architecture, decomposition, integration, review, and final acceptance.
 - Luna: default implementation worker.
 - Terra: fallback for bounded implementation tasks that require materially more independent reasoning, exploration or debugging.
 
