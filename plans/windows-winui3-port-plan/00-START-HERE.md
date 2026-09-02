@@ -103,7 +103,7 @@ Last updated: 2026-09-02 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, testing-class/testing-block persistence and retained adapter wiring, campus-record CRUD and retained campus adapter wiring, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-time validation and retained validator adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, teacher-import workflows and retained teacher-import adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, schedule-time formatter adapter wiring, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, class-tab navigation and retained adapter wiring, evaluation-default selection policy and retained adapter wiring, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, document-catalog policies, application-settings persistence and retained settings adapter wiring, personal-details settings persistence and retained personal-details adapter wiring, file-backed retained Qt DatabaseSession preflight through engine OpenDatabase, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, testing-class/testing-block persistence and retained adapter wiring, campus-record CRUD and retained campus adapter wiring, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-time validation and retained validator adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, teacher-import workflows and retained teacher-import adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, schedule-time formatter adapter wiring, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, class-tab navigation and retained adapter wiring, evaluation-default selection policy and retained adapter wiring, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, document-catalog policies, application-settings persistence and retained settings adapter wiring, personal-details settings persistence and retained personal-details adapter wiring, file-backed retained Qt DatabaseSession and CalendarEventCache preflight through engine OpenDatabase, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -178,9 +178,12 @@ enables foreign-key enforcement. The Qt-free personal-details settings service
 now owns personal-details defaults, legacy-key promotion, signature settings,
 and transactional writes; the retained Qt personal-details repository routes
 file-backed reads and writes through that boundary while keeping Qt image
-preparation and presentation conversions at the edge. The next active gate is
-connecting the remaining retained adapters, while extending fixture evidence
-across each migrated persistence slice.
+preparation and presentation conversions at the edge. The retained Qt
+`CalendarEventCache` now also preflights file-backed paths through engine
+`OpenDatabase` before opening its worker `QSQLITE` connection, preserving the
+Qt cache/model boundary while sharing path and schema preparation. The next
+active gate is connecting the remaining retained adapters, while extending
+fixture evidence across each migrated persistence slice.
 The retained Qt teacher and class-information validators now route their
 normalization and validation through the Qt-free engine validators as well.
 The standalone retained Qt `ClassTimeValidator` now delegates to the same
@@ -1110,6 +1113,20 @@ After meaningful work:
   fresh objects with no `C1083`, `D8040`, or FileTracker failure. Phase 2
   remains open for the remaining report/export adapters and models, other
   retained adapters, and broader fixture evidence.
+- **2026-09-02 — Calendar-event cache adapter connected.** The retained Qt
+  `CalendarEventCache` now preflights file-backed profiles through engine
+  `OpenDatabase`, preserving UTF-8 path normalization and parent-directory /
+  schema preparation before its background Qt read connection is opened. The
+  focused regression exercises a nested Korean profile path and confirms the
+  preflight-created database reaches the loaded empty-range state. CMake
+  configure/generate, compile-only MSVC validation for the focused sources and
+  owning feature target, and `git diff --check` passed. The ordinary
+  dependency build first hit the existing MSBuild FileTracker
+  `UnauthorizedAccessException` and generated-PDB contention; after sequential
+  dependency rebuilds with project references disabled, the focused test
+  linked and both its full executable and new focused case exited 0 offscreen.
+  Phase 2 remains open for the remaining report/export adapters and models,
+  other retained adapters, and broader fixture evidence.
 
 ## Shared Completion Rules
 

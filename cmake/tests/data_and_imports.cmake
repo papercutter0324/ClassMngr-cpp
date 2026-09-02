@@ -234,6 +234,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrCalendarEventCacheTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Concurrent
             Qt6::Core
             Qt6::Sql

@@ -1084,6 +1084,33 @@ Validation for the fix:
 - The existing engine PowerPoint-job regression remains runnable, and the
   previously validated Qt batch-report target remains green.
 
+## Calendar-event cache adapter — 2026-09-02
+
+The retained Qt `CalendarEventCache` now preflights ordinary file-backed
+database paths through engine `OpenDatabase` before opening its worker Qt
+`QSQLITE` connection. The adapter keeps the existing Qt cache/model and
+foreign-key setup, while engine path normalization, parent-directory creation,
+and schema initialization are shared by both presentation stacks. Exact
+`:memory:` handling remains on the existing Qt path.
+
+The focused regression uses a nested Korean profile/database path that does not
+exist before the request, then verifies that the cache loads an empty range and
+the preflight-created database file exists. The test target now links
+`ClassMngrEngine` explicitly.
+
+Validation for this slice:
+
+- CMake configure/generate succeeded in the Qt 6.12.0 x64 validation tree.
+- `git diff --check` passed.
+- The focused cache test sources and the owning `ClassMngrFeatures` target
+  passed compile-only MSVC validation with FileTracker disabled.
+- The ordinary dependency build first hit the host's existing FileTracker
+  `UnauthorizedAccessException` and generated-PDB contention. After the
+  owning feature and Qt runtime libraries were rebuilt sequentially with
+  project references disabled, the focused test linked successfully; the full
+  test executable and the new focused case both exited 0 with
+  `QT_QPA_PLATFORM=offscreen`.
+
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

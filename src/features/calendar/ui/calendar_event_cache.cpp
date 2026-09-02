@@ -1,9 +1,12 @@
 #include "calendar_event_cache.h"
 
+#include "classmngr/engine/open_database.h"
+
 #include "core/memory_usage_diagnostics.h"
 #include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
 
+#include <QByteArray>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSet>
@@ -11,6 +14,9 @@
 #include <QtConcurrentRun>
 
 #include <algorithm>
+#include <cstddef>
+#include <string>
+#include <string_view>
 
 namespace
 {
@@ -413,6 +419,47 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
         QStringLiteral("calendar-event-cache-%1").arg(
             QUuid::createUuid().toString(QUuid::WithoutBraces)
             );
+    const bool isMemoryDatabase =
+        databasePath == QStringLiteral(":memory:");
+    QString normalizedPath;
+
+    if (isMemoryDatabase)
+    {
+        normalizedPath = databasePath;
+    }
+    else
+    {
+        const QByteArray utf8Path = databasePath.toUtf8();
+        auto engineDatabase = classmngr::engine::OpenDatabase::execute(
+            std::string_view(
+                utf8Path.constData(),
+                static_cast<std::size_t>(utf8Path.size())
+                )
+            );
+
+        if (!engineDatabase)
+        {
+            const std::string& engineError = engineDatabase.error().message;
+            result.error = QStringLiteral(
+                "Unable to initialize calendar event cache database:\n%1\n\n%2"
+                )
+                .arg(
+                    databasePath,
+                    QString::fromUtf8(
+                        engineError.data(),
+                        static_cast<qsizetype>(engineError.size())
+                        )
+                    );
+            return result;
+        }
+
+        const std::string_view enginePath =
+            (*engineDatabase)->databasePath();
+        normalizedPath = QString::fromUtf8(
+            enginePath.data(),
+            static_cast<qsizetype>(enginePath.size())
+            );
+    }
 
     {
         QSqlDatabase database =
@@ -420,7 +467,7 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(databasePath);
+        database.setDatabaseName(normalizedPath);
 
         if (!database.open())
         {

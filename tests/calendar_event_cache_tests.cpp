@@ -2,6 +2,7 @@
 #include "features/calendar/ui/calendar_event_cache.h"
 #include "features/calendar/ui/calendar_event_model.h"
 
+#include <QFileInfo>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -94,6 +95,7 @@ class CalendarEventCacheTests : public QObject
 
 private slots:
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
+    void fileBackedLoadPreflightsAndCreatesUnicodePath();
     void invalidationDiscardsCompletedWorkerResult();
     void multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates();
     void retainedRangesEvictEventsAndRejectEvictedWorkerResults();
@@ -149,6 +151,37 @@ void CalendarEventCacheTests::rangeLoadPopulatesModelWithoutUiThreadDatabaseAcce
                     );
         }
         ));
+}
+
+void CalendarEventCacheTests::fileBackedLoadPreflightsAndCreatesUnicodePath()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath = temporaryDirectory.filePath(
+        QStringLiteral("프로필/캘린더.db")
+        );
+
+    CalendarEventCache cache;
+    cache.setDatabasePath(databasePath);
+    cache.requestRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            ),
+        5000
+        );
+    QVERIFY(QFileInfo::exists(databasePath));
+    QVERIFY(QFileInfo(databasePath).isFile());
+    QVERIFY(cache.eventsInRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        ).isEmpty());
 }
 
 void CalendarEventCacheTests::invalidationDiscardsCompletedWorkerResult()
