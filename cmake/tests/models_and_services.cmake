@@ -61,6 +61,16 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrSchedulePrintModelTests
     )
 
+    classmngr_add_qt_test(
+        NAME ScheduleTimeFormatter
+        SOURCES
+            tests/schedule_time_formatter_tests.cpp
+        LIBRARIES
+            ClassMngrEngine
+            Qt6::Core
+            Qt6::Test
+    )
+
     qt_add_executable(ClassMngrScheduleBuilderTests
         tests/schedule_builder_tests.cpp
         tests/schedule_builder_test_stubs.cpp

@@ -1015,6 +1015,15 @@ read-only plan and projected-conflict validation boundary as well.
 The retained Qt schedule-import matching and meeting-pattern helpers now share
 the extracted engine rule contract while keeping conversion and localization
 at the Qt boundary as well.
+The retained Qt schedule-time formatter now delegates display-time and
+range-label formatting to the Qt-free schedule-report service through explicit
+UTF-8 conversion. Focused parity coverage covers valid and invalid labels,
+12/24-hour output, 50/55-minute endings, cross-period labels, and direct engine
+equivalence. The engine schedule-report test executable passed directly, and
+`git diff --check` passed. The Qt 6.12 CMake target was generated, but its
+current build remains blocked by the host MSBuild FileTracker
+`UnauthorizedAccessException`; the new Qt CTest executable was therefore not
+available to run.
 The retained Qt `ClassTabNavigation` model now shares the extracted engine
 grouping, ordering, schedule-label, duplicate-label, and day-filter rules while
 preserving its existing Qt model shape and localized fallback labels as well.
