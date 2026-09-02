@@ -943,6 +943,49 @@ two unrelated apply-case failures (`intensiveModesPreserveOrReplaceAbsentHours`
 and `skippedExactMatchPreservesItsSchedule`); the existing import/apply path was
 not changed in this slice.
 
+## Schedule-import matching and pattern rules — 2026-09-02
+
+The Qt-free `ScheduleImportRules` contract now owns schedule day-group
+compatibility, meeting-day matching, regular/intensive fallback selection,
+class-option eligibility, supported meeting patterns, and weekday-pattern
+validation. `ScheduleImportService` uses that contract instead of carrying a
+second implementation. The retained Qt rules file now only converts between
+`QList`/`QString` and UTF-8 engine values and restores Qt-localized pattern
+messages and weekday names.
+
+The focused `ClassMngrEngineScheduleImportServiceTests` target built and
+passed 1/1 in all four Windows WinUI x64/x86 Debug/Release lanes. The retained
+Qt `ClassMngrScheduleImportDialogTests` target built and passed 1/1 in the Qt
+6.12.0 deprecation-audit lane. The broader `ClassMngrScheduleImportTests`
+selection still reports the two apply-case failures recorded below; its rule
+and parser coverage is not being treated as a clean full-suite result until
+those baseline failures are reviewed. The changed builds used
+`/p:TrackFileAccess=false` to bypass the host's existing MSBuild FileTracker
+permission issue.
+
+## Known baseline apply-case failures — review later
+
+The existing `ClassMngrScheduleImportTests` suite currently has two failing
+apply-case tests that should be reviewed separately from the Phase 2
+schedule-import validation extraction:
+
+1. `intensiveModesPreserveOrReplaceAbsentHours`
+2. `skippedExactMatchPreservesItsSchedule`
+
+The intended checks are that intensive `UpdateExisting` preserves an absent
+class’s intensive hours while `ReplaceWithNew` clears them, and that skipping
+an exact class match preserves its existing schedule (with profile-name
+changes occurring only when explicitly requested).
+
+Reproduce with:
+
+`ctest --test-dir build\\windows-x64-qt612-deprecation-audit -C Debug -R "ClassMngrScheduleImportTests" --output-on-failure`
+
+These failures exercise the existing transactional import/apply path. No
+production import/apply implementation was changed for the validation slice,
+so they remain an explicit follow-up review item rather than an acceptance
+failure for the new read-only validation boundary.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -969,6 +1012,9 @@ engine grade, level, and book configuration while preserving its existing Qt
 lookup API as well.
 The retained Qt schedule-import review now shares the extracted engine
 read-only plan and projected-conflict validation boundary as well.
+The retained Qt schedule-import matching and meeting-pattern helpers now share
+the extracted engine rule contract while keeping conversion and localization
+at the Qt boundary as well.
 The retained Qt `ClassTabNavigation` model now shares the extracted engine
 grouping, ordering, schedule-label, duplicate-label, and day-filter rules while
 preserving its existing Qt model shape and localized fallback labels as well.

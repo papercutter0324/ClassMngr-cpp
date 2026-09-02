@@ -1,6 +1,7 @@
 #include "classmngr/engine/class_info_service.h"
 #include "classmngr/engine/class_repository.h"
 #include "classmngr/engine/open_database.h"
+#include "classmngr/engine/schedule_import_rules.h"
 #include "classmngr/engine/schedule_import_service.h"
 #include "classmngr/engine/sqlite_database.h"
 #include "classmngr/engine/teacher_service.h"
@@ -128,6 +129,138 @@ ScheduleImportPlan planFor(
         }
     };
     return result;
+}
+
+bool sameTimes(
+    const std::vector<ClassTime>& left,
+    const std::vector<ClassTime>& right
+    )
+{
+    if (left.size() != right.size())
+    {
+        return false;
+    }
+
+    for (std::size_t index = 0; index < left.size(); ++index)
+    {
+        if (left[index].day != right[index].day
+            || left[index].startTime != right[index].startTime
+            || left[index].endTime != right[index].endTime)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool scheduleImportRulesMatchServicePolicy()
+{
+    ClassInfo existing;
+    existing.classGrade = "E5";
+    existing.classLevel = "Zeus";
+    existing.classTimes = {
+        {"Monday", "4:00 PM", "4:55 PM"},
+        {"Wednesday", "4:00 PM", "4:55 PM"}
+    };
+    existing.intensiveTimes = {
+        {"Tuesday", "9:00 AM", "9:50 AM"}
+    };
+
+    const ScheduleImportClassCandidate imported = candidate();
+    const ScheduleImportClassCandidate invalidPattern = candidate(
+        "홍길동",
+        "Zeus",
+        {
+            {"Monday", "4:00 PM", "4:55 PM"},
+            {"Tuesday", "4:00 PM", "4:55 PM"}
+        }
+        );
+    const ScheduleImportClassCandidate duplicatePattern = candidate(
+        "홍길동",
+        "Zeus",
+        {
+            {"Monday", "4:00 PM", "4:55 PM"},
+            {"Monday", "5:00 PM", "5:55 PM"}
+        }
+        );
+    const std::vector<ClassTime> mixedGroups{
+        {"Monday", "4:00 PM", "4:55 PM"},
+        {"Tuesday", "4:00 PM", "4:55 PM"}
+    };
+
+    const auto validPattern = ScheduleImportRules::validateMeetingPattern(
+        imported
+        );
+    const auto invalid = ScheduleImportRules::validateMeetingPattern(
+        invalidPattern
+        );
+    const auto duplicate = ScheduleImportRules::validateMeetingPattern(
+        duplicatePattern
+        );
+    const auto allowed = ScheduleImportRules::allowedDayPatterns(
+        "E5",
+        "Zeus"
+        );
+    const bool passed = expect(
+        ScheduleImportRules::weekdayIndex(" wEdNeSdAy ") == 2
+            && ScheduleImportRules::dayGroup(imported.times) == 1
+            && ScheduleImportRules::dayGroup(mixedGroups) == 0
+            && ScheduleImportRules::daysAreCompatible(
+                imported.times,
+                existing.classTimes
+                )
+            && ScheduleImportRules::meetingDaysMatch(
+                imported.times,
+                existing.classTimes
+                )
+            && sameTimes(
+                ScheduleImportRules::timesForKind(
+                    existing,
+                    ScheduleImportKind::Intensive
+                    ),
+                existing.intensiveTimes
+                )
+            && sameTimes(
+                ScheduleImportRules::timesForKind(
+                    ClassInfo{.classTimes = existing.classTimes},
+                    ScheduleImportKind::Intensive
+                    ),
+                existing.classTimes
+                )
+            && sameTimes(
+                ScheduleImportRules::targetTimesForKind(
+                    existing,
+                    ScheduleImportKind::Normal
+                    ),
+                existing.classTimes
+                )
+            && ScheduleImportRules::classOptionIsEligible(
+                imported,
+                existing,
+                ScheduleImportKind::Normal
+                )
+            && allowed.size() == 4
+            && validPattern.status
+                == ScheduleImportMeetingPatternStatus::Valid
+            && validPattern.meetingDays
+                == std::vector<std::string>{"Monday", "Wednesday"}
+            && invalid.status
+                == ScheduleImportMeetingPatternStatus::UnsupportedPattern
+            && duplicate.status
+                == ScheduleImportMeetingPatternStatus::InvalidWeekdayOrDuplicate
+            && ScheduleImportRules::meetingPatternExpectation(
+                "E5",
+                "Athena"
+                )
+                == ScheduleImportMeetingPatternExpectation::
+                    WeekdayTripleOrTuesdayThursday
+            && ScheduleImportRules::meetingPatternExpectation(
+                "E6",
+                "Hera"
+                ) == ScheduleImportMeetingPatternExpectation::OneWeekday,
+        "schedule-import rules contract changed its matching or pattern policy"
+        );
+    return passed;
 }
 
 bool validatesWithoutWriting()
@@ -541,7 +674,8 @@ bool preservesAndReplacesIntensiveSnapshot()
 
 int main()
 {
-    const bool passed = validatesWithoutWriting()
+    const bool passed = scheduleImportRulesMatchServicePolicy()
+        && validatesWithoutWriting()
         && rejectsProjectedConflict()
         && previewMatchesAndRanks()
         && createsSnapshotAndRollsBack()

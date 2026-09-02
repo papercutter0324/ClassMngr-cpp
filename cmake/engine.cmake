@@ -99,6 +99,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_schedule_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/schedule_builder_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_builder.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/schedule_import_rules.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import_rules.h"
     "${PROJECT_SOURCE_DIR}/src/engine/schedule_import_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import_service.h"

@@ -1031,9 +1031,25 @@ After meaningful work:
   authoritative preflight after its localized Qt checks while retaining
   presentation-owned conflict messaging. The focused engine test passed in all
   four x64/x86 Debug/Release WinUI lanes, and the retained Qt dialog test passed
-  1/1 in the Qt 6.12 audit lane with `/p:TrackFileAccess=false`. Phase 2
-  remains open for report/export adapters, other retained adapters, and broader
-  fixture evidence.
+  1/1 in the Qt 6.12 audit lane with `/p:TrackFileAccess=false`. The separate
+  existing `ClassMngrScheduleImportTests` selection still has the two known
+  apply-case failures `intensiveModesPreserveOrReplaceAbsentHours` and
+  `skippedExactMatchPreservesItsSchedule`; they are recorded as a review-later
+  baseline item because this slice did not change import/apply behavior. Phase
+  2 remains open for report/export adapters, other retained adapters, and
+  broader fixture evidence.
+- **2026-09-02 — Schedule-import matching and pattern rules extracted.** The
+  Qt-free `ScheduleImportRules` contract now owns weekday grouping and
+  compatibility, schedule-kind fallback/target selection, class-option
+  eligibility, supported meeting patterns, and meeting-pattern validation.
+  `ScheduleImportService` no longer carries a duplicate implementation, and
+  the retained Qt helper now only converts values and restores localized
+  presentation. The focused native target passed 1/1 in all four x64/x86
+  Debug/Release WinUI lanes, and the retained Qt review-dialog target passed
+  1/1 in the Qt 6.12 audit lane. The two existing apply-case failures in
+  `ClassMngrScheduleImportTests` remain recorded as a separate review-later
+  baseline item. Phase 2 remains open for report/export adapters, other
+  retained adapters, and broader fixture evidence.
 
 ## Shared Completion Rules
 

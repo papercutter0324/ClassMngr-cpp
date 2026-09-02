@@ -4,6 +4,7 @@
 #include "classmngr/engine/class_info_config.h"
 #include "classmngr/engine/class_repository.h"
 #include "classmngr/engine/class_schedule_service.h"
+#include "classmngr/engine/schedule_import_rules.h"
 #include "classmngr/engine/sqlite_database.h"
 #include "classmngr/engine/teacher_service.h"
 
@@ -87,18 +88,6 @@ std::string normalized(std::string_view value)
         }
     }
     return result;
-}
-
-std::string upperAscii(std::string value)
-{
-    for (char& character : value)
-    {
-        if (character >= 'a' && character <= 'z')
-        {
-            character = static_cast<char>(character - 'a' + 'A');
-        }
-    }
-    return value;
 }
 
 bool equalsInsensitive(
@@ -410,22 +399,9 @@ std::optional<int> parseStrict24Hour(std::string_view value)
     return hour * 60 + minute;
 }
 
-int weekdayIndex(std::string_view value)
-{
-    const std::string day = normalized(value);
-    for (std::size_t index = 0; index < ClassInfoConfig::days().size(); ++index)
-    {
-        if (normalized(ClassInfoConfig::days()[index]) == day)
-        {
-            return static_cast<int>(index);
-        }
-    }
-    return -1;
-}
-
 std::optional<std::pair<int, int>> timeInterval(const ClassTime& time)
 {
-    const int day = weekdayIndex(time.day);
+    const int day = ScheduleImportRules::weekdayIndex(time.day);
     const std::optional<int> start = parseClock(time.startTime);
     const std::optional<int> end = parseClock(time.endTime);
     if (day < 0 || !start || !end || *end <= *start)
@@ -439,264 +415,51 @@ std::optional<std::pair<int, int>> timeInterval(const ClassTime& time)
     };
 }
 
-int dayGroup(const std::vector<ClassTime>& times)
-{
-    int group = 0;
-    for (const ClassTime& time : times)
-    {
-        const std::string day = normalized(time.day);
-        const int current = day == "monday"
-                || day == "wednesday"
-                || day == "friday"
-            ? 1
-            : day == "tuesday" || day == "thursday"
-                ? 2
-                : 0;
-        if (current == 0 || (group != 0 && group != current))
-        {
-            return 0;
-        }
-        group = current;
-    }
-    return group;
-}
-
-bool daysAreCompatible(
-    const std::vector<ClassTime>& imported,
-    const std::vector<ClassTime>& existing
+std::string meetingPatternExpectation(
+    ScheduleImportMeetingPatternExpectation expectation
     )
 {
-    const int importedGroup = dayGroup(imported);
-    return importedGroup != 0 && importedGroup == dayGroup(existing);
-}
-
-std::vector<std::string> meetingDays(const std::vector<ClassTime>& times)
-{
-    std::vector<std::string> days;
-    for (const ClassTime& time : times)
+    switch (expectation)
     {
-        const std::string day = normalized(time.day);
-        if (std::find(days.begin(), days.end(), day) == days.end())
-        {
-            days.push_back(day);
-        }
+    case ScheduleImportMeetingPatternExpectation::WeekdayPairs:
+        return
+            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, "
+            "or Tuesday/Thursday.";
+    case ScheduleImportMeetingPatternExpectation::
+        WeekdayTripleOrTuesdayThursday:
+        return "Expected Monday/Wednesday/Friday or Tuesday/Thursday.";
+    case ScheduleImportMeetingPatternExpectation::OneWeekday:
+        return "Expected one weekday meeting.";
+    case ScheduleImportMeetingPatternExpectation::Unsupported:
+        return
+            "The imported grade and level do not have a supported "
+            "meeting-pattern rule.";
     }
-    std::sort(days.begin(), days.end());
-    return days;
-}
 
-bool meetingDaysMatch(
-    const std::vector<ClassTime>& imported,
-    const std::vector<ClassTime>& existing
-    )
-{
-    return daysAreCompatible(imported, existing)
-        && meetingDays(imported) == meetingDays(existing);
-}
-
-std::vector<ClassTime> timesForKind(
-    const ClassInfo& info,
-    ScheduleImportKind kind
-    )
-{
-    const std::vector<ClassTime>& preferred =
-        kind == ScheduleImportKind::Intensive
-            ? info.intensiveTimes
-            : info.classTimes;
-    if (!preferred.empty())
-    {
-        return preferred;
-    }
-    return kind == ScheduleImportKind::Intensive
-        ? info.classTimes
-        : info.intensiveTimes;
-}
-
-const std::vector<ClassTime>& targetTimesForKind(
-    const ClassInfo& info,
-    ScheduleImportKind kind
-    )
-{
-    return kind == ScheduleImportKind::Intensive
-        ? info.intensiveTimes
-        : info.classTimes;
-}
-
-bool classOptionIsEligible(
-    const ScheduleImportClassCandidate& candidate,
-    const ClassInfo& existing,
-    ScheduleImportKind kind
-    )
-{
-    return equalsInsensitive(candidate.classGrade, existing.classGrade)
-        && equalsInsensitive(candidate.classLevel, existing.classLevel)
-        && (
-            timesForKind(existing, kind).empty()
-            || daysAreCompatible(
-                candidate.times,
-                timesForKind(existing, kind)
-                )
-            );
-}
-
-std::vector<std::vector<std::string>> allowedDayPatterns(
-    std::string_view classGrade,
-    std::string_view classLevel
-    )
-{
-    const std::string grade = upperAscii(trimAsciiWhitespace(classGrade));
-    const std::string level = trimAsciiWhitespace(classLevel);
-    const bool songs = equalsInsensitive(level, "Song's");
-
-    const std::vector<std::string> mondayWednesday{
-        "Monday", "Wednesday"
-    };
-    const std::vector<std::string> mondayFriday{
-        "Monday", "Friday"
-    };
-    const std::vector<std::string> wednesdayFriday{
-        "Wednesday", "Friday"
-    };
-    const std::vector<std::string> tuesdayThursday{
-        "Tuesday", "Thursday"
-    };
-    const std::vector<std::string> mondayWednesdayFriday{
-        "Monday", "Wednesday", "Friday"
-    };
-
-    if (grade == "E4"
-        || (grade == "E5" && !equalsInsensitive(level, "Athena")))
-    {
-        return {
-            mondayWednesday,
-            mondayFriday,
-            wednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (grade == "E5" && equalsInsensitive(level, "Athena"))
-    {
-        return {mondayWednesdayFriday, tuesdayThursday};
-    }
-    if (grade == "E6" && songs)
-    {
-        return {mondayWednesdayFriday, tuesdayThursday};
-    }
-    if ((grade == "M1" || grade == "M2" || grade == "M3") && songs)
-    {
-        return {
-            mondayWednesday,
-            mondayFriday,
-            wednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (grade == "E6" || grade == "M1" || grade == "M2")
-    {
-        return {
-            {"Monday"},
-            {"Tuesday"},
-            {"Wednesday"},
-            {"Thursday"},
-            {"Friday"}
-        };
-    }
     return {};
-}
-
-std::string patternKey(std::vector<std::string> days)
-{
-    std::sort(
-        days.begin(),
-        days.end(),
-        [](const std::string& left, const std::string& right)
-        {
-            return weekdayIndex(left) < weekdayIndex(right);
-        }
-        );
-
-    std::string result;
-    for (const std::string& day : days)
-    {
-        if (!result.empty())
-        {
-            result += '|';
-        }
-        result += day;
-    }
-    return result;
 }
 
 std::string meetingPatternError(
     const ScheduleImportClassCandidate& candidate
     )
 {
-    std::vector<std::string> days;
-    for (const ClassTime& time : candidate.times)
-    {
-        const int day = weekdayIndex(time.day);
-        if (day < 0 || day > 4
-            || std::find(days.begin(), days.end(),
-                ClassInfoConfig::days()[static_cast<std::size_t>(day)])
-                != days.end())
-        {
-            return "Each imported class must have exactly one meeting per "
-                "scheduled weekday.";
-        }
-        days.push_back(ClassInfoConfig::days()[static_cast<std::size_t>(day)]);
-    }
-
-    const auto allowed = allowedDayPatterns(
-        candidate.classGrade,
-        candidate.classLevel
-        );
-    if (allowed.empty())
+    const ScheduleImportMeetingPatternResult validation =
+        ScheduleImportRules::validateMeetingPattern(candidate);
+    if (validation.status == ScheduleImportMeetingPatternStatus::Valid)
     {
         return {};
     }
-
-    const std::string key = patternKey(days);
-    for (const std::vector<std::string>& pattern : allowed)
+    if (
+        validation.status
+        == ScheduleImportMeetingPatternStatus::InvalidWeekdayOrDuplicate
+        )
     {
-        if (patternKey(pattern) == key)
-        {
-            return {};
-        }
-    }
-
-    std::string expectation;
-    const std::string grade = upperAscii(
-        trimAsciiWhitespace(candidate.classGrade)
-        );
-    const std::string level = trimAsciiWhitespace(candidate.classLevel);
-    const bool songs = equalsInsensitive(level, "Song's");
-    if (grade == "E4"
-        || (grade == "E5" && !equalsInsensitive(level, "Athena"))
-        || ((grade == "M1" || grade == "M2" || grade == "M3") && songs))
-    {
-        expectation =
-            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, "
-            "or Tuesday/Thursday.";
-    }
-    else if ((grade == "E5" && equalsInsensitive(level, "Athena"))
-             || (grade == "E6" && songs))
-    {
-        expectation =
-            "Expected Monday/Wednesday/Friday or Tuesday/Thursday.";
-    }
-    else if (grade == "E6" || grade == "M1" || grade == "M2")
-    {
-        expectation = "Expected one weekday meeting.";
-    }
-    else
-    {
-        expectation =
-            "The imported grade and level do not have a supported "
-            "meeting-pattern rule.";
+        return "Each imported class must have exactly one meeting per "
+            "scheduled weekday.";
     }
 
     std::string detected;
-    for (const std::string& day : days)
+    for (const std::string& day : validation.meetingDays)
     {
         if (!detected.empty())
         {
@@ -708,7 +471,8 @@ std::string meetingPatternError(
     {
         detected = "no meetings";
     }
-    return expectation + " Detected: " + detected + '.';
+    return meetingPatternExpectation(validation.expectation)
+        + " Detected: " + detected + '.';
 }
 
 std::string normalizedHexColor(std::string_view value)
@@ -1068,7 +832,7 @@ Status validateIntensiveSlotStates(
     std::set<std::string> keys;
     for (const IntensiveSlotState& state : states)
     {
-        if (weekdayIndex(state.day) < 0
+        if (ScheduleImportRules::weekdayIndex(state.day) < 0
             || !parseStrict24Hour(state.startTime)
             || validStates.find(state.state) == validStates.end())
         {
@@ -1110,7 +874,8 @@ Status validateProjectedSchedule(
     {
         for (const auto& [classId, info] : existingInfo)
         {
-            const std::vector<ClassTime> times = timesForKind(info, plan.kind);
+            const std::vector<ClassTime> times =
+                ScheduleImportRules::timesForKind(info, plan.kind);
             if (!times.empty())
             {
                 projectedClasses.emplace(
@@ -1143,7 +908,10 @@ Status validateProjectedSchedule(
                             found->second.classGrade,
                             found->second.classLevel
                             ),
-                        timesForKind(found->second, plan.kind)
+                        ScheduleImportRules::timesForKind(
+                            found->second,
+                            plan.kind
+                            )
                     };
                 }
             }
@@ -1530,7 +1298,11 @@ Result<ScheduleImportPreview> ScheduleImportService::previewImport(
         for (const Classroom& classroom : existing->classes)
         {
             const ClassInfo& info = existing->info.at(classroom.id);
-            if (!classOptionIsEligible(candidate, info, kind))
+            if (!ScheduleImportRules::classOptionIsEligible(
+                    candidate,
+                    info,
+                    kind
+                    ))
             {
                 continue;
             }
@@ -1548,18 +1320,20 @@ Result<ScheduleImportPreview> ScheduleImportService::previewImport(
                     return normalized(room) == normalized(info.roomNumber);
                 }
                 );
-            const std::vector<ClassTime>& targetTimes = targetTimesForKind(
-                info,
-                kind
-                );
+            const std::vector<ClassTime>& targetTimes =
+                ScheduleImportRules::targetTimesForKind(info, kind);
             const bool targetDaysMatch = !targetTimes.empty()
-                && meetingDaysMatch(candidate.times, targetTimes);
-            const std::vector<ClassTime> referenceTimes = timesForKind(
-                info,
-                kind
-                );
+                && ScheduleImportRules::meetingDaysMatch(
+                    candidate.times,
+                    targetTimes
+                    );
+            const std::vector<ClassTime> referenceTimes =
+                ScheduleImportRules::timesForKind(info, kind);
             const bool referenceDaysMatch = !referenceTimes.empty()
-                && meetingDaysMatch(candidate.times, referenceTimes);
+                && ScheduleImportRules::meetingDaysMatch(
+                    candidate.times,
+                    referenceTimes
+                    );
 
             if (teacherMatches && roomMatches && targetDaysMatch)
             {
@@ -1637,9 +1411,12 @@ Result<ScheduleImportPreview> ScheduleImportService::previewImport(
             {
                 const ClassInfo& info = existing->info.at(classId);
                 hasTargetHours = hasTargetHours
-                    || !targetTimesForKind(info, kind).empty();
+                    || !ScheduleImportRules::targetTimesForKind(
+                        info,
+                        kind
+                        ).empty();
                 hasOtherHours = hasOtherHours
-                    || !timesForKind(info, kind).empty();
+                    || !ScheduleImportRules::timesForKind(info, kind).empty();
             }
             classPreview.matchExplanation = hasTargetHours
                 ? "Possible existing classes share the imported grade and "
@@ -1826,10 +1603,11 @@ Result<ScheduleImportSummary> ScheduleImportService::importSchedule(
                 const auto found = existing->info.find(resolution.targetClassId);
                 if (found != existing->info.end())
                 {
-                    finalTimes[resolution.targetClassId] = timesForKind(
-                        found->second,
-                        plan.kind
-                        );
+                    finalTimes[resolution.targetClassId] =
+                        ScheduleImportRules::timesForKind(
+                            found->second,
+                            plan.kind
+                            );
                 }
             }
             continue;
@@ -1902,7 +1680,7 @@ Result<ScheduleImportSummary> ScheduleImportService::importSchedule(
         for (const Classroom& classroom : existing->classes)
         {
             const ClassInfo& info = existing->info.at(classroom.id);
-            if (!timesForKind(info, plan.kind).empty()
+            if (!ScheduleImportRules::timesForKind(info, plan.kind).empty()
                 && !finalTimes.contains(classroom.id))
             {
                 ++summary.schedulesCleared;
