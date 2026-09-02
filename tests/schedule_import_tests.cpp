@@ -1548,6 +1548,7 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 1);
 
+        query.finish();
         plan.intensiveMode =
             ScheduleImportIntensiveMode::ReplaceWithNew;
         const auto replaced =
@@ -1970,6 +1971,7 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
             QStringLiteral("Existing User")
             );
 
+        query.finish();
         plan.updateProfileName = true;
         const auto updatedProfileImport =
             repository.apply(plan);

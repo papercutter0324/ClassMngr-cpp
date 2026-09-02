@@ -938,10 +938,9 @@ The focused `ClassMngrEngineScheduleImportServiceTests` target built and passed
 `ClassMngrScheduleImportDialogTests` target built and passed 1/1 in the Qt
 6.12.0 deprecation-audit lane. Both builds used `/p:TrackFileAccess=false` to
 bypass the host's existing MSBuild FileTracker `UnauthorizedAccessException`.
-The separate existing `ClassMngrScheduleImportTests` selection still reports
-two unrelated apply-case failures (`intensiveModesPreserveOrReplaceAbsentHours`
-and `skippedExactMatchPreservesItsSchedule`); the existing import/apply path was
-not changed in this slice.
+The separate existing `ClassMngrScheduleImportTests` apply cases were
+subsequently corrected as a retained-fixture baseline issue; the existing
+import/apply path was not changed in this slice.
 
 ## Schedule-import matching and pattern rules — 2026-09-02
 
@@ -957,34 +956,33 @@ The focused `ClassMngrEngineScheduleImportServiceTests` target built and
 passed 1/1 in all four Windows WinUI x64/x86 Debug/Release lanes. The retained
 Qt `ClassMngrScheduleImportDialogTests` target built and passed 1/1 in the Qt
 6.12.0 deprecation-audit lane. The broader `ClassMngrScheduleImportTests`
-selection still reports the two apply-case failures recorded below; its rule
-and parser coverage is not being treated as a clean full-suite result until
-those baseline failures are reviewed. The changed builds used
+selection's two apply fixtures were subsequently corrected as a retained
+Qt/engine connection-boundary issue; its rule and parser coverage was not
+changed by this fixture correction. The changed builds used
 `/p:TrackFileAccess=false` to bypass the host's existing MSBuild FileTracker
 permission issue.
 
-## Known baseline apply-case failures — review later
+## Schedule-import apply fixture baseline — 2026-09-02
 
-The existing `ClassMngrScheduleImportTests` suite currently has two failing
-apply-case tests that should be reviewed separately from the Phase 2
-schedule-import validation extraction:
+The two retained Qt apply fixtures
+`intensiveModesPreserveOrReplaceAbsentHours` and
+`skippedExactMatchPreservesItsSchedule` were holding verification `QSqlQuery`
+cursors open while invoking a second engine-backed apply. Because the retained
+Qt repository and engine service use separate SQLite connections, those active
+read cursors could keep a read lock across the transactional write and produce
+the recorded apply failures.
 
-1. `intensiveModesPreserveOrReplaceAbsentHours`
-2. `skippedExactMatchPreservesItsSchedule`
+The fixtures now call `QSqlQuery::finish()` before their second apply. This
+releases the read cursors at the test boundary while preserving the intended
+coverage: intensive `UpdateExisting` keeps an absent class's intensive hours,
+`ReplaceWithNew` clears them, skipped exact matches preserve their schedules,
+and profile-name changes occur only when explicitly requested. Production
+engine import/apply code is unchanged.
 
-The intended checks are that intensive `UpdateExisting` preserves an absent
-class’s intensive hours while `ReplaceWithNew` clears them, and that skipping
-an exact class match preserves its existing schedule (with profile-name
-changes occurring only when explicitly requested).
-
-Reproduce with:
-
-`ctest --test-dir build\\windows-x64-qt612-deprecation-audit -C Debug -R "ClassMngrScheduleImportTests" --output-on-failure`
-
-These failures exercise the existing transactional import/apply path. No
-production import/apply implementation was changed for the validation slice,
-so they remain an explicit follow-up review item rather than an acceptance
-failure for the new read-only validation boundary.
+Both focused QtTest cases passed in implementation validation, and
+`git diff --check` passed. A fresh Qt 6.12 CMake target rebuild on this host
+remains blocked by the MSBuild FileTracker `UnauthorizedAccessException`, so no
+fresh full CTest run is claimed from this host.
 
 ## Remaining Phase 2 work
 

@@ -198,9 +198,11 @@ Qt orchestration at the boundary. The focused native test passed in x64/x86
 Debug and Release WinUI lanes.
 The Qt 6.12 formal deprecation gate, calendar-event import extraction,
 schedule-import review validation, and schedule-time formatter adapter
-extraction are now complete; the next active gate remains connecting the
-other retained adapters, extending report/export coverage, and expanding
-cross-platform fixture evidence.
+extraction are now complete. The two retained Qt schedule-import apply
+fixtures now release their verification SELECT cursors before a second
+engine-backed apply; production apply semantics remain unchanged. The next
+active gate remains connecting the other retained adapters, extending
+report/export coverage, and expanding cross-platform fixture evidence.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -1065,6 +1067,18 @@ After meaningful work:
   new Qt CTest executable was not available to run. Phase 2 remains open for
   the remaining report/export adapters and models, other retained adapters, and
   broader fixture evidence.
+
+- **2026-09-02 — Schedule-import apply fixture baseline corrected.** The
+  retained Qt `intensiveModesPreserveOrReplaceAbsentHours` and
+  `skippedExactMatchPreservesItsSchedule` fixtures now finish their
+  verification `QSqlQuery` cursors before the second engine-backed apply,
+  releasing the SQLite read locks held across the separate Qt/engine
+  connections. The production import/apply implementation is unchanged. Both
+  focused QtTest cases passed in implementation validation, and
+  `git diff --check` passed. A fresh Qt 6.12 CMake target rebuild on this host
+  remains blocked by the MSBuild FileTracker `UnauthorizedAccessException`.
+  Phase 2 remains open for the remaining report/export adapters and models,
+  other retained adapters, and broader fixture evidence.
 
 ## Shared Completion Rules
 
