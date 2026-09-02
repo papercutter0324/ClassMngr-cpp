@@ -136,6 +136,7 @@ public:
         const ScheduleImportUserBlock& user,
         ScheduleImportKind kind
         ) const;
+    [[nodiscard]] Status validateImport(const ScheduleImportPlan& plan) const;
     Result<ScheduleImportSummary> importSchedule(const ScheduleImportPlan& plan) const;
     [[nodiscard]] Result<QList<IntensiveSlotState>> intensiveSlotStates() const;
     [[nodiscard]] Status saveIntensiveSlotState(

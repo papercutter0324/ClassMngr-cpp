@@ -192,6 +192,10 @@ public:
         ScheduleImportKind kind
         );
 
+    [[nodiscard]] Status validateScheduleImport(
+        const ScheduleImportPlan& plan
+        );
+
     [[nodiscard]] Result<ScheduleImportSummary> importSchedule(
         const ScheduleImportPlan& plan
         );

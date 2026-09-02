@@ -416,6 +416,20 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
         );
 }
 
+Status DataService::validateScheduleImport(
+    const ScheduleImportPlan& plan
+    )
+{
+    if (!m_scheduleImportRepository)
+    {
+        return std::unexpected(
+            QObject::tr("Schedule import is unavailable.")
+            );
+    }
+
+    return m_scheduleImportRepository->validateImport(plan);
+}
+
 Result<ScheduleImportSummary> DataService::importSchedule(
     const ScheduleImportPlan& plan
     )

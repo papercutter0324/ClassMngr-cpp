@@ -1670,6 +1670,38 @@ Result<ScheduleImportPreview> ScheduleImportService::previewImport(
     return result;
 }
 
+Status ScheduleImportService::validateImport(
+    const ScheduleImportPlan& plan
+    )
+{
+    if (!m_database.isOpen())
+    {
+        return std::unexpected(error(
+            ErrorCode::Database,
+            "SQLite database is not open."
+            ));
+    }
+
+    const Result<ValidatedPlan> validated = validatePlan(plan);
+    if (!validated)
+    {
+        return std::unexpected(validated.error());
+    }
+
+    const Result<ExistingState> existing = loadExisting(m_database);
+    if (!existing)
+    {
+        return std::unexpected(existing.error());
+    }
+
+    return validateCurrentState(
+        m_database,
+        plan,
+        *validated,
+        *existing
+        );
+}
+
 Result<ScheduleImportSummary> ScheduleImportService::importSchedule(
     const ScheduleImportPlan& plan
     )

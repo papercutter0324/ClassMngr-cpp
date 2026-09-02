@@ -110,9 +110,9 @@ dialog presentation in Qt.
 The schedule-import slice now includes Qt-free workbook-neutral models and a
 `ScheduleImportService`. The retained workbook parser remains a Qt adapter;
 the engine owns teacher/class match ranking, course meeting-pattern rules,
-plan validation, stale-target checks, normal snapshot replacement, intensive
-preserve/replace modes, intensive slot-state snapshots, profile-name policy,
-and transactional schedule writes.
+plan validation, read-only review preflight, stale-target checks, normal
+snapshot replacement, intensive preserve/replace modes, intensive slot-state
+snapshots, profile-name policy, and transactional schedule writes.
 
 The class-transfer slice now includes Qt-free package models and a
 `ClassTransferService`. It preserves versioned teacher/class keys, package
@@ -923,6 +923,26 @@ the host's existing MSBuild FileTracker `UnauthorizedAccessException`; the
 normal Qt 6.11.1 lane still cannot regenerate because the project requires Qt
 6.12.0.
 
+## Schedule-import review validation extraction — 2026-09-02
+
+The Qt-free `ScheduleImportService::validateImport` now exposes the same plan,
+existing-state, and projected-conflict checks used before transactional import
+writes without opening a transaction or mutating the database. The retained Qt
+`ScheduleImportRepository`, `DataService`, and `ScheduleService` forward the
+plan through the existing boundary conversion. The review dialog calls this
+authoritative preflight after its Qt-side completeness and localized warning
+checks; projected conflict text and review controls remain presentation-owned.
+
+The focused `ClassMngrEngineScheduleImportServiceTests` target built and passed
+1/1 in all four Windows WinUI x64/x86 Debug/Release lanes. The retained Qt
+`ClassMngrScheduleImportDialogTests` target built and passed 1/1 in the Qt
+6.12.0 deprecation-audit lane. Both builds used `/p:TrackFileAccess=false` to
+bypass the host's existing MSBuild FileTracker `UnauthorizedAccessException`.
+The separate existing `ClassMngrScheduleImportTests` selection still reports
+two unrelated apply-case failures (`intensiveModesPreserveOrReplaceAbsentHours`
+and `skippedExactMatchPreservesItsSchedule`); the existing import/apply path was
+not changed in this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -947,6 +967,8 @@ validators now share the extracted engine validation boundaries as well.
 The retained Qt `ClassInfoConfig` catalog adapter now shares the extracted
 engine grade, level, and book configuration while preserving its existing Qt
 lookup API as well.
+The retained Qt schedule-import review now shares the extracted engine
+read-only plan and projected-conflict validation boundary as well.
 The retained Qt `ClassTabNavigation` model now shares the extracted engine
 grouping, ordering, schedule-label, duplicate-label, and day-filter rules while
 preserving its existing Qt model shape and localized fallback labels as well.

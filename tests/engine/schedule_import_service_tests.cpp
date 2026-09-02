@@ -130,6 +130,135 @@ ScheduleImportPlan planFor(
     return result;
 }
 
+bool validatesWithoutWriting()
+{
+    const auto opened = OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return false;
+    }
+
+    SqliteDatabase& database = **opened;
+    ScheduleImportService imports(database);
+    const ScheduleImportPlan plan = planFor(
+        ScheduleImportKind::Normal,
+        candidate("김하늘", "Apollo"),
+        ScheduleImportClassAction::CreateNew,
+        -1,
+        ScheduleImportTeacherAction::Create,
+        -1
+        );
+
+    const int teachersBefore = countRows(
+        database,
+        "SELECT COUNT(*) FROM teachers"
+        );
+    const int classesBefore = countRows(
+        database,
+        "SELECT COUNT(*) FROM classes"
+        );
+    const int timesBefore = countRows(
+        database,
+        "SELECT COUNT(*) FROM class_times"
+        );
+    const Status validated = imports.validateImport(plan);
+    const bool passed = expect(
+        validated
+            && countRows(database, "SELECT COUNT(*) FROM teachers")
+                == teachersBefore
+            && countRows(database, "SELECT COUNT(*) FROM classes")
+                == classesBefore
+            && countRows(database, "SELECT COUNT(*) FROM class_times")
+                == timesBefore,
+        "valid schedule import validation did not remain read-only"
+        );
+
+    database.close();
+    return passed;
+}
+
+bool rejectsProjectedConflict()
+{
+    const auto opened = OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return false;
+    }
+
+    SqliteDatabase& database = **opened;
+    TeacherService teachers(database);
+    ClassRepository classes(database);
+    ClassInfoService classInfo(database);
+    ScheduleImportService imports(database);
+    bool passed = true;
+
+    const auto teacherId = teachers.create(koreanTeacher("413"));
+    const auto targetClassId = classes.create("Target");
+    const auto absentClassId = classes.create("Absent");
+    passed &= expect(
+        teacherId && targetClassId && absentClassId,
+        "projected conflict fixtures could not be created"
+        );
+    if (!teacherId || !targetClassId || !absentClassId)
+    {
+        return false;
+    }
+
+    passed &= expect(
+        classInfo.save(info(
+            *targetClassId,
+            *teacherId,
+            {},
+            {{"Monday", "9:00 AM", "9:50 AM"}}
+            )).has_value()
+            && classInfo.save(info(
+                *absentClassId,
+                *teacherId,
+                {},
+                {{"Monday", "10:00 AM", "10:50 AM"}}
+                )).has_value(),
+        "projected conflict fixture information could not be saved"
+        );
+
+    const ScheduleImportPlan plan = planFor(
+        ScheduleImportKind::Intensive,
+        candidate(
+            "홍길동",
+            "Zeus",
+            {
+                {"Monday", "10:00 AM", "10:50 AM"},
+                {"Wednesday", "10:00 AM", "10:50 AM"}
+            }
+            ),
+        ScheduleImportClassAction::UpdateExisting,
+        *targetClassId,
+        ScheduleImportTeacherAction::Reuse,
+        *teacherId
+        );
+    const int classesBefore = countRows(
+        database,
+        "SELECT COUNT(*) FROM classes"
+        );
+    const int timesBefore = countRows(
+        database,
+        "SELECT COUNT(*) FROM class_intensive_times"
+        );
+    const Status validated = imports.validateImport(plan);
+    passed &= expect(
+        !validated
+            && validated.error().message.find("proposed schedule overlaps")
+                != std::string::npos
+            && countRows(database, "SELECT COUNT(*) FROM classes")
+                == classesBefore
+            && countRows(database, "SELECT COUNT(*) FROM class_intensive_times")
+                == timesBefore,
+        "projected schedule conflict was not rejected read-only"
+        );
+
+    database.close();
+    return passed;
+}
+
 bool previewMatchesAndRanks()
 {
     const auto opened = OpenDatabase::execute(":memory:");
@@ -412,7 +541,9 @@ bool preservesAndReplacesIntensiveSnapshot()
 
 int main()
 {
-    const bool passed = previewMatchesAndRanks()
+    const bool passed = validatesWithoutWriting()
+        && rejectsProjectedConflict()
+        && previewMatchesAndRanks()
         && createsSnapshotAndRollsBack()
         && preservesAndReplacesIntensiveSnapshot();
     return passed ? 0 : 1;

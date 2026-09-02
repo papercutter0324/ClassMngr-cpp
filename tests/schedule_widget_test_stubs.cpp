@@ -332,6 +332,13 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
     return preview;
 }
 
+Status DataService::validateScheduleImport(
+    const ScheduleImportPlan&
+    )
+{
+    return {};
+}
+
 Result<ScheduleImportSummary> DataService::importSchedule(
     const ScheduleImportPlan& plan
     )

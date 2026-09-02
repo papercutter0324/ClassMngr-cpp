@@ -688,6 +688,20 @@ Result<ScheduleImportPreview> ScheduleService::previewImport(
         : Result<ScheduleImportPreview>(std::unexpected(unavailableError()));
 }
 
+Status ScheduleService::validateImport(
+    const ScheduleImportPlan& plan
+    ) const
+{
+    if (auto* repository = session()
+            ? session()->scheduleImportRepository() : nullptr)
+    {
+        return repository->validateImport(plan);
+    }
+    return dataService()
+        ? dataService()->validateScheduleImport(plan)
+        : Status(std::unexpected(unavailableError()));
+}
+
 Result<ScheduleImportSummary> ScheduleService::importSchedule(
     const ScheduleImportPlan& plan
     ) const

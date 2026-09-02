@@ -751,6 +751,37 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     return *converted;
 }
 
+Status ScheduleImportRepository::validateImport(
+    const ScheduleImportPlan& plan
+    )
+{
+    const QString operation = QObject::tr("Validating schedule import");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    const std::optional<EngineScheduleImportPlan> enginePlan = toEnginePlan(
+        plan
+        );
+    if (!enginePlan)
+    {
+        return std::unexpected(boundaryConversionFailure(operation));
+    }
+
+    EngineScheduleImportService service(*m_engineDatabase);
+    const classmngr::engine::Status validated = service.validateImport(
+        *enginePlan
+        );
+    if (!validated)
+    {
+        return std::unexpected(engineFailure(operation, validated.error()));
+    }
+
+    return {};
+}
+
 Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     const ScheduleImportPlan& plan
     )

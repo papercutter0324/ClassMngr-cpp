@@ -149,7 +149,8 @@ English teacher repository now routes its list and atomic directory-save
 operations through the engine service, and the retained Qt GS Team repository
 now routes its list and atomic directory-save operations through the engine
 service as well. The retained Qt schedule-import repository now routes its
-preview and apply workflows through the engine service too, and the retained
+preview, read-only review validation, and apply workflows through the engine
+service too, and the retained
 Qt class-transfer repository now routes package build, preview, and import
 through the engine service. The retained Qt calendar-event repository now
 routes its eleven persistence operations through the Qt-free calendar-event
@@ -195,10 +196,10 @@ population detection, current/previous-term fallback, and grade classification
 to the Qt-free engine policy while retaining calendar, settings, and localized
 Qt orchestration at the boundary. The focused native test passed in x64/x86
 Debug and Release WinUI lanes.
-The Qt 6.12 formal deprecation gate and calendar-event import extraction are
-now complete; the next active gate remains connecting the other retained
-adapters, extending report/export coverage, and expanding cross-platform
-fixture evidence.
+The Qt 6.12 formal deprecation gate, calendar-event import extraction, and
+schedule-import review validation are now complete; the next active gate
+remains connecting the other retained adapters, extending report/export
+coverage, and expanding cross-platform fixture evidence.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -1023,6 +1024,16 @@ After meaningful work:
   audit lane using `/p:TrackFileAccess=false` for the existing host FileTracker
   permission issue. Phase 2 remains open for report/export adapters, other
   retained adapters, and broader fixture evidence.
+- **2026-09-02 — Schedule-import review validation connected.** The Qt-free
+  `ScheduleImportService` now exposes read-only plan/current-state validation,
+  including projected schedule conflicts, through the retained Qt repository,
+  compatibility facade, and feature service. The review dialog uses that
+  authoritative preflight after its localized Qt checks while retaining
+  presentation-owned conflict messaging. The focused engine test passed in all
+  four x64/x86 Debug/Release WinUI lanes, and the retained Qt dialog test passed
+  1/1 in the Qt 6.12 audit lane with `/p:TrackFileAccess=false`. Phase 2
+  remains open for report/export adapters, other retained adapters, and broader
+  fixture evidence.
 
 ## Shared Completion Rules
 

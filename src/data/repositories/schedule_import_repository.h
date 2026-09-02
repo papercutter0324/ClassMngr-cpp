@@ -25,6 +25,10 @@ public:
         ScheduleImportKind kind
         );
 
+    [[nodiscard]] Status validateImport(
+        const ScheduleImportPlan& plan
+        );
+
     [[nodiscard]] Result<ScheduleImportSummary> apply(
         const ScheduleImportPlan& plan
         );
