@@ -1,9 +1,13 @@
 #include "data/data_service.h"
 
+#include "classmngr/engine/calendar_event_service.h"
+#include "classmngr/engine/campus_record_service.h"
 #include "classmngr/engine/class_info_service.h"
 #include "classmngr/engine/class_repository.h"
 #include "classmngr/engine/class_transfer_service.h"
 #include "classmngr/engine/open_database.h"
+#include "classmngr/engine/roster_service.h"
+#include "classmngr/engine/speaking_evaluation_persistence_service.h"
 #include "classmngr/engine/teacher_service.h"
 
 #include <QCoreApplication>
@@ -20,6 +24,7 @@
 #include <QTime>
 #include <QUuid>
 
+#include <chrono>
 #include <cstdio>
 #include <memory>
 #include <optional>
@@ -141,7 +146,7 @@ bool createProfile(
     teacher.teacherEn = QStringLiteral("Fixture Teacher");
     teacher.teacherKr = QStringLiteral("대표 교사");
     teacher.preferredRomanization = QStringLiteral("Daepyo Gyosa");
-    teacher.preferredName = QStringLiteral("Fixture");
+    teacher.preferredName = teacher.teacherEn;
     teacher.roomNumber = QStringLiteral("301");
     teacher.birthday = QStringLiteral("02-29");
     teacher.phoneNumber = QStringLiteral("010-0000-0000");
@@ -1035,6 +1040,105 @@ bool createEngineWrittenProfile(
         return false;
     }
 
+    classmngr::engine::CalendarEvent event;
+    event.title = "Engine Event / \xED\x96\x89\xEC\x82\xAC";
+    event.eventType = "Meeting";
+    event.timeStatus = "Timed";
+    event.startDate = {
+        std::chrono::year{2026},
+        std::chrono::month{7},
+        std::chrono::day{17}
+    };
+    event.startTime = std::chrono::minutes{9 * 60};
+    event.endDate = event.startDate;
+    event.endTime = std::chrono::minutes{10 * 60};
+
+    classmngr::engine::CalendarEventService calendarEvents(*database);
+    const auto eventId = calendarEvents.save(event);
+    if (!eventId)
+    {
+        *error = QStringLiteral("The engine could not save a calendar event: %1")
+            .arg(QString::fromStdString(eventId.error().message));
+        return false;
+    }
+
+    classmngr::engine::Roster roster;
+    roster.columns = {"English", "Korean"};
+    roster.rows.push_back({
+        "Engine Student / \xED\x95\x99\xEC\x83\x9D",
+        "\xEC\x97\x94\xEC\xA7\x84 \xED\x95\x99\xEC\x83\x9D"
+    });
+
+    classmngr::engine::RosterService rosters(*database);
+    if (const auto saved = rosters.save(*classId, roster); !saved)
+    {
+        *error = QStringLiteral("The engine could not save a roster: %1")
+            .arg(QString::fromStdString(saved.error().message));
+        return false;
+    }
+
+    classmngr::engine::SpeakingEvaluationRows evaluation(
+        classmngr::engine::SpeakingEvaluationRowCount,
+        classmngr::engine::SpeakingEvaluationRow(
+            classmngr::engine::SpeakingEvaluationColumnCount
+            )
+        );
+    evaluation[0][classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Index
+        )] = "1";
+    evaluation[0][classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        )] = "Engine Student / \xED\x95\x99\xEC\x83\x9D";
+    evaluation[0][classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        )] = "\xEC\x97\x94\xEC\xA7\x84 \xED\x95\x99\xEC\x83\x9D";
+    for (const auto column : {
+             classmngr::engine::SpeakingEvaluationColumn::Grammar,
+             classmngr::engine::SpeakingEvaluationColumn::Pronunciation,
+             classmngr::engine::SpeakingEvaluationColumn::Fluency,
+             classmngr::engine::SpeakingEvaluationColumn::Manner,
+             classmngr::engine::SpeakingEvaluationColumn::Content,
+             classmngr::engine::SpeakingEvaluationColumn::OverallEffort
+         })
+    {
+        evaluation[0][classmngr::engine::toInt(column)] = "A+";
+    }
+    evaluation[0][classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Comments
+        )] = "Excellent / \xEC\xA2\x8B\xEC\x95\x84\xEC\x9A\x94";
+
+    classmngr::engine::SpeakingEvaluationPersistenceService evaluations(
+        *database
+        );
+    if (const auto saved = evaluations.save(
+            *classId,
+            "Engine Evaluation / \xED\x8F\x89\xEA\xB0\x80",
+            evaluation
+            ); !saved)
+    {
+        *error = QStringLiteral(
+                     "The engine could not save a speaking evaluation: %1"
+                     )
+            .arg(QString::fromStdString(saved.error().message));
+        return false;
+    }
+
+    classmngr::engine::CampusRecord campus;
+    campus.name = "Engine Campus";
+    campus.buildingName = "Main Building / \xEB\xB3\xB8\xEA\xB4\x80";
+    campus.address = "Seoul / \xEC\x84\x9C\xEC\x9A\xB8";
+    campus.phoneNumber = "+82-2-1111-2222";
+    campus.officeNumber = "02-1111-2222";
+
+    classmngr::engine::CampusRecordService campuses(*database);
+    const auto campusId = campuses.create(campus);
+    if (!campusId)
+    {
+        *error = QStringLiteral("The engine could not save a campus: %1")
+            .arg(QString::fromStdString(campusId.error().message));
+        return false;
+    }
+
     database.reset();
     return true;
 }
@@ -1087,6 +1191,62 @@ bool verifyEngineWrittenProfileWithQt(QString* error)
                     database,
                     QStringLiteral("SELECT name FROM classes WHERE id=1"),
                     QStringLiteral("Engine Class / 수업"),
+                    QStringLiteral("engine-written.tps"),
+                    error
+                    )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral(
+                        "SELECT title || '|' || event_type || '|' || "
+                        "time_status || '|' || all_day || '|' || "
+                        "start_date || '|' || start_time || '|' || "
+                        "end_date || '|' || end_time "
+                        "FROM calendar_events WHERE id=1"
+                        ),
+                    QStringLiteral(
+                        "Engine Event / 행사|Meeting|Timed|0|"
+                        "2026-07-17|09:00|2026-07-17|10:00"
+                        ),
+                    QStringLiteral("engine-written.tps"),
+                    error
+                    )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral(
+                        "SELECT (SELECT value FROM roster_data "
+                        "WHERE class_id=1 AND row_index=0 AND col_index=0) "
+                        "|| '|' || (SELECT value FROM roster_data "
+                        "WHERE class_id=1 AND row_index=0 AND col_index=1)"
+                        ),
+                    QStringLiteral("Engine Student / 학생|엔진 학생"),
+                    QStringLiteral("engine-written.tps"),
+                    error
+                    )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral(
+                        "SELECT se.evaluation_name || '|' || sed.col_3 "
+                        "|| '|' || sed.col_9 "
+                        "FROM speaking_evaluations se "
+                        "JOIN speaking_eval_data sed "
+                        "ON sed.evaluation_id=se.id "
+                        "WHERE se.class_id=1 AND sed.row_index=0"
+                        ),
+                    QStringLiteral(
+                        "Engine Evaluation / 평가|A+|Excellent / 좋아요"
+                        ),
+                    QStringLiteral("engine-written.tps"),
+                    error
+                    )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral(
+                        "SELECT name || '|' || address || '|' || phone_number "
+                        "FROM campuses WHERE id=1"
+                        ),
+                    QStringLiteral(
+                        "Engine Campus|Seoul / 서울|+82-2-1111-2222"
+                        ),
                     QStringLiteral("engine-written.tps"),
                     error
                     )

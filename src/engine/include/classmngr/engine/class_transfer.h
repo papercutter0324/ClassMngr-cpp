@@ -2,6 +2,7 @@
 
 #include "classmngr/engine/class_info.h"
 #include "classmngr/engine/roster.h"
+#include "classmngr/engine/speaking_evaluation.h"
 #include "classmngr/engine/teacher.h"
 
 #include <chrono>
@@ -11,11 +12,6 @@
 
 namespace classmngr::engine
 {
-
-inline constexpr std::size_t SpeakingEvaluationRowCount = 25;
-inline constexpr std::size_t SpeakingEvaluationColumnCount = 11;
-
-using SpeakingEvaluationRows = std::vector<std::vector<std::string>>;
 
 struct ClassTransferEvaluation
 {

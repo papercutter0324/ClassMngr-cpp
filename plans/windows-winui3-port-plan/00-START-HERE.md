@@ -181,9 +181,12 @@ file-backed reads and writes through that boundary while keeping Qt image
 preparation and presentation conversions at the edge. The retained Qt
 `CalendarEventCache` now also preflights file-backed paths through engine
 `OpenDatabase` before opening its worker `QSQLITE` connection, preserving the
-Qt cache/model boundary while sharing path and schema preparation. The next
-active gate is connecting the remaining retained adapters, while extending
-fixture evidence across each migrated persistence slice.
+Qt cache/model boundary while sharing path and schema preparation. The
+database-port fixture verifier now also writes representative calendar-event,
+roster, speaking-evaluation, and campus records through engine services and
+checks them through retained Qt SQLite. The next active gate is connecting the
+remaining retained adapters while extending fixture evidence across each
+migrated persistence slice.
 The retained Qt teacher and class-information validators now route their
 normalization and validation through the Qt-free engine validators as well.
 The standalone retained Qt `ClassTimeValidator` now delegates to the same
@@ -211,7 +214,9 @@ measurement, resource mapping, and automation JSON at the Qt boundary. The
 focused Qt x64 Debug batch-report CTest passed 1/1, and the existing Windows
 x64 Release engine PowerPoint-job test passed. The next active gate remains
 connecting the other retained adapters, extending report/export coverage, and
-expanding cross-platform fixture evidence.
+expanding cross-platform fixture evidence. The latest fixture slice now covers
+engine-written calendar-event, roster, speaking-evaluation, and campus values
+when reopened through the retained Qt connection.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -1127,6 +1132,18 @@ After meaningful work:
   linked and both its full executable and new focused case exited 0 offscreen.
   Phase 2 remains open for the remaining report/export adapters and models,
   other retained adapters, and broader fixture evidence.
+
+- **2026-09-02 — Database-port cross-slice fixture evidence expanded.** The
+  engine-written → retained-Qt round trip now writes and verifies representative
+  calendar-event, roster, speaking-evaluation, and campus-record values through
+  the Qt-free services and retained Qt SQLite. The fixture generator's temporary
+  Qt-written profile also uses the canonical teacher preferred-name choice under
+  the current validator. The shared speaking-evaluation constants are now
+  declared once and reused by class-transfer headers. The Qt 6.12.0 x64
+  `ClassMngrDatabasePortFixtureGenerator` target built with serialized MSVC
+  compilation and its fixture verification executable exited 0; `git diff
+  --check` passed. Phase 2 remains open for report/export adapters, other
+  retained adapters, and the full per-slice fixture matrix.
 
 ## Shared Completion Rules
 

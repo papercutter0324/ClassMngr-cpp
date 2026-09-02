@@ -1114,3 +1114,31 @@ Validation for this slice:
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.
+
+## Database-port cross-slice fixture evidence — 2026-09-02
+
+The engine-written → retained-Qt direction of the database-port round trip now
+verifies representative persisted values for the calendar-event, roster,
+speaking-evaluation, and campus-record slices in addition to teacher, class,
+and class-information data. The profile is written through the Qt-free engine
+services and reopened through the retained Qt SQLite connection, with Korean
+and English values checked at the storage boundary. The fixture generator also
+uses the canonical teacher preferred-name choice so its temporary Qt-written
+profile remains valid under the current engine validator.
+
+The engine speaking-evaluation row/column constants are now declared by the
+shared speaking-evaluation contract and reused by class-transfer headers,
+removing a duplicate-definition hazard when both contracts are included.
+
+Validation for this slice:
+
+- `git diff --check` passed.
+- The Qt 6.12.0 x64 `ClassMngrDatabasePortFixtureGenerator` target built in
+  `build/phase2-qt-x64-debug` with serialized MSVC compilation and
+  `TrackFileAccess=false`.
+- The focused fixture verification executable exited 0 for
+  `tests/fixtures/database-port` with `QT_QPA_PLATFORM=offscreen`.
+
+The aggregate fixture gate is stronger in this direction, but it does not
+close the remaining report/export adapter work or the full per-slice fixture
+matrix.
