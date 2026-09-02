@@ -40,16 +40,16 @@ target remains open.
 
 ### P2-01 — Complete report and export adapter boundaries
 
-- [ ] Schedule reports: make `ScheduleReportModel` the sole source of report
+- [x] Schedule reports: make `ScheduleReportModel` the sole source of report
   content for print/export adapters. Keep `QPainter`, `QPdfWriter`, page
   geometry, fonts, and colors in Qt.
-- [ ] Roster reports: make engine-produced cell values and template policy the
+- [x] Roster reports: make engine-produced cell values and template policy the
   sole source of roster content. Keep PDF geometry, drawing, and printing in
   Qt.
-- [ ] Speaking-evaluation reports: finish the typed handoff from report and
+- [x] Speaking-evaluation reports: finish the typed handoff from report and
   batch-job services to PDF, ZIP, and PowerPoint adapters. Isolate resource
   mapping, JSON transport, Office automation, progress, and output commits.
-- [ ] Sub-prep reports: consume engine document/package plans from the output
+- [x] Sub-prep reports: consume engine document/package plans from the output
   adapter and keep rendering, printing, and desktop integration in Qt.
 
 Representative code: `src/features/schedule/services/schedule_print_service.cpp`,

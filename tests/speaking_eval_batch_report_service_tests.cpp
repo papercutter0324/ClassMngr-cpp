@@ -1,6 +1,7 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
+#include "features/speaking_eval/services/speaking_eval_report_content_adapter.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
@@ -325,6 +326,7 @@ private slots:
     void notesDialogClearsOnlyCommentAfterConfirmation();
     void commentsAndNotesCellsUseTheCombinedDialog();
     void powerPointAvailabilityMessageIsAvailable();
+    void reportContentAdapterPreservesEditedValues();
     void powerPointJobModelRejectsInvalidInputs();
     void powerPointJobModelPreservesValidMapping();
     void powerPointJobModelNormalizesUnicodeAndFitsComments();
@@ -2432,6 +2434,62 @@ void SpeakingEvalBatchReportServiceTests::powerPointAvailabilityMessageIsAvailab
         );
 }
 
+void SpeakingEvalBatchReportServiceTests::
+    reportContentAdapterPreservesEditedValues()
+{
+    SpeakingEvalReportData data =
+        goldenReportData(SpeakingEvalReportTemplate::Advanced);
+    data.englishName = QStringLiteral("Edited English Name");
+    data.koreanName = QStringLiteral("편집된 이름");
+    data.classLabel = QStringLiteral("Edited Class");
+    data.nativeTeacher = QStringLiteral("Edited Native Teacher");
+    data.koreanTeacher = QStringLiteral("편집된 한국인 선생님");
+    data.date = QStringLiteral("Edited Date");
+    data.comments = QStringLiteral("Edited comments");
+    data.notes = QStringLiteral("Edited private notes");
+    data.grade = 5;
+    data.scores = {
+        QStringLiteral("C"),
+        QStringLiteral("B"),
+        QStringLiteral("B+"),
+        QStringLiteral("A"),
+        QStringLiteral("A+"),
+        QStringLiteral("A+")
+    };
+
+    const QList<SpeakingEvalBatchReportService::StudentReport> reports{
+        {
+            QStringLiteral("Edited display name"),
+            data,
+            23
+        }
+    };
+    const std::vector<SpeakingEvalReportContentAdapter::ReportContent>
+        contents = SpeakingEvalReportContentAdapter::toEngine(reports);
+
+    QCOMPARE(contents.size(), std::size_t(1));
+    const auto& content = contents.front();
+    QCOMPARE(QString::fromStdString(content.displayName), reports.front().displayName);
+    QCOMPARE(QString::fromStdString(content.englishName), data.englishName);
+    QCOMPARE(QString::fromStdString(content.koreanName), data.koreanName);
+    QCOMPARE(QString::fromStdString(content.classLabel), data.classLabel);
+    QCOMPARE(QString::fromStdString(content.nativeTeacher), data.nativeTeacher);
+    QCOMPARE(QString::fromStdString(content.koreanTeacher), data.koreanTeacher);
+    QCOMPARE(QString::fromStdString(content.date), data.date);
+    QCOMPARE(QString::fromStdString(content.comments), data.comments);
+    QCOMPARE(QString::fromStdString(content.notes), data.notes);
+    QCOMPARE(content.grade, data.grade);
+    QCOMPARE(content.reportTemplate, data.reportTemplate);
+    QCOMPARE(content.sourceRow, reports.front().sourceRow);
+    for (std::size_t index = 0; index < content.scores.size(); ++index)
+    {
+        QCOMPARE(
+            QString::fromStdString(content.scores[index]),
+            data.scores[index]
+            );
+    }
+}
+
 void SpeakingEvalBatchReportServiceTests::powerPointJobModelRejectsInvalidInputs()
 {
     const QString workingDirectory = QStringLiteral("C:/PowerPointWork");
@@ -2442,7 +2500,8 @@ void SpeakingEvalBatchReportServiceTests::powerPointJobModelRejectsInvalidInputs
             {},
             {},
             workingDirectory,
-            documentsRoot
+            documentsRoot,
+            {}
             );
     QVERIFY(!noReports);
     QVERIFY(
@@ -2454,19 +2513,22 @@ void SpeakingEvalBatchReportServiceTests::powerPointJobModelRejectsInvalidInputs
 
     const SpeakingEvalReportData reportData =
         goldenReportData(SpeakingEvalReportTemplate::Standard);
-    const QList<SpeakingEvalBatchReportService::StudentReport> reports{
+    const QList<SpeakingEvalBatchReportService::StudentReport> sourceReports{
         {
             reportData.englishName,
             reportData,
             0
         }
     };
+    const auto reports =
+        SpeakingEvalReportContentAdapter::toEngine(sourceReports);
     const auto mismatchedPdfPaths =
         SpeakingEvalPowerPointJobModel::build(
             reports,
             {},
             workingDirectory,
-            documentsRoot
+            documentsRoot,
+            reportData.signatureImage
             );
     QVERIFY(!mismatchedPdfPaths);
     QVERIFY(
@@ -2488,20 +2550,23 @@ void SpeakingEvalBatchReportServiceTests::
         QDir(workingDirectory).filePath(QStringLiteral("completed-000000"));
     const SpeakingEvalReportData reportData =
         goldenReportData(SpeakingEvalReportTemplate::Standard);
-    const QList<SpeakingEvalBatchReportService::StudentReport> reports{
+    const QList<SpeakingEvalBatchReportService::StudentReport> sourceReports{
         {
             QStringLiteral("Gildong (홍길동)"),
             reportData,
             0
         }
     };
+    const auto reports =
+        SpeakingEvalReportContentAdapter::toEngine(sourceReports);
 
     const auto result =
         SpeakingEvalPowerPointJobModel::build(
             reports,
             { pdfPath },
             workingDirectory,
-            documentsRoot
+            documentsRoot,
+            reportData.signatureImage
             );
     QVERIFY(result);
 
@@ -2517,7 +2582,7 @@ void SpeakingEvalBatchReportServiceTests::
     QCOMPARE(batch.students.size(), 1);
     QCOMPARE(
         batch.students.constFirst().displayName,
-        reports.constFirst().displayName
+        QString::fromStdString(reports.front().displayName)
         );
     QCOMPARE(batch.students.constFirst().pdfPath, pdfPath);
     QCOMPARE(
@@ -2542,7 +2607,7 @@ void SpeakingEvalBatchReportServiceTests::
     const QJsonObject student = students.at(0).toObject();
     QCOMPARE(
         student.value(QStringLiteral("displayName")).toString(),
-        reports.constFirst().displayName
+        QString::fromStdString(reports.front().displayName)
         );
     QCOMPARE(
         student.value(QStringLiteral("englishName")).toString(),
@@ -2573,20 +2638,23 @@ void SpeakingEvalBatchReportServiceTests::
         goldenReportData(SpeakingEvalReportTemplate::Standard);
     reportData.koreanName = decomposedKorean;
     reportData.comments = decomposedKorean;
-    const QList<SpeakingEvalBatchReportService::StudentReport> reports{
+    const QList<SpeakingEvalBatchReportService::StudentReport> sourceReports{
         {
             decomposedKorean,
             reportData,
             0
         }
     };
+    const auto reports =
+        SpeakingEvalReportContentAdapter::toEngine(sourceReports);
 
     const auto result =
         SpeakingEvalPowerPointJobModel::build(
             reports,
             { QStringLiteral("C:/PowerPointWork/report.pdf") },
             QStringLiteral("C:/PowerPointWork"),
-            QStringLiteral("C:/Documents")
+            QStringLiteral("C:/Documents"),
+            reportData.signatureImage
             );
     QVERIFY(result);
 

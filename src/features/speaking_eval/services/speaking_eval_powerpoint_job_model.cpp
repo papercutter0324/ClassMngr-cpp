@@ -1,7 +1,5 @@
 #include "speaking_eval_powerpoint_job_model.h"
 
-#include "speaking_eval_batch_report_service.h"
-
 #include "classmngr/engine/speaking_evaluation_powerpoint_job_service.h"
 #include "classmngr/engine/speaking_evaluation_report_template.h"
 
@@ -107,32 +105,6 @@ TemplateProfile templateProfile(
     return profile;
 }
 
-classmngr::engine::SpeakingEvaluationReportContent
-portableReportContent(
-    const SpeakingEvalBatchReportService::StudentReport& source
-    )
-{
-    const SpeakingEvalReportData& data = source.report;
-    classmngr::engine::SpeakingEvaluationReportContent portable;
-    portable.displayName = source.displayName.toStdString();
-    portable.englishName = data.englishName.toStdString();
-    portable.koreanName = data.koreanName.toStdString();
-    portable.classLabel = data.classLabel.toStdString();
-    portable.nativeTeacher = data.nativeTeacher.toStdString();
-    portable.koreanTeacher = data.koreanTeacher.toStdString();
-    portable.date = data.date.toStdString();
-    portable.comments = data.comments.toStdString();
-    portable.notes = data.notes.toStdString();
-    portable.grade = data.grade;
-    for (std::size_t index = 0; index < portable.scores.size(); ++index)
-    {
-        portable.scores[index] = data.scores[index].toStdString();
-    }
-    portable.reportTemplate = data.reportTemplate;
-    portable.sourceRow = source.sourceRow;
-    return portable;
-}
-
 std::vector<std::uint8_t> portableSignatureImage(
     const QByteArray& signatureImage
     )
@@ -152,39 +124,38 @@ std::vector<std::uint8_t> portableSignatureImage(
 }
 
 Result<BatchJob> build(
-    const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
+    const std::vector<
+        classmngr::engine::SpeakingEvaluationReportContent
+        >& reports,
     const QStringList& pdfPaths,
     const QString& workingDirectory,
-    const QString& documentsRoot
+    const QString& documentsRoot,
+    const QByteArray& signatureImage
     )
 {
     classmngr::engine::SpeakingEvaluationPowerPointJobRequest request;
-    request.reports.reserve(static_cast<std::size_t>(reports.size()));
+    request.reports = reports;
     request.pdfPaths.reserve(static_cast<std::size_t>(pdfPaths.size()));
-    request.completionPaths.reserve(static_cast<std::size_t>(reports.size()));
-    for (const SpeakingEvalBatchReportService::StudentReport& report : reports)
-    {
-        request.reports.push_back(portableReportContent(report));
-    }
+    request.completionPaths.reserve(reports.size());
     for (const QString& pdfPath : pdfPaths)
     {
         request.pdfPaths.push_back(pdfPath.toStdString());
     }
-    for (int index = 0; index < reports.size(); ++index)
+    for (std::size_t index = 0; index < reports.size(); ++index)
     {
         request.completionPaths.push_back(
             QDir(workingDirectory).filePath(
                 QStringLiteral("completed-%1")
-                    .arg(index, 6, 10, QLatin1Char('0'))
+                    .arg(
+                        static_cast<int>(index),
+                        6,
+                        10,
+                        QLatin1Char('0')
+                        )
             ).toStdString()
             );
     }
-    if (!reports.isEmpty())
-    {
-        request.signatureImage = portableSignatureImage(
-            reports.constFirst().report.signatureImage
-            );
-    }
+    request.signatureImage = portableSignatureImage(signatureImage);
 
     const auto portableJobResult =
         classmngr::engine::SpeakingEvaluationPowerPointJobService::build(

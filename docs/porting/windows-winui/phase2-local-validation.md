@@ -320,6 +320,15 @@ validation. The retained Qt job model converts the engine job to Qt values and
 continues to own NFC normalization, comment text measurement, resource paths,
 JSON serialization, and Office automation arguments.
 
+The P2-01 speaking-report handoff is now complete. The retained Qt batch
+service converts its edited `StudentReport` values once into the engine
+`SpeakingEvaluationReportContent` model; the internal PDF renderer and
+PowerPoint job model consume that typed content, with a Qt conversion only at
+the PDF widget edge. Signature bytes remain an explicit Qt presentation input.
+The existing engine-backed schedule, roster, and sub-prep report adapters
+complete the other P2-01 slices. The focused retained-Qt batch-report target
+built and passed 1/1 offscreen on Windows x64 Debug.
+
 The portable speaking-evaluation output policy now also owns student PDF
 filename composition, reserved-name protection, unsafe-character replacement,
 case-insensitive suffix normalization, fallback naming, and the UTF-8 length

@@ -252,6 +252,8 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.h
+        src/features/speaking_eval/services/speaking_eval_report_content_adapter.cpp
+        src/features/speaking_eval/services/speaking_eval_report_content_adapter.h
         src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.h
         src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.cpp

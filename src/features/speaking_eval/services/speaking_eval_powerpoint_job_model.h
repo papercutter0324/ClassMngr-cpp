@@ -1,5 +1,6 @@
 #pragma once
 
+#include "classmngr/engine/speaking_evaluation_report_content.h"
 #include "core/result.h"
 #include "features/speaking_eval/ui/speaking_eval_report_template.h"
 
@@ -11,11 +12,7 @@
 #include <QStringList>
 
 #include <array>
-
-namespace SpeakingEvalBatchReportService
-{
-struct StudentReport;
-}
+#include <vector>
 
 namespace SpeakingEvalPowerPointJobModel
 {
@@ -69,10 +66,13 @@ struct BatchJob
     );
 
 [[nodiscard]] Result<BatchJob> build(
-    const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
+    const std::vector<
+        classmngr::engine::SpeakingEvaluationReportContent
+        >& reports,
     const QStringList& pdfPaths,
     const QString& workingDirectory,
-    const QString& documentsRoot
+    const QString& documentsRoot,
+    const QByteArray& signatureImage
     );
 
 [[nodiscard]] QJsonObject toJson(

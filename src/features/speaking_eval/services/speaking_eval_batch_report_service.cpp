@@ -2,6 +2,7 @@
 #include "speaking_eval_report_output_policy.h"
 #include "speaking_eval_report_output.h"
 #include "speaking_eval_report_asset_resolver.h"
+#include "speaking_eval_report_content_adapter.h"
 #include "speaking_eval_internal_pdf_renderer.h"
 #include "speaking_eval_powerpoint_automation.h"
 #include "speaking_eval_powerpoint_job_model.h"
@@ -24,6 +25,7 @@
 #include <QTemporaryDir>
 
 #include <cstddef>
+#include <vector>
 
 namespace SpeakingEvalBatchReportService
 {
@@ -511,6 +513,12 @@ Result exportReports(
         return failed(powerPointRendererAvailabilityMessage());
     }
 
+    const std::vector<
+        classmngr::engine::SpeakingEvaluationReportContent
+        > reportContents = SpeakingEvalReportContentAdapter::toEngine(
+            request.reports
+            );
+
     const bool creatingBatchArchive = batchPlan.createsBatchArchive;
     const bool savingIndividualPdfFiles = batchPlan.savesIndividualPdfFiles;
 
@@ -591,10 +599,11 @@ Result exportReports(
 
         const auto batchResult =
             SpeakingEvalPowerPointJobModel::build(
-                request.reports,
+                reportContents,
                 powerPointPdfPaths,
                 powerPointWorkspace.automationDirectory(),
-                ResourcePaths::Documents::directory(*documentsLease)
+                ResourcePaths::Documents::directory(*documentsLease),
+                request.reports.constFirst().report.signatureImage
                 );
         if (!batchResult)
         {
@@ -671,7 +680,8 @@ Result exportReports(
 
             const bool rendered =
                 SpeakingEvalInternalPdfRenderer::render(
-                    student.report,
+                    reportContents.at(static_cast<std::size_t>(index)),
+                    student.report.signatureImage,
                     stagedPath,
                     &errorMessage
                     );
