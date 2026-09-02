@@ -1057,12 +1057,14 @@ After meaningful work:
   to the Qt-free `ScheduleReportService` through explicit UTF-8 conversion,
   preserving invalid-input handling, 12/24-hour output, 50/55-minute endings,
   and cross-period labels. Focused parity coverage was added for the adapter
-  and direct engine results. The existing engine schedule-report test executable
-  passed directly; `git diff --check` passed. The Qt 6.12 CMake target was
-  generated, but its build remains blocked by the host MSBuild FileTracker
-  `UnauthorizedAccessException`, so the new Qt CTest executable was not
-  available to run. Phase 2 remains open for the remaining report/export
-  adapters and models, other retained adapters, and broader fixture evidence.
+  and direct engine results. At tested revision `75fe1cc` on Windows x64 with
+  VS 2026/v145 and the Qt 6.12 CMake tree, the existing engine schedule-report
+  test executable passed directly and the committed diff passed `git show
+  --check`. The Qt 6.12 CMake target was generated, but its build remains
+  blocked by the host MSBuild FileTracker `UnauthorizedAccessException`, so the
+  new Qt CTest executable was not available to run. Phase 2 remains open for
+  the remaining report/export adapters and models, other retained adapters, and
+  broader fixture evidence.
 
 ## Shared Completion Rules
 
