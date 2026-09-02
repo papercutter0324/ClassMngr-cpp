@@ -589,13 +589,18 @@ Result exportReports(
                 );
         }
 
-        const SpeakingEvalPowerPointJobModel::BatchJob batch =
+        const auto batchResult =
             SpeakingEvalPowerPointJobModel::build(
                 request.reports,
                 powerPointPdfPaths,
                 powerPointWorkspace.automationDirectory(),
                 ResourcePaths::Documents::directory(*documentsLease)
                 );
+        if (!batchResult)
+        {
+            return failed(batchResult.error());
+        }
+        const SpeakingEvalPowerPointJobModel::BatchJob& batch = *batchResult;
         const PowerPointBatchStatus powerPointStatus =
             renderPowerPointBatch(
                 batch,

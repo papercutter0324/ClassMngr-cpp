@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "features/speaking_eval/ui/speaking_eval_report_template.h"
 
 #include <QByteArray>
@@ -67,7 +68,7 @@ struct BatchJob
     const QString& value
     );
 
-[[nodiscard]] BatchJob build(
+[[nodiscard]] Result<BatchJob> build(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     const QStringList& pdfPaths,
     const QString& workingDirectory,

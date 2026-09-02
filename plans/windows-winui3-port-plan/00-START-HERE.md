@@ -200,9 +200,15 @@ The Qt 6.12 formal deprecation gate, calendar-event import extraction,
 schedule-import review validation, and schedule-time formatter adapter
 extraction are now complete. The two retained Qt schedule-import apply
 fixtures now release their verification SELECT cursors before a second
-engine-backed apply; production apply semantics remain unchanged. The next
-active gate remains connecting the other retained adapters, extending
-report/export coverage, and expanding cross-platform fixture evidence.
+engine-backed apply; production apply semantics remain unchanged.
+The retained Qt PowerPoint job-model adapter now consumes a typed
+`Result<BatchJob>` from the extracted engine-backed job service, translating
+engine validation failures before renderer work while retaining normalization,
+measurement, resource mapping, and automation JSON at the Qt boundary. The
+focused Qt x64 Debug batch-report CTest passed 1/1, and the existing Windows
+x64 Release engine PowerPoint-job test passed. The next active gate remains
+connecting the other retained adapters, extending report/export coverage, and
+expanding cross-platform fixture evidence.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -1077,6 +1083,21 @@ After meaningful work:
   focused QtTest cases passed in implementation validation, and
   `git diff --check` passed. A fresh Qt 6.12 CMake target rebuild on this host
   remains blocked by the MSBuild FileTracker `UnauthorizedAccessException`.
+  Phase 2 remains open for the remaining report/export adapters and models,
+  other retained adapters, and broader fixture evidence.
+
+- **2026-09-02 — PowerPoint job-model result boundary connected.** The
+  retained Qt PowerPoint job-model adapter now returns a typed
+  `Result<BatchJob>`, translates engine validation errors, and stops the
+  caller before renderer setup when job construction fails. Successful
+  renderer-neutral mapping and JSON output remain unchanged; NFC text
+  normalization and comment-fit sizing remain explicit Qt presentation
+  responsibilities with focused parity coverage. The Qt x64 Debug target
+  built successfully and `ClassMngrSpeakingEvalBatchReportServiceTests`
+  passed 1/1 in 47.76 seconds; the existing Windows x64 Release engine
+  PowerPoint-job regression also passed. A current-tree x64 Debug rebuild was
+  attempted but hit the host MSVC generated-object `Permission denied`/
+  `D8040` process issue, so no clean current-tree full build is claimed.
   Phase 2 remains open for the remaining report/export adapters and models,
   other retained adapters, and broader fixture evidence.
 

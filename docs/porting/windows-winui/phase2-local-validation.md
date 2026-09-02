@@ -1035,6 +1035,36 @@ passed 1/1 in x64/x86 Debug and Release WinUI lanes. The retained Qt target was
 not rebuilt because this host exposes Qt 6.11.1 while the project requires Qt
 6.12.0; no current-binary Qt parity result is claimed.
 The calendar-event workbook import rules now share the Qt-free engine boundary.
+
+## Speaking-evaluation PowerPoint job-model adapter — 2026-09-02
+
+The retained Qt PowerPoint job-model adapter now exposes a typed
+`Result<BatchJob>` boundary over the engine's renderer-neutral PowerPoint job
+service. It converts engine validation failures into localized Qt errors and
+returns them to the batch-report service before template or automation setup,
+replacing the previous empty-job sentinel. Successful student mapping and
+automation JSON remain compatible. NFC normalization, comment-fit sizing,
+resource-path resolution, and automation transport remain at the Qt boundary
+and are covered by focused parity assertions.
+
+Validation for this slice:
+
+- The Qt x64 Debug `ClassMngrSpeakingEvalBatchReportServiceTests` target built
+  successfully in `build/phase2-qt-x64-debug` using
+  `/p:TrackFileAccess=false`.
+- Registered CTest `ClassMngrSpeakingEvalBatchReportServiceTests` passed 1/1
+  in 47.76 seconds, including invalid-input, JSON mapping, NFC, and comment-fit
+  coverage.
+- The existing Windows x64 Release
+  `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` executable
+  passed directly.
+- `git diff --check` passed.
+
+An attempted rebuild in the current `build/windows-x64-debug` tree reached
+MSBuild but failed on the host's generated-object `Permission denied` errors
+and subsequent `D8040` child-process failure. That is recorded as a build-tree
+environment limitation; no clean current-tree full build is claimed.
+
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

@@ -9,6 +9,7 @@
 
 #include <QDir>
 #include <QJsonArray>
+#include <QObject>
 
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +17,46 @@
 
 namespace SpeakingEvalPowerPointJobModel
 {
+namespace
+{
+QString localizedBuildError(
+    const classmngr::engine::Error& error
+    )
+{
+    if (error.message == "no-reports")
+    {
+        return QObject::tr("There are no student reports to export.");
+    }
+    if (error.message == "pdf-path-count-mismatch")
+    {
+        return QObject::tr(
+            "The number of PDF paths must match the number of student reports."
+            );
+    }
+    if (error.message == "completion-path-count-mismatch")
+    {
+        return QObject::tr(
+            "The number of completion paths must match the number of student reports."
+            );
+    }
+    if (error.message == "mixed-powerpoint-templates")
+    {
+        return QObject::tr(
+            "All reports in a PowerPoint batch must use the same template."
+            );
+    }
+
+    const QString detail = QString::fromUtf8(
+        error.message.data(),
+        static_cast<qsizetype>(error.message.size())
+        ).trimmed();
+    return detail.isEmpty()
+        ? QObject::tr("Unable to prepare the PowerPoint batch.")
+        : QObject::tr("Unable to prepare the PowerPoint batch: %1")
+            .arg(detail);
+}
+} // namespace
+
 QString normalizedText(
     const QString& value
     )
@@ -110,37 +151,40 @@ std::vector<std::uint8_t> portableSignatureImage(
     };
 }
 
-BatchJob build(
+Result<BatchJob> build(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     const QStringList& pdfPaths,
     const QString& workingDirectory,
     const QString& documentsRoot
     )
 {
-    BatchJob batch;
-    if (reports.isEmpty() || reports.size() != pdfPaths.size())
-    {
-        return batch;
-    }
-
     classmngr::engine::SpeakingEvaluationPowerPointJobRequest request;
     request.reports.reserve(static_cast<std::size_t>(reports.size()));
     request.pdfPaths.reserve(static_cast<std::size_t>(pdfPaths.size()));
     request.completionPaths.reserve(static_cast<std::size_t>(reports.size()));
+    for (const SpeakingEvalBatchReportService::StudentReport& report : reports)
+    {
+        request.reports.push_back(portableReportContent(report));
+    }
+    for (const QString& pdfPath : pdfPaths)
+    {
+        request.pdfPaths.push_back(pdfPath.toStdString());
+    }
     for (int index = 0; index < reports.size(); ++index)
     {
-        request.reports.push_back(portableReportContent(reports.at(index)));
-        request.pdfPaths.push_back(pdfPaths.at(index).toStdString());
         request.completionPaths.push_back(
             QDir(workingDirectory).filePath(
                 QStringLiteral("completed-%1")
                     .arg(index, 6, 10, QLatin1Char('0'))
-                ).toStdString()
+            ).toStdString()
             );
     }
-    request.signatureImage = portableSignatureImage(
-        reports.constFirst().report.signatureImage
-        );
+    if (!reports.isEmpty())
+    {
+        request.signatureImage = portableSignatureImage(
+            reports.constFirst().report.signatureImage
+            );
+    }
 
     const auto portableJobResult =
         classmngr::engine::SpeakingEvaluationPowerPointJobService::build(
@@ -148,9 +192,12 @@ BatchJob build(
             );
     if (!portableJobResult)
     {
-        return batch;
+        return std::unexpected(
+            localizedBuildError(portableJobResult.error())
+            );
     }
 
+    BatchJob batch;
     const classmngr::engine::SpeakingEvaluationPowerPointJob& portableJob =
         *portableJobResult;
     batch.templateProfile =
