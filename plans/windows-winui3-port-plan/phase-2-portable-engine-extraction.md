@@ -62,11 +62,11 @@ come from `ClassMngrEngine`, while Qt owns only presentation and platform I/O.
 
 ### P2-02 — Define portable file and output contracts
 
-- [ ] Define engine-facing contracts for paths, byte streams, temporary files,
+- [x] Define engine-facing contracts for paths, byte streams, temporary files,
   directory creation, atomic replacement, file copy, and output existence.
-- [ ] Route `DataService::saveAs()` and `exportAs()`, report output commits,
+- [x] Route `DataService::saveAs()` and `exportAs()`, report output commits,
   ZIP/document output, and sub-prep package staging through those contracts.
-- [ ] Return typed errors for invalid paths, missing resources, partial output,
+- [x] Return typed errors for invalid paths, missing resources, partial output,
   and failed atomic commits.
 
 Done when engine workflows do not depend on `QFile`, `QDir`, `QSaveFile`, or

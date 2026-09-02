@@ -2,6 +2,7 @@
 
 #include "classmngr/engine/database_schema.h"
 
+#include <algorithm>
 #include <cctype>
 #include <exception>
 #include <filesystem>
@@ -55,11 +56,13 @@ std::string pathToUtf8(
     const std::filesystem::path& path
     )
 {
-    const std::u8string encoded = path.u8string();
-    return std::string(
+    const std::u8string encoded = path.generic_u8string();
+    std::string result(
         reinterpret_cast<const char*>(encoded.data()),
         encoded.size()
         );
+    std::replace(result.begin(), result.end(), '\\', '/');
+    return result;
 }
 
 Result<std::string> normalizeDatabasePath(

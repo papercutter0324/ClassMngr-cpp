@@ -20,6 +20,8 @@ target_include_directories(ClassMngrCommonBuildSettings
 add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/semantic_version.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/semantic_version.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/file_system.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/file_system.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/result.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/document_output.h"
     "${PROJECT_SOURCE_DIR}/src/engine/zip_archive_writer.cpp"
@@ -1146,5 +1148,22 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineDocumentOutputResultTests
         COMMAND ClassMngrEngineDocumentOutputResultTests
+    )
+
+    add_executable(ClassMngrEngineFileSystemTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/file_system_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineFileSystemTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineFileSystemTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineFileSystemTests
+        COMMAND ClassMngrEngineFileSystemTests
     )
 endif()

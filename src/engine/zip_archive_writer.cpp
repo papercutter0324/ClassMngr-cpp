@@ -1,5 +1,7 @@
 #include "classmngr/engine/zip_archive_writer.h"
 
+#include "classmngr/engine/file_system.h"
+
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -78,6 +80,21 @@ fs::path pathFromUtf8(
             );
     }
     return fs::path(encoded);
+}
+
+std::string pathToUtf8(
+    const fs::path& path
+    )
+{
+    const std::u8string encoded = path.generic_u8string();
+    std::string result;
+    result.reserve(encoded.size());
+    for (const char8_t character : encoded)
+    {
+        result.push_back(static_cast<char>(character));
+    }
+    std::replace(result.begin(), result.end(), '\\', '/');
+    return result;
 }
 
 std::string pathFileNameUtf8(
@@ -502,75 +519,6 @@ private:
     bool m_released = false;
 };
 
-bool replaceArchive(
-    const fs::path& temporaryPath,
-    const fs::path& targetPath
-    )
-{
-    std::error_code error;
-    fs::rename(temporaryPath, targetPath, error);
-    if (!error)
-    {
-        return true;
-    }
-
-    std::error_code existsError;
-    const bool targetExists = fs::exists(targetPath, existsError);
-    if (existsError || !targetExists)
-    {
-        return false;
-    }
-
-    std::error_code statusError;
-    if (!fs::is_regular_file(fs::status(targetPath, statusError))
-        || statusError)
-    {
-        return false;
-    }
-
-    fs::path backupPath;
-    if (!makeUniqueSiblingPath(
-            targetPath,
-            ".classmngr-zip-backup-",
-            &backupPath
-            ))
-    {
-        return false;
-    }
-
-    error.clear();
-    fs::rename(targetPath, backupPath, error);
-    if (error)
-    {
-        return false;
-    }
-
-    error.clear();
-    fs::rename(temporaryPath, targetPath, error);
-    if (error)
-    {
-        std::error_code restoreError;
-        fs::rename(backupPath, targetPath, restoreError);
-        return false;
-    }
-
-    std::error_code cleanupError;
-    fs::remove(backupPath, cleanupError);
-    if (!cleanupError)
-    {
-        return true;
-    }
-
-    // Keep the previous archive if the standard-library replacement fallback
-    // cannot remove its private backup.  Both operations are best-effort;
-    // the explicit paths keep cleanup narrow if the filesystem is unwritable.
-    std::error_code removeNewError;
-    fs::remove(targetPath, removeNewError);
-    std::error_code restoreError;
-    fs::rename(backupPath, targetPath, restoreError);
-    return false;
-}
-
 Status writeArchiveImpl(
     const std::string& archivePath,
     const std::vector<Entry>& entries
@@ -815,7 +763,12 @@ Status writeArchiveImpl(
         return failure(ErrorCode::Io, ArchiveFinalizeFailedToken);
     }
 
-    if (!replaceArchive(temporaryPath, targetPath))
+    const StandardFileSystem fileSystem;
+    const Status finalized = fileSystem.replaceFileAtomically(
+        pathToUtf8(temporaryPath),
+        archivePath
+        );
+    if (!finalized)
     {
         return failure(ErrorCode::Io, ArchiveFinalizeFailedToken);
     }

@@ -1,6 +1,7 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
 #include "app/services/feature_services.h"
+#include "classmngr/engine/file_system.h"
 #include "classmngr/engine/sub_prep_package.h"
 #include "core/application_services.h"
 #include "domain/models/teacher.h"
@@ -11,9 +12,7 @@
 #include <QFileInfo>
 #include <QPageSize>
 #include <QStandardPaths>
-#include <QTemporaryDir>
 #include <QUrl>
-#include <QUuid>
 
 #include <algorithm>
 #include <chrono>
@@ -40,6 +39,41 @@ struct GeneratedPackage
     bool success = false;
     QString message;
     QStringList relativeDocumentPaths;
+};
+
+class TemporaryDirectoryGuard final
+{
+public:
+    TemporaryDirectoryGuard(
+        const classmngr::engine::FileSystem& fileSystem,
+        std::string path
+        )
+        : m_fileSystem(fileSystem)
+        , m_path(std::move(path))
+    {
+    }
+
+    ~TemporaryDirectoryGuard()
+    {
+        if (!m_path.empty())
+        {
+            (void)m_fileSystem.removeTemporaryDirectory(m_path);
+        }
+    }
+
+    const std::string& path() const noexcept
+    {
+        return m_path;
+    }
+
+    void release() noexcept
+    {
+        m_path.clear();
+    }
+
+private:
+    const classmngr::engine::FileSystem& m_fileSystem;
+    std::string m_path;
 };
 
 using PortableCalendarDate = classmngr::engine::CalendarDate;
@@ -420,7 +454,8 @@ GeneratedPackage generateAt(
     const QString& packageDirectory
     )
 {
-    if (!QDir().mkpath(packageDirectory))
+    const classmngr::engine::StandardFileSystem fileSystem;
+    if (!fileSystem.createDirectories(toUtf8(packageDirectory)).has_value())
     {
         return {
             false,
@@ -475,7 +510,7 @@ GeneratedPackage generateAt(
         const QString classDirectory =
             QDir(packageDirectory).filePath(packageClass.folderName);
 
-        if (!QDir().mkpath(classDirectory))
+        if (!fileSystem.createDirectories(toUtf8(classDirectory)).has_value())
         {
             return {
                 false,
@@ -568,13 +603,6 @@ bool isDirectChildPath(
         && cleanChild.compare(cleanParent, Qt::CaseInsensitive) != 0;
 }
 
-QString backupName()
-{
-    return QStringLiteral(".classmngr-sub-prep-backup-%1")
-        .arg(
-            QUuid::createUuid().toString(QUuid::WithoutBraces)
-            );
-}
 }
 
 QString defaultTargetRoot()
@@ -690,9 +718,10 @@ Result generate(
         return failed(QObject::tr("No classes meet on the selected days."));
     }
 
+    const classmngr::engine::StandardFileSystem fileSystem;
     QString packageDirectory;
     QStringList documentPaths;
-    std::unique_ptr<QTemporaryDir> printOnlyDirectory;
+    std::unique_ptr<TemporaryDirectoryGuard> printOnlyDirectory;
     bool folderCreated = false;
 
     if (request.createFolder)
@@ -705,7 +734,7 @@ Result generate(
         {
             return failed(QObject::tr("Enter your name for the Sub Prep folder."));
         }
-        if (!QDir().mkpath(request.targetRoot))
+        if (!fileSystem.createDirectories(toUtf8(request.targetRoot)).has_value())
         {
             return failed(QObject::tr("Unable to create the target folder."));
         }
@@ -719,70 +748,46 @@ Result generate(
         {
             return failed(QObject::tr("The generated folder path is not safe."));
         }
-        if (QFileInfo::exists(finalPath) && !request.replaceExisting)
+        const auto finalPathExists = fileSystem.exists(toUtf8(finalPath));
+        if (!finalPathExists)
+        {
+            return failed(QObject::tr("Unable to inspect the target folder."));
+        }
+        if (*finalPathExists && !request.replaceExisting)
         {
             return failed(
                 QObject::tr("The Sub Prep folder already exists.")
                 );
         }
 
-        QTemporaryDir stagingDirectory(
-            QDir(request.targetRoot).filePath(
-                QStringLiteral(".classmngr-sub-prep-XXXXXX")
-                )
+        const auto stagingPath = fileSystem.createTemporaryDirectory(
+            toUtf8(request.targetRoot)
             );
-        if (!stagingDirectory.isValid())
+        if (!stagingPath)
         {
             return failed(QObject::tr("Unable to create a staging folder."));
         }
+        auto stagingDirectory = std::make_unique<TemporaryDirectoryGuard>(
+            fileSystem,
+            *stagingPath
+            );
 
         const GeneratedPackage generated =
-            generateAt(request, stagingDirectory.path());
+            generateAt(request, fromUtf8(stagingDirectory->path()));
         if (!generated.success)
         {
             return failed(generated.message);
         }
 
-        QString backupPath;
-        if (QFileInfo::exists(finalPath))
+        const auto replaced = fileSystem.replaceDirectoryAtomically(
+            stagingDirectory->path(),
+            toUtf8(finalPath)
+            );
+        if (!replaced)
         {
-            backupPath =
-                QDir(request.targetRoot).filePath(backupName());
-
-            if (!QDir().rename(finalPath, backupPath))
-            {
-                return failed(
-                    QObject::tr("Unable to preserve the existing Sub Prep folder.")
-                    );
-            }
-        }
-
-        stagingDirectory.setAutoRemove(false);
-        if (!QDir().rename(stagingDirectory.path(), finalPath))
-        {
-            stagingDirectory.setAutoRemove(true);
-
-            if (!backupPath.isEmpty())
-            {
-                if (!QDir().rename(backupPath, finalPath))
-                {
-                    return failed(
-                        QObject::tr(
-                            "Unable to commit the Sub Prep package. "
-                            "The previous folder remains at:\n%1"
-                            )
-                            .arg(backupPath)
-                        );
-                }
-            }
-
             return failed(QObject::tr("Unable to commit the Sub Prep package."));
         }
-
-        if (!backupPath.isEmpty())
-        {
-            QDir(backupPath).removeRecursively();
-        }
+        stagingDirectory->release();
 
         packageDirectory = finalPath;
         documentPaths =
@@ -794,21 +799,26 @@ Result generate(
     }
     else
     {
-        printOnlyDirectory = std::make_unique<QTemporaryDir>();
-
-        if (!printOnlyDirectory->isValid())
+        const auto temporaryPath = fileSystem.createTemporaryDirectory(
+            toUtf8(QDir::tempPath())
+            );
+        if (!temporaryPath)
         {
             return failed(QObject::tr("Unable to create a temporary print folder."));
         }
+        printOnlyDirectory = std::make_unique<TemporaryDirectoryGuard>(
+            fileSystem,
+            *temporaryPath
+            );
 
         const GeneratedPackage generated =
-            generateAt(request, printOnlyDirectory->path());
+            generateAt(request, fromUtf8(printOnlyDirectory->path()));
         if (!generated.success)
         {
             return failed(generated.message);
         }
 
-        packageDirectory = printOnlyDirectory->path();
+        packageDirectory = fromUtf8(printOnlyDirectory->path());
         documentPaths =
             absoluteDocumentPaths(
                 packageDirectory,

@@ -431,6 +431,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineDocumentOutputResultTests
         )
     endif()
+    if(TARGET ClassMngrEngineFileSystemTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineFileSystemTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

@@ -2,18 +2,133 @@
 
 #include "speaking_eval_batch_report_service.h"
 
+#include "classmngr/engine/file_system.h"
 #include "classmngr/engine/speaking_evaluation_report_output_policy.h"
 
+#include <QByteArray>
 #include <QDir>
-#include <QFile>
 #include <QFileInfo>
 #include <QObject>
 
+#include <cstddef>
+#include <string>
 #include <string_view>
 #include <vector>
 
 namespace SpeakingEvalReportOutput
 {
+namespace
+{
+
+using EngineFileSystem = classmngr::engine::StandardFileSystem;
+
+std::string toUtf8(
+    const QString& value
+    )
+{
+    const QByteArray encoded = value.toUtf8();
+    return std::string(
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+        );
+}
+
+QString fromUtf8(
+    std::string_view value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+bool normalizePath(
+    const EngineFileSystem& fileSystem,
+    const QString& path,
+    QString* normalizedPath
+    )
+{
+    if (!normalizedPath)
+    {
+        return false;
+    }
+
+    const auto normalized = fileSystem.normalizePath(toUtf8(path));
+    if (!normalized)
+    {
+        return false;
+    }
+
+    *normalizedPath = fromUtf8(*normalized);
+    return true;
+}
+
+bool pathExists(
+    const EngineFileSystem& fileSystem,
+    const QString& path,
+    bool* exists
+    )
+{
+    if (!exists)
+    {
+        return false;
+    }
+
+    QString normalizedPathValue;
+    if (!normalizePath(fileSystem, path, &normalizedPathValue))
+    {
+        return false;
+    }
+
+    const auto result = fileSystem.exists(toUtf8(normalizedPathValue));
+    if (!result)
+    {
+        return false;
+    }
+
+    *exists = *result;
+    return true;
+}
+
+bool ensureDirectory(
+    const EngineFileSystem& fileSystem,
+    const QString& path
+    )
+{
+    QString normalizedPathValue;
+    if (!normalizePath(fileSystem, path, &normalizedPathValue))
+    {
+        return false;
+    }
+
+    // Let the engine distinguish an existing directory from a blocking file;
+    // a bool-only existence check cannot preserve that contract.
+    return fileSystem.createDirectories(toUtf8(normalizedPathValue)).has_value();
+}
+
+void restoreBackups(
+    const EngineFileSystem& fileSystem,
+    const QStringList& backupTargets,
+    const QStringList& targetPaths
+    )
+{
+    for (int index = 0; index < backupTargets.size(); ++index)
+    {
+        const QString& backupPath = backupTargets.at(index);
+        if (!backupPath.isEmpty())
+        {
+            (void)fileSystem.copyFile(
+                toUtf8(backupPath),
+                toUtf8(targetPaths.at(index)),
+                true
+                );
+        }
+    }
+}
+
+} // namespace
+
 QString duplicateFileNameError(
     const classmngr::engine::Error& error
     )
@@ -48,6 +163,8 @@ bool targetFilePaths(
         return false;
     }
 
+    const EngineFileSystem fileSystem;
+
     if (!request.outputFilePath.trimmed().isEmpty())
     {
         if (request.reports.size() != 1)
@@ -62,9 +179,7 @@ bool targetFilePaths(
         }
 
         const QFileInfo targetInfo(request.outputFilePath);
-        QDir targetDirectory(targetInfo.absolutePath());
-        if (!targetDirectory.exists()
-            && !QDir().mkpath(targetDirectory.path()))
+        if (!ensureDirectory(fileSystem, targetInfo.absolutePath()))
         {
             if (errorMessage)
             {
@@ -76,7 +191,19 @@ bool targetFilePaths(
         }
 
         const QString targetPath = targetInfo.absoluteFilePath();
-        if (!request.overwriteExisting && QFileInfo::exists(targetPath))
+        bool targetExists = false;
+        if (!pathExists(fileSystem, targetPath, &targetExists))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "The selected PDF path could not be inspected."
+                    );
+            }
+            return false;
+        }
+
+        if (!request.overwriteExisting && targetExists)
         {
             if (errorMessage)
             {
@@ -92,7 +219,7 @@ bool targetFilePaths(
     }
 
     QDir outputDirectory(request.outputDirectory);
-    if (!outputDirectory.exists() && !QDir().mkpath(outputDirectory.path()))
+    if (!ensureDirectory(fileSystem, outputDirectory.path()))
     {
         if (errorMessage)
         {
@@ -145,9 +272,21 @@ bool targetFilePaths(
                 )
             );
 
+        bool pathAlreadyExists = false;
+        if (!pathExists(fileSystem, path, &pathAlreadyExists))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "The selected PDF path could not be inspected."
+                    );
+            }
+            return false;
+        }
+
         if (saveIndividualPdfFiles
             && !request.overwriteExisting
-            && QFileInfo::exists(path))
+            && pathAlreadyExists)
         {
             if (errorMessage)
             {
@@ -182,31 +321,55 @@ bool commitFiles(
         return false;
     }
 
+    const EngineFileSystem fileSystem;
+    for (int index = 0; index < stagedPaths.size(); ++index)
+    {
+        bool stagedExists = false;
+        if (!pathExists(fileSystem, stagedPaths.at(index), &stagedExists)
+            || !stagedExists)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "The staged output files are incomplete."
+                    );
+            }
+            return false;
+        }
+
+        bool targetExists = false;
+        if (!pathExists(fileSystem, targetPaths.at(index), &targetExists))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "An output file could not be finalized in the selected folder."
+                    );
+            }
+            return false;
+        }
+        if (targetExists && !overwriteExisting)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "An output file already exists in the selected folder."
+                    );
+            }
+            return false;
+        }
+    }
+
     QStringList backupTargets;
     backupTargets.reserve(targetPaths.size());
     for (const QString& targetPath : targetPaths)
     {
-        if (!overwriteExisting || !QFileInfo::exists(targetPath))
-        {
-            backupTargets.append(QString());
-            continue;
-        }
+        backupTargets.append(QString());
 
-        const QString backupPath =
-            targetPath + QStringLiteral(".classmngr-backup");
-        QFile::remove(backupPath);
-        if (!QFile::rename(targetPath, backupPath))
+        bool targetExists = false;
+        if (!pathExists(fileSystem, targetPath, &targetExists))
         {
-            for (int index = 0; index < backupTargets.size(); ++index)
-            {
-                if (!backupTargets.at(index).isEmpty())
-                {
-                    QFile::rename(
-                        backupTargets.at(index),
-                        targetPaths.at(index)
-                        );
-                }
-            }
+            restoreBackups(fileSystem, backupTargets, targetPaths);
             if (errorMessage)
             {
                 *errorMessage = QObject::tr(
@@ -215,7 +378,31 @@ bool commitFiles(
             }
             return false;
         }
-        backupTargets.append(backupPath);
+
+        if (!overwriteExisting || !targetExists)
+        {
+            continue;
+        }
+
+        const QString backupPath =
+            targetPath + QStringLiteral(".classmngr-backup");
+        if (!fileSystem.removeFile(toUtf8(backupPath)).has_value()
+            || !fileSystem.copyFile(
+                toUtf8(targetPath),
+                toUtf8(backupPath),
+                true
+                ).has_value())
+        {
+            restoreBackups(fileSystem, backupTargets, targetPaths);
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "An existing output file could not be prepared for replacement."
+                    );
+            }
+            return false;
+        }
+        backupTargets[backupTargets.size() - 1] = backupPath;
     }
 
     QStringList temporaryTargets;
@@ -223,26 +410,20 @@ bool commitFiles(
     {
         const QString temporaryTarget =
             targetPaths.at(index) + QStringLiteral(".classmngr-part");
-        QFile::remove(temporaryTarget);
+        temporaryTargets.append(temporaryTarget);
 
-        if (!QFile::copy(stagedPaths.at(index), temporaryTarget))
+        if (!fileSystem.removeFile(toUtf8(temporaryTarget)).has_value()
+            || !fileSystem.copyFile(
+                toUtf8(stagedPaths.at(index)),
+                toUtf8(temporaryTarget),
+                true
+                ).has_value())
         {
             for (const QString& createdPath : temporaryTargets)
             {
-                QFile::remove(createdPath);
+                (void)fileSystem.removeFile(toUtf8(createdPath));
             }
-            for (int backupIndex = 0;
-                 backupIndex < backupTargets.size();
-                 ++backupIndex)
-            {
-                if (!backupTargets.at(backupIndex).isEmpty())
-                {
-                    QFile::rename(
-                        backupTargets.at(backupIndex),
-                        targetPaths.at(backupIndex)
-                        );
-                }
-            }
+            restoreBackups(fileSystem, backupTargets, targetPaths);
             if (errorMessage)
             {
                 *errorMessage = QObject::tr(
@@ -251,35 +432,32 @@ bool commitFiles(
             }
             return false;
         }
-
-        temporaryTargets.append(temporaryTarget);
     }
 
     QStringList committedTargets;
     for (int index = 0; index < temporaryTargets.size(); ++index)
     {
-        if (!QFile::rename(temporaryTargets.at(index), targetPaths.at(index)))
+        if (!fileSystem.replaceFileAtomically(
+                toUtf8(temporaryTargets.at(index)),
+                toUtf8(targetPaths.at(index))
+                ).has_value())
         {
             for (const QString& createdPath : temporaryTargets)
             {
-                QFile::remove(createdPath);
+                (void)fileSystem.removeFile(toUtf8(createdPath));
             }
-            for (const QString& committedPath : committedTargets)
+            for (int committedIndex = 0;
+                 committedIndex < committedTargets.size();
+                 ++committedIndex)
             {
-                QFile::remove(committedPath);
-            }
-            for (int backupIndex = 0;
-                 backupIndex < backupTargets.size();
-                 ++backupIndex)
-            {
-                if (!backupTargets.at(backupIndex).isEmpty())
+                if (backupTargets.at(committedIndex).isEmpty())
                 {
-                    QFile::rename(
-                        backupTargets.at(backupIndex),
-                        targetPaths.at(backupIndex)
+                    (void)fileSystem.removeFile(
+                        toUtf8(committedTargets.at(committedIndex))
                         );
                 }
             }
+            restoreBackups(fileSystem, backupTargets, targetPaths);
             if (errorMessage)
             {
                 *errorMessage = QObject::tr(
@@ -296,7 +474,7 @@ bool commitFiles(
     {
         if (!backupPath.isEmpty())
         {
-            QFile::remove(backupPath);
+            (void)fileSystem.removeFile(toUtf8(backupPath));
         }
     }
 

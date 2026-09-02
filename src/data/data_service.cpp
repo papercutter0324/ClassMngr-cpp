@@ -18,11 +18,108 @@
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
 
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
+#include "classmngr/engine/file_system.h"
+
+#include <QByteArray>
 #include <QObject>
 #include <QVariant>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+
+namespace
+{
+
+std::string utf8Path(
+    const QString& path
+    )
+{
+    const QByteArray encoded = path.toUtf8();
+    return std::string(
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+        );
+}
+
+QString displayPath(
+    const std::string& normalizedPath
+    )
+{
+    return QString::fromUtf8(
+        normalizedPath.data(),
+        static_cast<qsizetype>(normalizedPath.size())
+        );
+}
+
+Status copyDatabaseFile(
+    const QString& sourcePath,
+    const QString& destinationPath
+    )
+{
+    classmngr::engine::StandardFileSystem fileSystem;
+    const std::string sourceUtf8 = utf8Path(sourcePath);
+    const std::string destinationUtf8 = utf8Path(destinationPath);
+
+    const classmngr::engine::Result<std::string> normalizedDestination =
+        fileSystem.normalizePath(destinationUtf8);
+    const QString targetPath = normalizedDestination
+        ? displayPath(*normalizedDestination)
+        : destinationPath;
+
+    const classmngr::engine::Result<std::string> normalizedSource =
+        fileSystem.normalizePath(sourceUtf8);
+    if (!normalizedSource || !normalizedDestination)
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to copy Teacher Profile to:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    if (*normalizedSource == *normalizedDestination)
+    {
+        return {};
+    }
+
+    const classmngr::engine::Status copied = fileSystem.copyFile(
+        *normalizedSource,
+        *normalizedDestination,
+        true
+        );
+    if (copied)
+    {
+        return {};
+    }
+
+    const std::string_view errorToken = copied.error().message;
+    if (errorToken
+        == classmngr::engine::FileSystemErrorToken::DirectoryCreationFailed)
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to create destination directory:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    if (errorToken
+        == classmngr::engine::FileSystemErrorToken::AtomicReplacementFailed)
+    {
+        return std::unexpected(
+            QStringLiteral(
+                "Unable to replace existing Teacher Profile file:\n%1"
+                )
+                .arg(targetPath)
+            );
+    }
+
+    return std::unexpected(
+        QStringLiteral("Unable to copy Teacher Profile to:\n%1")
+            .arg(targetPath)
+        );
+}
+
+} // namespace
 
 DataService::DataService(
     const QString &dbPath
@@ -1133,49 +1230,10 @@ Status DataService::saveAs(
             );
     }
 
-    const QString sourcePath =
-        QFileInfo(m_session->databasePath()).absoluteFilePath();
-
-    const QFileInfo targetInfo(destinationPath);
-    const QString targetPath =
-        targetInfo.absoluteFilePath();
-
-    if (sourcePath == targetPath)
-    {
-        return {};
-    }
-
-    if (
-        !targetInfo.absolutePath().isEmpty()
-        && !QDir().mkpath(targetInfo.absolutePath())
-        )
-    {
-        return std::unexpected(
-            QStringLiteral("Unable to create destination directory:\n%1")
-                .arg(targetInfo.absolutePath())
-            );
-    }
-
-    if (
-        QFile::exists(targetPath)
-        && !QFile::remove(targetPath)
-        )
-    {
-        return std::unexpected(
-            QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
-                .arg(targetPath)
-            );
-    }
-
-    if (!QFile::copy(sourcePath, targetPath))
-    {
-        return std::unexpected(
-            QStringLiteral("Unable to copy Teacher Profile to:\n%1")
-                .arg(targetPath)
-            );
-    }
-
-    return {};
+    return copyDatabaseFile(
+        m_session->databasePath(),
+        destinationPath
+        );
 }
 
 Status DataService::exportAs(
@@ -1196,47 +1254,8 @@ Status DataService::exportAs(
             );
     }
 
-    const QString sourcePath =
-        QFileInfo(m_session->databasePath()).absoluteFilePath();
-
-    const QFileInfo targetInfo(destinationPath);
-    const QString targetPath =
-        targetInfo.absoluteFilePath();
-
-    if (sourcePath == targetPath)
-    {
-        return {};
-    }
-
-    if (
-        !targetInfo.absolutePath().isEmpty()
-        && !QDir().mkpath(targetInfo.absolutePath())
-        )
-    {
-        return std::unexpected(
-            QStringLiteral("Unable to create destination directory:\n%1")
-                .arg(targetInfo.absolutePath())
-            );
-    }
-
-    if (
-        QFile::exists(targetPath)
-        && !QFile::remove(targetPath)
-        )
-    {
-        return std::unexpected(
-            QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
-                .arg(targetPath)
-            );
-    }
-
-    if (!QFile::copy(sourcePath, targetPath))
-    {
-        return std::unexpected(
-            QStringLiteral("Unable to copy Teacher Profile to:\n%1")
-                .arg(targetPath)
-            );
-    }
-
-    return {};
+    return copyDatabaseFile(
+        m_session->databasePath(),
+        destinationPath
+        );
 }

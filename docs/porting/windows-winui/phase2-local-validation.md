@@ -1,6 +1,6 @@
 # Phase 2 local validation record
 
-Date: 2026-09-02 (Asia/Seoul)
+Date: 2026-09-03 (Asia/Seoul)
 
 Scope: Phase 2 portable-engine slices on the clean Phase 1 working tree.
 
@@ -329,6 +329,41 @@ The existing engine-backed schedule, roster, and sub-prep report adapters
 complete the other P2-01 slices. The focused retained-Qt batch-report target
 built and passed 1/1 offscreen on Windows x64 Debug.
 
+The P2-02 portable file/output contract is now implemented by the Qt-free
+`classmngr::engine::FileSystem` and `StandardFileSystem`. It defines stable
+UTF-8 path text, arbitrary byte reads and writes, directory creation,
+temporary-directory staging and cleanup, existence checks, atomic file and
+directory replacement, and file copy with typed invalid-path, missing-source,
+partial-output, replacement, and cleanup errors. The retained Qt
+`DataService::saveAs()` and `exportAs()` operations use atomic engine file
+copy. Speaking-evaluation report commits use engine existence, copy, remove,
+and atomic-replacement operations; Sub Prep uses engine directory creation,
+temporary staging, cleanup, and directory replacement. The engine ZIP writer
+keeps its streaming archive encoder in the portable layer and now uses the
+shared engine filesystem contract for final archive replacement. Qt retains
+path composition, localized diagnostics, PDF drawing/printing, resource
+mapping, and Office automation.
+
+Validation for this slice:
+
+- `ClassMngrEngineFileSystemTests` built and passed on Windows x64 Debug,
+  covering UTF-8 names, arbitrary bytes, parent creation, atomic file and
+  directory replacement, missing/non-regular sources, and cleanup.
+- `ClassMngrEngineZipArchiveWriterTests` built and passed on Windows x64
+  Debug after the shared finalization handoff.
+- The focused `applicationServicesOwnDatabaseFileOperations` case in
+  `ClassMngrDataServiceLifecycleTests` built and passed on Windows x64 Debug,
+  covering save-as, export, reopen, and closed-session failures.
+- `ClassMngrSpeakingEvalBatchReportServiceTests` and
+  `ClassMngrSubPrepPackageServiceTests` built and passed 1/1 offscreen on
+  Windows x64 Debug.
+- `git diff --check` passed. The aggregate lifecycle executable still has two
+  pre-existing fixture failures: its synthetic class grades are intentionally
+  outside the engine catalog, and its sparse legacy-teachers schema omits a
+  column required by the existing migration test. Those compatibility-test
+  corrections are tracked with P2-03 rather than counted as P2-02 output
+  failures.
+
 The portable speaking-evaluation output policy now also owns student PDF
 filename composition, reserved-name protection, unsafe-character replacement,
 case-insensitive suffix normalization, fallback naming, and the UTF-8 length
@@ -394,6 +429,11 @@ profile is migrated and readable through the retained Qt connection.
 | Windows x64 Release SQLite foundation test | Passed: `ClassMngrEngineSqliteDatabaseTests` |
 | Windows x86 Debug SQLite foundation test | Passed: `ClassMngrEngineSqliteDatabaseTests` |
 | Windows x86 Release SQLite foundation test | Passed: `ClassMngrEngineSqliteDatabaseTests` |
+| Windows x64 Debug portable filesystem test | Passed: `ClassMngrEngineFileSystemTests` |
+| Windows x64 Debug ZIP finalization regression | Passed: `ClassMngrEngineZipArchiveWriterTests` |
+| Windows x64 Debug DataService save/export case | Passed: `applicationServicesOwnDatabaseFileOperations` in `ClassMngrDataServiceLifecycleTests` |
+| Windows x64 Debug speaking-report output regression | Passed: `ClassMngrSpeakingEvalBatchReportServiceTests` (1/1 offscreen) |
+| Windows x64 Debug Sub Prep staging regression | Passed: `ClassMngrSubPrepPackageServiceTests` (1/1 offscreen) |
 | Windows x64 Debug schema/OpenDatabase test | Passed: `ClassMngrEngineDatabaseSchemaTests` |
 | Windows x64 Release schema/OpenDatabase test | Passed: `ClassMngrEngineDatabaseSchemaTests` |
 | Windows x86 Debug schema/OpenDatabase test | Passed: `ClassMngrEngineDatabaseSchemaTests` |
@@ -1120,9 +1160,10 @@ Validation for this slice:
   test executable and the new focused case both exited 0 with
   `QT_QPA_PLATFORM=offscreen`.
 
-The next work is migrating the remaining report/export adapters and models,
-connecting the other retained Qt adapters to extracted use-case boundaries,
-and extending fixture evidence across each migrated persistence slice.
+The next work is completing the retained Qt adapter audit and extending
+fixture evidence across each migrated persistence slice. Report/export
+adapter boundaries and portable file/output contracts are now recorded as
+complete P2 targets.
 
 ## Database-port cross-slice fixture evidence — 2026-09-02
 
