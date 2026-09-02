@@ -19,6 +19,7 @@ struct DatabaseIds
     int classId = -1;
     int eventId = -1;
     int campusId = -1;
+    bool classInfoSaved = false;
     bool settingSaved = false;
     bool intensiveSlotStateSaved = false;
     bool testingBlockSaved = false;
@@ -54,8 +55,8 @@ DatabaseIds populateDatabase(
     ClassInfo classInfo;
     classInfo.classId = ids.classId;
     classInfo.teacherId = ids.teacherId;
-    classInfo.classGrade = prefix + QStringLiteral(" Grade");
-    classInfo.classLevel = prefix + QStringLiteral(" Level");
+    classInfo.classGrade = QStringLiteral("E4");
+    classInfo.classLevel = QStringLiteral("Theseus");
     classInfo.notes = prefix + QStringLiteral(" Class Notes");
     classInfo.classTimes.append(
         {
@@ -64,9 +65,8 @@ DatabaseIds populateDatabase(
             QStringLiteral("4:50 PM")
         }
         );
-    const bool classInfoSaved =
+    ids.classInfoSaved =
         service.saveClassInfo(classInfo).has_value();
-    Q_UNUSED(classInfoSaved);
 
     ids.intensiveSlotStateSaved = service.saveIntensiveSlotState(
         QStringLiteral("Tuesday"),
@@ -127,6 +127,7 @@ void verifyDatabase(
     const DatabaseIds& ids
     )
 {
+    QVERIFY(ids.classInfoSaved);
     QVERIFY(ids.testingBlockSaved);
     QVERIFY(ids.settingSaved);
     QVERIFY(ids.intensiveSlotStateSaved);
@@ -384,7 +385,16 @@ void DataServiceLifecycleTests::fileBackedSessionUsesEngineSchemaPipeline()
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE teachers ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            "teacher_en TEXT"
+            "teacher_kr TEXT, "
+            "teacher_en TEXT, "
+            "room_number TEXT, "
+            "wifi_name TEXT, "
+            "wifi_password TEXT, "
+            "internet_type TEXT DEFAULT 'WiFi', "
+            "zoom_id TEXT, "
+            "zoom_password TEXT, "
+            "projection_type TEXT DEFAULT 'HDMI', "
+            "notes TEXT"
             ")"
             )));
         QVERIFY(query.exec(QStringLiteral(

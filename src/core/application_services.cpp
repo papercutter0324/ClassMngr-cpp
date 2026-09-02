@@ -111,8 +111,10 @@ SettingsService* ApplicationServices::settingsService() const
     if (!m_settingsService)
     {
         DataService* legacy = dataService();
+        // Production wiring is session-only; the legacy pointer remains for
+        // direct migration callers and tests.
         m_settingsService = std::make_unique<SettingsService>(
-            legacy ? legacy->databaseSession() : nullptr, legacy);
+            legacy ? legacy->databaseSession() : nullptr, nullptr);
     }
     return m_settingsService.get();
 }
@@ -123,7 +125,7 @@ TeacherService* ApplicationServices::teacherService() const
     {
         DataService* legacy = dataService();
         m_teacherService = std::make_unique<TeacherService>(
-            legacy ? legacy->databaseSession() : nullptr, legacy);
+            legacy ? legacy->databaseSession() : nullptr, nullptr);
     }
     return m_teacherService.get();
 }
@@ -134,7 +136,7 @@ ClassService* ApplicationServices::classService() const
     {
         DataService* legacy = dataService();
         m_classService = std::make_unique<ClassService>(
-            legacy ? legacy->databaseSession() : nullptr, legacy);
+            legacy ? legacy->databaseSession() : nullptr, nullptr);
     }
     return m_classService.get();
 }
@@ -145,7 +147,7 @@ ScheduleService* ApplicationServices::scheduleService() const
     {
         DataService* legacy = dataService();
         m_scheduleService = std::make_unique<ScheduleService>(
-            legacy ? legacy->databaseSession() : nullptr, legacy);
+            legacy ? legacy->databaseSession() : nullptr, nullptr);
     }
     return m_scheduleService.get();
 }
@@ -156,7 +158,7 @@ CalendarService* ApplicationServices::calendarService() const
     {
         DataService* legacy = dataService();
         m_calendarService = std::make_unique<CalendarService>(
-            legacy ? legacy->databaseSession() : nullptr, legacy);
+            legacy ? legacy->databaseSession() : nullptr, nullptr);
     }
     return m_calendarService.get();
 }
@@ -167,7 +169,7 @@ RosterService* ApplicationServices::rosterService() const
     {
         DataService* legacy = dataService();
         m_rosterService = std::make_unique<RosterService>(
-            legacy ? legacy->databaseSession() : nullptr, legacy);
+            legacy ? legacy->databaseSession() : nullptr, nullptr);
     }
     return m_rosterService.get();
 }
@@ -179,7 +181,7 @@ SpeakingEvaluationService* ApplicationServices::speakingEvaluationService() cons
         DataService* legacy = dataService();
         m_speakingEvaluationService =
             std::make_unique<SpeakingEvaluationService>(
-                legacy ? legacy->databaseSession() : nullptr, legacy);
+                legacy ? legacy->databaseSession() : nullptr, nullptr);
     }
     return m_speakingEvaluationService.get();
 }

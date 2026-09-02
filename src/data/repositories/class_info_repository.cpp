@@ -211,13 +211,32 @@ QString localizedOperation(
     return source == nullptr ? fallback : QObject::tr(source);
 }
 
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
 QString engineFailure(
     const QString& fallbackOperation,
     int classId,
     const EngineError& error
     )
 {
-    const QString detail = fromUtf8(error.message);
+    const QString detail = engineErrorDetail(error);
     const char* source = operationPrefix(detail);
     QString remaining = detail;
     QString context;

@@ -24,6 +24,10 @@ class TeacherRepository;
 class TestingBlockRepository;
 class TestingClassRepository;
 
+// Qt SQL compatibility session around the portable engine database pipeline.
+// File-backed opens are preflighted, migrated, and validated by the engine;
+// the Qt connection and repositories remain the adapter boundary for callers
+// that have not migrated to engine services yet.
 class DatabaseSession final
 {
 public:

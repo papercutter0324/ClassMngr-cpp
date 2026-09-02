@@ -40,6 +40,7 @@ struct SpeakingEvaluationDashboard
 class FeatureService
 {
 public:
+    // Compatibility-only constructors for direct migration callers and tests.
     explicit FeatureService(DataService* dataService);
     FeatureService(DatabaseSession* session, DataService* legacyDataService);
     [[nodiscard]] bool isAvailable() const;

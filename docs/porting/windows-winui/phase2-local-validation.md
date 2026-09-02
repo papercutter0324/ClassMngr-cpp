@@ -357,12 +357,9 @@ Validation for this slice:
 - `ClassMngrSpeakingEvalBatchReportServiceTests` and
   `ClassMngrSubPrepPackageServiceTests` built and passed 1/1 offscreen on
   Windows x64 Debug.
-- `git diff --check` passed. The aggregate lifecycle executable still has two
-  pre-existing fixture failures: its synthetic class grades are intentionally
-  outside the engine catalog, and its sparse legacy-teachers schema omits a
-  column required by the existing migration test. Those compatibility-test
-  corrections are tracked with P2-03 rather than counted as P2-02 output
-  failures.
+- `git diff --check` passed. The lifecycle coverage identified two retained-
+  compatibility fixture assumptions; P2-03 corrected the catalog values and
+  legacy schema, and the complete registered lifecycle test now passes.
 
 The portable speaking-evaluation output policy now also owns student PDF
 filename composition, reserved-name protection, unsafe-character replacement,
@@ -416,6 +413,30 @@ compatibility path, and the Qt connection still enables foreign-key
 enforcement. The focused lifecycle coverage verifies a legacy file-backed
 profile is migrated and readable through the retained Qt connection.
 
+The P2-03 retained-adapter audit is now complete. All sixteen retained Qt
+repository implementations include the engine boundary and contain no direct
+`QSqlQuery`/Qt-SQL persistence path; `DataService` likewise remains a facade
+over the session repositories. `DatabaseSession` documents the split between
+engine-owned file-backed preflight/migration and the temporary Qt repository
+connection, with exact `:memory:` handling retained as the compatibility case.
+`ApplicationServices` now wires production feature services with the session
+only; the legacy `DataService*` constructors and fallback branches are
+documented and remain available for direct migration callers and tests.
+The lifecycle fixtures now use canonical engine catalog values and a complete
+legacy teacher schema, while retained class-conflict errors preserve the
+historical not-found message contract.
+
+Validation for P2-03:
+
+- `ClassMngrDataServiceLifecycleTests` built and passed 15/15 cases through
+  registered CTest on Windows x64 Debug.
+- The lifecycle coverage includes session/repository lifetime, production
+  ApplicationServices wiring, file-backed engine preflight, rollback/error
+  propagation, and legacy-schema migration.
+- The repository and DataService Qt-SQL audit passed with no direct Qt-SQL
+  persistence implementations found in the retained adapters.
+- `git diff --check` passed.
+
 ## Local validation
 
 | Lane | Result |
@@ -464,7 +485,8 @@ profile is migrated and readable through the retained Qt connection.
 | Windows x64 Debug personal-details service test | Passed: direct VS 2026/v145 compile, link, and run |
 | Windows x86 Debug personal-details service test | Passed: direct VS 2026/v145 compile, link, and run |
 | Retained Windows Qt personal-details adapter/lifecycle smoke | Passed: Qt 6.11/MSVC file-backed UTF-8 save/load/campus link-level smoke with `QT_QPA_PLATFORM=offscreen` |
-| Retained Windows Qt DatabaseSession boundary | Source compilation passed; focused lifecycle target rebuild is blocked by the existing MSBuild FileTracker `UnauthorizedAccessException` during `ZERO_CHECK`/compile tracking |
+| Retained Windows Qt DatabaseSession boundary | Passed: file-backed engine preflight/migration and Qt repository lifetime coverage in `ClassMngrDataServiceLifecycleTests` |
+| Retained Windows Qt/ApplicationServices adapter audit | Passed: all sixteen repository implementations use engine adapters; production ApplicationServices wiring is session-only; full lifecycle CTest passed 15/15 |
 | Windows x64 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x64 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x86 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
@@ -1160,10 +1182,11 @@ Validation for this slice:
   test executable and the new focused case both exited 0 with
   `QT_QPA_PLATFORM=offscreen`.
 
-The next work is completing the retained Qt adapter audit and extending
-fixture evidence across each migrated persistence slice. Report/export
-adapter boundaries and portable file/output contracts are now recorded as
-complete P2 targets.
+The retained Qt adapter audit is now recorded as complete; the next work is
+extending fixture evidence across each migrated persistence slice.
+Report/export adapter boundaries, portable file/output contracts, and retained
+database/application-service adapter cleanup are now recorded as complete P2
+targets.
 
 ## Database-port cross-slice fixture evidence — 2026-09-02
 

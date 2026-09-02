@@ -124,6 +124,8 @@ FeatureService::FeatureService(
 
 bool FeatureService::isAvailable() const
 {
+    // Keep the DataService fallback for direct migration callers and tests;
+    // production ApplicationServices wiring supplies the session path only.
     return (m_session && m_session->isOpen())
         || (m_legacyDataService && m_legacyDataService->isOpen());
 }

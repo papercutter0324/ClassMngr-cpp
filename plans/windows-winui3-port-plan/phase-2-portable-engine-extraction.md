@@ -75,14 +75,14 @@ macOS, and Linux.
 
 ### P2-03 — Finish retained Qt database and application-service adapters
 
-- [ ] Audit every retained repository and make it a thin Qt-to-engine adapter,
+- [x] Audit every retained repository and make it a thin Qt-to-engine adapter,
   with no product rules duplicated in the Qt layer.
-- [ ] Make `DatabaseSession` an explicit compatibility boundary: engine owns
+- [x] Make `DatabaseSession` an explicit compatibility boundary: engine owns
   file-backed open/migration semantics, while Qt owns only its temporary SQL
   session until that adapter is retired.
-- [ ] Route `ApplicationServices` and `DataService` workflows through engine
+- [x] Route `ApplicationServices` and `DataService` workflows through engine
   use cases rather than repository/fallback paths.
-- [ ] Remove or document compatibility branches once the engine path has
+- [x] Remove or document compatibility branches once the engine path has
   equivalent coverage.
 
 Representative code: `src/data/database/database_session.cpp`,

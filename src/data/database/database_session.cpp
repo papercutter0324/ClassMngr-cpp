@@ -51,11 +51,15 @@ Status DatabaseSession::open(const QString& databasePath)
 
     close();
 
+    // The engine owns file-backed path normalization, directory creation,
+    // migration, and validation before Qt repositories are made available.
     const bool isMemoryDatabase = databasePath == QStringLiteral(":memory:");
     QString normalizedPath;
 
     if (isMemoryDatabase)
     {
+        // A separate engine handle cannot share Qt's named in-memory database,
+        // so this remains the explicit compatibility-only path.
         normalizedPath = databasePath;
     }
     else
