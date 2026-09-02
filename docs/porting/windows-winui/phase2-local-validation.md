@@ -905,6 +905,24 @@ Qt 6.12.0 on PATH the executable loads, but its current run has 8 passing and
 claimed here. The next Phase 2 work remains the report/export adapters,
 remaining retained adapters, and broader fixture coverage.
 
+## Calendar-event import extraction — 2026-09-02
+
+The Qt-free `CalendarEventImportService` now owns workbook event extraction:
+month-grid date mapping, legend classification, note ranges and cancellation,
+campus-note title suffixes, event normalization, and duplicate signatures. The
+retained Qt parser now only converts the existing workbook representation to
+the engine contract and converts the resulting events back to its legacy Qt
+API; ZIP/XML workbook decoding and network/database orchestration remain Qt
+adapters.
+
+The Qt-free `ClassMngrEngineCalendarEventImportServiceTests` target built and
+passed 1/1 in the Windows x64 WinUI engine lane. The retained
+`ClassMngrCalendarImportTests` target built and passed 1/1 in the Qt 6.12.0
+deprecation-audit lane. Both builds used `/p:TrackFileAccess=false` to bypass
+the host's existing MSBuild FileTracker `UnauthorizedAccessException`; the
+normal Qt 6.11.1 lane still cannot regenerate because the project requires Qt
+6.12.0.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -941,6 +959,7 @@ The focused `ClassMngrEngineEvaluationDefaultSelectionTests` target built and
 passed 1/1 in x64/x86 Debug and Release WinUI lanes. The retained Qt target was
 not rebuilt because this host exposes Qt 6.11.1 while the project requires Qt
 6.12.0; no current-binary Qt parity result is claimed.
+The calendar-event workbook import rules now share the Qt-free engine boundary.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

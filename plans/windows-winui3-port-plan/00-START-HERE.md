@@ -195,9 +195,10 @@ population detection, current/previous-term fallback, and grade classification
 to the Qt-free engine policy while retaining calendar, settings, and localized
 Qt orchestration at the boundary. The focused native test passed in x64/x86
 Debug and Release WinUI lanes.
-The Qt 6.12 formal deprecation gate is now clean; the next active gate remains
-connecting the other retained adapters, extending report/export coverage, and
-expanding cross-platform fixture evidence.
+The Qt 6.12 formal deprecation gate and calendar-event import extraction are
+now complete; the next active gate remains connecting the other retained
+adapters, extending report/export coverage, and expanding cross-platform
+fixture evidence.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -1011,6 +1012,17 @@ After meaningful work:
   Qt 6.11.1 is installed; no current Qt parity result is claimed. Phase 2
   remains open for report/export adapters, other retained adapters, and
   broader fixture evidence.
+- **2026-09-02 — Calendar-event import extraction completed.** The Qt-free
+  `CalendarEventImportService` now owns month-grid date mapping, legend
+  classification, note ranges/cancellation, campus-note title suffixes,
+  normalization, and duplicate signatures. The retained Qt parser is now a
+  workbook/event conversion adapter while ZIP/XML decoding and
+  network/database orchestration remain Qt-owned. The focused engine target
+  built and passed 1/1 in the Windows x64 WinUI lane, and the retained Qt
+  `ClassMngrCalendarImportTests` target built and passed 1/1 in the Qt 6.12
+  audit lane using `/p:TrackFileAccess=false` for the existing host FileTracker
+  permission issue. Phase 2 remains open for report/export adapters, other
+  retained adapters, and broader fixture evidence.
 
 ## Shared Completion Rules
 
