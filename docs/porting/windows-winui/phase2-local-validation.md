@@ -1065,6 +1065,25 @@ MSBuild but failed on the host's generated-object `Permission denied` errors
 and subsequent `D8040` child-process failure. That is recorded as a build-tree
 environment limitation; no clean current-tree full build is claimed.
 
+## MSVC generated-object permission fix — 2026-09-02
+
+The repository build configuration now disables MSVC `/MP` compilation by
+default and sets Visual Studio's `TrackFileAccess=false` on generated targets.
+The host reproduced generated-object `Permission denied` and `D8040` failures
+when parallel FileTracker/compiler work overlapped with interrupted build
+processes; object ACLs themselves were valid. Hosts with a stable FileTracker
+environment can explicitly opt back in with
+`-DCLASSMNGR_ENABLE_MSVC_PARALLEL_COMPILE=ON`.
+
+Validation for the fix:
+
+- CMake regenerated the current Windows x64 Debug projects with
+  `TrackFileAccess=false` and without `MultiProcessorCompilation`/`/MP`.
+- A clean `ClassMngrEngine` rebuild from fresh objects passed successfully
+  using the generated project settings.
+- The existing engine PowerPoint-job regression remains runnable, and the
+  previously validated Qt batch-report target remains green.
+
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

@@ -77,10 +77,25 @@ if(CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS
     )
 endif()
 
+option(CLASSMNGR_ENABLE_MSVC_PARALLEL_COMPILE
+    "Enable MSVC /MP compilation for Visual Studio builds"
+    OFF
+)
+
+if(WIN32 AND CMAKE_GENERATOR MATCHES "^Visual Studio")
+    # The host's MSBuild FileTracker fails while /MP compiler workers contend
+    # for generated objects.  Keep the reliable default deterministic; callers
+    # can opt back into /MP on a host with a stable FileTracker environment.
+    list(APPEND CMAKE_VS_GLOBALS "TrackFileAccess=false")
+endif()
+
 add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/FS>
-    $<$<CXX_COMPILER_ID:MSVC>:/MP>
 )
+
+if(MSVC AND CLASSMNGR_ENABLE_MSVC_PARALLEL_COMPILE)
+    add_compile_options(/MP)
+endif()
 
 # A CMake build directory can retain individual Qt component locations after
 # Qt6_DIR has been changed.  Qt permits components from the same public version

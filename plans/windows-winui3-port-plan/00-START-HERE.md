@@ -1101,6 +1101,16 @@ After meaningful work:
   Phase 2 remains open for the remaining report/export adapters and models,
   other retained adapters, and broader fixture evidence.
 
+- **2026-09-02 — MSVC generated-object permission issue stabilized.** CMake
+  now disables MSVC `/MP` compilation by default and sets Visual Studio's
+  `TrackFileAccess=false` for generated targets. This avoids the host's
+  parallel FileTracker/object contention while retaining an explicit
+  `CLASSMNGR_ENABLE_MSVC_PARALLEL_COMPILE=ON` opt-in for stable hosts. The
+  current Windows x64 Debug engine target was clean-rebuilt successfully from
+  fresh objects with no `C1083`, `D8040`, or FileTracker failure. Phase 2
+  remains open for the remaining report/export adapters and models, other
+  retained adapters, and broader fixture evidence.
+
 ## Shared Completion Rules
 
 - Every phase preserves `.tps` and supported legacy `.db` behavior.
