@@ -88,8 +88,17 @@ public:
     [[nodiscard]] static Model build(
         const std::vector<ClassEntry>& entries,
         GroupingPolicy groupingPolicy = GroupingPolicy::Adaptive,
-        const DayFilter& dayFilter = {},
-        const Labels& labels = {}
+        const DayFilter& dayFilter = DayFilter{
+            {},
+            ScheduleSource::Regular,
+            VisibilityScope::AllClasses
+        },
+        const Labels& labels = Labels{
+            "Other",
+            "Int",
+            "No time",
+            "Class %1"
+        }
         );
 };
 
