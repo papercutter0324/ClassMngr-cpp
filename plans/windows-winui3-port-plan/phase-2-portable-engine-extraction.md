@@ -120,11 +120,11 @@ Representative code: `src/core/resource_packs/resource_pack_manager.cpp`,
 
 ### P2-06 — Introduce the remaining platform-service interfaces
 
-- [ ] Define injectable interfaces for settings, networking, signature
+- [x] Define injectable interfaces for settings, networking, signature
   verification, process launch, clock, logging, resources, and cancellation.
-- [ ] Keep Qt implementations as adapters and add WinUI implementations only
+- [x] Keep Qt implementations as adapters and add WinUI implementations only
   for platform behavior.
-- [ ] Ensure engine services can be tested headlessly with deterministic clock,
+- [x] Ensure engine services can be tested headlessly with deterministic clock,
   in-memory or fixture-backed resources, and controlled cancellation/errors.
 
 ### P2-07 — Expand per-slice interoperability evidence

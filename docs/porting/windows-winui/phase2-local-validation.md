@@ -1089,6 +1089,34 @@ Validation for these targets:
   setup failures; the new malformed/unsupported fixture case passes.
 - `git diff --check` passed.
 
+## Platform-service interfaces — 2026-09-03
+
+P2-06 now defines the remaining platform-service seams in the Qt-free engine:
+`SettingsStore`, `NetworkClient`, `SignatureVerifier`, `ProcessLauncher`,
+`Clock`, `Logger`, `ResourceProvider`, and `CancellationToken`/source. The
+contracts use UTF-8 strings, byte buffers, standard-library clocks and
+containers, and typed `Result`/`Status` errors. `SystemClock`, `NullLogger`,
+and thread-safe cancellation implementations provide small portable defaults.
+
+The retained Qt implementation is isolated in
+`src/core/platform/qt_platform_services.*`. It translates `QSettings`,
+`QNetworkAccessManager`, `UpdateSignatureVerifier`, `QProcess`, Qt logging,
+and `QFile`/`QFileInfo` to the engine contracts; no Qt type is included by the
+engine header or implementation. The WinUI lane remains responsible only for
+future platform-specific adapters and does not pull Qt into `ClassMngrEngine`.
+
+The headless `ClassMngrEnginePlatformServicesTests` target uses in-memory
+settings and resources, a deterministic clock, controlled network/signature/
+process fakes, and cancellation/error assertions.
+
+Validation for this slice:
+
+- `cmake --build --preset windows-x64-winui-debug --parallel 8 --target ClassMngrEnginePlatformServicesTests -- /p:TrackFileAccess=false /p:BuildProjectReferences=false` passed, and the executable exited 0.
+- `cmake --build --preset windows-x86-winui-debug --parallel 8 --target ClassMngrEnginePlatformServicesTests -- /p:TrackFileAccess=false /p:BuildProjectReferences=false` passed, and the executable exited 0.
+- `cmake --build --preset windows-x64-debug --parallel 8 --target ClassMngrCore -- /p:TrackFileAccess=false /p:BuildProjectReferences=false` passed with the Qt adapter sources compiled.
+- The engine source audit found no Qt, WinUI, WinRT, or Win32 UI includes.
+- `git diff --check` passed for the tracked changes.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -1123,9 +1151,10 @@ repository, class-transfer codec, and campus codec now share the extracted
 P2-04 import/file-codec boundaries. Resource-pack manifest, precedence,
 integrity, signature, and catalog-source policy now share the extracted P2-05
 engine boundary while Qt retains parsing, mounting, downloads, staging, and
-installation. The next incomplete targets are P2-06 platform-service
-interfaces, P2-07 per-slice cross-platform fixture evidence, and P2-08
-retained-adapter/legacy-rule cleanup.
+installation. The P2-06 platform-service interfaces now have Qt adapters and
+headless contract coverage. The next incomplete targets are P2-07 per-slice
+cross-platform fixture evidence and P2-08 retained-adapter/legacy-rule
+cleanup.
 The retained Qt schedule-time formatter now delegates display-time and
 range-label formatting to the Qt-free schedule-report service through explicit
 UTF-8 conversion. Focused parity coverage covers valid and invalid labels,
@@ -1255,5 +1284,5 @@ Validation for this slice:
   `tests/fixtures/database-port` with `QT_QPA_PLATFORM=offscreen`.
 
 The aggregate fixture gate is stronger in this direction, but it does not
-close the P2-06 platform-service interfaces or the full P2-07 per-slice fixture
-matrix; retained-adapter cleanup remains tracked under P2-08.
+close the full P2-07 per-slice fixture matrix; retained-adapter cleanup remains
+tracked under P2-08.

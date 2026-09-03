@@ -20,6 +20,8 @@ target_include_directories(ClassMngrCommonBuildSettings
 add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/semantic_version.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/semantic_version.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/platform_services.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/platform_services.h"
     "${PROJECT_SOURCE_DIR}/src/engine/resource_pack_policy.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/resource_pack_policy.h"
     "${PROJECT_SOURCE_DIR}/src/engine/file_system.cpp"
@@ -1133,6 +1135,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineResourcePackPolicyTests
         COMMAND ClassMngrEngineResourcePackPolicyTests
+    )
+
+    add_executable(ClassMngrEnginePlatformServicesTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/platform_services_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEnginePlatformServicesTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEnginePlatformServicesTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEnginePlatformServicesTests
+        COMMAND ClassMngrEnginePlatformServicesTests
     )
 
     add_executable(ClassMngrEngineZipArchiveWriterTests
