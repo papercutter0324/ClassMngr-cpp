@@ -20,6 +20,7 @@ class ScheduleImportTests : public QObject
 
 private slots:
     void parsesUsersMergesAndDiagnostics();
+    void cancellationStopsWorkbookParsing();
     void rejectsAmbiguousIntensiveTimesWithCellDiagnostic();
     void convertsIntensiveTimesAcrossNoon();
     void appliesIntensiveSlotStatesSnapshot();
@@ -363,6 +364,24 @@ void ScheduleImportTests::parsesUsersMergesAndDiagnostics()
             ),
         QStringLiteral("alicejones")
         );
+}
+
+void ScheduleImportTests::cancellationStopsWorkbookParsing()
+{
+    int cancellationChecks = 0;
+    const auto parsed = parseScheduleImportWorkbook(
+        scheduleWorkbookData(),
+        ScheduleImportKind::Normal,
+        [&cancellationChecks]()
+        {
+            ++cancellationChecks;
+            return cancellationChecks >= 1;
+        }
+        );
+
+    QVERIFY(!parsed.has_value());
+    QVERIFY(parsed.error().contains(QStringLiteral("cancelled")));
+    QCOMPARE(cancellationChecks, 1);
 }
 
 void ScheduleImportTests

@@ -137,6 +137,15 @@ int main()
             && parentPath("Guides") == "",
         "parent path extraction changed"
         );
+    passed &= expect(
+        DocumentCatalogService::selectSource(true, true).source
+                == DocumentCatalogSource::Active
+            && DocumentCatalogService::selectSource(false, true).source
+                == DocumentCatalogSource::Embedded
+            && DocumentCatalogService::selectSource(false, false).source
+                == DocumentCatalogSource::None,
+        "active/embedded catalog fallback policy changed"
+        );
 
     DocumentCatalogInput input;
     input.folders = {

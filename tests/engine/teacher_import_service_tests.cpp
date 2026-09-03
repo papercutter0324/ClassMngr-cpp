@@ -382,6 +382,25 @@ bool duplicateAndAmbiguousImportsRollBack()
     TeacherImportService service(database);
     bool passed = true;
 
+    TeacherImportPlan invalidDate;
+    invalidDate.sourceDate = "not-a-date";
+    invalidDate.koreanTeachers.push_back(koreanTeacher("날짜오류"));
+    const auto invalidDateResult = service.importTeachers(invalidDate);
+    passed &= expect(
+        !invalidDateResult
+            && invalidDateResult.error().code == ErrorCode::InvalidFormat,
+        "invalid source date was not rejected by the engine"
+        );
+
+    TeacherImportPlan empty;
+    empty.sourceDate = "2026-08-01";
+    const auto emptyResult = service.importTeachers(empty);
+    passed &= expect(
+        !emptyResult
+            && emptyResult.error().code == ErrorCode::InvalidFormat,
+        "empty teacher import plan was not rejected by the engine"
+        );
+
     TeacherImportPlan duplicate;
     duplicate.sourceDate = "2026-08-01";
     duplicate.koreanTeachers.push_back(koreanTeacher("롤백교사"));

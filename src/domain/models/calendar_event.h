@@ -31,6 +31,12 @@ struct CalendarEvent
     QTime endTime;
 };
 
+struct CalendarEventImportSummary
+{
+    int importedCount = 0;
+    int skippedCount = 0;
+};
+
 namespace calendar_event_detail
 {
 inline std::string toUtf8(const QString& value)

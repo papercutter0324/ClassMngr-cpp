@@ -56,6 +56,11 @@ public:
         const QList<CalendarEvent>& events
         );
 
+    [[nodiscard]] Result<CalendarEventImportSummary> importCalendarEvents(
+        const QList<CalendarEvent>& events,
+        int parserSkippedCount
+        );
+
     [[nodiscard]] Status deleteCalendarEvent(
         int eventId
         );

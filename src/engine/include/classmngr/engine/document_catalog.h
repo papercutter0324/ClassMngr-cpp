@@ -61,11 +61,28 @@ struct DocumentCatalogModel
     std::vector<std::string> warnings;
 };
 
+enum class DocumentCatalogSource
+{
+    None,
+    Active,
+    Embedded
+};
+
+struct DocumentCatalogSelection
+{
+    DocumentCatalogSource source = DocumentCatalogSource::None;
+    bool activeWasInvalid = false;
+};
+
 class DocumentCatalogService final
 {
 public:
     [[nodiscard]] static DocumentCatalogModel build(
         const DocumentCatalogInput& input
+        );
+    [[nodiscard]] static DocumentCatalogSelection selectSource(
+        bool activeValid,
+        bool embeddedValid
         );
 };
 

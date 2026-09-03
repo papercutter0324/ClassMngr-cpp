@@ -1180,9 +1180,18 @@ ScheduleImportService::ScheduleImportService(SqliteDatabase& database)
 
 Result<ScheduleImportPreview> ScheduleImportService::previewImport(
     const ScheduleImportUserBlock& user,
-    ScheduleImportKind kind
+    ScheduleImportKind kind,
+    const ScheduleImportCancellation& isCancelled
     )
 {
+    if (isCancelled && isCancelled())
+    {
+        return std::unexpected(error(
+            ErrorCode::Cancelled,
+            "The schedule import was cancelled."
+            ));
+    }
+
     if (!m_database.isOpen())
     {
         return std::unexpected(error(
@@ -1202,6 +1211,13 @@ Result<ScheduleImportPreview> ScheduleImportService::previewImport(
     if (!existing)
     {
         return std::unexpected(existing.error());
+    }
+    if (isCancelled && isCancelled())
+    {
+        return std::unexpected(error(
+            ErrorCode::Cancelled,
+            "The schedule import was cancelled."
+            ));
     }
 
     ScheduleImportPreview result;
@@ -1448,9 +1464,18 @@ Result<ScheduleImportPreview> ScheduleImportService::previewImport(
 }
 
 Status ScheduleImportService::validateImport(
-    const ScheduleImportPlan& plan
+    const ScheduleImportPlan& plan,
+    const ScheduleImportCancellation& isCancelled
     )
 {
+    if (isCancelled && isCancelled())
+    {
+        return std::unexpected(error(
+            ErrorCode::Cancelled,
+            "The schedule import was cancelled."
+            ));
+    }
+
     if (!m_database.isOpen())
     {
         return std::unexpected(error(
@@ -1470,6 +1495,13 @@ Status ScheduleImportService::validateImport(
     {
         return std::unexpected(existing.error());
     }
+    if (isCancelled && isCancelled())
+    {
+        return std::unexpected(error(
+            ErrorCode::Cancelled,
+            "The schedule import was cancelled."
+            ));
+    }
 
     return validateCurrentState(
         m_database,
@@ -1480,9 +1512,18 @@ Status ScheduleImportService::validateImport(
 }
 
 Result<ScheduleImportSummary> ScheduleImportService::importSchedule(
-    const ScheduleImportPlan& plan
+    const ScheduleImportPlan& plan,
+    const ScheduleImportCancellation& isCancelled
     )
 {
+    if (isCancelled && isCancelled())
+    {
+        return std::unexpected(error(
+            ErrorCode::Cancelled,
+            "The schedule import was cancelled."
+            ));
+    }
+
     if (!m_database.isOpen())
     {
         return std::unexpected(error(
@@ -1495,6 +1536,16 @@ Result<ScheduleImportSummary> ScheduleImportService::importSchedule(
     if (!validated)
     {
         return std::unexpected(validated.error());
+    }
+
+    // Do not check cancellation after the transaction begins: apply must
+    // remain atomic and cannot be interrupted mid-persistence.
+    if (isCancelled && isCancelled())
+    {
+        return std::unexpected(error(
+            ErrorCode::Cancelled,
+            "The schedule import was cancelled."
+            ));
     }
 
     Result<SqliteTransaction> transactionResult =

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "classmngr/engine/calendar_event.h"
+#include "classmngr/engine/calendar_event_import_service.h"
 #include "classmngr/engine/result.h"
 #include "classmngr/engine/sqlite_database.h"
 
@@ -54,6 +55,13 @@ public:
 
     [[nodiscard]] Result<std::vector<int>> saveBatch(
         const std::vector<CalendarEvent>& events
+        );
+
+    // Imports parser-owned calendar content as one atomic operation.  The
+    // service owns duplicate detection against persisted events and batch
+    // persistence; callers only present parsed import content.
+    [[nodiscard]] Result<CalendarEventImportSummary> importParsed(
+        const CalendarImportResult& parsed
         );
 
     [[nodiscard]] Status remove(

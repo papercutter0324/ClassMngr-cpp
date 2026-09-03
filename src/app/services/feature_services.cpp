@@ -1069,6 +1069,38 @@ Result<QList<int>> CalendarService::saveEvents(
         : Result<QList<int>>(std::unexpected(unavailableError()));
 }
 
+Result<CalendarEventImportSummary> CalendarService::importEvents(
+    const QList<CalendarEvent>& events,
+    int parserSkippedCount
+    ) const
+{
+    if (parserSkippedCount < 0)
+    {
+        return std::unexpected(
+            QStringLiteral("Calendar import skipped count is invalid.")
+            );
+    }
+
+    if (events.isEmpty())
+    {
+        return CalendarEventImportSummary{
+            0,
+            parserSkippedCount
+        };
+    }
+
+    if (auto* repository = session()
+            ? session()->calendarEventRepository() : nullptr)
+    {
+        return repository->importCalendarEvents(events, parserSkippedCount);
+    }
+    return dataService()
+        ? dataService()->importCalendarEvents(events, parserSkippedCount)
+        : Result<CalendarEventImportSummary>(
+            std::unexpected(unavailableError())
+            );
+}
+
 Status CalendarService::deleteEvent(int eventId) const
 {
     if (auto* repository = session()

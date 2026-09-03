@@ -1055,6 +1055,40 @@ Both focused QtTest cases passed in implementation validation, and
 remains blocked by the MSBuild FileTracker `UnauthorizedAccessException`, so no
 fresh full CTest run is claimed from this host.
 
+## Import/file-codec and resource policy boundaries — 2026-09-03
+
+The schedule workbook adapter now supports cancellation-aware Qt parsing while
+conversion, typed errors, validation, cancellation checkpoints, and atomic
+apply semantics are owned by the Qt-free schedule-import service. Calendar
+workbook imports now normalize, deduplicate, validate, and persist through one
+engine transaction. Teacher import matching and plan validation are delegated
+to `TeacherImportService`; the retained file/template codec keeps only workbook
+decoding and localized diagnostics. Class-transfer and campus JSON codecs now
+have representative valid, legacy, malformed, and unsupported fixtures, and
+the superseded schedule matcher/plan/state validator duplicates were removed.
+
+Resource-pack manifest validation, precedence/fallback, installed metadata,
+download-integrity, HTTPS URL, signature-requirement, and document-catalog
+source-selection policy now live in `ClassMngrEngine`. Qt retains JSON and
+filesystem decoding, QResource mounting, network downloads, staging,
+installation, and localized error presentation. Campus resource references
+are normalized and rebased through the same portable policy boundary.
+
+Validation for these targets:
+
+- x64 and x86 WinUI Debug `ClassMngrEngine` builds passed with
+  `--parallel 8`.
+- The five affected engine test executables passed in both x64 and x86
+  WinUI Debug lanes; focused resource-pack and document-catalog policy tests
+  passed as well.
+- The x64 Qt Debug retained calendar-import, teacher-import, campus-map,
+  document-catalog, resource-pack, and schedule-import test executables passed
+  offscreen. The new cancellation and codec-fixture cases passed.
+- x64 and x86 WinUI application-link builds passed with `--parallel 8`.
+- The existing class-transfer executable still has seven database-dependent
+  setup failures; the new malformed/unsupported fixture case passes.
+- `git diff --check` passed.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -1084,6 +1118,14 @@ read-only plan and projected-conflict validation boundary as well.
 The retained Qt schedule-import matching and meeting-pattern helpers now share
 the extracted engine rule contract while keeping conversion and localization
 at the Qt boundary as well.
+The retained Qt schedule-import parser, calendar-import service, teacher-import
+repository, class-transfer codec, and campus codec now share the extracted
+P2-04 import/file-codec boundaries. Resource-pack manifest, precedence,
+integrity, signature, and catalog-source policy now share the extracted P2-05
+engine boundary while Qt retains parsing, mounting, downloads, staging, and
+installation. The next incomplete targets are P2-06 platform-service
+interfaces, P2-07 per-slice cross-platform fixture evidence, and P2-08
+retained-adapter/legacy-rule cleanup.
 The retained Qt schedule-time formatter now delegates display-time and
 range-label formatting to the Qt-free schedule-report service through explicit
 UTF-8 conversion. Focused parity coverage covers valid and invalid labels,
@@ -1213,5 +1255,5 @@ Validation for this slice:
   `tests/fixtures/database-port` with `QT_QPA_PLATFORM=offscreen`.
 
 The aggregate fixture gate is stronger in this direction, but it does not
-close the remaining report/export adapter work or the full per-slice fixture
-matrix.
+close the P2-06 platform-service interfaces or the full P2-07 per-slice fixture
+matrix; retained-adapter cleanup remains tracked under P2-08.

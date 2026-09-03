@@ -35,6 +35,12 @@ struct CalendarImportResult
     int skippedCount = 0;
 };
 
+struct CalendarEventImportSummary
+{
+    int importedCount = 0;
+    int skippedCount = 0;
+};
+
 class CalendarEventImportService final
 {
 public:

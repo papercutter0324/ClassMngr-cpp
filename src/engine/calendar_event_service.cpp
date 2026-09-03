@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -1181,6 +1182,137 @@ Result<std::vector<int>> CalendarEventService::saveBatch(
             ));
     }
     return eventIds;
+}
+
+Result<CalendarEventImportSummary> CalendarEventService::importParsed(
+    const CalendarImportResult& parsed
+    )
+{
+    if (parsed.skippedCount < 0)
+    {
+        return std::unexpected(error(
+            ErrorCode::InvalidFormat,
+            "The calendar import skipped count cannot be negative."
+            ));
+    }
+
+    CalendarEventImportSummary summary;
+    summary.skippedCount = parsed.skippedCount;
+    if (parsed.events.empty())
+    {
+        return summary;
+    }
+
+    std::vector<CalendarEvent> normalizedEvents;
+    normalizedEvents.reserve(parsed.events.size());
+    for (const CalendarEvent& event : parsed.events)
+    {
+        const Result<CalendarEvent> normalized = normalizedForSave(event);
+        if (!normalized)
+        {
+            return std::unexpected(withContext(
+                normalized.error(),
+                "Importing calendar events",
+                eventIdentity(event)
+                ));
+        }
+        normalizedEvents.push_back(*normalized);
+    }
+
+    const ValidationResult seriesValidation =
+        CalendarEventValidator::validateSeries(normalizedEvents);
+    if (seriesValidation.hasErrors())
+    {
+        return std::unexpected(withContext(
+            error(
+                ErrorCode::InvalidFormat,
+                validationMessage(seriesValidation)
+                ),
+            "Importing calendar events"
+            ));
+    }
+
+    CalendarDate firstDate = normalizedEvents.front().startDate;
+    CalendarDate lastDate = normalizedEvents.front().endDate;
+    for (const CalendarEvent& event : normalizedEvents)
+    {
+        if (std::chrono::sys_days{event.startDate}
+            < std::chrono::sys_days{firstDate})
+        {
+            firstDate = event.startDate;
+        }
+        if (std::chrono::sys_days{event.endDate}
+            > std::chrono::sys_days{lastDate})
+        {
+            lastDate = event.endDate;
+        }
+    }
+
+    auto transactionResult = m_database.beginTransaction();
+    if (!transactionResult)
+    {
+        return std::unexpected(withContext(
+            transactionResult.error(),
+            "Starting calendar event import transaction"
+            ));
+    }
+    SqliteTransaction transaction = std::move(*transactionResult);
+
+    const Result<std::vector<CalendarEvent>> existing = loadInRange(
+        firstDate,
+        lastDate
+        );
+    if (!existing)
+    {
+        return std::unexpected(withContext(
+            existing.error(),
+            "Loading existing calendar events for import"
+            ));
+    }
+
+    std::set<std::string> signatures;
+    for (const CalendarEvent& event : *existing)
+    {
+        signatures.insert(CalendarEventImportService::importSignature(event));
+    }
+
+    std::vector<CalendarEvent> eventsToSave;
+    eventsToSave.reserve(normalizedEvents.size());
+    for (const CalendarEvent& event : normalizedEvents)
+    {
+        const std::string signature =
+            CalendarEventImportService::importSignature(event);
+        if (!signatures.insert(signature).second)
+        {
+            ++summary.skippedCount;
+            continue;
+        }
+        eventsToSave.push_back(event);
+    }
+
+    for (const CalendarEvent& event : eventsToSave)
+    {
+        const Result<int> saved = saveNormalized(event);
+        if (!saved)
+        {
+            return std::unexpected(withContext(
+                saved.error(),
+                "Importing calendar events",
+                eventIdentity(event)
+                ));
+        }
+        ++summary.importedCount;
+    }
+
+    const Status committed = transaction.commit();
+    if (!committed)
+    {
+        return std::unexpected(withContext(
+            committed.error(),
+            "Committing calendar event import"
+            ));
+    }
+    return summary;
 }
 
 Status CalendarEventService::remove(

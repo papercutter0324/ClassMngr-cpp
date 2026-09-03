@@ -15,6 +15,24 @@
 
 namespace
 {
+QJsonObject loadFixtureObject(const QString& name)
+{
+    const QString path = QFINDTESTDATA(
+        QStringLiteral("fixtures/class-transfer/") + name);
+    if (path.isEmpty())
+    {
+        return {};
+    }
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+
+    return QJsonDocument::fromJson(file.readAll()).object();
+}
+
 Teacher completeTeacher(
     const QString& englishName = QStringLiteral("Alex Kim")
     )
@@ -177,6 +195,7 @@ class ClassTransferTests : public QObject
 
 private slots:
     void jsonRoundTripPreservesCompletePackage();
+    void codecFixturesCoverValidAndLegacyPackages();
     void importsCompleteClassesAndDeduplicatesTeacher();
     void previewMatchesCourseAndTeacherIgnoringSchedule();
     void replacementRetainsIdAndClearsOldChildren();
@@ -281,6 +300,25 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
             .preferredRomanization.isEmpty()
         );
     QVERIFY(legacyPackage->teachers.first().teacher.preferredName.isEmpty());
+    QVERIFY(legacyPackage->teachers.first().teacher.birthday.isEmpty());
+    QVERIFY(legacyPackage->teachers.first().teacher.phoneNumber.isEmpty());
+}
+
+void ClassTransferTests::codecFixturesCoverValidAndLegacyPackages()
+{
+    const QJsonObject valid = loadFixtureObject(QStringLiteral("valid.json"));
+    const auto validPackage = ClassTransferJsonCodec::fromJson(valid);
+    QVERIFY2(validPackage.has_value(),
+             validPackage ? "" : qPrintable(validPackage.error()));
+    QCOMPARE(validPackage->teachers.size(), 1);
+    QCOMPARE(validPackage->classes.size(), 1);
+    QCOMPARE(validPackage->classes.first().info.classGrade,
+             QStringLiteral("E4"));
+
+    const QJsonObject legacy = loadFixtureObject(QStringLiteral("legacy.json"));
+    const auto legacyPackage = ClassTransferJsonCodec::fromJson(legacy);
+    QVERIFY2(legacyPackage.has_value(),
+             legacyPackage ? "" : qPrintable(legacyPackage.error()));
     QVERIFY(legacyPackage->teachers.first().teacher.birthday.isEmpty());
     QVERIFY(legacyPackage->teachers.first().teacher.phoneNumber.isEmpty());
 }
@@ -702,6 +740,16 @@ void ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages()
     malformedFile.write("{not-json");
     malformedFile.close();
     QVERIFY(!ClassTransferJsonCodec::loadFile(malformedPath).has_value());
+
+    const QString malformedFixture = QFINDTESTDATA(
+        QStringLiteral("fixtures/class-transfer/malformed.json"));
+    QVERIFY(!malformedFixture.isEmpty());
+    QVERIFY(!ClassTransferJsonCodec::loadFile(malformedFixture).has_value());
+
+    const QString unsupportedFixture = QFINDTESTDATA(
+        QStringLiteral("fixtures/class-transfer/unsupported.json"));
+    QVERIFY(!unsupportedFixture.isEmpty());
+    QVERIFY(!ClassTransferJsonCodec::loadFile(unsupportedFixture).has_value());
 
     ClassTransferPackage package;
     package.exportedAtUtc = QDateTime::currentDateTimeUtc();

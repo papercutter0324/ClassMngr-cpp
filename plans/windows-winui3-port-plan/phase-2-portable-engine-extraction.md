@@ -90,27 +90,27 @@ Representative code: `src/data/database/database_session.cpp`,
 
 ### P2-04 — Close import and file-codec boundaries
 
-- [ ] Schedule workbook import: keep XLSX/OOXML parsing in the Qt adapter,
+- [x] Schedule workbook import: keep XLSX/OOXML parsing in the Qt adapter,
   but make conversion, typed errors, validation, cancellation, and apply
   semantics flow through engine services.
-- [ ] Calendar workbook import: keep download and workbook parsing in Qt,
+- [x] Calendar workbook import: keep download and workbook parsing in Qt,
   while engine owns normalized events, rules, recurrence, and persistence
   decisions.
-- [ ] Teacher import: finish the boundary between Qt file/template codecs and
+- [x] Teacher import: finish the boundary between Qt file/template codecs and
   `TeacherImportService`; remove duplicated validation or matching rules.
-- [ ] Class-transfer and campus JSON: isolate JSON/filesystem/resource access
+- [x] Class-transfer and campus JSON: isolate JSON/filesystem/resource access
   from the engine contracts and add representative codec fixtures.
-- [ ] Audit `ScheduleImportMatcher`, `ScheduleImportPlanValidator`, and
+- [x] Audit `ScheduleImportMatcher`, `ScheduleImportPlanValidator`, and
   `ScheduleImportStateValidator`; route any live behavior through the engine,
   or remove/quarantine these apparently superseded duplicate implementations.
 
 ### P2-05 — Extract resource-pack and catalog policy
 
-- [ ] Move resource-pack manifest parsing, precedence/fallback, integrity, and
+- [x] Move resource-pack manifest parsing, precedence/fallback, integrity, and
   signature policy behind portable engine contracts.
-- [ ] Keep `QResource`/RCC mounting, downloads, staging, and installation in
+- [x] Keep `QResource`/RCC mounting, downloads, staging, and installation in
   Qt or another platform adapter.
-- [ ] Put document-catalog and campus resource metadata/path checks behind the
+- [x] Put document-catalog and campus resource metadata/path checks behind the
   same portable boundary where they affect engine workflows.
 
 Representative code: `src/core/resource_packs/resource_pack_manager.cpp`,

@@ -19,6 +19,10 @@ using EngineCalendarDate = classmngr::engine::CalendarDate;
 using EngineCalendarEvent = classmngr::engine::CalendarEvent;
 using EngineCalendarEventService =
     classmngr::engine::CalendarEventService;
+using EngineCalendarEventImportResult =
+    classmngr::engine::CalendarImportResult;
+using EngineCalendarEventImportSummary =
+    classmngr::engine::CalendarEventImportSummary;
 using EngineError = classmngr::engine::Error;
 
 std::string toUtf8(
@@ -403,6 +407,53 @@ Result<QList<int>> CalendarEventRepository::saveCalendarEvents(
         result.append(eventId);
     }
     return result;
+}
+
+Result<CalendarEventImportSummary>
+CalendarEventRepository::importCalendarEvents(
+    const QList<CalendarEvent>& events,
+    int parserSkippedCount
+    )
+{
+    const QString operation = QObject::tr("Importing calendar events");
+    if (parserSkippedCount < 0)
+    {
+        return std::unexpected(operationFailure(
+            operation,
+            QObject::tr("The parser skipped count is invalid.")
+            ));
+    }
+
+    if (events.isEmpty())
+    {
+        return CalendarEventImportSummary{
+            0,
+            parserSkippedCount
+        };
+    }
+
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineCalendarEventImportResult parsed;
+    parsed.events = toEngineEvents(events);
+    parsed.skippedCount = parserSkippedCount;
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineCalendarEventImportSummary> imported =
+        service.importParsed(parsed);
+    if (!imported)
+    {
+        return std::unexpected(engineFailure(operation, imported.error()));
+    }
+
+    return CalendarEventImportSummary{
+        imported->importedCount,
+        imported->skippedCount
+    };
 }
 
 Status CalendarEventRepository::deleteCalendarEvent(

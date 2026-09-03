@@ -1,4 +1,6 @@
 #include "classmngr/engine/calendar_event_import_service.h"
+#include "classmngr/engine/calendar_event_service.h"
+#include "classmngr/engine/open_database.h"
 
 #include <chrono>
 #include <iostream>
@@ -258,6 +260,90 @@ bool testDuplicateSuppressionAndSignature()
             CalendarEventImportService::importSignature(parsed.events.front())
                 == "DYB Workshop|Workshop|2026-07-06|2026-07-06|0|Unknown",
             "parsed event signature changed"
+        );
+}
+
+bool testDatabaseImportPersistence()
+{
+    const auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+    if (!expect(opened && *opened != nullptr, "calendar import database did not open"))
+    {
+        return false;
+    }
+
+    classmngr::engine::CalendarEventService service(**opened);
+    if (!expect(
+            !service.importParsed({{}, -1}),
+            "calendar import accepted a negative parser skipped count"
+            ))
+    {
+        return false;
+    }
+
+    CalendarImportResult parsed;
+    CalendarEvent first;
+    first.title = "Workshop";
+    first.eventType = "Workshop";
+    first.timeStatus = "Unknown";
+    first.startDate = date(2026, 7, 6);
+    first.endDate = date(2026, 7, 6);
+    parsed.events = {first, first};
+    parsed.skippedCount = 2;
+
+    const auto firstImport = service.importParsed(parsed);
+    if (!expect(
+            firstImport
+                && firstImport->importedCount == 1
+                && firstImport->skippedCount == 3,
+            "calendar import counts did not include an in-import duplicate"
+            ))
+    {
+        return false;
+    }
+
+    const auto repeatedImport = service.importParsed(parsed);
+    if (!expect(
+            repeatedImport
+                && repeatedImport->importedCount == 0
+                && repeatedImport->skippedCount == 4,
+            "calendar import did not suppress persisted duplicates"
+            ))
+    {
+        return false;
+    }
+
+    if (!expect(
+            (**opened).execute(
+                "CREATE TRIGGER reject_calendar_import "
+                "BEFORE INSERT ON calendar_events "
+                "WHEN NEW.title = 'Reject' BEGIN "
+                "SELECT RAISE(ABORT, 'injected calendar import failure'); END"
+                ).has_value(),
+            "calendar import failure trigger could not be created"
+            ))
+    {
+        return false;
+    }
+
+    CalendarEvent accepted = first;
+    accepted.title = "Accepted before reject";
+    accepted.startDate = date(2026, 7, 7);
+    accepted.endDate = date(2026, 7, 7);
+    CalendarEvent rejected = accepted;
+    rejected.title = "Reject";
+    rejected.startDate = date(2026, 7, 8);
+    rejected.endDate = date(2026, 7, 8);
+    const auto failedImport = service.importParsed({{accepted, rejected}, 0});
+    const auto persisted = service.loadInRange(
+        date(2026, 7, 6),
+        date(2026, 7, 8)
+        );
+
+    return expect(!failedImport, "calendar import did not report a write failure")
+        && expect(
+            persisted && persisted->size() == 1
+                && persisted->front().title == "Workshop",
+            "calendar import write failure was not rolled back"
             );
 }
 } // namespace
@@ -272,5 +358,6 @@ int main()
     passed &= testNoteRangesAndCancellation();
     passed &= testCampusNoteSuffixAndBoundaries();
     passed &= testDuplicateSuppressionAndSignature();
+    passed &= testDatabaseImportPersistence();
     return passed ? 0 : 1;
 }

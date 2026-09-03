@@ -103,7 +103,7 @@ Last updated: 2026-09-03 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, testing-class/testing-block persistence and retained adapter wiring, campus-record CRUD and retained campus adapter wiring, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-time validation and retained validator adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, teacher-import workflows and retained teacher-import adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, schedule-time formatter adapter wiring, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, class-tab navigation and retained adapter wiring, evaluation-default selection policy and retained adapter wiring, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, document-catalog policies, application-settings persistence and retained settings adapter wiring, personal-details settings persistence and retained personal-details adapter wiring, file-backed retained Qt DatabaseSession and CalendarEventCache preflight through engine OpenDatabase, the eleven-case fixture corpus round-trip gate, P2-01 report/export adapter boundaries, P2-02 portable file/output contracts, and P2-03 retained database/application-service adapter cleanup are extracted; broader per-slice cross-platform fixture coverage remains. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, testing-class/testing-block persistence and retained adapter wiring, campus-record CRUD and retained campus adapter wiring, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-time validation and retained validator adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, teacher-import workflows and retained teacher-import adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, schedule-time formatter adapter wiring, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, class-tab navigation and retained adapter wiring, evaluation-default selection policy and retained adapter wiring, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, document-catalog policies, application-settings persistence and retained settings adapter wiring, personal-details settings persistence and retained personal-details adapter wiring, file-backed retained Qt DatabaseSession and CalendarEventCache preflight through engine OpenDatabase, the eleven-case fixture corpus round-trip gate, P2-01 report/export adapter boundaries, P2-02 portable file/output contracts, P2-03 retained database/application-service adapter cleanup, P2-04 import/file-codec boundaries, and P2-05 resource-pack/catalog policy are extracted; P2-06 platform-service interfaces and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -188,8 +188,11 @@ checks them through retained Qt SQLite. The P2-03 retained-adapter audit now
 confirms that all retained repositories delegate persistence operations through
 engine services, `DatabaseSession` preflights file-backed profiles through
 `OpenDatabase`, and production `ApplicationServices` wiring uses session-only
-feature services. The complete retained lifecycle suite passes; broader
-per-slice fixture evidence remains the active Phase 2 work.
+feature services. The complete retained lifecycle suite passes, and the P2-04
+import/file-codec and P2-05 resource-pack/catalog boundaries now have engine
+contracts, retained-adapter coverage, and representative fixtures. The next
+active gates are P2-06 platform-service interfaces and broader per-slice
+fixture evidence.
 The retained Qt teacher and class-information validators now route their
 normalization and validation through the Qt-free engine validators as well.
 The standalone retained Qt `ClassTimeValidator` now delegates to the same
@@ -288,6 +291,23 @@ After meaningful work:
    long logs.
 
 ## Progress Log
+
+- **2026-09-03 — P2-04 import/file-codec and P2-05 resource-pack/catalog
+  boundaries completed.** Schedule workbook parsing now exposes typed engine
+  conversion, validation, apply, and cancellation semantics; calendar imports
+  normalize and persist atomically through the engine; teacher imports delegate
+  matching and plan validation without duplicated Qt rules; and class-transfer
+  and campus JSON codecs have representative valid/legacy/malformed fixtures.
+  Superseded schedule helper implementations were removed. Resource-pack
+  precedence, fallback, integrity, signature, URL, and catalog-source policy
+  now live in the Qt-free engine, while Qt retains JSON/QFile/QResource,
+  downloads, staging, mounting, and installation. x64 and x86 WinUI engine
+  builds and focused engine tests passed with `--parallel 8`; x64 and x86
+  WinUI application-link builds passed as well. Focused retained Qt import,
+  resource-pack, catalog, campus, and schedule tests passed offscreen; the new
+  cancellation and codec-fixture cases passed. The existing class-transfer
+  executable still reports seven database-dependent baseline setup failures,
+  while the new malformed-package fixture passes. `git diff --check` passed.
 
 - **2026-09-03 — P2-03 retained Qt database/application adapters completed.**
   The retained repository audit found all sixteen repository implementations

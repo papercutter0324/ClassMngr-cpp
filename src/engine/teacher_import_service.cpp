@@ -561,6 +561,16 @@ Status validatePlan(
         return std::unexpected(makeError(
             ErrorCode::InvalidFormat,
             "The teacher import source date must be a valid ISO date."
+        ));
+    }
+
+    if (plan.koreanTeachers.empty()
+        && plan.nativeEnglishTeachers.empty()
+        && plan.gsTeamMembers.empty())
+    {
+        return std::unexpected(makeError(
+            ErrorCode::InvalidFormat,
+            "The teacher import plan contains no importable people."
             ));
     }
 

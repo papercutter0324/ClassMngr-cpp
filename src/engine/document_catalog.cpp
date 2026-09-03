@@ -520,4 +520,20 @@ DocumentCatalogModel DocumentCatalogService::build(
     return result;
 }
 
+DocumentCatalogSelection DocumentCatalogService::selectSource(
+    bool activeValid,
+    bool embeddedValid
+    )
+{
+    if (activeValid)
+    {
+        return {DocumentCatalogSource::Active, false};
+    }
+    if (embeddedValid)
+    {
+        return {DocumentCatalogSource::Embedded, true};
+    }
+    return {DocumentCatalogSource::None, !activeValid};
+}
+
 } // namespace classmngr::engine

@@ -192,6 +192,10 @@ public:
     [[nodiscard]] Result<QList<int>> saveEvents(
         const QList<CalendarEvent>& events
         ) const;
+    [[nodiscard]] Result<CalendarEventImportSummary> importEvents(
+        const QList<CalendarEvent>& events,
+        int parserSkippedCount
+        ) const;
     [[nodiscard]] Status deleteEvent(int eventId) const;
     [[nodiscard]] Status deleteRepeatSeriesFromDate(
         const QString& repeatSeriesId,

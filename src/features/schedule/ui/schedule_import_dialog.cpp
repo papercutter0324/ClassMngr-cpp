@@ -37,6 +37,8 @@
 #include <QtConcurrentRun>
 
 #include <algorithm>
+#include <atomic>
+#include <memory>
 #include <utility>
 
 namespace
@@ -427,6 +429,7 @@ bool ScheduleImportDialog::loadWorkbook()
             );
     auto* timeout = new QTimer(watcher);
     timeout->setSingleShot(true);
+    const auto cancellation = std::make_shared<std::atomic_bool>(false);
     connect(
         watcher,
         &QFutureWatcher<ScheduleWorkbookLoadResult>::finished,
@@ -473,13 +476,14 @@ bool ScheduleImportDialog::loadWorkbook()
         timeout,
         &QTimer::timeout,
         this,
-        [this, requestId, timeoutSeconds]()
+        [this, requestId, timeoutSeconds, cancellation]()
         {
             if (requestId != m_loadRequestId)
             {
                 return;
             }
 
+            cancellation->store(true, std::memory_order_relaxed);
             ++m_loadRequestId;
             setLoading(false);
             setSourceStatus(
@@ -491,7 +495,7 @@ bool ScheduleImportDialog::loadWorkbook()
         );
     watcher->setFuture(
         QtConcurrent::run(
-            [filePath, kind]()
+            [filePath, kind, cancellation]()
             {
                 ScheduleWorkbookLoadResult result;
                 QFile file(filePath);
@@ -504,7 +508,13 @@ bool ScheduleImportDialog::loadWorkbook()
                 const auto parsed =
                     parseScheduleImportWorkbook(
                         file.readAll(),
-                        kind
+                        kind,
+                        [cancellation]()
+                        {
+                            return cancellation->load(
+                                std::memory_order_relaxed
+                                );
+                        }
                         );
                 if (!parsed)
                 {

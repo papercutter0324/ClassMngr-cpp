@@ -310,6 +310,42 @@ bool validatesWithoutWriting()
     return passed;
 }
 
+bool cancellationStopsBeforeTransaction()
+{
+    const auto opened = OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return false;
+    }
+
+    SqliteDatabase& database = **opened;
+    ScheduleImportService imports(database);
+    const ScheduleImportPlan plan = planFor(
+        ScheduleImportKind::Normal,
+        candidate("김하늘", "Apollo"),
+        ScheduleImportClassAction::CreateNew,
+        -1,
+        ScheduleImportTeacherAction::Create,
+        -1
+        );
+    const auto cancelled = imports.importSchedule(
+        plan,
+        []()
+        {
+            return true;
+        }
+        );
+    const bool passed = expect(
+        !cancelled
+            && cancelled.error().code == ErrorCode::Cancelled
+            && countRows(database, "SELECT COUNT(*) FROM teachers") == 0
+            && countRows(database, "SELECT COUNT(*) FROM classes") == 0,
+        "cancelled schedule import did not stop before the transaction"
+        );
+    database.close();
+    return passed;
+}
+
 bool rejectsProjectedConflict()
 {
     const auto opened = OpenDatabase::execute(":memory:");
@@ -676,6 +712,7 @@ int main()
 {
     const bool passed = scheduleImportRulesMatchServicePolicy()
         && validatesWithoutWriting()
+        && cancellationStopsBeforeTransaction()
         && rejectsProjectedConflict()
         && previewMatchesAndRanks()
         && createsSnapshotAndRollsBack()

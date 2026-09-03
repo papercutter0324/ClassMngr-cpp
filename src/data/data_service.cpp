@@ -958,6 +958,24 @@ Result<QList<int>> DataService::saveCalendarEvents(
     return m_calendarEventRepository->saveCalendarEvents(events);
 }
 
+Result<CalendarEventImportSummary> DataService::importCalendarEvents(
+    const QList<CalendarEvent>& events,
+    int parserSkippedCount
+    )
+{
+    if (!m_calendarEventRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return m_calendarEventRepository->importCalendarEvents(
+        events,
+        parserSkippedCount
+        );
+}
+
 Status DataService::deleteCalendarEvent(
     int eventId
     )

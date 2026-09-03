@@ -946,24 +946,33 @@ Result<DocumentCatalog> DocumentCatalog::loadFromRoots(
 {
     QString activeError;
 
+    std::optional<DocumentCatalog> activeCatalog;
     if (!activeRootPath.trimmed().isEmpty())
     {
-        auto activeCatalog =
-            loadCatalogRoot(activeRootPath);
-
-        if (activeCatalog)
+        auto loadedActiveCatalog = loadCatalogRoot(activeRootPath);
+        if (loadedActiveCatalog)
         {
-            return activeCatalog;
+            activeCatalog = std::move(*loadedActiveCatalog);
         }
-
-        activeError =
-            activeCatalog.error();
+        else
+        {
+            activeError = loadedActiveCatalog.error();
+        }
     }
 
     auto embeddedCatalog =
         loadCatalogRoot(embeddedRootPath);
 
-    if (!embeddedCatalog)
+    const auto selection = classmngr::engine::DocumentCatalogService::selectSource(
+        activeCatalog.has_value(),
+        embeddedCatalog.has_value()
+        );
+    if (selection.source == classmngr::engine::DocumentCatalogSource::Active)
+    {
+        return std::move(*activeCatalog);
+    }
+
+    if (selection.source == classmngr::engine::DocumentCatalogSource::None)
     {
         return std::unexpected(
             activeError.isEmpty()
