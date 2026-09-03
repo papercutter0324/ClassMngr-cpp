@@ -49,8 +49,9 @@ class TestingClassRepository;
 // Data Service
 // =========================================================
 
-// Compatibility facade retained while callers migrate to the feature services
-// exposed by ApplicationServices. New UI and controller code should depend on
+// Compatibility facade for legacy callers while they migrate to the feature
+// services exposed by ApplicationServices. Operations are forwarded to the
+// engine-backed repositories; new UI and controller code should depend on
 // those narrow services instead of adding operations here.
 class DataService
 {
@@ -80,8 +81,9 @@ public:
 
     [[nodiscard]] QString currentDatabasePath() const;
 
-    // Transitional access for constructing the narrow application services.
-    // UI and controllers must not use the session or its repositories directly.
+    // Transitional access used to construct the narrow application services
+    // and support legacy migration callers. UI and controllers must not use
+    // the session or its repositories directly.
     [[nodiscard]] DatabaseSession* databaseSession() const;
 
     // =====================================================
@@ -220,15 +222,17 @@ public:
         int classId
         );
 
-    // TODO:
-    // Port class time management
-    // Port intensive time management
+    // Class details and regular/intensive class times are delegated through
+    // ClassInfoRepository to the engine ClassInfoService.
 
 
 
     // =====================================================
     // Intensive Slot States
     // =====================================================
+
+    // Grid-wide intensive-slot state persistence is delegated through the
+    // engine-backed IntensiveSlotStateRepository.
 
     [[nodiscard]] Result<QList<IntensiveSlotState>> loadIntensiveSlotStates();
 
@@ -369,8 +373,8 @@ public:
         ScheduleType type
         );
 
-    // TODO:
-    // Port time parsing helpers
+    // Class-time conversion and conflict evaluation are delegated through
+    // ClassInfoRepository to the engine ClassScheduleService.
 
 
 
@@ -395,7 +399,9 @@ public:
         int classId
         );
 
-    // Port buildRosterScoreImport()
+    // Roster score-import construction is delegated through
+    // SpeakingEvalRepository to the engine
+    // SpeakingEvaluationPersistenceService.
 
 
 

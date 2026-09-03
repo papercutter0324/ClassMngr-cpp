@@ -1153,8 +1153,8 @@ integrity, signature, and catalog-source policy now share the extracted P2-05
 engine boundary while Qt retains parsing, mounting, downloads, staging, and
 installation. The P2-06 platform-service interfaces now have Qt adapters and
 headless contract coverage. P2-07 per-slice cross-platform fixture evidence
-is complete; the next incomplete target is P2-08 retained-adapter/legacy-rule
-cleanup.
+is complete; the P2-08 retained-adapter/legacy-rule cleanup is now recorded
+below.
 The retained Qt schedule-time formatter now delegates display-time and
 range-label formatting to the Qt-free schedule-report service through explicit
 UTF-8 conversion. Focused parity coverage covers valid and invalid labels,
@@ -1317,3 +1317,47 @@ Validation matrix:
 The unfiltered legacy engine sweep is not used as P2-07 evidence because the
 existing x64/x86 build trees have nine unrelated registered test binaries
 absent; the focused database-port headless target is the recorded matrix.
+
+## P2-08 — Retained-adapter and legacy-rule cleanup — 2026-09-03
+
+The retained-adapter audit searched the Qt feature, repository, codec,
+resource-pack, and `DataService` layers for rules that already have a
+Qt-free engine owner. The duplicate native-English-teacher and GS-team name
+checks in `StaffDirectoryPage` now defer to the engine directory services;
+the page retains table-row conversion, localized warning presentation, and
+the legacy `MM-dd` birthday input preflight, for which those services do not
+currently expose an equivalent rule. The roster duplicate-name highlighting
+continues to use the engine-backed `StudentNameUtils` conversion, with row and
+cell diagnostics remaining presentation-only.
+
+The stale `DataService` migration markers were removed after confirming that
+class information and intensive-slot persistence are delegated through the
+engine-backed repositories, class-time parsing/conflict rules are owned by
+the engine class-schedule service, and roster score-import construction is
+owned by the engine speaking-evaluation persistence service. `DataService`
+remains a source-compatible facade; it contains no direct SQL rule
+implementation. The file-backed `DatabaseSession` engine preflight and the
+Qt named-`:memory:` path remain intentional compatibility boundaries.
+
+Intentionally retained Qt responsibilities are:
+
+- rendering, Qt widget/model wiring, localized diagnostics, and presentation
+  state;
+- printing, PDF/PowerPoint drawing, and Office/process automation;
+- workbook/JSON/XML/ZIP codecs and their Qt-side decode/encode orchestration;
+- resource mounting and `QResource`/`QFile` staging or installation;
+- filesystem path composition and final filesystem commits.
+
+Validation for this cleanup:
+
+- source audit confirmed the migrated directory and persistence rules have
+  engine-backed owners and no stale `DataService` migration markers remain;
+- `ClassMngrEngineNativeEnglishTeacherServiceTests` and
+  `ClassMngrEngineGsTeamServiceTests` passed directly in the WinUI x64 and x86
+  Debug lanes; the P2-07 retained-Qt database-port result remains recorded
+  separately;
+- the retained Qt `ClassMngrStaffDirectoryPageTests` target build was attempted
+  with FileTracker disabled, but the host reproduced its existing MSBuild
+  `FileTracker` access failure before a new Qt binary was produced; no current
+  Qt binary pass is claimed;
+- `git diff --check` passed.

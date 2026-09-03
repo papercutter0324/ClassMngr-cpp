@@ -143,13 +143,20 @@ Qt 6.12 retained-adapter result.
 
 ### P2-08 — Retained-adapter and legacy-rule cleanup
 
-- [ ] Search for Qt-side business rules that now have engine equivalents and
+- [x] Search for Qt-side business rules that now have engine equivalents and
   either delete them, delegate them, or mark them as presentation-only.
-- [ ] Resolve stale migration TODOs and compatibility comments in
+- [x] Resolve stale migration TODOs and compatibility comments in
   `DataService` after confirming the corresponding engine service is covered.
-- [ ] Keep a short list of intentionally retained Qt responsibilities:
+- [x] Keep a short list of intentionally retained Qt responsibilities:
   rendering, printing, workbook/JSON codecs, resource mounting, filesystem
   commits, and Office/process automation.
+
+Done: the retained Qt audit removed duplicate directory-name validation from
+the presentation page, documented the remaining Qt-only input and presentation
+responsibilities, and replaced stale `DataService` migration markers with
+engine-service ownership comments. The retained responsibility list and
+validation evidence are recorded in the [Phase 2 local validation
+record](../../docs/porting/windows-winui/phase2-local-validation.md#p2-08--retained-adapter-and-legacy-rule-cleanup--2026-09-03).
 
 ## Validation
 
