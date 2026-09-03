@@ -25,6 +25,13 @@ target_compile_features(ClassMngrDatabasePortFixtureGenerator
         cxx_std_23
 )
 
+if(WIN32)
+    target_compile_options(ClassMngrDatabasePortFixtureGenerator
+        PRIVATE
+            /utf-8
+    )
+endif()
+
 target_include_directories(ClassMngrDatabasePortFixtureGenerator
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src
@@ -44,6 +51,12 @@ add_test(
         ClassMngrDatabasePortFixtureGenerator
         --verify-directory
         "${PROJECT_SOURCE_DIR}/tests/fixtures/database-port"
+)
+
+set_tests_properties(
+    ClassMngrDatabasePortFixtureTests
+    PROPERTIES
+        LABELS "phase2;database-port;retained-qt-adapter"
 )
 
 if(WIN32)

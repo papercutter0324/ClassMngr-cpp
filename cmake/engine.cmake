@@ -1102,6 +1102,11 @@ if(BUILD_TESTING)
         NAME ClassMngrEngineDatabaseFixtureRoundTripTests
         COMMAND ClassMngrEngineDatabaseFixtureRoundTripTests
     )
+    set_tests_properties(
+        ClassMngrEngineDatabaseFixtureRoundTripTests
+        PROPERTIES
+            LABELS "phase2;headless;engine;database-port"
+    )
 
     add_executable(ClassMngrEngineDocumentCatalogTests
         "${PROJECT_SOURCE_DIR}/tests/engine/document_catalog_tests.cpp"

@@ -1152,8 +1152,8 @@ P2-04 import/file-codec boundaries. Resource-pack manifest, precedence,
 integrity, signature, and catalog-source policy now share the extracted P2-05
 engine boundary while Qt retains parsing, mounting, downloads, staging, and
 installation. The P2-06 platform-service interfaces now have Qt adapters and
-headless contract coverage. The next incomplete targets are P2-07 per-slice
-cross-platform fixture evidence and P2-08 retained-adapter/legacy-rule
+headless contract coverage. P2-07 per-slice cross-platform fixture evidence
+is complete; the next incomplete target is P2-08 retained-adapter/legacy-rule
 cleanup.
 The retained Qt schedule-time formatter now delegates display-time and
 range-label formatting to the Qt-free schedule-report service through explicit
@@ -1286,3 +1286,34 @@ Validation for this slice:
 The aggregate fixture gate is stronger in this direction, but it does not
 close the full P2-07 per-slice fixture matrix; retained-adapter cleanup remains
 tracked under P2-08.
+
+## P2-07 — Per-slice interoperability matrix — 2026-09-03
+
+The database-port evidence now covers the migrated persistence slices
+individually rather than relying on aggregate fixture opening. The Qt-free
+engine test writes, reads, closes, and reopens teacher, class, class-info,
+roster, speaking-evaluation, calendar-event, campus, application-settings,
+personal-details, intensive-slot-state, testing-class/testing-block,
+teacher-directory/import, and schedule data. It also retains typed invalid
+teacher input, trigger-backed partial roster rollback, a deterministic typed
+`SQLITE_BUSY` case, current and legacy migration checks, rejected fixtures,
+and source-immutability checks.
+
+The retained Qt fixture generator verifies the seven shared Qt/engine slices
+(teacher, class, class-info, calendar-event, roster, speaking-evaluation, and
+campus) in both directions. Each direction performs value checks after the
+writer closes and the other stack reopens the profile; the Qt generator emits
+`[retained-qt]` diagnostics so this result is distinct from compile-only
+validation.
+
+Validation matrix:
+
+| Lane | Result | Evidence |
+| --- | --- | --- |
+| WinUI x64 Debug, headless engine | PASS | `ClassMngrEngineDatabaseFixtureRoundTripTests` direct run and `ctest -C Debug -L headless --output-on-failure`: 1/1 |
+| WinUI x86 Debug, headless engine | PASS | `ClassMngrEngineDatabaseFixtureRoundTripTests` direct run and `ctest -C Debug -L headless --output-on-failure`: 1/1 |
+| Qt 6.12.0 x64 Debug, retained adapter | PASS | `ClassMngrDatabasePortFixtureGenerator --verify-directory tests/fixtures/database-port` and `ClassMngrDatabasePortFixtureTests`: 1/1 |
+
+The unfiltered legacy engine sweep is not used as P2-07 evidence because the
+existing x64/x86 build trees have nine unrelated registered test binaries
+absent; the focused database-port headless target is the recorded matrix.

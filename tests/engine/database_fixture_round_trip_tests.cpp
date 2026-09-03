@@ -1,11 +1,25 @@
+#include "classmngr/engine/application_settings_service.h"
+#include "classmngr/engine/calendar_event_service.h"
+#include "classmngr/engine/campus_record_service.h"
 #include "classmngr/engine/class_info_service.h"
 #include "classmngr/engine/class_repository.h"
+#include "classmngr/engine/class_schedule_service.h"
 #include "classmngr/engine/class_transfer_service.h"
 #include "classmngr/engine/database_schema.h"
+#include "classmngr/engine/gs_team_service.h"
+#include "classmngr/engine/intensive_slot_state_service.h"
+#include "classmngr/engine/native_english_teacher_service.h"
 #include "classmngr/engine/open_database.h"
+#include "classmngr/engine/personal_details_service.h"
+#include "classmngr/engine/roster_service.h"
+#include "classmngr/engine/speaking_evaluation_persistence_service.h"
 #include "classmngr/engine/sqlite_database.h"
+#include "classmngr/engine/teacher_import_service.h"
 #include "classmngr/engine/teacher_service.h"
+#include "classmngr/engine/testing_block_service.h"
+#include "classmngr/engine/testing_class_service.h"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -13,6 +27,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -704,6 +719,669 @@ bool verifyRejectedFixture(
     }
     return passed;
 }
+
+bool verifyPersistenceInteroperability(
+    const Filesystem::path& fixturePath
+    )
+{
+    const std::string fixture = "typical.tps / persistence slices";
+    auto opened = Engine::OpenDatabase::execute(pathToUtf8(fixturePath));
+    bool passed = expect(
+        opened && *opened != nullptr,
+        fixture + " did not open"
+        );
+    if (!opened || *opened == nullptr)
+    {
+        return false;
+    }
+
+    auto database = std::move(*opened);
+    Engine::TeacherService teachers(*database);
+    Engine::ClassRepository classes(*database);
+    Engine::ClassInfoService classInfo(*database);
+    Engine::RosterService rosters(*database);
+    Engine::SpeakingEvaluationPersistenceService evaluations(*database);
+    Engine::CalendarEventService calendar(*database);
+    Engine::CampusRecordService campuses(*database);
+    Engine::ApplicationSettingsService settings(*database);
+    Engine::PersonalDetailsService personalDetails(settings);
+    Engine::IntensiveSlotStateService intensiveSlots(*database);
+    Engine::TestingClassService testingClasses(*database);
+    Engine::TestingBlockService testingBlocks(*database);
+    Engine::NativeEnglishTeacherService nativeEnglish(*database);
+    Engine::GsTeamService gsTeam(*database);
+
+    Engine::Teacher teacher;
+    teacher.teacherKr = "상호교사";
+    teacher.teacherEn = "Interop Teacher";
+    teacher.preferredRomanization = "Sangho Unyong";
+    teacher.preferredName = teacher.teacherEn;
+    teacher.roomNumber = "I-101";
+    teacher.birthday = "09-03";
+    teacher.phoneNumber = "010-1234-5678";
+    teacher.notes = "fixture interoperability";
+    const auto teacherId = teachers.create(teacher);
+    passed &= expect(
+        teacherId && *teacherId > 0,
+        fixture + ": teacher create failed"
+        );
+    if (!teacherId)
+    {
+        std::cerr << "ClassMngrEngineDatabaseFixtureRoundTripTests: "
+                  << fixture << ": teacher create error "
+                  << Engine::errorCodeName(teacherId.error().code)
+                  << ": " << teacherId.error().message << '\n';
+    }
+    int createdTeacherId = teacherId ? *teacherId : -1;
+
+    if (teacherId)
+    {
+        teacher.id = *teacherId;
+        teacher.notes = "fixture interoperability updated";
+        passed &= expect(
+            teachers.update(teacher).has_value()
+                && teachers.get(*teacherId)
+                && teachers.get(*teacherId)->notes == teacher.notes,
+            fixture + ": teacher update/get failed"
+            );
+    }
+    const auto invalidTeacher = teachers.create(Engine::Teacher{});
+    passed &= expect(
+        !invalidTeacher
+            && invalidTeacher.error().code == Engine::ErrorCode::InvalidFormat,
+        fixture + ": invalid teacher input was not typed"
+        );
+
+    const auto classId = classes.create("Interop Class");
+    passed &= expect(
+        classId && *classId > 0,
+        fixture + ": class create failed"
+        );
+    int createdClassId = classId ? *classId : -1;
+    int createdTestingClassId = -1;
+    if (classId)
+    {
+        passed &= expect(
+            classes.rename(*classId, "Interop Class / 수정").has_value()
+                && classes.get(*classId)
+                && classes.get(*classId)->name == "Interop Class / 수정",
+            fixture + ": class rename/get failed"
+            );
+    }
+
+    if (classId)
+    {
+        Engine::ClassInfo info;
+        info.classId = *classId;
+        info.teacherId = createdTeacherId;
+        info.classGrade = "E5";
+        info.classLevel = "Artemis";
+        info.classTimes = {Engine::ClassTime{"Wednesday", "08:00", "08:50"}};
+        info.intensiveTimes = {Engine::ClassTime{"Thursday", "09:00", "09:50"}};
+        info.notes = "class-info fixture";
+        info.timeFillerActivities = "filler fixture";
+        passed &= expect(
+            classInfo.save(info).has_value()
+                && classInfo.load(*classId)
+                && classInfo.load(*classId)->notes == info.notes
+                && classInfo.load(*classId)->classTimes.size() == 1
+                && classInfo.load(*classId)->intensiveTimes.size() == 1,
+            fixture + ": class-info save/load failed"
+            );
+
+        Engine::Roster roster;
+        roster.columns = {"English", "Korean", "Status"};
+        roster.columnWidths = {20, 20, 12};
+        roster.rows = {{"Interop Student", "학생", "Ready"}};
+        passed &= expect(
+            rosters.save(*classId, roster).has_value()
+                && rosters.load(*classId)
+                && rosters.load(*classId)->rows == roster.rows,
+            fixture + ": roster save/load failed"
+            );
+
+        Engine::SpeakingEvaluationRows evaluationRows(
+            static_cast<std::size_t>(Engine::SpeakingEvaluationRowCount),
+            Engine::SpeakingEvaluationRow(
+                static_cast<std::size_t>(Engine::SpeakingEvaluationColumnCount)
+                )
+            );
+        evaluationRows[0][1] = "Interop Student";
+        evaluationRows[0][2] = "학생";
+        evaluationRows[0][3] = "A";
+        passed &= expect(
+            evaluations.save(*classId, "Interop Evaluation", evaluationRows)
+                .has_value()
+                && evaluations.load(*classId, "Interop Evaluation")
+                && evaluations.load(*classId, "Interop Evaluation")->at(0).at(1)
+                    == "Interop Student",
+            fixture + ": speaking-evaluation save/load failed"
+            );
+
+        Engine::TestingClass testingClass;
+        testingClass.name = "Interop Testing Class";
+        testingClass.grade = "M1";
+        testingClass.level = "Major";
+        testingClass.room = "I-201";
+        testingClass.teacherId = createdTeacherId;
+        const auto testingClassId = testingClasses.create(
+            testingClass,
+            "Friday",
+            "10:10"
+            );
+        passed &= expect(
+            testingClassId && testingClasses.get(*testingClassId),
+            fixture + ": testing-class create/get failed"
+            );
+        if (testingClassId)
+        {
+            createdTestingClassId = *testingClassId;
+            const auto blockSaved = testingBlocks.saveBlock(
+                "Monday", "11:05", "I-202", true
+                );
+            const auto assignmentSaved = testingBlocks.assignClass(
+                "Sunday", "12:05", *testingClassId, true
+                );
+            const auto blocksListed = testingBlocks.listBlocks();
+            const auto assignmentsListed = testingBlocks.listAssignments();
+            const bool blockPersisted = blocksListed
+                && std::any_of(
+                    blocksListed->begin(),
+                    blocksListed->end(),
+                    [](const Engine::TestingBlock& value)
+                    {
+                        return value.day == "Monday"
+                            && value.startTime == "11:05"
+                            && value.room == "I-202";
+                    }
+                    );
+            passed &= expect(
+                blockSaved && assignmentSaved && blockPersisted
+                    && assignmentsListed,
+                fixture + ": testing block/assignment persistence failed"
+                );
+            if (!blockSaved)
+            {
+                std::cerr << "ClassMngrEngineDatabaseFixtureRoundTripTests: "
+                          << fixture << ": testing block error "
+                          << Engine::errorCodeName(blockSaved.error().code)
+                          << ": " << blockSaved.error().message << '\n';
+            }
+            if (!assignmentSaved)
+            {
+                std::cerr << "ClassMngrEngineDatabaseFixtureRoundTripTests: "
+                          << fixture << ": testing assignment error "
+                          << Engine::errorCodeName(assignmentSaved.error().code)
+                          << ": " << assignmentSaved.error().message << '\n';
+            }
+        }
+    }
+
+    Engine::CampusRecord campus;
+    campus.name = "Interop Campus";
+    campus.buildingName = "Interop Building";
+    campus.address = "Interop Address";
+    campus.phoneNumber = "010-campus";
+    campus.officeNumber = "I-301";
+    campus.transitSteps = "Transit";
+    campus.arrivalInfo = "Arrival";
+    campus.officeWifi = "Interop WiFi";
+    campus.officeWifiPassword = "Interop Password";
+    const auto campusId = campuses.create(campus);
+    passed &= expect(
+        campusId && campuses.get(campusId ? *campusId : -1)
+            && campuses.get(*campusId)->name == campus.name,
+        fixture + ": campus create/get failed"
+        );
+
+    const auto settingSaved = settings.save(
+        "interop/persistence-slice",
+        Engine::SettingValue{std::string("persisted")}
+        );
+    const auto settingLoaded = settings.load("interop/persistence-slice");
+    const auto* settingText = settingLoaded
+        ? std::get_if<std::string>(&*settingLoaded)
+        : nullptr;
+    passed &= expect(
+        settingSaved && settingLoaded && settingText != nullptr
+            && *settingText == "persisted",
+        fixture + ": application setting save/load failed"
+        );
+
+    Engine::PersonalDetails details;
+    details.name = "Interop User";
+    details.campus = "Interop Campus";
+    details.zoomLoginId = "interop-login";
+    details.zoomPassword = "interop-password";
+    details.zoomNotAvailable = false;
+    details.signatureMode = Engine::SignatureMode::Type;
+    details.typedSignatureText = "Interop Signature";
+    details.typedSignatureFont = 3;
+    passed &= expect(
+        personalDetails.save(details).has_value()
+            && personalDetails.load()
+            && personalDetails.load()->name == details.name
+            && personalDetails.load()->typedSignatureText
+                == details.typedSignatureText,
+        fixture + ": personal-details save/load failed"
+        );
+
+    const auto intensiveSaved = intensiveSlots.save(
+        "Saturday", "12:12", "reading"
+        );
+    const auto intensiveListed = intensiveSlots.list();
+    passed &= expect(
+        intensiveSaved && intensiveListed && !intensiveListed->empty()
+            && intensiveListed->back().state == "reading",
+        fixture + ": intensive-slot state save/list failed"
+        );
+
+    const Engine::CalendarDate eventDate{
+        std::chrono::year{2026},
+        std::chrono::month{9},
+        std::chrono::day{4}
+    };
+    Engine::CalendarEvent event;
+    event.title = "Interop Event";
+    event.eventType = "Other";
+    event.startDate = eventDate;
+    event.endDate = eventDate;
+    event.startTime = std::chrono::minutes{600};
+    event.endTime = std::chrono::minutes{650};
+    const auto eventId = calendar.save(event);
+    passed &= expect(
+        eventId && calendar.get(*eventId)
+            && calendar.get(*eventId)->title == event.title
+            && calendar.loadForDate(eventDate)
+            && !calendar.loadForDate(eventDate)->empty(),
+        fixture + ": calendar-event save/get/date-read failed"
+        );
+
+    Engine::NativeEnglishTeacher native;
+    native.name = "Interop Native";
+    native.position = "NET";
+    native.phoneNumber = "010-native";
+    native.birthday = "10-10";
+    native.nationality = "Canadian";
+    native.email = "interop-native@example.com";
+    Engine::GsTeamMember gs;
+    gs.name = "Interop GS";
+    gs.koreanName = "상호운용 지에스";
+    gs.position = "Manager";
+    gs.phoneNumber = "010-gs";
+    gs.birthday = "11-11";
+    passed &= expect(
+        nativeEnglish.saveDirectory({native}, {}).has_value()
+            && nativeEnglish.list()
+            && gsTeam.saveDirectory({gs}, {}).has_value()
+            && gsTeam.list(),
+        fixture + ": native-English/GS directory save/list failed"
+        );
+
+    Engine::TeacherImportPlan importPlan;
+    importPlan.templateId = "sectioned-contact-list-v1";
+    importPlan.sourceDate = "2026-09-03";
+    Engine::NativeEnglishTeacher importedNative;
+    importedNative.name = "Interop Imported Native";
+    importedNative.position = "Imported NET";
+    Engine::GsTeamMember importedGs;
+    importedGs.name = "Interop Imported GS";
+    importedGs.position = "Imported GS";
+    importPlan.nativeEnglishTeachers.push_back(importedNative);
+    importPlan.gsTeamMembers.push_back(importedGs);
+    const auto imported = Engine::TeacherImportService(*database)
+        .importTeachers(importPlan);
+    passed &= expect(
+        imported
+            && imported->nativeEnglishTeachers.created == 1
+            && imported->gsTeamMembers.created == 1,
+        fixture + ": teacher directory import failed"
+        );
+
+    Engine::ClassScheduleService schedule(*database);
+    passed &= expect(
+        schedule.loadClassTeacherAssignments()
+            && schedule.loadScheduleClassInfos(),
+        fixture + ": schedule read paths failed"
+        );
+
+    if (classId)
+    {
+        const auto secondClassId = classes.create("Interop Rollback Class");
+        Engine::Roster originalFirst;
+        originalFirst.columns = {"English"};
+        originalFirst.columnWidths = {20};
+        originalFirst.rows = {{"Original first"}};
+        Engine::Roster originalSecond = originalFirst;
+        originalSecond.rows = {{"Original second"}};
+        passed &= expect(
+            secondClassId
+                && rosters.save(*classId, originalFirst).has_value()
+                && rosters.save(*secondClassId, originalSecond).has_value()
+                && database->execute(
+                    "CREATE TRIGGER interop_roster_failure "
+                    "BEFORE INSERT ON roster_data WHEN NEW.value='Reject slice' "
+                    "BEGIN SELECT RAISE(ABORT, 'interop roster failure'); END"
+                    ).has_value(),
+            fixture + ": rollback fixture setup failed"
+            );
+        if (secondClassId)
+        {
+            Engine::Roster changedFirst = originalFirst;
+            changedFirst.rows = {{"Changed first"}};
+            Engine::Roster changedSecond = originalSecond;
+            changedSecond.rows = {{"Reject slice"}};
+            const auto failedBatch = rosters.saveBatch({
+                {*classId, changedFirst},
+                {*secondClassId, changedSecond}
+            });
+            const auto afterFirst = rosters.load(*classId);
+            const auto afterSecond = rosters.load(*secondClassId);
+            passed &= expect(
+                !failedBatch
+                    && failedBatch.error().code == Engine::ErrorCode::Database
+                    && afterFirst && afterFirst->rows == originalFirst.rows
+                    && afterSecond && afterSecond->rows == originalSecond.rows,
+                fixture + ": partial roster failure did not roll back prior writes"
+                );
+        }
+        passed &= expect(
+            database->execute("DROP TRIGGER interop_roster_failure").has_value(),
+            fixture + ": rollback trigger cleanup failed"
+            );
+    }
+
+    database.reset();
+    auto reopened = Engine::OpenDatabase::execute(pathToUtf8(fixturePath));
+    passed &= expect(
+        reopened && *reopened != nullptr,
+        fixture + ": close/reopen failed"
+        );
+    if (reopened && *reopened != nullptr)
+    {
+        auto reopenedDatabase = std::move(*reopened);
+        Engine::TeacherService reopenedTeachers(*reopenedDatabase);
+        Engine::ClassRepository reopenedClasses(*reopenedDatabase);
+        Engine::ClassInfoService reopenedClassInfo(*reopenedDatabase);
+        Engine::RosterService reopenedRosters(*reopenedDatabase);
+        Engine::SpeakingEvaluationPersistenceService reopenedEvaluations(
+            *reopenedDatabase
+            );
+        Engine::CampusRecordService reopenedCampuses(*reopenedDatabase);
+        Engine::ApplicationSettingsService reopenedSettings(*reopenedDatabase);
+        Engine::PersonalDetailsService reopenedPersonal(reopenedSettings);
+        Engine::IntensiveSlotStateService reopenedIntensive(*reopenedDatabase);
+        Engine::CalendarEventService reopenedCalendar(*reopenedDatabase);
+        Engine::TestingClassService reopenedTestingClasses(*reopenedDatabase);
+        Engine::TestingBlockService reopenedTestingBlocks(*reopenedDatabase);
+        Engine::NativeEnglishTeacherService reopenedNativeEnglish(
+            *reopenedDatabase
+            );
+        Engine::GsTeamService reopenedGsTeam(*reopenedDatabase);
+        Engine::ClassScheduleService reopenedSchedule(*reopenedDatabase);
+
+        const auto reopenedTeacher = reopenedTeachers.get(createdTeacherId);
+        const auto reopenedClass = reopenedClasses.get(createdClassId);
+        const auto reopenedInfo = reopenedClassInfo.load(createdClassId);
+        const auto reopenedRoster = reopenedRosters.load(createdClassId);
+        const auto reopenedEvaluation = reopenedEvaluations.load(
+            createdClassId,
+            "Interop Evaluation"
+            );
+        const auto reopenedCampus = reopenedCampuses.get(
+            campusId ? *campusId : -1
+            );
+        const auto reopenedSetting = reopenedSettings.load(
+            "interop/persistence-slice"
+            );
+        const auto* reopenedSettingText = reopenedSetting
+            ? std::get_if<std::string>(&*reopenedSetting)
+            : nullptr;
+        const auto reopenedDetails = reopenedPersonal.load();
+        const auto reopenedIntensiveSlots = reopenedIntensive.list();
+        const auto reopenedEvent = reopenedCalendar.get(
+            eventId ? *eventId : -1
+            );
+        const auto reopenedTestingClass = reopenedTestingClasses.get(
+            createdTestingClassId
+            );
+        const auto reopenedBlocks = reopenedTestingBlocks.listBlocks();
+        const auto reopenedAssignments = reopenedTestingBlocks.listAssignments();
+        const auto reopenedNativeTeachers = reopenedNativeEnglish.list();
+        const auto reopenedGsMembers = reopenedGsTeam.list();
+        const auto reopenedScheduleAssignments =
+            reopenedSchedule.loadClassTeacherAssignments();
+        const auto reopenedScheduleInfos =
+            reopenedSchedule.loadScheduleClassInfos();
+
+        const bool importedNativePersisted = reopenedNativeTeachers
+            && std::any_of(
+                reopenedNativeTeachers->begin(),
+                reopenedNativeTeachers->end(),
+                [&](const Engine::NativeEnglishTeacher& value)
+                {
+                    return value.name == importedNative.name;
+                }
+                );
+        const bool importedGsPersisted = reopenedGsMembers
+            && std::any_of(
+                reopenedGsMembers->begin(),
+                reopenedGsMembers->end(),
+                [&](const Engine::GsTeamMember& value)
+                {
+                    return value.name == importedGs.name;
+                }
+                );
+        const bool testingAssignmentPersisted = reopenedAssignments
+            && createdTestingClassId > 0
+            && std::any_of(
+                reopenedAssignments->begin(),
+                reopenedAssignments->end(),
+                [&](const Engine::TestingAssignment& value)
+                {
+                    return value.day == "Monday"
+                        && value.startTime == "11:05"
+                        && value.classId == createdTestingClassId
+                        && value.kind == Engine::TestingAssignmentKind::SpecialClass;
+                }
+                );
+        const bool testingBlockPersisted = reopenedBlocks
+            && std::any_of(
+                reopenedBlocks->begin(),
+                reopenedBlocks->end(),
+                [](const Engine::TestingBlock& value)
+                {
+                    return value.day == "Monday"
+                        && value.startTime == "11:05"
+                        && value.room == "I-202";
+                }
+                );
+        const bool nativeRecordPersisted = reopenedNativeTeachers
+            && std::any_of(
+                reopenedNativeTeachers->begin(),
+                reopenedNativeTeachers->end(),
+                [&](const Engine::NativeEnglishTeacher& value)
+                {
+                    return value.name == native.name;
+                }
+                );
+        const bool gsRecordPersisted = reopenedGsMembers
+            && std::any_of(
+                reopenedGsMembers->begin(),
+                reopenedGsMembers->end(),
+                [&](const Engine::GsTeamMember& value)
+                {
+                    return value.name == gs.name;
+                }
+                );
+        const bool scheduleAssignmentPersisted = reopenedScheduleAssignments
+            && std::any_of(
+                reopenedScheduleAssignments->begin(),
+                reopenedScheduleAssignments->end(),
+                [&](const Engine::ClassTeacherAssignment& value)
+                {
+                    return value.classId == createdClassId
+                        && value.teacherId == createdTeacherId;
+                }
+                );
+        const bool scheduleClassPersisted = reopenedScheduleInfos
+            && std::any_of(
+                reopenedScheduleInfos->begin(),
+                reopenedScheduleInfos->end(),
+                [&](const Engine::ClassInfo& value)
+                {
+                    return value.classId == createdClassId;
+                }
+                );
+        const bool teacherPersisted = createdTeacherId > 0
+            && reopenedTeacher
+            && reopenedTeacher->notes == teacher.notes;
+        const bool classPersisted = createdClassId > 0
+            && reopenedClass
+            && reopenedClass->name == "Interop Class / 수정";
+        const bool classInfoPersisted = reopenedInfo
+            && reopenedInfo->notes == "class-info fixture"
+            && reopenedInfo->classTimes.size() == 1
+            && reopenedInfo->classTimes.front().startTime == "8:00 AM"
+            && reopenedInfo->intensiveTimes.size() == 1
+            && reopenedInfo->intensiveTimes.front().startTime == "9:00 AM";
+        const bool rosterPersisted = reopenedRoster
+            && reopenedRoster->rows.size() == 1
+            && reopenedRoster->rows.front().size() == 1
+            && reopenedRoster->rows.front().at(0) == "Original first";
+        const bool evaluationPersisted = reopenedEvaluation
+            && !reopenedEvaluation->empty()
+            && reopenedEvaluation->at(0).size() > 1
+            && reopenedEvaluation->at(0).at(1) == "Interop Student";
+        const bool campusPersisted = campusId
+            && reopenedCampus
+            && reopenedCampus->name == campus.name;
+        const bool settingPersisted = reopenedSetting
+            && reopenedSettingText != nullptr
+            && *reopenedSettingText == "persisted";
+        const bool personalDetailsPersisted = reopenedDetails
+            && reopenedDetails->name == details.name;
+        const bool intensiveSlotPersisted = reopenedIntensiveSlots
+            && std::any_of(
+                reopenedIntensiveSlots->begin(),
+                reopenedIntensiveSlots->end(),
+                [](const Engine::IntensiveSlotState& value)
+                {
+                    return value.day == "Saturday"
+                        && value.startTime == "12:12"
+                        && value.state == "reading";
+                }
+                );
+        const bool calendarPersisted = eventId
+            && reopenedEvent
+            && reopenedEvent->title == event.title;
+        const bool testingClassPersisted = createdTestingClassId > 0
+            && reopenedTestingClass
+            && reopenedTestingClass->name == "Interop Testing Class";
+        const bool nativeDirectoryPersisted = nativeRecordPersisted
+            && importedNativePersisted;
+        const bool gsDirectoryPersisted = gsRecordPersisted
+            && importedGsPersisted;
+        const bool schedulePersisted = scheduleAssignmentPersisted
+            && scheduleClassPersisted;
+
+        passed &= expect(
+            teacherPersisted,
+            fixture + ": teacher did not survive close/reopen"
+            );
+        passed &= expect(
+            classPersisted,
+            fixture + ": class did not survive close/reopen"
+            );
+        passed &= expect(
+            classInfoPersisted,
+            fixture + ": class-info did not survive close/reopen"
+            );
+        passed &= expect(
+            rosterPersisted,
+            fixture + ": roster did not survive close/reopen"
+            );
+        passed &= expect(
+            evaluationPersisted,
+            fixture + ": speaking evaluation did not survive close/reopen"
+            );
+        passed &= expect(
+            campusPersisted,
+            fixture + ": campus did not survive close/reopen"
+            );
+        passed &= expect(
+            settingPersisted,
+            fixture + ": application setting did not survive close/reopen"
+            );
+        passed &= expect(
+            personalDetailsPersisted,
+            fixture + ": personal details did not survive close/reopen"
+            );
+        passed &= expect(
+            intensiveSlotPersisted,
+            fixture + ": intensive slot did not survive close/reopen"
+            );
+        passed &= expect(
+            calendarPersisted,
+            fixture + ": calendar event did not survive close/reopen"
+            );
+        passed &= expect(
+            testingClassPersisted,
+            fixture + ": testing class did not survive close/reopen"
+            );
+        passed &= expect(
+            testingBlockPersisted,
+            fixture + ": testing block did not survive close/reopen"
+            );
+        passed &= expect(
+            nativeDirectoryPersisted,
+            fixture + ": native-English directory did not survive close/reopen"
+            );
+        passed &= expect(
+            gsDirectoryPersisted,
+            fixture + ": GS directory did not survive close/reopen"
+            );
+        passed &= expect(
+            schedulePersisted,
+            fixture + ": schedule did not survive close/reopen"
+            );
+    }
+
+    Engine::SqliteDatabase lockHolder;
+    Engine::SqliteDatabase lockContender;
+    passed &= expect(
+        lockHolder.open(
+            pathToUtf8(fixturePath),
+            Engine::SqliteOpenOptions{std::chrono::milliseconds{0}}
+            ).has_value()
+            && lockContender.open(
+                pathToUtf8(fixturePath),
+                Engine::SqliteOpenOptions{std::chrono::milliseconds{0}}
+                ).has_value(),
+        fixture + ": busy-lock connections could not open"
+        );
+    if (lockHolder.isOpen() && lockContender.isOpen())
+    {
+        const auto lock = lockHolder.beginTransaction();
+        const auto blocked = lockContender.execute(
+            "UPDATE teachers SET notes=? WHERE id=?",
+            Engine::SqliteParameters{
+                Engine::SqliteValue{std::string("busy contender")},
+                Engine::SqliteValue{std::int64_t{createdTeacherId}}
+            }
+            );
+        passed &= expect(
+            lock
+                && !blocked
+                && blocked.error().code == Engine::ErrorCode::Database
+                && blocked.error().nativeCode.has_value()
+                && *blocked.error().nativeCode == 5,
+            fixture + ": busy lock did not return typed SQLITE_BUSY"
+            );
+    }
+
+    return passed;
+}
 } // namespace
 
 int main()
@@ -762,6 +1440,23 @@ int main()
         passed &= verifyTypicalRoundTrip(
             typicalRoundTrip,
             temporaryDirectory->path
+            );
+    }
+
+    Filesystem::path persistenceInteroperability;
+    passed &= expect(
+        copyFixture(
+            fixtureRoot,
+            temporaryDirectory->path / "persistence-interoperability",
+            "typical.tps",
+            &persistenceInteroperability
+            ),
+        "could not copy typical.tps for persistence interoperability"
+        );
+    if (Filesystem::exists(persistenceInteroperability))
+    {
+        passed &= verifyPersistenceInteroperability(
+            persistenceInteroperability
             );
     }
 

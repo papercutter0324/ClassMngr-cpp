@@ -129,15 +129,17 @@ Representative code: `src/core/resource_packs/resource_pack_manager.cpp`,
 
 ### P2-07 — Expand per-slice interoperability evidence
 
-- [ ] For each migrated persistence slice, test open/migrate, CRUD or import,
+- [x] For each migrated persistence slice, test open/migrate, CRUD or import,
   write, close, and reopen using the shared fixture corpus.
-- [ ] Add explicit Qt-to-engine and engine-to-Qt round trips, including invalid
+- [x] Add explicit Qt-to-engine and engine-to-Qt round trips, including invalid
   input, rollback, migration, busy handling, and partial-failure cases.
-- [ ] Run the headless engine matrix on x64 and x86 and record retained-Qt
+- [x] Run the headless engine matrix on x64 and x86 and record retained-Qt
   adapter results separately from compile-only or environment-limited checks.
 
-Done when the fixture evidence covers the migrated slices individually rather
-than only proving that the aggregate corpus can be opened.
+Done: the shared corpus now has individual per-slice engine assertions, typed
+invalid/rollback/busy coverage, and explicit retained-Qt adapter round trips in
+both directions, with x64/x86 headless results recorded separately from the
+Qt 6.12 retained-adapter result.
 
 ### P2-08 — Retained-adapter and legacy-rule cleanup
 

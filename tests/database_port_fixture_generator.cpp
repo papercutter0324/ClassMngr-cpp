@@ -1,4 +1,5 @@
 #include "data/data_service.h"
+#include "domain/models/calendar_event.h"
 
 #include "classmngr/engine/calendar_event_service.h"
 #include "classmngr/engine/campus_record_service.h"
@@ -11,6 +12,7 @@
 #include "classmngr/engine/teacher_service.h"
 
 #include <QCoreApplication>
+#include <QByteArray>
 #include <QDate>
 #include <QDebug>
 #include <QDir>
@@ -94,6 +96,15 @@ QString fixtureEnglishName(int row)
     }
 
     return QStringLiteral("Student %1").arg(suffix);
+}
+
+std::string utf8(const QString& value)
+{
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
 bool requireStatus(const Status& status, QString* error)
@@ -958,6 +969,170 @@ bool verifyQtWrittenProfileWithEngine(QString* error)
 
     std::unique_ptr<classmngr::engine::SqliteDatabase> database =
         std::move(*opened);
+
+    {
+    const auto fail = [error](
+                          const QString& slice,
+                          const QString& detail
+                          )
+    {
+        *error = QStringLiteral(
+            "[retained-qt] Qt-to-engine %1 slice failed: %2"
+            ).arg(slice, detail);
+        return false;
+    };
+
+    classmngr::engine::TeacherService teachers(*database);
+    const auto teacher = teachers.get(1);
+    if (!teacher)
+    {
+        return fail(
+            QStringLiteral("teacher"),
+            QString::fromStdString(teacher.error().message)
+            );
+    }
+    if (teacher->teacherEn != "Fixture Teacher"
+        || teacher->teacherKr != utf8(QStringLiteral("대표교사"))
+        || teacher->notes != utf8(QStringLiteral("English and 한국어 fixture data")))
+    {
+        return fail(
+            QStringLiteral("teacher"),
+            QStringLiteral("UTF-8 teacher values did not round-trip")
+            );
+    }
+
+    classmngr::engine::ClassRepository classes(*database);
+    const auto classroom = classes.get(1);
+    if (!classroom)
+    {
+        return fail(
+            QStringLiteral("class"),
+            QString::fromStdString(classroom.error().message)
+            );
+    }
+    if (classroom->name != utf8(QStringLiteral("Fixture Class / 수업")))
+    {
+        return fail(
+            QStringLiteral("class"),
+            QStringLiteral("class name did not round-trip")
+            );
+    }
+
+    classmngr::engine::ClassInfoService classInfo(*database);
+    const auto info = classInfo.load(1);
+    if (!info)
+    {
+        return fail(
+            QStringLiteral("class-info"),
+            QString::fromStdString(info.error().message)
+            );
+    }
+    if (info->teacherId != 1
+        || info->classGrade != "E6"
+        || info->classLevel != "Helios"
+        || info->classTimes.size() != 1
+        || info->classTimes.front().day != "Tuesday"
+        || info->classTimes.front().startTime != "4:00 PM"
+        || info->classTimes.front().endTime != "4:50 PM")
+    {
+        return fail(
+            QStringLiteral("class-info"),
+            QStringLiteral("class information or schedule did not round-trip")
+            );
+    }
+
+    classmngr::engine::CalendarEventService calendarEvents(*database);
+    const auto calendarEvent = calendarEvents.get(1);
+    if (!calendarEvent)
+    {
+        return fail(
+            QStringLiteral("calendar-event"),
+            QString::fromStdString(calendarEvent.error().message)
+            );
+    }
+    const CalendarEvent qtCalendarEvent = calendarEventFromEngine(*calendarEvent);
+    if (qtCalendarEvent.title != QStringLiteral("Fixture Event / 행사")
+        || qtCalendarEvent.startDate != QDate(2026, 7, 17)
+        || qtCalendarEvent.startTime != QTime(9, 0)
+        || qtCalendarEvent.endTime != QTime(10, 0))
+    {
+        return fail(
+            QStringLiteral("calendar-event"),
+            QStringLiteral("calendar event values did not round-trip")
+            );
+    }
+
+    classmngr::engine::RosterService rosters(*database);
+    const auto roster = rosters.load(1);
+    if (!roster)
+    {
+        return fail(
+            QStringLiteral("roster"),
+            QString::fromStdString(roster.error().message)
+            );
+    }
+    if (roster->rows.size() != 2
+        || roster->rows.front().size() < 2
+        || roster->rows.front()[0] != "Student A"
+        || roster->rows.front()[1] != utf8(QStringLiteral("김민준")))
+    {
+        return fail(
+            QStringLiteral("roster"),
+            QStringLiteral("English/Korean roster values did not round-trip")
+            );
+    }
+
+    classmngr::engine::SpeakingEvaluationPersistenceService evaluations(
+        *database
+        );
+    const auto evaluation = evaluations.load(1, "Winter");
+    if (!evaluation)
+    {
+        return fail(
+            QStringLiteral("speaking-evaluation"),
+            QString::fromStdString(evaluation.error().message)
+            );
+    }
+    if (evaluation->empty()
+        || evaluation->front().size()
+            <= classmngr::engine::toInt(
+                classmngr::engine::SpeakingEvaluationColumn::OverallEffort
+                )
+        || evaluation->front()[classmngr::engine::toInt(
+               classmngr::engine::SpeakingEvaluationColumn::EnglishName
+               )] != "Student A"
+        || evaluation->front()[classmngr::engine::toInt(
+               classmngr::engine::SpeakingEvaluationColumn::KoreanName
+               )] != utf8(QStringLiteral("김민준"))
+        || evaluation->front()[classmngr::engine::toInt(
+               classmngr::engine::SpeakingEvaluationColumn::OverallEffort
+               )] != "A+")
+    {
+        return fail(
+            QStringLiteral("speaking-evaluation"),
+            QStringLiteral("evaluation values did not round-trip")
+            );
+    }
+
+    classmngr::engine::CampusRecordService campuses(*database);
+    const auto campus = campuses.get(1);
+    if (!campus)
+    {
+        return fail(
+            QStringLiteral("campus"),
+            QString::fromStdString(campus.error().message)
+            );
+    }
+    if (campus->name != "Fixture Campus"
+        || campus->address != utf8(QStringLiteral("Seoul / 서울")))
+    {
+        return fail(
+            QStringLiteral("campus"),
+            QStringLiteral("campus values did not round-trip")
+            );
+    }
+
+    // Keep the aggregate transfer check as an additional engine-side proof.
     classmngr::engine::ClassTransferService transfers(*database);
     const auto package = transfers.buildPackage({1});
     if (!package
@@ -967,8 +1142,89 @@ bool verifyQtWrittenProfileWithEngine(QString* error)
         || package->classes.front().roster.rows.size() != 2
         || package->classes.front().evaluations.size() != 1)
     {
+        return fail(
+            QStringLiteral("class-transfer"),
+            QStringLiteral("complete payload was not recovered")
+            );
+    }
+
+    for (const QString& slice : {
+             QStringLiteral("teacher"),
+             QStringLiteral("class"),
+             QStringLiteral("class-info"),
+             QStringLiteral("calendar-event"),
+             QStringLiteral("roster"),
+             QStringLiteral("speaking-evaluation"),
+             QStringLiteral("campus")
+         })
+    {
+        qInfo().noquote()
+            << QStringLiteral("[retained-qt] Qt-to-engine %1 slice PASS").arg(slice);
+    }
+
+    }
+    database.reset();
+    auto reopened = classmngr::engine::OpenDatabase::execute(path.toStdString());
+    if (!reopened || *reopened == nullptr)
+    {
         *error = QStringLiteral(
-            "The engine did not recover the complete Qt-written profile payload."
+            "[retained-qt] Qt-to-engine reader could not reopen after close: %1"
+            ).arg(
+                reopened
+                    ? QStringLiteral("no database handle")
+                    : QString::fromStdString(reopened.error().message)
+                );
+        return false;
+    }
+    auto reopenedDatabase = std::move(*reopened);
+    classmngr::engine::TeacherService reopenedTeachers(*reopenedDatabase);
+    classmngr::engine::ClassRepository reopenedClasses(*reopenedDatabase);
+    classmngr::engine::ClassInfoService reopenedClassInfo(*reopenedDatabase);
+    classmngr::engine::CalendarEventService reopenedCalendarEvents(
+        *reopenedDatabase
+        );
+    classmngr::engine::RosterService reopenedRosters(*reopenedDatabase);
+    classmngr::engine::SpeakingEvaluationPersistenceService reopenedEvaluations(
+        *reopenedDatabase
+        );
+    classmngr::engine::CampusRecordService reopenedCampuses(*reopenedDatabase);
+    const auto reopenedTeacher = reopenedTeachers.get(1);
+    const auto reopenedClassroom = reopenedClasses.get(1);
+    const auto reopenedInfo = reopenedClassInfo.load(1);
+    const auto reopenedCalendarEvent = reopenedCalendarEvents.get(1);
+    const auto reopenedRoster = reopenedRosters.load(1);
+    const auto reopenedEvaluation = reopenedEvaluations.load(1, "Winter");
+    const auto reopenedCampus = reopenedCampuses.get(1);
+    const bool reopenedSlices = reopenedTeacher
+        && reopenedTeacher->teacherEn == "Fixture Teacher"
+        && reopenedTeacher->teacherKr == utf8(QStringLiteral("대표교사"))
+        && reopenedClassroom
+        && reopenedClassroom->name == utf8(QStringLiteral("Fixture Class / 수업"))
+        && reopenedInfo
+        && reopenedInfo->classTimes.size() == 1
+        && reopenedInfo->classTimes.front().startTime == "4:00 PM"
+        && reopenedCalendarEvent
+        && reopenedCalendarEvent->title == "Fixture Event / 행사"
+        && reopenedRoster
+        && reopenedRoster->rows.size() == 2
+        && reopenedRoster->rows.front().size() >= 2
+        && reopenedRoster->rows.front()[1] == utf8(QStringLiteral("김민준"))
+        && reopenedEvaluation
+        && !reopenedEvaluation->empty()
+        && reopenedEvaluation->front().size()
+            > classmngr::engine::toInt(
+                classmngr::engine::SpeakingEvaluationColumn::OverallEffort
+                )
+        && reopenedEvaluation->front()[classmngr::engine::toInt(
+               classmngr::engine::SpeakingEvaluationColumn::KoreanName
+               )] == utf8(QStringLiteral("김민준"))
+        && reopenedCampus
+        && reopenedCampus->address == utf8(QStringLiteral("Seoul / 서울"));
+    reopenedDatabase.reset();
+    if (!reopenedSlices)
+    {
+        *error = QStringLiteral(
+            "[retained-qt] Qt-to-engine reader reopened with incomplete slice data"
             );
         return false;
     }
@@ -1160,6 +1416,270 @@ bool verifyEngineWrittenProfileWithQt(QString* error)
     if (!createEngineWrittenProfile(path, error))
     {
         return false;
+    }
+
+    DataService service;
+    const Status openedByQt = service.openDatabase(path);
+    if (!openedByQt)
+    {
+        *error = QStringLiteral(
+            "[retained-qt] engine-to-Qt open failed: %1"
+            ).arg(openedByQt.error());
+        return false;
+    }
+
+    const auto fail = [error](
+                          const QString& slice,
+                          const QString& detail
+                          )
+    {
+        *error = QStringLiteral(
+            "[retained-qt] engine-to-Qt %1 slice failed: %2"
+            ).arg(slice, detail);
+        return false;
+    };
+
+    const auto teacher = service.getTeacher(1);
+    if (!teacher)
+    {
+        service.closeDatabase();
+        return fail(QStringLiteral("teacher"), teacher.error());
+    }
+    if (teacher->teacherEn != QStringLiteral("Engine Teacher")
+        || teacher->teacherKr != QStringLiteral("엔진교사"))
+    {
+        service.closeDatabase();
+        return fail(
+            QStringLiteral("teacher"),
+            QStringLiteral("UTF-8 teacher values did not round-trip")
+            );
+    }
+
+    const auto classroom = service.getClassById(1);
+    if (!classroom)
+    {
+        service.closeDatabase();
+        return fail(QStringLiteral("class"), classroom.error());
+    }
+    if (classroom->name != QStringLiteral("Engine Class / 수업"))
+    {
+        service.closeDatabase();
+        return fail(
+            QStringLiteral("class"),
+            QStringLiteral("class name did not round-trip")
+            );
+    }
+
+    const auto info = service.loadClassInfo(1);
+    if (!info)
+    {
+        service.closeDatabase();
+        return fail(QStringLiteral("class-info"), info.error());
+    }
+    if (info->teacherId != 1
+        || info->classGrade != QStringLiteral("E6")
+        || info->classLevel != QStringLiteral("Helios")
+        || info->classTimes.size() != 1
+        || info->classTimes.front().day != QStringLiteral("Tuesday")
+        || info->classTimes.front().startTime != QStringLiteral("4:00 PM")
+        || info->classTimes.front().endTime != QStringLiteral("4:50 PM"))
+    {
+        service.closeDatabase();
+        return fail(
+            QStringLiteral("class-info"),
+            QStringLiteral("class information or schedule did not round-trip")
+            );
+    }
+
+    const auto calendarEvent = service.getCalendarEvent(1);
+    if (!calendarEvent)
+    {
+        service.closeDatabase();
+        return fail(QStringLiteral("calendar-event"), calendarEvent.error());
+    }
+    if (calendarEvent->title != QStringLiteral("Engine Event / 행사")
+        || calendarEvent->eventType != QStringLiteral("Meeting")
+        || calendarEvent->timeStatus != QStringLiteral("Timed")
+        || calendarEvent->startDate != QDate(2026, 7, 17)
+        || calendarEvent->startTime != QTime(9, 0)
+        || calendarEvent->endTime != QTime(10, 0))
+    {
+        service.closeDatabase();
+        return fail(
+            QStringLiteral("calendar-event"),
+            QStringLiteral("calendar event values did not round-trip")
+            );
+    }
+
+    const auto roster = service.loadRoster(1);
+    if (!roster)
+    {
+        service.closeDatabase();
+        return fail(QStringLiteral("roster"), roster.error());
+    }
+    if (roster->rows.size() != 1
+        || roster->rows.front().size() < 2
+        || roster->rows.front()[0] != QStringLiteral("Engine Student / 학생")
+        || roster->rows.front()[1] != QStringLiteral("엔진 학생"))
+    {
+        service.closeDatabase();
+        return fail(
+            QStringLiteral("roster"),
+            QStringLiteral("English/Korean roster values did not round-trip")
+            );
+    }
+
+    const auto evaluation = service.loadSpeakingEval(1, QStringLiteral("Engine Evaluation / 평가"));
+    if (!evaluation)
+    {
+        service.closeDatabase();
+        return fail(QStringLiteral("speaking-evaluation"), evaluation.error());
+    }
+    const int commentsColumn = SpeakingEval::toInt(SpeakingEvalColumn::Comments);
+    if (evaluation->empty()
+        || evaluation->front().size() <= commentsColumn
+        || evaluation->front()[SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)]
+            != QStringLiteral("Engine Student / 학생")
+        || evaluation->front()[SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)]
+            != QStringLiteral("엔진 학생")
+        || evaluation->front()[SpeakingEval::toInt(SpeakingEvalColumn::OverallEffort)]
+            != QStringLiteral("A+")
+        || evaluation->front()[commentsColumn]
+            != QStringLiteral("Excellent / 좋아요"))
+    {
+        service.closeDatabase();
+        return fail(
+            QStringLiteral("speaking-evaluation"),
+            QStringLiteral("evaluation values did not round-trip")
+            );
+    }
+
+    const auto campus = service.getCampus(1);
+    if (!campus)
+    {
+        service.closeDatabase();
+        return fail(QStringLiteral("campus"), campus.error());
+    }
+    if (campus->name != QStringLiteral("Engine Campus")
+        || campus->buildingName != QStringLiteral("Main Building / 본관")
+        || campus->address != QStringLiteral("Seoul / 서울"))
+    {
+        service.closeDatabase();
+        return fail(
+            QStringLiteral("campus"),
+            QStringLiteral("campus values did not round-trip")
+            );
+    }
+
+    service.closeDatabase();
+    const Status reopenedByQt = service.openDatabase(path);
+    if (!reopenedByQt)
+    {
+        return fail(QStringLiteral("close-reopen"), reopenedByQt.error());
+    }
+    const auto reopenedTeacher = service.getTeacher(1);
+    const auto reopenedClassroom = service.getClassById(1);
+    const auto reopenedInfo = service.loadClassInfo(1);
+    const auto reopenedCalendarEvent = service.getCalendarEvent(1);
+    const auto reopenedRoster = service.loadRoster(1);
+    const auto reopenedEvaluation = service.loadSpeakingEval(
+        1,
+        QStringLiteral("Engine Evaluation / 평가")
+        );
+    const auto reopenedCampus = service.getCampus(1);
+    service.closeDatabase();
+    if (!reopenedTeacher)
+    {
+        return fail(QStringLiteral("close-reopen"), reopenedTeacher.error());
+    }
+    if (!reopenedClassroom)
+    {
+        return fail(QStringLiteral("close-reopen"), reopenedClassroom.error());
+    }
+    if (!reopenedInfo)
+    {
+        return fail(QStringLiteral("close-reopen"), reopenedInfo.error());
+    }
+    if (!reopenedCalendarEvent)
+    {
+        return fail(
+            QStringLiteral("close-reopen"),
+            reopenedCalendarEvent.error()
+            );
+    }
+    if (!reopenedRoster)
+    {
+        return fail(QStringLiteral("close-reopen"), reopenedRoster.error());
+    }
+    if (!reopenedEvaluation)
+    {
+        return fail(
+            QStringLiteral("close-reopen"),
+            reopenedEvaluation.error()
+            );
+    }
+    if (!reopenedCampus)
+    {
+        return fail(QStringLiteral("close-reopen"), reopenedCampus.error());
+    }
+    if (reopenedTeacher->teacherEn != QStringLiteral("Engine Teacher")
+        || reopenedTeacher->teacherKr != QStringLiteral("엔진교사")
+        || reopenedClassroom->name != QStringLiteral("Engine Class / 수업")
+        || reopenedInfo->teacherId != 1
+        || reopenedInfo->classGrade != QStringLiteral("E6")
+        || reopenedInfo->classLevel != QStringLiteral("Helios")
+        || reopenedInfo->classTimes.size() != 1
+        || reopenedInfo->classTimes.front().day != QStringLiteral("Tuesday")
+        || reopenedInfo->classTimes.front().startTime != QStringLiteral("4:00 PM")
+        || reopenedInfo->classTimes.front().endTime != QStringLiteral("4:50 PM")
+        || reopenedCalendarEvent->title != QStringLiteral("Engine Event / 행사")
+        || reopenedCalendarEvent->startDate != QDate(2026, 7, 17)
+        || reopenedCalendarEvent->startTime != QTime(9, 0)
+        || reopenedCalendarEvent->endTime != QTime(10, 0)
+        || reopenedRoster->rows.size() != 1
+        || reopenedRoster->rows.front().size() < 2
+        || reopenedRoster->rows.front()[0]
+            != QStringLiteral("Engine Student / 학생")
+        || reopenedRoster->rows.front()[1] != QStringLiteral("엔진 학생")
+        || reopenedEvaluation->empty()
+        || reopenedEvaluation->front().size()
+            <= SpeakingEval::toInt(SpeakingEvalColumn::Comments)
+        || reopenedEvaluation->front()[SpeakingEval::toInt(
+               SpeakingEvalColumn::EnglishName
+               )] != QStringLiteral("Engine Student / 학생")
+        || reopenedEvaluation->front()[SpeakingEval::toInt(
+               SpeakingEvalColumn::KoreanName
+               )] != QStringLiteral("엔진 학생")
+        || reopenedEvaluation->front()[SpeakingEval::toInt(
+               SpeakingEvalColumn::OverallEffort
+               )] != QStringLiteral("A+")
+        || reopenedEvaluation->front()[SpeakingEval::toInt(
+               SpeakingEvalColumn::Comments
+               )] != QStringLiteral("Excellent / 좋아요")
+        || reopenedCampus->name != QStringLiteral("Engine Campus")
+        || reopenedCampus->address != QStringLiteral("Seoul / 서울"))
+    {
+        return fail(
+            QStringLiteral("close-reopen"),
+            QStringLiteral("one or more retained Qt slices did not reopen")
+            );
+    }
+    qInfo().noquote()
+        << QStringLiteral(
+               "[retained-qt] engine-to-Qt writer closed, adapter reader reopened PASS"
+               );
+    for (const QString& slice : {
+             QStringLiteral("teacher"),
+             QStringLiteral("class"),
+             QStringLiteral("class-info"),
+             QStringLiteral("calendar-event"),
+             QStringLiteral("roster"),
+             QStringLiteral("speaking-evaluation"),
+             QStringLiteral("campus")
+         })
+    {
+        qInfo().noquote()
+            << QStringLiteral("[retained-qt] engine-to-Qt %1 slice PASS").arg(slice);
     }
 
     const QString name = connectionName();
