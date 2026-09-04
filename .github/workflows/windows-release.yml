@@ -83,6 +83,8 @@ jobs:
           # aqtinstall 3.3.0 predates Qt 6.12's architecture-specific
           # Windows repository layout. Pin the upstream fix until released.
           python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
+          # py7zr 1.1.1+ can sporadically fail while extracting Qt archives on Windows.
+          python -m pip install --disable-pip-version-check "py7zr==1.1.0"
 
       - name: Show available Qt versions
         shell: pwsh

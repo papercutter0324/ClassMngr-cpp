@@ -133,6 +133,8 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
+          # py7zr 1.1.1+ can sporadically fail while extracting Qt archives on Windows.
+          python -m pip install --disable-pip-version-check "py7zr==1.1.0"
           python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir C:\Qt --modules qtpdf
           "QT_MSVC_X64_PREFIX=C:\Qt\$env:QT_VERSION\msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
 
