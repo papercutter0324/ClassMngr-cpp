@@ -184,12 +184,6 @@ std::size_t utf8Length(std::string_view value)
     return decoded.codePoints.size();
 }
 
-bool isAsciiLetter(unsigned codePoint)
-{
-    return (codePoint >= 'A' && codePoint <= 'Z')
-        || (codePoint >= 'a' && codePoint <= 'z');
-}
-
 std::string fieldName(int row, int column)
 {
     return "rows[" + std::to_string(row) + "]."
@@ -244,123 +238,33 @@ void addEnglishNameIssues(
     std::string field
     )
 {
-    if (utf8Length(value) > 20)
+    for (const StudentNameIssue nameIssue :
+         StudentNameService::validateEnglish(value))
     {
-        result.add(issue(
-            "student_name.english.too_long",
-            field,
-            ValidationSeverity::Error,
-            row,
-            column
-            ));
-    }
-
-    bool nonAscii = false;
-    bool invalid = false;
-    const DecodedText decoded = decode(value);
-    if (!decoded.valid)
-    {
-        nonAscii = true;
-        invalid = true;
-    }
-    else
-    {
-        for (const unsigned codePoint : decoded.codePoints)
+        const char* code = nullptr;
+        switch (nameIssue)
         {
-            if (codePoint > 127U)
-            {
-                nonAscii = true;
-                continue;
-            }
-
-            if (isAsciiLetter(codePoint)
-                || codePoint == '.'
-                || codePoint == '-'
-                || isWhitespace(codePoint))
-            {
-                continue;
-            }
-
-            invalid = true;
-        }
-    }
-
-    if (nonAscii)
-    {
-        result.add(issue(
-            "student_name.english.non_ascii",
-            field,
-            ValidationSeverity::Error,
-            row,
-            column
-            ));
-    }
-
-    if (invalid)
-    {
-        result.add(issue(
-            "student_name.english.invalid_characters",
-            std::move(field),
-            ValidationSeverity::Error,
-            row,
-            column
-            ));
-    }
-}
-
-bool validKoreanShape(const std::string& value)
-{
-    const DecodedText decoded = decode(value);
-    if (!decoded.valid || decoded.codePoints.empty())
-    {
-        return false;
-    }
-
-    std::size_t begin = 0;
-    std::size_t end = decoded.codePoints.size();
-    while (begin < end && isWhitespace(decoded.codePoints[begin]))
-    {
-        ++begin;
-    }
-    while (end > begin && isWhitespace(decoded.codePoints[end - 1]))
-    {
-        --end;
-    }
-
-    if (begin == end)
-    {
-        return false;
-    }
-
-    if (end - begin >= 3
-        && decoded.codePoints[end - 3] == '('
-        && isAsciiLetter(decoded.codePoints[end - 2])
-        && decoded.codePoints[end - 1] == ')')
-    {
-        end -= 3;
-        while (end > begin && isWhitespace(decoded.codePoints[end - 1]))
-        {
-            --end;
-        }
-    }
-
-    bool hasHangul = false;
-    for (std::size_t index = begin; index < end; ++index)
-    {
-        const unsigned codePoint = decoded.codePoints[index];
-        if (codePoint >= 0xac00U && codePoint <= 0xd7a3U)
-        {
-            hasHangul = true;
+        case StudentNameIssue::EnglishTooLong:
+            code = "student_name.english.too_long";
+            break;
+        case StudentNameIssue::EnglishContainsNonAscii:
+            code = "student_name.english.non_ascii";
+            break;
+        case StudentNameIssue::EnglishContainsInvalidCharacters:
+            code = "student_name.english.invalid_characters";
+            break;
+        default:
             continue;
         }
 
-        if (!isWhitespace(codePoint))
-        {
-            return false;
-        }
+        result.add(issue(
+            code,
+            field,
+            ValidationSeverity::Error,
+            row,
+            column
+            ));
     }
-
-    return hasHangul;
 }
 
 void addKoreanNameIssues(
@@ -372,59 +276,43 @@ void addKoreanNameIssues(
     bool allowQuestionableLength
     )
 {
-    if (!validKoreanShape(value))
-    {
-        result.add(issue(
-            "student_name.korean.invalid_characters",
-            field,
-            ValidationSeverity::Error,
-            row,
-            column
-            ));
-    }
-
-    const std::size_t length = utf8Length(
-        StudentNameService::baseKorean(value));
     const ValidationSeverity questionableSeverity = allowQuestionableLength
         ? ValidationSeverity::Warning
         : ValidationSeverity::Error;
-
-    if (length == 0 || length == 3)
+    for (const StudentNameIssue nameIssue :
+         StudentNameService::validateKorean(value))
     {
-        return;
-    }
+        const char* code = nullptr;
+        ValidationSeverity severity = ValidationSeverity::Error;
+        switch (nameIssue)
+        {
+        case StudentNameIssue::KoreanContainsInvalidCharacters:
+            code = "student_name.korean.invalid_characters";
+            break;
+        case StudentNameIssue::KoreanTooShort:
+            code = "student_name.korean.too_short";
+            severity = questionableSeverity;
+            break;
+        case StudentNameIssue::KoreanTooLong:
+            code = "student_name.korean.too_long";
+            severity = questionableSeverity;
+            break;
+        case StudentNameIssue::KoreanUnusualLength:
+            code = "student_name.korean.unusual_length";
+            severity = ValidationSeverity::Warning;
+            break;
+        default:
+            continue;
+        }
 
-    if (length <= 1)
-    {
         result.add(issue(
-            "student_name.korean.too_short",
+            code,
             field,
-            questionableSeverity,
+            severity,
             row,
             column
             ));
-        return;
     }
-
-    if (length >= 5)
-    {
-        result.add(issue(
-            "student_name.korean.too_long",
-            field,
-            questionableSeverity,
-            row,
-            column
-            ));
-        return;
-    }
-
-    result.add(issue(
-        "student_name.korean.unusual_length",
-        std::move(field),
-        ValidationSeverity::Warning,
-        row,
-        column
-        ));
 }
 
 bool hasValueAt(
@@ -504,17 +392,10 @@ std::string namePairKey(const SpeakingEvaluationRow& row)
         return {};
     }
 
-    const std::string english = trimAsciiWhitespace(
-        row[static_cast<std::size_t>(EnglishNameColumn)]);
-    const std::string korean = trimAsciiWhitespace(
-        row[static_cast<std::size_t>(KoreanNameColumn)]);
-
-    std::string key;
-    key.reserve(english.size() + korean.size() + 1);
-    key += english;
-    key.push_back('\x1f');
-    key += korean;
-    return key;
+    return StudentNameService::namePairKey(
+        row[static_cast<std::size_t>(EnglishNameColumn)],
+        row[static_cast<std::size_t>(KoreanNameColumn)]
+        );
 }
 } // namespace
 

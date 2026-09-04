@@ -3,7 +3,6 @@
 #include "classmngr/engine/student_name.h"
 
 #include <QByteArray>
-#include <QRegularExpression>
 #include <QSet>
 
 #include <string_view>
@@ -29,48 +28,27 @@ QString fromUtf8(std::string_view value)
         );
 }
 
-bool containsNonAsciiCharacters(const QString& value)
+ValidationIssue mapIssue(classmngr::engine::StudentNameIssue issue)
 {
-    for (const QChar character : value)
+    using EngineIssue = classmngr::engine::StudentNameIssue;
+    switch (issue)
     {
-        if (character.unicode() > 127)
-        {
-            return true;
-        }
+    case EngineIssue::EnglishTooLong:
+        return ValidationIssue::EnglishTooLong;
+    case EngineIssue::EnglishContainsNonAscii:
+        return ValidationIssue::EnglishContainsNonAscii;
+    case EngineIssue::EnglishContainsInvalidCharacters:
+        return ValidationIssue::EnglishContainsInvalidCharacters;
+    case EngineIssue::KoreanTooShort:
+        return ValidationIssue::KoreanTooShort;
+    case EngineIssue::KoreanUnusualLength:
+        return ValidationIssue::KoreanUnusualLength;
+    case EngineIssue::KoreanTooLong:
+        return ValidationIssue::KoreanTooLong;
+    case EngineIssue::KoreanContainsInvalidCharacters:
+        return ValidationIssue::KoreanContainsInvalidCharacters;
     }
-
-    return false;
-}
-
-bool containsInvalidEnglishCharacters(const QString& value)
-{
-    for (const QChar character : value)
-    {
-        const ushort code = character.unicode();
-        if ((code >= 'A' && code <= 'Z')
-            || (code >= 'a' && code <= 'z')
-            || character == QLatin1Char('.')
-            || character == QLatin1Char('-')
-            || character.isSpace()
-            || code > 127)
-        {
-            continue;
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
-bool containsInvalidKoreanCharacters(const QString& value)
-{
-    static const QRegularExpression validNameExpression(
-        QStringLiteral("^[\\s\\x{AC00}-\\x{D7A3}]+(?:\\s*\\([A-Za-z]\\))?\\s*$")
-        );
-
-    return !value.trimmed().isEmpty()
-        && !validNameExpression.match(value).hasMatch();
+    return ValidationIssue::EnglishContainsInvalidCharacters;
 }
 }
 
@@ -122,22 +100,12 @@ QString namePairKey(
     const QString& koreanName
     )
 {
-    const QString normalizedEnglishName =
-        englishName.trimmed();
-    const QString normalizedKoreanName =
-        koreanName.trimmed();
-
-    if (
-        normalizedEnglishName.isEmpty()
-        || normalizedKoreanName.isEmpty()
-        )
-    {
-        return {};
-    }
-
-    return normalizedEnglishName
-        + QChar(0x001F)
-        + normalizedKoreanName;
+    return fromUtf8(
+        classmngr::engine::StudentNameService::namePairKey(
+            toUtf8(englishName),
+            toUtf8(koreanName)
+            )
+        );
 }
 
 QHash<QString, QList<int>> rowsByNamePair(
@@ -172,17 +140,12 @@ QList<ValidationIssue> validateEnglishName(
     )
 {
     QList<ValidationIssue> issues;
-    if (value.size() > maximumLength)
+    for (const auto issue : classmngr::engine::StudentNameService::validateEnglish(
+             toUtf8(value),
+             static_cast<std::size_t>(maximumLength)
+             ))
     {
-        issues.append(ValidationIssue::EnglishTooLong);
-    }
-    if (containsNonAsciiCharacters(value))
-    {
-        issues.append(ValidationIssue::EnglishContainsNonAscii);
-    }
-    if (containsInvalidEnglishCharacters(value))
-    {
-        issues.append(ValidationIssue::EnglishContainsInvalidCharacters);
+        issues.append(mapIssue(issue));
     }
     return issues;
 }
@@ -190,27 +153,12 @@ QList<ValidationIssue> validateEnglishName(
 QList<ValidationIssue> validateKoreanName(const QString& value)
 {
     QList<ValidationIssue> issues;
-    if (containsInvalidKoreanCharacters(value))
+    for (const auto issue : classmngr::engine::StudentNameService::validateKorean(
+             toUtf8(value)
+             ))
     {
-        issues.append(ValidationIssue::KoreanContainsInvalidCharacters);
+        issues.append(mapIssue(issue));
     }
-
-    const int length = baseKoreanName(value).size();
-    if (length == 0 || length == 3)
-    {
-        return issues;
-    }
-    if (length <= 1)
-    {
-        issues.append(ValidationIssue::KoreanTooShort);
-        return issues;
-    }
-    if (length >= 5)
-    {
-        issues.append(ValidationIssue::KoreanTooLong);
-        return issues;
-    }
-    issues.append(ValidationIssue::KoreanUnusualLength);
     return issues;
 }
 

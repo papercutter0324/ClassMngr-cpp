@@ -4,6 +4,7 @@
 #include <cctype>
 #include <regex>
 #include <string>
+#include <vector>
 
 namespace classmngr::engine
 {
@@ -56,7 +57,7 @@ std::string collapseAsciiWhitespace(std::string_view value)
     return result;
 }
 
-bool isAsciiLetter(char character)
+bool isAsciiLetter(unsigned character)
 {
     return (character >= 'A' && character <= 'Z')
         || (character >= 'a' && character <= 'z');
@@ -66,7 +67,7 @@ bool hasInvalidEnglishCharacter(std::string_view value)
 {
     for (const unsigned char character : value)
     {
-        if (isAsciiLetter(static_cast<char>(character))
+        if (isAsciiLetter(character)
             || character == '.'
             || character == '-'
             || std::isspace(character) != 0)
@@ -178,6 +179,50 @@ bool decodeUtf8(
     return true;
 }
 
+struct DecodedText
+{
+    std::vector<unsigned> codePoints;
+    bool valid = true;
+};
+
+DecodedText decode(std::string_view value)
+{
+    DecodedText result;
+    std::size_t offset = 0;
+    while (offset < value.size())
+    {
+        unsigned codePoint = 0;
+        if (!decodeUtf8(value, &offset, &codePoint))
+        {
+            result.valid = false;
+            return result;
+        }
+        result.codePoints.push_back(codePoint);
+    }
+    return result;
+}
+
+bool isWhitespace(unsigned codePoint)
+{
+    if (codePoint <= 0x7fU)
+    {
+        return std::isspace(static_cast<unsigned char>(codePoint)) != 0;
+    }
+
+    return (codePoint >= 0x2000U && codePoint <= 0x200aU)
+        || codePoint == 0x2028U
+        || codePoint == 0x2029U
+        || codePoint == 0x202fU
+        || codePoint == 0x205fU
+        || codePoint == 0x3000U;
+}
+
+std::size_t utf8Length(std::string_view value)
+{
+    const DecodedText decoded = decode(value);
+    return decoded.valid ? decoded.codePoints.size() : value.size();
+}
+
 std::size_t koreanSuffixStart(std::string_view value)
 {
     if (value.size() < 3)
@@ -211,56 +256,54 @@ std::size_t koreanSuffixStart(std::string_view value)
 
 bool isValidKoreanName(std::string_view value)
 {
-    if (value.empty())
+    const DecodedText decoded = decode(value);
+    if (!decoded.valid || decoded.codePoints.empty())
     {
         return false;
     }
 
-    const std::size_t suffixStart = koreanSuffixStart(value);
-    bool hasHangul = false;
-    std::size_t offset = 0;
-    while (offset < value.size())
+    std::size_t begin = 0;
+    std::size_t end = decoded.codePoints.size();
+    while (begin < end && isWhitespace(decoded.codePoints[begin]))
     {
-        const std::size_t characterOffset = offset;
-        unsigned codePoint = 0;
-        if (!decodeUtf8(value, &offset, &codePoint))
+        ++begin;
+    }
+    while (end > begin && isWhitespace(decoded.codePoints[end - 1]))
+    {
+        --end;
+    }
+
+    if (begin == end)
+    {
+        return false;
+    }
+
+    if (end - begin >= 3
+        && decoded.codePoints[end - 3] == '('
+        && isAsciiLetter(decoded.codePoints[end - 2])
+        && decoded.codePoints[end - 1] == ')')
+    {
+        end -= 3;
+        while (end > begin && isWhitespace(decoded.codePoints[end - 1]))
+        {
+            --end;
+        }
+    }
+
+    bool hasHangul = false;
+    for (std::size_t index = begin; index < end; ++index)
+    {
+        const unsigned codePoint = decoded.codePoints[index];
+        if (codePoint >= 0xac00U && codePoint <= 0xd7a3U)
+        {
+            hasHangul = true;
+            continue;
+        }
+
+        if (!isWhitespace(codePoint))
         {
             return false;
         }
-
-        if (codePoint <= 0x7fU)
-        {
-            if (std::isspace(static_cast<unsigned char>(codePoint)) != 0)
-            {
-                continue;
-            }
-
-            if (characterOffset == suffixStart
-                && suffixStart != std::string_view::npos
-                && value.size() - suffixStart == 3
-                && value[suffixStart] == '('
-                && value[suffixStart + 2] == ')'
-                && isAsciiLetter(value[suffixStart + 1]))
-            {
-                // The suffix is ASCII and its exact shape was checked above;
-                // consume its remaining bytes in the loop as ordinary ASCII.
-                continue;
-            }
-
-            if (suffixStart != std::string_view::npos
-                && characterOffset > suffixStart)
-            {
-                continue;
-            }
-
-            return false;
-        }
-
-        if (codePoint < 0xac00U || codePoint > 0xd7a3U)
-        {
-            return false;
-        }
-        hasHangul = true;
     }
 
     return hasHangul;
@@ -423,6 +466,88 @@ std::string StudentNameService::normalizeKorean(std::string_view value)
     return normalizeKoreanSource(value);
 }
 
+std::vector<StudentNameIssue> StudentNameService::validateEnglish(
+    std::string_view value,
+    std::size_t maximumLength
+    )
+{
+    std::vector<StudentNameIssue> issues;
+    if (utf8Length(value) > maximumLength)
+    {
+        issues.push_back(StudentNameIssue::EnglishTooLong);
+    }
+
+    bool nonAscii = false;
+    bool invalid = false;
+    const DecodedText decoded = decode(value);
+    if (!decoded.valid)
+    {
+        nonAscii = true;
+        invalid = true;
+    }
+    else
+    {
+        for (const unsigned codePoint : decoded.codePoints)
+        {
+            if (codePoint > 127U)
+            {
+                nonAscii = true;
+                continue;
+            }
+
+            if (isAsciiLetter(codePoint)
+                || codePoint == '.'
+                || codePoint == '-'
+                || isWhitespace(codePoint))
+            {
+                continue;
+            }
+
+            invalid = true;
+        }
+    }
+
+    if (nonAscii)
+    {
+        issues.push_back(StudentNameIssue::EnglishContainsNonAscii);
+    }
+    if (invalid)
+    {
+        issues.push_back(StudentNameIssue::EnglishContainsInvalidCharacters);
+    }
+    return issues;
+}
+
+std::vector<StudentNameIssue> StudentNameService::validateKorean(
+    std::string_view value
+    )
+{
+    std::vector<StudentNameIssue> issues;
+    if (!isValidKoreanName(value))
+    {
+        issues.push_back(StudentNameIssue::KoreanContainsInvalidCharacters);
+    }
+
+    const std::size_t length = utf8Length(baseKorean(value));
+    if (length == 0 || length == 3)
+    {
+        return issues;
+    }
+    if (length <= 1)
+    {
+        issues.push_back(StudentNameIssue::KoreanTooShort);
+    }
+    else if (length >= 5)
+    {
+        issues.push_back(StudentNameIssue::KoreanTooLong);
+    }
+    else
+    {
+        issues.push_back(StudentNameIssue::KoreanUnusualLength);
+    }
+    return issues;
+}
+
 std::string StudentNameService::baseKorean(std::string_view value)
 {
     std::string normalized = normalizeKorean(value);
@@ -444,6 +569,26 @@ std::string StudentNameService::koreanSuffix(std::string_view value)
     }
 
     return std::string(1, normalized[suffixStart + 1]);
+}
+
+std::string StudentNameService::namePairKey(
+    std::string_view englishName,
+    std::string_view koreanName
+    )
+{
+    const std::string english = trimAsciiWhitespace(englishName);
+    const std::string korean = trimAsciiWhitespace(koreanName);
+    if (english.empty() || korean.empty())
+    {
+        return {};
+    }
+
+    std::string key;
+    key.reserve(english.size() + korean.size() + 1);
+    key += english;
+    key.push_back('\x1f');
+    key += korean;
+    return key;
 }
 
 } // namespace classmngr::engine

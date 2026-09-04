@@ -1,5 +1,7 @@
 #include "classmngr/engine/roster_validator.h"
+#include "classmngr/engine/student_name.h"
 
+#include <algorithm>
 #include <iostream>
 #include <string_view>
 
@@ -61,6 +63,14 @@ bool hasIssueWithSeverity(
     return false;
 }
 
+bool hasNameIssue(
+    const std::vector<StudentNameIssue>& issues,
+    StudentNameIssue expected
+    )
+{
+    return std::find(issues.cbegin(), issues.cend(), expected) != issues.cend();
+}
+
 } // namespace
 
 int main()
@@ -114,6 +124,60 @@ int main()
     passed &= expect(
         RosterValidator::validate(normalized).isValid(),
         "normalized valid roster was rejected"
+        );
+
+    const auto validEnglish = StudentNameService::validateEnglish("Amy-Jane");
+    const auto invalidEnglish = StudentNameService::validateEnglish("Amy1");
+    const std::string invalidUtf8{"\xc3\x28", 2};
+    const auto malformedEnglish = StudentNameService::validateEnglish(invalidUtf8);
+    passed &= expect(
+        validEnglish.empty()
+            && hasNameIssue(
+                invalidEnglish,
+                StudentNameIssue::EnglishContainsInvalidCharacters
+                )
+            && hasNameIssue(
+                malformedEnglish,
+                StudentNameIssue::EnglishContainsNonAscii
+                )
+            && hasNameIssue(
+                malformedEnglish,
+                StudentNameIssue::EnglishContainsInvalidCharacters
+                ),
+        "shared English name rules did not cover invalid ASCII and UTF-8"
+        );
+
+    const auto validKorean = StudentNameService::validateKorean(
+        "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98(A)"
+        );
+    const auto shortKorean = StudentNameService::validateKorean("\xea\xb9\x80");
+    const auto unusualKorean = StudentNameService::validateKorean(
+        "\xea\xb9\x80\xeb\xaf\xbc"
+        );
+    const auto longKorean = StudentNameService::validateKorean(
+        "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98\xec\xa7\x80\xec\x9b\x90"
+        );
+    const auto invalidKorean = StudentNameService::validateKorean(
+        "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98" "1"
+        );
+    passed &= expect(
+        validKorean.empty()
+            && hasNameIssue(shortKorean, StudentNameIssue::KoreanTooShort)
+            && hasNameIssue(
+                unusualKorean,
+                StudentNameIssue::KoreanUnusualLength
+                )
+            && hasNameIssue(longKorean, StudentNameIssue::KoreanTooLong)
+            && hasNameIssue(
+                invalidKorean,
+                StudentNameIssue::KoreanContainsInvalidCharacters
+                )
+            && StudentNameService::namePairKey(
+                " Amy ",
+                " \xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98(A) "
+                )
+                == "Amy\x1f\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98(A)",
+        "shared Korean name or duplicate-pair rules changed"
         );
 
     Roster invalid;
