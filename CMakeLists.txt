@@ -299,6 +299,41 @@ if(CLASSMNGR_BUILD_QT_DESKTOP)
         include(cmake/tests/models_and_services.cmake)
         include(cmake/tests/platform_and_reports.cmake)
 
+        # These Qt-era helpers are retained only for the legacy shared-policy
+        # coverage. Keep them out of the production domain object library so
+        # the engine validators remain the sole live production rule path.
+        set(CLASSMNGR_QT_LEGACY_SHARED_VALIDATION_SOURCES
+            "${PROJECT_SOURCE_DIR}/src/domain/validation/shared_validation.cpp"
+            "${PROJECT_SOURCE_DIR}/src/domain/validation/shared_validation.h"
+            "${PROJECT_SOURCE_DIR}/src/domain/rules/schedule_value_parser.cpp"
+            "${PROJECT_SOURCE_DIR}/src/domain/rules/schedule_value_parser.h"
+        )
+
+        get_target_property(classmngr_domain_sources
+            ClassMngrDomain
+            SOURCES
+        )
+        list(REMOVE_ITEM
+            classmngr_domain_sources
+            ${CLASSMNGR_QT_LEGACY_SHARED_VALIDATION_SOURCES}
+        )
+        set_target_properties(ClassMngrDomain
+            PROPERTIES
+                SOURCES "${classmngr_domain_sources}"
+        )
+
+        add_library(ClassMngrQtLegacySharedValidation STATIC
+            ${CLASSMNGR_QT_LEGACY_SHARED_VALIDATION_SOURCES}
+        )
+        target_link_libraries(ClassMngrQtLegacySharedValidation
+            PRIVATE
+                ClassMngrQtBuildSettings
+        )
+        target_link_libraries(ClassMngrSharedPolicyTests
+            PRIVATE
+                ClassMngrQtLegacySharedValidation
+        )
+
         classmngr_finalize_test_targets()
     endif()
 endif()
