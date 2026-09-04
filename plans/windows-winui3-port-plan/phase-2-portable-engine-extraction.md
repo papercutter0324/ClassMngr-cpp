@@ -158,6 +158,211 @@ engine-service ownership comments. The retained responsibility list and
 validation evidence are recorded in the [Phase 2 local validation
 record](../../docs/porting/windows-winui/phase2-local-validation.md#p2-08--retained-adapter-and-legacy-rule-cleanup--2026-09-03).
 
+## Remaining Phase 2 slices — code audit (2026-09-04)
+
+The P2-01–P2-08 checklists above describe the extraction packages already
+recorded as complete. A source audit against the Goal and Exit Gate found the
+following open follow-up slices. They are ordered by how directly they affect
+the portable-engine boundary. `[ ]` means open; completion requires the
+acceptance evidence listed for that slice.
+
+### P2-R01 — Extract speaking-evaluation dashboard orchestration
+
+**Status (2026-09-04): Implemented; Qt integration validation pending.**
+Committed as `ff9ac88`. The portable dashboard orchestration and headless
+engine coverage are complete; the retained Qt/WinUI integration build remains
+to be verified.
+
+- [ ] Move the policy in
+  `SpeakingEvaluationService::analyticsDashboard()` from
+  `src/app/services/feature_services.cpp` into a Qt-free engine dashboard
+  service/model. The engine boundary must own `All` selection, canonical
+  evaluation iteration, current-roster filtering, current versus historical
+  snapshot scope, cross-evaluation aggregation, latest fully-scored
+  class-shape selection, and year-to-date point generation.
+- [ ] Leave the Qt service and `class_analytics_page` responsible only for
+  database/input conversion, localization, and rendering. Add headless tests
+  for empty and partial evaluations, selected versus `All`, roster filtering,
+  latest-completed selection, and historical-cohort YTD behavior.
+
+Evidence: `src/app/services/feature_services.cpp` currently implements the
+dashboard orchestration in `SpeakingEvaluationService::analyticsDashboard`,
+while `src/engine/include/classmngr/engine/speaking_analytics.h` exposes only
+the underlying stateless calculations.
+
+### P2-R02 — Unify interactive roster and speaking-evaluation validation
+
+**Status (2026-09-04): Implemented; focused engine validation passed.**
+Committed as `b4ff0c8`. Shared UTF-8 name validation and duplicate-pair policy
+now feed the Qt utility and both engine validators.
+
+- [ ] Add or expose an engine-facing per-row/per-cell name-validation
+  contract, then route `RosterModel`, `SpeakingEvalModel`, their delegates,
+  and questionable-length confirmation through it.
+- [ ] Keep Qt responsible for mapping engine issues to localized messages,
+  cell/row highlights, and confirmation UI. Remove the duplicate Qt
+  character, length, and duplicate-name policy from live paths.
+- [ ] Add parity cases for invalid ASCII/UTF-8 input, Korean suffixes and
+  lengths, duplicate pairs, and normalized names so interactive feedback and
+  save-time validation cannot diverge.
+
+Evidence: `src/core/utils/student_name_utils.cpp` implements the active Qt
+validation and duplicate-pair rules used by
+`src/features/roster/ui/roster_model_validation.cpp` and
+`src/features/speaking_eval/ui/speaking_eval_model.cpp`, while equivalent
+rules independently exist in `src/engine/roster_validator.cpp` and
+`src/engine/speaking_evaluation_validator.cpp`.
+
+### P2-R03 — Finish the teacher-import candidate policy boundary
+
+**Status (2026-09-04): Implemented; broader import validation pending.**
+Committed as `49d6e56`. Template parsing no longer rejects duplicate source
+candidates, while the engine remains responsible for plan policy and matching.
+
+- [ ] Keep workbook decoding and template-specific extraction in
+  `SectionedContactListTemplate`, but pass all decoded candidates to the
+  engine for cross-candidate duplicate/identity validation and import
+  matching. The engine must remain authoritative for stored-record
+  ambiguity and plan validity.
+- [ ] Preserve source-row diagnostics and localized presentation errors in
+  the Qt adapter, and add fixtures for duplicate source candidates,
+  ambiguous stored matches, and normalized birthdays/names.
+
+Evidence: `src/features/teacher/import/sectioned_contact_list_template.cpp`
+still performs `normalizedBirthday`, `cleanedKoreanName`,
+`cleanedStaffName`, normalized identities, and duplicate rejection, while
+`src/engine/teacher_import_service.cpp` independently validates the plan and
+performs matching. Format-specific extraction remains intentionally Qt-owned;
+the duplicated product policy does not.
+
+### P2-R04 — Collapse legacy application-service fallbacks
+
+**Status (2026-09-04): Partially implemented; migration validation pending.**
+Committed as `b24f35e`. ApplicationServices now owns the session and production
+feature services receive it directly; the legacy DataService API remains as an
+explicit shared-session adapter until remaining fallback branches are retired.
+
+- [ ] Replace the production `ApplicationServices -> DataService ->
+  DatabaseSession` composition with an engine-first session/use-case graph,
+  or make the compatibility object an explicit adapter with a retirement
+  owner and deadline.
+- [ ] Remove the `FeatureService` `DataService*` fallback branches and narrow
+  `DataService` to compatibility/test callers after equivalent engine paths
+  are proven. No new UI or controller code should add another facade method.
+- [ ] Keep the existing Qt-facing service API stable during the transition,
+  with tests proving that open/close and all migrated feature operations use
+  the same engine-backed session.
+
+Evidence: `src/core/application_services.cpp` still creates
+`DataService` and obtains every feature service through its
+`DatabaseSession`; `src/app/services/feature_services.cpp` retains
+`DataService` fallback branches throughout the migrated operations.
+
+### P2-R05 — Retire the remaining Qt SQL compatibility path
+
+**Status (2026-09-04): Calendar-cache slice implemented; wider Qt SQL retirement open.**
+Committed as `36be4ef`. CalendarEventCache now reads through the engine service;
+DatabaseSession, DataService, and other Qt SQL compatibility consumers remain.
+
+- [ ] Migrate retained database consumers, including the asynchronous
+  `CalendarEventCache`, to engine `SqliteDatabase`/service access, or isolate
+  them behind an explicitly temporary adapter boundary.
+- [ ] Remove `DatabaseSession::database()`, the direct Qt transaction in
+  `DataService::save()`, and the Qt schema/transaction helpers once the
+  compatibility tests have moved to the engine path. Exact `:memory:` support
+  must either be engine-backed or be clearly test-only and separately owned.
+- [ ] Confirm that file-backed open, migration, CRUD, rollback, and cache
+  reads no longer depend on a Qt SQL connection or duplicate schema logic.
+
+Evidence: `src/data/database/database_session.h/.cpp` still exposes and
+creates `QSqlDatabase`, exact `:memory:` opens still use
+`DatabaseSchemaManager`, `src/data/data_service.cpp` calls
+`m_session->database().commit()`, and
+`src/features/calendar/ui/calendar_event_cache.cpp` creates a worker Qt SQL
+connection. The engine already owns the corresponding file-backed SQLite
+pipeline.
+
+### P2-R06 — Make platform-service contracts live at engine boundaries
+
+**Status (2026-09-04): Implemented for calendar import and class transfer; focused rerun pending.**
+Committed as `00f8dee`. Both workflows use injectable clocks with SystemClock
+compatibility; the final calendar-import fixture requires a clean rerun.
+
+- [ ] Audit each engine workflow that needs time, cancellation, resources,
+  networking, signatures, logging, or process launch. Inject the appropriate
+  contract where the workflow semantics depend on it, or record an explicit
+  later-phase owner instead of leaving the contract test-only.
+- [ ] At minimum close deterministic-time coverage for calendar import and
+  class-transfer timestamps; review archive/temp-name time sources for the
+  same requirement. Ensure Qt and future WinUI composition passes adapters at
+  the boundary.
+- [ ] Extend headless tests from testing the fake interfaces in isolation to
+  testing the affected engine workflows with fixed clocks, cancellation, and
+  controlled platform failures.
+
+Evidence: `src/engine/include/classmngr/engine/platform_services.h` and
+`src/core/platform/qt_platform_services.h` define the contracts/adapters,
+but `tests/engine/platform_services_tests.cpp` exercises fakes directly and
+does not compose them into an engine workflow. Engine code still calls
+`system_clock::now()` directly in `calendar_event_import_service.cpp` and
+`class_transfer_service.cpp` (with additional time sources in
+`zip_archive_writer.cpp` and `file_system.cpp`).
+
+### P2-R07 — Close the cross-platform and clean-build exit gate
+
+**Status (2026-09-04): In progress; evidence gate remains open.**
+The reproducible matrix and CI ownership are documented in commit `f20c9a5`
+and [the exit-gate runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md),
+but fresh x64/x86 and macOS/Linux artifacts are still required.
+
+- [ ] Replace the focused exception in the P2-07 record with a complete,
+  reproducible headless x64/x86 matrix, or explicitly repair/update the
+  registered test set so an unfiltered run has no missing binaries.
+- [ ] Record retained-Qt adapter results on the required Qt version and keep
+  compile-only or host-blocked results separate from runtime parity. Add
+  macOS/Linux Qt fixture evidence, or identify the CI job that owns that
+  direction, for every migrated persistence slice.
+- [ ] Include invalid input, rollback, migration, busy/locked database, and
+  partial-failure assertions in the same release evidence used for the Exit
+  Gate.
+
+Evidence: `docs/porting/windows-winui/phase2-local-validation.md` records
+Windows x64/x86 headless and Qt 6.12 x64 focused fixture results, but also
+records nine unrelated registered engine binaries missing from the existing
+build trees, a host Qt 6.11.1 versus project Qt 6.12.0 mismatch, and an
+MSBuild FileTracker limitation. The plan's Validation section still requires
+cross-platform fixture readability and a complete migrated-feature matrix.
+
+### P2-R08 — Remove or quarantine superseded Qt validation helpers
+
+**Status (2026-09-04): Production quarantine implemented; compatibility test validation pending.**
+Committed as `6a9ec28`. The helpers are no longer part of production domain
+linkage and are retained only for the legacy shared-policy test target.
+
+- [ ] Confirm the source audit remains clean for the apparently unused
+  `SharedValidation` and `ScheduleValueParser` APIs. Remove them or mark them
+  compatibility-only after verifying no generated or external build target
+  depends on them.
+- [ ] Keep only Qt validation helpers that translate engine issues or own
+  presentation-only policy; do not leave a second live schedule/name rule
+  implementation in the Qt domain layer.
+
+Evidence: `src/domain/validation/shared_validation.cpp` is the only caller of
+`src/domain/rules/schedule_value_parser.cpp`, and the current source search
+finds no production call site for `SharedValidation`. The live engine
+equivalents are `ClassTimeValidator`, `RosterValidator`, and
+`SpeakingEvaluationValidator`.
+
+## Audit classifications intentionally outside Phase 2
+
+The audit did not add the following to the open-slice list because the plan
+already assigns them to an adapter or later phase: campus JSON and workbook/
+JSON/XML/ZIP decoding, `QResource` mounting and resource staging, PDF/print/
+PowerPoint drawing and Office automation, updater/network implementation, and
+WinUI screen/control migration. Those boundaries should remain thin and
+documented; moving their implementation is not required to close the
+portable-engine extraction gate.
+
 ## Validation
 
 - Configure-time and source audits reject Qt, WinUI, WinRT, and Win32 UI
