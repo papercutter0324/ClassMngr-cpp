@@ -60,3 +60,15 @@ data/app.tps
 .DS_Store
 .continue/
 # artifacts/
+
+# Local CMake/Qt generated state
+/.qt/
+/.rcc/
+/CMakeFiles/
+/generated/
+/meta_types/
+/qml/
+/artifacts/phase2/
+*.exe.manifest
+DartConfiguration.tcl
+*.depends
