@@ -61,6 +61,12 @@ public:
         const QString &dbPath = QString()
         );
 
+    // Explicit compatibility adapter for legacy callers that must share an
+    // ApplicationServices-owned session during the transition.
+    explicit DataService(
+        DatabaseSession& session
+        );
+
     ~DataService();
 
 
@@ -469,7 +475,9 @@ private:
     void refreshRepositoryAdapters();
 
     QString m_initialDatabasePath;
-    std::unique_ptr<DatabaseSession> m_session;
+    std::unique_ptr<DatabaseSession> m_ownedSession;
+    DatabaseSession* m_session = nullptr;
+    bool m_ownsSession = false;
 
     SettingsRepository* m_settingsRepository = nullptr;
     CampusRecordRepository* m_campusRecordRepository = nullptr;

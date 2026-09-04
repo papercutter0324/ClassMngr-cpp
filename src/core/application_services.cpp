@@ -1,10 +1,110 @@
 #include "application_services.h"
 
+#include "classmngr/engine/file_system.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "app/services/feature_services.h"
 #include "core/theme_service.h"
 
+#include <QByteArray>
 #include <QDebug>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+
+namespace
+{
+
+std::string utf8Path(
+    const QString& path
+    )
+{
+    const QByteArray encoded = path.toUtf8();
+    return std::string(
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+        );
+}
+
+QString displayPath(
+    const std::string& normalizedPath
+    )
+{
+    return QString::fromUtf8(
+        normalizedPath.data(),
+        static_cast<qsizetype>(normalizedPath.size())
+        );
+}
+
+Status copyDatabaseFile(
+    const QString& sourcePath,
+    const QString& destinationPath
+    )
+{
+    classmngr::engine::StandardFileSystem fileSystem;
+    const std::string sourceUtf8 = utf8Path(sourcePath);
+    const std::string destinationUtf8 = utf8Path(destinationPath);
+
+    const classmngr::engine::Result<std::string> normalizedDestination =
+        fileSystem.normalizePath(destinationUtf8);
+    const QString targetPath = normalizedDestination
+        ? displayPath(*normalizedDestination)
+        : destinationPath;
+
+    const classmngr::engine::Result<std::string> normalizedSource =
+        fileSystem.normalizePath(sourceUtf8);
+    if (!normalizedSource || !normalizedDestination)
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to copy Teacher Profile to:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    if (*normalizedSource == *normalizedDestination)
+    {
+        return {};
+    }
+
+    const classmngr::engine::Status copied = fileSystem.copyFile(
+        *normalizedSource,
+        *normalizedDestination,
+        true
+        );
+    if (copied)
+    {
+        return {};
+    }
+
+    const std::string_view errorToken = copied.error().message;
+    if (errorToken
+        == classmngr::engine::FileSystemErrorToken::DirectoryCreationFailed)
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to create destination directory:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    if (errorToken
+        == classmngr::engine::FileSystemErrorToken::AtomicReplacementFailed)
+    {
+        return std::unexpected(
+            QStringLiteral(
+                "Unable to replace existing Teacher Profile file:\n%1"
+                )
+                .arg(targetPath)
+            );
+    }
+
+    return std::unexpected(
+        QStringLiteral("Unable to copy Teacher Profile to:\n%1")
+            .arg(targetPath)
+        );
+}
+
+} // namespace
 
 ApplicationServices::ApplicationServices()
     : ApplicationServices(nullptr)
@@ -15,8 +115,8 @@ ApplicationServices::ApplicationServices(
     std::unique_ptr<ThemeService> themeService
     )
 {
-    m_dataService =
-        std::make_unique<DataService>();
+    m_session =
+        std::make_unique<DatabaseSession>();
 
     m_themeService =
         themeService
@@ -42,42 +142,51 @@ Status ApplicationServices::openDatabase(
     const QString& databasePath
     )
 {
-    if (!m_dataService)
+    if (!m_session)
     {
         return std::unexpected(
-            QStringLiteral("Data service is unavailable.")
+            QStringLiteral("Database session is unavailable.")
             );
     }
 
-    return m_dataService->openDatabase(databasePath);
+    return m_legacyDataService
+        ? m_legacyDataService->openDatabase(databasePath)
+        : m_session->open(databasePath);
 }
 
 void ApplicationServices::closeDatabase()
 {
-    if (m_dataService)
+    if (m_session)
     {
-        m_dataService->closeDatabase();
+        if (m_legacyDataService)
+        {
+            m_legacyDataService->closeDatabase();
+        }
+        else
+        {
+            m_session->close();
+        }
     }
 }
 
 bool ApplicationServices::hasOpenDatabase() const
 {
-    return m_dataService
-        && m_dataService->isOpen();
+    return m_session
+        && m_session->isOpen();
 }
 
 QString ApplicationServices::currentDatabasePath() const
 {
-    return m_dataService
-        ? m_dataService->currentDatabasePath()
+    return m_session
+        ? m_session->databasePath()
         : QString();
 }
 
 void ApplicationServices::saveDatabase()
 {
-    if (m_dataService)
+    if (hasOpenDatabase())
     {
-        m_dataService->save();
+        m_session->database().commit();
     }
 }
 
@@ -85,36 +194,66 @@ Status ApplicationServices::saveDatabaseAs(
     const QString& destinationPath
     )
 {
-    return m_dataService
-        ? m_dataService->saveAs(destinationPath)
-        : Status(std::unexpected(
-            QStringLiteral("Data service is unavailable.")));
+    if (!hasOpenDatabase())
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    if (destinationPath.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("No destination path was provided.")
+            );
+    }
+
+    return copyDatabaseFile(
+        m_session->databasePath(),
+        destinationPath
+        );
 }
 
 Status ApplicationServices::exportDatabaseAs(
     const QString& destinationPath
     )
 {
-    return m_dataService
-        ? m_dataService->exportAs(destinationPath)
-        : Status(std::unexpected(
-            QStringLiteral("Data service is unavailable.")));
+    if (!hasOpenDatabase())
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    if (destinationPath.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("No destination path was provided.")
+            );
+    }
+
+    return copyDatabaseFile(
+        m_session->databasePath(),
+        destinationPath
+        );
 }
 
 DataService* ApplicationServices::dataService() const
 {
-    return m_dataService.get();
+    if (!m_legacyDataService)
+    {
+        m_legacyDataService = std::make_unique<DataService>(*m_session);
+    }
+
+    return m_legacyDataService.get();
 }
 
 SettingsService* ApplicationServices::settingsService() const
 {
     if (!m_settingsService)
     {
-        DataService* legacy = dataService();
-        // Production wiring is session-only; the legacy pointer remains for
-        // direct migration callers and tests.
         m_settingsService = std::make_unique<SettingsService>(
-            legacy ? legacy->databaseSession() : nullptr, nullptr);
+            m_session.get(), nullptr);
     }
     return m_settingsService.get();
 }
@@ -123,9 +262,8 @@ TeacherService* ApplicationServices::teacherService() const
 {
     if (!m_teacherService)
     {
-        DataService* legacy = dataService();
         m_teacherService = std::make_unique<TeacherService>(
-            legacy ? legacy->databaseSession() : nullptr, nullptr);
+            m_session.get(), nullptr);
     }
     return m_teacherService.get();
 }
@@ -134,9 +272,8 @@ ClassService* ApplicationServices::classService() const
 {
     if (!m_classService)
     {
-        DataService* legacy = dataService();
         m_classService = std::make_unique<ClassService>(
-            legacy ? legacy->databaseSession() : nullptr, nullptr);
+            m_session.get(), nullptr);
     }
     return m_classService.get();
 }
@@ -145,9 +282,8 @@ ScheduleService* ApplicationServices::scheduleService() const
 {
     if (!m_scheduleService)
     {
-        DataService* legacy = dataService();
         m_scheduleService = std::make_unique<ScheduleService>(
-            legacy ? legacy->databaseSession() : nullptr, nullptr);
+            m_session.get(), nullptr);
     }
     return m_scheduleService.get();
 }
@@ -156,9 +292,8 @@ CalendarService* ApplicationServices::calendarService() const
 {
     if (!m_calendarService)
     {
-        DataService* legacy = dataService();
         m_calendarService = std::make_unique<CalendarService>(
-            legacy ? legacy->databaseSession() : nullptr, nullptr);
+            m_session.get(), nullptr);
     }
     return m_calendarService.get();
 }
@@ -167,9 +302,8 @@ RosterService* ApplicationServices::rosterService() const
 {
     if (!m_rosterService)
     {
-        DataService* legacy = dataService();
         m_rosterService = std::make_unique<RosterService>(
-            legacy ? legacy->databaseSession() : nullptr, nullptr);
+            m_session.get(), nullptr);
     }
     return m_rosterService.get();
 }
@@ -178,10 +312,9 @@ SpeakingEvaluationService* ApplicationServices::speakingEvaluationService() cons
 {
     if (!m_speakingEvaluationService)
     {
-        DataService* legacy = dataService();
         m_speakingEvaluationService =
             std::make_unique<SpeakingEvaluationService>(
-                legacy ? legacy->databaseSession() : nullptr, nullptr);
+            m_session.get(), nullptr);
     }
     return m_speakingEvaluationService.get();
 }

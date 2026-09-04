@@ -125,13 +125,26 @@ DataService::DataService(
     const QString &dbPath
     )
     : m_initialDatabasePath(dbPath)
-    , m_session(std::make_unique<DatabaseSession>())
+    , m_ownedSession(std::make_unique<DatabaseSession>())
+    , m_session(m_ownedSession.get())
+    , m_ownsSession(true)
 {
+}
+
+DataService::DataService(
+    DatabaseSession& session
+    )
+    : m_session(&session)
+{
+    refreshRepositoryAdapters();
 }
 
 DataService::~DataService()
 {
-    closeDatabase();
+    if (m_ownsSession)
+    {
+        closeDatabase();
+    }
 }
 
 bool DataService::open()
@@ -171,7 +184,7 @@ QString DataService::currentDatabasePath() const
 
 DatabaseSession* DataService::databaseSession() const
 {
-    return m_session.get();
+    return m_session;
 }
 
 void DataService::refreshRepositoryAdapters()

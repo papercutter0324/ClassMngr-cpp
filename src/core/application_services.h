@@ -8,6 +8,7 @@
 #include <memory>
 
 class DataService;
+class DatabaseSession;
 class ThemeService;
 class SettingsService;
 class TeacherService;
@@ -48,6 +49,8 @@ public:
         const QString& destinationPath
         );
 
+    // Compatibility adapter for test and legacy callers. It shares
+    // m_session; production feature composition never depends on it.
     [[nodiscard]] DataService* dataService() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;
@@ -60,7 +63,8 @@ public:
     [[nodiscard]] const DocumentCatalog* documentCatalog() const;
 
 private:
-    std::unique_ptr<DataService> m_dataService;
+    std::unique_ptr<DatabaseSession> m_session;
+    mutable std::unique_ptr<DataService> m_legacyDataService;
     mutable std::unique_ptr<SettingsService> m_settingsService;
     mutable std::unique_ptr<TeacherService> m_teacherService;
     mutable std::unique_ptr<ClassService> m_classService;
