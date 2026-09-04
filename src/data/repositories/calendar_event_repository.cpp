@@ -361,6 +361,94 @@ CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate(
     return fromEngineEvents(*loaded);
 }
 
+Result<QList<CalendarEvent>> CalendarEventRepository::expandRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const QDate& untilDate
+    )
+{
+    const QString operation = QObject::tr("Expanding calendar repeat series");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineCalendarEvent>> expanded =
+        service.expandRepeatSeries(
+            calendarEventToEngine(event),
+            frequency,
+            calendar_event_detail::toEngineDate(untilDate)
+            );
+    if (!expanded)
+    {
+        return std::unexpected(engineFailure(operation, expanded.error()));
+    }
+
+    return fromEngineEvents(*expanded);
+}
+
+Result<QList<int>> CalendarEventRepository::createRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const QDate& untilDate
+    )
+{
+    const QString operation = QObject::tr("Creating calendar repeat series");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<int>> created =
+        service.createRepeatSeries(
+            calendarEventToEngine(event),
+            frequency,
+            calendar_event_detail::toEngineDate(untilDate)
+            );
+    if (!created)
+    {
+        return std::unexpected(engineFailure(operation, created.error()));
+    }
+
+    QList<int> result;
+    result.reserve(static_cast<qsizetype>(created->size()));
+    for (const int eventId : *created)
+    {
+        result.append(eventId);
+    }
+    return result;
+}
+
+Status CalendarEventRepository::updateRepeatSeriesFromDate(
+    const CalendarEvent& originalEvent,
+    const CalendarEvent& editedEvent
+    )
+{
+    const QString operation =
+        QObject::tr("Updating calendar repeat series events");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return engineReady;
+    }
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Status updated =
+        service.updateRepeatSeriesFromDate(
+            calendarEventToEngine(originalEvent),
+            calendarEventToEngine(editedEvent)
+            );
+    if (!updated)
+    {
+        return std::unexpected(engineFailure(operation, updated.error()));
+    }
+    return {};
+}
+
 Result<int> CalendarEventRepository::saveCalendarEvent(
     const CalendarEvent& event
     )

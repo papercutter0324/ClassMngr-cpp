@@ -188,6 +188,20 @@ public:
         const QString& repeatSeriesId,
         const QDate& startDate
         ) const;
+    [[nodiscard]] Result<QList<CalendarEvent>> expandRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const QDate& untilDate
+        ) const;
+    [[nodiscard]] Result<QList<int>> createRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const QDate& untilDate
+        ) const;
+    [[nodiscard]] Status updateRepeatSeriesFromDate(
+        const CalendarEvent& originalEvent,
+        const CalendarEvent& editedEvent
+        ) const;
     [[nodiscard]] Result<int> saveEvent(const CalendarEvent& event) const;
     [[nodiscard]] Result<QList<int>> saveEvents(
         const QList<CalendarEvent>& events

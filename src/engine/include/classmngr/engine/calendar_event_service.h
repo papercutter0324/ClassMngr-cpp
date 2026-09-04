@@ -49,6 +49,32 @@ public:
         const CalendarDate& startDate
         );
 
+    // Expands a caller-owned repeat-series id into unsaved occurrences.  Each
+    // returned event has id=-1; callers retain ownership of generating the
+    // repeatSeriesId before invoking this operation.
+    [[nodiscard]] Result<std::vector<CalendarEvent>> expandRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const CalendarDate& untilDate
+        ) const;
+
+    // Atomically expands and persists a repeat series.  event.repeatSeriesId
+    // must be a non-empty caller-owned identifier.
+    [[nodiscard]] Result<std::vector<int>> createRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const CalendarDate& untilDate
+        );
+
+    // Atomically applies editedEvent's editable fields to the persisted
+    // suffix of originalEvent's repeat series.  The original series id is
+    // retained and the edited start-date offset and duration are propagated
+    // to every affected occurrence.
+    [[nodiscard]] Status updateRepeatSeriesFromDate(
+        const CalendarEvent& originalEvent,
+        const CalendarEvent& editedEvent
+        );
+
     [[nodiscard]] Result<int> save(
         const CalendarEvent& event
         );

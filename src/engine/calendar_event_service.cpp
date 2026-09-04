@@ -3,7 +3,9 @@
 #include "classmngr/engine/calendar_event_rules.h"
 #include "classmngr/engine/calendar_event_validator.h"
 
+#include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -131,6 +133,75 @@ Status validQueryDate(
     return std::unexpected(error(
         ErrorCode::InvalidArgument,
         std::string(action) + " requires a valid ISO calendar date."
+        ));
+}
+
+Result<std::optional<CalendarDate>> nextRepeatDate(
+    const CalendarDate& date,
+    CalendarEventRepeatFrequency frequency
+    )
+{
+    if (!isWireDate(date))
+    {
+        return std::unexpected(error(
+            ErrorCode::InvalidFormat,
+            "Calendar repeat occurrence date is not representable as ISO YYYY-MM-DD."
+            ));
+    }
+
+    switch (frequency)
+    {
+    case CalendarEventRepeatFrequency::Daily:
+    case CalendarEventRepeatFrequency::Weekly:
+    {
+        const std::chrono::days increment =
+            frequency == CalendarEventRepeatFrequency::Daily
+                ? std::chrono::days{1}
+                : std::chrono::days{7};
+        const CalendarDate next{
+            std::chrono::sys_days{date} + increment
+        };
+        return isWireDate(next)
+            ? std::optional<CalendarDate>{next}
+            : std::optional<CalendarDate>{};
+    }
+
+    case CalendarEventRepeatFrequency::Monthly:
+    {
+        const int currentYear = static_cast<int>(date.year());
+        const unsigned currentMonth = static_cast<unsigned>(date.month());
+        const unsigned currentDay = static_cast<unsigned>(date.day());
+        const bool wrapsYear = currentMonth == 12U;
+        const std::chrono::year nextYear{
+            currentYear + (wrapsYear ? 1 : 0)
+        };
+        if (!nextYear.ok())
+        {
+            return std::optional<CalendarDate>{};
+        }
+
+        const std::chrono::month nextMonth{wrapsYear ? 1U : currentMonth + 1U};
+        const auto lastDay = std::chrono::year_month_day_last{
+            nextYear,
+            std::chrono::month_day_last{nextMonth}
+        }.day();
+        const CalendarDate next{
+            nextYear,
+            nextMonth,
+            std::chrono::day{std::min(
+                currentDay,
+                static_cast<unsigned>(lastDay)
+                )}
+        };
+        return isWireDate(next)
+            ? std::optional<CalendarDate>{next}
+            : std::optional<CalendarDate>{};
+    }
+    }
+
+    return std::unexpected(error(
+        ErrorCode::InvalidArgument,
+        "Calendar repeat frequency is not supported."
         ));
 }
 
@@ -909,6 +980,262 @@ CalendarEventService::loadRepeatSeriesFromDate(
         "Loading calendar repeat series events",
         identity
         );
+}
+
+Result<std::vector<CalendarEvent>>
+CalendarEventService::expandRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const CalendarDate& untilDate
+    ) const
+{
+    const Result<CalendarEvent> normalized = normalizedForSave(event);
+    if (!normalized)
+    {
+        return std::unexpected(withContext(
+            normalized.error(),
+            "Expanding calendar repeat series",
+            eventIdentity(event)
+            ));
+    }
+
+    if (normalized->repeatSeriesId.empty())
+    {
+        return std::unexpected(error(
+            ErrorCode::InvalidArgument,
+            "Expanding a calendar repeat series requires a non-empty series id."
+            ));
+    }
+    if (!isWireDate(untilDate))
+    {
+        return std::unexpected(error(
+            ErrorCode::InvalidFormat,
+            "Calendar repeat until date is not representable as ISO YYYY-MM-DD."
+            ));
+    }
+
+    const ValidationResult recurrenceValidation =
+        CalendarEventValidator::validateRecurrence(
+            *normalized,
+            frequency,
+            untilDate
+            );
+    if (recurrenceValidation.hasErrors())
+    {
+        return std::unexpected(error(
+            ErrorCode::InvalidFormat,
+            validationMessage(recurrenceValidation)
+            ));
+    }
+
+    std::vector<CalendarEvent> occurrences;
+    occurrences.reserve(static_cast<std::size_t>(
+        CalendarEventValidator::estimatedRepeatOccurrences(
+            normalized->startDate,
+            untilDate,
+            frequency
+            )
+        ));
+
+    const std::chrono::days duration =
+        std::chrono::sys_days{normalized->endDate}
+        - std::chrono::sys_days{normalized->startDate};
+    CalendarDate occurrenceDate = normalized->startDate;
+    while (true)
+    {
+        CalendarEvent occurrence = *normalized;
+        occurrence.id = -1;
+        occurrence.startDate = occurrenceDate;
+        occurrence.endDate = CalendarDate{
+            std::chrono::sys_days{occurrenceDate} + duration
+        };
+        if (!isWireDate(occurrence.endDate))
+        {
+            return std::unexpected(error(
+                ErrorCode::InvalidFormat,
+                "Calendar repeat occurrence end date is not representable as ISO YYYY-MM-DD."
+                ));
+        }
+        occurrences.push_back(std::move(occurrence));
+
+        const Result<std::optional<CalendarDate>> next = nextRepeatDate(
+            occurrenceDate,
+            frequency
+            );
+        if (!next)
+        {
+            return std::unexpected(next.error());
+        }
+        if (!next->has_value()
+            || std::chrono::sys_days{**next}
+                > std::chrono::sys_days{untilDate})
+        {
+            break;
+        }
+        occurrenceDate = **next;
+    }
+
+    return occurrences;
+}
+
+Result<std::vector<int>> CalendarEventService::createRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const CalendarDate& untilDate
+    )
+{
+    const Result<std::vector<CalendarEvent>> occurrences = expandRepeatSeries(
+        event,
+        frequency,
+        untilDate
+        );
+    if (!occurrences)
+    {
+        return std::unexpected(withContext(
+            occurrences.error(),
+            "Creating calendar repeat series",
+            eventIdentity(event)
+            ));
+    }
+
+    return saveBatch(*occurrences);
+}
+
+Status CalendarEventService::updateRepeatSeriesFromDate(
+    const CalendarEvent& originalEvent,
+    const CalendarEvent& editedEvent
+    )
+{
+    const std::string repeatSeriesId = trimAsciiWhitespace(
+        originalEvent.repeatSeriesId
+        );
+    if (repeatSeriesId.empty())
+    {
+        return std::unexpected(error(
+            ErrorCode::InvalidArgument,
+            "Updating a calendar repeat series requires a non-empty original series id."
+            ));
+    }
+
+    const Status validOriginalDate = validQueryDate(
+        originalEvent.startDate,
+        "Updating calendar repeat series events"
+        );
+    if (!validOriginalDate)
+    {
+        return validOriginalDate;
+    }
+
+    const Result<CalendarEvent> normalizedEdited = normalizedForSave(
+        editedEvent
+        );
+    if (!normalizedEdited)
+    {
+        return std::unexpected(withContext(
+            normalizedEdited.error(),
+            "Updating calendar repeat series",
+            eventIdentity(editedEvent)
+            ));
+    }
+
+    const std::chrono::days startDateOffset =
+        std::chrono::sys_days{normalizedEdited->startDate}
+        - std::chrono::sys_days{originalEvent.startDate};
+    const std::chrono::days duration =
+        std::chrono::sys_days{normalizedEdited->endDate}
+        - std::chrono::sys_days{normalizedEdited->startDate};
+
+    auto transactionResult = m_database.beginTransaction();
+    if (!transactionResult)
+    {
+        return std::unexpected(withContext(
+            transactionResult.error(),
+            "Starting calendar repeat-series update transaction"
+            ));
+    }
+    SqliteTransaction transaction = std::move(*transactionResult);
+
+    const Result<std::vector<CalendarEvent>> seriesEvents =
+        loadRepeatSeriesFromDate(repeatSeriesId, originalEvent.startDate);
+    if (!seriesEvents)
+    {
+        return std::unexpected(withContext(
+            seriesEvents.error(),
+            "Loading calendar repeat series for update",
+            repeatSeriesIdentity(repeatSeriesId, originalEvent.startDate)
+            ));
+    }
+
+    std::vector<CalendarEvent> updatedEvents;
+    updatedEvents.reserve(seriesEvents->size());
+    for (const CalendarEvent& seriesEvent : *seriesEvents)
+    {
+        CalendarEvent updatedEvent = seriesEvent;
+        updatedEvent.title = normalizedEdited->title;
+        updatedEvent.eventType = normalizedEdited->eventType;
+        updatedEvent.timeStatus = normalizedEdited->timeStatus;
+        updatedEvent.repeatSeriesId = repeatSeriesId;
+        updatedEvent.allDay = normalizedEdited->allDay;
+        updatedEvent.startTime = normalizedEdited->startTime;
+        updatedEvent.endTime = normalizedEdited->endTime;
+        updatedEvent.startDate = CalendarDate{
+            std::chrono::sys_days{seriesEvent.startDate} + startDateOffset
+        };
+        updatedEvent.endDate = CalendarDate{
+            std::chrono::sys_days{updatedEvent.startDate} + duration
+        };
+        if (!isWireDate(updatedEvent.startDate)
+            || !isWireDate(updatedEvent.endDate))
+        {
+            return std::unexpected(error(
+                ErrorCode::InvalidFormat,
+                "Updated calendar repeat-series dates are not representable as ISO YYYY-MM-DD."
+                ));
+        }
+        updatedEvents.push_back(std::move(updatedEvent));
+    }
+
+    const ValidationResult seriesValidation =
+        CalendarEventValidator::validateSeries(updatedEvents);
+    if (seriesValidation.hasErrors())
+    {
+        return std::unexpected(error(
+            ErrorCode::InvalidFormat,
+            validationMessage(seriesValidation)
+            ));
+    }
+
+    for (const CalendarEvent& event : updatedEvents)
+    {
+        const Result<CalendarEvent> normalized = normalizedForSave(event);
+        if (!normalized)
+        {
+            return std::unexpected(withContext(
+                normalized.error(),
+                "Updating calendar repeat series",
+                eventIdentity(event)
+                ));
+        }
+        const Result<int> saved = saveNormalized(*normalized);
+        if (!saved)
+        {
+            return std::unexpected(withContext(
+                saved.error(),
+                "Updating calendar repeat series",
+                eventIdentity(event)
+                ));
+        }
+    }
+
+    const Status committed = transaction.commit();
+    if (!committed)
+    {
+        return std::unexpected(withContext(
+            committed.error(),
+            "Committing calendar repeat-series update"
+            ));
+    }
+    return {};
 }
 
 Result<CalendarEvent> CalendarEventService::normalizedForSave(

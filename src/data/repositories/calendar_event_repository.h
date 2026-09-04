@@ -50,6 +50,23 @@ public:
         const QDate& startDate
         );
 
+    [[nodiscard]] Result<QList<CalendarEvent>> expandRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const QDate& untilDate
+        );
+
+    [[nodiscard]] Result<QList<int>> createRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const QDate& untilDate
+        );
+
+    [[nodiscard]] Status updateRepeatSeriesFromDate(
+        const CalendarEvent& originalEvent,
+        const CalendarEvent& editedEvent
+        );
+
     [[nodiscard]] Result<int> saveCalendarEvent(
         const CalendarEvent& event
         );

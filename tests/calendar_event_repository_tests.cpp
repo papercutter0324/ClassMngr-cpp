@@ -88,6 +88,7 @@ private slots:
     void schemaCreatesEndDateIndex();
     void savesAndLoadsRepeatSeriesId();
     void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
+    void repeatSeriesWorkflowRoundTripsThroughEngine();
     void repeatSeriesDeleteRemovesSelectedAndFollowingOnly();
     void writeFailuresAreReturnedAndBatchRollsBack();
 };
@@ -547,6 +548,107 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
                 QStringLiteral("Series 3")
             })
             );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::repeatSeriesWorkflowRoundTripsThroughEngine()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_series_workflow_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
+            );
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        const CalendarEvent seed = makeEvent(
+            QStringLiteral("Repeat seed"),
+            QDate(2026, 1, 31),
+            QTime(9, 0),
+            QDate(2026, 2, 1),
+            QTime(10, 0),
+            QStringLiteral("Meeting"),
+            QStringLiteral("qt-series")
+            );
+
+        const Result<QList<CalendarEvent>> expanded =
+            repository.expandRepeatSeries(
+                seed,
+                CalendarEventRepeatFrequency::Monthly,
+                QDate(2026, 4, 30)
+                );
+        QVERIFY(expanded);
+        QCOMPARE(expanded->size(), 4);
+        QCOMPARE(expanded->at(0).id, -1);
+        QCOMPARE(expanded->at(1).startDate, QDate(2026, 2, 28));
+        QCOMPARE(expanded->at(1).endDate, QDate(2026, 3, 1));
+        QCOMPARE(expanded->at(3).startDate, QDate(2026, 4, 28));
+
+        const Result<QList<int>> created = repository.createRepeatSeries(
+            seed,
+            CalendarEventRepeatFrequency::Daily,
+            QDate(2026, 2, 2)
+            );
+        QVERIFY(created);
+        QCOMPARE(created->size(), 3);
+        QVERIFY(created->at(0) > 0);
+        QVERIFY(created->at(1) > 0);
+        QVERIFY(created->at(2) > 0);
+
+        const Result<QList<CalendarEvent>> loaded =
+            repository.loadCalendarEventsForRepeatSeriesFromDate(
+                QStringLiteral("qt-series"),
+                QDate(2026, 1, 31)
+                );
+        QVERIFY(loaded);
+        QCOMPARE(loaded->size(), 3);
+
+        const CalendarEvent edited = makeEvent(
+            QStringLiteral("Edited suffix"),
+            QDate(2026, 2, 2),
+            QTime(11, 0),
+            QDate(2026, 2, 4),
+            QTime(12, 0),
+            QStringLiteral("Workshop"),
+            QStringLiteral("ignored-series-id")
+            );
+        const Status updated = repository.updateRepeatSeriesFromDate(
+            loaded->at(1),
+            edited
+            );
+        QVERIFY(updated);
+
+        const Result<QList<CalendarEvent>> updatedSeries =
+            repository.loadCalendarEventsForRepeatSeriesFromDate(
+                QStringLiteral("qt-series"),
+                QDate(2026, 1, 31)
+                );
+        QVERIFY(updatedSeries);
+        QCOMPARE(updatedSeries->size(), 3);
+        QCOMPARE(updatedSeries->at(0).title, QStringLiteral("Repeat seed"));
+        QCOMPARE(updatedSeries->at(0).startDate, QDate(2026, 1, 31));
+        QCOMPARE(updatedSeries->at(1).title, QStringLiteral("Edited suffix"));
+        QCOMPARE(updatedSeries->at(1).eventType, QStringLiteral("Workshop"));
+        QCOMPARE(updatedSeries->at(1).startDate, QDate(2026, 2, 2));
+        QCOMPARE(updatedSeries->at(1).endDate, QDate(2026, 2, 4));
+        QCOMPARE(updatedSeries->at(1).startTime, QTime(11, 0));
+        QCOMPARE(updatedSeries->at(2).startDate, QDate(2026, 2, 3));
+        QCOMPARE(updatedSeries->at(2).endDate, QDate(2026, 2, 5));
+        QCOMPARE(updatedSeries->at(1).repeatSeriesId,
+            QStringLiteral("qt-series"));
     }
 
     QSqlDatabase::removeDatabase(connectionName);

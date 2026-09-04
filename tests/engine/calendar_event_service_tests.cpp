@@ -84,6 +84,25 @@ bool containsTitle(
     }
     return false;
 }
+
+bool containsOccurrence(
+    const std::vector<Engine::CalendarEvent>& events,
+    std::string_view title,
+    const Engine::CalendarDate& startDate,
+    const Engine::CalendarDate& endDate
+    )
+{
+    for (const Engine::CalendarEvent& event : events)
+    {
+        if (event.title == title
+            && event.startDate == startDate
+            && event.endDate == endDate)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace
 
 int main()
@@ -289,6 +308,235 @@ int main()
     passed &= expect(
         database.execute("DROP TRIGGER reject_calendar_insert").has_value(),
         "calendar insert failure trigger could not be removed"
+        );
+
+    Engine::CalendarEvent recurrence = makeEvent(
+        "Repeat",
+        date(2026, 1, 30),
+        date(2026, 1, 31),
+        time(9, 0),
+        time(10, 0),
+        "engine-repeat"
+        );
+    const auto dailyOccurrences = service.expandRepeatSeries(
+        recurrence,
+        Engine::CalendarEventRepeatFrequency::Daily,
+        date(2026, 2, 1)
+        );
+    passed &= expect(
+        dailyOccurrences && dailyOccurrences->size() == 3
+            && dailyOccurrences->front().id == -1
+            && containsOccurrence(
+                *dailyOccurrences,
+                "Repeat",
+                date(2026, 2, 1),
+                date(2026, 2, 2)
+                ),
+        "daily repeat expansion did not preserve unsaved ids and duration"
+        );
+
+    const auto weeklyOccurrences = service.expandRepeatSeries(
+        recurrence,
+        Engine::CalendarEventRepeatFrequency::Weekly,
+        date(2026, 2, 13)
+        );
+    passed &= expect(
+        weeklyOccurrences && weeklyOccurrences->size() == 3
+            && containsOccurrence(
+                *weeklyOccurrences,
+                "Repeat",
+                date(2026, 2, 13),
+                date(2026, 2, 14)
+                ),
+        "weekly repeat expansion did not preserve seven-day spacing"
+        );
+
+    Engine::CalendarEvent monthEnd = makeEvent(
+        "Month end",
+        date(2026, 1, 31),
+        date(2026, 2, 1),
+        time(9, 0),
+        time(10, 0),
+        "engine-month-end"
+        );
+    const auto monthlyOccurrences = service.expandRepeatSeries(
+        monthEnd,
+        Engine::CalendarEventRepeatFrequency::Monthly,
+        date(2026, 4, 30)
+        );
+    passed &= expect(
+        monthlyOccurrences && monthlyOccurrences->size() == 4
+            && containsOccurrence(
+                *monthlyOccurrences,
+                "Month end",
+                date(2026, 2, 28),
+                date(2026, 3, 1)
+                )
+            && containsOccurrence(
+                *monthlyOccurrences,
+                "Month end",
+                date(2026, 4, 28),
+                date(2026, 4, 29)
+                ),
+        "monthly repeat expansion did not retain the established month-end clamp"
+        );
+
+    const auto invalidUntil = service.expandRepeatSeries(
+        recurrence,
+        Engine::CalendarEventRepeatFrequency::Daily,
+        date(2026, 1, 29)
+        );
+    Engine::CalendarEvent missingSeriesId = recurrence;
+    missingSeriesId.repeatSeriesId.clear();
+    const auto invalidSeriesId = service.expandRepeatSeries(
+        missingSeriesId,
+        Engine::CalendarEventRepeatFrequency::Daily,
+        date(2026, 2, 1)
+        );
+    passed &= expect(
+        !invalidUntil
+            && invalidUntil.error().code == Engine::ErrorCode::InvalidFormat
+            && !invalidSeriesId
+            && invalidSeriesId.error().code == Engine::ErrorCode::InvalidArgument,
+        "repeat expansion did not reject invalid bounds or a missing series id"
+        );
+
+    Engine::CalendarEvent seriesSeed = makeEvent(
+        "Series base",
+        date(2026, 3, 1),
+        date(2026, 3, 2),
+        time(9, 0),
+        time(10, 0),
+        "engine-update-series"
+        );
+    const auto createdSeries = service.createRepeatSeries(
+        seriesSeed,
+        Engine::CalendarEventRepeatFrequency::Daily,
+        date(2026, 3, 3)
+        );
+    const auto originalSeries = service.loadRepeatSeriesFromDate(
+        "engine-update-series",
+        date(2026, 3, 1)
+        );
+    passed &= expect(
+        createdSeries && createdSeries->size() == 3
+            && originalSeries && originalSeries->size() == 3,
+        "repeat-series creation did not persist all occurrences"
+        );
+
+    if (originalSeries && originalSeries->size() == 3)
+    {
+        Engine::CalendarEvent edited = makeEvent(
+            "Series edited",
+            date(2026, 3, 3),
+            date(2026, 3, 5),
+            time(11, 0),
+            time(12, 0),
+            "ignored-edited-series-id"
+            );
+        const auto updated = service.updateRepeatSeriesFromDate(
+            originalSeries->at(1),
+            edited
+            );
+        const auto reloadedSeries = service.loadRepeatSeriesFromDate(
+            "engine-update-series",
+            date(2026, 3, 1)
+            );
+        passed &= expect(
+            updated && reloadedSeries && reloadedSeries->size() == 3
+                && reloadedSeries->at(0).id == originalSeries->at(0).id
+                && reloadedSeries->at(1).id == originalSeries->at(1).id
+                && reloadedSeries->at(2).id == originalSeries->at(2).id
+                && containsOccurrence(
+                    *reloadedSeries,
+                    "Series base",
+                    date(2026, 3, 1),
+                    date(2026, 3, 2)
+                    )
+                && containsOccurrence(
+                    *reloadedSeries,
+                    "Series edited",
+                    date(2026, 3, 3),
+                    date(2026, 3, 5)
+                    )
+                && containsOccurrence(
+                    *reloadedSeries,
+                    "Series edited",
+                    date(2026, 3, 4),
+                    date(2026, 3, 6)
+                    )
+                && reloadedSeries->at(1).startTime == time(11, 0)
+                && reloadedSeries->at(1).repeatSeriesId
+                    == "engine-update-series",
+            "repeat-series update did not preserve suffix, ids, duration, and identity"
+            );
+    }
+
+    Engine::CalendarEvent rollbackSeed = makeEvent(
+        "Rollback base",
+        date(2026, 4, 10),
+        date(2026, 4, 11),
+        time(9, 0),
+        time(10, 0),
+        "engine-rollback-series"
+        );
+    const auto rollbackCreated = service.createRepeatSeries(
+        rollbackSeed,
+        Engine::CalendarEventRepeatFrequency::Daily,
+        date(2026, 4, 12)
+        );
+    const auto rollbackOriginal = service.loadRepeatSeriesFromDate(
+        "engine-rollback-series",
+        date(2026, 4, 10)
+        );
+    passed &= expect(
+        rollbackCreated && rollbackOriginal && rollbackOriginal->size() == 3
+            && database.execute(
+                "CREATE TRIGGER reject_calendar_repeat_update "
+                "BEFORE UPDATE ON calendar_events "
+                "WHEN NEW.title = 'Rollback reject' BEGIN "
+                "SELECT RAISE(ABORT, 'injected calendar repeat update failure'); END"
+                ).has_value(),
+        "repeat-series update rollback fixture could not be created"
+        );
+    if (rollbackOriginal && rollbackOriginal->size() == 3)
+    {
+        Engine::CalendarEvent rejectedEdit = makeEvent(
+            "Rollback reject",
+            date(2026, 4, 11),
+            date(2026, 4, 13),
+            time(11, 0),
+            time(12, 0)
+            );
+        const auto rejectedUpdate = service.updateRepeatSeriesFromDate(
+            rollbackOriginal->front(),
+            rejectedEdit
+            );
+        const auto afterRejectedUpdate = service.loadRepeatSeriesFromDate(
+            "engine-rollback-series",
+            date(2026, 4, 10)
+            );
+        passed &= expect(
+            !rejectedUpdate && afterRejectedUpdate
+                && afterRejectedUpdate->size() == 3
+                && containsOccurrence(
+                    *afterRejectedUpdate,
+                    "Rollback base",
+                    date(2026, 4, 10),
+                    date(2026, 4, 11)
+                    )
+                && containsOccurrence(
+                    *afterRejectedUpdate,
+                    "Rollback base",
+                    date(2026, 4, 12),
+                    date(2026, 4, 13)
+                    ),
+            "repeat-series update failure was not rolled back"
+            );
+    }
+    passed &= expect(
+        database.execute("DROP TRIGGER reject_calendar_repeat_update").has_value(),
+        "repeat-series update rollback fixture could not be removed"
         );
 
     if (futureId)

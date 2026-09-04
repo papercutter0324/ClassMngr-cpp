@@ -886,6 +886,50 @@ Result<QList<CalendarEvent>> CalendarService::repeatSeriesFromDate(
     return Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
+Result<QList<CalendarEvent>> CalendarService::expandRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const QDate& untilDate
+    ) const
+{
+    if (auto* repository = session()
+            ? session()->calendarEventRepository() : nullptr)
+    {
+        return repository->expandRepeatSeries(event, frequency, untilDate);
+    }
+    return Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
+}
+
+Result<QList<int>> CalendarService::createRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const QDate& untilDate
+    ) const
+{
+    if (auto* repository = session()
+            ? session()->calendarEventRepository() : nullptr)
+    {
+        return repository->createRepeatSeries(event, frequency, untilDate);
+    }
+    return Result<QList<int>>(std::unexpected(unavailableError()));
+}
+
+Status CalendarService::updateRepeatSeriesFromDate(
+    const CalendarEvent& originalEvent,
+    const CalendarEvent& editedEvent
+    ) const
+{
+    if (auto* repository = session()
+            ? session()->calendarEventRepository() : nullptr)
+    {
+        return repository->updateRepeatSeriesFromDate(
+            originalEvent,
+            editedEvent
+            );
+    }
+    return std::unexpected(unavailableError());
+}
+
 Result<int> CalendarService::saveEvent(const CalendarEvent& event) const
 {
     const CalendarEvent normalized = CalendarEventValidator::normalized(event);
