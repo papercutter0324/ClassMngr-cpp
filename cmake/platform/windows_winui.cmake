@@ -438,6 +438,64 @@ function(classmngr_add_windows_winui_target)
         )
     endif()
 
+    # These engine tests were added after the original WinUI dependency list;
+    # keep them as dependencies because the WinUI workflow runs the complete
+    # registered CTest inventory after building this custom target.
+    if(TARGET ClassMngrEngineApplicationSettingsServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineApplicationSettingsServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEnginePersonalDetailsServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEnginePersonalDetailsServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineCampusRecordServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineCampusRecordServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineTeacherImportServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineTeacherImportServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineIntensiveSlotStateServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineIntensiveSlotStateServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineSpeakingEvaluationPersistenceServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingEvaluationPersistenceServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineCalendarEventImportServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineCalendarEventImportServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineResourcePackPolicyTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineResourcePackPolicyTests
+        )
+    endif()
+    if(TARGET ClassMngrEnginePlatformServicesTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEnginePlatformServicesTests
+        )
+    endif()
+
     if(BUILD_TESTING)
         add_test(
             NAME ClassMngrWindowsWinUIStageTests

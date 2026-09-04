@@ -7,6 +7,13 @@ if(POLICY CMP0219)
     cmake_policy(SET CMP0219 NEW)
 endif()
 
+# CMake's Visual Studio compiler probe runs MSBuild before the project has
+# declared its normal VS globals.  Make the FileTracker workaround a process
+# environment property early enough for that probe as well as later targets.
+if(WIN32 AND CMAKE_GENERATOR MATCHES "^Visual Studio")
+    set(ENV{TrackFileAccess} "false")
+endif()
+
 project(ClassMngr
     VERSION 0.19.0
     LANGUAGES CXX

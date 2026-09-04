@@ -310,10 +310,12 @@ does not compose them into an engine workflow. Engine code still calls
 
 ### P2-R07 — Close the cross-platform and clean-build exit gate
 
-**Status (2026-09-04): In progress; evidence gate remains open.**
-The reproducible matrix and CI ownership are documented in commit `f20c9a5`
-and [the exit-gate runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md),
-but fresh x64/x86 and macOS/Linux artifacts are still required.
+**Status (2026-09-04): Automation implemented; evidence gate remains open.**
+The reproducible matrix is executable through
+`.github/workflows/phase2-exit-gate.yml` and
+`scripts/phase2_exit_gate.py`, with the process documented in [the exit-gate
+runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md), but
+fresh x64/x86 and macOS/Linux artifacts are still required.
 
 - [ ] Replace the focused exception in the P2-07 record with a complete,
   reproducible headless x64/x86 matrix, or explicitly repair/update the

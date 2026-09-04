@@ -63,6 +63,7 @@ jobs:
             build-essential \
             libcups2-dev \
             libgl1-mesa-dev \
+            libwayland-dev \
             libxkbcommon-dev \
             libxkbcommon-x11-dev \
             libxcb1-dev \
