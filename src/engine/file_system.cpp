@@ -1134,6 +1134,93 @@ Status StandardFileSystem::copyFile(
     }
 }
 
+Status StandardFileSystem::moveFile(
+    std::string_view utf8SourcePath,
+    std::string_view utf8DestinationPath
+    ) const
+{
+    try
+    {
+        const Result<fs::path> sourcePath = normalizedPath(utf8SourcePath);
+        if (!sourcePath)
+        {
+            return std::unexpected(sourcePath.error());
+        }
+        const Result<fs::path> destinationPath = normalizedPath(
+            utf8DestinationPath
+            );
+        if (!destinationPath)
+        {
+            return std::unexpected(destinationPath.error());
+        }
+
+        if (*sourcePath == *destinationPath)
+        {
+            return failure(
+                ErrorCode::InvalidArgument,
+                FileSystemErrorToken::MoveFailed
+                );
+        }
+
+        const Result<fs::file_status> sourceStatus = regularSourceStatus(
+            *sourcePath
+            );
+        if (!sourceStatus)
+        {
+            return std::unexpected(sourceStatus.error());
+        }
+
+        std::error_code destinationStatusError;
+        const fs::file_status destinationStatus = fs::status(
+            *destinationPath,
+            destinationStatusError
+            );
+        if (destinationStatusError && !isMissing(destinationStatusError))
+        {
+            return failure(
+                ErrorCode::Io,
+                FileSystemErrorToken::MoveFailed,
+                destinationStatusError
+                );
+        }
+        if (!destinationStatusError && fs::exists(destinationStatus))
+        {
+            return failure(
+                ErrorCode::Io,
+                FileSystemErrorToken::MoveFailed
+                );
+        }
+
+        std::error_code moveError;
+        fs::rename(*sourcePath, *destinationPath, moveError);
+        if (moveError)
+        {
+            return failure(
+                ErrorCode::Io,
+                FileSystemErrorToken::MoveFailed,
+                moveError
+                );
+        }
+
+        return {};
+    }
+    catch (const std::bad_alloc&)
+    {
+        return internalFailure();
+    }
+    catch (const std::exception&)
+    {
+        return failure(
+            ErrorCode::Io,
+            FileSystemErrorToken::MoveFailed
+            );
+    }
+    catch (...)
+    {
+        return internalFailure();
+    }
+}
+
 Status StandardFileSystem::replaceFileAtomically(
     std::string_view utf8TemporaryPath,
     std::string_view utf8DestinationPath

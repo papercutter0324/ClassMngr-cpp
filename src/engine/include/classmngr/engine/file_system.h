@@ -29,6 +29,8 @@ inline constexpr std::string_view WriteFailed =
     "file-system.write-failed";
 inline constexpr std::string_view CopyFailed =
     "file-system.copy-failed";
+inline constexpr std::string_view MoveFailed =
+    "file-system.move-failed";
 inline constexpr std::string_view AtomicReplacementFailed =
     "file-system.atomic-replacement-failed";
 inline constexpr std::string_view DirectoryReplacementFailed =
@@ -78,6 +80,14 @@ public:
         std::string_view utf8SourcePath,
         std::string_view utf8DestinationPath,
         bool createParentDirectories = false
+        ) const = 0;
+
+    // Moves a regular file without replacing an existing destination. The
+    // non-overwrite contract lets recovery workflows preserve the source when
+    // a backup destination is unexpectedly occupied.
+    [[nodiscard]] virtual Status moveFile(
+        std::string_view utf8SourcePath,
+        std::string_view utf8DestinationPath
         ) const = 0;
 
     // The temporary path must be on the same filesystem as the destination.
@@ -144,6 +154,11 @@ public:
         std::string_view utf8SourcePath,
         std::string_view utf8DestinationPath,
         bool createParentDirectories = false
+        ) const override;
+
+    [[nodiscard]] Status moveFile(
+        std::string_view utf8SourcePath,
+        std::string_view utf8DestinationPath
         ) const override;
 
     [[nodiscard]] Status replaceFileAtomically(

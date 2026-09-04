@@ -8,8 +8,10 @@
 #include "core/settingsmanager.h"
 #include "data/data_service.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
+#include "classmngr/engine/database_lifecycle.h"
 
 #include <QAction>
+#include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -17,9 +19,32 @@
 #include <QStandardPaths>
 #include <QUuid>
 
+#include <cstddef>
+#include <string_view>
+
 namespace
 {
 constexpr int MaxRecentFiles = 10;
+
+std::string_view utf8View(
+    const QByteArray& value
+    )
+{
+    return {
+        value.constData(),
+        static_cast<std::size_t>(value.size())
+    };
+}
+
+QString engineErrorText(
+    const classmngr::engine::Error& error
+    )
+{
+    return QString::fromUtf8(
+        error.message.data(),
+        static_cast<qsizetype>(error.message.size())
+        );
+}
 }
 
 FileController::FileController(
@@ -283,23 +308,39 @@ bool FileController::createInitialSetupDatabase(
     m_initialSetupDatabasePath = filePath;
     m_initialSetupBackupPath.clear();
 
-    if (QFile::exists(filePath))
+    const QString requestedBackupPath = initialSetupBackupPath(filePath);
+    const QByteArray databaseUtf8 = filePath.toUtf8();
+    const QByteArray backupUtf8 = requestedBackupPath.toUtf8();
+    classmngr::engine::StandardFileSystem fileSystem;
+    const classmngr::engine::DatabaseLifecycleService lifecycle(
+        fileSystem
+        );
+    const auto setup = lifecycle.beginInitialSetup(
+        utf8View(databaseUtf8),
+        utf8View(backupUtf8)
+        );
+    if (!setup)
     {
-        m_initialSetupBackupPath = initialSetupBackupPath(filePath);
-        if (!QFile::rename(filePath, m_initialSetupBackupPath))
-        {
-            DialogServices::showWarning(
-                m_window,
-                tr("New Teacher Profile"),
-                tr("Unable to preserve the existing Teacher Profile file:\n%1")
-                    .arg(filePath)
-                );
-            m_initialSetupDatabasePath.clear();
-            m_initialSetupBackupPath.clear();
-            enterNoDatabaseState();
-            return false;
-        }
+        DialogServices::showWarning(
+            m_window,
+            tr("New Teacher Profile"),
+            tr("Unable to preserve the existing Teacher Profile file:\n%1\n\n%2")
+                .arg(filePath, engineErrorText(setup.error()))
+            );
+        m_initialSetupDatabasePath.clear();
+        m_initialSetupBackupPath.clear();
+        enterNoDatabaseState();
+        return false;
     }
+
+    m_initialSetupDatabasePath = QString::fromUtf8(
+        setup->databasePath.data(),
+        static_cast<qsizetype>(setup->databasePath.size())
+        );
+    m_initialSetupBackupPath = QString::fromUtf8(
+        setup->backupPath.data(),
+        static_cast<qsizetype>(setup->backupPath.size())
+        );
 
     const Status opened =
         m_services->openDatabase(filePath);
@@ -338,16 +379,25 @@ void FileController::finishInitialSetup()
         return;
     }
 
-    if (
-        !m_initialSetupBackupPath.isEmpty()
-        && !QFile::remove(m_initialSetupBackupPath)
-        )
+    const QByteArray databaseUtf8 = m_initialSetupDatabasePath.toUtf8();
+    const QByteArray backupUtf8 = m_initialSetupBackupPath.toUtf8();
+    classmngr::engine::StandardFileSystem fileSystem;
+    const classmngr::engine::DatabaseLifecycleService lifecycle(
+        fileSystem
+        );
+    const classmngr::engine::DatabaseInitialSetupState state{
+        .databasePath = std::string(utf8View(databaseUtf8)),
+        .backupPath = std::string(utf8View(backupUtf8))
+    };
+    const classmngr::engine::Status finished =
+        lifecycle.finishInitialSetup(state);
+    if (!finished)
     {
         DialogServices::showWarning(
             m_window,
             tr("Initial Setup"),
-            tr("Setup is complete, but the replaced Teacher Profile could not be removed:\n%1")
-                .arg(m_initialSetupBackupPath)
+            tr("Setup is complete, but the replaced Teacher Profile could not be removed:\n%1\n\n%2")
+                .arg(m_initialSetupBackupPath, engineErrorText(finished.error()))
             );
     }
 
@@ -372,51 +422,44 @@ void FileController::cancelInitialSetup()
 
     if (!databasePath.isEmpty())
     {
-        if (backupPath.isEmpty())
+        const QByteArray databaseUtf8 = databasePath.toUtf8();
+        const QByteArray backupUtf8 = backupPath.toUtf8();
+        const QString incompletePath = backupPath.isEmpty()
+            ? QString{}
+            : initialSetupBackupPath(databasePath);
+        const QByteArray incompleteUtf8 = incompletePath.toUtf8();
+        classmngr::engine::StandardFileSystem fileSystem;
+        const classmngr::engine::DatabaseLifecycleService lifecycle(
+            fileSystem
+            );
+        const classmngr::engine::DatabaseInitialSetupState state{
+            .databasePath = std::string(utf8View(databaseUtf8)),
+            .backupPath = std::string(utf8View(backupUtf8))
+        };
+        const classmngr::engine::Status cancelled =
+            lifecycle.cancelInitialSetup(
+                state,
+                utf8View(incompleteUtf8)
+                );
+        if (!cancelled)
         {
-            if (QFile::exists(databasePath) && !QFile::remove(databasePath))
+            if (backupPath.isEmpty())
             {
                 DialogServices::showWarning(
                     m_window,
                     tr("Initial Setup"),
-                    tr("The incomplete Teacher Profile could not be removed:\n%1")
-                        .arg(databasePath)
+                    tr("The incomplete Teacher Profile could not be removed:\n%1\n\n%2")
+                        .arg(databasePath, engineErrorText(cancelled.error()))
                     );
             }
-        }
-        else
-        {
-            const QString incompletePath = initialSetupBackupPath(databasePath);
-            bool movedIncompleteProfile = true;
-            if (QFile::exists(databasePath))
+            else
             {
-                movedIncompleteProfile =
-                    QFile::rename(databasePath, incompletePath);
-            }
-
-            if (
-                !movedIncompleteProfile
-                || !QFile::rename(backupPath, databasePath)
-                )
-            {
-                if (
-                    movedIncompleteProfile
-                    && QFile::exists(incompletePath)
-                    )
-                {
-                    QFile::rename(incompletePath, databasePath);
-                }
-
                 DialogServices::showWarning(
                     m_window,
                     tr("Initial Setup"),
-                    tr("The original Teacher Profile could not be restored:\n%1")
-                        .arg(backupPath)
+                    tr("The original Teacher Profile could not be restored:\n%1\n\n%2")
+                        .arg(backupPath, engineErrorText(cancelled.error()))
                     );
-            }
-            else if (QFile::exists(incompletePath))
-            {
-                QFile::remove(incompletePath);
             }
         }
     }

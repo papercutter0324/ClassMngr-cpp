@@ -26,6 +26,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/resource_pack_policy.h"
     "${PROJECT_SOURCE_DIR}/src/engine/file_system.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/file_system.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/database_lifecycle.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/database_lifecycle.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/result.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/document_output.h"
     "${PROJECT_SOURCE_DIR}/src/engine/zip_archive_writer.cpp"
@@ -1208,5 +1210,22 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineFileSystemTests
         COMMAND ClassMngrEngineFileSystemTests
+    )
+
+    add_executable(ClassMngrEngineDatabaseLifecycleTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/database_lifecycle_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineDatabaseLifecycleTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineDatabaseLifecycleTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineDatabaseLifecycleTests
+        COMMAND ClassMngrEngineDatabaseLifecycleTests
     )
 endif()

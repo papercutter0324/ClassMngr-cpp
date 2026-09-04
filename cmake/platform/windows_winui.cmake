@@ -437,6 +437,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineFileSystemTests
         )
     endif()
+    if(TARGET ClassMngrEngineDatabaseLifecycleTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineDatabaseLifecycleTests
+        )
+    endif()
 
     # These engine tests were added after the original WinUI dependency list;
     # keep them as dependencies because the WinUI workflow runs the complete
