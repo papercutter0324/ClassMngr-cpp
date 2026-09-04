@@ -1,6 +1,7 @@
 #pragma once
 
 #include "classmngr/engine/class_transfer.h"
+#include "classmngr/engine/platform_services.h"
 #include "classmngr/engine/result.h"
 
 #include <vector>
@@ -21,6 +22,11 @@ public:
         SqliteDatabase& database
         );
 
+    ClassTransferService(
+        SqliteDatabase& database,
+        const Clock& clock
+        );
+
     [[nodiscard]] Result<ClassTransferPackage> buildPackage(
         const std::vector<int>& classIds
         );
@@ -36,6 +42,8 @@ public:
 
 private:
     SqliteDatabase& m_database;
+    SystemClock m_systemClock;
+    const Clock* m_clock = nullptr;
 };
 
 } // namespace classmngr::engine

@@ -197,12 +197,12 @@ CalendarImportStyle cellStyle(
     return workbook.styles[static_cast<std::size_t>(cell.style)];
 }
 
-int currentYear()
+int currentYear(const Clock& clock)
 {
     using namespace std::chrono;
 
     const year_month_day today{
-        floor<days>(system_clock::now())
+        floor<days>(clock.nowUtc())
     };
     return static_cast<int>(today.year());
 }
@@ -212,7 +212,10 @@ bool asciiDigit(char value)
     return value >= '0' && value <= '9';
 }
 
-int calendarYear(const CalendarImportWorkbook& workbook)
+int calendarYear(
+    const CalendarImportWorkbook& workbook,
+    const Clock& clock
+    )
 {
     for (const CalendarImportCell& cell : workbook.cells)
     {
@@ -232,7 +235,7 @@ int calendarYear(const CalendarImportWorkbook& workbook)
         }
     }
 
-    return currentYear();
+    return currentYear(clock);
 }
 
 int monthNumber(std::string_view value)
@@ -292,11 +295,12 @@ int monthNumber(std::string_view value)
 }
 
 std::vector<MonthBlock> monthBlocks(
-    const CalendarImportWorkbook& workbook
+    const CalendarImportWorkbook& workbook,
+    const Clock& clock
     )
 {
     std::vector<MonthBlock> blocks;
-    const int year = calendarYear(workbook);
+    const int year = calendarYear(workbook, clock);
 
     for (const CalendarImportCell& cell : workbook.cells)
     {
@@ -1052,10 +1056,20 @@ CalendarImportResult CalendarEventImportService::parse(
     const std::vector<std::string>& campusCodes
     )
 {
+    const SystemClock clock;
+    return parse(workbook, campusCodes, clock);
+}
+
+CalendarImportResult CalendarEventImportService::parse(
+    const CalendarImportWorkbook& workbook,
+    const std::vector<std::string>& campusCodes,
+    const Clock& clock
+    )
+{
     CalendarImportResult result;
     const std::vector<std::string> knownCampusCodes =
         normalizedCampusCodes(campusCodes);
-    const std::vector<MonthBlock> blocks = monthBlocks(workbook);
+    const std::vector<MonthBlock> blocks = monthBlocks(workbook, clock);
 
     CellMap cellsByPosition;
     for (const CalendarImportCell& cell : workbook.cells)
@@ -1227,6 +1241,15 @@ CalendarImportResult CalendarEventImportService::parse(
     }
 
     return result;
+}
+
+CalendarImportResult CalendarEventImportService::parse(
+    const CalendarImportWorkbook& workbook,
+    const Clock& clock,
+    const std::vector<std::string>& campusCodes
+    )
+{
+    return parse(workbook, campusCodes, clock);
 }
 
 } // namespace classmngr::engine

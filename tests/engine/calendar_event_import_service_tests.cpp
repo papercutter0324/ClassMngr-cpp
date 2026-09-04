@@ -1,6 +1,7 @@
 #include "classmngr/engine/calendar_event_import_service.h"
 #include "classmngr/engine/calendar_event_service.h"
 #include "classmngr/engine/open_database.h"
+#include "classmngr/engine/platform_services.h"
 
 #include <chrono>
 #include <iostream>
@@ -15,6 +16,26 @@ using classmngr::engine::CalendarEvent;
 using classmngr::engine::CalendarEventImportService;
 using classmngr::engine::CalendarImportResult;
 using classmngr::engine::CalendarImportWorkbook;
+using classmngr::engine::Clock;
+using classmngr::engine::MonotonicTimePoint;
+using classmngr::engine::WallClockTimePoint;
+
+class FixedClock final : public Clock
+{
+public:
+    [[nodiscard]] WallClockTimePoint nowUtc() const noexcept override
+    {
+        return wall;
+    }
+
+    [[nodiscard]] MonotonicTimePoint monotonicNow() const noexcept override
+    {
+        return monotonic;
+    }
+
+    WallClockTimePoint wall{};
+    MonotonicTimePoint monotonic{};
+};
 
 CalendarDate date(int year, unsigned month, unsigned day)
 {
@@ -84,6 +105,36 @@ bool testNewSemesterLegendImport()
         && expect(event->eventType == "Other", "new semester event type changed")
         && expect(!event->allDay, "new semester all-day state changed")
         && expect(event->timeStatus == "Unknown", "new semester time status changed");
+}
+
+bool testFixedClockYearInference()
+{
+    CalendarImportWorkbook workbook;
+    workbook.styles = {
+        {},
+        {"FFF2CC", ""}
+    };
+    workbook.cells = {
+        {1, 1, 0, "JULY", ""},
+        {20, 26, 1, "DYB Workshop", ""},
+        {4, 1, 1, "7", ""}
+    };
+    FixedClock clock;
+    clock.wall = WallClockTimePoint{
+        std::chrono::sys_days{
+            std::chrono::year{2031}
+                / std::chrono::month{2}
+                / std::chrono::day{1}
+        }
+    };
+
+    const CalendarImportResult parsed =
+        CalendarEventImportService::parse(workbook, {}, clock);
+
+    return expect(
+        eventOn(parsed, date(2031, 7, 7)) != nullptr,
+        "calendar year inference ignored the injected clock"
+        );
 }
 
 bool testWeekendAndColorOverrides()
@@ -352,6 +403,7 @@ int main()
 {
     bool passed = true;
     passed &= testNewSemesterLegendImport();
+    passed &= testFixedClockYearInference();
     passed &= testWeekendAndColorOverrides();
     passed &= testShiftedFirstCalendarRow();
     passed &= testFractionalDayIsIgnored();

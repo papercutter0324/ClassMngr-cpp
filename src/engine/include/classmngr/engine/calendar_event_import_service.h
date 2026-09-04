@@ -1,6 +1,7 @@
 #pragma once
 
 #include "classmngr/engine/calendar_event.h"
+#include "classmngr/engine/platform_services.h"
 
 #include <string>
 #include <vector>
@@ -46,6 +47,18 @@ class CalendarEventImportService final
 public:
     [[nodiscard]] static CalendarImportResult parse(
         const CalendarImportWorkbook& workbook,
+        const std::vector<std::string>& campusCodes = {}
+        );
+
+    [[nodiscard]] static CalendarImportResult parse(
+        const CalendarImportWorkbook& workbook,
+        const std::vector<std::string>& campusCodes,
+        const Clock& clock
+        );
+
+    [[nodiscard]] static CalendarImportResult parse(
+        const CalendarImportWorkbook& workbook,
+        const Clock& clock,
         const std::vector<std::string>& campusCodes = {}
         );
 

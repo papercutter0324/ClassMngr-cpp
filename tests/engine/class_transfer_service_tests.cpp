@@ -2,6 +2,7 @@
 #include "classmngr/engine/class_repository.h"
 #include "classmngr/engine/class_transfer_service.h"
 #include "classmngr/engine/open_database.h"
+#include "classmngr/engine/platform_services.h"
 #include "classmngr/engine/sqlite_database.h"
 #include "classmngr/engine/teacher_service.h"
 
@@ -14,6 +15,23 @@
 namespace
 {
 using namespace classmngr::engine;
+
+class FixedClock final : public Clock
+{
+public:
+    [[nodiscard]] WallClockTimePoint nowUtc() const noexcept override
+    {
+        return wall;
+    }
+
+    [[nodiscard]] MonotonicTimePoint monotonicNow() const noexcept override
+    {
+        return monotonic;
+    }
+
+    WallClockTimePoint wall{};
+    MonotonicTimePoint monotonic{};
+};
 
 bool expect(
     bool condition,
@@ -109,6 +127,15 @@ int main()
     ClassInfoService classInfoService(database);
     TeacherService teachers(database);
     ClassTransferService transfers(database);
+    FixedClock clock;
+    clock.wall = WallClockTimePoint{
+        std::chrono::sys_days{
+            std::chrono::year{2031}
+                / std::chrono::month{2}
+                / std::chrono::day{1}
+        }
+    };
+    ClassTransferService fixedTransfers(database, clock);
     bool passed = true;
 
     const auto aliceId = teachers.create(teacher("Alice Smith"));
@@ -193,10 +220,11 @@ int main()
         "source speaking evaluation row could not be written"
         );
 
-    const auto packageResult = transfers.buildPackage({*sourceId});
+    const auto packageResult = fixedTransfers.buildPackage({*sourceId});
     passed &= expect(
         packageResult
             && packageResult->version == ClassTransferPackage::CurrentVersion
+            && packageResult->exportedAtUtc == clock.wall
             && packageResult->classes.size() == 1
             && packageResult->teachers.size() == 1
             && packageResult->classes.front().info.classId == -1

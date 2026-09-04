@@ -1360,7 +1360,17 @@ Status writeClassData(
 } // namespace
 
 ClassTransferService::ClassTransferService(SqliteDatabase& database)
-    : m_database(database)
+    : m_database(database),
+      m_clock(&m_systemClock)
+{
+}
+
+ClassTransferService::ClassTransferService(
+    SqliteDatabase& database,
+    const Clock& clock
+    )
+    : m_database(database),
+      m_clock(&clock)
 {
 }
 
@@ -1387,7 +1397,7 @@ Result<ClassTransferPackage> ClassTransferService::buildPackage(
     ClassInfoService classInfoService(m_database);
     TeacherService teacherService(m_database);
     ClassTransferPackage package;
-    package.exportedAtUtc = std::chrono::system_clock::now();
+    package.exportedAtUtc = m_clock->nowUtc();
     std::set<int> seenClasses;
     std::map<int, std::string> teacherKeys;
 
