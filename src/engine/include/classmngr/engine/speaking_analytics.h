@@ -87,6 +87,27 @@ struct SpeakingAnalyticsYearToDatePoint
     std::string classAverageLetter;
 };
 
+struct SpeakingAnalyticsEvaluation
+{
+    std::string name;
+    SpeakingAnalyticsRows rows;
+};
+
+struct SpeakingAnalyticsDashboardInput
+{
+    std::string selection;
+    SpeakingAnalyticsRoster roster;
+    std::vector<SpeakingAnalyticsEvaluation> evaluations;
+};
+
+struct SpeakingAnalyticsDashboard
+{
+    SpeakingAnalyticsSnapshot selectedSnapshot;
+    std::string classShapeEvaluationName;
+    SpeakingAnalyticsSnapshot classShapeSnapshot;
+    std::vector<SpeakingAnalyticsYearToDatePoint> yearToDatePoints;
+};
+
 class SpeakingAnalyticsService final
 {
 public:
@@ -125,6 +146,10 @@ public:
             std::string evaluationName,
             const SpeakingAnalyticsSnapshot& snapshot
             );
+
+    [[nodiscard]] static SpeakingAnalyticsDashboard buildDashboard(
+        const SpeakingAnalyticsDashboardInput& input
+        );
 };
 
 } // namespace classmngr::engine

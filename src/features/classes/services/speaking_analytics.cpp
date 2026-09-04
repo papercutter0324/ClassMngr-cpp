@@ -20,6 +20,11 @@ using PortableRow = classmngr::engine::SpeakingAnalyticsRow;
 using PortableRows = classmngr::engine::SpeakingAnalyticsRows;
 using PortableService = classmngr::engine::SpeakingAnalyticsService;
 using PortableSnapshot = classmngr::engine::SpeakingAnalyticsSnapshot;
+using PortableEvaluation =
+    classmngr::engine::SpeakingAnalyticsEvaluation;
+using PortableDashboardInput =
+    classmngr::engine::SpeakingAnalyticsDashboardInput;
+using PortableDashboard = classmngr::engine::SpeakingAnalyticsDashboard;
 using PortableStudentRank =
     classmngr::engine::SpeakingAnalyticsStudentRank;
 using PortableYearToDatePoint =
@@ -62,6 +67,14 @@ PortableRows toPortable(const SpeakingEvalRows& rows)
         result.push_back(toPortable(row));
     }
     return result;
+}
+
+PortableEvaluation toPortable(const Evaluation& evaluation)
+{
+    return {
+        toUtf8(evaluation.name),
+        toPortable(evaluation.rows)
+    };
 }
 
 std::vector<PortableRows> toPortable(
@@ -188,6 +201,23 @@ YearToDatePoint fromPortable(const PortableYearToDatePoint& source)
         source.classAverage3,
         fromUtf8(source.classAverageLetter)
     };
+}
+
+Dashboard fromPortable(const PortableDashboard& source)
+{
+    Dashboard result;
+    result.selectedSnapshot = fromPortable(source.selectedSnapshot);
+    result.classShapeEvaluationName = fromUtf8(
+        source.classShapeEvaluationName);
+    result.classShapeSnapshot = fromPortable(source.classShapeSnapshot);
+    result.yearToDatePoints.reserve(
+        static_cast<qsizetype>(source.yearToDatePoints.size())
+        );
+    for (const PortableYearToDatePoint& point : source.yearToDatePoints)
+    {
+        result.yearToDatePoints.append(fromPortable(point));
+    }
+    return result;
 }
 
 QList<int> fromPortable(const std::vector<int>& values)
@@ -325,6 +355,24 @@ SpeakingEvalRows filterMatrixByRoster(
         toPortable(matrix),
         toPortable(roster)
         ));
+}
+
+Dashboard buildDashboard(
+    const QString& selection,
+    const Roster& roster,
+    const QList<Evaluation>& evaluations
+)
+{
+    PortableDashboardInput input;
+    input.selection = toUtf8(selection);
+    input.roster = toPortable(roster);
+    input.evaluations.reserve(static_cast<std::size_t>(evaluations.size()));
+    for (const Evaluation& evaluation : evaluations)
+    {
+        input.evaluations.push_back(toPortable(evaluation));
+    }
+
+    return fromPortable(PortableService::buildDashboard(input));
 }
 
 } // namespace SpeakingAnalytics

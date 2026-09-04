@@ -1330,9 +1330,6 @@ Result<SpeakingEvaluationDashboard> SpeakingEvaluationService::analyticsDashboar
     const QString& evaluationName
     ) const
 {
-    const QString name = evaluationName.trimmed();
-    const bool allEvaluations = name.isEmpty()
-        || name.compare(QStringLiteral("All"), Qt::CaseInsensitive) == 0;
     Result<Roster> loadedRoster =
         std::unexpected(unavailableError());
     if (auto* repository = session()
@@ -1349,28 +1346,10 @@ Result<SpeakingEvaluationDashboard> SpeakingEvaluationService::analyticsDashboar
         return std::unexpected(loadedRoster.error());
     }
 
-    const Roster& roster = *loadedRoster;
-
-    // Repository-backed sessions do not necessarily expose a DataService.
-    // The loaded roster is therefore the authoritative denominator here.
-    const int rosterCount = !roster.rows.isEmpty()
-        ? roster.rows.size()
-        : 0;
-
-    struct EvaluationView
-    {
-        QString name;
-        SpeakingAnalytics::Snapshot filteredSnapshot;
-        SpeakingAnalytics::Snapshot historicalSnapshot;
-    };
-
-    QList<EvaluationView> evaluations;
-    QList<SpeakingEvalRows> filteredMatrices;
+    QList<SpeakingAnalytics::Evaluation> evaluations;
+    evaluations.reserve(SpeakingAnalytics::evaluationNames().size());
     for (const QString& evaluationName : SpeakingAnalytics::evaluationNames())
     {
-        // Load every canonical evaluation exactly once.  The two snapshots
-        // deliberately have different scopes: the dashboard remains about
-        // today's roster, while YTD must retain each historical cohort.
         const Result<SpeakingEvalRows> raw =
             evaluation(classId, evaluationName);
         if (!raw)
@@ -1378,69 +1357,25 @@ Result<SpeakingEvaluationDashboard> SpeakingEvaluationService::analyticsDashboar
             return std::unexpected(raw.error());
         }
 
-        const SpeakingEvalRows filtered = !roster.rows.isEmpty()
-            ? SpeakingAnalytics::filterMatrixByRoster(*raw, roster)
-            : *raw;
-
-        EvaluationView view;
-        view.name = evaluationName;
-        view.filteredSnapshot =
-            SpeakingAnalytics::compute({ filtered }, rosterCount);
-        view.historicalSnapshot =
-            SpeakingAnalytics::compute({ *raw }, rosterCount);
-        evaluations.append(view);
-
-        if (!raw->isEmpty())
-            filteredMatrices.append(filtered);
+        evaluations.append({evaluationName, *raw});
     }
+
+    SpeakingAnalytics::Dashboard portableDashboard =
+        SpeakingAnalytics::buildDashboard(
+            evaluationName.trimmed(),
+            *loadedRoster,
+            evaluations
+            );
 
     SpeakingEvaluationDashboard dashboard;
-    if (allEvaluations)
-    {
-        // Preserve the existing cross-evaluation dashboard behavior.  It
-        // consolidates current-roster students across all named evaluations.
-        dashboard.selectedSnapshot =
-            SpeakingAnalytics::compute(filteredMatrices, rosterCount);
-    }
-    else
-    {
-        for (const EvaluationView& view : evaluations)
-        {
-            if (view.name == name)
-            {
-                dashboard.selectedSnapshot = view.filteredSnapshot;
-                dashboard.classShapeEvaluationName = view.name;
-                dashboard.classShapeSnapshot = view.filteredSnapshot;
-                break;
-            }
-        }
-    }
-
-    if (allEvaluations)
-    {
-        // The all-evaluations histogram is intentionally not the aggregate.
-        // It must be captioned with the exact completed current-class
-        // evaluation whose distribution it plots.
-        for (auto it = evaluations.crbegin(); it != evaluations.crend(); ++it)
-        {
-            if (it->filteredSnapshot.fullyScoredCount <= 0)
-                continue;
-
-            dashboard.classShapeEvaluationName = it->name;
-            dashboard.classShapeSnapshot = it->filteredSnapshot;
-            break;
-        }
-    }
-
-    for (const EvaluationView& view : evaluations)
-    {
-        if (const auto point = SpeakingAnalytics::yearToDatePoint(
-                view.name, view.historicalSnapshot))
-        {
-            dashboard.yearToDatePoints.append(*point);
-        }
-    }
-
+    dashboard.selectedSnapshot = std::move(
+        portableDashboard.selectedSnapshot);
+    dashboard.classShapeEvaluationName = std::move(
+        portableDashboard.classShapeEvaluationName);
+    dashboard.classShapeSnapshot = std::move(
+        portableDashboard.classShapeSnapshot);
+    dashboard.yearToDatePoints = std::move(
+        portableDashboard.yearToDatePoints);
     return dashboard;
 }
 

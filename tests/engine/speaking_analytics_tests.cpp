@@ -235,6 +235,115 @@ int main()
         "partial-only year-to-date point was not omitted"
         );
 
+    SpeakingAnalyticsRoster dashboardRoster;
+    dashboardRoster.columns = {"English", "Korean"};
+    dashboardRoster.rows = {
+        {"Alice", "\xEC\x95\x8C\xEB\xA6\xAC\xEC\x8A\xA4"},
+        {"Bob", "\xEB\xB0\x95\xEB\xB3\xB4"}
+    };
+    const std::vector<SpeakingAnalyticsEvaluation> dashboardEvaluations{
+        {
+            "Winter",
+            {
+                makeRow(
+                    "Alice", "\xEC\x95\x8C\xEB\xA6\xAC\xEC\x8A\xA4",
+                    "B", "B", "B", "B", "B", "B"
+                    ),
+                makeRow(
+                    "Carol", "\xEC\xB9\xB4\xEB\x9D\xBC",
+                    "A", "A", "A", "A", "A", "A"
+                    )
+            }
+        },
+        {
+            "Speech Contest",
+            {
+                makeRow(
+                    "Bob", "\xEB\xB0\x95\xEB\xB3\xB4",
+                    "A", "A", "A", "A", "A", "A"
+                    )
+            }
+        },
+        {
+            "Summer",
+            {
+                makeRow(
+                    "Alice", "\xEC\x95\x8C\xEB\xA6\xAC\xEC\x8A\xA4",
+                    "A", "A", "A", "A", "A", "A"
+                    ),
+                makeRow(
+                    "Bob", "\xEB\xB0\x95\xEB\xB3\xB4",
+                    "B", "B", "B", "B", "B", "B"
+                    )
+            }
+        },
+        {
+            "Fall",
+            {
+                makeRow(
+                    "Alice", "\xEC\x95\x8C\xEB\xA6\xAC\xEC\x8A\xA4",
+                    "A", "A", "A", "A", "A", {}
+                    )
+            }
+        }
+    };
+
+    const auto buildDashboard =
+        [&dashboardRoster, &dashboardEvaluations](std::string selection)
+    {
+        SpeakingAnalyticsDashboardInput input;
+        input.selection = std::move(selection);
+        input.roster = dashboardRoster;
+        input.evaluations = dashboardEvaluations;
+        return SpeakingAnalyticsService::buildDashboard(input);
+    };
+    const SpeakingAnalyticsDashboard allDashboard =
+        buildDashboard("  aLl  ");
+    const SpeakingAnalyticsDashboard emptyDashboard = buildDashboard({});
+    passed &= expect(
+        allDashboard.selectedSnapshot.rankings.size() == 2
+            && allDashboard.classShapeEvaluationName == "Summer"
+            && allDashboard.classShapeSnapshot.fullyScoredCount == 2
+            && allDashboard.yearToDatePoints.size() == 3
+            && closeTo(allDashboard.yearToDatePoints.front().classAverage3, 3.0)
+            && emptyDashboard.classShapeEvaluationName
+                == allDashboard.classShapeEvaluationName
+            && emptyDashboard.selectedSnapshot.rankings.size()
+                == allDashboard.selectedSnapshot.rankings.size(),
+        "all and empty dashboard selection policy changed"
+        );
+
+    const SpeakingAnalyticsDashboard selectedDashboard =
+        buildDashboard("  Winter  ");
+    passed &= expect(
+        selectedDashboard.selectedSnapshot.rankings.size() == 1
+            && selectedDashboard.selectedSnapshot.rankings.front().englishName
+                == "Alice"
+            && selectedDashboard.classShapeEvaluationName == "Winter"
+            && selectedDashboard.classShapeSnapshot.rankings.size() == 1,
+        "named dashboard selection policy changed"
+        );
+
+    const SpeakingAnalyticsDashboard partialDashboard =
+        buildDashboard("Fall");
+    passed &= expect(
+        partialDashboard.selectedSnapshot.hasData
+            && partialDashboard.selectedSnapshot.fullyScoredCount == 0
+            && partialDashboard.classShapeEvaluationName == "Fall"
+            && partialDashboard.yearToDatePoints.size() == 3,
+        "partial dashboard selection policy changed"
+        );
+
+    const SpeakingAnalyticsDashboard unknownDashboard =
+        buildDashboard("Unknown");
+    passed &= expect(
+        !unknownDashboard.selectedSnapshot.hasData
+            && unknownDashboard.classShapeEvaluationName.empty()
+            && !unknownDashboard.classShapeSnapshot.hasData
+            && unknownDashboard.yearToDatePoints.size() == 3,
+        "unknown dashboard selection policy changed"
+        );
+
     passed &= expect(
         StudentNameService::normalizeEnglish("  j. p. kim  ")
             == "J.P.Kim",

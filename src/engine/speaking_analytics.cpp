@@ -617,4 +617,97 @@ SpeakingAnalyticsRows SpeakingAnalyticsService::filterMatrixByRoster(
     return filtered;
 }
 
+SpeakingAnalyticsDashboard SpeakingAnalyticsService::buildDashboard(
+    const SpeakingAnalyticsDashboardInput& input
+    )
+{
+    const std::string selection = trimAsciiWhitespace(input.selection);
+    const bool allEvaluations = selection.empty()
+        || asciiCaseFold(selection) == "all";
+    const int rosterCount = static_cast<int>(input.roster.rows.size());
+
+    struct EvaluationView
+    {
+        const SpeakingAnalyticsEvaluation* evaluation = nullptr;
+        SpeakingAnalyticsSnapshot filteredSnapshot;
+        SpeakingAnalyticsSnapshot historicalSnapshot;
+    };
+
+    std::vector<EvaluationView> evaluations;
+    evaluations.reserve(input.evaluations.size());
+    std::vector<SpeakingAnalyticsRows> filteredMatrices;
+    filteredMatrices.reserve(input.evaluations.size());
+
+    for (const SpeakingAnalyticsEvaluation& evaluation : input.evaluations)
+    {
+        const SpeakingAnalyticsRows filtered = input.roster.rows.empty()
+            ? evaluation.rows
+            : filterMatrixByRoster(evaluation.rows, input.roster);
+
+        EvaluationView view;
+        view.evaluation = &evaluation;
+        view.filteredSnapshot = compute({filtered}, rosterCount);
+        view.historicalSnapshot = compute({evaluation.rows}, rosterCount);
+        evaluations.push_back(std::move(view));
+
+        if (!evaluation.rows.empty())
+        {
+            filteredMatrices.push_back(filtered);
+        }
+    }
+
+    SpeakingAnalyticsDashboard dashboard;
+    if (allEvaluations)
+    {
+        dashboard.selectedSnapshot = compute(filteredMatrices, rosterCount);
+    }
+    else
+    {
+        for (const EvaluationView& view : evaluations)
+        {
+            if (view.evaluation->name != selection)
+            {
+                continue;
+            }
+
+            dashboard.selectedSnapshot = view.filteredSnapshot;
+            dashboard.classShapeEvaluationName = view.evaluation->name;
+            dashboard.classShapeSnapshot = view.filteredSnapshot;
+            break;
+        }
+    }
+
+    if (allEvaluations)
+    {
+        for (auto iterator = evaluations.crbegin();
+             iterator != evaluations.crend();
+             ++iterator)
+        {
+            if (iterator->filteredSnapshot.fullyScoredCount <= 0)
+            {
+                continue;
+            }
+
+            dashboard.classShapeEvaluationName =
+                iterator->evaluation->name;
+            dashboard.classShapeSnapshot = iterator->filteredSnapshot;
+            break;
+        }
+    }
+
+    dashboard.yearToDatePoints.reserve(evaluations.size());
+    for (const EvaluationView& view : evaluations)
+    {
+        if (const auto point = yearToDatePoint(
+                view.evaluation->name,
+                view.historicalSnapshot
+                ))
+        {
+            dashboard.yearToDatePoints.push_back(*point);
+        }
+    }
+
+    return dashboard;
+}
+
 } // namespace classmngr::engine
