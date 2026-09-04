@@ -388,74 +388,81 @@ equivalents are `ClassTimeValidator`, `RosterValidator`, and
 
 ### P2-R09 — Extract calendar recurrence workflows
 
-**Status (2026-09-05): Open; Qt-owned recurrence mutation found in source audit.**
+**Status (2026-09-05): Implemented; engine and retained-Qt recurrence
+validation passed.**
 
-The Phase 2 implementation sequence and P2-04 assign recurrence policy to the
-engine, but the calendar page still creates and edits repeat-series events.
+The recurrence workflow is now owned by `CalendarEventService`; the calendar
+page retains only dialog/prompt, localization, and UUID responsibilities.
 
-- [ ] Add Qt-free engine operations for creating/expanding a repeat series and
+- [x] Add Qt-free engine operations for creating/expanding a repeat series and
   updating a series from a selected date. The contract must own recurrence
   frequency/interval semantics, occurrence limits and date bounds, duration
   propagation, month-end behavior, and persistence/transaction decisions.
-- [ ] Keep dialog choices, localized labels, presentation prompts, and any
+- [x] Keep dialog choices, localized labels, presentation prompts, and any
   adapter-only identity/UUID translation outside the engine. Make identity
   ownership explicit in the engine contract so Qt and WinUI cannot generate
   different product behavior.
-- [ ] Add headless tests for daily, weekly, and monthly series; month-end
+- [x] Add headless tests for daily, weekly, and monthly series; month-end
   clamping/termination; invalid bounds; duration propagation; series edits;
   rollback; and representative Qt-to-engine round trips.
 
-Evidence: `src/features/calendar/ui/calendar_page_events.cpp` contains
-`nextRepeatDate`, `repeatedCalendarEvents`, and `saveRepeatSeriesFromDate`,
-including occurrence generation and future-series rewriting. The public
-`CalendarEventService` currently exposes load/save/remove operations but no
-repeat-series expansion or update use case. The engine validator has a private
-date helper for validation/counting, which is not a replacement for the
-workflow contract.
+Evidence: `src/engine/calendar_event_service.cpp` owns expansion, month-end
+clamping, duration propagation, and transactional create/update operations.
+`src/data/repositories/calendar_event_repository.cpp` and
+`src/app/services/feature_services.cpp` provide retained-Qt adapters, while
+`src/features/calendar/ui/calendar_page_events.cpp` no longer implements
+recurrence mutation. `ClassMngrEngineCalendarEventServiceTests` covers the
+headless cases and `ClassMngrCalendarEventRepositoryTests` covers the Qt
+round trip; both pass.
 
 ### P2-R10 — Canonicalize shared policy catalogs and roster projections
 
-**Status (2026-09-05): Open; duplicated policy data and derived semantics found in source audit.**
+**Status (2026-09-05): Implemented for the current catalog/projection slice;
+focused engine and retained-Qt validation passed.**
 
-- [ ] Expose engine-owned catalogs/constants for teacher display-name choices,
+- [x] Expose engine-owned catalogs/constants for teacher display-name choices,
   testing-class grades/levels, roster base columns, calendar event types and
   time statuses, and speaking-evaluation names, dimensions, score values, and
   comment limits. Route the corresponding Qt model helpers through those
   contracts and add parity tests.
-- [ ] Add an engine roster projection/count operation with an explicit
+- [x] Add an engine roster projection/count operation with an explicit
   definition of a populated student row. Align class details, My Classes, sub
   prep, roster validation, and speaking-dashboard counts with that definition.
-- [ ] Consolidate duplicate engine ordering helpers, including the teacher
+- [x] Consolidate duplicate engine ordering helpers, including the teacher
   display comparator used by sub-prep and class naming, or document why a
   distinction is intentional.
-- [ ] Keep colors, headers, widths, row highlights, and other rendering-only
+- [x] Keep colors, headers, widths, row highlights, and other rendering-only
   metadata in Qt/WinUI adapters.
 
-Evidence: duplicate catalogs remain in `src/domain/models/teacher.h`,
-`testing_class.h`, `calendar_event.h`, `speaking_evaluation.h`, and
-`roster.cpp`, alongside engine equivalents. Qt's
-`src/data/repositories/roster_repository.cpp` counts only rows with non-empty
-English/Korean names, while `src/engine/speaking_analytics.cpp` currently
-uses the total row count for its roster count.
+Evidence: engine catalogs in `src/engine/include/classmngr/engine/` now feed
+the Qt model helpers, and `RosterService::studentCount()` defines populated
+rows as those with non-blank English or Korean names. Class details, My
+Classes, sub-prep, roster, and speaking-dashboard paths use the shared count;
+teacher ordering is shared by class naming and sub-prep. The full Qt-free
+engine suite (57/57) and the four focused retained-Qt model/repository tests
+pass.
 
 ### P2-R11 — Extract database initial-setup and recovery workflow
 
-**Status (2026-09-05): Open; phase ownership needs to be made explicit.**
+**Status (2026-09-05): Implemented; failure-injection and adapter compilation
+validation passed.**
 
-- [ ] Define a portable database lifecycle workflow for creating a database,
+- [x] Define a portable database lifecycle workflow for creating a database,
   backing up an existing profile, restoring after cancellation or failure,
   and cleaning up incomplete files. Use the engine filesystem/atomic-replace
   contracts and typed results; extend those contracts if rename/move semantics
   are required.
-- [ ] Add failure-injection tests for backup, setup completion, cancellation,
+- [x] Add failure-injection tests for backup, setup completion, cancellation,
   restore, and cleanup, including preserving the original database on failure.
-- [ ] Leave standard-directory discovery, path selection, dialogs, and user
+- [x] Leave standard-directory discovery, path selection, dialogs, and user
   confirmation in the Qt/WinUI adapters.
 
-Evidence: `src/app/controllers/file_controller.cpp` still owns the backup,
-rename, removal, rollback, and restore transitions for initial setup. The
-engine has portable filesystem and atomic replacement primitives, but no
-portable database lifecycle use case representing those transitions.
+Evidence: `DatabaseLifecycleService` and the non-overwriting
+`FileSystem::moveFile()` contract own the portable transitions and typed
+failures. `FileController` supplies selected paths and UI, then delegates
+backup, completion, cancellation, restore, and incomplete-file cleanup. The
+engine lifecycle test covers injected backup, completion, cancellation,
+restore, and cleanup failures; it passes together with the full engine suite.
 
 ## Recommended completion order
 
