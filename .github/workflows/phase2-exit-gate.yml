@@ -2,6 +2,20 @@ name: Phase 2 portable-engine exit gate
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - NativeWindowsPort
+    paths:
+      - ".github/workflows/phase2-exit-gate.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/catalog/**"
+      - "resources/windows/**"
+      - "scripts/phase2_exit_gate.py"
+      - "src/engine/**"
+      - "tests/engine/**"
+      - "tests/fixtures/resource_packs/**"
 
 permissions:
   contents: read
