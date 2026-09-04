@@ -1,5 +1,7 @@
 #pragma once
 
+#include "classmngr/engine/roster.h"
+
 #include <map>
 #include <optional>
 #include <string>
@@ -38,11 +40,7 @@ enum class SpeakingAnalyticsCriterion
 using SpeakingAnalyticsRow = std::vector<std::string>;
 using SpeakingAnalyticsRows = std::vector<SpeakingAnalyticsRow>;
 
-struct SpeakingAnalyticsRoster
-{
-    std::vector<std::string> columns;
-    std::vector<SpeakingAnalyticsRow> rows;
-};
+using SpeakingAnalyticsRoster = Roster;
 
 struct SpeakingAnalyticsCriterionSlice
 {

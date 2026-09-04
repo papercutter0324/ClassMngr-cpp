@@ -1,11 +1,29 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace classmngr::engine
 {
+
+inline constexpr std::array<std::string_view, 4> SpeakingEvaluationNames{
+    "Winter",
+    "Speech Contest",
+    "Summer",
+    "Fall"
+};
+
+inline constexpr std::array<std::string_view, 5>
+    SpeakingEvaluationScoreValues{
+        "A+",
+        "A",
+        "B+",
+        "B",
+        "C"
+    };
 
 enum class SpeakingEvaluationColumn
 {
@@ -24,6 +42,11 @@ enum class SpeakingEvaluationColumn
 
 inline constexpr int SpeakingEvaluationRowCount = 25;
 inline constexpr int SpeakingEvaluationColumnCount = 11;
+inline constexpr int SpeakingEvaluationCommentMinLength = 100;
+inline constexpr int SpeakingEvaluationCommentMaxLength = 450;
+inline constexpr std::size_t
+    SpeakingEvaluationMaximumEvaluationNameLength = 128;
+inline constexpr std::size_t SpeakingEvaluationMaximumNotesLength = 10000;
 
 [[nodiscard]] constexpr int toInt(
     SpeakingEvaluationColumn column

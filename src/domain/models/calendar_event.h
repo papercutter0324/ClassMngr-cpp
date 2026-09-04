@@ -156,14 +156,13 @@ inline CalendarEvent calendarEventFromEngine(
 
 inline QStringList calendarEventTypes()
 {
-    return {
-        QStringLiteral("Vacation"),
-        QStringLiteral("Holiday"),
-        QStringLiteral("Workshop"),
-        QStringLiteral("CM"),
-        QStringLiteral("Meeting"),
-        QStringLiteral("Other")
-    };
+    QStringList result;
+    for (const std::string_view eventType
+         : classmngr::engine::CalendarEventRules::eventTypes())
+    {
+        result.append(calendar_event_detail::fromUtf8(eventType));
+    }
+    return result;
 }
 
 inline QString normalizedCalendarEventType(
@@ -179,11 +178,13 @@ inline QString normalizedCalendarEventType(
 
 inline QStringList calendarEventTimeStatuses()
 {
-    return {
-        QStringLiteral("Timed"),
-        QStringLiteral("Unknown"),
-        QStringLiteral("Unconfirmed")
-    };
+    QStringList result;
+    for (const std::string_view timeStatus
+         : classmngr::engine::CalendarEventRules::timeStatuses())
+    {
+        result.append(calendar_event_detail::fromUtf8(timeStatus));
+    }
+    return result;
 }
 
 inline QString normalizedCalendarEventTimeStatus(

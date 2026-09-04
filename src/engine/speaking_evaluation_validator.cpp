@@ -367,7 +367,7 @@ void addStringEnumIssue(
     int column
     )
 {
-    for (const std::string_view allowed : {"A+", "A", "B+", "B", "C"})
+    for (const std::string_view allowed : SpeakingEvaluationScoreValues)
     {
         if (value == allowed)
         {
@@ -421,29 +421,31 @@ std::string SpeakingEvaluationValidator::normalizedScore(std::string_view value)
 
     if (compact == "1" || compact == "\xe3\x85\x8a")
     {
-        return "C";
+        return std::string(SpeakingEvaluationScoreValues[4]);
     }
     if (compact == "2" || compact == "\xe3\x85\xa0")
     {
-        return "B";
+        return std::string(SpeakingEvaluationScoreValues[3]);
     }
     if (compact == "3" || compact == "\xe3\x85\xa0+")
     {
-        return "B+";
+        return std::string(SpeakingEvaluationScoreValues[2]);
     }
     if (compact == "4" || compact == "\xe3\x85\x81")
     {
-        return "A";
+        return std::string(SpeakingEvaluationScoreValues[1]);
     }
     if (compact == "5" || compact == "\xe3\x85\x81+")
     {
-        return "A+";
+        return std::string(SpeakingEvaluationScoreValues[0]);
     }
 
-    if (compact == "A+" || compact == "A" || compact == "B+"
-        || compact == "B" || compact == "C")
+    for (const std::string_view allowed : SpeakingEvaluationScoreValues)
     {
-        return compact;
+        if (compact == allowed)
+        {
+            return compact;
+        }
     }
 
     // A malformed score must remain recognizable to validation; never turn

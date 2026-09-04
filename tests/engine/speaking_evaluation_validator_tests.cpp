@@ -95,6 +95,27 @@ int main()
 {
     bool passed = true;
 
+    passed &= expect(
+        SpeakingEvaluationNames.size() == 4
+            && SpeakingEvaluationNames[0] == "Winter"
+            && SpeakingEvaluationNames[1] == "Speech Contest"
+            && SpeakingEvaluationNames[2] == "Summer"
+            && SpeakingEvaluationNames[3] == "Fall"
+            && SpeakingEvaluationScoreValues.size() == 5
+            && SpeakingEvaluationScoreValues[0] == "A+"
+            && SpeakingEvaluationScoreValues[1] == "A"
+            && SpeakingEvaluationScoreValues[2] == "B+"
+            && SpeakingEvaluationScoreValues[3] == "B"
+            && SpeakingEvaluationScoreValues[4] == "C"
+            && SpeakingEvaluationValidator::MaximumRows
+                == static_cast<std::size_t>(SpeakingEvaluationRowCount)
+            && SpeakingEvaluationValidator::MaximumColumns
+                == static_cast<std::size_t>(SpeakingEvaluationColumnCount)
+            && SpeakingEvaluationValidator::CommentMaxLength
+                == static_cast<std::size_t>(SpeakingEvaluationCommentMaxLength),
+        "speaking evaluation policy catalog changed"
+        );
+
     const std::vector<std::pair<std::string, std::string>> scoreAliases{
         {" 1 ", "C"},
         {"2", "B"},

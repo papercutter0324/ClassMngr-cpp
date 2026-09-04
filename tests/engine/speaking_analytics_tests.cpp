@@ -313,6 +313,24 @@ int main()
         "all and empty dashboard selection policy changed"
         );
 
+    SpeakingAnalyticsRoster sparseDashboardRoster;
+    sparseDashboardRoster.columns = {"English", "Korean"};
+    sparseDashboardRoster.rows = {
+        {"Alice", "\xEC\x95\x8C\xEB\xA6\xAC\xEC\x8A\xA4"},
+        {"  ", "\t"},
+        {},
+        {"", "\xEB\xB0\x95\xEB\xB3\xB4"}
+    };
+    SpeakingAnalyticsDashboardInput sparseInput;
+    sparseInput.roster = sparseDashboardRoster;
+    sparseInput.evaluations = dashboardEvaluations;
+    const SpeakingAnalyticsDashboard sparseDashboard =
+        SpeakingAnalyticsService::buildDashboard(sparseInput);
+    passed &= expect(
+        sparseDashboard.selectedSnapshot.rosterStudentCount == 2,
+        "dashboard roster count did not ignore blank or short roster rows"
+        );
+
     const SpeakingAnalyticsDashboard selectedDashboard =
         buildDashboard("  Winter  ");
     passed &= expect(

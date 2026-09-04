@@ -1,5 +1,6 @@
 #include "classmngr/engine/speaking_analytics.h"
 
+#include "classmngr/engine/speaking_evaluation.h"
 #include "classmngr/engine/student_name.h"
 
 #include <algorithm>
@@ -146,12 +147,13 @@ bool namesSortBefore(
 
 std::vector<std::string> SpeakingAnalyticsService::evaluationNames()
 {
-    return {
-        "Winter",
-        "Speech Contest",
-        "Summer",
-        "Fall"
-    };
+    std::vector<std::string> names;
+    names.reserve(SpeakingEvaluationNames.size());
+    for (const std::string_view name : SpeakingEvaluationNames)
+    {
+        names.emplace_back(name);
+    }
+    return names;
 }
 
 double SpeakingAnalyticsService::roundTo3(double value)
@@ -169,25 +171,30 @@ std::string SpeakingAnalyticsService::formatAverage(double average)
 
 int SpeakingAnalyticsService::gradeToNumber(std::string_view grade)
 {
-    if (grade == "A+") return 5;
-    if (grade == "A") return 4;
-    if (grade == "B+") return 3;
-    if (grade == "B") return 2;
-    if (grade == "C") return 1;
+    for (std::size_t index = 0; index < SpeakingEvaluationScoreValues.size(); ++index)
+    {
+        if (grade == SpeakingEvaluationScoreValues[index])
+        {
+            return static_cast<int>(
+                SpeakingEvaluationScoreValues.size() - index
+                );
+        }
+    }
     return 0;
 }
 
 std::string SpeakingAnalyticsService::numberToGrade(int number)
 {
-    number = std::clamp(number, 1, 5);
-    switch (number)
-    {
-    case 5: return "A+";
-    case 4: return "A";
-    case 3: return "B+";
-    case 2: return "B";
-    default: return "C";
-    }
+    number = std::clamp(
+        number,
+        1,
+        static_cast<int>(SpeakingEvaluationScoreValues.size())
+        );
+    return std::string(
+        SpeakingEvaluationScoreValues[
+            SpeakingEvaluationScoreValues.size() - static_cast<std::size_t>(number)
+            ]
+        );
 }
 
 int SpeakingAnalyticsService::roundAverageToGrade(double average)
@@ -624,7 +631,7 @@ SpeakingAnalyticsDashboard SpeakingAnalyticsService::buildDashboard(
     const std::string selection = trimAsciiWhitespace(input.selection);
     const bool allEvaluations = selection.empty()
         || asciiCaseFold(selection) == "all";
-    const int rosterCount = static_cast<int>(input.roster.rows.size());
+    const int rosterCount = rosterStudentCount(input.roster);
 
     struct EvaluationView
     {

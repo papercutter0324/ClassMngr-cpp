@@ -69,4 +69,52 @@ std::string Teacher::preferredDisplayName() const
     return trimAsciiWhitespace(teacherKr);
 }
 
+bool teacherDisplayLessThan(
+    const Teacher& left,
+    const Teacher& right
+    )
+{
+    const std::string leftEnglish = trimAsciiWhitespace(left.teacherEn);
+    const std::string rightEnglish = trimAsciiWhitespace(right.teacherEn);
+    const bool leftHasEnglish = !leftEnglish.empty();
+    const bool rightHasEnglish = !rightEnglish.empty();
+
+    if (leftHasEnglish != rightHasEnglish)
+    {
+        return leftHasEnglish;
+    }
+
+    const auto lowerAscii = [](std::string_view value)
+    {
+        std::string result(value);
+        for (char& character : result)
+        {
+            if (character >= 'A' && character <= 'Z')
+            {
+                character = static_cast<char>(character - 'A' + 'a');
+            }
+        }
+        return result;
+    };
+
+    const std::string leftEnglishFolded = lowerAscii(leftEnglish);
+    const std::string rightEnglishFolded = lowerAscii(rightEnglish);
+    if (leftEnglishFolded != rightEnglishFolded)
+    {
+        return leftEnglishFolded < rightEnglishFolded;
+    }
+    if (leftEnglish != rightEnglish)
+    {
+        return leftEnglish < rightEnglish;
+    }
+
+    const std::string leftKorean = trimAsciiWhitespace(left.teacherKr);
+    const std::string rightKorean = trimAsciiWhitespace(right.teacherKr);
+    if (leftKorean != rightKorean)
+    {
+        return leftKorean < rightKorean;
+    }
+    return left.id < right.id;
+}
+
 } // namespace classmngr::engine

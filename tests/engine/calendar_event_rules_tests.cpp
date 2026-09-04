@@ -27,6 +27,27 @@ int main()
 {
     bool passed = true;
 
+    const auto& eventTypes = CalendarEventRules::eventTypes();
+    passed &= expect(
+        eventTypes.size() == 6
+            && eventTypes[0] == "Vacation"
+            && eventTypes[1] == "Holiday"
+            && eventTypes[2] == "Workshop"
+            && eventTypes[3] == "CM"
+            && eventTypes[4] == "Meeting"
+            && eventTypes[5] == "Other",
+        "event type catalog changed"
+        );
+
+    const auto& timeStatuses = CalendarEventRules::timeStatuses();
+    passed &= expect(
+        timeStatuses.size() == 3
+            && timeStatuses[0] == "Timed"
+            && timeStatuses[1] == "Unknown"
+            && timeStatuses[2] == "Unconfirmed",
+        "time status catalog changed"
+        );
+
     passed &= expect(
         CalendarEventRules::normalizedEventType(" Holiday ") == "Holiday"
             && CalendarEventRules::normalizedEventType("holiday") == "Other"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "classmngr/engine/speaking_evaluation.h"
 #include "classmngr/engine/validation_result.h"
 
 #include <cstddef>
@@ -10,17 +11,19 @@
 namespace classmngr::engine
 {
 
-using SpeakingEvaluationRow = std::vector<std::string>;
-using SpeakingEvaluationRows = std::vector<SpeakingEvaluationRow>;
-
 class SpeakingEvaluationValidator final
 {
 public:
-    static constexpr std::size_t MaximumRows = 25;
-    static constexpr std::size_t MaximumColumns = 11;
-    static constexpr std::size_t MaximumEvaluationNameLength = 128;
-    static constexpr std::size_t MaximumNotesLength = 10000;
-    static constexpr std::size_t CommentMaxLength = 450;
+    static constexpr std::size_t MaximumRows =
+        static_cast<std::size_t>(SpeakingEvaluationRowCount);
+    static constexpr std::size_t MaximumColumns =
+        static_cast<std::size_t>(SpeakingEvaluationColumnCount);
+    static constexpr std::size_t MaximumEvaluationNameLength =
+        SpeakingEvaluationMaximumEvaluationNameLength;
+    static constexpr std::size_t MaximumNotesLength =
+        SpeakingEvaluationMaximumNotesLength;
+    static constexpr std::size_t CommentMaxLength =
+        static_cast<std::size_t>(SpeakingEvaluationCommentMaxLength);
 
     // Maps historic score aliases to their canonical letter forms while
     // retaining unrecognized input for validate() to report.

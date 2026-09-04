@@ -87,12 +87,19 @@ ClassTabNavigation::ScheduleSource scheduleSourceForMode(
 
 const QStringList& evaluationNames()
 {
-    static const QStringList names{
-        QStringLiteral("Winter"),
-        QStringLiteral("Speech Contest"),
-        QStringLiteral("Summer"),
-        QStringLiteral("Fall")
-    };
+    static const QStringList names = []
+    {
+        QStringList result;
+        for (const std::string_view evaluationName
+             : classmngr::engine::SpeakingEvaluationNames)
+        {
+            result.append(QString::fromUtf8(
+                evaluationName.data(),
+                static_cast<qsizetype>(evaluationName.size())
+                ));
+        }
+        return result;
+    }();
 
     return names;
 }

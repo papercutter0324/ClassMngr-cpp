@@ -7,20 +7,21 @@ namespace classmngr::engine
 {
 namespace
 {
-constexpr std::array<std::string_view, 6> EventTypes{
-    "Vacation",
-    "Holiday",
-    "Workshop",
-    "CM",
-    "Meeting",
-    "Other"
-};
-
-constexpr std::array<std::string_view, 3> TimeStatuses{
-    "Timed",
-    "Unknown",
-    "Unconfirmed"
-};
+template <std::size_t N>
+bool containsExact(
+    const std::array<std::string_view, N>& values,
+    std::string_view candidate
+    )
+{
+    for (const std::string_view value : values)
+    {
+        if (value == candidate)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 char upperAscii(char value)
 {
@@ -82,36 +83,6 @@ std::string simplifiedLowerAscii(std::string_view value)
     }
 
     return result;
-}
-
-bool containsExact(
-    const std::array<std::string_view, 6>& values,
-    std::string_view candidate
-    )
-{
-    for (const std::string_view value : values)
-    {
-        if (value == candidate)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool containsExact(
-    const std::array<std::string_view, 3>& values,
-    std::string_view candidate
-    )
-{
-    for (const std::string_view value : values)
-    {
-        if (value == candidate)
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 std::string normalizedCode(std::string_view code)
@@ -219,14 +190,37 @@ bool hasNormalizedCode(const std::vector<std::string>& codes)
 }
 } // namespace
 
+const std::array<std::string_view, 6>& CalendarEventRules::eventTypes() noexcept
+{
+    static constexpr std::array<std::string_view, 6> values{
+        "Vacation",
+        "Holiday",
+        "Workshop",
+        "CM",
+        "Meeting",
+        "Other"
+    };
+    return values;
+}
+
+const std::array<std::string_view, 3>& CalendarEventRules::timeStatuses() noexcept
+{
+    static constexpr std::array<std::string_view, 3> values{
+        "Timed",
+        "Unknown",
+        "Unconfirmed"
+    };
+    return values;
+}
+
 std::string CalendarEventRules::normalizedEventType(
     std::string_view eventType
     )
 {
     const std::string trimmed = trimAsciiWhitespace(eventType);
-    return containsExact(EventTypes, trimmed)
+    return containsExact(CalendarEventRules::eventTypes(), trimmed)
         ? trimmed
-        : "Other";
+        : std::string(CalendarEventRules::eventTypes().back());
 }
 
 std::string CalendarEventRules::normalizedTimeStatus(
@@ -234,9 +228,9 @@ std::string CalendarEventRules::normalizedTimeStatus(
     )
 {
     const std::string trimmed = trimAsciiWhitespace(timeStatus);
-    return containsExact(TimeStatuses, trimmed)
+    return containsExact(CalendarEventRules::timeStatuses(), trimmed)
         ? trimmed
-        : "Timed";
+        : std::string(CalendarEventRules::timeStatuses().front());
 }
 
 bool CalendarEventRules::isStartOfTerm(
@@ -244,7 +238,10 @@ bool CalendarEventRules::isStartOfTerm(
     std::string_view eventType
     )
 {
-    if (normalizedEventType(eventType) != "Other")
+    if (
+        normalizedEventType(eventType)
+        != CalendarEventRules::eventTypes().back()
+        )
     {
         return false;
     }

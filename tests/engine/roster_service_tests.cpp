@@ -145,6 +145,43 @@ int main()
         "missing save class did not return a typed not-found error"
         );
 
+    const auto invalidCount = service.studentCount(0);
+    passed &= expect(
+        !invalidCount && invalidCount.error().code == ErrorCode::InvalidArgument,
+        "non-positive student-count class id was not rejected"
+        );
+    const auto missingCount = service.studentCount(classId + 1);
+    passed &= expect(
+        !missingCount && missingCount.error().code == ErrorCode::NotFound,
+        "missing student-count class did not return a typed not-found error"
+        );
+
+    Roster countRoster;
+    countRoster.columns = {"English", "Korean", "Notes"};
+    countRoster.rows = {
+        {},
+        {"  ", "\t", "not a name"},
+        {" Alice "},
+        {"", "\n\xEA\xB9\x80\xEB\xAF\xBC"},
+        {" ", "", "not a name"},
+        {"", "\xEB\xB0\x95\xEB\xB3\xB4", "present"}
+    };
+    passed &= expect(
+        !isRosterStudentRow(countRoster, countRoster.rows.at(0))
+            && !isRosterStudentRow(countRoster, countRoster.rows.at(1))
+            && isRosterStudentRow(countRoster, countRoster.rows.at(2))
+            && isRosterStudentRow(countRoster, countRoster.rows.at(3))
+            && !isRosterStudentRow(countRoster, countRoster.rows.at(4))
+            && isRosterStudentRow(countRoster, countRoster.rows.at(5))
+            && rosterStudentCount(countRoster) == 3,
+        "roster student-row population semantics changed"
+        );
+    passed &= expect(
+        service.save(classId, countRoster).has_value()
+            && service.studentCount(classId).value_or(-1) == 3,
+        "persisted roster student count did not use population semantics"
+        );
+
     const std::string columnName = "\xEC\x9D\xB4\xEB\xA6\x84";
     const std::string notesColumn = "\xE5\xA4\x87\xE6\xB3\xA8";
     const std::string statusColumn = "\xE7\x8A\xB6\xE6\x85\x8B";

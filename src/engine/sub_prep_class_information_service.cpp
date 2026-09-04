@@ -35,19 +35,6 @@ std::string trimAsciiWhitespace(std::string_view value)
     return std::string(value.substr(first, last - first));
 }
 
-std::string lowerAscii(std::string_view value)
-{
-    std::string result(value);
-    for (char& character : result)
-    {
-        if (character >= 'A' && character <= 'Z')
-        {
-            character = static_cast<char>(character - 'A' + 'a');
-        }
-    }
-    return result;
-}
-
 int dayOrder(std::string_view day)
 {
     const std::string normalized = trimAsciiWhitespace(day);
@@ -345,38 +332,6 @@ std::pair<int, int> firstMeetingOrder(
     return result;
 }
 
-bool teacherDisplayLessThan(const Teacher& left, const Teacher& right)
-{
-    const std::string leftEnglish = trimAsciiWhitespace(left.teacherEn);
-    const std::string rightEnglish = trimAsciiWhitespace(right.teacherEn);
-    const bool leftHasEnglish = !leftEnglish.empty();
-    const bool rightHasEnglish = !rightEnglish.empty();
-
-    if (leftHasEnglish != rightHasEnglish)
-    {
-        return leftHasEnglish;
-    }
-
-    const std::string leftEnglishFolded = lowerAscii(leftEnglish);
-    const std::string rightEnglishFolded = lowerAscii(rightEnglish);
-    if (leftEnglishFolded != rightEnglishFolded)
-    {
-        return leftEnglishFolded < rightEnglishFolded;
-    }
-    if (leftEnglish != rightEnglish)
-    {
-        return leftEnglish < rightEnglish;
-    }
-
-    const std::string leftKorean = trimAsciiWhitespace(left.teacherKr);
-    const std::string rightKorean = trimAsciiWhitespace(right.teacherKr);
-    if (leftKorean != rightKorean)
-    {
-        return leftKorean < rightKorean;
-    }
-    return left.id < right.id;
-}
-
 const std::vector<ClassTime>& selectedTimes(
     const SubPrepClassDetails& details,
     const SubPrepBuildOptions& options
@@ -553,7 +508,11 @@ std::vector<SubPrepTeacherGroup> SubPrepClassInformationService::build(
         (void)teacherId;
         teachers.push_back(teacher);
     }
-    std::sort(teachers.begin(), teachers.end(), teacherDisplayLessThan);
+    std::sort(
+        teachers.begin(),
+        teachers.end(),
+        classmngr::engine::teacherDisplayLessThan
+        );
 
     std::vector<SubPrepTeacherGroup> groups;
     groups.reserve(teachers.size());

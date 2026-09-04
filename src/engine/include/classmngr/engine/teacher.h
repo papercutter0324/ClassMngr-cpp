@@ -33,4 +33,11 @@ struct Teacher
     [[nodiscard]] std::string preferredDisplayName() const;
 };
 
+// Stable ordering shared by class naming and sub-prep grouping. English
+// names sort first, followed by Korean fallback and the persisted id.
+[[nodiscard]] bool teacherDisplayLessThan(
+    const Teacher& left,
+    const Teacher& right
+    );
+
 } // namespace classmngr::engine

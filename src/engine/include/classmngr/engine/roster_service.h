@@ -22,6 +22,10 @@ public:
         int classId
         );
 
+    [[nodiscard]] Result<int> studentCount(
+        int classId
+        );
+
     [[nodiscard]] Status save(
         int classId,
         const Roster& roster

@@ -366,46 +366,24 @@ Result<int> RosterRepository::getRosterStudentCount(
     int classId
     )
 {
-    const Result<Roster> roster = loadRoster(classId);
-    if (!roster)
+    const QString operation = QObject::tr("Loading roster columns");
+    if (classId <= 0)
     {
-        return std::unexpected(roster.error());
+        return std::unexpected(invalidClassIdError(operation, classId));
     }
 
-    const int englishColumn =
-        roster->columns.indexOf(
-            QStringLiteral("English")
-            );
-
-    const int koreanColumn =
-        roster->columns.indexOf(
-            QStringLiteral("Korean")
-            );
-
-    if (englishColumn < 0 && koreanColumn < 0)
+    const Status engineReady = ensureEngineDatabase(operation, classId);
+    if (!engineReady)
     {
-        return 0;
+        return std::unexpected(engineReady.error());
     }
 
-    int count = 0;
-
-    for (const QStringList& row : roster->rows)
+    EngineRosterService service(*m_engineDatabase);
+    const classmngr::engine::Result<int> count = service.studentCount(classId);
+    if (!count)
     {
-        const bool hasEnglish =
-            englishColumn >= 0
-            && englishColumn < row.size()
-            && !row[englishColumn].trimmed().isEmpty();
-
-        const bool hasKorean =
-            koreanColumn >= 0
-            && koreanColumn < row.size()
-            && !row[koreanColumn].trimmed().isEmpty();
-
-        if (hasEnglish || hasKorean)
-        {
-            ++count;
-        }
+        return std::unexpected(engineFailure(operation, classId, count.error()));
     }
 
-    return count;
+    return *count;
 }

@@ -2,6 +2,8 @@
 
 #include "classmngr/engine/sqlite_database.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -179,7 +181,59 @@ Result<int> integerValue(
 
     return static_cast<int>(*integer);
 }
+
+bool isBlank(
+    std::string_view value
+    )
+{
+    return std::ranges::all_of(
+        value,
+        [](unsigned char character)
+        {
+            return std::isspace(character) != 0;
+        }
+        );
+}
 } // namespace
+
+bool isRosterStudentRow(
+    const Roster& roster,
+    const std::vector<std::string>& row
+    )
+{
+    const auto hasName = [&roster, &row](std::string_view columnName)
+    {
+        const auto column = std::find(
+            roster.columns.cbegin(),
+            roster.columns.cend(),
+            columnName
+            );
+        if (column == roster.columns.cend())
+        {
+            return false;
+        }
+
+        const std::size_t index = static_cast<std::size_t>(
+            std::distance(roster.columns.cbegin(), column)
+            );
+        return index < row.size() && !isBlank(row[index]);
+    };
+
+    return hasName("English") || hasName("Korean");
+}
+
+int rosterStudentCount(
+    const Roster& roster
+    )
+{
+    return static_cast<int>(std::ranges::count_if(
+        roster.rows,
+        [&roster](const std::vector<std::string>& row)
+        {
+            return isRosterStudentRow(roster, row);
+        }
+        ));
+}
 
 RosterService::RosterService(
     SqliteDatabase& database
@@ -351,6 +405,19 @@ Result<Roster> RosterService::load(
     }
 
     return roster;
+}
+
+Result<int> RosterService::studentCount(
+    int classId
+    )
+{
+    const Result<Roster> roster = load(classId);
+    if (!roster)
+    {
+        return std::unexpected(roster.error());
+    }
+
+    return rosterStudentCount(*roster);
 }
 
 Status RosterService::save(
