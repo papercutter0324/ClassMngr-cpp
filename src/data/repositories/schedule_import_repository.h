@@ -15,6 +15,8 @@ class SqliteDatabase;
 class ScheduleImportRepository
 {
 public:
+    explicit ScheduleImportRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit ScheduleImportRepository(
         QSqlDatabase& database
         );
@@ -38,7 +40,8 @@ private:
         const QString& operation
         );
 
-    QSqlDatabase& m_database;
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
     std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
     QString m_engineDatabasePath;
 };

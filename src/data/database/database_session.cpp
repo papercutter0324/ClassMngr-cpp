@@ -52,7 +52,7 @@ Status DatabaseSession::open(const QString& databasePath)
     close();
 
     // The engine owns file-backed path normalization, directory creation,
-    // migration, and validation before Qt repositories are made available.
+    // migration, and validation before retained repositories are made available.
     const bool isMemoryDatabase = databasePath == QStringLiteral(":memory:");
     QString normalizedPath;
 
@@ -126,24 +126,24 @@ Status DatabaseSession::open(const QString& databasePath)
     }
 
     m_databasePath = normalizedPath;
-    m_settingsRepository = std::make_unique<SettingsRepository>(m_database);
-    m_campusRecordRepository = std::make_unique<CampusRecordRepository>(m_database);
-    m_teacherRepository = std::make_unique<TeacherRepository>(m_database);
+    m_settingsRepository = std::make_unique<SettingsRepository>(m_databasePath);
+    m_campusRecordRepository = std::make_unique<CampusRecordRepository>(m_databasePath);
+    m_teacherRepository = std::make_unique<TeacherRepository>(m_databasePath);
     m_nativeEnglishTeacherRepository =
-        std::make_unique<NativeEnglishTeacherRepository>(m_database);
-    m_gsTeamRepository = std::make_unique<GsTeamRepository>(m_database);
-    m_teacherImportRepository = std::make_unique<TeacherImportRepository>(m_database);
-    m_classRepository = std::make_unique<ClassRepository>(m_database);
-    m_classTransferRepository = std::make_unique<ClassTransferRepository>(m_database);
-    m_scheduleImportRepository = std::make_unique<ScheduleImportRepository>(m_database);
-    m_classInfoRepository = std::make_unique<ClassInfoRepository>(m_database);
+        std::make_unique<NativeEnglishTeacherRepository>(m_databasePath);
+    m_gsTeamRepository = std::make_unique<GsTeamRepository>(m_databasePath);
+    m_teacherImportRepository = std::make_unique<TeacherImportRepository>(m_databasePath);
+    m_classRepository = std::make_unique<ClassRepository>(m_databasePath);
+    m_classTransferRepository = std::make_unique<ClassTransferRepository>(m_databasePath);
+    m_scheduleImportRepository = std::make_unique<ScheduleImportRepository>(m_databasePath);
+    m_classInfoRepository = std::make_unique<ClassInfoRepository>(m_databasePath);
     m_intensiveSlotStateRepository =
-        std::make_unique<IntensiveSlotStateRepository>(m_database);
-    m_testingBlockRepository = std::make_unique<TestingBlockRepository>(m_database);
-    m_testingClassRepository = std::make_unique<TestingClassRepository>(m_database);
-    m_calendarEventRepository = std::make_unique<CalendarEventRepository>(m_database);
-    m_rosterRepository = std::make_unique<RosterRepository>(m_database);
-    m_speakingEvalRepository = std::make_unique<SpeakingEvalRepository>(m_database);
+        std::make_unique<IntensiveSlotStateRepository>(m_databasePath);
+    m_testingBlockRepository = std::make_unique<TestingBlockRepository>(m_databasePath);
+    m_testingClassRepository = std::make_unique<TestingClassRepository>(m_databasePath);
+    m_calendarEventRepository = std::make_unique<CalendarEventRepository>(m_databasePath);
+    m_rosterRepository = std::make_unique<RosterRepository>(m_databasePath);
+    m_speakingEvalRepository = std::make_unique<SpeakingEvalRepository>(m_databasePath);
 
     return {};
 }
@@ -190,7 +190,7 @@ QString DatabaseSession::databasePath() const
     return m_databasePath;
 }
 
-QSqlDatabase DatabaseSession::database() const
+QSqlDatabase DatabaseSession::compatibilityDatabase() const
 {
     return m_database;
 }

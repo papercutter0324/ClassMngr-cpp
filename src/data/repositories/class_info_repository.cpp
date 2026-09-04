@@ -285,11 +285,17 @@ QString invalidClassIdError(
 }
 } // namespace
 
+ClassInfoRepository::ClassInfoRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 ClassInfoRepository::ClassInfoRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : ClassInfoRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 ClassInfoRepository::~ClassInfoRepository() = default;
@@ -299,7 +305,7 @@ Status ClassInfoRepository::ensureEngineDatabase(
     int classId
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         QString message = QObject::tr("%1 failed").arg(operation);
         if (classId > 0)
@@ -310,7 +316,7 @@ Status ClassInfoRepository::ensureEngineDatabase(
         return std::unexpected(message);
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty())
     {
         QString message = QObject::tr("%1 failed").arg(operation);

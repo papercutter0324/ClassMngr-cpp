@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -67,6 +68,10 @@ public:
                 ErrorCode::Cancelled, "request cancelled", std::nullopt
             });
         }
+        if (failure)
+        {
+            return std::unexpected(*failure);
+        }
         seenUrl = request.url;
         seenTimeout = request.timeout;
         return NetworkResponse{200, {}, bytes("ok")};
@@ -74,6 +79,7 @@ public:
 
     std::string seenUrl;
     std::chrono::milliseconds seenTimeout{};
+    std::optional<Error> failure;
 };
 
 class FakeSignatureVerifier final : public SignatureVerifier
@@ -81,6 +87,10 @@ class FakeSignatureVerifier final : public SignatureVerifier
 public:
     Status verify(const DetachedSignature& detached) const override
     {
+        if (failure)
+        {
+            return std::unexpected(*failure);
+        }
         if (detached.payload == bytes("payload")
             && detached.signature == bytes("signature")
             && detached.publicKey == bytes("public-key")) return {};
@@ -88,6 +98,8 @@ public:
             ErrorCode::InvalidArgument, "signature mismatch", std::nullopt
         });
     }
+
+    std::optional<Error> failure;
 };
 
 class FakeLauncher final : public ProcessLauncher
@@ -102,6 +114,10 @@ public:
                 ErrorCode::Cancelled, "launch cancelled", std::nullopt
             });
         }
+        if (failure)
+        {
+            return std::unexpected(*failure);
+        }
         seenExecutable = request.executable;
         seenWorkingDirectory = request.workingDirectory;
         return ProcessResult{0, bytes("stdout"), bytes("stderr")};
@@ -109,12 +125,18 @@ public:
 
     Status launchDetached(const ProcessLaunchRequest& request) override
     {
+        if (detachedFailure)
+        {
+            return std::unexpected(*detachedFailure);
+        }
         seenExecutable = request.executable;
         return {};
     }
 
     std::string seenExecutable;
     std::string seenWorkingDirectory;
+    std::optional<Error> failure;
+    std::optional<Error> detachedFailure;
 };
 
 class FakeResources final : public ResourceProvider
@@ -195,12 +217,31 @@ int main()
     const auto cancelledRequest = network.request(request);
     passed &= expect(!cancelledRequest && cancelledRequest.error().code == ErrorCode::Cancelled,
                      "network cancellation result failed");
+    source.reset();
+    network.failure = Error{ErrorCode::Io, "network unavailable", 12007};
+    const auto failedRequest = network.request(request);
+    passed &= expect(
+        !failedRequest
+            && failedRequest.error().code == ErrorCode::Io
+            && failedRequest.error().nativeCode == 12007,
+        "network failure was not propagated"
+        );
+    network.failure.reset();
 
     FakeSignatureVerifier verifier;
     passed &= expect(verifier.verify({bytes("payload"), bytes("signature"), bytes("public-key")}).has_value(),
                      "signature verification success failed");
     passed &= expect(verifier.verify({bytes("bad"), bytes("signature"), bytes("public-key")}).error().code == ErrorCode::InvalidArgument,
                      "signature verification error failed");
+    verifier.failure = Error{ErrorCode::InvalidFormat, "signature invalid", std::nullopt};
+    const auto failedVerification = verifier.verify(
+        {bytes("payload"), bytes("signature"), bytes("public-key")}
+        );
+    passed &= expect(
+        !failedVerification
+            && failedVerification.error().code == ErrorCode::InvalidFormat,
+        "signature failure was not propagated"
+        );
 
     source.reset();
     FakeLauncher launcher;
@@ -214,6 +255,23 @@ int main()
     const auto cancelledLaunch = launcher.launch(launch);
     passed &= expect(!cancelledLaunch && cancelledLaunch.error().code == ErrorCode::Cancelled,
                      "process cancellation result failed");
+    source.reset();
+    launcher.failure = Error{ErrorCode::Io, "process unavailable", 2};
+    const auto failedLaunch = launcher.launch(launch);
+    passed &= expect(
+        !failedLaunch
+            && failedLaunch.error().code == ErrorCode::Io
+            && failedLaunch.error().nativeCode == 2,
+        "process failure was not propagated"
+        );
+    launcher.failure.reset();
+    launcher.detachedFailure = Error{ErrorCode::Io, "detached process unavailable", 2};
+    const auto failedDetachedLaunch = launcher.launchDetached(launch);
+    passed &= expect(
+        !failedDetachedLaunch
+            && failedDetachedLaunch.error().code == ErrorCode::Io,
+        "detached process failure was not propagated"
+        );
 
     FakeResources resources;
     passed &= expect(resources.exists("fixture.txt").value() && resources.readBytes("fixture.txt").value() == bytes("fixture bytes"),

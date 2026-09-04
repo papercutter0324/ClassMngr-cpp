@@ -124,11 +124,17 @@ std::vector<EngineCalendarEvent> toEngineEvents(
 }
 } // namespace
 
+CalendarEventRepository::CalendarEventRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 CalendarEventRepository::CalendarEventRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : CalendarEventRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 CalendarEventRepository::~CalendarEventRepository() = default;
@@ -137,7 +143,7 @@ Status CalendarEventRepository::ensureEngineDatabase(
     const QString& operation
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -149,7 +155,7 @@ Status CalendarEventRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

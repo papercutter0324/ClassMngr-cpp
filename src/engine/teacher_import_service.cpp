@@ -590,7 +590,8 @@ Status validatePlan(
         {
             return std::unexpected(makeError(
                 ErrorCode::InvalidFormat,
-                "The import contains a duplicate Korean teacher name."
+                "The import contains a duplicate Korean teacher name: "
+                    + teacher.teacherKr + "."
                 ));
         }
     }
@@ -611,7 +612,8 @@ Status validatePlan(
         {
             return std::unexpected(makeError(
                 ErrorCode::InvalidFormat,
-                "The import contains a duplicate Native English Teacher name."
+                "The import contains a duplicate Native English Teacher name: "
+                    + teacher.name + "."
                 ));
         }
     }
@@ -634,9 +636,13 @@ Status validatePlan(
         if ((!english.empty() && !gsEnglishNames.insert(english).second)
             || (!korean.empty() && !gsKoreanNames.insert(korean).second))
         {
+            const std::string duplicateName = !english.empty()
+                ? member.name
+                : member.koreanName;
             return std::unexpected(makeError(
                 ErrorCode::InvalidFormat,
-                "The import contains a duplicate GS Team name."
+                "The import contains a duplicate GS Team name: "
+                    + duplicateName + "."
                 ));
         }
     }

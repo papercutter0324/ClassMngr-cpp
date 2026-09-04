@@ -174,11 +174,17 @@ SpeakingEvalScore fromEngineScore(
 }
 } // namespace
 
+SpeakingEvalRepository::SpeakingEvalRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 SpeakingEvalRepository::SpeakingEvalRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : SpeakingEvalRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 SpeakingEvalRepository::~SpeakingEvalRepository() = default;
@@ -187,7 +193,7 @@ Status SpeakingEvalRepository::ensureEngineDatabase(
     const QString& operation
     ) const
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -199,7 +205,7 @@ Status SpeakingEvalRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

@@ -648,11 +648,17 @@ QString boundaryConversionFailure(
 }
 } // namespace
 
+ClassTransferRepository::ClassTransferRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 ClassTransferRepository::ClassTransferRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : ClassTransferRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 ClassTransferRepository::~ClassTransferRepository() = default;
@@ -661,7 +667,7 @@ Status ClassTransferRepository::ensureEngineDatabase(
     const QString& operation
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -673,7 +679,7 @@ Status ClassTransferRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

@@ -149,22 +149,22 @@ Status ApplicationServices::openDatabase(
             );
     }
 
-    return m_legacyDataService
-        ? m_legacyDataService->openDatabase(databasePath)
-        : m_session->open(databasePath);
+    const Status status = m_session->open(databasePath);
+    if (m_legacyDataService)
+    {
+        m_legacyDataService->synchronizeCompatibilityAdapters();
+    }
+    return status;
 }
 
 void ApplicationServices::closeDatabase()
 {
     if (m_session)
     {
+        m_session->close();
         if (m_legacyDataService)
         {
-            m_legacyDataService->closeDatabase();
-        }
-        else
-        {
-            m_session->close();
+            m_legacyDataService->synchronizeCompatibilityAdapters();
         }
     }
 }
@@ -184,10 +184,8 @@ QString ApplicationServices::currentDatabasePath() const
 
 void ApplicationServices::saveDatabase()
 {
-    if (hasOpenDatabase())
-    {
-        m_session->database().commit();
-    }
+    // Repository writes are committed by the engine transaction boundary.
+    // Retained as a source-compatible no-op for existing UI callers.
 }
 
 Status ApplicationServices::saveDatabaseAs(
@@ -252,8 +250,7 @@ SettingsService* ApplicationServices::settingsService() const
 {
     if (!m_settingsService)
     {
-        m_settingsService = std::make_unique<SettingsService>(
-            m_session.get(), nullptr);
+        m_settingsService = std::make_unique<SettingsService>(m_session.get());
     }
     return m_settingsService.get();
 }
@@ -262,8 +259,7 @@ TeacherService* ApplicationServices::teacherService() const
 {
     if (!m_teacherService)
     {
-        m_teacherService = std::make_unique<TeacherService>(
-            m_session.get(), nullptr);
+        m_teacherService = std::make_unique<TeacherService>(m_session.get());
     }
     return m_teacherService.get();
 }
@@ -272,8 +268,7 @@ ClassService* ApplicationServices::classService() const
 {
     if (!m_classService)
     {
-        m_classService = std::make_unique<ClassService>(
-            m_session.get(), nullptr);
+        m_classService = std::make_unique<ClassService>(m_session.get());
     }
     return m_classService.get();
 }
@@ -282,8 +277,7 @@ ScheduleService* ApplicationServices::scheduleService() const
 {
     if (!m_scheduleService)
     {
-        m_scheduleService = std::make_unique<ScheduleService>(
-            m_session.get(), nullptr);
+        m_scheduleService = std::make_unique<ScheduleService>(m_session.get());
     }
     return m_scheduleService.get();
 }
@@ -292,8 +286,7 @@ CalendarService* ApplicationServices::calendarService() const
 {
     if (!m_calendarService)
     {
-        m_calendarService = std::make_unique<CalendarService>(
-            m_session.get(), nullptr);
+        m_calendarService = std::make_unique<CalendarService>(m_session.get());
     }
     return m_calendarService.get();
 }
@@ -302,8 +295,7 @@ RosterService* ApplicationServices::rosterService() const
 {
     if (!m_rosterService)
     {
-        m_rosterService = std::make_unique<RosterService>(
-            m_session.get(), nullptr);
+        m_rosterService = std::make_unique<RosterService>(m_session.get());
     }
     return m_rosterService.get();
 }
@@ -313,8 +305,7 @@ SpeakingEvaluationService* ApplicationServices::speakingEvaluationService() cons
     if (!m_speakingEvaluationService)
     {
         m_speakingEvaluationService =
-            std::make_unique<SpeakingEvaluationService>(
-            m_session.get(), nullptr);
+            std::make_unique<SpeakingEvaluationService>(m_session.get());
     }
     return m_speakingEvaluationService.get();
 }

@@ -23,6 +23,7 @@ class TeacherImportTests : public QObject
 private slots:
     void parsesSectionedTemplate();
     void invalidVersionIsRecognizedButRejected();
+    void preservesSourceRowDiagnostics();
     void readsNamedMultiSheetWorkbookMetadata();
     void validatorReportsRecognitionStatusesAndMetadata();
     void registryAcceptsAdditionalTemplateAdapters();
@@ -286,6 +287,24 @@ void TeacherImportTests::invalidVersionIsRecognizedButRejected()
     QVERIFY(preview.error().contains(QStringLiteral("A1")));
 }
 
+void TeacherImportTests::preservesSourceRowDiagnostics()
+{
+    CalendarImport::Workbook workbook = sectionedWorkbook();
+    for (CalendarImport::Cell& cell : workbook.worksheets.first().cells)
+    {
+        if (cell.row == 4 && cell.column == 5)
+        {
+            cell.value = QStringLiteral("not-a-birthday");
+        }
+    }
+    workbook.cells = workbook.worksheets.first().cells;
+
+    SectionedContactListTemplate importTemplate;
+    const auto preview = importTemplate.parse(workbook);
+    QVERIFY(!preview.has_value());
+    QVERIFY(preview.error().contains(QStringLiteral("row 4")));
+}
+
 void TeacherImportTests::readsNamedMultiSheetWorkbookMetadata()
 {
     QString error;
@@ -405,10 +424,15 @@ void TeacherImportTests::acceptsDuplicateSourceCandidates()
     QCOMPARE(preview->koreanGroups.first().candidates.size(), 2);
     QCOMPARE(preview->koreanGroups.first().candidates.at(1).teacher.teacherKr,
              QString::fromUtf8("\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99"));
+    QCOMPARE(preview->koreanGroups.first().candidates.at(1).teacher.birthday,
+             QStringLiteral("07-09"));
     QCOMPARE(preview->nativeEnglishTeachers.size(), 4);
     QCOMPARE(preview->nativeEnglishTeachers.at(3).name, QStringLiteral("alex"));
+    QCOMPARE(preview->nativeEnglishTeachers.at(3).birthday,
+             QStringLiteral("07-10"));
     QCOMPARE(preview->gsTeamMembers.size(), 3);
     QCOMPARE(preview->gsTeamMembers.at(2).name, QStringLiteral("Taylor"));
+    QCOMPARE(preview->gsTeamMembers.at(2).birthday, QStringLiteral("07-11"));
 }
 
 void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()

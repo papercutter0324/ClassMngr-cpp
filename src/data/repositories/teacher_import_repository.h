@@ -18,6 +18,8 @@ public:
     static constexpr auto LatestSourceDateSetting =
         "teacher_import/latest_source_date";
 
+    explicit TeacherImportRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit TeacherImportRepository(QSqlDatabase& database);
     ~TeacherImportRepository();
 
@@ -30,7 +32,8 @@ private:
         const QString& operation
         );
 
-    QSqlDatabase& m_database;
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
     std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
     QString m_engineDatabasePath;
 };

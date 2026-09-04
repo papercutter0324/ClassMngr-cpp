@@ -13,6 +13,7 @@ on:
       - "resources/catalog/**"
       - "resources/windows/**"
       - "scripts/phase2_exit_gate.py"
+      - "docs/porting/windows-winui/phase2-exit-gate-runbook.md"
       - "src/engine/**"
       - "tests/engine/**"
       - "tests/fixtures/resource_packs/**"
@@ -90,6 +91,8 @@ jobs:
       - name: Run engine exit-gate lane
         shell: pwsh
         run: >-
+          # The runner snapshots the unfiltered CTest inventory after the
+          # build, then executes the complete ClassMngrEngine selection.
           python scripts/phase2_exit_gate.py run
           --lane-id ${{ matrix.lane }}
           --lane-type engine
@@ -291,6 +294,14 @@ jobs:
           # paths relative to that directory, and merging would overwrite all
           # lanes' logs/configure.log, build.log, and ctest.log files.
           merge-multiple: false
+
+      - name: Verify required lane declarations
+        if: always()
+        shell: bash
+        run: >-
+          python -c "from scripts.phase2_exit_gate import ENGINE_LANES, QT_LANES,
+          REQUIRED_COVERAGE; assert len(ENGINE_LANES) == 4 and len(QT_LANES) == 3
+          and len(REQUIRED_COVERAGE) == 5; print('Phase 2 lane declarations: PASS')"
 
       - name: Validate the complete lane set
         if: always()

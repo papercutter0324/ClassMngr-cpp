@@ -16,6 +16,8 @@ class SqliteDatabase;
 class TestingClassRepository
 {
 public:
+    explicit TestingClassRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit TestingClassRepository(
         QSqlDatabase& database
         );
@@ -50,7 +52,8 @@ private:
         const QString& operation
         ) const;
 
-    QSqlDatabase& m_database;
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
     mutable std::unique_ptr<classmngr::engine::SqliteDatabase>
         m_engineDatabase;
     mutable QString m_engineDatabasePath;

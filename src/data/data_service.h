@@ -92,6 +92,10 @@ public:
     // the session or its repositories directly.
     [[nodiscard]] DatabaseSession* databaseSession() const;
 
+    // Compatibility-only lifecycle hook for an adapter borrowing an
+    // ApplicationServices-owned session. New production code must not call it.
+    void synchronizeCompatibilityAdapters();
+
     // =====================================================
     // Settings
     // =====================================================
@@ -458,6 +462,7 @@ public:
     // Manual Saving
     // =====================================================
 
+    // Compatibility no-op. Engine repository writes are transactional.
     void save();
 
     [[nodiscard]] Status saveAs(

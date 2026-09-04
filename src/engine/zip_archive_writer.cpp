@@ -235,13 +235,14 @@ void appendLe32(
 void dosDateTime(
     const fs::path& sourcePath,
     std::uint16_t* time,
-    std::uint16_t* date
+    std::uint16_t* date,
+    const Clock& clock
     ) noexcept
 {
     using FileClock = fs::file_time_type::clock;
 
     std::chrono::system_clock::time_point systemTime =
-        std::chrono::system_clock::now();
+        clock.nowUtc();
     std::error_code error;
     const fs::file_time_type fileTime = fs::last_write_time(
         sourcePath,
@@ -250,13 +251,14 @@ void dosDateTime(
     if (!error)
     {
         // file_time_type has no portable epoch conversion.  Relating it to
-        // the current values of both clocks is the standard-library bridge
-        // used here; an unavailable conversion falls back to current time.
+        // the current file clock and injected wall clock preserves source
+        // modification-time semantics without an engine wall-clock read.
+        // An unavailable conversion falls back to the injected clock.
         const auto fileClockDelta = fileTime - FileClock::now();
         const auto systemClockDelta = std::chrono::duration_cast<
             std::chrono::system_clock::duration
             >(fileClockDelta);
-        systemTime = std::chrono::system_clock::now() + systemClockDelta;
+        systemTime = clock.nowUtc() + systemClockDelta;
     }
 
     std::time_t timeValue = std::chrono::system_clock::to_time_t(systemTime);
@@ -269,7 +271,7 @@ void dosDateTime(
     else
     {
         timeValue = std::chrono::system_clock::to_time_t(
-            std::chrono::system_clock::now()
+            clock.nowUtc()
             );
         converted = std::localtime(&timeValue);
         if (converted)
@@ -445,7 +447,8 @@ std::atomic<std::uint64_t> TemporaryPathCounter = 0;
 bool makeUniqueSiblingPath(
     const fs::path& targetPath,
     std::string_view suffix,
-    fs::path* result
+    fs::path* result,
+    const Clock& clock
     )
 {
     if (!result)
@@ -465,7 +468,7 @@ bool makeUniqueSiblingPath(
         std::memory_order_relaxed
         );
     const std::uint64_t clockValue = static_cast<std::uint64_t>(
-        std::chrono::steady_clock::now().time_since_epoch().count()
+        clock.monotonicNow().time_since_epoch().count()
         );
     const std::uint64_t seed = clockValue ^ counter;
 
@@ -521,7 +524,8 @@ private:
 
 Status writeArchiveImpl(
     const std::string& archivePath,
-    const std::vector<Entry>& entries
+    const std::vector<Entry>& entries,
+    const Clock& clock
     )
 {
     if (entries.empty())
@@ -613,7 +617,8 @@ Status writeArchiveImpl(
         dosDateTime(
             sourcePath,
             &prepared.modifiedTime,
-            &prepared.modifiedDate
+            &prepared.modifiedDate,
+            clock
             );
         preparedEntries.push_back(std::move(prepared));
         archiveNames.insert(entry.archiveName);
@@ -629,7 +634,8 @@ Status writeArchiveImpl(
     if (!makeUniqueSiblingPath(
             targetPath,
             ".classmngr-zip-temp-",
-            &temporaryPath
+            &temporaryPath,
+            clock
             ))
     {
         return failure(ErrorCode::Io, ArchiveOpenFailedToken);
@@ -784,9 +790,19 @@ Status writeArchive(
     const std::vector<Entry>& entries
     )
 {
+    const SystemClock clock;
+    return writeArchive(archivePath, entries, clock);
+}
+
+Status writeArchive(
+    const std::string& archivePath,
+    const std::vector<Entry>& entries,
+    const Clock& clock
+    )
+{
     try
     {
-        return writeArchiveImpl(archivePath, entries);
+        return writeArchiveImpl(archivePath, entries, clock);
     }
     catch (const std::bad_alloc&)
     {

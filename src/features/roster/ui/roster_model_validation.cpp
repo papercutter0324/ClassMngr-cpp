@@ -32,10 +32,28 @@ QStringList RosterModel::validateCell(
                 tr("English name should use ASCII characters.")
                 );
         }
+
+        if (issues.contains(
+                StudentNameUtils::ValidationIssue::EnglishContainsInvalidCharacters
+                ))
+        {
+            errors.append(
+                tr("English name contains invalid characters.")
+                );
+        }
     }
     else if (name.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) == 0)
     {
         const auto issues = StudentNameUtils::validateKoreanName(value);
+        if (issues.contains(
+                StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters
+                ))
+        {
+            errors.append(
+                tr("Korean name contains invalid characters.")
+                );
+        }
+
         if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort))
         {
             errors.append(
@@ -111,48 +129,6 @@ void RosterModel::validateCellAt(
     {
         m_validationErrors.remove(key);
         return;
-    }
-
-    m_validationErrors.insert(
-        key,
-        errors
-        );
-}
-
-void RosterModel::validateRawInput(
-    int row,
-    int column,
-    const QString& rawValue
-    )
-{
-    if (columnName(column).compare(QStringLiteral("English"), Qt::CaseInsensitive) != 0)
-    {
-        return;
-    }
-
-    const auto issues = StudentNameUtils::validateEnglishName(rawValue);
-    if (!issues.contains(
-            StudentNameUtils::ValidationIssue::EnglishContainsNonAscii
-            ))
-    {
-        return;
-    }
-
-    const QString key =
-        cellKey(
-            row,
-            column
-            );
-
-    QStringList errors =
-        m_validationErrors.value(key);
-
-    const QString message =
-        tr("English name should use ASCII characters.");
-
-    if (!errors.contains(message))
-    {
-        errors.append(message);
     }
 
     m_validationErrors.insert(

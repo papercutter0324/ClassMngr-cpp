@@ -295,11 +295,17 @@ QVariant fromEngineSettingValue(
 }
 } // namespace
 
+SettingsRepository::SettingsRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 SettingsRepository::SettingsRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : SettingsRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 SettingsRepository::~SettingsRepository() = default;
@@ -309,7 +315,7 @@ Status SettingsRepository::ensureEngineDatabase(
     const QString& settingContext
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -322,7 +328,7 @@ Status SettingsRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

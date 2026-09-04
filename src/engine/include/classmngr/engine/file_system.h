@@ -1,5 +1,6 @@
 #pragma once
 
+#include "classmngr/engine/platform_services.h"
 #include "classmngr/engine/result.h"
 
 #include <string>
@@ -112,6 +113,11 @@ public:
 class StandardFileSystem final : public FileSystem
 {
 public:
+    // The default keeps existing callers on the system clock.  Tests and
+    // workflows that need reproducible temporary names can supply a clock.
+    StandardFileSystem();
+    explicit StandardFileSystem(const Clock& clock);
+
     [[nodiscard]] Result<std::string> normalizePath(
         std::string_view utf8Path
         ) const override;
@@ -161,6 +167,12 @@ public:
     [[nodiscard]] Status removeTemporaryDirectory(
         std::string_view utf8DirectoryPath
         ) const override;
+
+private:
+    [[nodiscard]] const Clock& clock() const noexcept;
+
+    SystemClock m_systemClock;
+    const Clock* m_clock = nullptr;
 };
 
 } // namespace classmngr::engine

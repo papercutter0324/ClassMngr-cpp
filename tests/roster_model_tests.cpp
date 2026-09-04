@@ -1,5 +1,6 @@
 #include "features/roster/ui/roster_model.h"
 
+#include "core/utils/student_name_utils.h"
 #include "domain/models/roster.h"
 #include "features/roster/ui/roster_constants.h"
 
@@ -21,6 +22,7 @@ private slots:
     void insertTransferredRowRejectsFullTargetRoster();
     void transferredRowDetectsDuplicateStudentPair();
     void namePairHelpersDetectDuplicatesAndSuggestSuffix();
+    void interactiveNameValidationMatchesEnginePolicy();
     void structuredValidationMarksAndClearsAffectedCells();
 };
 
@@ -612,6 +614,80 @@ void RosterModelTests::namePairHelpersDetectDuplicatesAndSuggestSuffix()
     QCOMPARE(
         model.suggestedKoreanNameWithSuffix(0),
         QStringLiteral("김민수(B)")
+        );
+}
+
+void RosterModelTests::interactiveNameValidationMatchesEnginePolicy()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Amy1"),
+            QStringLiteral("김!")
+            ),
+        studentRow(
+            QStringLiteral("  aMY  "),
+            QStringLiteral(" 김 민 수 (a) ")
+            ),
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("김민수(A)")
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    const int englishColumn = model.englishNameColumn();
+    const int koreanColumn = model.koreanNameColumn();
+
+    QVERIFY(
+        model.errorsForCell(0, englishColumn)
+            .contains(QStringLiteral("English name contains invalid characters."))
+        );
+    QVERIFY(
+        model.errorsForCell(0, koreanColumn)
+            .contains(QStringLiteral("Korean name contains invalid characters."))
+        );
+
+    QCOMPARE(
+        model.index(1, englishColumn).data(Qt::DisplayRole).toString(),
+        QStringLiteral("Amy")
+        );
+    QCOMPARE(
+        model.index(1, koreanColumn).data(Qt::DisplayRole).toString(),
+        QStringLiteral("김민수(A)")
+        );
+    QVERIFY(model.hasDuplicateNameErrors());
+    QVERIFY(
+        model.errorsForCell(1, englishColumn)
+            .contains(QStringLiteral("Duplicate student name pair. Also used on row(s): 3."))
+        );
+    QVERIFY(
+        model.errorsForCell(2, koreanColumn)
+            .contains(QStringLiteral("Duplicate student name pair. Also used on row(s): 2."))
+        );
+
+    const auto shortIssues =
+        StudentNameUtils::validateKoreanName(QStringLiteral("김"));
+    QVERIFY(
+        shortIssues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort)
+        );
+
+    QVERIFY(
+        model.setData(
+            model.index(0, englishColumn),
+            QStringLiteral("  Alice  ")
+            )
+        );
+    QCOMPARE(
+        model.index(0, englishColumn).data(Qt::DisplayRole).toString(),
+        QStringLiteral("Alice")
+        );
+    QVERIFY(
+        !model.errorsForCell(0, englishColumn)
+            .contains(QStringLiteral("English name contains invalid characters."))
         );
 }
 

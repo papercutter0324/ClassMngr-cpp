@@ -17,6 +17,8 @@ class SqliteDatabase;
 class RosterRepository
 {
 public:
+    explicit RosterRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit RosterRepository(
         QSqlDatabase& database
         );
@@ -45,7 +47,8 @@ private:
         int classId
         );
 
-    QSqlDatabase& m_database;
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
     std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
     QString m_engineDatabasePath;
 };

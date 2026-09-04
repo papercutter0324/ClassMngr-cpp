@@ -150,11 +150,17 @@ QString testingClassIdentity(
 }
 } // namespace
 
+TestingClassRepository::TestingClassRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 TestingClassRepository::TestingClassRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : TestingClassRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 TestingClassRepository::~TestingClassRepository() = default;
@@ -163,7 +169,7 @@ Status TestingClassRepository::ensureEngineDatabase(
     const QString& operation
     ) const
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -175,7 +181,7 @@ Status TestingClassRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

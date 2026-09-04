@@ -46,6 +46,22 @@ REQUIRED_COVERAGE = (
     "busy/locked database",
     "partial failure",
 )
+# The database-port round-trip executable contains the deliberately grouped
+# Phase 2 persistence checks.  Keep this mapping explicit so a category is
+# only reported as covered when this registered test was actually executed.
+ENGINE_COVERAGE_TESTS = {
+    "invalid-input": (DATABASE_ENGINE_TEST,),
+    "rollback": (DATABASE_ENGINE_TEST,),
+    "migration": (DATABASE_ENGINE_TEST,),
+    "busy/locked database": (DATABASE_ENGINE_TEST,),
+    "partial failure": (DATABASE_ENGINE_TEST,),
+}
+EVIDENCE_CLASSES = (
+    "runtime-tested",
+    "compile-only",
+    "host-blocked",
+    "failed",
+)
 REQUIRED_ARTIFACTS = (
     "configure_log",
     "build_log",
@@ -125,18 +141,23 @@ def run_logged(command: list[str], cwd: Path, log_path: Path) -> tuple[int, floa
     with log_path.open("w", encoding="utf-8", newline="") as log:
         log.write(f"$ {' '.join(command)}\n\n")
         log.flush()
-        completed = subprocess.run(
-            command,
-            cwd=cwd,
-            check=False,
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        log.write(f"\n[exit code: {completed.returncode}]\n")
-    return completed.returncode, time.perf_counter() - started
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=cwd,
+                check=False,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            code = completed.returncode
+        except OSError as error:
+            log.write(f"\n[unable to execute command: {error}]\n")
+            code = 127
+        log.write(f"\n[exit code: {code}]\n")
+    return code, time.perf_counter() - started
 
 
 def configuration_args(configuration: str | None) -> list[str]:
@@ -201,7 +222,10 @@ def parse_json_inventory(raw: str, build_dir: Path) -> list[dict[str, Any]] | No
     inventory = []
     for test in tests:
         if not isinstance(test, dict) or not isinstance(test.get("name"), str):
-            continue
+            # Do not silently discard a malformed registration: falling back
+            # to verbose CTest output gives the lane a second deterministic
+            # chance to recover the complete inventory.
+            return None
         name = test["name"]
         command = test.get("command", [])
         if not isinstance(command, list):
@@ -256,6 +280,24 @@ def parse_fallback_inventory(raw: str, build_dir: Path) -> list[dict[str, Any]]:
 
 def engine_inventory(inventory: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     return [item for item in inventory if item["name"].startswith("ClassMngrEngine")]
+
+
+def engine_coverage(
+    inventory: Iterable[dict[str, Any]],
+    executed_names: set[str],
+) -> dict[str, dict[str, Any]]:
+    registered_names = {item["name"] for item in inventory}
+    coverage = {}
+    for category, candidates in ENGINE_COVERAGE_TESTS.items():
+        registered = [name for name in candidates if name in registered_names]
+        executed = [name for name in registered if name in executed_names]
+        coverage[category] = {
+            "status": "covered" if executed else "unavailable",
+            "required_tests": list(candidates),
+            "registered_tests": registered,
+            "evidence_tests": executed,
+        }
+    return coverage
 
 
 def collect_inventory(
@@ -370,6 +412,7 @@ def qt_metadata(args: argparse.Namespace) -> tuple[dict[str, Any], list[str]]:
         "runtime_tested": False,
         "compile_only": False,
         "blocked": False,
+        "blocked_reasons": [],
     }
     failures = []
     if not args.qt_version:
@@ -393,6 +436,8 @@ def qt_metadata(args: argparse.Namespace) -> tuple[dict[str, Any], list[str]]:
             failures.append(
                 f"Detected Qt version must be exactly {args.qt_version}, got {detected_version!r}"
             )
+    metadata["blocked"] = bool(failures)
+    metadata["blocked_reasons"] = list(failures)
     return metadata, failures
 
 
@@ -423,9 +468,6 @@ def run_lane(args: argparse.Namespace) -> int:
     inventory_source = None
     inventory: list[dict[str, Any]] = []
     inventory_path = None
-    if configure_code == 0:
-        inventory_code, inventory_source, inventory, inventory_path = collect_inventory(build_dir, args.configuration, logs_dir)
-
     build_parallel = "1" if args.lane_type == "retained-qt" else "2"
     build_command = [
         "cmake",
@@ -444,8 +486,10 @@ def run_lane(args: argparse.Namespace) -> int:
     build_seconds = 0.0
     if configure_code == 0:
         build_code, build_seconds = run_logged(build_command, repository, logs_dir / "build.log")
-        if inventory_code == 0:
-            inventory_code, inventory_source, inventory, inventory_path = collect_inventory(build_dir, args.configuration, logs_dir)
+        # Inventory is deliberately collected after the build.  It is an
+        # unfiltered snapshot of the artifacts this lane claims to test, not
+        # a stale pre-build registration list.
+        inventory_code, inventory_source, inventory, inventory_path = collect_inventory(build_dir, args.configuration, logs_dir)
 
     test_pattern = ENGINE_TEST_PATTERN if args.lane_type == "engine" else rf"^{RETAINED_QT_TEST}$"
     junit_path = logs_dir / "ctest.junit.xml"
@@ -464,7 +508,7 @@ def run_lane(args: argparse.Namespace) -> int:
     ]
     test_code = -1
     test_seconds = 0.0
-    if build_code == 0:
+    if build_code == 0 and not args.compile_only:
         test_code, test_seconds = run_logged(test_command, repository, logs_dir / "ctest.log")
     summary = junit_summary(junit_path)
     registered_names = {item["name"] for item in inventory}
@@ -472,6 +516,17 @@ def run_lane(args: argparse.Namespace) -> int:
     missing_executables = [item["name"] for item in relevant if not item["executable_present"]]
     required_test = DATABASE_ENGINE_TEST if args.lane_type == "engine" else RETAINED_QT_TEST
     executed_names = set(summary["test_names"]) if summary else set()
+    required_test_entry = next(
+        (item for item in inventory if item["name"] == required_test),
+        None,
+    )
+    required_test_executable_present = bool(
+        required_test_entry and required_test_entry["executable_present"]
+    )
+    unexecuted_engine_tests = sorted(
+        item["name"] for item in relevant
+        if item["executable_present"] and item["name"] not in executed_names
+    )
     if configure_code != 0:
         failures.append(f"configure failed with exit code {configure_code}")
     if build_code != 0:
@@ -483,11 +538,15 @@ def run_lane(args: argparse.Namespace) -> int:
             failures.append("no registered ClassMngrEngine tests were found")
         if missing_executables:
             failures.append("missing registered engine executables: " + ", ".join(sorted(missing_executables)))
+        if unexecuted_engine_tests:
+            failures.append(
+                "registered engine tests did not produce runtime evidence: "
+                + ", ".join(unexecuted_engine_tests)
+            )
     missing_executables = sorted(missing_executables)
     if required_test not in registered_names:
         failures.append(f"required test is not registered: {required_test}")
-    required_entry = next((item for item in inventory if item["name"] == required_test), None)
-    if required_entry is None or not required_entry["executable_present"]:
+    if not required_test_executable_present:
         failures.append(f"required test executable is missing: {required_test}")
     if required_test not in executed_names:
         failures.append(f"required test did not run: {required_test}")
@@ -498,16 +557,24 @@ def run_lane(args: argparse.Namespace) -> int:
     elif summary["failures"] or summary["errors"]:
         failures.append("CTest reported failed or errored tests")
     if args.lane_type == "engine":
-        coverage = {
-            category: {"status": "covered", "evidence_tests": [DATABASE_ENGINE_TEST]}
-            for category in REQUIRED_COVERAGE
-        }
+        coverage = engine_coverage(inventory, executed_names)
+        for category, entry in coverage.items():
+            if entry["status"] != "covered":
+                failures.append(f"required coverage evidence is missing: {category}")
     else:
         coverage = {}
         if qt_info is not None:
-            qt_info["runtime_tested"] = test_code == 0 and required_test in executed_names
-            if not qt_info["runtime_tested"]:
-                qt_info["compile_only"] = build_code == 0
+            qt_info["runtime_tested"] = (
+                qt_info["required_version"] == "6.12.0"
+                and qt_info["detected_version"] == "6.12.0"
+                and test_code == 0
+                and required_test in executed_names
+            )
+            qt_info["compile_only"] = (
+                not qt_info["blocked"]
+                and build_code == 0
+                and (args.compile_only or test_code == -1)
+            )
     commit_end = capture(["git", "rev-parse", "HEAD"], repository)
     fingerprint_end = source_fingerprint(repository)
     dirty_end = bool(capture(["git", "status", "--porcelain"], repository))
@@ -515,6 +582,7 @@ def run_lane(args: argparse.Namespace) -> int:
     if not source_stable:
         failures.append("source changed during the lane")
     if qt_info is not None:
+        qt_info["blocked"] = bool(qt_info.get("blocked") or qt_info.get("blocked_reasons"))
         failures.extend(
             message
             for message in (
@@ -523,11 +591,26 @@ def run_lane(args: argparse.Namespace) -> int:
                 else ["retained Qt fixture was not runtime-tested"]
             )
         )
+    if args.lane_type == "retained-qt" and qt_info and qt_info["blocked"]:
+        evidence_class = "host-blocked"
+    elif args.lane_type == "retained-qt" and qt_info and qt_info["compile_only"]:
+        evidence_class = "compile-only"
+    elif args.lane_type == "retained-qt" and qt_info and qt_info["runtime_tested"]:
+        evidence_class = "runtime-tested"
+    elif args.lane_type == "engine" and not failures:
+        evidence_class = "runtime-tested"
+    else:
+        evidence_class = "failed"
+    if args.lane_type == "retained-qt" and qt_info and qt_info["blocked"]:
+        status = "BLOCKED"
+    else:
+        status = "PASS" if not failures else "FAIL"
     report = {
         "format": "phase2-exit-gate-report-v1",
         "lane_id": args.lane_id,
         "lane_type": args.lane_type,
-        "status": "PASS" if not failures else "FAIL",
+        "status": status,
+        "evidence_class": evidence_class,
         "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
         "platform": platform.platform(),
         "git_commit": commit_end,
@@ -556,7 +639,10 @@ def run_lane(args: argparse.Namespace) -> int:
             "inventory_source": inventory_source,
             "registered_tests": [item["name"] for item in inventory],
             "registered_engine_tests": [item["name"] for item in relevant],
+            "registered_engine_inventory": relevant,
             "missing_engine_executables": sorted(missing_executables),
+            "unexecuted_engine_tests": unexecuted_engine_tests,
+            "required_test_executable_present": required_test_executable_present,
             "required_test": required_test,
             "tests": summary,
         },
@@ -599,8 +685,14 @@ def validate_report(report: dict[str, Any], report_path: Path) -> list[str]:
     expected_type = "engine" if lane_id in ENGINE_LANES else "retained-qt"
     if lane_type != expected_type:
         failures.append(f"lane_type is {lane_type!r}, expected {expected_type!r}")
-    if report.get("status") != "PASS":
-        failures.append(f"lane status is {report.get('status')!r}")
+    status = report.get("status")
+    if status not in ("PASS", "FAIL", "BLOCKED"):
+        failures.append(f"lane status is {status!r}")
+    evidence_class = report.get("evidence_class")
+    if evidence_class not in EVIDENCE_CLASSES:
+        failures.append(f"evidence_class is {evidence_class!r}")
+    if status != "PASS":
+        failures.append(f"lane status is {status!r}")
     if not isinstance(report.get("git_commit"), str) or not report.get("git_commit"):
         failures.append("git commit identity is missing")
     if report.get("source_stable_during_run") is not True:
@@ -625,9 +717,14 @@ def validate_report(report: dict[str, Any], report_path: Path) -> list[str]:
             failures.append(f"{key} is {results.get(key)!r}")
     tests = results.get("tests")
     required_test = DATABASE_ENGINE_TEST if lane_type == "engine" else RETAINED_QT_TEST
-    if required_test not in results.get("registered_tests", []):
+    registered_tests = results.get("registered_tests")
+    if not isinstance(registered_tests, list):
+        registered_tests = []
+        failures.append("registered test inventory is missing or invalid")
+    if required_test not in registered_tests:
         failures.append(f"required test is not in the registered inventory: {required_test}")
-    if not isinstance(tests, dict) or required_test not in tests.get("test_names", []):
+    test_names = tests.get("test_names") if isinstance(tests, dict) else None
+    if not isinstance(test_names, list) or required_test not in test_names:
         failures.append(f"required test evidence is missing: {required_test}")
     if not isinstance(tests, dict) or tests.get("failures", 0) or tests.get("errors", 0):
         failures.append("test summary contains failures/errors")
@@ -638,15 +735,51 @@ def validate_report(report: dict[str, Any], report_path: Path) -> list[str]:
             failures.append("engine test pattern is not the complete ClassMngrEngine selection")
         if not results.get("registered_engine_tests"):
             failures.append("registered engine test inventory is empty")
-        if results.get("missing_engine_executables"):
+        if not isinstance(results.get("missing_engine_executables"), list):
+            failures.append("missing engine executable inventory is missing or invalid")
+        elif results.get("missing_engine_executables"):
             failures.append("registered engine executables are missing")
-        if DATABASE_ENGINE_TEST not in results.get("registered_engine_tests", []):
+        if not isinstance(results.get("unexecuted_engine_tests"), list):
+            failures.append("unexecuted engine test inventory is missing or invalid")
+        elif results.get("unexecuted_engine_tests"):
+            failures.append("registered engine tests did not produce runtime evidence")
+        engine_inventory = results.get("registered_engine_inventory")
+        registered_engine_tests = results.get("registered_engine_tests")
+        if not isinstance(registered_engine_tests, list):
+            registered_engine_tests = []
+            failures.append("registered engine test inventory is missing or invalid")
+        if not isinstance(engine_inventory, list):
+            failures.append("resolved registered engine inventory is missing")
+        else:
+            inventory_names = set()
+            for item in engine_inventory:
+                if not isinstance(item, dict) or not isinstance(item.get("name"), str):
+                    failures.append("resolved registered engine inventory is invalid")
+                    continue
+                inventory_names.add(item["name"])
+                if item.get("executable_present") is not True:
+                    failures.append(
+                        "registered engine executable is missing: " + item["name"]
+                    )
+            if inventory_names != set(registered_engine_tests):
+                failures.append("resolved engine inventory does not match registered engine tests")
+        if results.get("required_test_executable_present") is not True:
+            failures.append("required test executable is missing")
+        if DATABASE_ENGINE_TEST not in registered_engine_tests:
             failures.append("database fixture engine test is not registered")
         coverage = report.get("coverage")
         for category in REQUIRED_COVERAGE:
             entry = coverage.get(category) if isinstance(coverage, dict) else None
-            if not isinstance(entry, dict) or entry.get("status") != "covered" or DATABASE_ENGINE_TEST not in entry.get("evidence_tests", []):
+            required_coverage_tests = ENGINE_COVERAGE_TESTS[category]
+            if (
+                not isinstance(entry, dict)
+                or entry.get("status") != "covered"
+                or not isinstance(entry.get("evidence_tests"), list)
+                or not set(required_coverage_tests).intersection(entry["evidence_tests"])
+            ):
                 failures.append(f"required coverage evidence is missing: {category}")
+        if evidence_class != "runtime-tested":
+            failures.append("engine lane is not runtime-tested")
     else:
         qt = report.get("qt")
         if not isinstance(qt, dict):
@@ -661,9 +794,12 @@ def validate_report(report: dict[str, Any], report_path: Path) -> list[str]:
                 "prefix",
                 "version_probe",
             ):
-                if not qt.get(key):
+                if not qt.get(key) and evidence_class != "host-blocked":
                     failures.append(f"Qt metadata is missing: {key}")
-            if (
+            if evidence_class == "host-blocked":
+                if not qt.get("blocked") or not qt.get("blocked_reasons"):
+                    failures.append("host-blocked Qt evidence lacks blocking reasons")
+            elif (
                 qt.get("required_version") != "6.12.0"
                 or qt.get("version") != "6.12.0"
                 or qt.get("detected_version") != "6.12.0"
@@ -676,8 +812,14 @@ def validate_report(report: dict[str, Any], report_path: Path) -> list[str]:
             }.get(str(lane_id))
             if expected_qt and (qt.get("prefix_env"), qt.get("architecture")) != expected_qt:
                 failures.append("Qt prefix environment or architecture does not match the declared lane")
-            if qt.get("compile_only") or qt.get("blocked") or not qt.get("runtime_tested"):
+            if evidence_class == "compile-only" and not qt.get("compile_only"):
+                failures.append("Qt evidence class is compile-only but metadata disagrees")
+            if evidence_class == "runtime-tested" and (
+                qt.get("compile_only") or qt.get("blocked") or not qt.get("runtime_tested")
+            ):
                 failures.append("Qt lane is compile-only, blocked, or not runtime-tested")
+            if evidence_class not in ("runtime-tested", "compile-only", "host-blocked"):
+                failures.append("Qt lane evidence class is not recognized")
             if lane_id == "windows-qt-6.12-x64" and qt.get("architecture") != "x64":
                 failures.append("Windows retained Qt lane is not x64")
     return failures
@@ -753,6 +895,11 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("--build-dir", required=True, type=Path)
     run.add_argument("--configuration")
     run.add_argument("--test-timeout", type=int, default=120)
+    run.add_argument(
+        "--compile-only",
+        action="store_true",
+        help="build retained Qt evidence without claiming a runtime test",
+    )
     run.add_argument("--output", required=True, type=Path)
     run.add_argument("--logs-dir", required=True, type=Path)
     run.add_argument("--qt-version")
@@ -769,6 +916,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run":
         if args.test_timeout < 1:
             parser().error("--test-timeout must be at least 1")
+        if args.compile_only and args.lane_type != "retained-qt":
+            parser().error("--compile-only is only valid for retained-qt lanes")
         return run_lane(args)
     return validate_aggregate(args.reports_dir, args.output)
 

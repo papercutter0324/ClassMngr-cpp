@@ -641,11 +641,17 @@ QString boundaryConversionFailure(
 }
 } // namespace
 
+ScheduleImportRepository::ScheduleImportRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 ScheduleImportRepository::ScheduleImportRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : ScheduleImportRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 ScheduleImportRepository::~ScheduleImportRepository() = default;
@@ -654,7 +660,7 @@ Status ScheduleImportRepository::ensureEngineDatabase(
     const QString& operation
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -666,7 +672,7 @@ Status ScheduleImportRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

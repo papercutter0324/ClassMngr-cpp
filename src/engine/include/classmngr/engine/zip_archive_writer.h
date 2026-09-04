@@ -1,5 +1,6 @@
 #pragma once
 
+#include "classmngr/engine/platform_services.h"
 #include "classmngr/engine/result.h"
 
 #include <string>
@@ -19,6 +20,14 @@ struct Entry
 [[nodiscard]] Status writeArchive(
     const std::string& archivePath,
     const std::vector<Entry>& entries
+    );
+
+// Uses clock values for temporary archive names and fallback ZIP timestamps.
+// The overload above preserves the system-clock behavior for existing callers.
+[[nodiscard]] Status writeArchive(
+    const std::string& archivePath,
+    const std::vector<Entry>& entries,
+    const Clock& clock
     );
 
 } // namespace classmngr::engine::ZipArchiveWriter

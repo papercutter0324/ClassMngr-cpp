@@ -16,6 +16,8 @@ class SqliteDatabase;
 class TeacherRepository
 {
 public:
+    explicit TeacherRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit TeacherRepository(
         QSqlDatabase& database
         );
@@ -49,7 +51,8 @@ private:
         const QString& teacherContext = {}
         );
 
-    QSqlDatabase& m_database;
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
     std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
     QString m_engineDatabasePath;
 };

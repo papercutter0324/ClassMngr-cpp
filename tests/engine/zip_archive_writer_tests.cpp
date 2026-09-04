@@ -17,6 +17,30 @@ namespace
 {
 namespace fs = std::filesystem;
 namespace ZipArchiveWriter = classmngr::engine::ZipArchiveWriter;
+using classmngr::engine::Clock;
+using classmngr::engine::MonotonicTimePoint;
+using classmngr::engine::WallClockTimePoint;
+
+class FixedClock final : public Clock
+{
+public:
+    [[nodiscard]] WallClockTimePoint nowUtc() const noexcept override
+    {
+        ++wallCalls;
+        return wall;
+    }
+
+    [[nodiscard]] MonotonicTimePoint monotonicNow() const noexcept override
+    {
+        ++monotonicCalls;
+        return monotonic;
+    }
+
+    WallClockTimePoint wall{};
+    MonotonicTimePoint monotonic{};
+    mutable int wallCalls = 0;
+    mutable int monotonicCalls = 0;
+};
 
 struct TemporaryDirectory final
 {
@@ -348,14 +372,23 @@ int main()
         );
 
     const fs::path archivePath = temporaryDirectory->path / "reports.zip";
+    FixedClock clock;
+    clock.wall = WallClockTimePoint(std::chrono::seconds(1'930'899'600));
+    clock.monotonic = MonotonicTimePoint(std::chrono::milliseconds(456));
     const auto written = ZipArchiveWriter::writeArchive(
         pathToUtf8(archivePath),
         {
             {pathToUtf8(firstSource), "학생/첫 번째.txt"},
             {pathToUtf8(secondSource), "student-2.txt"}
-        }
+        },
+        clock
         );
-    passed &= expect(written.has_value(), "valid archive was rejected");
+    passed &= expect(
+        written.has_value()
+            && clock.wallCalls >= 2
+            && clock.monotonicCalls == 1,
+        "archive creation ignored the injected clock"
+        );
 
     const auto archive = parseArchive(archivePath);
     passed &= expect(archive.has_value(), "valid archive could not be parsed");

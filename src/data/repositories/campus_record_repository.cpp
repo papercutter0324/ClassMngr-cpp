@@ -170,11 +170,17 @@ QString engineFailure(
 }
 } // namespace
 
+CampusRecordRepository::CampusRecordRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 CampusRecordRepository::CampusRecordRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : CampusRecordRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 CampusRecordRepository::~CampusRecordRepository() = default;
@@ -184,7 +190,7 @@ Status CampusRecordRepository::ensureEngineDatabase(
     const QString& campusContext
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -197,7 +203,7 @@ Status CampusRecordRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

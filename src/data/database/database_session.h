@@ -26,8 +26,8 @@ class TestingClassRepository;
 
 // Qt SQL compatibility session around the portable engine database pipeline.
 // File-backed opens are preflighted, migrated, and validated by the engine;
-// the Qt connection and repositories remain the adapter boundary for callers
-// that have not migrated to engine services yet.
+// the Qt connection and repositories remain an explicitly temporary adapter
+// boundary for callers that have not migrated to engine services yet.
 class DatabaseSession final
 {
 public:
@@ -42,7 +42,10 @@ public:
 
     [[nodiscard]] bool isOpen() const;
     [[nodiscard]] QString databasePath() const;
-    [[nodiscard]] QSqlDatabase database() const;
+    // Compatibility-only access for legacy Qt SQL tests and adapters that
+    // still need to inspect the retained connection. Product workflows must
+    // use the engine-backed repositories/services instead.
+    [[nodiscard]] QSqlDatabase compatibilityDatabase() const;
 
     SettingsRepository* settingsRepository() const;
     CampusRecordRepository* campusRecordRepository() const;

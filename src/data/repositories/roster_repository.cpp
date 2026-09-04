@@ -171,11 +171,17 @@ QString invalidClassIdError(
 }
 } // namespace
 
+RosterRepository::RosterRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 RosterRepository::RosterRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : RosterRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 RosterRepository::~RosterRepository() = default;
@@ -185,7 +191,7 @@ Status RosterRepository::ensureEngineDatabase(
     int classId
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         return std::unexpected(
             QObject::tr("%1 failed for class id %2: No Teacher Profile is open.")
@@ -194,7 +200,7 @@ Status RosterRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty())
     {
         return std::unexpected(

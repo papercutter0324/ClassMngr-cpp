@@ -280,7 +280,7 @@ void DataServiceLifecycleTests::personalDetailsRepositoryUsesEngineBoundary()
     QVERIFY(repository.saveCampus(QStringLiteral("부산 캠퍼스")));
     QCOMPARE(repository.load().campus, QStringLiteral("부산 캠퍼스"));
 
-    QSqlQuery query(dataService.databaseSession()->database());
+    QSqlQuery query(dataService.databaseSession()->compatibilityDatabase());
     QVERIFY(query.exec(QStringLiteral(
         "SELECT value FROM app_settings WHERE key='myInfo/name'"
         )));
@@ -301,11 +301,26 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
         directory.filePath(QStringLiteral("exported.db"));
 
     ApplicationServices services;
+    DataService* compatibilityAdapter = services.dataService();
+    QCOMPARE(
+        services.settingsService()->databaseSession(),
+        compatibilityAdapter->databaseSession()
+        );
     QVERIFY(services.openDatabase(sourcePath).has_value());
+    QVERIFY(compatibilityAdapter->saveSetting(
+        QStringLiteral("application-services/compatibility"),
+        QStringLiteral("shared-session")
+        ).has_value());
     QVERIFY(services.settingsService()->save(
         QStringLiteral("application-services/value"),
         QStringLiteral("saved")
         ).has_value());
+    QCOMPARE(
+        services.settingsService()
+            ->load(QStringLiteral("application-services/compatibility"))
+            ->toString(),
+        QStringLiteral("shared-session")
+        );
     services.saveDatabase();
 
     QVERIFY(services.saveDatabaseAs(savedPath).has_value());
@@ -323,6 +338,7 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
         );
 
     services.closeDatabase();
+    QVERIFY(!compatibilityAdapter->isOpen());
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
 }
@@ -411,7 +427,7 @@ void DataServiceLifecycleTests::fileBackedSessionUsesEngineSchemaPipeline()
         QFileInfo(path).absoluteFilePath()
         );
 
-    QSqlQuery versionQuery(session.database());
+    QSqlQuery versionQuery(session.compatibilityDatabase());
     QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version")));
     QVERIFY(versionQuery.next());
     QCOMPARE(
@@ -419,7 +435,7 @@ void DataServiceLifecycleTests::fileBackedSessionUsesEngineSchemaPipeline()
         DatabaseSchemaManager::LatestSchemaVersion
         );
 
-    QSqlQuery columnQuery(session.database());
+    QSqlQuery columnQuery(session.compatibilityDatabase());
     QVERIFY(columnQuery.exec(QStringLiteral(
         "SELECT preferred_name FROM teachers"
         )));
@@ -446,7 +462,7 @@ void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
     info.classId = classId;
     QVERIFY(service.saveClassInfo(info));
 
-    QSqlDatabase database = service.databaseSession()->database();
+    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
     QSqlQuery query(database);
     query.prepare(QStringLiteral(
         "INSERT INTO roster_columns (class_id, name, position, width) "
@@ -508,7 +524,7 @@ void DataServiceLifecycleTests
     info.teacherId = *createdTeacher;
     QVERIFY(service.saveClassInfo(info));
 
-    QSqlDatabase database = service.databaseSession()->database();
+    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
     QSqlQuery query(database);
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_teacher_delete "
@@ -591,7 +607,7 @@ void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()
         directory.filePath(QStringLiteral("write-failures.db"))
         ).has_value());
 
-    QSqlDatabase database = service.databaseSession()->database();
+    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
     QSqlQuery query(database);
 
     QVERIFY(query.exec(QStringLiteral(
@@ -773,7 +789,7 @@ void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
         QStringLiteral("class id %1").arg(*classId + 1000)
         ));
 
-    QSqlDatabase database = service.databaseSession()->database();
+    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
     QSqlQuery query(database);
     QVERIFY(query.exec(QStringLiteral("DROP TABLE classes")));
 
@@ -840,7 +856,7 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
     QVERIFY(missingSetting);
     QVERIFY(!missingSetting->isValid());
 
-    QSqlDatabase database = service.databaseSession()->database();
+    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
     QSqlQuery query(database);
 
     QVERIFY(query.exec(QStringLiteral("DROP TABLE class_times")));
@@ -925,7 +941,7 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     });
     QVERIFY(service.saveClassInfo(originalInfo));
 
-    QSqlDatabase database = service.databaseSession()->database();
+    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
     QSqlQuery query(database);
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_intensive_time_insert "
@@ -1133,7 +1149,7 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.open(path).has_value());
     QVERIFY(session.isOpen());
     QCOMPARE(session.databasePath(), path);
-    QVERIFY(session.database().isOpen());
+    QVERIFY(session.compatibilityDatabase().isOpen());
     QVERIFY(session.teacherRepository() != nullptr);
     QVERIFY(session.classRepository() != nullptr);
     QVERIFY(session.rosterRepository() != nullptr);
@@ -1154,18 +1170,18 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
     QVERIFY(directory.isValid());
 
     DataService dataService;
-    SettingsService settings(dataService.databaseSession(), &dataService);
-    TeacherService teachers(dataService.databaseSession(), &dataService);
-    ClassService classes(dataService.databaseSession(), &dataService);
-    ScheduleService schedule(dataService.databaseSession(), &dataService);
-    CalendarService calendar(dataService.databaseSession(), &dataService);
-    RosterService rosters(dataService.databaseSession(), &dataService);
-    SpeakingEvaluationService evaluations(
-        dataService.databaseSession(), &dataService);
+    SettingsService settings(&dataService);
+    TeacherService teachers(&dataService);
+    ClassService classes(&dataService);
+    ScheduleService schedule(&dataService);
+    CalendarService calendar(&dataService);
+    RosterService rosters(&dataService);
+    SpeakingEvaluationService evaluations(&dataService);
 
     QVERIFY(!settings.isAvailable());
     QVERIFY(!teachers.isAvailable());
     QVERIFY(!classes.isAvailable());
+    QCOMPARE(settings.databaseSession(), dataService.databaseSession());
 
     const QString path =
         directory.filePath(QStringLiteral("feature-services.db"));

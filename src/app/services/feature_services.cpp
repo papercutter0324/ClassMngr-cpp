@@ -109,7 +109,15 @@ Status validateClassScheduleConflicts(
 }
 
 FeatureService::FeatureService(DataService* dataService)
-    : m_legacyDataService(dataService)
+    : FeatureService(
+        dataService ? dataService->databaseSession() : nullptr,
+        dataService
+        )
+{
+}
+
+FeatureService::FeatureService(DatabaseSession* session)
+    : m_session(session)
 {
 }
 
@@ -117,41 +125,26 @@ FeatureService::FeatureService(
     DatabaseSession* session,
     DataService* legacyDataService
     )
-    : m_session(session)
-    , m_legacyDataService(legacyDataService)
+    : m_session(session ? session
+                        : (legacyDataService
+                            ? legacyDataService->databaseSession()
+                            : nullptr))
 {
 }
 
 bool FeatureService::isAvailable() const
 {
-    // Keep the DataService fallback for direct migration callers and tests;
-    // production ApplicationServices wiring supplies the session path only.
-    return (m_session && m_session->isOpen())
-        || (m_legacyDataService && m_legacyDataService->isOpen());
+    return m_session && m_session->isOpen();
 }
 
 DatabaseSession* FeatureService::session() const
 {
     return m_session;
 }
-
-DataService* FeatureService::dataService() const
-{
-    return m_legacyDataService;
-}
-
 DatabaseSession* SettingsService::databaseSession() const
 {
-    if (session())
-    {
-        return session();
-    }
-
-    return dataService()
-        ? dataService()->databaseSession()
-        : nullptr;
+    return session();
 }
-
 Status SettingsService::save(
     const QString& key,
     const QVariant& value
@@ -160,10 +153,6 @@ Status SettingsService::save(
     if (auto* repository = session() ? session()->settingsRepository() : nullptr)
     {
         return repository->saveSetting(key, value);
-    }
-    if (dataService())
-    {
-        return dataService()->saveSetting(key, value);
     }
 
     return std::unexpected(unavailableError());
@@ -177,10 +166,6 @@ Status SettingsService::saveAll(
     {
         return repository->saveSettings(values);
     }
-    if (dataService())
-    {
-        return dataService()->saveSettings(values);
-    }
 
     return std::unexpected(unavailableError());
 }
@@ -193,9 +178,7 @@ Result<QVariant> SettingsService::load(
     {
         return repository->loadSetting(key);
     }
-    return dataService()
-        ? dataService()->loadSetting(key)
-        : Result<QVariant>(std::unexpected(unavailableError()));
+    return Result<QVariant>(std::unexpected(unavailableError()));
 }
 
 QVariant SettingsService::loadOrDefault(
@@ -226,9 +209,7 @@ Result<int> TeacherService::create(const Teacher& teacher) const
     {
         return repository->createTeacher(normalized);
     }
-    return dataService()
-        ? dataService()->createTeacher(normalized)
-        : Result<int>(std::unexpected(unavailableError()));
+    return Result<int>(std::unexpected(unavailableError()));
 }
 
 Result<int> TeacherService::save(const Teacher& teacher) const
@@ -244,9 +225,7 @@ Result<int> TeacherService::save(const Teacher& teacher) const
     {
         return repository->saveTeacher(normalized);
     }
-    return dataService()
-        ? dataService()->saveTeacher(normalized)
-        : Result<int>(std::unexpected(unavailableError()));
+    return Result<int>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::update(const Teacher& teacher) const
@@ -268,10 +247,6 @@ Status TeacherService::update(const Teacher& teacher) const
     {
         return repository->updateTeacher(normalized);
     }
-    else if (dataService())
-    {
-        return dataService()->updateTeacher(normalized);
-    }
 
     return std::unexpected(unavailableError());
 }
@@ -282,9 +257,7 @@ Result<Teacher> TeacherService::teacher(int teacherId) const
     {
         return repository->getTeacher(teacherId);
     }
-    return dataService()
-        ? dataService()->getTeacher(teacherId)
-        : Result<Teacher>(std::unexpected(unavailableError()));
+    return Result<Teacher>(std::unexpected(unavailableError()));
 }
 
 Result<QList<Teacher>> TeacherService::teachers() const
@@ -293,9 +266,7 @@ Result<QList<Teacher>> TeacherService::teachers() const
     {
         return repository->getAllTeachers();
     }
-    return dataService()
-        ? dataService()->getAllTeachers()
-        : Result<QList<Teacher>>(std::unexpected(unavailableError()));
+    return Result<QList<Teacher>>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::remove(int teacherId) const
@@ -303,10 +274,6 @@ Status TeacherService::remove(int teacherId) const
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
         return repository->deleteTeacher(teacherId);
-    }
-    else if (dataService())
-    {
-        return dataService()->deleteTeacher(teacherId);
     }
 
     return std::unexpected(unavailableError());
@@ -319,9 +286,7 @@ Result<QList<NativeEnglishTeacher>> TeacherService::nativeEnglishTeachers() cons
     {
         return repository->getAll();
     }
-    return dataService()
-        ? dataService()->getNativeEnglishTeachers()
-        : Result<QList<NativeEnglishTeacher>>(std::unexpected(unavailableError()));
+    return Result<QList<NativeEnglishTeacher>>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::saveNativeEnglishTeacherDirectory(
@@ -334,9 +299,7 @@ Status TeacherService::saveNativeEnglishTeacherDirectory(
     {
         return repository->saveDirectory(teachers, deletedIds);
     }
-    return dataService()
-        ? dataService()->saveNativeEnglishTeacherDirectory(teachers, deletedIds)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<QList<GsTeamMember>> TeacherService::gsTeamMembers() const
@@ -345,9 +308,7 @@ Result<QList<GsTeamMember>> TeacherService::gsTeamMembers() const
     {
         return repository->getAll();
     }
-    return dataService()
-        ? dataService()->getGsTeamMembers()
-        : Result<QList<GsTeamMember>>(std::unexpected(unavailableError()));
+    return Result<QList<GsTeamMember>>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::saveGsTeamDirectory(
@@ -359,9 +320,7 @@ Status TeacherService::saveGsTeamDirectory(
     {
         return repository->saveDirectory(members, deletedIds);
     }
-    return dataService()
-        ? dataService()->saveGsTeamDirectory(members, deletedIds)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<TeacherImportSummary> TeacherService::importTeachers(
@@ -391,9 +350,7 @@ Result<TeacherImportSummary> TeacherService::importTeachers(
     {
         return repository->importTeachers(normalizedPlan);
     }
-    return dataService()
-        ? dataService()->importTeachers(normalizedPlan)
-        : Result<TeacherImportSummary>(std::unexpected(unavailableError()));
+    return Result<TeacherImportSummary>(std::unexpected(unavailableError()));
 }
 
 Result<QDate> TeacherService::latestImportDate() const
@@ -410,9 +367,7 @@ Result<QDate> TeacherService::latestImportDate() const
 
         return QDate::fromString(value->toString(), Qt::ISODate);
     }
-    return dataService()
-        ? dataService()->latestTeacherImportDate()
-        : Result<QDate>(std::unexpected(unavailableError()));
+    return Result<QDate>(std::unexpected(unavailableError()));
 }
 
 Result<int> ClassService::create(const QString& name) const
@@ -421,9 +376,7 @@ Result<int> ClassService::create(const QString& name) const
     {
         return repository->createClass(name);
     }
-    return dataService()
-        ? dataService()->createClass(name)
-        : Result<int>(std::unexpected(unavailableError()));
+    return Result<int>(std::unexpected(unavailableError()));
 }
 
 Result<QList<Classroom>> ClassService::classes() const
@@ -432,9 +385,7 @@ Result<QList<Classroom>> ClassService::classes() const
     {
         return repository->getClasses();
     }
-    return dataService()
-        ? dataService()->getClasses()
-        : Result<QList<Classroom>>(std::unexpected(unavailableError()));
+    return Result<QList<Classroom>>(std::unexpected(unavailableError()));
 }
 
 Result<QList<ClassTeacherAssignment>>
@@ -462,9 +413,7 @@ Result<Classroom> ClassService::classroom(int classId) const
     {
         return repository->getClassById(classId);
     }
-    return dataService()
-        ? dataService()->getClassById(classId)
-        : Result<Classroom>(std::unexpected(unavailableError()));
+    return Result<Classroom>(std::unexpected(unavailableError()));
 }
 
 Status ClassService::rename(int classId, const QString& name) const
@@ -472,10 +421,6 @@ Status ClassService::rename(int classId, const QString& name) const
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
         return repository->updateClassName(classId, name);
-    }
-    else if (dataService())
-    {
-        return dataService()->updateClassName(classId, name);
     }
 
     return std::unexpected(unavailableError());
@@ -487,10 +432,6 @@ Status ClassService::remove(int classId) const
     {
         return repository->deleteClass(classId);
     }
-    else if (dataService())
-    {
-        return dataService()->deleteClass(classId);
-    }
 
     return std::unexpected(unavailableError());
 }
@@ -500,10 +441,6 @@ Result<ClassInfo> ClassService::classInfo(int classId) const
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
         return repository->loadClassInfo(classId);
-    }
-    if (dataService())
-    {
-        return dataService()->loadClassInfo(classId);
     }
     return std::unexpected(unavailableError());
 }
@@ -545,9 +482,7 @@ Status ClassService::saveClassInfo(const ClassInfo& info) const
     {
         return repository->saveClassInfo(normalized);
     }
-    return dataService()
-        ? dataService()->saveClassInfo(normalized)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Status ClassService::saveClassNotes(
@@ -575,10 +510,7 @@ Status ClassService::saveClassNotes(
         return repository->saveClassNotes(
             classId, normalizedNotes, normalizedActivities);
     }
-    return dataService()
-        ? dataService()->saveClassNotes(
-            classId, normalizedNotes, normalizedActivities)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<QList<ClassConflict>> ClassService::conflicts(
@@ -591,9 +523,7 @@ Result<QList<ClassConflict>> ClassService::conflicts(
     {
         return repository->getClassTimeConflicts(classId, times, type);
     }
-    return dataService()
-        ? dataService()->getClassTimeConflicts(classId, times, type)
-        : Result<QList<ClassConflict>>(
+    return Result<QList<ClassConflict>>(
             std::unexpected(unavailableError())
             );
 }
@@ -607,9 +537,7 @@ Result<ClassTransferPackage> ClassService::buildTransferPackage(
     {
         return repository->buildPackage(classIds);
     }
-    return dataService()
-        ? dataService()->buildClassTransferPackage(classIds)
-        : Result<ClassTransferPackage>(std::unexpected(unavailableError()));
+    return Result<ClassTransferPackage>(std::unexpected(unavailableError()));
 }
 
 Result<ClassImportPreview> ClassService::previewImport(
@@ -621,9 +549,7 @@ Result<ClassImportPreview> ClassService::previewImport(
     {
         return repository->previewImport(package);
     }
-    return dataService()
-        ? dataService()->previewClassImport(package)
-        : Result<ClassImportPreview>(std::unexpected(unavailableError()));
+    return Result<ClassImportPreview>(std::unexpected(unavailableError()));
 }
 
 Result<ClassImportSummary> ClassService::importClasses(
@@ -670,9 +596,7 @@ Result<ClassImportSummary> ClassService::importClasses(
     {
         return repository->importClasses(normalizedPackage, plan);
     }
-    return dataService()
-        ? dataService()->importClasses(normalizedPackage, plan)
-        : Result<ClassImportSummary>(std::unexpected(unavailableError()));
+    return Result<ClassImportSummary>(std::unexpected(unavailableError()));
 }
 
 Result<ScheduleImportPreview> ScheduleService::previewImport(
@@ -685,9 +609,7 @@ Result<ScheduleImportPreview> ScheduleService::previewImport(
     {
         return repository->preview(user, kind);
     }
-    return dataService()
-        ? dataService()->previewScheduleImport(user, kind)
-        : Result<ScheduleImportPreview>(std::unexpected(unavailableError()));
+    return Result<ScheduleImportPreview>(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::validateImport(
@@ -699,9 +621,7 @@ Status ScheduleService::validateImport(
     {
         return repository->validateImport(plan);
     }
-    return dataService()
-        ? dataService()->validateScheduleImport(plan)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<ScheduleImportSummary> ScheduleService::importSchedule(
@@ -713,9 +633,7 @@ Result<ScheduleImportSummary> ScheduleService::importSchedule(
     {
         return repository->apply(plan);
     }
-    return dataService()
-        ? dataService()->importSchedule(plan)
-        : Result<ScheduleImportSummary>(std::unexpected(unavailableError()));
+    return Result<ScheduleImportSummary>(std::unexpected(unavailableError()));
 }
 
 Result<QList<IntensiveSlotState>> ScheduleService::intensiveSlotStates() const
@@ -725,9 +643,7 @@ Result<QList<IntensiveSlotState>> ScheduleService::intensiveSlotStates() const
     {
         return repository->loadIntensiveSlotStates();
     }
-    return dataService()
-        ? dataService()->loadIntensiveSlotStates()
-        : Result<QList<IntensiveSlotState>>(std::unexpected(unavailableError()));
+    return Result<QList<IntensiveSlotState>>(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::saveIntensiveSlotState(
@@ -743,11 +659,6 @@ Status ScheduleService::saveIntensiveSlotState(
         return repository->saveIntensiveSlotState(
             day, startTime, state, defaultState);
     }
-    if (dataService())
-    {
-        return dataService()->saveIntensiveSlotState(
-            day, startTime, state, defaultState);
-    }
 
     return std::unexpected(unavailableError());
 }
@@ -759,9 +670,7 @@ Result<QList<TestingAssignment>> ScheduleService::testingAssignments() const
     {
         return repository->loadTestingAssignments();
     }
-    return dataService()
-        ? dataService()->loadTestingAssignments()
-        : Result<QList<TestingAssignment>>(std::unexpected(unavailableError()));
+    return Result<QList<TestingAssignment>>(std::unexpected(unavailableError()));
 }
 
 Result<QList<TestingBlock>> ScheduleService::testingBlocks() const
@@ -771,9 +680,7 @@ Result<QList<TestingBlock>> ScheduleService::testingBlocks() const
     {
         return repository->loadTestingBlocks();
     }
-    return dataService()
-        ? dataService()->loadTestingBlocks()
-        : Result<QList<TestingBlock>>(std::unexpected(unavailableError()));
+    return Result<QList<TestingBlock>>(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::saveTestingBlock(
@@ -789,10 +696,7 @@ Status ScheduleService::saveTestingBlock(
         return repository->saveTestingBlock(
             day, startTime, room, replaceExisting);
     }
-    return dataService()
-        ? dataService()->saveTestingBlock(
-            day, startTime, room, replaceExisting)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::assignTestingClass(
@@ -808,10 +712,7 @@ Status ScheduleService::assignTestingClass(
         return repository->assignTestingClass(
             day, startTime, classId, replaceExisting);
     }
-    return dataService()
-        ? dataService()->assignTestingClass(
-            day, startTime, classId, replaceExisting)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::deleteTestingAssignment(
@@ -824,9 +725,7 @@ Status ScheduleService::deleteTestingAssignment(
     {
         return repository->deleteTestingAssignment(day, startTime);
     }
-    return dataService()
-        ? dataService()->deleteTestingAssignment(day, startTime)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::deleteTestingBlock(
@@ -839,9 +738,7 @@ Status ScheduleService::deleteTestingBlock(
     {
         return repository->deleteTestingBlock(day, startTime);
     }
-    return dataService()
-        ? dataService()->deleteTestingBlock(day, startTime)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::clearTestingAssignments() const
@@ -851,9 +748,7 @@ Status ScheduleService::clearTestingAssignments() const
     {
         return repository->clearTestingAssignments();
     }
-    return dataService()
-        ? dataService()->clearTestingAssignments()
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::clearTestingBlocks() const
@@ -863,9 +758,7 @@ Status ScheduleService::clearTestingBlocks() const
     {
         return repository->clearTestingBlocks();
     }
-    return dataService()
-        ? dataService()->clearTestingBlocks()
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<int> ScheduleService::createTestingClass(
@@ -880,10 +773,7 @@ Result<int> ScheduleService::createTestingClass(
         return repository->createTestingClass(
             testingClass, assignmentDay, assignmentStartTime);
     }
-    return dataService()
-        ? dataService()->createTestingClass(
-            testingClass, assignmentDay, assignmentStartTime)
-        : Result<int>(std::unexpected(unavailableError()));
+    return Result<int>(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::updateTestingClass(const TestingClass& testingClass) const
@@ -893,9 +783,7 @@ Status ScheduleService::updateTestingClass(const TestingClass& testingClass) con
     {
         return repository->updateTestingClass(testingClass);
     }
-    return dataService()
-        ? dataService()->updateTestingClass(testingClass)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<TestingClass> ScheduleService::testingClass(int classId) const
@@ -905,9 +793,7 @@ Result<TestingClass> ScheduleService::testingClass(int classId) const
     {
         return repository->loadTestingClass(classId);
     }
-    return dataService()
-        ? dataService()->loadTestingClass(classId)
-        : Result<TestingClass>(std::unexpected(unavailableError()));
+    return Result<TestingClass>(std::unexpected(unavailableError()));
 }
 
 Result<QList<TestingClass>> ScheduleService::testingClasses() const
@@ -917,9 +803,7 @@ Result<QList<TestingClass>> ScheduleService::testingClasses() const
     {
         return repository->loadTestingClasses();
     }
-    return dataService()
-        ? dataService()->loadTestingClasses()
-        : Result<QList<TestingClass>>(std::unexpected(unavailableError()));
+    return Result<QList<TestingClass>>(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::deleteTestingClass(int classId) const
@@ -929,9 +813,7 @@ Status ScheduleService::deleteTestingClass(int classId) const
     {
         return repository->deleteTestingClass(classId);
     }
-    return dataService()
-        ? dataService()->deleteTestingClass(classId)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<bool> ScheduleService::isTestingClass(int classId) const
@@ -941,9 +823,7 @@ Result<bool> ScheduleService::isTestingClass(int classId) const
     {
         return repository->isTestingClass(classId);
     }
-    return dataService()
-        ? dataService()->isTestingClass(classId)
-        : Result<bool>(std::unexpected(unavailableError()));
+    return Result<bool>(std::unexpected(unavailableError()));
 }
 
 Result<QList<CalendarEvent>> CalendarService::eventsForDate(const QDate& date) const
@@ -953,9 +833,7 @@ Result<QList<CalendarEvent>> CalendarService::eventsForDate(const QDate& date) c
     {
         return repository->loadCalendarEventsForDate(date);
     }
-    return dataService()
-        ? dataService()->loadCalendarEventsForDate(date)
-        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
+    return Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
 Result<QList<CalendarEvent>> CalendarService::eventsInRange(
@@ -968,9 +846,7 @@ Result<QList<CalendarEvent>> CalendarService::eventsInRange(
     {
         return repository->loadCalendarEventsInRange(startDate, endDate);
     }
-    return dataService()
-        ? dataService()->loadCalendarEventsInRange(startDate, endDate)
-        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
+    return Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
 Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
@@ -983,9 +859,7 @@ Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
     {
         return repository->loadUpcomingCalendarEvents(fromDate, limit);
     }
-    return dataService()
-        ? dataService()->loadUpcomingCalendarEvents(fromDate, limit)
-        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
+    return Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
 Result<CalendarEvent> CalendarService::event(int eventId) const
@@ -995,9 +869,7 @@ Result<CalendarEvent> CalendarService::event(int eventId) const
     {
         return repository->getCalendarEvent(eventId);
     }
-    return dataService()
-        ? dataService()->getCalendarEvent(eventId)
-        : Result<CalendarEvent>(std::unexpected(unavailableError()));
+    return Result<CalendarEvent>(std::unexpected(unavailableError()));
 }
 
 Result<QList<CalendarEvent>> CalendarService::repeatSeriesFromDate(
@@ -1011,10 +883,7 @@ Result<QList<CalendarEvent>> CalendarService::repeatSeriesFromDate(
         return repository->loadCalendarEventsForRepeatSeriesFromDate(
             repeatSeriesId, startDate);
     }
-    return dataService()
-        ? dataService()->loadCalendarEventsForRepeatSeriesFromDate(
-            repeatSeriesId, startDate)
-        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
+    return Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
 Result<int> CalendarService::saveEvent(const CalendarEvent& event) const
@@ -1033,9 +902,7 @@ Result<int> CalendarService::saveEvent(const CalendarEvent& event) const
     {
         return repository->saveCalendarEvent(normalized);
     }
-    return dataService()
-        ? dataService()->saveCalendarEvent(normalized)
-        : Result<int>(std::unexpected(unavailableError()));
+    return Result<int>(std::unexpected(unavailableError()));
 }
 
 Result<QList<int>> CalendarService::saveEvents(
@@ -1064,9 +931,7 @@ Result<QList<int>> CalendarService::saveEvents(
     {
         return repository->saveCalendarEvents(normalizedEvents);
     }
-    return dataService()
-        ? dataService()->saveCalendarEvents(normalizedEvents)
-        : Result<QList<int>>(std::unexpected(unavailableError()));
+    return Result<QList<int>>(std::unexpected(unavailableError()));
 }
 
 Result<CalendarEventImportSummary> CalendarService::importEvents(
@@ -1094,9 +959,7 @@ Result<CalendarEventImportSummary> CalendarService::importEvents(
     {
         return repository->importCalendarEvents(events, parserSkippedCount);
     }
-    return dataService()
-        ? dataService()->importCalendarEvents(events, parserSkippedCount)
-        : Result<CalendarEventImportSummary>(
+    return Result<CalendarEventImportSummary>(
             std::unexpected(unavailableError())
             );
 }
@@ -1107,10 +970,6 @@ Status CalendarService::deleteEvent(int eventId) const
             ? session()->calendarEventRepository() : nullptr)
     {
         return repository->deleteCalendarEvent(eventId);
-    }
-    if (dataService())
-    {
-        return dataService()->deleteCalendarEvent(eventId);
     }
 
     return std::unexpected(unavailableError());
@@ -1127,11 +986,6 @@ Status CalendarService::deleteRepeatSeriesFromDate(
         return repository->deleteCalendarEventsForRepeatSeriesFromDate(
             repeatSeriesId, startDate);
     }
-    if (dataService())
-    {
-        return dataService()->deleteCalendarEventsForRepeatSeriesFromDate(
-            repeatSeriesId, startDate);
-    }
 
     return std::unexpected(unavailableError());
 }
@@ -1142,10 +996,6 @@ Status CalendarService::deleteAllEvents() const
             ? session()->calendarEventRepository() : nullptr)
     {
         return repository->deleteAllCalendarEvents();
-    }
-    if (dataService())
-    {
-        return dataService()->deleteAllCalendarEvents();
     }
 
     return std::unexpected(unavailableError());
@@ -1181,10 +1031,6 @@ Status RosterService::saveRoster(
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
         return repository->saveRoster(classId, normalized);
-    }
-    if (dataService())
-    {
-        return dataService()->saveRoster(classId, normalized);
     }
 
     return std::unexpected(unavailableError());
@@ -1231,9 +1077,7 @@ Status RosterService::saveRosters(
     {
         return repository->saveRosters(normalizedRosters);
     }
-    return dataService()
-        ? dataService()->saveRosters(normalizedRosters)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<Roster> RosterService::roster(int classId) const
@@ -1242,9 +1086,7 @@ Result<Roster> RosterService::roster(int classId) const
     {
         return repository->loadRoster(classId);
     }
-    return dataService()
-        ? dataService()->loadRoster(classId)
-        : Result<Roster>(std::unexpected(unavailableError()));
+    return Result<Roster>(std::unexpected(unavailableError()));
 }
 
 Result<int> RosterService::studentCount(int classId) const
@@ -1253,9 +1095,7 @@ Result<int> RosterService::studentCount(int classId) const
     {
         return repository->getRosterStudentCount(classId);
     }
-    return dataService()
-        ? dataService()->getRosterStudentCount(classId)
-        : Result<int>(std::unexpected(unavailableError()));
+    return Result<int>(std::unexpected(unavailableError()));
 }
 
 Status SpeakingEvaluationService::saveEvaluation(
@@ -1289,10 +1129,7 @@ Status SpeakingEvaluationService::saveEvaluation(
         return repository->saveSpeakingEval(
             classId, normalizedName, normalizedRows, dirtyCells);
     }
-    return dataService()
-        ? dataService()->saveSpeakingEval(
-            classId, normalizedName, normalizedRows, dirtyCells)
-        : Status(std::unexpected(unavailableError()));
+    return Status(std::unexpected(unavailableError()));
 }
 
 Result<SpeakingEvalRows> SpeakingEvaluationService::evaluation(
@@ -1305,9 +1142,7 @@ Result<SpeakingEvalRows> SpeakingEvaluationService::evaluation(
     {
         return repository->loadSpeakingEval(classId, evaluationName);
     }
-    return dataService()
-        ? dataService()->loadSpeakingEval(classId, evaluationName)
-        : Result<SpeakingEvalRows>(std::unexpected(unavailableError()));
+    return Result<SpeakingEvalRows>(std::unexpected(unavailableError()));
 }
 
 Result<SpeakingAnalytics::Snapshot> SpeakingEvaluationService::analytics(
@@ -1336,10 +1171,6 @@ Result<SpeakingEvaluationDashboard> SpeakingEvaluationService::analyticsDashboar
             ? session()->rosterRepository() : nullptr)
     {
         loadedRoster = repository->loadRoster(classId);
-    }
-    else if (dataService())
-    {
-        loadedRoster = dataService()->loadRoster(classId);
     }
     if (!loadedRoster)
     {
@@ -1389,7 +1220,5 @@ Result<QList<SpeakingEvalScore>> SpeakingEvaluationService::rosterScoreImport(
     {
         return repository->buildRosterScoreImport(classId, evaluationName);
     }
-    return dataService()
-        ? dataService()->buildRosterScoreImport(classId, evaluationName)
-        : Result<QList<SpeakingEvalScore>>(std::unexpected(unavailableError()));
+    return Result<QList<SpeakingEvalScore>>(std::unexpected(unavailableError()));
 }

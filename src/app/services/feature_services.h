@@ -40,18 +40,18 @@ struct SpeakingEvaluationDashboard
 class FeatureService
 {
 public:
-    // Compatibility-only constructors for direct migration callers and tests.
+    // Compatibility-only constructors translate DataService to its session at
+    // construction. Feature operations never retain or call DataService.
     explicit FeatureService(DataService* dataService);
+    explicit FeatureService(DatabaseSession* session);
     FeatureService(DatabaseSession* session, DataService* legacyDataService);
     [[nodiscard]] bool isAvailable() const;
 
 protected:
     DatabaseSession* session() const;
-    DataService* dataService() const;
 
 private:
     DatabaseSession* m_session = nullptr;
-    DataService* m_legacyDataService = nullptr;
 };
 
 class SettingsService final : public FeatureService

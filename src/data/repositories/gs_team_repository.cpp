@@ -111,9 +111,15 @@ QString engineFailure(
 }
 }
 
-GsTeamRepository::GsTeamRepository(QSqlDatabase& database)
-    : m_database(database)
+GsTeamRepository::GsTeamRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
 {
+}
+
+GsTeamRepository::GsTeamRepository(QSqlDatabase& database)
+    : GsTeamRepository(database.databaseName())
+{
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 GsTeamRepository::~GsTeamRepository() = default;
@@ -122,7 +128,7 @@ Status GsTeamRepository::ensureEngineDatabase(
     const QString& operation
     ) const
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -134,7 +140,7 @@ Status GsTeamRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

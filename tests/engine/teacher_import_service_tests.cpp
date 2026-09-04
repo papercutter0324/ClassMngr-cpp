@@ -370,6 +370,133 @@ bool importSuccessPreservesManualFields()
     return passed;
 }
 
+bool duplicateSourceCandidatesAreRejected()
+{
+    const auto opened = OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return expect(false, "OpenDatabase failed for duplicate candidate test");
+    }
+
+    auto& database = **opened;
+    TeacherImportService service(database);
+    bool passed = true;
+
+    TeacherImportPlan korean;
+    korean.sourceDate = "2026-08-01";
+    korean.koreanTeachers.push_back(
+        koreanTeacher("\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99")
+        );
+    korean.koreanTeachers.push_back(
+        koreanTeacher(" \xED\x99\x8D \xEA\xB8\xB8 \xEB\x8F\x99 ")
+        );
+    const auto koreanResult = service.importTeachers(korean);
+    passed &= expect(
+        !koreanResult
+            && koreanResult.error().code == ErrorCode::InvalidFormat,
+        "normalized duplicate Korean candidates were not rejected"
+        );
+
+    TeacherImportPlan native;
+    native.sourceDate = "2026-08-01";
+    native.nativeEnglishTeachers.push_back(nativeTeacher("Duplicate"));
+    native.nativeEnglishTeachers.push_back(nativeTeacher(" duplicate "));
+    const auto nativeResult = service.importTeachers(native);
+    passed &= expect(
+        !nativeResult
+            && nativeResult.error().code == ErrorCode::InvalidFormat
+            && nativeResult.error().message.find("duplicate")
+                != std::string::npos,
+        "normalized duplicate Native English candidates were not rejected"
+        );
+
+    TeacherImportPlan gs;
+    gs.sourceDate = "2026-08-01";
+    gs.gsTeamMembers.push_back(gsMember("New GS", ""));
+    gs.gsTeamMembers.push_back(gsMember(" new   gs ", ""));
+    const auto gsResult = service.importTeachers(gs);
+    passed &= expect(
+        !gsResult
+            && gsResult.error().code == ErrorCode::InvalidFormat
+            && gsResult.error().message.find("new   gs")
+                != std::string::npos,
+        "normalized duplicate GS candidates were not rejected"
+        );
+
+    return passed;
+}
+
+bool normalizedNamesMatchStoredRecords()
+{
+    const auto opened = OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return expect(false, "OpenDatabase failed for normalized matching test");
+    }
+
+    auto& database = **opened;
+    bool passed = true;
+    passed &= expect(
+        database.execute(
+            "INSERT INTO native_english_teachers (name, position) "
+            "VALUES (?, ?)",
+            SqliteParameters{
+                SqliteValue{std::string("  aLeX  ")},
+                SqliteValue{std::string("NET")}
+            }
+            ).has_value(),
+        "could not seed the normalized Native English Teacher"
+        );
+    passed &= expect(
+        database.execute(
+            "INSERT INTO gs_team (name, position) VALUES (?, ?)",
+            SqliteParameters{
+                SqliteValue{std::string("  New   GS  ")},
+                SqliteValue{std::string("NET")}
+            }
+            ).has_value(),
+        "could not seed the normalized GS Team member"
+        );
+
+    TeacherImportPlan plan;
+    plan.sourceDate = "2026-08-01";
+    plan.nativeEnglishTeachers.push_back(
+        nativeTeacher(" ALEX ", "Team Leader", {}, " 02-09 ")
+        );
+    plan.gsTeamMembers.push_back(
+        gsMember("new gs", "", "Branch Manager", {}, " 03-10 ")
+        );
+
+    TeacherImportService service(database);
+    const auto imported = service.importTeachers(plan);
+    passed &= expect(
+        imported
+            && imported->nativeEnglishTeachers.updated == 1
+            && imported->gsTeamMembers.updated == 1,
+        "normalized source names did not match stored records"
+        );
+
+    const auto nativeBirthday = textAt(
+        database,
+        "SELECT birthday FROM native_english_teachers WHERE name=?",
+        SqliteParameters{SqliteValue{std::string("ALEX")}}
+        );
+    passed &= expect(
+        nativeBirthday == std::optional<std::string>("02-09"),
+        "normalized Native English birthday was not preserved"
+        );
+    const auto gsBirthday = textAt(
+        database,
+        "SELECT birthday FROM gs_team WHERE name=?",
+        SqliteParameters{SqliteValue{std::string("new gs")}}
+        );
+    passed &= expect(
+        gsBirthday == std::optional<std::string>("03-10"),
+        "normalized GS birthday was not preserved"
+        );
+    return passed;
+}
+
 bool duplicateAndAmbiguousImportsRollBack()
 {
     const auto opened = OpenDatabase::execute(":memory:");
@@ -476,6 +603,75 @@ bool duplicateAndAmbiguousImportsRollBack()
     return passed;
 }
 
+bool ambiguousStoredMatchesAreRejectedForEachDirectory()
+{
+    const auto opened = OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return expect(false, "OpenDatabase failed for directory ambiguity test");
+    }
+
+    auto& database = **opened;
+    TeacherImportService service(database);
+    bool passed = true;
+
+    passed &= expect(
+        database.execute(
+            "INSERT INTO teachers (teacher_kr) VALUES (?)",
+            SqliteParameters{
+                SqliteValue{std::string("\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99")}
+            }
+            ).has_value()
+            && database.execute(
+                "INSERT INTO teachers (teacher_kr) VALUES (?)",
+                SqliteParameters{
+                    SqliteValue{
+                        std::string(" \xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99 ")
+                    }
+                }
+                ).has_value(),
+        "could not seed ambiguous Korean teachers"
+        );
+    TeacherImportPlan korean;
+    korean.sourceDate = "2026-08-02";
+    korean.koreanTeachers.push_back(
+        koreanTeacher("\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99")
+        );
+    const auto koreanResult = service.importTeachers(korean);
+    passed &= expect(
+        !koreanResult && koreanResult.error().code == ErrorCode::Constraint,
+        "ambiguous stored Korean teachers were not rejected"
+        );
+
+    passed &= expect(
+        database.execute(
+            "INSERT INTO gs_team (name, position) VALUES (?, ?)",
+            SqliteParameters{
+                SqliteValue{std::string("  New   GS  ")},
+                SqliteValue{std::string("NET")}
+            }
+            ).has_value()
+            && database.execute(
+                "INSERT INTO gs_team (name, position) VALUES (?, ?)",
+                SqliteParameters{
+                    SqliteValue{std::string("new gs")},
+                    SqliteValue{std::string("NET")}
+                }
+                ).has_value(),
+        "could not seed ambiguous GS Team members"
+        );
+    TeacherImportPlan gs;
+    gs.sourceDate = "2026-08-02";
+    gs.gsTeamMembers.push_back(gsMember("NEW GS", ""));
+    const auto gsResult = service.importTeachers(gs);
+    passed &= expect(
+        !gsResult && gsResult.error().code == ErrorCode::Constraint,
+        "ambiguous stored GS Team members were not rejected"
+        );
+
+    return passed;
+}
+
 bool olderDateDoesNotReplaceNewerDate()
 {
     const auto opened = OpenDatabase::execute(":memory:");
@@ -523,7 +719,10 @@ bool olderDateDoesNotReplaceNewerDate()
 int main()
 {
     const bool passed = importSuccessPreservesManualFields()
+        && duplicateSourceCandidatesAreRejected()
+        && normalizedNamesMatchStoredRecords()
         && duplicateAndAmbiguousImportsRollBack()
+        && ambiguousStoredMatchesAreRejectedForEachDirectory()
         && olderDateDoesNotReplaceNewerDate();
     return passed ? 0 : 1;
 }

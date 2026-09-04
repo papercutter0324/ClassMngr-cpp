@@ -120,11 +120,17 @@ IntensiveSlotState fromEngineState(
 }
 } // namespace
 
+IntensiveSlotStateRepository::IntensiveSlotStateRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 IntensiveSlotStateRepository::IntensiveSlotStateRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : IntensiveSlotStateRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 IntensiveSlotStateRepository::~IntensiveSlotStateRepository() = default;
@@ -133,7 +139,7 @@ Status IntensiveSlotStateRepository::ensureEngineDatabase(
     const QString& operation
     ) const
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -145,7 +151,7 @@ Status IntensiveSlotStateRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

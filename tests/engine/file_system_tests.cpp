@@ -1,5 +1,7 @@
 #include "classmngr/engine/file_system.h"
+#include "classmngr/engine/platform_services.h"
 
+#include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -12,7 +14,10 @@ namespace
 
 namespace fs = std::filesystem;
 using classmngr::engine::ErrorCode;
+using classmngr::engine::Clock;
+using classmngr::engine::MonotonicTimePoint;
 using classmngr::engine::StandardFileSystem;
+using classmngr::engine::WallClockTimePoint;
 namespace FileSystemErrorToken = classmngr::engine::FileSystemErrorToken;
 
 bool expect(
@@ -101,6 +106,27 @@ private:
     std::string m_path;
 };
 
+class FixedClock final : public Clock
+{
+public:
+    [[nodiscard]] WallClockTimePoint nowUtc() const noexcept override
+    {
+        ++wallCalls;
+        return wall;
+    }
+
+    [[nodiscard]] MonotonicTimePoint monotonicNow() const noexcept override
+    {
+        ++monotonicCalls;
+        return monotonic;
+    }
+
+    WallClockTimePoint wall{};
+    MonotonicTimePoint monotonic{};
+    mutable int wallCalls = 0;
+    mutable int monotonicCalls = 0;
+};
+
 } // namespace
 
 int main()
@@ -151,6 +177,24 @@ int main()
     {
         return 1;
     }
+
+    FixedClock clock;
+    clock.monotonic = MonotonicTimePoint(std::chrono::milliseconds(456));
+    StandardFileSystem fixedClockFileSystem(clock);
+    const auto fixedClockTemporaryRoot =
+        fixedClockFileSystem.createTemporaryDirectory(
+            pathToUtf8(systemTemporaryDirectory)
+            );
+    passed &= expect(
+        fixedClockTemporaryRoot
+            && clock.monotonicCalls == 1
+            && fixedClockTemporaryRoot->find(".classmngr-temporary-")
+                != std::string::npos
+            && fixedClockFileSystem.removeTemporaryDirectory(
+                *fixedClockTemporaryRoot
+                ).has_value(),
+        "temporary directory naming ignored the injected clock"
+        );
 
     const auto temporaryRoot = fileSystem.createTemporaryDirectory(
         pathToUtf8(systemTemporaryDirectory)

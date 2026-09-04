@@ -187,6 +187,11 @@ DatabaseSession* DataService::databaseSession() const
     return m_session;
 }
 
+void DataService::synchronizeCompatibilityAdapters()
+{
+    refreshRepositoryAdapters();
+}
+
 void DataService::refreshRepositoryAdapters()
 {
     m_settingsRepository = m_session->settingsRepository();
@@ -1235,12 +1240,8 @@ Status DataService::deleteCampus(
 
 void DataService::save()
 {
-    if (!isOpen())
-    {
-        return;
-    }
-
-    m_session->database().commit();
+    // Compatibility no-op: engine repository writes commit their own
+    // transactions. Legacy callers can retire explicit save calls.
 }
 
 Status DataService::saveAs(

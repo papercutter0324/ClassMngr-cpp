@@ -257,6 +257,17 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrRosterModelTests
     )
 
+    classmngr_add_qt_test(
+        NAME SpeakingEvalModel
+        SOURCES
+            tests/speaking_eval_model_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+        OFFSCREEN
+    )
+
     qt_add_executable(ClassMngrRosterTemplatePrintServiceTests
         tests/roster_template_print_service_tests.cpp
         src/core/fontmanager.cpp

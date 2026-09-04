@@ -15,6 +15,20 @@ the exact seven-lane set and rejects missing registered engine executables,
 failed tests, missing artifacts, incorrect Qt metadata, compile-only or
 blocked fixtures, and incomplete category evidence.
 
+The required lane set is intentionally split as follows:
+
+| lane group | required lanes | evidence allowed for aggregate |
+| --- | --- | --- |
+| Qt-free WinUI engine | x64 Debug, x64 Release, x86 Debug, x86 Release | runtime-tested only |
+| retained Qt adapter | Windows Qt 6.12 x64, Linux Qt 6.12 x64, macOS Qt 6.12 universal | exact Qt 6.12.0 runtime-tested only |
+
+The JSON report records `evidence_class` as `runtime-tested`, `compile-only`,
+`host-blocked`, or `failed`. A compile-only report is an honest build result,
+but it is not an exit-gate pass. A retained-Qt report is `host-blocked` when
+the exact Qt prefix/version cannot be established; it must include the
+blocking reasons. The four engine lanes remain separate from the three
+retained-Qt lanes, including their x64/x86 results.
+
 For a local lane, use the dependency-free runner from the repository root. A
 Windows engine invocation is:
 
@@ -75,7 +89,14 @@ Repeat the build and CTest command with the matching build directory and
 configuration for x64 Release, x86 Debug, and x86 Release. Archive the CTest
 output with the build logs. The matrix must include invalid-input, rollback,
 migration, busy/locked database, and partial-failure coverage from the
-registered engine tests.
+registered engine tests. The required unfiltered CTest inventory is collected
+after the build and before the filtered runtime command. Every registered
+`ClassMngrEngine*` test must have a resolved executable and a matching JUnit
+runtime entry; missing or unexecuted binaries are failures, not omitted tests.
+The current explicit category evidence test is
+`ClassMngrEngineDatabaseFixtureRoundTripTests`, whose fixture suite exercises
+all five categories. The report only marks a category covered when that test
+is registered and actually executed.
 
 ## Retained Qt adapter fixture
 
@@ -93,6 +114,9 @@ validator treats those as the test name and executable name respectively.
 
 Keep this result separate from the Qt-free engine matrix. Record the exact Qt
 version and whether the test was runtime-tested, compile-only, or blocked.
+To record a build without making a runtime claim, add `--compile-only` to the
+`run` command. This remains a failed aggregate lane until runtime evidence is
+collected.
 
 ## macOS and Linux fixture ownership
 
@@ -115,16 +139,21 @@ deciding whether the documented Phase 2 intent is satisfied.
 
 ## Deferred closure conditions for P2-R07
 
-The latest hosted rerun passed the four Qt-free Windows engine lanes, but the
-full cross-platform baseline still has a failing Linux test phase. Because
-`NativeWindowsPort` is unofficial, this result is recorded as deferred rather
-than treated as a release blocker. Reopen the gate when the port becomes an
-official supported target.
+This repository does not claim a completed cross-platform exit gate. The
+current local/plan limitations are concrete: existing build trees are missing
+nine registered engine binaries, the available host Qt is 6.11.1 while the
+gate requires exactly 6.12.0, and the Linux baseline is red. Those conditions
+must remain visible as missing-artifact, `host-blocked`, or failed evidence;
+they must not be converted into passing runtime results. Because
+`NativeWindowsPort` is unofficial, the outcome remains deferred rather than a
+release claim.
 
 - Fresh artifacts are required for every Windows matrix lane; focused tests
   are not a complete matrix.
-- Historical missing registered binaries, the Qt 6.11.1 versus 6.12.0 host
-  mismatch, and MSBuild FileTracker failures must be recorded as failures or
-  repaired before the gate is closed.
-- The two cross-platform CI lanes must publish current fixture evidence for
-  every migrated persistence slice.
+- Missing registered binaries, the Qt 6.11.1 versus 6.12.0 host mismatch,
+  MSBuild FileTracker failures, and any Linux/macOS failures must be recorded
+  in the lane report or repaired before the gate is closed.
+- The three retained-Qt lanes must publish current fixture evidence for every
+  migrated persistence slice, including invalid input, rollback, migration,
+  busy/locked database, and partial-failure outcomes where the lane owns that
+  fixture.

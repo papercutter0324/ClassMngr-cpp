@@ -115,11 +115,17 @@ QString engineFailure(
 }
 }
 
+NativeEnglishTeacherRepository::NativeEnglishTeacherRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 NativeEnglishTeacherRepository::NativeEnglishTeacherRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : NativeEnglishTeacherRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 NativeEnglishTeacherRepository::~NativeEnglishTeacherRepository() = default;
@@ -128,7 +134,7 @@ Status NativeEnglishTeacherRepository::ensureEngineDatabase(
     const QString& operation
     ) const
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -140,7 +146,7 @@ Status NativeEnglishTeacherRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty()
         || databasePath.trimmed() == QStringLiteral(":memory:"))
     {

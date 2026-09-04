@@ -171,11 +171,17 @@ QString engineFailure(
 }
 } // namespace
 
+TeacherRepository::TeacherRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
 TeacherRepository::TeacherRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : TeacherRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
 TeacherRepository::~TeacherRepository() = default;
@@ -185,7 +191,7 @@ Status TeacherRepository::ensureEngineDatabase(
     const QString& teacherContext
     )
 {
-    if (!m_database.isValid() || !m_database.isOpen())
+    if (!m_compatibilityDatabaseWasOpen)
     {
         m_engineDatabase.reset();
         m_engineDatabasePath.clear();
@@ -198,7 +204,7 @@ Status TeacherRepository::ensureEngineDatabase(
             );
     }
 
-    const QString databasePath = m_database.databaseName();
+    const QString databasePath = m_databasePath;
     if (databasePath.trimmed().isEmpty())
     {
         m_engineDatabase.reset();

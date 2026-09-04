@@ -905,7 +905,7 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
     const Result<int> createdTeacher = teachers.create(validTeacher);
     QVERIFY(createdTeacher);
 
-    QSqlQuery legacyTeacherUpdate(dataService.databaseSession()->database());
+    QSqlQuery legacyTeacherUpdate(dataService.databaseSession()->compatibilityDatabase());
     legacyTeacherUpdate.prepare(QStringLiteral(
         "UPDATE teachers SET internet_type=?, projection_type=? WHERE id=?"
         ));

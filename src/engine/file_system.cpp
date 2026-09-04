@@ -4,7 +4,6 @@
 #include <array>
 #include <atomic>
 #include <cctype>
-#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -296,7 +295,8 @@ Result<fs::file_status> regularSourceStatus(
 Result<fs::path> uniqueSiblingPath(
     const fs::path& targetPath,
     std::string_view suffix,
-    std::string_view failureToken
+    std::string_view failureToken,
+    const Clock& clock
     )
 {
     fs::path parentPath = targetPath.parent_path();
@@ -311,7 +311,7 @@ Result<fs::path> uniqueSiblingPath(
         std::memory_order_relaxed
         );
     const std::uint64_t clockValue = static_cast<std::uint64_t>(
-        std::chrono::steady_clock::now().time_since_epoch().count()
+        clock.monotonicNow().time_since_epoch().count()
         );
     const std::uint64_t seed = clockValue ^ counter;
 
@@ -459,7 +459,8 @@ Status closeOutput(
 
 Status replaceFileAtomicallyAt(
     const fs::path& temporaryPath,
-    const fs::path& destinationPath
+    const fs::path& destinationPath,
+    const Clock& clock
     )
 {
     if (temporaryPath == destinationPath)
@@ -511,7 +512,8 @@ Status replaceFileAtomicallyAt(
     const Result<fs::path> backupPath = uniqueSiblingPath(
         destinationPath,
         BackupFileSuffix,
-        FileSystemErrorToken::AtomicReplacementFailed
+        FileSystemErrorToken::AtomicReplacementFailed,
+        clock
         );
     if (!backupPath)
     {
@@ -576,7 +578,8 @@ Status replaceFileAtomicallyAt(
 
 Status replaceDirectoryAtomicallyAt(
     const fs::path& temporaryPath,
-    const fs::path& destinationPath
+    const fs::path& destinationPath,
+    const Clock& clock
     )
 {
     if (temporaryPath == destinationPath)
@@ -661,7 +664,8 @@ Status replaceDirectoryAtomicallyAt(
     const Result<fs::path> backupPath = uniqueSiblingPath(
         destinationPath,
         BackupDirectorySuffix,
-        FileSystemErrorToken::DirectoryReplacementFailed
+        FileSystemErrorToken::DirectoryReplacementFailed,
+        clock
         );
     if (!backupPath)
     {
@@ -723,6 +727,20 @@ Status replaceDirectoryAtomicallyAt(
 }
 
 } // namespace
+
+StandardFileSystem::StandardFileSystem()
+{
+}
+
+StandardFileSystem::StandardFileSystem(const Clock& clock)
+    : m_clock(&clock)
+{
+}
+
+const Clock& StandardFileSystem::clock() const noexcept
+{
+    return m_clock == nullptr ? m_systemClock : *m_clock;
+}
 
 Result<std::string> StandardFileSystem::normalizePath(
     std::string_view utf8Path
@@ -924,7 +942,8 @@ Status StandardFileSystem::writeBytes(
         const Result<fs::path> temporaryPath = uniqueSiblingPath(
             *normalized,
             TemporaryFileSuffix,
-            FileSystemErrorToken::WriteFailed
+            FileSystemErrorToken::WriteFailed,
+            clock()
             );
         if (!temporaryPath)
         {
@@ -952,7 +971,8 @@ Status StandardFileSystem::writeBytes(
 
         const Status finalized = replaceFileAtomicallyAt(
             *temporaryPath,
-            *normalized
+            *normalized,
+            clock()
             );
         if (!finalized)
         {
@@ -1029,7 +1049,8 @@ Status StandardFileSystem::copyFile(
         const Result<fs::path> temporaryPath = uniqueSiblingPath(
             *destinationPath,
             TemporaryFileSuffix,
-            FileSystemErrorToken::CopyFailed
+            FileSystemErrorToken::CopyFailed,
+            clock()
             );
         if (!temporaryPath)
         {
@@ -1085,7 +1106,8 @@ Status StandardFileSystem::copyFile(
 
         const Status finalized = replaceFileAtomicallyAt(
             *temporaryPath,
-            *destinationPath
+            *destinationPath,
+            clock()
             );
         if (!finalized)
         {
@@ -1134,7 +1156,11 @@ Status StandardFileSystem::replaceFileAtomically(
             return std::unexpected(destinationPath.error());
         }
 
-        return replaceFileAtomicallyAt(*temporaryPath, *destinationPath);
+        return replaceFileAtomicallyAt(
+            *temporaryPath,
+            *destinationPath,
+            clock()
+            );
     }
     catch (const std::bad_alloc&)
     {
@@ -1177,7 +1203,8 @@ Status StandardFileSystem::replaceDirectoryAtomically(
 
         return replaceDirectoryAtomicallyAt(
             *temporaryPath,
-            *destinationPath
+            *destinationPath,
+            clock()
             );
     }
     catch (const std::bad_alloc&)
@@ -1301,7 +1328,7 @@ Result<std::string> StandardFileSystem::createTemporaryDirectory(
             std::memory_order_relaxed
             );
         const std::uint64_t clockValue = static_cast<std::uint64_t>(
-            std::chrono::steady_clock::now().time_since_epoch().count()
+            clock().monotonicNow().time_since_epoch().count()
             );
         const std::uint64_t seed = clockValue ^ counter;
         for (std::uint64_t attempt = 0; attempt < 128; ++attempt)
