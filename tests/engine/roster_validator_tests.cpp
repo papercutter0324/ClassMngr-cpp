@@ -150,6 +150,8 @@ int main()
     const auto validKorean = StudentNameService::validateKorean(
         "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98(A)"
         );
+    const auto emptyKorean = StudentNameService::validateKorean("");
+    const auto whitespaceKorean = StudentNameService::validateKorean(" \t\n ");
     const auto shortKorean = StudentNameService::validateKorean("\xea\xb9\x80");
     const auto unusualKorean = StudentNameService::validateKorean(
         "\xea\xb9\x80\xeb\xaf\xbc"
@@ -162,6 +164,8 @@ int main()
         );
     passed &= expect(
         validKorean.empty()
+            && emptyKorean.empty()
+            && whitespaceKorean.empty()
             && hasNameIssue(shortKorean, StudentNameIssue::KoreanTooShort)
             && hasNameIssue(
                 unusualKorean,

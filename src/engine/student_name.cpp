@@ -217,6 +217,20 @@ bool isWhitespace(unsigned codePoint)
         || codePoint == 0x3000U;
 }
 
+bool isBlank(std::string_view value)
+{
+    const DecodedText decoded = decode(value);
+    return decoded.valid
+        && std::all_of(
+            decoded.codePoints.cbegin(),
+            decoded.codePoints.cend(),
+            [](unsigned codePoint)
+            {
+                return isWhitespace(codePoint);
+            }
+            );
+}
+
 std::size_t utf8Length(std::string_view value)
 {
     const DecodedText decoded = decode(value);
@@ -523,6 +537,11 @@ std::vector<StudentNameIssue> StudentNameService::validateKorean(
     )
 {
     std::vector<StudentNameIssue> issues;
+    if (isBlank(value))
+    {
+        return issues;
+    }
+
     if (!isValidKoreanName(value))
     {
         issues.push_back(StudentNameIssue::KoreanContainsInvalidCharacters);

@@ -57,6 +57,7 @@ def make_report(root: Path, lane_id: str) -> None:
         "lane_id": lane_id,
         "lane_type": "engine" if engine else "retained-qt",
         "status": "PASS",
+        "evidence_class": "runtime-tested",
         "git_commit": "synthetic-commit",
         "source_stable_during_run": True,
         "artifacts": {artifact_keys[name]: f"logs/{name}" for name in artifact_names},
@@ -68,7 +69,12 @@ def make_report(root: Path, lane_id: str) -> None:
             "test_pattern": r"^ClassMngrEngine" if engine else rf"^{RETAINED_QT_TEST}$",
             "registered_tests": [required_test],
             "registered_engine_tests": [DATABASE_ENGINE_TEST] if engine else [],
+            "registered_engine_inventory": [
+                {"name": DATABASE_ENGINE_TEST, "executable_present": True}
+            ] if engine else [],
             "missing_engine_executables": [],
+            "unexecuted_engine_tests": [],
+            "required_test_executable_present": True,
             "tests": {"test_names": [required_test], "failures": 0, "errors": 0},
         },
         "coverage": {
@@ -133,6 +139,15 @@ class Phase2ExitGateTests(unittest.TestCase):
             output = root / "aggregate.json"
             self.assertEqual(validate_aggregate(root, output), 0)
             self.assertEqual(json.loads(output.read_text())["status"], "PASS")
+
+    def test_aggregate_output_inside_reports_dir_is_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for lane_id in REQUIRED_LANES:
+                make_report(root, lane_id)
+            output = root / "aggregate.json"
+            self.assertEqual(validate_aggregate(root, output), 0)
+            self.assertEqual(validate_aggregate(root, output), 0)
 
     def test_missing_artifact_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

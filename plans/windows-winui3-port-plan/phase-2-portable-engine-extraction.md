@@ -310,34 +310,46 @@ does not compose them into an engine workflow. Engine code still calls
 
 ### P2-R07 — Close the cross-platform and clean-build exit gate
 
-**Status (2026-09-04): Deferred; unofficial port.**
+**Status (2026-09-05): Deferred; Windows local matrix complete, cross-platform
+retained-Qt evidence pending.**
 The reproducible matrix is executable through
 `.github/workflows/phase2-exit-gate.yml` and
 `scripts/phase2_exit_gate.py`, with the process documented in [the exit-gate
-runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md), but
-fresh x64/x86 and macOS/Linux artifacts are still required before official
-promotion. The latest hosted rerun passed the four Qt-free Windows engine
-lanes, while the full Linux baseline test phase remained red. Since this is
-currently an unofficial port, the evidence gate is explicitly deferred for
-later rather than treated as a current release blocker.
+runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md). A fresh
+local Windows run now has runtime-tested PASS reports for all four Qt-free
+x64/x86 Debug/Release engine lanes and the retained Windows Qt 6.12.0 x64
+lane. The Linux and macOS retained-Qt lanes are explicitly host-blocked on
+this Windows device because their exact Qt prefixes are unavailable, so the
+aggregate remains red. Since this is currently an unofficial port, the
+evidence gate remains deferred rather than treated as a current release
+blocker.
 
-- [ ] Replace the focused exception in the P2-07 record with a complete,
+- [x] Replace the focused exception in the P2-07 record with a complete,
   reproducible headless x64/x86 matrix, or explicitly repair/update the
-  registered test set so an unfiltered run has no missing binaries.
+  registered test set so an unfiltered run has no missing binaries. The fresh
+  runner reports register and execute 56 `ClassMngrEngine*` tests in each
+  Windows lane with no missing or unexecuted engine binaries.
 - [ ] Record retained-Qt adapter results on the required Qt version and keep
   compile-only or host-blocked results separate from runtime parity. Add
   macOS/Linux Qt fixture evidence, or identify the CI job that owns that
-  direction, for every migrated persistence slice.
+  direction, for every migrated persistence slice. The Windows retained-Qt
+  report is now exact Qt 6.12.0 runtime-tested; the Linux and macOS reports
+  remain host-blocked with explicit missing-prefix reasons and require CI
+  evidence.
 - [ ] Include invalid input, rollback, migration, busy/locked database, and
   partial-failure assertions in the same release evidence used for the Exit
-  Gate.
+  Gate. The four Windows engine reports record all five coverage categories as
+  covered by `ClassMngrEngineDatabaseFixtureRoundTripTests`; the complete
+  cross-platform release evidence remains pending with the blocked retained-
+  Qt lanes.
 
 Evidence: `docs/porting/windows-winui/phase2-local-validation.md` records
-Windows x64/x86 headless and Qt 6.12 x64 focused fixture results, but also
-records nine unrelated registered engine binaries missing from the existing
-build trees, a host Qt 6.11.1 versus project Qt 6.12.0 mismatch, and an
-MSBuild FileTracker limitation. The plan's Validation section still requires
-cross-platform fixture readability and a complete migrated-feature matrix.
+the exact 2026-09-05 Windows matrix and retained-Qt report paths, the
+host-blocked Linux/macOS results, the aggregate validator outcome, and the
+MSVC FileTracker host limitation. The plan's Validation section still requires
+cross-platform fixture readability and a complete migrated-feature matrix;
+P2-R07 is not complete until the CI-owned retained-Qt lanes produce
+runtime-tested reports and the aggregate is non-red.
 
 ### P2-R08 — Remove or quarantine superseded Qt validation helpers
 

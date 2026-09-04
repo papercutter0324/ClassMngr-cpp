@@ -3,9 +3,11 @@
 Prepared 2026-09-04 on branch `NativeWindowsPort`.
 
 This handoff records the current state of the portable-engine follow-up work.
-The source and test changes are committed, but the cross-platform Phase 2
-exit gate is intentionally not claimed as complete. Final validation can
-continue on another device without redoing the implementation work.
+The implementation changes in the handoff commit are committed, but the
+cross-platform Phase 2 exit gate is intentionally not claimed as complete.
+The continuation validation below was performed on the current working tree;
+its small parity and report-validator fixes remain uncommitted until they are
+reviewed and committed.
 
 ## What this commit contains
 
@@ -31,7 +33,7 @@ The main references are:
 - [Phase 2 exit-gate runbook](phase2-exit-gate-runbook.md)
 - [Exit-gate runner](../../../scripts/phase2_exit_gate.py)
 
-## Validation performed before handoff
+## Validation performed before and during continuation
 
 Completed:
 
@@ -49,19 +51,28 @@ Completed:
   service compiled successfully.
 - The `ClassMngrQtLegacySharedValidation` library compiled successfully.
 
-Not yet completed:
+Continuation completed on 2026-09-05:
 
-- The newly compiled Qt integration executables were not all run before the
-  handoff. In particular, relink/run `ClassMngrSharedPolicyTests` after the
-  legacy validation library is available, and run the calendar cache and
-  calendar repository targets if they are part of the selected fixture.
-- The nine engine tests were split across two local build trees because the
-  first tree already contained three binaries. The three available in the Qt
-  tree passed; the remaining six passed in the engine-only tree. Re-run the
-  complete set from one fresh tree for a single-tree record.
-- The full seven-lane cross-platform exit gate was not run. Existing evidence
-  still has the documented limitations: missing registered binaries, a host
-  Qt 6.11.1 versus required Qt 6.12.0 mismatch, and a red Linux baseline.
+- The eight focused Qt integration targets were rebuilt from a fresh Qt
+  6.12.0 x64 Debug tree and passed CTest 8/8, including the shared-policy,
+  calendar-cache, and calendar-repository targets.
+- Each fresh Qt-free Windows lane registered and runtime-tested all 56
+  `ClassMngrEngine*` tests with no missing or unexecuted engine binaries:
+  x64 Debug, x64 Release, x86 Debug, and x86 Release all passed.
+- The retained Windows Qt 6.12.0 x64 report passed runtime validation. It
+  registered 125 tests and ran the required
+  `ClassMngrDatabasePortFixtureTests` fixture.
+- Linux Qt 6.12 x64 and macOS Qt 6.12 universal reports were recorded as
+  `host-blocked` with explicit reasons (`QT_LINUX_PREFIX` and
+  `QT_MACOS_PREFIX` are not set). Those directions remain CI-owned.
+- The aggregate validator found all seven lane reports and remains `FAIL`
+  only because the Linux/macOS retained-Qt lanes are blocked. P2-R07 remains
+  deferred; no release or cross-platform completion claim is made.
+
+Still not completed:
+
+- Run the retained Linux and macOS Qt 6.12 fixture lanes on their supported
+  CI/device hosts and regenerate a non-red aggregate report.
 
 Do not convert a compile-only, missing-binary, host-blocked, or failed result
 into a passing runtime result. The exit-gate runner preserves those
@@ -125,7 +136,7 @@ retained Linux and macOS lanes use `QT_LINUX_PREFIX` and
 
 ## Recommended continuation order
 
-### 1. Run the focused Qt tests
+### 1. Run the focused Qt tests (completed locally on 2026-09-05)
 
 Use a fresh Windows Qt x64 debug tree. The `--fresh` configure avoids stale
 generated targets:
@@ -153,7 +164,7 @@ target build, build the corresponding `<target>_autogen` target first, or run
 the normal target build without disabling project references. This is a build
 system detail, not a reason to remove MOC sources or change production code.
 
-### 2. Re-run one complete Qt-free engine tree
+### 2. Re-run one complete Qt-free engine tree (completed locally on 2026-09-05)
 
 Configure and build each required Windows engine lane from a fresh directory.
 The matching build preset targets the WinUI executable, so the exit-gate
@@ -174,7 +185,7 @@ Repeat for:
 Every registered `ClassMngrEngine*` executable must exist and have a
 matching runtime entry. Missing or unexecuted binaries are failures.
 
-### 3. Collect the seven exit-gate lane reports
+### 3. Collect the seven exit-gate lane reports (Windows complete; CI-owned lanes blocked locally)
 
 From the repository root, use the dependency-free runner. For example:
 

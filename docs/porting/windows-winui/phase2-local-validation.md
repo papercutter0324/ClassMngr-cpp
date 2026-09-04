@@ -1361,3 +1361,66 @@ Validation for this cleanup:
   `FileTracker` access failure before a new Qt binary was produced; no current
   Qt binary pass is claimed;
 - `git diff --check` passed.
+
+## Phase 2 exit-gate continuation — 2026-09-05
+
+The continuation followed the device-handoff order from a fresh build tree.
+The host toolchain was CMake 4.4.2, Python 3.14.7, Visual Studio 18 2026
+(MSVC 19.51.36256), Windows SDK 10.0.28000.0, and Qt 6.12.0 at
+`C:/Qt/6.12.0/msvc2022_64`. MSVC's existing FileTracker access limitation
+required `TrackFileAccess=false` for the Windows builds; it did not require a
+source workaround.
+
+The focused Qt x64 Debug targets were rebuilt and the exact handoff filter
+passed CTest 8/8:
+
+```text
+ClassMngrDataServiceLifecycleTests
+ClassMngrTeacherImportTests
+ClassMngrRosterModelTests
+ClassMngrSpeakingEvalModelTests
+ClassMngrSpeakingEvaluationServiceTests
+ClassMngrSharedPolicyTests
+ClassMngrCalendarEventCacheTests
+ClassMngrCalendarEventRepositoryTests
+```
+
+The focused run caught a parity issue in the optional Korean-name field:
+`StudentNameService::validateKorean` rejected empty/whitespace-only input while
+the retained Qt policy treated it as valid. The engine now accepts valid blank
+Unicode whitespace and retains rejection of malformed or non-Korean input; the
+engine roster-validator regression covers both empty and ASCII-whitespace
+values. The affected engine and shared-policy tests, and then the complete
+focused filter, passed.
+
+The fresh Qt-free Windows runner reports are all runtime-tested `PASS`:
+
+| Lane | Registered engine tests | Missing | Unexecuted | Report |
+| --- | ---: | ---: | ---: | --- |
+| x64 Debug | 56 | 0 | 0 | `artifacts/phase2/windows-x64-winui-debug/windows-x64-winui-debug.json` |
+| x64 Release | 56 | 0 | 0 | `artifacts/phase2/windows-x64-winui-release/windows-x64-winui-release.json` |
+| x86 Debug | 56 | 0 | 0 | `artifacts/phase2/windows-x86-winui-debug/windows-x86-winui-debug.json` |
+| x86 Release | 56 | 0 | 0 | `artifacts/phase2/windows-x86-winui-release/windows-x86-winui-release.json` |
+
+Each engine report records the required invalid-input, rollback, migration,
+busy/locked-database, and partial-failure coverage through
+`ClassMngrEngineDatabaseFixtureRoundTripTests`.
+
+The retained-Qt reports are:
+
+| Lane | Result | Evidence |
+| --- | --- | --- |
+| Windows Qt 6.12.0 x64 | `PASS`, runtime-tested | 125 tests registered; `ClassMngrDatabasePortFixtureTests` ran; `artifacts/phase2/windows-qt-6.12-x64/windows-qt-6.12-x64.json` |
+| Linux Qt 6.12 x64 | `BLOCKED`, host-blocked | `QT_LINUX_PREFIX` is not set; `artifacts/phase2/linux-qt-6.12-x64/linux-qt-6.12-x64.json` |
+| macOS Qt 6.12 universal | `BLOCKED`, host-blocked | `QT_MACOS_PREFIX` is not set; `artifacts/phase2/macos-qt-6.12-universal/macos-qt-6.12-universal.json` |
+
+The aggregate command found all seven lane reports and returned `FAIL` because
+the Linux and macOS retained-Qt lanes are host-blocked on this Windows
+device. The aggregate report is
+`artifacts/phase2/aggregate-report.json`; it is not a Phase 2 completion
+claim. The report validator also now excludes its own output when that output
+is placed inside the reports directory, covered by
+`tests/phase2_exit_gate_tests.py` (6/6 tests passed).
+
+P2-R07 remains deferred until CI or supported devices produce runtime-tested
+exact-Qt 6.12 Linux and macOS reports and the aggregate becomes non-red.

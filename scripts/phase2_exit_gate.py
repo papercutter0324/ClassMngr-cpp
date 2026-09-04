@@ -827,9 +827,15 @@ def validate_report(report: dict[str, Any], report_path: Path) -> list[str]:
 
 def validate_aggregate(reports_dir: Path, output: Path) -> int:
     # Inventory JSON is itself a required lane artifact, not another lane
-    # report.  Lane reports have stable, lane-specific filenames.
+    # report.  Lane reports have stable, lane-specific filenames.  The
+    # aggregate is commonly written inside reports_dir, so exclude it too.
+    aggregate_path = output.resolve()
     report_paths = (
-        sorted(path for path in reports_dir.rglob("*.json") if path.name != "inventory.json")
+        sorted(
+            path
+            for path in reports_dir.rglob("*.json")
+            if path.name != "inventory.json" and path.resolve() != aggregate_path
+        )
         if reports_dir.exists()
         else []
     )
