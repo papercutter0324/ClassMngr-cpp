@@ -255,33 +255,7 @@ bool ClassNamingService::teacherDisplayLessThan(
     const Teacher& right
     )
 {
-    const std::string leftEnglish = trimAsciiWhitespace(left.teacherEn);
-    const std::string rightEnglish = trimAsciiWhitespace(right.teacherEn);
-    const bool leftHasEnglish = !leftEnglish.empty();
-    const bool rightHasEnglish = !rightEnglish.empty();
-    if (leftHasEnglish != rightHasEnglish)
-    {
-        return leftHasEnglish;
-    }
-
-    const std::string leftFolded = lowerAscii(leftEnglish);
-    const std::string rightFolded = lowerAscii(rightEnglish);
-    if (leftFolded != rightFolded)
-    {
-        return leftFolded < rightFolded;
-    }
-    if (leftEnglish != rightEnglish)
-    {
-        return leftEnglish < rightEnglish;
-    }
-
-    const std::string leftKorean = trimAsciiWhitespace(left.teacherKr);
-    const std::string rightKorean = trimAsciiWhitespace(right.teacherKr);
-    if (leftKorean != rightKorean)
-    {
-        return leftKorean < rightKorean;
-    }
-    return left.id < right.id;
+    return classmngr::engine::teacherDisplayLessThan(left, right);
 }
 
 } // namespace classmngr::engine
