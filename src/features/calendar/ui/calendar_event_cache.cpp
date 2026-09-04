@@ -1,16 +1,12 @@
 #include "calendar_event_cache.h"
 
+#include "classmngr/engine/calendar_event_service.h"
 #include "classmngr/engine/open_database.h"
 
 #include "core/memory_usage_diagnostics.h"
-#include "data/database/database_schema_manager.h"
-#include "data/repositories/calendar_event_repository.h"
 
 #include <QByteArray>
-#include <QSqlDatabase>
-#include <QSqlError>
 #include <QSet>
-#include <QUuid>
 #include <QtConcurrentRun>
 
 #include <algorithm>
@@ -415,114 +411,72 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
     LoadResult result;
     result.request = request;
 
-    const QString connectionName =
-        QStringLiteral("calendar-event-cache-%1").arg(
-            QUuid::createUuid().toString(QUuid::WithoutBraces)
-            );
-    const bool isMemoryDatabase =
-        databasePath == QStringLiteral(":memory:");
-    QString normalizedPath;
-
-    if (isMemoryDatabase)
+    const QByteArray utf8Path = databasePath.toUtf8();
+    auto engineDatabase = classmngr::engine::OpenDatabase::execute(
+        std::string_view(
+            utf8Path.constData(),
+            static_cast<std::size_t>(utf8Path.size())
+            )
+        );
+    if (!engineDatabase)
     {
-        normalizedPath = databasePath;
+        const std::string& engineError = engineDatabase.error().message;
+        result.error = QStringLiteral(
+            "Unable to initialize calendar event cache database:\n%1\n\n%2"
+            )
+            .arg(
+                databasePath,
+                QString::fromUtf8(
+                    engineError.data(),
+                    static_cast<qsizetype>(engineError.size())
+                    )
+                );
+        return result;
     }
-    else
-    {
-        const QByteArray utf8Path = databasePath.toUtf8();
-        auto engineDatabase = classmngr::engine::OpenDatabase::execute(
-            std::string_view(
-                utf8Path.constData(),
-                static_cast<std::size_t>(utf8Path.size())
-                )
-            );
 
-        if (!engineDatabase)
+    classmngr::engine::CalendarEventService service(**engineDatabase);
+    if (request.kind == RequestKind::Range)
+    {
+        const auto events = service.loadInRange(
+            calendar_event_detail::toEngineDate(request.startDate),
+            calendar_event_detail::toEngineDate(request.endDate)
+            );
+        if (!events)
         {
-            const std::string& engineError = engineDatabase.error().message;
-            result.error = QStringLiteral(
-                "Unable to initialize calendar event cache database:\n%1\n\n%2"
-                )
-                .arg(
-                    databasePath,
-                    QString::fromUtf8(
-                        engineError.data(),
-                        static_cast<qsizetype>(engineError.size())
-                        )
-                    );
+            result.error = QString::fromUtf8(
+                events.error().message.data(),
+                static_cast<qsizetype>(events.error().message.size())
+                );
             return result;
         }
 
-        const std::string_view enginePath =
-            (*engineDatabase)->databasePath();
-        normalizedPath = QString::fromUtf8(
-            enginePath.data(),
-            static_cast<qsizetype>(enginePath.size())
-            );
+        result.events.reserve(static_cast<qsizetype>(events->size()));
+        for (const classmngr::engine::CalendarEvent& event : *events)
+        {
+            result.events.append(calendarEventFromEngine(event));
+        }
     }
-
+    else
     {
-        QSqlDatabase database =
-            QSqlDatabase::addDatabase(
-                QStringLiteral("QSQLITE"),
-                connectionName
+        const auto nextEventDate = service.findNextStartDate(
+            calendar_event_detail::toEngineDate(request.startDate)
+            );
+        if (!nextEventDate)
+        {
+            result.error = QString::fromUtf8(
+                nextEventDate.error().message.data(),
+                static_cast<qsizetype>(nextEventDate.error().message.size())
                 );
-        database.setDatabaseName(normalizedPath);
-
-        if (!database.open())
-        {
-            result.error = database.lastError().text();
+            return result;
         }
-        else if (const Status foreignKeyStatus =
-                     DatabaseSchemaManager::enableForeignKeyEnforcement(
-                         database
-                         );
-                 !foreignKeyStatus)
-        {
-            result.error = foreignKeyStatus.error();
-            database.close();
-        }
-        else
-        {
-            CalendarEventRepository repository(database);
 
-            if (request.kind == RequestKind::Range)
-            {
-                const Result<QList<CalendarEvent>> events =
-                    repository.loadCalendarEventsInRange(
-                        request.startDate,
-                        request.endDate
-                        );
-                if (events)
-                {
-                    result.events = *events;
-                }
-                else
-                {
-                    result.error = events.error();
-                }
-            }
-            else
-            {
-                const Result<QDate> nextEventDate =
-                    repository.findNextCalendarEventStartDate(
-                        request.startDate
-                        );
-                if (nextEventDate)
-                {
-                    result.nextEventDate = *nextEventDate;
-                }
-                else
-                {
-                    result.error = nextEventDate.error();
-                }
-            }
-
-            database.close();
+        if (nextEventDate->has_value())
+        {
+            result.nextEventDate =
+                calendar_event_detail::fromEngineDate(**nextEventDate);
         }
     }
 
-    QSqlDatabase::removeDatabase(connectionName);
     return result;
 }
 
