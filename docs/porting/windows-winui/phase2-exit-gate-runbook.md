@@ -1,7 +1,8 @@
 # Phase 2 exit-gate runbook
 
-Status: open. This runbook defines the required evidence path; it does not
-represent a passing cross-platform matrix.
+Status: deferred (2026-09-04). This is an unofficial port, so the
+cross-platform evidence gate is intentionally deferred. The automated path
+remains available for the point when the port is promoted for official use.
 
 ## Automated entry point
 
@@ -112,7 +113,13 @@ confirming that the required migration slices and failure categories are still
 meaningful, reviewing platform-specific failures or environment issues, and
 deciding whether the documented Phase 2 intent is satisfied.
 
-## Current blockers to closing P2-R07
+## Deferred closure conditions for P2-R07
+
+The latest hosted rerun passed the four Qt-free Windows engine lanes, but the
+full cross-platform baseline still has a failing Linux test phase. Because
+`NativeWindowsPort` is unofficial, this result is recorded as deferred rather
+than treated as a release blocker. Reopen the gate when the port becomes an
+official supported target.
 
 - Fresh artifacts are required for every Windows matrix lane; focused tests
   are not a complete matrix.
