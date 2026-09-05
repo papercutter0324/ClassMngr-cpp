@@ -1641,6 +1641,57 @@ remains deferred: the Linux lane and the current aggregate are still open, and
 the clean/full retained-Qt validation must be repaired and rerun before the
 complete migrated-feature matrix can be claimed green.
 
+## macOS retained-Qt failure remediation — 2026-09-06
+
+The retained-Qt repair pass ran on the same macOS 26.6.2 arm64 host with
+AppleClang 21.0.0, CMake 4.3.3, Qt 6.12.0, and the `macos-clang-debug`
+preset. It was compared against the completed Phase 3 foundation: no WinUI
+composition or production service graph was changed.
+
+The clean baseline now configures and builds successfully. Its 127-target CTest
+run passed 123/127. The only remaining failures are host-capability cases:
+
+- `ClassMngrInitialSetupWizardTests` aborts when Cocoa cannot create the
+  pasteboard/LaunchServices connection in this non-GUI session.
+- `ClassMngrUpdaterTests` has 11 `QTcpServer::listen()` failures because this
+  sandbox denies loopback socket binding; the parser, signature, cleanup, and
+  non-network cases pass.
+- `ClassMngrTeacherImportDialogTests` aborts when a dialog requests a screen.
+- `ClassMngrSpeakingEvalBatchReportServiceTests` passes 24 cases, including
+  the Korean/emoji safe-filename regression, then aborts when the AI prompt
+  preview requests a screen.
+
+The original retained-Qt failures were repaired as follows:
+
+- The four removed two-argument `ClassService`/`TeacherService` construction
+  sites in `tests/class_transfer_tests.cpp` now use the current session
+  boundary. The ClassTransfer fixture data uses catalog-valid book choices and
+  its target passes 16/16.
+- The five UI targets that previously depended on an implicit DataService
+  linker fake now construct an explicit test `ApplicationServices` and narrow
+  service seam. `ClassMngrScheduleWidgetTests`,
+  `ClassMngrTestingClassesPageTests`, `ClassMngrClassesPageTests`,
+  `ClassMngrScheduleImportDialogTests`, and `ClassMngrSubPrepPageTests` all
+  pass. `ClassMngrSubPrepPackageServiceTests` also passes with constructed
+  service objects instead of raw storage.
+- UTF-8 boundaries are explicit in the speaking-evaluation adapter. Engine
+  output-policy and validator code no longer runs locale-sensitive ctype
+  classification over raw UTF-8 bytes. `ClassMngrSharedPolicyTests` and
+  `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` pass, with
+  Korean/emoji regression coverage.
+- The PDF page keeps its document lifetime attached through teardown, and the
+  repeated page-switch regression in `ClassMngrPageManagerTests` passes.
+- `ClassMngrInitialSetupWizardTests` is now a macOS app bundle and selects
+  Cocoa on Apple hosts; native execution remains explicitly pending a
+  GUI-capable session.
+
+The exact retained-Qt P2-R07 command was rerun with Qt 6.12.0 universal
+metadata and completed `PASS`; the report is
+`artifacts/phase2/macos-qt-6.12-universal/macos-qt-6.12-universal.json`.
+The cross-platform Phase 2 gate remains open for the CI/device-owned Linux
+lane, a non-red seven-lane aggregate, and the host-specific native Cocoa and
+loopback validations above.
+
 ## Windows Phase 2 milestone gate — 2026-09-05
 
 The current Windows milestone was rerun from the clean `HEAD` with

@@ -1,6 +1,9 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/theme_service.h"
+#include "data/database/database_session.h"
 #include "data/data_service.h"
 #include "domain/models/teacher.h"
 #include "ui/shared/printing/pdf_print_service.h"
@@ -25,21 +28,10 @@ PdfPrintService::Status g_batchPrintStatus =
     PdfPrintService::Status::Canceled;
 QStringList g_batchPrintPaths;
 
-alignas(ApplicationServices) unsigned char
-    g_fakeApplicationServicesStorage[sizeof(ApplicationServices)];
-alignas(DataService) unsigned char
-    g_fakeDataServiceStorage[sizeof(DataService)];
-
 ApplicationServices* fakeApplicationServices()
 {
-    return reinterpret_cast<ApplicationServices*>(
-        g_fakeApplicationServicesStorage
-        );
-}
-
-DataService* fakeDataService()
-{
-    return reinterpret_cast<DataService*>(g_fakeDataServiceStorage);
+    static ApplicationServices services;
+    return &services;
 }
 
 void resetData()
@@ -133,9 +125,13 @@ SubPrepPackageService::Request packageRequest(
 }
 }
 
+ApplicationServices::ApplicationServices() = default;
+
+ApplicationServices::~ApplicationServices() = default;
+
 DataService* ApplicationServices::dataService() const
 {
-    return fakeDataService();
+    return nullptr;
 }
 
 bool ApplicationServices::hasOpenDatabase() const
@@ -143,19 +139,36 @@ bool ApplicationServices::hasOpenDatabase() const
     return true;
 }
 
-bool DataService::isOpen() const
+FeatureService::FeatureService(DatabaseSession*)
+{
+}
+
+bool FeatureService::isAvailable() const
 {
     return true;
 }
 
-Result<QList<Classroom>> DataService::getClasses()
+ClassService* ApplicationServices::classService() const
 {
-    return g_classes;
+    static ClassService service(nullptr);
+    return &service;
 }
 
-Result<Classroom> DataService::getClassById(
+TeacherService* ApplicationServices::teacherService() const
+{
+    static TeacherService service(nullptr);
+    return &service;
+}
+
+RosterService* ApplicationServices::rosterService() const
+{
+    static RosterService service(nullptr);
+    return &service;
+}
+
+Result<Classroom> ClassService::classroom(
     int classId
-    )
+    ) const
 {
     for (const Classroom& classroom : std::as_const(g_classes))
     {
@@ -167,23 +180,23 @@ Result<Classroom> DataService::getClassById(
     return std::unexpected(QStringLiteral("Class not found."));
 }
 
-Result<ClassInfo> DataService::loadClassInfo(
+Result<ClassInfo> ClassService::classInfo(
     int classId
-    )
+    ) const
 {
     return g_classInfo.value(classId);
 }
 
-Result<Roster> DataService::loadRoster(
+Result<Roster> RosterService::roster(
     int classId
-    )
+    ) const
 {
     return g_rosters.value(classId);
 }
 
-Result<Teacher> DataService::getTeacher(
+Result<Teacher> TeacherService::teacher(
     int teacherId
-    )
+    ) const
 {
     return g_teachers.value(teacherId);
 }
