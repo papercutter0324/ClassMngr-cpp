@@ -187,7 +187,10 @@ int main()
     Roster invalid;
     invalid.columns = {"English", "Korean"};
     invalid.columnWidths = {1, 2, 3};
-    invalid.rows = {{"Amy1", "\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98!", "extra"}};
+    invalid.rows = {
+        {"Amy1", "\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98!", "extra"},
+        {invalidUtf8, "\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98"}
+    };
     const ValidationResult invalidResult = RosterValidator::validate(invalid);
     passed &= expect(
         hasIssue(invalidResult, "roster.column.required")
@@ -204,12 +207,24 @@ int main()
                 "student_name.korean.invalid_characters",
                 0,
                 1
+                )
+            && hasIssue(
+                invalidResult,
+                "student_name.english.non_ascii",
+                1,
+                0
+                )
+            && hasIssue(
+                invalidResult,
+                "student_name.english.invalid_characters",
+                1,
+                0
                 ),
         "invalid roster diagnostics changed"
         );
 
-    Roster duplicate;
-    duplicate.columns = {
+    Roster duplicateSource;
+    duplicateSource.columns = {
         "English",
         "Korean",
         "Winter",
@@ -217,10 +232,11 @@ int main()
         "Summer",
         "Fall"
     };
-    duplicate.rows = {
-        {"Amy", "\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98", "", "", "", ""},
-        {"Amy", "\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98", "", "", "", ""}
+    duplicateSource.rows = {
+        {"  aMY  ", " \xEA\xB9\x80 \xEB\xAF\xBC \xEC\x88\x98 (a) ", "", "", "", ""},
+        {"Amy", "\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98(A)", "", "", "", ""}
     };
+    const Roster duplicate = RosterValidator::normalized(duplicateSource);
     const ValidationResult duplicateResult = RosterValidator::validate(duplicate);
     int duplicateIssueCount = 0;
     for (const ValidationIssue& issue : duplicateResult.issues())
@@ -231,8 +247,11 @@ int main()
         }
     }
     passed &= expect(
-        duplicateIssueCount == 4,
-        "duplicate student pairs were not reported for both cells"
+        duplicate.rows[0].at(0) == "Amy"
+            && duplicate.rows[0].at(1)
+                == "\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98(A)"
+            && duplicateIssueCount == 4,
+        "normalized duplicate student pairs were not reported for both cells"
         );
 
     Roster questionable;

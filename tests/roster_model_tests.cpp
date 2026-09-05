@@ -2,8 +2,10 @@
 
 #include "core/utils/student_name_utils.h"
 #include "domain/models/roster.h"
+#include "domain/validation/roster_validator.h"
 #include "features/roster/ui/roster_constants.h"
 
+#include <QByteArray>
 #include <QCoreApplication>
 #include <QtTest>
 
@@ -42,6 +44,28 @@ QStringList row(
         QString(),
         QString()
     };
+}
+
+bool hasIssue(
+    const ValidationResult& result,
+    const QString& code,
+    int row,
+    int column
+    )
+{
+    for (const ValidationIssue& issue : result.issues())
+    {
+        if (
+            issue.code == code
+            && issue.row == row
+            && issue.column == column
+            )
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 QStringList studentRow(
@@ -633,6 +657,18 @@ void RosterModelTests::interactiveNameValidationMatchesEnginePolicy()
         studentRow(
             QStringLiteral("Amy"),
             QStringLiteral("김민수(A)")
+            ),
+        studentRow(
+            QStringLiteral("Lia"),
+            QStringLiteral("김민수지")
+            ),
+        studentRow(
+            QStringLiteral("Noah"),
+            QStringLiteral("김민수지원")
+            ),
+        studentRow(
+            QString::fromUtf8(QByteArray("\xc3(", 2)),
+            QStringLiteral("김지원")
             )
     };
 
@@ -659,6 +695,10 @@ void RosterModelTests::interactiveNameValidationMatchesEnginePolicy()
         model.index(1, koreanColumn).data(Qt::DisplayRole).toString(),
         QStringLiteral("김민수(A)")
         );
+    QCOMPARE(
+        model.index(2, koreanColumn).data(Qt::DisplayRole).toString(),
+        QStringLiteral("김민수(A)")
+        );
     QVERIFY(model.hasDuplicateNameErrors());
     QVERIFY(
         model.errorsForCell(1, englishColumn)
@@ -667,6 +707,18 @@ void RosterModelTests::interactiveNameValidationMatchesEnginePolicy()
     QVERIFY(
         model.errorsForCell(2, koreanColumn)
             .contains(QStringLiteral("Duplicate student name pair. Also used on row(s): 2."))
+        );
+    QVERIFY(
+        model.errorsForCell(3, koreanColumn)
+            .contains(QStringLiteral("Korean name has an uncommon length. Verify it is correct."))
+        );
+    QVERIFY(
+        model.errorsForCell(4, koreanColumn)
+            .contains(QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct."))
+        );
+    QVERIFY(
+        model.errorsForCell(5, englishColumn)
+            .contains(QStringLiteral("English name should use ASCII characters."))
         );
 
     const auto shortIssues =
@@ -688,6 +740,57 @@ void RosterModelTests::interactiveNameValidationMatchesEnginePolicy()
     QVERIFY(
         !model.errorsForCell(0, englishColumn)
             .contains(QStringLiteral("English name contains invalid characters."))
+        );
+    QVERIFY(
+        model.setData(
+            model.index(0, englishColumn),
+            QStringLiteral("Amy1")
+            )
+        );
+
+    const ValidationResult saved =
+        RosterValidator::validate(
+            RosterValidator::normalized(model.toRoster())
+            );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.english.invalid_characters"),
+            0,
+            englishColumn
+            )
+        );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.english.non_ascii"),
+            5,
+            englishColumn
+            )
+        );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.korean.unusual_length"),
+            3,
+            koreanColumn
+            )
+        );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.korean.too_long"),
+            4,
+            koreanColumn
+            )
+        );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.duplicate_pair"),
+            1,
+            englishColumn
+            )
         );
 }
 

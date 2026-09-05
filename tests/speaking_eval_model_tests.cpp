@@ -58,6 +58,14 @@ void SpeakingEvalModelTests::interactiveNameValidationMatchesEnginePolicy()
         QStringLiteral("Zoe");
     rows[3][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
         QStringLiteral("김");
+    rows[4][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QString::fromUtf8(QByteArray("\xc3(", 2));
+    rows[4][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("김민수지");
+    rows[5][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Mia");
+    rows[5][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("김민수지원");
 
     SpeakingEvalModel model;
     model.loadData(rows);
@@ -77,6 +85,18 @@ void SpeakingEvalModelTests::interactiveNameValidationMatchesEnginePolicy()
         );
     QVERIFY(
         model.errorsForCell(3, koreanColumn)
+            .contains(QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct."))
+        );
+    QVERIFY(
+        model.errorsForCell(4, englishColumn)
+            .contains(QStringLiteral("Only standard English letters are allowed."))
+        );
+    QVERIFY(
+        model.errorsForCell(4, koreanColumn)
+            .contains(QStringLiteral("Korean name has an uncommon length. Verify it is correct."))
+        );
+    QVERIFY(
+        model.errorsForCell(5, koreanColumn)
             .contains(QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct."))
         );
     QCOMPARE(
@@ -156,6 +176,30 @@ void SpeakingEvalModelTests::interactiveNameValidationMatchesEnginePolicy()
             saved,
             QStringLiteral("student_name.korean.too_short"),
             3,
+            koreanColumn
+            )
+        );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.english.non_ascii"),
+            4,
+            englishColumn
+            )
+        );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.korean.unusual_length"),
+            4,
+            koreanColumn
+            )
+        );
+    QVERIFY(
+        hasIssue(
+            saved,
+            QStringLiteral("student_name.korean.too_long"),
+            5,
             koreanColumn
             )
         );

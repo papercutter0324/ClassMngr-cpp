@@ -209,6 +209,27 @@ int main()
             && normalizedMalformed[0][3] == "D",
         "malformed values were silently converted into valid values"
         );
+    const ValidationResult malformedResult =
+        SpeakingEvaluationValidator::validate(
+            1,
+            "Winter",
+            normalizedMalformed
+            );
+    passed &= expect(
+        hasIssue(
+            malformedResult,
+            "student_name.english.non_ascii",
+            0,
+            1
+            )
+            && hasIssue(
+                malformedResult,
+                "student_name.english.invalid_characters",
+                0,
+                1
+                ),
+        "malformed UTF-8 name was not rejected at save validation"
+        );
 
     SpeakingEvaluationRow invalidRow(
         SpeakingEvaluationValidator::MaximumColumns + 1);
@@ -314,15 +335,26 @@ int main()
         "required editable-row names were not reported"
         );
 
-    const SpeakingEvaluationRow duplicateRow = validRow();
+    SpeakingEvaluationRow duplicateSource = validRow();
+    duplicateSource[1] = "  aLiCe  ";
+    duplicateSource[2] = " \xea\xb9\x80 \xeb\xaf\xbc \xec\x88\x98 (a) ";
+    SpeakingEvaluationRow duplicateExpected = validRow();
+    duplicateExpected[2] = "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98(A)";
+    const SpeakingEvaluationRows duplicateRows =
+        SpeakingEvaluationValidator::normalized(
+            {duplicateSource, duplicateExpected}
+            );
     const ValidationResult duplicateResult =
         SpeakingEvaluationValidator::validate(
             1,
             "Winter",
-            {duplicateRow, duplicateRow}
+            duplicateRows
             );
     passed &= expect(
-        countIssues(duplicateResult, "student_name.duplicate_pair") == 4
+        duplicateRows[0][1] == "Alice"
+            && duplicateRows[0][2]
+                == "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98(A)"
+            && countIssues(duplicateResult, "student_name.duplicate_pair") == 4
             && hasIssue(
                 duplicateResult,
                 "student_name.duplicate_pair",
@@ -373,6 +405,41 @@ int main()
             && questionableWarning.hasWarnings()
             && !questionableWarning.hasErrors(),
         "questionable Korean-name severity changed"
+        );
+
+    SpeakingEvaluationRow unusualLengthRow = validRow();
+    unusualLengthRow[2] = "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98\xec\xa7\x80";
+    const ValidationResult unusualLengthResult =
+        SpeakingEvaluationValidator::validate(
+            1,
+            "Winter",
+            {unusualLengthRow}
+            );
+    SpeakingEvaluationRow longLengthRow = validRow();
+    longLengthRow[2] =
+        "\xea\xb9\x80\xeb\xaf\xbc\xec\x88\x98\xec\xa7\x80\xec\x9b\x90";
+    const ValidationResult longLengthResult =
+        SpeakingEvaluationValidator::validate(
+            1,
+            "Winter",
+            {longLengthRow}
+            );
+    passed &= expect(
+        hasIssueWithSeverity(
+            unusualLengthResult,
+            "student_name.korean.unusual_length",
+            ValidationSeverity::Warning,
+            0,
+            2
+            )
+            && hasIssueWithSeverity(
+                longLengthResult,
+                "student_name.korean.too_long",
+                ValidationSeverity::Error,
+                0,
+                2
+                ),
+        "unusual and long Korean-name lengths were not reported"
         );
 
     return passed ? 0 : 1;
