@@ -238,6 +238,29 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
     pages.showPage(PageType::PdfViewer);
     QCOMPARE(pages.pdfViewerPage(), viewer);
     QVERIFY(!viewer->hasLoadedDocument());
+
+    // Reuse the same view/document pair after a release. This exercises the
+    // repeated leave/re-enter lifecycle without detaching QPdfView's document.
+    QVERIFY(
+        viewer->loadPdf(
+            {
+                .pdfFilePath = pdfPath,
+                .exportEnabled = true,
+                .exportFilePath = pdfPath,
+                .exportFileName = QStringLiteral("lesson-planning-guide.pdf"),
+                .printEnabled = true
+            }
+            )
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(viewer->hasLoadedDocument(), 5000);
+
+    pages.showPage(PageType::MyWorkspace);
+    QVERIFY(!viewer->hasLoadedDocument());
+
+    pages.showPage(PageType::PdfViewer);
+    QCOMPARE(pages.pdfViewerPage(), viewer);
+    QVERIFY(!viewer->hasLoadedDocument());
+
     const QList<MemoryUsageHistoryEntry>& events =
         MemoryUsageDiagnostics::history().entries();
     QVERIFY(std::any_of(

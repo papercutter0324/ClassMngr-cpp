@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cctype>
 #include <map>
 #include <string>
 #include <string_view>
@@ -21,6 +20,22 @@ constexpr int FirstScoringColumn = 3;
 constexpr int LastScoringColumn = 8;
 constexpr int CommentsColumn = 9;
 constexpr int NotesColumn = 10;
+
+bool isAsciiWhitespaceByte(unsigned char character)
+{
+    switch (character)
+    {
+    case ' ':
+    case '\t':
+    case '\n':
+    case '\v':
+    case '\f':
+    case '\r':
+        return true;
+    default:
+        return false;
+    }
+}
 
 constexpr std::array<std::string_view, SpeakingEvaluationValidator::MaximumColumns>
     ColumnHeaders{
@@ -140,7 +155,7 @@ bool isWhitespace(unsigned codePoint)
 {
     if (codePoint <= 0x7fU)
     {
-        return std::isspace(static_cast<unsigned char>(codePoint)) != 0;
+        return isAsciiWhitespaceByte(static_cast<unsigned char>(codePoint));
     }
 
     return (codePoint >= 0x2000U && codePoint <= 0x200aU)
@@ -155,7 +170,7 @@ std::string trimAsciiWhitespace(std::string_view value)
 {
     const auto isAsciiWhitespace = [](char character)
     {
-        return std::isspace(static_cast<unsigned char>(character)) != 0;
+        return isAsciiWhitespaceByte(static_cast<unsigned char>(character));
     };
 
     std::size_t first = 0;
@@ -411,12 +426,18 @@ std::string SpeakingEvaluationValidator::normalizedScore(std::string_view value)
     compact.reserve(trimmed.size());
     for (const unsigned char character : trimmed)
     {
-        if (std::isspace(character) != 0)
+        if (isAsciiWhitespaceByte(character))
         {
             continue;
         }
 
-        compact.push_back(static_cast<char>(std::toupper(character)));
+        compact.push_back(
+            static_cast<char>(
+                character >= 'a' && character <= 'z'
+                    ? character - ('a' - 'A')
+                    : character
+                )
+            );
     }
 
     if (compact == "1" || compact == "\xe3\x85\x8a")

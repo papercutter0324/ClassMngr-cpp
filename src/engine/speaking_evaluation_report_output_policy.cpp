@@ -1,7 +1,6 @@
 #include "classmngr/engine/speaking_evaluation_report_output_policy.h"
 
 #include <algorithm>
-#include <cctype>
 #include <set>
 #include <string>
 #include <string_view>
@@ -11,12 +10,28 @@ namespace classmngr::engine
 {
 namespace
 {
+bool isAsciiWhitespace(unsigned char character)
+{
+    switch (character)
+    {
+    case ' ':
+    case '\t':
+    case '\n':
+    case '\v':
+    case '\f':
+    case '\r':
+        return true;
+    default:
+        return false;
+    }
+}
+
 std::string trimAsciiWhitespace(std::string_view value)
 {
     std::size_t first = 0;
     while (
         first < value.size()
-        && std::isspace(static_cast<unsigned char>(value[first]))
+        && isAsciiWhitespace(static_cast<unsigned char>(value[first]))
         )
     {
         ++first;
@@ -25,7 +40,7 @@ std::string trimAsciiWhitespace(std::string_view value)
     std::size_t last = value.size();
     while (
         last > first
-        && std::isspace(static_cast<unsigned char>(value[last - 1]))
+        && isAsciiWhitespace(static_cast<unsigned char>(value[last - 1]))
         )
     {
         --last;
@@ -43,7 +58,7 @@ std::string simplifiedAsciiWhitespace(std::string_view value)
     bool pendingSpace = false;
     for (const unsigned char character : trimmed)
     {
-        if (std::isspace(character))
+        if (isAsciiWhitespace(character))
         {
             pendingSpace = true;
             continue;
@@ -197,7 +212,7 @@ std::string shortTime(std::string_view value)
         std::string suffix;
 
         while (minuteEnd > colon + 1
-               && std::isspace(
+               && isAsciiWhitespace(
                    static_cast<unsigned char>(trimmed[minuteEnd - 1])
                    ))
         {
@@ -213,7 +228,7 @@ std::string shortTime(std::string_view value)
                 suffix = candidate;
                 minuteEnd -= 2;
                 while (minuteEnd > colon + 1
-                       && std::isspace(
+                       && isAsciiWhitespace(
                            static_cast<unsigned char>(trimmed[minuteEnd - 1])
                            ))
                 {

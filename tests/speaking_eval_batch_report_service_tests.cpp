@@ -359,6 +359,13 @@ void SpeakingEvalBatchReportServiceTests::safeFileNameUsesStudentNamesAndRemoves
             ),
         QStringLiteral("Jane- Doe (김-철수).pdf")
         );
+    QCOMPARE(
+        SpeakingEvalBatchReportService::safeFileName(
+            QStringLiteral("김:학생"),
+            QStringLiteral("🧑‍🏫/학생")
+            ),
+        QStringLiteral("김-학생 (🧑‍🏫-학생).pdf")
+        );
 }
 
 void SpeakingEvalBatchReportServiceTests::defaultOutputDirectoryIncludesClassScheduleAndEvaluation()

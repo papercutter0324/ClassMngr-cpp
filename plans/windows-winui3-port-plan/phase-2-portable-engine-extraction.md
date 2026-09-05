@@ -254,11 +254,13 @@ engine and retained-Qt teacher-import tests pass.
 
 ### P2-R04 — Collapse legacy application-service fallbacks
 
-**Status (2026-09-05): Implemented for production composition; facade retirement
-is tracked for Phase 3.** ApplicationServices owns the session and production
-feature services receive it directly. The legacy DataService API remains an
-explicit shared-session adapter with a named owner and a deadline before the
-Phase 3 application-foundation exit gate.
+**Status (2026-09-06): Implemented for production composition; facade
+retirement remains open after Phase 3.** ApplicationServices owns the session
+and production feature services receive it directly. The legacy DataService
+API remains an explicit shared-session adapter. Phase 3's application
+foundation exit gate is complete, but it validated the WinUI shell and Windows
+adapters rather than retiring the retained Qt compatibility facade. Retirement
+is now part of the remaining Phase 2 closure work.
 
 - [x] Keep migrated production workflows on the engine-first session/use-case
   graph and make the remaining compatibility object an explicit adapter with
@@ -277,7 +279,8 @@ removed, and the source audit found no production caller of the compatibility
 facade. `ClassMngrDataServiceLifecycleTests` now covers shared-session service
 construction, open/close availability, and the compatibility adapter. The
 broad `DataService` facade remains only as a source-compatible adapter until
-the Phase 3 deadline.
+the remaining retained Qt test and compatibility callers are migrated or
+explicitly quarantined.
 
 ### P2-R05 — Retire the remaining Qt SQL compatibility path
 
@@ -524,6 +527,68 @@ round trip before moving to the next; P2-R07 is the final aggregate gate.
     aggregate deferred until the Windows port is complete, then obtain
     CI/device-owned Linux evidence, complete the retained-Qt sweep, and
     regenerate a non-red cross-platform report.
+
+## Phase 2 closure after the Phase 3 foundation — retained macOS repair plan
+
+**Status (2026-09-06): Retained macOS repairs executed; host/device exit
+conditions remain.** Phase 3 completed its Windows WinUI
+application-foundation gate on x64. Its engine-first composition, platform
+service contracts, lifecycle rules, and semantic/visual evidence confirm that
+the intended architecture is already in place for the new client. The
+remaining work is limited to native-session and CI/device-owned cross-platform
+evidence; it must not introduce a second service graph or change the WinUI
+foundation.
+
+- [x] Fix the clean-build blocker in
+  `tests/class_transfer_tests.cpp` by migrating the four removed two-argument
+  service constructor calls. The clean macOS baseline now configures and
+  builds all 127 registered targets. The ClassTransfer fixtures were also
+  updated to use the catalog-valid grade/level book choices introduced by the
+  completed Phase 3 validator; `ClassMngrClassTransferTests` passes 16/16.
+- [x] Replace the implicit legacy linker fallback used by
+  `ClassMngrScheduleWidgetTests`, `ClassMngrTestingClassesPageTests`,
+  `ClassMngrClassesPageTests`, `ClassMngrScheduleImportDialogTests`, and
+  `ClassMngrSubPrepPageTests` with a constructed, explicitly scoped test
+  `ApplicationServices`/narrow-service seam. The existing state maps remain
+  test-local doubles for these UI interaction cases; production composition
+  remains engine-first and no facade method or removed fallback constructor
+  was restored. All five targets pass.
+- [x] Replace the raw, unconstructed `ApplicationServices` fake in
+  `ClassMngrSubPrepPackageServiceTests` with constructed service objects and
+  the same clearly scoped dependency-injection boundary, preserving the
+  package-rendering stubs. The target passes.
+- [x] Resolve the Qt/engine UTF-8 parity failures in
+  `ClassMngrSharedPolicyTests` and
+  `ClassMngrSpeakingEvalBatchReportServiceTests`. The engine no longer applies
+  locale-sensitive ctype classification to raw UTF-8 bytes, the retained
+  adapter uses explicit UTF-8 conversions, and Korean/emoji filename cases
+  are covered. The shared-policy and engine output-policy tests pass; the
+  batch target reaches 24 passing cases before its separate no-screen UI case
+  aborts on this host.
+- [x] Prepare the macOS `QWizard` test for native Cocoa by making the target a
+  macOS app bundle and selecting Cocoa on Apple hosts; offscreen remains the
+  explicit non-Apple/test fallback. Native execution is still blocked here by
+  pasteboard/LaunchServices errors and the absence of a GUI-capable session.
+- [ ] Re-run that InitialSetupWizard native path in a GUI-capable session.
+- [x] Repair `QPdfView`/`QPdfDocument` teardown ordering exposed by
+  `ClassMngrPageManagerTests`; the focused repeated page-switch regression and
+  the target pass under the available offscreen host.
+- [ ] Run `ClassMngrUpdaterTests` on a loopback-capable host. Its 11 remaining
+  `server.listen()` failures are caused by this sandbox's socket restriction,
+  not by a product/test change; the test and updater behavior remain intact.
+- [x] Re-run the clean macOS baseline and exact Qt 6.12 universal P2-R07 lane.
+  The baseline configures/builds successfully and records 123/127 passing
+  tests; the four failures are the two native no-screen UI targets plus the
+  updater loopback case and the speaking-evaluation no-screen case. The exact
+  retained-Qt P2-R07 report is `PASS`.
+- [ ] Obtain the CI/device-owned Linux retained-Qt report and regenerate the
+  non-red seven-lane cross-platform aggregate.
+
+The 11-target macOS failure evidence and diagnosis are recorded in
+`docs/porting/windows-winui/phase2-local-validation.md`. The shared fixture
+migration is intentionally first among the runtime repairs because it closes
+five UI targets and the package-service fake without changing production
+composition.
 
 ## Audit classifications intentionally outside Phase 2
 

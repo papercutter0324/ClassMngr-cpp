@@ -1,12 +1,12 @@
 {
-  "recorded_at_utc": "2026-09-05T05:57:17.932029+00:00",
-  "git_commit": "9a6c9c964589df48e6d7071b5def1d289e373011",
-  "git_commit_start": "9a6c9c964589df48e6d7071b5def1d289e373011",
-  "git_commit_end": "9a6c9c964589df48e6d7071b5def1d289e373011",
+  "recorded_at_utc": "2026-09-05T19:39:16.590685+00:00",
+  "git_commit": "6bebfcee471c23a9542dc1ccf094bc7bab38afe2",
+  "git_commit_start": "6bebfcee471c23a9542dc1ccf094bc7bab38afe2",
+  "git_commit_end": "6bebfcee471c23a9542dc1ccf094bc7bab38afe2",
   "git_dirty_start": false,
   "git_dirty_end": false,
-  "source_fingerprint_start": "7b33d979662155e6211a0befa285063f1a0b18bf71de63699892c41bf59dcae5",
-  "source_fingerprint_end": "7b33d979662155e6211a0befa285063f1a0b18bf71de63699892c41bf59dcae5",
+  "source_fingerprint_start": "b4c9f24b873effd32d56a5d62fc44ec9ee819f0201636f6ddaf7a6ee6170e2e5",
+  "source_fingerprint_end": "b4c9f24b873effd32d56a5d62fc44ec9ee819f0201636f6ddaf7a6ee6170e2e5",
   "source_stable_during_run": true,
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "python": "3.14.4",
@@ -17,19 +17,30 @@
   "test_timeout_seconds": 120,
   "results": {
     "configure_exit_code": 0,
-    "build_exit_code": 1,
-    "test_exit_code": -1,
-    "tests": null
+    "build_exit_code": 0,
+    "test_exit_code": 8,
+    "tests": {
+      "total": 127,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "failed_tests": [
+        "ClassMngrInitialSetupWizardTests",
+        "ClassMngrUpdaterTests",
+        "ClassMngrTeacherImportDialogTests",
+        "ClassMngrSpeakingEvalBatchReportServiceTests"
+      ]
+    }
   },
   "duration_seconds": {
-    "configure": 140.378,
-    "clean_build": 506.874,
-    "tests": 0.0
+    "configure": 139.493,
+    "clean_build": 606.838,
+    "tests": 134.503
   },
   "root_cmake_lines": 353,
   "application": {
-    "path": null,
-    "size_bytes": null
+    "path": "build/macos-clang-debug/ClassMngr.app/Contents/MacOS/ClassMngr",
+    "size_bytes": 100800120
   },
   "compilation": {
     "compile_commands": "build/macos-clang-debug/compile_commands.json",

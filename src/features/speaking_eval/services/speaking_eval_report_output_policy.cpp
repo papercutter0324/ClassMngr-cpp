@@ -3,24 +3,48 @@
 #include "classmngr/engine/speaking_evaluation_report_output_policy.h"
 
 #include <QObject>
+#include <QByteArray>
 #include <QStandardPaths>
+
+#include <string>
 
 namespace
 {
+std::string toUtf8(
+    const QString& value
+    )
+{
+    const QByteArray encoded = value.toUtf8();
+    return std::string(
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+        );
+}
+
+QString fromUtf8(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
 classmngr::engine::ClassInfo toPortableClassInfo(
     const ClassInfo& source
     )
 {
     classmngr::engine::ClassInfo result;
-    result.classGrade = source.classGrade.toStdString();
-    result.classLevel = source.classLevel.toStdString();
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
     result.classTimes.reserve(source.classTimes.size());
     for (const ClassTime& time : source.classTimes)
     {
         result.classTimes.push_back({
-            time.day.toStdString(),
-            time.startTime.toStdString(),
-            time.endTime.toStdString()
+            toUtf8(time.day),
+            toUtf8(time.startTime),
+            toUtf8(time.endTime)
         });
     }
     return result;
@@ -36,13 +60,13 @@ QString SpeakingEvalReportOutputPolicy::defaultDirectory(
     const QString root = documentsDirectory.trimmed().isEmpty()
         ? QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
         : documentsDirectory;
-    return QString::fromStdString(
+    return fromUtf8(
         classmngr::engine::SpeakingEvaluationReportOutputPolicy::defaultDirectory(
             toPortableClassInfo(classInfo),
-            evaluationName.toStdString(),
-            root.toStdString(),
-            QObject::tr("Speaking Evaluation").toStdString(),
-            QObject::tr("Evaluation").toStdString()
+            toUtf8(evaluationName),
+            toUtf8(root),
+            toUtf8(QObject::tr("Speaking Evaluation")),
+            toUtf8(QObject::tr("Evaluation"))
             )
         );
 }
@@ -51,10 +75,10 @@ QString SpeakingEvalReportOutputPolicy::batchArchivePath(
     const QString& outputDirectory
     )
 {
-    return QString::fromStdString(
+    return fromUtf8(
         classmngr::engine::SpeakingEvaluationReportOutputPolicy::batchArchivePath(
-            outputDirectory.toStdString(),
-            QObject::tr("Speaking Evaluation Reports").toStdString()
+            toUtf8(outputDirectory),
+            toUtf8(QObject::tr("Speaking Evaluation Reports"))
             )
         );
 }
@@ -68,13 +92,16 @@ QString SpeakingEvalReportOutputPolicy::studentFileName(
         englishName.normalized(QString::NormalizationForm_C).simplified();
     const QString korean =
         koreanName.normalized(QString::NormalizationForm_C).simplified();
-    return QString::fromStdString(
+    const std::string englishUtf8 = toUtf8(english);
+    const std::string koreanUtf8 = toUtf8(korean);
+    const std::string fallbackUtf8 = toUtf8(QObject::tr("Student"));
+    const std::string output =
         classmngr::engine::SpeakingEvaluationReportOutputPolicy::studentFileName(
-            english.toStdString(),
-            korean.toStdString(),
+            englishUtf8,
+            koreanUtf8,
             ".pdf",
-            QObject::tr("Student").toStdString(),
+            fallbackUtf8,
             '-'
-            )
-        );
+            );
+    return fromUtf8(output);
 }

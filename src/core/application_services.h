@@ -51,8 +51,8 @@ public:
 
     // Explicit compatibility adapter for legacy/test callers. It borrows
     // m_session; production feature composition must use the narrow services
-    // above. Retirement owner: the Phase 2/3 application-service migration;
-    // deadline: before the Phase 3 application-foundation exit gate; do not
+    // above. Retirement owner: the remaining Phase 2 retained-Qt closure;
+    // Phase 3 confirms the engine-first boundary for the WinUI client. Do not
     // add new production callers or facade operations.
     [[nodiscard]] DataService* dataService() const;
     [[nodiscard]] SettingsService* settingsService() const;

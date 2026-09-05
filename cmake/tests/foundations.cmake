@@ -224,6 +224,19 @@ classmngr_add_qt_test(
         ${CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT}
 )
 
+# Qt's native macOS QWizard style consults the process bundle for its
+# platform pixmaps. Keep this focused test a real app bundle so NSBundle's
+# mainBundle URL is available when the Cocoa backend is selected.
+if(APPLE)
+    set_target_properties(ClassMngrInitialSetupWizardTests
+        PROPERTIES
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_GUI_IDENTIFIER
+                com.classmngr.tests.initialsetupwizard
+            MACOSX_BUNDLE_BUNDLE_NAME ClassMngrInitialSetupWizardTests
+    )
+endif()
+
 qt_add_resources(ClassMngrInitialSetupWizardTests initial_setup_keyboard_test_resources
     PREFIX "/"
     BASE "${PROJECT_SOURCE_DIR}/resources"

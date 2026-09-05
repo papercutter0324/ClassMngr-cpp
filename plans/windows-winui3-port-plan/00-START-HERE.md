@@ -118,7 +118,8 @@ correction commit `db50929` records the unpackaged PRI merge, visual-tree
 timing, and normal-close lifecycle fixes. The full x64 staged verifier and
 the passed visual/semantic evidence are recorded under
 `artifacts/phase3/windows-x64-winui-debug-clean/`. Phase 1 is complete and
-Phase 2 remains in progress. The Qt-free engine already
+Phase 2 remains in progress, with post-Phase-3 retained macOS repair and the
+CI/device-owned Linux lane as the active closure work. The Qt-free engine already
 contains the `SemanticVersion` seed slice and typed standard-library result and
 error contracts. The database boundary now owns file-format rules, SQLite
 connection/transaction behavior, six-version schema migration, `OpenDatabase`,
@@ -1410,6 +1411,17 @@ After meaningful work:
   compilation and its fixture verification executable exited 0; `git diff
   --check` passed. Phase 2 remains open for report/export adapters, other
   retained adapters, and the full per-slice fixture matrix.
+
+- **2026-09-06 — Post-Phase-3 retained macOS repair executed.** The clean
+  `macos-clang-debug` baseline now configures/builds all 127 targets and passes
+  123/127 tests; the four remaining failures are limited to no-GUI Cocoa/UI
+  execution and loopback socket restrictions. The original Phase 2 retained-Qt
+  failures were repaired through constructed test seams, explicit UTF-8 byte
+  handling, PDF teardown ordering, macOS bundle setup, and catalog-valid
+  ClassTransfer fixtures. The exact Qt 6.12 universal macOS P2-R07 lane is
+  `PASS`. Phase 2 remains open for a GUI-capable native macOS session, a
+  loopback-capable updater host, CI/device-owned Linux evidence, and a non-red
+  seven-lane aggregate.
 
 ## Shared Completion Rules
 
