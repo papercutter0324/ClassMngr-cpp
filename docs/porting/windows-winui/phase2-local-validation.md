@@ -1643,10 +1643,9 @@ complete migrated-feature matrix can be claimed green.
 
 ## Windows Phase 2 milestone gate — 2026-09-05
 
-The current Windows milestone was rerun from clean commit
-`e847c10c9c27ad70de7f128e466232a4ff58d6b3` with
-`TrackFileAccess=false`. All five Windows lanes are now current, clean, and
-runtime-tested:
+The current Windows milestone was rerun from the clean `HEAD` with
+`TrackFileAccess=false`. Each lane report records the exact commit identity.
+All five Windows lanes are current, clean, and runtime-tested:
 
 | Lane | Result | Evidence |
 | --- | --- | --- |

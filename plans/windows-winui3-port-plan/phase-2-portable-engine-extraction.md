@@ -349,9 +349,9 @@ cross-platform gate is deferred.**
 The reproducible matrix is executable through
 `.github/workflows/phase2-exit-gate.yml` and
 `scripts/phase2_exit_gate.py`, with the process documented in [the exit-gate
-runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md). At
-commit `e847c10c9c27ad70de7f128e466232a4ff58d6b3`, the refreshed Windows
-matrix has runtime-tested PASS reports for all four Qt-free x64/x86
+runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md). At the
+current clean `HEAD`, the refreshed Windows matrix has runtime-tested PASS
+reports for all four Qt-free x64/x86
 Debug/Release engine lanes and the retained Windows Qt 6.12.0 x64 lane.
 The Windows-focused aggregate is PASS through
 `validate-windows` and is recorded at
