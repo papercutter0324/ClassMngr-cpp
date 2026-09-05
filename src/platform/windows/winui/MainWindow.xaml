@@ -9,47 +9,62 @@
     Title="ClassMngr">
     <Grid
         x:Name="RootGrid"
-        Padding="32"
         Background="{ThemeResource Phase1SurfaceBrush}"
         RequestedTheme="Default">
-        <StackPanel
-            Width="640"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Spacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="AppTitleBar"
+            Grid.Row="0"
+            Padding="16,0,12,0"
+            Background="{ThemeResource Phase1SurfaceBrush}"
+            AutomationProperties.Name="Application title bar">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <TextBlock
-                Text="ClassMngr Windows"
-                Foreground="{ThemeResource Phase1TextBrush}"
-                FontSize="32"
-                FontWeight="SemiBold" />
-            <TextBlock
-                x:Name="EngineVersionText"
-                Foreground="{ThemeResource Phase1AccentBrush}"
+                x:Name="AppTitleBarText"
+                VerticalAlignment="Center"
+                Text="ClassMngr"
                 FontSize="16"
-                AutomationProperties.Name="Engine version" />
-            <TextBlock
-                Text="Phase 1 representative form"
-                Foreground="{ThemeResource Phase1TextBrush}"
-                Opacity="0.78" />
-            <TextBox
-                x:Name="NameTextBox"
-                Header="이름"
-                PlaceholderText="한국어 입력"
-                InputScope="Text"
-                TabIndex="0"
-                AutomationProperties.Name="Name input" />
+                FontWeight="SemiBold"
+                AutomationProperties.Name="Application title" />
             <Button
-                x:Name="ContinueButton"
-                Content="Continue"
-                Click="ContinueButton_Click"
-                TabIndex="1"
-                HorizontalAlignment="Left"
-                AutomationProperties.Name="Continue" />
-            <TextBlock
-                x:Name="StatusText"
-                Text="Ready"
-                Foreground="{ThemeResource Phase1TextBrush}"
-                AutomationProperties.LiveSetting="Polite" />
-        </StackPanel>
+                x:Name="ShellInfoButton"
+                Grid.Column="1"
+                Content="About shell"
+                Padding="12,4"
+                Click="ShellInfoButton_Click"
+                AutomationProperties.Name="Show shell information" />
+        </Grid>
+
+        <NavigationView
+            x:Name="RootNavigationView"
+            Grid.Row="1"
+            IsBackButtonVisible="Visible"
+            IsSettingsVisible="False"
+            PaneDisplayMode="Left"
+            AutomationProperties.Name="Primary navigation">
+            <NavigationView.MenuItems>
+                <NavigationViewItem
+                    x:Name="HomeNavigationItem"
+                    Content="Home"
+                    Tag="home"
+                    AutomationProperties.Name="Home navigation item" />
+                <NavigationViewItem
+                    x:Name="AboutNavigationItem"
+                    Content="About"
+                    Tag="about"
+                    AutomationProperties.Name="About navigation item" />
+            </NavigationView.MenuItems>
+            <Frame
+                x:Name="ContentFrame"
+                IsNavigationStackEnabled="True"
+                AutomationProperties.Name="Page content" />
+        </NavigationView>
     </Grid>
 </Window>

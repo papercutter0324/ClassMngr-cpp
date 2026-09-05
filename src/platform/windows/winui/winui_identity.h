@@ -9,6 +9,9 @@ inline constexpr wchar_t AppUserModelId[] =
 inline constexpr wchar_t SingleInstanceKey[] =
     L"PaperCloud.ClassMngr.WinUI.SingleInstance";
 
+inline constexpr wchar_t ShellStateRegistrySubkey[] =
+    L"Software\\PaperCloud\\ClassMngrWinUI\\Shell";
+
 inline constexpr wchar_t WindowTitle[] =
     L"ClassMngr";
 

@@ -211,9 +211,13 @@ void App::OnLaunched(
         activation,
         L"--phase1-dpi-test"
         );
-    if (smokeTest || inputTest || themeTest || dpiTest)
+    const bool navigationTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase3-navigation-test"
+        );
+    if (smokeTest || inputTest || themeTest || dpiTest || navigationTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -233,6 +237,10 @@ void App::OnLaunched(
             else if (dpiTest)
             {
                 passed = mainWindow->runPhase1DpiChecks();
+            }
+            else if (navigationTest)
+            {
+                passed = mainWindow->runPhase3NavigationChecks();
             }
             scheduleTestExit(m_window, passed);
         };
