@@ -2,7 +2,6 @@
 
 #include "classmngr/engine/open_database.h"
 
-#include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/campus_record_repository.h"
 #include "data/repositories/class_info_repository.h"
@@ -21,18 +20,11 @@
 #include "data/repositories/testing_class_repository.h"
 
 #include <QByteArray>
-#include <QSqlError>
 
 #include <cstddef>
 #include <string_view>
 
-DatabaseSession::DatabaseSession()
-    : m_connectionName(
-        QStringLiteral("classmngr-session-%1")
-            .arg(reinterpret_cast<quintptr>(this), 0, 16)
-        )
-{
-}
+DatabaseSession::DatabaseSession() = default;
 
 DatabaseSession::~DatabaseSession()
 {
@@ -51,95 +43,46 @@ Status DatabaseSession::open(const QString& databasePath)
 
     close();
 
-    // The engine owns file-backed path normalization, directory creation,
-    // migration, and validation before retained repositories are made available.
-    const bool isMemoryDatabase = databasePath == QStringLiteral(":memory:");
-    QString normalizedPath;
-
-    if (isMemoryDatabase)
+    if (databasePath == QStringLiteral(":memory:"))
     {
-        // A separate engine handle cannot share Qt's named in-memory database,
-        // so this remains the explicit compatibility-only path.
-        normalizedPath = databasePath;
-    }
-    else
-    {
-        const QByteArray utf8Path = databasePath.toUtf8();
-        auto engineDatabase = classmngr::engine::OpenDatabase::execute(
-            std::string_view(
-                utf8Path.constData(),
-                static_cast<std::size_t>(utf8Path.size())
+        close();
+        return std::unexpected(
+            QStringLiteral(
+                "In-memory sessions are not owned by DatabaseSession. "
+                "Use classmngr::engine::OpenDatabase::execute(\":memory:\") "
+                "and pass the engine handle to the portable service."
                 )
             );
+    }
 
-        if (!engineDatabase)
-        {
-            const std::string& engineError = engineDatabase.error().message;
-            return std::unexpected(
-                QStringLiteral("Unable to initialize Teacher Profile:\n%1\n\n%2")
-                    .arg(
-                        databasePath,
-                        QString::fromUtf8(
-                            engineError.data(),
-                            static_cast<qsizetype>(engineError.size())
-                            )
+    const QByteArray utf8Path = databasePath.toUtf8();
+    auto engineDatabase = classmngr::engine::OpenDatabase::execute(
+        std::string_view(
+            utf8Path.constData(),
+            static_cast<std::size_t>(utf8Path.size())
+            )
+        );
+
+    if (!engineDatabase)
+    {
+        const std::string& engineError = engineDatabase.error().message;
+        return std::unexpected(
+            QStringLiteral("Unable to initialize Teacher Profile:\n%1\n\n%2")
+                .arg(
+                    databasePath,
+                    QString::fromUtf8(
+                        engineError.data(),
+                        static_cast<qsizetype>(engineError.size())
                         )
-                );
-        }
-
-        const std::string_view enginePath =
-            (*engineDatabase)->databasePath();
-        normalizedPath = QString::fromUtf8(
-            enginePath.data(),
-            static_cast<qsizetype>(enginePath.size())
-            );
-    }
-
-    if (isMemoryDatabase)
-    {
-        m_database = QSqlDatabase::addDatabase(
-            QStringLiteral("QSQLITE"),
-            m_connectionName
-            );
-        m_database.setDatabaseName(normalizedPath);
-
-        if (!m_database.open())
-        {
-            const QString openError = m_database.lastError().text();
-            m_database = QSqlDatabase();
-            QSqlDatabase::removeDatabase(m_connectionName);
-            return std::unexpected(
-                QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
-                    .arg(normalizedPath, openError)
-                );
-        }
-    }
-
-    m_databasePath = normalizedPath;
-
-    if (isMemoryDatabase)
-    {
-        const Status schemaStatus = DatabaseSchemaManager::ensureSchema(
-            m_database
-            );
-        if (!schemaStatus)
-        {
-            const QString schemaError = schemaStatus.error();
-            close();
-            return std::unexpected(
-                QStringLiteral(
-                    "Unable to initialize Teacher Profile:\n%1\n\n%2"
                     )
-                    .arg(normalizedPath, schemaError)
-                );
-        }
-
-        // Qt's named in-memory connection cannot be shared with the portable
-        // engine. Keep this mode isolated for legacy SQL compatibility rather
-        // than constructing repositories that would point at independent
-        // in-memory databases (or silently fail to open them).
-        return {};
+            );
     }
+
+    const std::string_view enginePath = (*engineDatabase)->databasePath();
+    m_databasePath = QString::fromUtf8(
+        enginePath.data(),
+        static_cast<qsizetype>(enginePath.size())
+        );
 
     m_settingsRepository = std::make_unique<SettingsRepository>(m_databasePath);
     m_campusRecordRepository = std::make_unique<CampusRecordRepository>(m_databasePath);
@@ -182,35 +125,12 @@ void DatabaseSession::close()
     m_rosterRepository.reset();
     m_speakingEvalRepository.reset();
 
-    if (m_database.isOpen())
-    {
-        m_database.close();
-    }
-    m_database = QSqlDatabase();
-
-    if (QSqlDatabase::contains(m_connectionName))
-    {
-        QSqlDatabase::removeDatabase(m_connectionName);
-    }
     m_databasePath.clear();
 }
 
 bool DatabaseSession::isOpen() const
 {
-    if (m_databasePath.isEmpty())
-    {
-        return false;
-    }
-
-    if (m_databasePath == QStringLiteral(":memory:"))
-    {
-        return m_database.isValid() && m_database.isOpen();
-    }
-
-    // File-backed opens are owned by the portable engine repositories. The
-    // Qt connection is created only when a legacy compatibility caller asks
-    // for it.
-    return true;
+    return !m_databasePath.isEmpty();
 }
 
 bool DatabaseSession::isEngineBacked() const
@@ -221,66 +141,6 @@ bool DatabaseSession::isEngineBacked() const
 QString DatabaseSession::databasePath() const
 {
     return m_databasePath;
-}
-
-QSqlDatabase DatabaseSession::compatibilityDatabase() const
-{
-    if (!ensureCompatibilityDatabase())
-    {
-        return {};
-    }
-
-    return m_database;
-}
-
-bool DatabaseSession::ensureCompatibilityDatabase() const
-{
-    if (m_databasePath.isEmpty())
-    {
-        return false;
-    }
-
-    if (m_database.isValid() && m_database.isOpen())
-    {
-        return true;
-    }
-
-    if (m_database.isValid())
-    {
-        m_database.close();
-        m_database = QSqlDatabase();
-    }
-    if (QSqlDatabase::contains(m_connectionName))
-    {
-        QSqlDatabase::removeDatabase(m_connectionName);
-    }
-
-    m_database = QSqlDatabase::addDatabase(
-        QStringLiteral("QSQLITE"),
-        m_connectionName
-        );
-    m_database.setDatabaseName(m_databasePath);
-    if (!m_database.open())
-    {
-        m_database = QSqlDatabase();
-        QSqlDatabase::removeDatabase(m_connectionName);
-        return false;
-    }
-
-    if (m_databasePath != QStringLiteral(":memory:"))
-    {
-        const Status foreignKeys =
-            DatabaseSchemaManager::enableForeignKeyEnforcement(m_database);
-        if (!foreignKeys)
-        {
-            m_database.close();
-            m_database = QSqlDatabase();
-            QSqlDatabase::removeDatabase(m_connectionName);
-            return false;
-        }
-    }
-
-    return true;
 }
 
 #define CLASSMNGR_REPOSITORY_ACCESSOR(Type, name, member) \

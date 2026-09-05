@@ -1462,3 +1462,30 @@ Validation for this follow-up:
   repeated full dependency passes and existing MSVC FileTracker contention
   prevent claiming a clean all-target rebuild. Full Qt SQL compatibility-handle
   retirement and the Linux/macOS retained-Qt exit lanes remain open.
+
+## Database ownership cleanup — 2026-09-05
+
+The retained database boundary now has one production owner. `DatabaseSession`
+opens file-backed profiles through `classmngr::engine::OpenDatabase`, retains
+the normalized engine path, and constructs repositories that open the portable
+SQLite database as needed. It no longer owns a Qt SQL connection or invokes the
+Qt schema manager. Exact `:memory:` opens are rejected by `DatabaseSession`;
+headless tests that need memory use an explicit engine `OpenDatabase` handle.
+
+The legacy Qt schema, transaction, and query helpers are now compiled only into
+the `ClassMngrQtSqlTestSupport` test target. Compatibility tests that need
+direct SQL use an explicit, test-owned `QSQLITE` connection, so the production
+session cannot silently combine a Qt connection with independent engine
+repositories.
+
+Validation for this slice:
+
+- `cmake --preset windows-x64-debug` configured and generated successfully.
+- `ClassMngrDataServiceLifecycleTests` rebuilt successfully; the test passed
+  1/1 under x64 Debug.
+- The build output showed `ClassMngrData` without the three quarantined helper
+  sources and `ClassMngrQtSqlTestSupport` with all three helpers.
+- `rg` found no Qt SQL symbols in `database_session.h/.cpp`; the remaining
+  `src/data` Qt SQL references are limited to the explicitly retained
+  compatibility repository overloads and test-only helper implementation.
+- `git diff --check` passed.

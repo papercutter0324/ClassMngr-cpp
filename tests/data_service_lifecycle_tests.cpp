@@ -1,7 +1,8 @@
 #include "data/data_service.h"
-#include "data/database/database_schema_manager.h"
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
+#include "classmngr/engine/database_schema.h"
+#include "classmngr/engine/open_database.h"
 #include "core/application_services.h"
 #include "features/my_info/data/personal_details_repository.h"
 
@@ -25,6 +26,58 @@ struct DatabaseIds
     bool testingBlockSaved = false;
     bool rosterSaved = false;
     bool speakingEvaluationSaved = false;
+};
+
+class ScopedQtDatabase final
+{
+public:
+    ScopedQtDatabase(
+        const QString& path,
+        const QString& connectionName
+        )
+        : m_connectionName(connectionName)
+        , m_database(QSqlDatabase::addDatabase(
+              QStringLiteral("QSQLITE"),
+              m_connectionName
+              ))
+    {
+        m_database.setDatabaseName(path);
+        if (m_database.open())
+        {
+            QSqlQuery foreignKeys(m_database);
+            foreignKeys.exec(QStringLiteral("PRAGMA foreign_keys = ON"));
+        }
+    }
+
+    ~ScopedQtDatabase()
+    {
+        if (m_database.isOpen())
+        {
+            m_database.close();
+        }
+        m_database = QSqlDatabase();
+        if (QSqlDatabase::contains(m_connectionName))
+        {
+            QSqlDatabase::removeDatabase(m_connectionName);
+        }
+    }
+
+    ScopedQtDatabase(const ScopedQtDatabase&) = delete;
+    ScopedQtDatabase& operator=(const ScopedQtDatabase&) = delete;
+
+    [[nodiscard]] bool isOpen() const
+    {
+        return m_database.isValid() && m_database.isOpen();
+    }
+
+    [[nodiscard]] QSqlDatabase& database()
+    {
+        return m_database;
+    }
+
+private:
+    QString m_connectionName;
+    QSqlDatabase m_database;
 };
 
 DatabaseIds populateDatabase(
@@ -222,7 +275,7 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
-    void memoryDatabaseIsCompatibilityOnly();
+    void memoryDatabaseRequiresExplicitEngineOwnership();
     void applicationServicesOwnDatabaseFileOperations();
     void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
@@ -280,7 +333,12 @@ void DataServiceLifecycleTests::personalDetailsRepositoryUsesEngineBoundary()
     QVERIFY(repository.saveCampus(QStringLiteral("부산 캠퍼스")));
     QCOMPARE(repository.load().campus, QStringLiteral("부산 캠퍼스"));
 
-    QSqlQuery query(dataService.databaseSession()->compatibilityDatabase());
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-personal-details-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     QVERIFY(query.exec(QStringLiteral(
         "SELECT value FROM app_settings WHERE key='myInfo/name'"
         )));
@@ -427,15 +485,21 @@ void DataServiceLifecycleTests::fileBackedSessionUsesEngineSchemaPipeline()
         QFileInfo(path).absoluteFilePath()
         );
 
-    QSqlQuery versionQuery(session.compatibilityDatabase());
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-engine-schema-query")
+        );
+    QVERIFY(database.isOpen());
+
+    QSqlQuery versionQuery(database.database());
     QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version")));
     QVERIFY(versionQuery.next());
     QCOMPARE(
         versionQuery.value(0).toInt(),
-        DatabaseSchemaManager::LatestSchemaVersion
+        classmngr::engine::DatabaseSchemaManager::LatestSchemaVersion
         );
 
-    QSqlQuery columnQuery(session.compatibilityDatabase());
+    QSqlQuery columnQuery(database.database());
     QVERIFY(columnQuery.exec(QStringLiteral(
         "SELECT preferred_name FROM teachers"
         )));
@@ -449,9 +513,10 @@ void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("class-delete-rollback.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("class-delete-rollback.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     const Result<int> createdClass =
         service.createClass(QStringLiteral("Rollback Class"));
@@ -462,8 +527,12 @@ void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
     info.classId = classId;
     QVERIFY(service.saveClassInfo(info));
 
-    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-class-delete-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     query.prepare(QStringLiteral(
         "INSERT INTO roster_columns (class_id, name, position, width) "
         "VALUES (?, 'English', 0, 180)"
@@ -507,9 +576,10 @@ void DataServiceLifecycleTests
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("teacher-delete-rollback.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("teacher-delete-rollback.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Rollback Teacher");
@@ -524,8 +594,12 @@ void DataServiceLifecycleTests
     info.teacherId = *createdTeacher;
     QVERIFY(service.saveClassInfo(info));
 
-    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-teacher-delete-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_teacher_delete "
         "BEFORE DELETE ON teachers "
@@ -603,12 +677,17 @@ void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("write-failures.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("write-failures.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
-    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-write-failures-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
 
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_setting_write "
@@ -744,9 +823,10 @@ void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("core-read-failures.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("core-read-failures.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Readable Teacher");
@@ -789,8 +869,12 @@ void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
         QStringLiteral("class id %1").arg(*classId + 1000)
         ));
 
-    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-core-read-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     QVERIFY(query.exec(QStringLiteral("DROP TABLE classes")));
 
     const Result<Classroom> failedClass = service.getClassById(*classId);
@@ -824,9 +908,10 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("compound-read-failures.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("compound-read-failures.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     const Result<int> classId = service.createClass(QStringLiteral("Read Contract"));
     QVERIFY(classId);
@@ -856,8 +941,12 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
     QVERIFY(missingSetting);
     QVERIFY(!missingSetting->isValid());
 
-    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-compound-read-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
 
     QVERIFY(query.exec(QStringLiteral("DROP TABLE class_times")));
     const Result<ClassInfo> failedClassInfo = service.loadClassInfo(*classId);
@@ -922,9 +1011,10 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("legacy-write-rollbacks.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("legacy-write-rollbacks.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     const Result<int> createdClass =
         service.createClass(QStringLiteral("Rollback Class"));
@@ -941,8 +1031,12 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     });
     QVERIFY(service.saveClassInfo(originalInfo));
 
-    QSqlDatabase database = service.databaseSession()->compatibilityDatabase();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-legacy-write-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_intensive_time_insert "
         "BEFORE INSERT ON class_intensive_times "
@@ -1149,7 +1243,6 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.open(path).has_value());
     QVERIFY(session.isOpen());
     QCOMPARE(session.databasePath(), path);
-    QVERIFY(session.compatibilityDatabase().isOpen());
     QVERIFY(session.teacherRepository() != nullptr);
     QVERIFY(session.classRepository() != nullptr);
     QVERIFY(session.rosterRepository() != nullptr);
@@ -1164,28 +1257,27 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.speakingEvalRepository() == nullptr);
 }
 
-void DataServiceLifecycleTests::memoryDatabaseIsCompatibilityOnly()
+void DataServiceLifecycleTests::memoryDatabaseRequiresExplicitEngineOwnership()
 {
     DatabaseSession session;
 
-    QVERIFY(session.open(QStringLiteral(":memory:")).has_value());
-    QVERIFY(session.isOpen());
+    const Status rejected = session.open(QStringLiteral(":memory:"));
+    QVERIFY(!rejected);
+    QVERIFY(!session.isOpen());
     QVERIFY(!session.isEngineBacked());
-    QVERIFY(session.compatibilityDatabase().isOpen());
     QCOMPARE(session.settingsRepository(), nullptr);
-    QCOMPARE(session.classRepository(), nullptr);
-    QCOMPARE(session.calendarEventRepository(), nullptr);
+
+    auto engineDatabase =
+        classmngr::engine::OpenDatabase::execute(":memory:");
+    QVERIFY(engineDatabase);
+    QVERIFY((*engineDatabase)->isOpen());
 
     SettingsService settings(&session);
     QVERIFY(!settings.isAvailable());
 
     ApplicationServices services;
-    QVERIFY(services.openDatabase(QStringLiteral(":memory:")).has_value());
+    QVERIFY(!services.openDatabase(QStringLiteral(":memory:")).has_value());
     QVERIFY(!services.hasOpenDatabase());
-
-    session.close();
-    QVERIFY(!session.isOpen());
-    QVERIFY(!session.isEngineBacked());
 }
 
 void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()

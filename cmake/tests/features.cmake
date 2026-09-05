@@ -2,8 +2,6 @@ qt_add_executable(ClassMngrClassTransferTests
         tests/class_transfer_tests.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/data/data_service.cpp
-        src/data/database/database_schema_manager.cpp
-        src/data/database/database_transaction.cpp
         src/data/repositories/calendar_event_repository.cpp
         src/data/repositories/campus_record_repository.cpp
         src/data/repositories/class_info_repository.cpp
@@ -85,8 +83,6 @@ qt_add_executable(ClassMngrClassTransferTests
 
     qt_add_executable(ClassMngrScheduleImportTests
         tests/schedule_import_tests.cpp
-        src/data/database/database_schema_manager.cpp
-        src/data/database/database_transaction.cpp
         src/data/repositories/class_info_repository.cpp
         src/data/repositories/class_repository.cpp
         src/data/repositories/schedule_import_repository.cpp
@@ -123,8 +119,6 @@ qt_add_executable(ClassMngrClassTransferTests
 
     qt_add_executable(ClassMngrTeacherImportTests
         tests/teacher_import_tests.cpp
-        src/data/database/database_schema_manager.cpp
-        src/data/database/database_transaction.cpp
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/teacher_import_repository.cpp
         src/features/calendar/calendar_workbook_reader.cpp

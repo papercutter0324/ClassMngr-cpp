@@ -887,9 +887,10 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
     QVERIFY(directory.isValid());
 
     DataService dataService;
-    QVERIFY(dataService.openDatabase(
-        directory.filePath(QStringLiteral("validation.db"))
-        ));
+    const QString path = directory.filePath(
+        QStringLiteral("validation.db")
+        );
+    QVERIFY(dataService.openDatabase(path));
 
     TeacherService teachers(dataService.databaseSession());
     Teacher invalidTeacher;
@@ -905,14 +906,26 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
     const Result<int> createdTeacher = teachers.create(validTeacher);
     QVERIFY(createdTeacher);
 
-    QSqlQuery legacyTeacherUpdate(dataService.databaseSession()->compatibilityDatabase());
-    legacyTeacherUpdate.prepare(QStringLiteral(
-        "UPDATE teachers SET internet_type=?, projection_type=? WHERE id=?"
-        ));
-    legacyTeacherUpdate.addBindValue(QStringLiteral("Satellite"));
-    legacyTeacherUpdate.addBindValue(QStringLiteral("Laser"));
-    legacyTeacherUpdate.addBindValue(*createdTeacher);
-    QVERIFY(!legacyTeacherUpdate.exec());
+    const QString connectionName = QUuid::createUuid().toString();
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery legacyTeacherUpdate(database);
+        legacyTeacherUpdate.prepare(QStringLiteral(
+            "UPDATE teachers SET internet_type=?, projection_type=? WHERE id=?"
+            ));
+        legacyTeacherUpdate.addBindValue(QStringLiteral("Satellite"));
+        legacyTeacherUpdate.addBindValue(QStringLiteral("Laser"));
+        legacyTeacherUpdate.addBindValue(*createdTeacher);
+        QVERIFY(!legacyTeacherUpdate.exec());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
 
     const Result<Teacher> storedTeacher = teachers.teacher(*createdTeacher);
     QVERIFY(storedTeacher);

@@ -2,7 +2,6 @@
 
 #include "core/result.h"
 
-#include <QSqlDatabase>
 #include <QString>
 
 #include <memory>
@@ -24,10 +23,10 @@ class TeacherRepository;
 class TestingBlockRepository;
 class TestingClassRepository;
 
-// Qt SQL compatibility session around the portable engine database pipeline.
-// File-backed opens are preflighted, migrated, and validated by the engine;
-// the Qt connection and repositories remain an explicitly temporary adapter
-// boundary for callers that have not migrated to engine services yet.
+// Session around the portable engine database pipeline. File-backed opens are
+// normalized, migrated, and validated by the engine before retained Qt-facing
+// repositories are made available. Qt SQL compatibility fixtures must open
+// their own explicit connection; the session does not own a Qt connection.
 class DatabaseSession final
 {
 public:
@@ -41,16 +40,8 @@ public:
     void close();
 
     [[nodiscard]] bool isOpen() const;
-    // A :memory: session is retained only for legacy Qt SQL compatibility.
-    // It intentionally has no engine repository adapters; headless engine
-    // callers must own an OpenDatabase::execute(":memory:") handle instead.
     [[nodiscard]] bool isEngineBacked() const;
     [[nodiscard]] QString databasePath() const;
-    // Compatibility-only access for legacy Qt SQL tests and adapters that
-    // still need to inspect the retained connection. Product workflows must
-    // use the engine-backed repositories/services instead. For :memory: this
-    // is the only supported database handle.
-    [[nodiscard]] QSqlDatabase compatibilityDatabase() const;
 
     SettingsRepository* settingsRepository() const;
     CampusRecordRepository* campusRecordRepository() const;
@@ -70,11 +61,7 @@ public:
     SpeakingEvalRepository* speakingEvalRepository() const;
 
 private:
-    [[nodiscard]] bool ensureCompatibilityDatabase() const;
-
     QString m_databasePath;
-    QString m_connectionName;
-    mutable QSqlDatabase m_database;
 
     std::unique_ptr<SettingsRepository> m_settingsRepository;
     std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;

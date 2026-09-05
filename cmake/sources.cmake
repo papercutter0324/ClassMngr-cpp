@@ -37,6 +37,12 @@ function(classmngr_add_production_objects target directory)
         "${PROJECT_SOURCE_DIR}/${directory}/*.ui"
     )
 
+    if(target STREQUAL "ClassMngrData")
+        list(FILTER sources EXCLUDE REGEX
+            "(database_schema_manager|database_transaction|sql_query_utils)[.]cpp$"
+        )
+    endif()
+
     add_library("${target}" OBJECT ${sources})
     target_link_libraries("${target}"
         PRIVATE
@@ -52,6 +58,19 @@ endfunction()
 
 classmngr_add_production_objects(ClassMngrCore src/core)
 classmngr_add_production_objects(ClassMngrData src/data)
+
+if(BUILD_TESTING)
+    add_library(ClassMngrQtSqlTestSupport STATIC
+        "${PROJECT_SOURCE_DIR}/src/data/database/database_schema_manager.cpp"
+        "${PROJECT_SOURCE_DIR}/src/data/database/database_transaction.cpp"
+        "${PROJECT_SOURCE_DIR}/src/data/database/sql_query_utils.cpp"
+    )
+    target_link_libraries(ClassMngrQtSqlTestSupport
+        PRIVATE
+            ClassMngrQtBuildSettings
+    )
+endif()
+
 classmngr_add_production_objects(ClassMngrDomain src/domain)
 classmngr_add_production_objects(ClassMngrUiShared src/ui)
 classmngr_add_production_objects(ClassMngrFeatures src/features)

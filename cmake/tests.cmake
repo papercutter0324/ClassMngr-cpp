@@ -142,6 +142,11 @@ function(classmngr_finalize_test_targets)
             continue()
         endif()
 
+        target_link_libraries("${test_name}"
+            PRIVATE
+                ClassMngrQtSqlTestSupport
+        )
+
         get_target_property(target_qml_module_uri
             "${test_name}" QT_QML_MODULE_URI
         )

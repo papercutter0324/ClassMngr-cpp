@@ -275,33 +275,34 @@ the Phase 3 deadline.
 
 ### P2-R05 — Retire the remaining Qt SQL compatibility path
 
-**Status (2026-09-05): Compatibility boundary reduced; wider Qt SQL retirement
-open.** CalendarEventCache already reads through the engine service. Ordinary
-file-backed DatabaseSession opens now avoid an eager Qt SQL connection, and
-exact `:memory:` sessions are explicitly compatibility-only.
+**Status (2026-09-05): Implemented for production composition; Qt SQL helpers
+are test-only compatibility support.** CalendarEventCache reads through the
+engine service, DatabaseSession file-backed opens are fully engine-owned, and
+exact `:memory:` ownership is explicit.
 
 - [x] Migrate retained database consumers, including the asynchronous
   `CalendarEventCache`, to engine `SqliteDatabase`/service access, or isolate
   them behind an explicitly temporary adapter boundary.
-- [ ] Retire `DatabaseSession::compatibilityDatabase()` and the remaining Qt
-  schema/transaction helpers once compatibility tests have moved to the engine
-  path. `DataService::save()` and `ApplicationServices::saveDatabase()` are
+- [x] Retire `DatabaseSession::compatibilityDatabase()` and quarantine the
+  remaining Qt schema/transaction/query helpers in a test-only compatibility
+  target. `DataService::save()` and `ApplicationServices::saveDatabase()` are
   currently no-ops; confirm that no production workflow relies on them.
 - [x] Define exact `:memory:` ownership: make it a shared engine-backed test
   mode, or document and isolate it as a compatibility-only path. It must not
   mix one Qt in-memory database with independent repository databases.
-- [ ] Confirm that file-backed open, migration, CRUD, rollback, and cache
+- [x] Confirm that file-backed open, migration, CRUD, rollback, and cache
   reads no longer depend on a Qt SQL connection or duplicate schema logic.
 
-Evidence: `src/data/database/database_session.h/.cpp` now creates the Qt
-`QSqlDatabase` connection lazily only when `compatibilityDatabase()` is called.
-File-backed repositories remain engine-backed, while the compatibility handle
-is explicitly temporary. Exact `:memory:` opens retain only the Qt schema
-compatibility connection and create no engine repository adapters; the
-headless engine mode remains `OpenDatabase::execute(":memory:")`. The
-calendar cache reads through the engine service. Retiring the compatibility
-handle and consolidating the retained repositories onto one engine ownership
-model remain open.
+Evidence: `DatabaseSession` no longer owns a `QSqlDatabase` or Qt schema
+manager. File-backed opens call `OpenDatabase`, then construct repositories
+against the normalized engine path. Exact `:memory:` opens are rejected by the
+session with an explicit instruction to use
+`OpenDatabase::execute(":memory:")` for headless engine ownership. The former
+Qt schema, transaction, and query helpers are compiled only into
+`ClassMngrQtSqlTestSupport`, and lifecycle tests use explicit test-owned Qt
+connections for compatibility fixtures. The calendar cache reads through the
+engine service; the remaining Qt repository constructors are compatibility
+adapters and are not part of production composition.
 
 ### P2-R06 — Make platform-service contracts live at engine boundaries
 

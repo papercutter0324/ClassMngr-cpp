@@ -21,7 +21,6 @@
 
 #include <QList>
 #include <QPair>
-#include <QSqlDatabase>
 #include <QString>
 #include <QVariantMap>
 
