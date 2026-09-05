@@ -387,23 +387,25 @@ runtime-tested reports and the aggregate is non-red.
 
 ### P2-R08 — Remove or quarantine superseded Qt validation helpers
 
-**Status (2026-09-04): Production quarantine implemented; compatibility test validation pending.**
-Committed as `6a9ec28`. The helpers are no longer part of production domain
-linkage and are retained only for the legacy shared-policy test target.
+**Status (2026-09-05): Complete; source audit and compatibility test passed.**
+The helpers are no longer part of production domain linkage and are retained
+only for the explicitly named legacy shared-policy test target.
 
-- [ ] Confirm the source audit remains clean for the apparently unused
+- [x] Confirm the source audit remains clean for the apparently unused
   `SharedValidation` and `ScheduleValueParser` APIs. Remove them or mark them
   compatibility-only after verifying no generated or external build target
   depends on them.
-- [ ] Keep only Qt validation helpers that translate engine issues or own
+- [x] Keep only Qt validation helpers that translate engine issues or own
   presentation-only policy; do not leave a second live schedule/name rule
   implementation in the Qt domain layer.
 
-Evidence: `src/domain/validation/shared_validation.cpp` is the only caller of
-`src/domain/rules/schedule_value_parser.cpp`, and the current source search
-finds no production call site for `SharedValidation`. The live engine
-equivalents are `ClassTimeValidator`, `RosterValidator`, and
-`SpeakingEvaluationValidator`.
+Evidence: a repository-wide source audit found the two helper APIs only in
+their own implementation, the legacy shared-policy test, and the
+`ClassMngrQtLegacySharedValidation` CMake target. The target is linked only to
+`ClassMngrSharedPolicyTests`; no generated or production target depends on
+the helpers. The live engine equivalents are `ClassTimeValidator`,
+`RosterValidator`, and `SpeakingEvaluationValidator`, and the compatibility
+test passed after the quarantine.
 
 ### P2-R09 — Extract calendar recurrence workflows
 

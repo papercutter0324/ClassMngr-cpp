@@ -1362,6 +1362,21 @@ Validation for this cleanup:
   Qt binary pass is claimed;
 - `git diff --check` passed.
 
+## Superseded Qt validation-helper quarantine — 2026-09-05
+
+The repository-wide source audit found `SharedValidation` and
+`ScheduleValueParser` only in their implementation files, the legacy
+`tests/shared_policy_tests.cpp` coverage, and the explicitly named
+`ClassMngrQtLegacySharedValidation` compatibility target. The production
+`ClassMngrDomain` target does not compile or link these helpers, so the engine
+validators remain the only live schedule/name policy path.
+
+Validation for this slice:
+
+- `ClassMngrSharedPolicyTests` passed 1/1 under x64 Debug.
+- The source audit found no generated, production, or external target
+  reference beyond the compatibility test target; `git diff --check` passed.
+
 ## Speaking-analytics dashboard integration — 2026-09-05
 
 The speaking-evaluation dashboard now has retained-Qt integration evidence in
