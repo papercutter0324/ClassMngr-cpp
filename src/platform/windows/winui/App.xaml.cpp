@@ -215,6 +215,7 @@ void App::OnLaunched(
     m_window = winrt::make<MainWindow>();
     m_window.Title(ClassMngrWinUIIdentity::WindowTitle);
     m_dispatcherQueue = m_window.DispatcherQueue();
+    m_windowClosedToken = m_window.Closed({this, &App::OnWindowClosed});
     m_window.Activate();
 
     const bool smokeTest = ClassMngrWinUILifecycle::hasArgument(
@@ -322,7 +323,7 @@ void App::OnLaunched(
             scheduleTestExit(m_window, passed);
         };
 
-        const bool queued = dpiTest
+        const bool queued = dpiTest || semanticTest
             ? m_window.DispatcherQueue().TryEnqueue(
                 Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
                 runChecks
@@ -433,6 +434,20 @@ void App::OnResuming(
     m_isSuspended = false;
 }
 
+void App::OnWindowClosed(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::WindowEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    // The event source is closing; dropping the token avoids revoking the
+    // handler while it is being dispatched.
+    m_windowClosedToken = {};
+    closeLifecycle();
+    Microsoft::UI::Xaml::Application::Current().Exit();
+}
+
 void App::OnUnhandledException(
     Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::UnhandledExceptionEventArgs const& arguments
@@ -450,6 +465,11 @@ void App::closeLifecycle() noexcept
 {
     try
     {
+        if (m_window && m_windowClosedToken.value != 0)
+        {
+            m_window.Closed(m_windowClosedToken);
+            m_windowClosedToken = {};
+        }
         if (m_instance && m_activationToken.value != 0)
         {
             m_instance.Activated(m_activationToken);

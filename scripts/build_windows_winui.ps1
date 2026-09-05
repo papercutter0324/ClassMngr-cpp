@@ -470,6 +470,23 @@ if ($null -ne $packagingNode) {
     $null = $priConfig.resources.RemoveChild($packagingNode)
 }
 $priConfig.Save($priConfigPath)
+
+# Unpackaged WinUI uses the application PRI as the resource root.  Merge the
+# framework PRIs emitted by MSBuild into that index so XamlControlsResources
+# can resolve WinUI's embedded theme XBF files without package identity.
+$frameworkPriFiles = @(Get-ChildItem `
+    -LiteralPath $outputPath `
+    -File `
+    -Filter '*.pri' |
+    Where-Object { $_.Name -ine 'ClassMngrWinUI.pri' })
+if ($frameworkPriFiles.Count -eq 0) {
+    throw "MSBuild did not emit any framework PRI files into the WinUI stage: $outputPath"
+}
+foreach ($frameworkPriFile in $frameworkPriFiles) {
+    Copy-Item -LiteralPath $frameworkPriFile.FullName `
+        -Destination (Join-Path $winUiResourceDirectory $frameworkPriFile.Name) `
+        -Force
+}
 & $makePriPath @(
     'new',
     '/pr', $winUiResourceDirectory,

@@ -12,6 +12,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <coroutine>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -25,6 +26,34 @@ namespace
 
 constexpr std::wstring_view homePageId = L"home";
 constexpr std::wstring_view aboutPageId = L"about";
+
+struct ResumeOnDispatcherQueue
+{
+    winrt::Microsoft::UI::Dispatching::DispatcherQueue dispatcher;
+    winrt::Microsoft::UI::Dispatching::DispatcherQueuePriority priority;
+
+    [[nodiscard]] bool await_ready() const noexcept
+    {
+        return false;
+    }
+
+    void await_suspend(std::coroutine_handle<> continuation) const
+    {
+        if (!dispatcher.TryEnqueue(
+                priority,
+                [continuation]() noexcept {
+                    continuation.resume();
+                }
+                ))
+        {
+            throw winrt::hresult_illegal_method_call();
+        }
+    }
+
+    void await_resume() const noexcept
+    {
+    }
+};
 
 struct PersistedShellState
 {
@@ -454,8 +483,7 @@ bool MainWindow::runPhase3NavigationChecks()
         && static_cast<bool>(m_contentFrame)
         && m_contentFrame.IsNavigationStackEnabled()
         && m_contentFrame.CacheSize() >= 2
-        && static_cast<bool>(m_shellInfoButton)
-        && static_cast<bool>(m_contentFrame.XamlRoot());
+        && static_cast<bool>(m_shellInfoButton);
     if (!shellReady)
     {
         return false;
@@ -568,16 +596,37 @@ MainWindow::runPhase3SemanticChecks()
         navigateTo(aboutPageId);
         const bool aboutPageReady = m_currentPageId == aboutPageId;
         navigateTo(homePageId);
+        if (aboutPageReady)
+        {
+            // Navigation creates the Home controls synchronously, but they do
+            // not become focusable until the next dispatcher turn applies the
+            // pending layout. Keep the focus assertion meaningful by waiting
+            // for that UI turn rather than treating an unattached control as
+            // a focus failure.
+            co_await ResumeOnDispatcherQueue{
+                DispatcherQueue(),
+                Microsoft::UI::Dispatching::DispatcherQueuePriority::Low
+                };
+        }
         if (aboutPageReady && ensureHomePage() && m_nameTextBox.XamlRoot())
         {
             const bool focusRequested = m_nameTextBox.Focus(
                 Microsoft::UI::Xaml::FocusState::Programmatic
                 );
-            const auto focusedElement =
-                Microsoft::UI::Xaml::Input::FocusManager::GetFocusedElement(
-                    m_nameTextBox.XamlRoot()
-                    );
-            focusReady = focusRequested && focusedElement == m_nameTextBox;
+            if (focusRequested)
+            {
+                // Focus is committed by the XAML focus manager after the
+                // request returns. Observe the manager on a later UI turn.
+                co_await ResumeOnDispatcherQueue{
+                    DispatcherQueue(),
+                    Microsoft::UI::Dispatching::DispatcherQueuePriority::Low
+                    };
+                const auto focusedElement =
+                    Microsoft::UI::Xaml::Input::FocusManager::GetFocusedElement(
+                        m_nameTextBox.XamlRoot()
+                        );
+                focusReady = focusedElement == m_nameTextBox;
+            }
         }
     }
 
@@ -1265,13 +1314,14 @@ void MainWindow::showDialog(
     std::function<void(ClassMngrWinUIDialogs::DialogOutcome)> completion
     )
 {
-    if (m_ownedDialog || !m_contentFrame || !m_contentFrame.XamlRoot())
+    const auto xamlRoot = RootGrid().XamlRoot();
+    if (m_ownedDialog || !m_contentFrame || !xamlRoot)
     {
         return;
     }
 
     auto dialog = Microsoft::UI::Xaml::Controls::ContentDialog();
-    dialog.XamlRoot(m_contentFrame.XamlRoot());
+    dialog.XamlRoot(xamlRoot);
     dialog.Title(winrt::box_value(title));
     dialog.Content(winrt::box_value(content));
     dialog.PrimaryButtonText(primaryText);

@@ -35,6 +35,10 @@ private:
         Windows::Foundation::IInspectable const& sender,
         Windows::Foundation::IInspectable const& arguments
         );
+    void OnWindowClosed(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::WindowEventArgs const& arguments
+        );
     void OnUnhandledException(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::UnhandledExceptionEventArgs const& arguments
@@ -48,6 +52,7 @@ private:
     winrt::event_token m_activationToken{};
     winrt::event_token m_suspendingToken{};
     winrt::event_token m_resumingToken{};
+    winrt::event_token m_windowClosedToken{};
     winrt::event_token m_unhandledExceptionToken{};
     bool m_isSuspended{};
 };
