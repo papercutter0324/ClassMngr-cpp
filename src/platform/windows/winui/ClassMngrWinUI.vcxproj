@@ -151,6 +151,7 @@
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="winui_dialogs.h" />
     <ClInclude Include="winui_view_model.h" />
     <ClInclude Include="winui_lifecycle.h" />
     <ClInclude Include="winui_identity.h" />
@@ -192,6 +193,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="winui_view_model.cpp" />
+    <ClCompile Include="winui_dialogs.cpp" />
     <ClCompile Include="winui_lifecycle.cpp" />
     <ClCompile Include="winui_localization.cpp" />
     <ClCompile Include="winui_platform_services.cpp" />

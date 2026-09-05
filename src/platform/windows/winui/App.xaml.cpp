@@ -244,10 +244,14 @@ void App::OnLaunched(
         activation,
         L"--phase3-localization-test"
         );
+    const bool dialogTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase3-dialog-test"
+        );
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
-        || viewModelTest || localizationTest)
+        || viewModelTest || localizationTest || dialogTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -283,6 +287,10 @@ void App::OnLaunched(
             else if (localizationTest)
             {
                 passed = mainWindow->runPhase3LocalizationChecks();
+            }
+            else if (dialogTest)
+            {
+                passed = mainWindow->runPhase3DialogChecks();
             }
             scheduleTestExit(m_window, passed);
         };

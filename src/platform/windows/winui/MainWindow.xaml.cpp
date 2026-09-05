@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -68,6 +69,21 @@ winrt::Windows::Foundation::IAsyncAction completedPhase3Work(
 {
     static_cast<void>(cancellation);
     co_return;
+}
+
+winrt::Windows::Foundation::IAsyncAction phase3PresentationWork(
+    classmngr::engine::CancellationToken const& cancellation
+    )
+{
+    using namespace std::chrono_literals;
+
+    co_await winrt::resume_after(250ms);
+    if (cancellation.isCancellationRequested())
+    {
+        co_return;
+    }
+
+    co_await winrt::resume_after(250ms);
 }
 
 bool readRegistryString(
@@ -514,6 +530,39 @@ bool MainWindow::runPhase3LocalizationChecks()
             != WinUILocalizer::makeResourceId(actionContext, L"about");
 }
 
+bool MainWindow::runPhase3DialogChecks()
+{
+    if (!ensureHomePage() || !ClassMngrWinUIDialogs::runDialogContractChecks()
+        || !m_homeViewModel || !m_progressRing || !m_cancelButton
+        || !m_validationSummaryText || !m_unsavedChangesButton)
+    {
+        return false;
+    }
+
+    classmngr::engine::ValidationResult validation;
+    validation.add(classmngr::engine::ValidationIssue{
+        "required",
+        "name",
+        classmngr::engine::ValidationSeverity::Error,
+        0,
+        0
+        });
+    presentValidationSummary(validation);
+    const bool validationPresented = m_homeViewModel->HasValidationErrors()
+        && std::wstring_view(
+               m_validationSummaryText.Text().c_str(),
+               m_validationSummaryText.Text().size()
+               ).find(L"code=required") != std::wstring_view::npos;
+
+    m_homeViewModel->ClearValidation();
+    updateHomePresentation();
+    return validationPresented
+        && !m_progressRing.IsActive()
+        && !m_cancelButton.IsEnabled()
+        && m_unsavedChangesButton.IsTabStop()
+        && m_validationSummaryText.Text() == L"No validation issues.";
+}
+
 Windows::Foundation::IAsyncOperation<bool>
 MainWindow::runPhase3ViewModelChecks()
 {
@@ -638,13 +687,31 @@ void MainWindow::ContinueButton_Click(
     static_cast<void>(sender);
     static_cast<void>(arguments);
 
-    if (m_statusText && m_nameTextBox)
+    if (!m_nameTextBox || !m_homeViewModel || !m_homeCommand)
     {
-        m_statusText.Text(
-            m_nameTextBox.Text().empty()
-                ? L"Enter a name."
-                : L"Continue clicked"
-            );
+        return;
+    }
+
+    if (m_nameTextBox.Text().empty())
+    {
+        classmngr::engine::ValidationResult validation;
+        validation.add(classmngr::engine::ValidationIssue{
+            "required",
+            "name",
+            classmngr::engine::ValidationSeverity::Error,
+            0,
+            0
+            });
+        presentValidationSummary(validation);
+        m_statusText.Text(L"Enter a name.");
+        return;
+    }
+
+    if (m_homeCommand->CanExecute(nullptr))
+    {
+        m_homeViewModel->ClearValidation();
+        m_homeCommand->Execute(nullptr);
+        updateHomePresentation();
     }
 }
 
@@ -656,6 +723,30 @@ void MainWindow::ShellInfoButton_Click(
     static_cast<void>(sender);
     static_cast<void>(arguments);
     showOwnedDialog();
+}
+
+void MainWindow::CancelButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (m_homeCommand)
+    {
+        m_homeCommand->Cancel();
+        updateHomePresentation();
+    }
+}
+
+void MainWindow::UnsavedChangesButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    showUnsavedChangesConfirmation();
 }
 
 void MainWindow::NavigationView_SelectionChanged(
@@ -838,6 +929,7 @@ void MainWindow::populateHomePage(
     m_nameTextBox.InputScope(inputScope);
     m_nameTextBox.TabIndex(0);
     m_nameTextBox.IsTabStop(true);
+    m_nameTextBox.TextChanging({this, &MainWindow::NameTextBox_TextChanged});
     setAutomationName(m_nameTextBox, L"Name input");
 
     m_continueButton = Button();
@@ -848,17 +940,84 @@ void MainWindow::populateHomePage(
     m_continueButton.Click({this, &MainWindow::ContinueButton_Click});
     setAutomationName(m_continueButton, L"Continue");
 
+    m_progressRing = ProgressRing();
+    m_progressRing.IsActive(false);
+    m_progressRing.Visibility(Visibility::Collapsed);
+    m_progressRing.Width(24.0);
+    m_progressRing.Height(24.0);
+    m_progressRing.HorizontalAlignment(HorizontalAlignment::Left);
+    setAutomationName(m_progressRing, L"Operation progress");
+
+    m_cancelButton = Button();
+    m_cancelButton.Content(winrt::box_value(winrt::hstring(L"Cancel operation")));
+    m_cancelButton.TabIndex(2);
+    m_cancelButton.IsTabStop(true);
+    m_cancelButton.IsEnabled(false);
+    m_cancelButton.HorizontalAlignment(HorizontalAlignment::Left);
+    m_cancelButton.Click({this, &MainWindow::CancelButton_Click});
+    setAutomationName(m_cancelButton, L"Cancel current operation");
+
     m_statusText = TextBlock();
     m_statusText.Text(L"Ready");
+    m_statusText.TextWrapping(TextWrapping::Wrap);
     setAutomationName(m_statusText, L"Status");
+
+    m_validationSummaryText = TextBlock();
+    m_validationSummaryText.Text(L"No validation issues.");
+    m_validationSummaryText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_validationSummaryText, L"Validation summary");
+
+    m_unsavedChangesButton = Button();
+    m_unsavedChangesButton.Content(
+        winrt::box_value(winrt::hstring(L"Review unsaved changes"))
+        );
+    m_unsavedChangesButton.TabIndex(3);
+    m_unsavedChangesButton.IsTabStop(true);
+    m_unsavedChangesButton.HorizontalAlignment(HorizontalAlignment::Left);
+    m_unsavedChangesButton.Click({this, &MainWindow::UnsavedChangesButton_Click});
+    setAutomationName(m_unsavedChangesButton, L"Review unsaved changes");
+
+    m_homeViewModel = winrt::make_self<ObservableViewModel>();
+    const auto command = winrt::make_self<AsyncCommand>(
+        DispatcherQueue(),
+        phase3PresentationWork
+        );
+    const auto commandInterface = command.as<Microsoft::UI::Xaml::Input::ICommand>();
+    auto weak = get_weak();
+    m_homeCommandStateToken = commandInterface.CanExecuteChanged(
+        [weak](
+            Windows::Foundation::IInspectable const&,
+            Windows::Foundation::IInspectable const&
+            ) {
+            if (auto self = weak.get())
+            {
+                self->updateHomePresentation();
+            }
+        }
+        );
+    m_homeCommand = command;
 
     root.Children().Append(title);
     root.Children().Append(m_engineVersionText);
     root.Children().Append(description);
     root.Children().Append(m_nameTextBox);
     root.Children().Append(m_continueButton);
+    root.Children().Append(m_progressRing);
+    root.Children().Append(m_cancelButton);
     root.Children().Append(m_statusText);
+    root.Children().Append(m_validationSummaryText);
+    root.Children().Append(m_unsavedChangesButton);
     page.Content(root);
+}
+
+void MainWindow::NameTextBox_TextChanged(
+    Microsoft::UI::Xaml::Controls::TextBox const& sender,
+    Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    m_dirtyState.markDirty();
 }
 
 void MainWindow::populateAboutPage(
@@ -1007,41 +1166,179 @@ void MainWindow::updateNavigationState()
 
 void MainWindow::showOwnedDialog()
 {
+    showDialog(
+        L"ClassMngr shell",
+        L"This dialog is owned by MainWindow and uses the active XamlRoot.",
+        {},
+        {},
+        L"Close",
+        {}
+        );
+}
+
+void MainWindow::showUnsavedChangesConfirmation()
+{
+    if (!m_dirtyState.isDirty())
+    {
+        if (m_statusText)
+        {
+            m_statusText.Text(L"No unsaved changes.");
+        }
+        return;
+    }
+
+    auto weak = get_weak();
+    showDialog(
+        L"Unsaved changes",
+        L"Choose Save to let the feature save changes, Discard to discard them, or Keep editing to cancel.",
+        L"Save",
+        L"Discard",
+        L"Keep editing",
+        [weak](ClassMngrWinUIDialogs::DialogOutcome outcome) {
+            if (auto self = weak.get())
+            {
+                switch (ClassMngrWinUIDialogs::resolveUnsavedChanges(
+                    self->m_dirtyState,
+                    outcome
+                    ))
+                {
+                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Save:
+                    self->m_statusText.Text(
+                        L"Save requested; changes remain dirty until the feature completes it."
+                        );
+                    break;
+                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Discard:
+                    self->m_dirtyState.markClean();
+                    self->m_statusText.Text(L"Unsaved changes discarded.");
+                    break;
+                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Stay:
+                    self->m_statusText.Text(L"Continuing to edit unsaved changes.");
+                    break;
+                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Proceed:
+                    self->m_statusText.Text(L"No unsaved changes.");
+                    break;
+                }
+            }
+        }
+        );
+}
+
+void MainWindow::showDialog(
+    winrt::hstring const& title,
+    winrt::hstring const& content,
+    winrt::hstring const& primaryText,
+    winrt::hstring const& secondaryText,
+    winrt::hstring const& closeText,
+    std::function<void(ClassMngrWinUIDialogs::DialogOutcome)> completion
+    )
+{
     if (m_ownedDialog || !m_contentFrame || !m_contentFrame.XamlRoot())
     {
         return;
     }
 
-    m_ownedDialog = Microsoft::UI::Xaml::Controls::ContentDialog();
-    m_ownedDialog.XamlRoot(m_contentFrame.XamlRoot());
-    m_ownedDialog.Title(winrt::box_value(winrt::hstring(L"ClassMngr shell")));
-    m_ownedDialog.Content(
-        winrt::box_value(
-            winrt::hstring(
-                L"This dialog is owned by MainWindow and uses the active XamlRoot."
-                )
-            )
+    auto dialog = Microsoft::UI::Xaml::Controls::ContentDialog();
+    dialog.XamlRoot(m_contentFrame.XamlRoot());
+    dialog.Title(winrt::box_value(title));
+    dialog.Content(winrt::box_value(content));
+    dialog.PrimaryButtonText(primaryText);
+    dialog.SecondaryButtonText(secondaryText);
+    dialog.CloseButtonText(closeText);
+    dialog.DefaultButton(
+        primaryText.empty()
+            ? Microsoft::UI::Xaml::Controls::ContentDialogButton::Close
+            : Microsoft::UI::Xaml::Controls::ContentDialogButton::Primary
         );
-    m_ownedDialog.CloseButtonText(L"Close");
-    m_ownedDialog.DefaultButton(
-        Microsoft::UI::Xaml::Controls::ContentDialogButton::Close
-        );
+    m_ownedDialog = dialog;
+    completeOwnedDialog(dialog, std::move(completion));
+}
 
-    auto weak = get_weak();
-    m_ownedDialog.Closed(
-        [weak](
-            Microsoft::UI::Xaml::Controls::ContentDialog const& sender,
-            Microsoft::UI::Xaml::Controls::ContentDialogClosedEventArgs const& arguments
-            ) {
-            static_cast<void>(sender);
-            static_cast<void>(arguments);
-            if (auto self = weak.get())
-            {
-                self->m_ownedDialog = nullptr;
-            }
+winrt::fire_and_forget MainWindow::completeOwnedDialog(
+    Microsoft::UI::Xaml::Controls::ContentDialog dialog,
+    std::function<void(ClassMngrWinUIDialogs::DialogOutcome)> completion
+    )
+{
+    auto lifetime = get_strong();
+    ClassMngrWinUIDialogs::DialogOutcome outcome =
+        ClassMngrWinUIDialogs::DialogOutcome::Cancel;
+    try
+    {
+        const auto result = co_await dialog.ShowAsync();
+        if (result == Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary)
+        {
+            outcome = ClassMngrWinUIDialogs::DialogOutcome::Primary;
         }
+        else if (result
+            == Microsoft::UI::Xaml::Controls::ContentDialogResult::Secondary)
+        {
+            outcome = ClassMngrWinUIDialogs::DialogOutcome::Secondary;
+        }
+    }
+    catch (...)
+    {
+        // Hiding during shell teardown is cancellation, not an error dialog.
+    }
+
+    if (m_ownedDialog == dialog)
+    {
+        m_ownedDialog = nullptr;
+        if (completion)
+        {
+            completion(outcome);
+        }
+    }
+}
+
+void MainWindow::updateHomePresentation()
+{
+    if (!m_homeCommand || !m_progressRing || !m_cancelButton || !m_statusText)
+    {
+        return;
+    }
+
+    const bool running = m_homeCommand->IsRunning();
+    m_progressRing.IsActive(running);
+    m_progressRing.Visibility(
+        running
+            ? Microsoft::UI::Xaml::Visibility::Visible
+            : Microsoft::UI::Xaml::Visibility::Collapsed
         );
-    static_cast<void>(m_ownedDialog.ShowAsync());
+    m_cancelButton.IsEnabled(running);
+    if (running)
+    {
+        m_statusText.Text(
+            m_homeCommand->IsCancellationRequested()
+                ? L"Cancelling operation..."
+                : L"Operation in progress..."
+            );
+    }
+    else if (m_statusText.Text() == L"Operation in progress..."
+        || m_statusText.Text() == L"Cancelling operation...")
+    {
+        m_statusText.Text(L"Operation complete.");
+    }
+
+    if (m_validationSummaryText && m_homeViewModel)
+    {
+        m_validationSummaryText.Text(
+            m_homeViewModel->HasValidationErrors()
+                ? m_homeViewModel->ValidationSummary()
+                : L"No validation issues."
+            );
+    }
+}
+
+void MainWindow::presentValidationSummary(
+    classmngr::engine::ValidationResult const& validation
+    )
+{
+    if (!m_homeViewModel)
+    {
+        return;
+    }
+
+    m_homeViewModel->PresentValidation(validation);
+    updateHomePresentation();
 }
 
 void MainWindow::closeShell() noexcept
@@ -1079,6 +1376,14 @@ void MainWindow::closeShell() noexcept
             m_ownedDialog.Hide();
             m_ownedDialog = nullptr;
         }
+        if (m_homeCommand && m_homeCommandStateToken.value != 0)
+        {
+            m_homeCommand.as<Microsoft::UI::Xaml::Input::ICommand>()
+                .CanExecuteChanged(m_homeCommandStateToken);
+            m_homeCommandStateToken = {};
+        }
+        m_homeCommand = nullptr;
+        m_homeViewModel = nullptr;
         m_contentFrame = nullptr;
         m_navigationView = nullptr;
     }

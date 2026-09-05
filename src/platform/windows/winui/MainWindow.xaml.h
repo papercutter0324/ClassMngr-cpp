@@ -4,6 +4,8 @@
 #include "MainWindow.g.h"
 
 #include "classmngr/engine/semantic_version.h"
+#include "classmngr/engine/validation_result.h"
+#include "winui_dialogs.h"
 #include "winui_localization.h"
 #include "winui_view_model.h"
 
@@ -12,6 +14,7 @@
 
 #include <string>
 #include <string_view>
+#include <functional>
 
 namespace winrt::ClassMngrWinUI::implementation
 {
@@ -27,6 +30,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase1DpiChecks();
     [[nodiscard]] bool runPhase3NavigationChecks();
     [[nodiscard]] bool runPhase3LocalizationChecks();
+    [[nodiscard]] bool runPhase3DialogChecks();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
         runPhase3ViewModelChecks();
 
@@ -35,6 +39,14 @@ struct MainWindow : MainWindowT<MainWindow>
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void ShellInfoButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void CancelButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void UnsavedChangesButton_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
@@ -72,11 +84,32 @@ private:
     void populateAboutPage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
+    void NameTextBox_TextChanged(
+        Microsoft::UI::Xaml::Controls::TextBox const& sender,
+        Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+        );
     void restoreShellState();
     void restoreWindowBounds() noexcept;
     void saveShellState() noexcept;
     void updateNavigationState();
     void showOwnedDialog();
+    void showUnsavedChangesConfirmation();
+    void showDialog(
+        winrt::hstring const& title,
+        winrt::hstring const& content,
+        winrt::hstring const& primaryText,
+        winrt::hstring const& secondaryText,
+        winrt::hstring const& closeText,
+        std::function<void(ClassMngrWinUIDialogs::DialogOutcome)> completion
+        );
+    winrt::fire_and_forget completeOwnedDialog(
+        Microsoft::UI::Xaml::Controls::ContentDialog dialog,
+        std::function<void(ClassMngrWinUIDialogs::DialogOutcome)> completion
+        );
+    void updateHomePresentation();
+    void presentValidationSummary(
+        classmngr::engine::ValidationResult const& validation
+        );
     void closeShell() noexcept;
 
     [[nodiscard]] std::wstring selectedPageId() const;
@@ -93,9 +126,16 @@ private:
     Microsoft::UI::Xaml::Controls::TextBox m_nameTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_continueButton{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_statusText{nullptr};
+    Microsoft::UI::Xaml::Controls::ProgressRing m_progressRing{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_cancelButton{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_validationSummaryText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_unsavedChangesButton{nullptr};
 
     classmngr::engine::SemanticVersion m_engineVersion;
     WinUILocalizer m_localizer;
+    winrt::com_ptr<ObservableViewModel> m_homeViewModel;
+    winrt::com_ptr<AsyncCommand> m_homeCommand;
+    ClassMngrWinUIDialogs::DirtyState m_dirtyState;
     std::wstring m_currentPageId;
     Microsoft::UI::Xaml::Controls::ContentDialog m_ownedDialog{nullptr};
 
@@ -104,6 +144,7 @@ private:
     winrt::event_token m_navigatedToken{};
     winrt::event_token m_activatedToken{};
     winrt::event_token m_closedToken{};
+    winrt::event_token m_homeCommandStateToken{};
     bool m_restoringState{};
     bool m_selectionChanging{};
     bool m_windowBoundsRestored{};
