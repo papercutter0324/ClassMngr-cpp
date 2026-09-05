@@ -9,6 +9,7 @@
 #include <winrt/Microsoft.UI.Xaml.Automation.h>
 
 #include <algorithm>
+#include <atomic>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -58,6 +59,14 @@ std::wstring boxedString(
     {
         return {};
     }
+}
+
+winrt::Windows::Foundation::IAsyncAction completedPhase3Work(
+    classmngr::engine::CancellationToken const& cancellation
+    )
+{
+    static_cast<void>(cancellation);
+    co_return;
 }
 
 bool readRegistryString(
@@ -457,6 +466,122 @@ bool MainWindow::runPhase3NavigationChecks()
 
     navigateTo(homePageId);
     return homeReady && aboutReady && backReady && forwardReady;
+}
+
+Windows::Foundation::IAsyncOperation<bool>
+MainWindow::runPhase3ViewModelChecks()
+{
+    auto lifetime = get_strong();
+    auto viewModel = winrt::make_self<ObservableViewModel>();
+    std::vector<std::wstring> changedProperties;
+    const auto observable = viewModel.as<
+        Microsoft::UI::Xaml::Data::INotifyPropertyChanged>();
+    const auto propertyToken = observable.PropertyChanged(
+        [&changedProperties](
+            Windows::Foundation::IInspectable const&,
+            Microsoft::UI::Xaml::Data::PropertyChangedEventArgs const& arguments
+            ) {
+            changedProperties.emplace_back(
+                arguments.PropertyName().c_str(),
+                arguments.PropertyName().size()
+                );
+        }
+        );
+
+    viewModel->PresentError(classmngr::engine::Error{
+        classmngr::engine::ErrorCode::InvalidArgument,
+        "A test error.",
+        42
+        });
+    classmngr::engine::ValidationResult validation;
+    validation.add(classmngr::engine::ValidationIssue{
+        "required",
+        "name",
+        classmngr::engine::ValidationSeverity::Error,
+        3,
+        1
+        });
+    viewModel->PresentValidation(validation);
+
+    const auto contains = [](winrt::hstring const& value, std::wstring_view text) {
+        return std::wstring_view(value.c_str(), value.size()).find(text)
+            != std::wstring_view::npos;
+    };
+    const bool presentationReady = viewModel->HasError()
+        && contains(viewModel->ErrorMessage(), L"invalid-argument")
+        && contains(viewModel->ErrorMessage(), L"native-code=42")
+        && viewModel->HasValidationErrors()
+        && contains(viewModel->ValidationSummary(), L"code=required")
+        && contains(viewModel->ValidationSummary(), L"field=name")
+        && changedProperties.size() >= 4;
+    observable.PropertyChanged(propertyToken);
+    if (!presentationReady)
+    {
+        co_return false;
+    }
+
+    struct CommandCheckState
+    {
+        winrt::handle completion{CreateEventW(nullptr, TRUE, FALSE, nullptr)};
+        std::atomic_bool workInvoked{};
+        std::atomic_bool completionReady{};
+        std::atomic_uint32_t stateChanges{};
+    };
+    auto commandState = std::make_shared<CommandCheckState>();
+    if (!commandState->completion)
+    {
+        co_return false;
+    }
+
+    AsyncCommand::AsyncWork work = [commandState](
+        classmngr::engine::CancellationToken const& cancellation
+        ) {
+        commandState->workInvoked.store(true, std::memory_order_relaxed);
+        return completedPhase3Work(cancellation);
+    };
+    auto command = winrt::make_self<AsyncCommand>(
+        DispatcherQueue(),
+        std::move(work)
+        );
+    const auto commandInterface = command.as<Microsoft::UI::Xaml::Input::ICommand>();
+    const auto weakCommand = command->get_weak();
+    const auto commandToken = commandInterface.CanExecuteChanged(
+        [commandState, weakCommand](
+            Windows::Foundation::IInspectable const&,
+            Windows::Foundation::IInspectable const&
+            ) {
+            commandState->stateChanges.fetch_add(1, std::memory_order_relaxed);
+            if (auto currentCommand = weakCommand.get();
+                currentCommand && !currentCommand->IsRunning())
+            {
+                commandState->completionReady.store(
+                    currentCommand->CanExecute(nullptr)
+                        && commandState->stateChanges.load(
+                            std::memory_order_relaxed
+                            ) >= 2,
+                    std::memory_order_relaxed
+                    );
+                SetEvent(commandState->completion.get());
+            }
+        }
+        );
+
+    const bool initiallyEnabled = commandInterface.CanExecute(nullptr);
+    commandInterface.Execute(nullptr);
+    const bool runningAfterExecute = command->IsRunning()
+        && !commandInterface.CanExecute(nullptr)
+        && commandState->workInvoked.load(std::memory_order_relaxed);
+    command->Cancel();
+    const bool cancellationRequested = command->IsCancellationRequested();
+    if (!initiallyEnabled || !runningAfterExecute || !cancellationRequested)
+    {
+        commandInterface.CanExecuteChanged(commandToken);
+        co_return false;
+    }
+
+    co_await winrt::resume_on_signal(commandState->completion.get());
+    static_cast<void>(commandToken);
+    co_return commandState->completionReady.load(std::memory_order_relaxed);
 }
 
 void MainWindow::ContinueButton_Click(

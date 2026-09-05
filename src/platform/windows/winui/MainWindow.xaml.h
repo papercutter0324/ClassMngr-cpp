@@ -4,6 +4,7 @@
 #include "MainWindow.g.h"
 
 #include "classmngr/engine/semantic_version.h"
+#include "winui_view_model.h"
 
 #include <winrt/Microsoft.UI.Xaml.Navigation.h>
 #include <winrt/Windows.UI.Xaml.Interop.h>
@@ -24,6 +25,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase1ThemeChecks();
     [[nodiscard]] bool runPhase1DpiChecks();
     [[nodiscard]] bool runPhase3NavigationChecks();
+    [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
+        runPhase3ViewModelChecks();
 
     void ContinueButton_Click(
         Windows::Foundation::IInspectable const& sender,

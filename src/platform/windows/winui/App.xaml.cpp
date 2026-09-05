@@ -102,6 +102,23 @@ void scheduleTestExit(
         );
 }
 
+winrt::fire_and_forget completeViewModelTest(
+    winrt::Microsoft::UI::Xaml::Window const& window,
+    winrt::Windows::Foundation::IAsyncOperation<bool> check
+    )
+{
+    bool passed{};
+    try
+    {
+        passed = co_await check;
+    }
+    catch (...)
+    {
+        passed = false;
+    }
+    scheduleTestExit(window, passed);
+}
+
 } // namespace
 
 namespace winrt::ClassMngrWinUI::implementation
@@ -215,9 +232,14 @@ void App::OnLaunched(
         activation,
         L"--phase3-navigation-test"
         );
-    if (smokeTest || inputTest || themeTest || dpiTest || navigationTest)
+    const bool viewModelTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase3-view-model-test"
+        );
+    if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
+        || viewModelTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -241,6 +263,14 @@ void App::OnLaunched(
             else if (navigationTest)
             {
                 passed = mainWindow->runPhase3NavigationChecks();
+            }
+            else if (viewModelTest)
+            {
+                completeViewModelTest(
+                    m_window,
+                    mainWindow->runPhase3ViewModelChecks()
+                    );
+                return;
             }
             scheduleTestExit(m_window, passed);
         };
