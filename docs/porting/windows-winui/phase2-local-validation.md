@@ -1362,6 +1362,27 @@ Validation for this cleanup:
   Qt binary pass is claimed;
 - `git diff --check` passed.
 
+## Speaking-analytics dashboard integration — 2026-09-05
+
+The speaking-evaluation dashboard now has retained-Qt integration evidence in
+addition to the headless engine coverage. The Qt service converts the roster
+and evaluation inputs to the engine contract and maps the typed dashboard
+result back to Qt models. `ClassAnalyticsPage` retains selection, localized
+labels, chart/model updates, and rendering; it does not duplicate the
+selection, aggregation, roster-filtering, class-shape, or year-to-date policy.
+
+Validation for this slice:
+
+- `ClassMngrEngineSpeakingAnalyticsTests` built successfully and passed 1/1
+  under x64 Debug.
+- `ClassMngrSpeakingAnalyticsTests` built successfully and passed 1/1 under
+  x64 Debug.
+- `ClassMngrClassAnalyticsRankingModelTests` built successfully and passed
+  1/1 under x64 Debug.
+- A source audit of `feature_services.cpp` and `class_analytics_page.cpp`
+  confirmed the retained boundary is input conversion, localization, and
+  rendering; `git diff --check` passed.
+
 ## Teacher-import policy boundary — 2026-09-05
 
 Teacher-import workbook decoding and source-row diagnostics remain in the Qt

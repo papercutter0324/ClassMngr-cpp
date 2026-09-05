@@ -168,10 +168,10 @@ acceptance evidence listed for that slice.
 
 ### P2-R01 — Extract speaking-evaluation dashboard orchestration
 
-**Status (2026-09-04): Implemented; Qt integration validation pending.**
-Committed as `ff9ac88`. The portable dashboard orchestration and headless
-engine coverage are complete; the retained Qt/WinUI integration build remains
-to be verified.
+**Status (2026-09-05): Complete; headless and retained-Qt integration
+validation passed.** The portable dashboard orchestration and headless engine
+coverage are complete, and the retained Qt service/page boundary now has
+serial x64 Debug build and test evidence.
 
 - [x] Move the policy in
   `SpeakingEvaluationService::analyticsDashboard()` from
@@ -180,18 +180,21 @@ to be verified.
   evaluation iteration, current-roster filtering, current versus historical
   snapshot scope, cross-evaluation aggregation, latest fully-scored
   class-shape selection, and year-to-date point generation.
-- [ ] Verify that the Qt service and `class_analytics_page` remain responsible
+- [x] Verify that the Qt service and `class_analytics_page` remain responsible
   only for database/input conversion, localization, and rendering, then pass
   the retained Qt/WinUI integration build. The headless cases are implemented;
   preserve coverage for empty and partial evaluations, selected versus `All`,
   roster filtering, latest-completed selection, and historical-cohort YTD.
 
 Evidence: `src/engine/include/classmngr/engine/speaking_analytics.h` and
-`src/engine/speaking_analytics.cpp` now expose and implement the dashboard
+`src/engine/speaking_analytics.cpp` expose and implement the dashboard
 orchestration. `src/features/classes/services/speaking_analytics.cpp` and
 `src/app/services/feature_services.cpp` convert Qt inputs and map the engine
-result. The remaining work is retained-adapter integration and full headless
-coverage for the listed cases.
+result. `src/features/classes/ui/class_analytics_page.cpp` selects the
+evaluation, requests the service result, and renders/localizes the returned
+snapshots without reimplementing dashboard policy. The current x64 Debug
+`ClassMngrEngineSpeakingAnalyticsTests`, `ClassMngrSpeakingAnalyticsTests`,
+and `ClassMngrClassAnalyticsRankingModelTests` all pass.
 
 ### P2-R02 — Unify interactive roster and speaking-evaluation validation
 
