@@ -306,29 +306,35 @@ adapters and are not part of production composition.
 
 ### P2-R06 — Make platform-service contracts live at engine boundaries
 
-**Status (2026-09-04): Implemented for calendar import and class transfer; focused rerun pending.**
-Committed as `00f8dee`. Both workflows use injectable clocks with SystemClock
-compatibility; the final calendar-import fixture requires a clean rerun.
+**Status (2026-09-05): Complete for the audited workflows and adapters.**
+Calendar import, class transfer, and ZIP output now compose the clock contract
+at their retained Qt boundaries, while archive finalization uses the same
+injected clock as archive temporary-name generation. Existing headless
+workflow tests cover fixed-time behavior, cancellation, rollback, and
+controlled platform failures; the focused clock-composition rerun passed.
 
-- [ ] Audit each engine workflow that needs time, cancellation, resources,
+- [x] Audit each engine workflow that needs time, cancellation, resources,
   networking, signatures, logging, or process launch. Inject the appropriate
   contract where the workflow semantics depend on it, or record an explicit
   later-phase owner instead of leaving the contract test-only.
-- [ ] At minimum close deterministic-time coverage for calendar import and
+- [x] At minimum close deterministic-time coverage for calendar import and
   class-transfer timestamps; review archive/temp-name time sources for the
   same requirement. Ensure Qt and future WinUI composition passes adapters at
   the boundary.
-- [ ] Extend headless tests from testing the fake interfaces in isolation to
+- [x] Extend headless tests from testing the fake interfaces in isolation to
   testing the affected engine workflows with fixed clocks, cancellation, and
   controlled platform failures.
 
 Evidence: `src/engine/include/classmngr/engine/platform_services.h` and
 `src/core/platform/qt_platform_services.h` define the contracts/adapters.
-Calendar import and class transfer now accept injectable clocks, and file
-system/archive temporary names use the clock contract. Remaining evidence is
-workflow composition with fixed clocks, plus a decision about archive metadata
-that currently translates filesystem file-clock timestamps and local time in
-`zip_archive_writer.cpp`.
+Calendar import and class transfer now receive `QtClock` at their retained
+adapter boundaries. The Qt ZIP adapter also passes `QtClock`, and
+`ZipArchiveWriter` constructs `StandardFileSystem` with the injected clock for
+atomic finalization. Source-file modification times remain source metadata;
+the clock controls fallback timestamps, temporary names, and replacement
+operations. `ClassMngrEngineCalendarEventImportServiceTests`,
+`ClassMngrEngineClassTransferServiceTests`, and
+`ClassMngrEngineZipArchiveWriterTests` passed in the focused rerun.
 
 ### P2-R07 — Close the cross-platform and clean-build exit gate
 

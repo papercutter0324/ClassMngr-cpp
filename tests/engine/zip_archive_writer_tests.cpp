@@ -475,6 +475,37 @@ int main()
             ).has_value(),
         "could not create replacement baseline"
         );
+#ifdef _WIN32
+    std::error_code readOnlyError;
+    fs::permissions(
+        existingArchive,
+        fs::perms::owner_read,
+        fs::perm_options::replace,
+        readOnlyError
+        );
+    passed &= expect(
+        !readOnlyError,
+        "could not make the replacement baseline read-only"
+        );
+#endif
+    FixedClock replacementClock;
+    replacementClock.monotonic = MonotonicTimePoint(
+        std::chrono::milliseconds(789)
+        );
+    passed &= expect(
+        ZipArchiveWriter::writeArchive(
+            pathToUtf8(existingArchive),
+            {{pathToUtf8(secondSource), "replacement.txt"}},
+            replacementClock
+            ).has_value(),
+        "could not replace an existing archive"
+        );
+#ifdef _WIN32
+    passed &= expect(
+        replacementClock.monotonicCalls == 2,
+        "archive finalization ignored the injected clock"
+        );
+#endif
     const auto beforeReplacement = readFile(existingArchive);
     const auto failedReplacement = ZipArchiveWriter::writeArchive(
         pathToUtf8(existingArchive),

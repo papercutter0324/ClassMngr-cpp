@@ -1,5 +1,6 @@
 #include "class_transfer_repository.h"
 
+#include "core/platform/qt_platform_services.h"
 #include "classmngr/engine/class_transfer_service.h"
 #include "classmngr/engine/open_database.h"
 #include "classmngr/engine/sqlite_database.h"
@@ -743,7 +744,8 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         engineClassIds.push_back(classId);
     }
 
-    EngineClassTransferService service(*m_engineDatabase);
+    const classmngr::qt::QtClock clock;
+    EngineClassTransferService service(*m_engineDatabase, clock);
     const classmngr::engine::Result<EngineClassTransferPackage> package =
         service.buildPackage(engineClassIds);
     if (!package)
@@ -779,7 +781,8 @@ Result<ClassImportPreview> ClassTransferRepository::previewImport(
         return std::unexpected(boundaryConversionFailure(operation));
     }
 
-    EngineClassTransferService service(*m_engineDatabase);
+    const classmngr::qt::QtClock clock;
+    EngineClassTransferService service(*m_engineDatabase, clock);
     const classmngr::engine::Result<EngineClassImportPreview> preview =
         service.previewImport(*enginePackage);
     if (!preview)
@@ -810,7 +813,8 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
         return std::unexpected(boundaryConversionFailure(operation));
     }
 
-    EngineClassTransferService service(*m_engineDatabase);
+    const classmngr::qt::QtClock clock;
+    EngineClassTransferService service(*m_engineDatabase, clock);
     const classmngr::engine::Result<EngineClassImportSummary> imported =
         service.importClasses(*enginePackage, *enginePlan);
     if (!imported)

@@ -769,7 +769,7 @@ Status writeArchiveImpl(
         return failure(ErrorCode::Io, ArchiveFinalizeFailedToken);
     }
 
-    const StandardFileSystem fileSystem;
+    const StandardFileSystem fileSystem(clock);
     const Status finalized = fileSystem.replaceFileAtomically(
         pathToUtf8(temporaryPath),
         archivePath

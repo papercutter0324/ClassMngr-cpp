@@ -1362,6 +1362,26 @@ Validation for this cleanup:
   Qt binary pass is claimed;
 - `git diff --check` passed.
 
+## Platform-service workflow composition — 2026-09-05
+
+The retained Qt calendar-import, class-transfer, and ZIP adapters now pass a
+`QtClock` explicitly into their engine workflows. ZIP finalization also uses
+the injected clock when constructing `StandardFileSystem`, so archive
+temporary names and atomic replacement remain deterministic under headless
+tests. Source-file modification times continue to provide archive entry
+metadata; the clock is used only for fallback timestamps and platform
+operations that need generated time values.
+
+Validation for this slice:
+
+- `git diff --check` passed.
+- The focused engine targets for calendar import, class transfer, and ZIP
+  archive writing built successfully with the serial MSVC build settings.
+- The corresponding CTest selection passed 3/3.
+- The broader requested target build was stopped after reproducing the
+  existing MSVC FileTracker/PDB contention in an unrelated UI dependency;
+  no failure in the changed slice was observed.
+
 ## Phase 2 exit-gate continuation — 2026-09-05
 
 The continuation followed the device-handoff order from a fresh build tree.

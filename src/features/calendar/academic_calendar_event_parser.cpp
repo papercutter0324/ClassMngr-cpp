@@ -1,6 +1,7 @@
 #include "academic_calendar_event_parser.h"
 
 #include "calendar_workbook_reader.h"
+#include "core/platform/qt_platform_services.h"
 #include "classmngr/engine/calendar_event_import_service.h"
 
 #include <QByteArray>
@@ -93,10 +94,12 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
     const QStringList& campusCodes
     )
 {
+    const classmngr::qt::QtClock clock;
     const classmngr::engine::CalendarImportResult parsed =
         classmngr::engine::CalendarEventImportService::parse(
             toEngineWorkbook(workbook),
-            toEngineCampusCodes(campusCodes)
+            toEngineCampusCodes(campusCodes),
+            clock
             );
 
     ParsedCalendarImport result;

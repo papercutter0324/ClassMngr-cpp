@@ -1,5 +1,6 @@
 #include "zip_archive_writer.h"
 
+#include "platform/qt_platform_services.h"
 #include "classmngr/engine/zip_archive_writer.h"
 
 #include <QByteArray>
@@ -179,6 +180,7 @@ bool writeArchive(
     QString* errorMessage
     )
 {
+    const classmngr::qt::QtClock clock;
     std::vector<EngineEntry> engineEntries;
     engineEntries.reserve(static_cast<std::size_t>(entries.size()));
     for (const Entry& entry : entries)
@@ -191,7 +193,8 @@ bool writeArchive(
 
     const auto result = classmngr::engine::ZipArchiveWriter::writeArchive(
         toUtf8(archivePath),
-        engineEntries
+        engineEntries,
+        clock
         );
     if (!result)
     {
