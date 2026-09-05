@@ -33,6 +33,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase3DialogChecks();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
         runPhase3ViewModelChecks();
+    [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
+        runPhase3SemanticChecks();
 
     void ContinueButton_Click(
         Windows::Foundation::IInspectable const& sender,

@@ -253,10 +253,15 @@ void App::OnLaunched(
         activation,
         L"--phase3-threading-test"
         );
+    const bool semanticTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase3-semantic-test"
+        );
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
-        || viewModelTest || localizationTest || dialogTest || threadingTest)
+        || viewModelTest || localizationTest || dialogTest || threadingTest
+        || semanticTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -300,6 +305,19 @@ void App::OnLaunched(
             else if (threadingTest)
             {
                 passed = ClassMngrWinUIThreading::runThreadingContractChecks();
+            }
+            else if (semanticTest)
+            {
+                if (!ClassMngrWinUILifecycle::runLifecycleContractChecks())
+                {
+                    scheduleTestExit(m_window, false);
+                    return;
+                }
+                completeViewModelTest(
+                    m_window,
+                    mainWindow->runPhase3SemanticChecks()
+                    );
+                return;
             }
             scheduleTestExit(m_window, passed);
         };

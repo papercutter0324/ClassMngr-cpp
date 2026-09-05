@@ -556,6 +556,44 @@ bool MainWindow::runPhase3DialogChecks()
 }
 
 Windows::Foundation::IAsyncOperation<bool>
+MainWindow::runPhase3SemanticChecks()
+{
+    auto lifetime = get_strong();
+    const bool navigationReady = runPhase3NavigationChecks();
+    const bool inputReady = runPhase1InputChecks();
+
+    bool focusReady = false;
+    if (inputReady)
+    {
+        navigateTo(aboutPageId);
+        const bool aboutPageReady = m_currentPageId == aboutPageId;
+        navigateTo(homePageId);
+        if (aboutPageReady && ensureHomePage() && m_nameTextBox.XamlRoot())
+        {
+            const bool focusRequested = m_nameTextBox.Focus(
+                Microsoft::UI::Xaml::FocusState::Programmatic
+                );
+            const auto focusedElement =
+                Microsoft::UI::Xaml::Input::FocusManager::GetFocusedElement(
+                    m_nameTextBox.XamlRoot()
+                    );
+            focusReady = focusRequested && focusedElement == m_nameTextBox;
+        }
+    }
+
+    const bool resourcesReady = runPhase3LocalizationChecks();
+    const bool dialogsReady = runPhase3DialogChecks();
+    const bool threadingReady = ClassMngrWinUIThreading::runThreadingContractChecks();
+    if (!navigationReady || !inputReady || !focusReady || !resourcesReady
+        || !dialogsReady || !threadingReady)
+    {
+        co_return false;
+    }
+
+    co_return co_await runPhase3ViewModelChecks();
+}
+
+Windows::Foundation::IAsyncOperation<bool>
 MainWindow::runPhase3ViewModelChecks()
 {
     auto lifetime = get_strong();

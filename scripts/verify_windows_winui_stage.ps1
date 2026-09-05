@@ -305,5 +305,9 @@ Invoke-StageSmokeTest `
     -Executable $executablePath `
     -WorkingDirectory $stagePath `
     -Argument '--phase3-threading-test'
+Invoke-StageSmokeTest `
+    -Executable $executablePath `
+    -WorkingDirectory $stagePath `
+    -Argument '--phase3-semantic-test'
 
 Write-Host "Verified WinUI stage ($Platform): $stagePath"

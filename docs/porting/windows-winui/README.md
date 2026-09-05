@@ -127,6 +127,15 @@ settle, capture, close, and release protocol without starting an executable.
 The normal WinUI `ContentDialog` remains owned by `MainWindow` and is included
 in the main-window capture when it is visible.
 
+Validate a capture directory before linking its evidence to a phase record:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File `
+  .\scripts\porting\windows\validate_winui_scenario_artifacts.ps1 `
+  -ArtifactRoot D:\ClassMngrCapture\winui-foundation `
+  -RequirePassed
+```
+
 ## Deferred follow-up evidence
 
 The bootstrap source contains a representative Korean text form and explicit
