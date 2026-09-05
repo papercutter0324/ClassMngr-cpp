@@ -41,10 +41,15 @@ public:
     void close();
 
     [[nodiscard]] bool isOpen() const;
+    // A :memory: session is retained only for legacy Qt SQL compatibility.
+    // It intentionally has no engine repository adapters; headless engine
+    // callers must own an OpenDatabase::execute(":memory:") handle instead.
+    [[nodiscard]] bool isEngineBacked() const;
     [[nodiscard]] QString databasePath() const;
     // Compatibility-only access for legacy Qt SQL tests and adapters that
     // still need to inspect the retained connection. Product workflows must
-    // use the engine-backed repositories/services instead.
+    // use the engine-backed repositories/services instead. For :memory: this
+    // is the only supported database handle.
     [[nodiscard]] QSqlDatabase compatibilityDatabase() const;
 
     SettingsRepository* settingsRepository() const;
@@ -65,9 +70,11 @@ public:
     SpeakingEvalRepository* speakingEvalRepository() const;
 
 private:
+    [[nodiscard]] bool ensureCompatibilityDatabase() const;
+
     QString m_databasePath;
     QString m_connectionName;
-    QSqlDatabase m_database;
+    mutable QSqlDatabase m_database;
 
     std::unique_ptr<SettingsRepository> m_settingsRepository;
     std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;

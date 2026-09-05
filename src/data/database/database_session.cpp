@@ -95,37 +95,52 @@ Status DatabaseSession::open(const QString& databasePath)
             );
     }
 
-    m_database = QSqlDatabase::addDatabase(
-        QStringLiteral("QSQLITE"),
-        m_connectionName
-        );
-    m_database.setDatabaseName(normalizedPath);
-
-    if (!m_database.open())
+    if (isMemoryDatabase)
     {
-        const QString openError = m_database.lastError().text();
-        m_database = QSqlDatabase();
-        QSqlDatabase::removeDatabase(m_connectionName);
-        return std::unexpected(
-            QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
-                .arg(normalizedPath, openError)
+        m_database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            m_connectionName
             );
-    }
+        m_database.setDatabaseName(normalizedPath);
 
-    const Status schemaStatus = isMemoryDatabase
-        ? DatabaseSchemaManager::ensureSchema(m_database)
-        : DatabaseSchemaManager::enableForeignKeyEnforcement(m_database);
-    if (!schemaStatus)
-    {
-        const QString schemaError = schemaStatus.error();
-        close();
-        return std::unexpected(
-            QStringLiteral("Unable to initialize Teacher Profile:\n%1\n\n%2")
-                .arg(normalizedPath, schemaError)
-            );
+        if (!m_database.open())
+        {
+            const QString openError = m_database.lastError().text();
+            m_database = QSqlDatabase();
+            QSqlDatabase::removeDatabase(m_connectionName);
+            return std::unexpected(
+                QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
+                    .arg(normalizedPath, openError)
+                );
+        }
     }
 
     m_databasePath = normalizedPath;
+
+    if (isMemoryDatabase)
+    {
+        const Status schemaStatus = DatabaseSchemaManager::ensureSchema(
+            m_database
+            );
+        if (!schemaStatus)
+        {
+            const QString schemaError = schemaStatus.error();
+            close();
+            return std::unexpected(
+                QStringLiteral(
+                    "Unable to initialize Teacher Profile:\n%1\n\n%2"
+                    )
+                    .arg(normalizedPath, schemaError)
+                );
+        }
+
+        // Qt's named in-memory connection cannot be shared with the portable
+        // engine. Keep this mode isolated for legacy SQL compatibility rather
+        // than constructing repositories that would point at independent
+        // in-memory databases (or silently fail to open them).
+        return {};
+    }
+
     m_settingsRepository = std::make_unique<SettingsRepository>(m_databasePath);
     m_campusRecordRepository = std::make_unique<CampusRecordRepository>(m_databasePath);
     m_teacherRepository = std::make_unique<TeacherRepository>(m_databasePath);
@@ -182,7 +197,25 @@ void DatabaseSession::close()
 
 bool DatabaseSession::isOpen() const
 {
-    return m_database.isValid() && m_database.isOpen();
+    if (m_databasePath.isEmpty())
+    {
+        return false;
+    }
+
+    if (m_databasePath == QStringLiteral(":memory:"))
+    {
+        return m_database.isValid() && m_database.isOpen();
+    }
+
+    // File-backed opens are owned by the portable engine repositories. The
+    // Qt connection is created only when a legacy compatibility caller asks
+    // for it.
+    return true;
+}
+
+bool DatabaseSession::isEngineBacked() const
+{
+    return isOpen() && m_settingsRepository != nullptr;
 }
 
 QString DatabaseSession::databasePath() const
@@ -192,7 +225,62 @@ QString DatabaseSession::databasePath() const
 
 QSqlDatabase DatabaseSession::compatibilityDatabase() const
 {
+    if (!ensureCompatibilityDatabase())
+    {
+        return {};
+    }
+
     return m_database;
+}
+
+bool DatabaseSession::ensureCompatibilityDatabase() const
+{
+    if (m_databasePath.isEmpty())
+    {
+        return false;
+    }
+
+    if (m_database.isValid() && m_database.isOpen())
+    {
+        return true;
+    }
+
+    if (m_database.isValid())
+    {
+        m_database.close();
+        m_database = QSqlDatabase();
+    }
+    if (QSqlDatabase::contains(m_connectionName))
+    {
+        QSqlDatabase::removeDatabase(m_connectionName);
+    }
+
+    m_database = QSqlDatabase::addDatabase(
+        QStringLiteral("QSQLITE"),
+        m_connectionName
+        );
+    m_database.setDatabaseName(m_databasePath);
+    if (!m_database.open())
+    {
+        m_database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(m_connectionName);
+        return false;
+    }
+
+    if (m_databasePath != QStringLiteral(":memory:"))
+    {
+        const Status foreignKeys =
+            DatabaseSchemaManager::enableForeignKeyEnforcement(m_database);
+        if (!foreignKeys)
+        {
+            m_database.close();
+            m_database = QSqlDatabase();
+            QSqlDatabase::removeDatabase(m_connectionName);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 #define CLASSMNGR_REPOSITORY_ACCESSOR(Type, name, member) \
