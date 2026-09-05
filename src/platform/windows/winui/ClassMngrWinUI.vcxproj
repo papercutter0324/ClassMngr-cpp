@@ -119,7 +119,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>$(ClassMngrEngineLibrary);winsqlite3.lib;advapi32.lib;bcrypt.lib;shell32.lib;user32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ClassMngrEngineLibrary);winsqlite3.lib;advapi32.lib;bcrypt.lib;crypt32.lib;dbghelp.lib;shell32.lib;user32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
@@ -155,6 +155,7 @@
     <ClInclude Include="winui_lifecycle.h" />
     <ClInclude Include="winui_identity.h" />
     <ClInclude Include="winui_localization.h" />
+    <ClInclude Include="winui_platform_services.h" />
   </ItemGroup>
 
   <ItemGroup>
@@ -193,6 +194,7 @@
     <ClCompile Include="winui_view_model.cpp" />
     <ClCompile Include="winui_lifecycle.cpp" />
     <ClCompile Include="winui_localization.cpp" />
+    <ClCompile Include="winui_platform_services.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
 

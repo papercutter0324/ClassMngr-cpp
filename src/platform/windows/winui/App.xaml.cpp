@@ -4,6 +4,7 @@
 #include "MainWindow.xaml.h"
 #include "winui_lifecycle.h"
 #include "winui_identity.h"
+#include "winui_platform_services.h"
 
 #include <shellapi.h>
 #include <shobjidl_core.h>
@@ -127,6 +128,9 @@ namespace winrt::ClassMngrWinUI::implementation
 App::App()
 {
     InitializeComponent();
+    static_cast<void>(
+        classmngr::windows::winui::WindowsCrashDiagnostics::install()
+        );
     SetCurrentProcessExplicitAppUserModelID(
         ClassMngrWinUIIdentity::AppUserModelId
         );
