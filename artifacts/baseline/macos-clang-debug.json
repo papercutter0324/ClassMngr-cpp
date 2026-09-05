@@ -1,0 +1,40 @@
+{
+  "recorded_at_utc": "2026-09-05T05:57:17.932029+00:00",
+  "git_commit": "9a6c9c964589df48e6d7071b5def1d289e373011",
+  "git_commit_start": "9a6c9c964589df48e6d7071b5def1d289e373011",
+  "git_commit_end": "9a6c9c964589df48e6d7071b5def1d289e373011",
+  "git_dirty_start": false,
+  "git_dirty_end": false,
+  "source_fingerprint_start": "7b33d979662155e6211a0befa285063f1a0b18bf71de63699892c41bf59dcae5",
+  "source_fingerprint_end": "7b33d979662155e6211a0befa285063f1a0b18bf71de63699892c41bf59dcae5",
+  "source_stable_during_run": true,
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.14.4",
+  "cmake": "cmake version 4.3.3",
+  "preset": "macos-clang-debug",
+  "configuration": null,
+  "parallel_build_jobs": 2,
+  "test_timeout_seconds": 120,
+  "results": {
+    "configure_exit_code": 0,
+    "build_exit_code": 1,
+    "test_exit_code": -1,
+    "tests": null
+  },
+  "duration_seconds": {
+    "configure": 140.378,
+    "clean_build": 506.874,
+    "tests": 0.0
+  },
+  "root_cmake_lines": 353,
+  "application": {
+    "path": null,
+    "size_bytes": null
+  },
+  "compilation": {
+    "compile_commands": "build/macos-clang-debug/compile_commands.json",
+    "production_entries": 356,
+    "unique_production_sources": 356,
+    "recompiled_production_sources": 0
+  }
+}

@@ -1582,3 +1582,61 @@ Validation for this slice:
   `src/data` Qt SQL references are limited to the explicitly retained
   compatibility repository overloads and test-only helper implementation.
 - `git diff --check` passed.
+
+## macOS Phase 2 validation — 2026-09-05
+
+The macOS host validation ran on commit
+`9a6c9c964589df48e6d7071b5def1d289e373011` using AppleClang 21.0.0, CMake
+4.3.3, macOS 26.6.2 arm64, the `macos-clang-debug` preset, and the exact
+Qt 6.12.0 prefix `/Users/papercutter0324/Qt/6.12.0/macos`.
+
+The exact P2-R07 retained-Qt lane passed with runtime-tested evidence:
+
+- `scripts/phase2_exit_gate.py run --lane-id macos-qt-6.12-universal
+  --lane-type retained-qt --configure-preset macos-clang-debug
+  --build-dir build/macos-clang-debug --qt-version 6.12.0
+  --qt-architecture universal --qt-prefix-env QT_MACOS_PREFIX` completed
+  with configure, build, inventory, and test exit code 0.
+- `ClassMngrDatabasePortFixtureTests` passed 1/1. Its output records all seven
+  Qt-to-engine slices and all seven engine-to-Qt slices as `PASS`, including
+  teacher, class, class-info, calendar-event, roster,
+  speaking-evaluation, and campus data.
+- The report is
+  `artifacts/phase2/macos-qt-6.12-universal/macos-qt-6.12-universal.json`;
+  it records exact Qt 6.12.0, universal architecture, `runtime-tested`, and
+  no failures. The fixture generator is a Mach-O universal binary with
+  `x86_64` and `arm64` slices.
+
+Additional macOS phase-2 checks were run as follows:
+
+- The complete registered `ClassMngrEngine*` CTest selection passed 57/57
+  under `QT_QPA_PLATFORM=offscreen`, including the database fixture round-trip
+  and lifecycle tests. JUnit evidence is in
+  `build/macos-clang-debug/artifacts/phase2/macos-engine-debug/ctest.junit.xml`.
+- The dependency-free phase-2 report-validator tests passed 6/6 via
+  `python3 tests/phase2_exit_gate_tests.py`.
+- The engine forbidden-include audit passed: no Qt, WinUI, WinRT, or Win32 UI
+  includes were found under `src/engine`.
+- A clean full macOS Qt baseline configured successfully, but its build stopped
+  at `tests/class_transfer_tests.cpp:805`, `:806`, `:899`, and `:900` because
+  `ClassService` and `TeacherService` are still constructed with removed
+  two-argument forms. No full baseline test run was therefore claimed. The
+  report is `artifacts/baseline/macos-clang-debug.json`.
+- After the non-engine targets were built excluding that known compile blocker,
+  the broader retained-Qt selection passed 58/69 CTest targets. The 11 failing
+  targets were `ClassMngrSharedPolicyTests`,
+  `ClassMngrInitialSetupWizardTests`, `ClassMngrUpdaterTests`,
+  `ClassMngrScheduleWidgetTests`, `ClassMngrTestingClassesPageTests`,
+  `ClassMngrPageManagerTests` (segmentation fault),
+  `ClassMngrClassesPageTests`, `ClassMngrScheduleImportDialogTests`,
+  `ClassMngrSubPrepPageTests`, `ClassMngrSubPrepPackageServiceTests`, and
+  `ClassMngrSpeakingEvalBatchReportServiceTests`. A native macOS probe without
+  forcing the offscreen plugin reproduced the representative shared-policy,
+  schedule, testing-class, classes-page, and sub-prep failures, so they are not
+  reported as an offscreen-only artifact. JUnit evidence is in
+  `build/macos-clang-debug/artifacts/phase2/macos-retained-qt-debug/ctest.junit.xml`.
+
+The exact macOS P2-R07 lane is no longer host-blocked, but the phase-2 exit gate
+remains deferred: the Linux lane and the current aggregate are still open, and
+the clean/full retained-Qt validation must be repaired and rerun before the
+complete migrated-feature matrix can be claimed green.
