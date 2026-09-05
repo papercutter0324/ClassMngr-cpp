@@ -186,6 +186,12 @@ qt_add_executable(ClassMngrClassTransferTests
         COMMAND ClassMngrTeacherImportDialogTests
     )
 
+    set_tests_properties(
+        ClassMngrTeacherImportDialogTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrStaffDirectoryPageTests
         tests/staff_directory_page_tests.cpp
         tests/staff_directory_page_test_stubs.cpp

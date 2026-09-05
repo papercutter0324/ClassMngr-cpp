@@ -346,6 +346,12 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
     )
 
+    set_tests_properties(
+        ClassMngrSpeakingEvalBatchReportServiceTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
     )

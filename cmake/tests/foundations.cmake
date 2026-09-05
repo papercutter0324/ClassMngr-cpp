@@ -202,9 +202,9 @@ qt_add_resources(ClassMngrDialogShellTests dialog_shell_keyboard_test_resources
         resources/assets/icons/keyboard_light.svg
 )
 
-# QWizard's macOS implementation requires the Cocoa platform: Qt 6.11.1
-# aborts in its native wizard-pixmap path when this test is forced through
-# the offscreen plugin. Keep the test headless on other platforms.
+# QWizard's macOS implementation requires the Cocoa platform: Qt's native
+# wizard-pixmap path needs a real macOS application session. Keep the test
+# headless on other platforms.
 if(APPLE)
     set(CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT
         "QT_QPA_PLATFORM=cocoa")
@@ -310,6 +310,12 @@ classmngr_add_qt_test(
     add_test(
         NAME ClassMngrUpdaterTests
         COMMAND ClassMngrUpdaterTests
+    )
+
+    set_tests_properties(
+        ClassMngrUpdaterTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrResourcePackTests
