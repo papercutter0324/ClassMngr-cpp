@@ -1362,6 +1362,23 @@ Validation for this cleanup:
   Qt binary pass is claimed;
 - `git diff --check` passed.
 
+## Final Phase 2 exit-gate audit — 2026-09-05
+
+The available Windows evidence still covers all four Qt-free x64/x86
+Debug/Release lanes and the retained Windows Qt 6.12.0 x64 lane as runtime
+tested. The Linux and macOS retained-Qt lanes cannot run on this Windows host:
+their required Qt prefixes are unavailable, and the generated aggregate
+validator therefore remains `FAIL` with both lanes explicitly `BLOCKED`.
+
+The command
+`python scripts/phase2_exit_gate.py validate --reports-dir artifacts/phase2
+--output artifacts/phase2/aggregate-report.json` reproduced that result with
+exit code 1. The stored lane reports share the earlier source commit used for
+that matrix; the current R03, R06, R01, and R08 focused validations are
+recorded separately above and do not turn the stale aggregate into current
+release evidence. P2-R07 remains open for CI/device-owned Linux and macOS
+runtime reports and a regenerated non-red aggregate.
+
 ## Superseded Qt validation-helper quarantine — 2026-09-05
 
 The repository-wide source audit found `SharedValidation` and
