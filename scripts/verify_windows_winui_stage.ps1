@@ -246,6 +246,10 @@ $priFiles = @(Get-ChildItem -LiteralPath $stagePath -Recurse -File -Filter '*.pr
 if ($priFiles.Count -eq 0) {
     throw "No MRT resource (.pri) file was found in: $stagePath"
 }
+$applicationPriPath = Join-Path $stagePath 'ClassMngrWinUI.pri'
+if (-not (Test-Path -LiteralPath $applicationPriPath -PathType Leaf)) {
+    throw "Application MRT resource index was not staged: $applicationPriPath"
+}
 
 $dumpbin = Resolve-DumpbinPath
 $dependencyOutput = (& $dumpbin /nologo /dependents $executablePath 2>&1 |
@@ -289,5 +293,9 @@ Invoke-StageSmokeTest `
     -Executable $executablePath `
     -WorkingDirectory $stagePath `
     -Argument '--phase3-view-model-test'
+Invoke-StageSmokeTest `
+    -Executable $executablePath `
+    -WorkingDirectory $stagePath `
+    -Argument '--phase3-localization-test'
 
 Write-Host "Verified WinUI stage ($Platform): $stagePath"

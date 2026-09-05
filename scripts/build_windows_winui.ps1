@@ -380,9 +380,28 @@ Assert-PackageFiles `
         'build\Microsoft.Windows.SDK.BuildTools.targets'
     )
 
+$makePriArchitecture = if ($Platform -eq 'Win32') { 'x86' } else { 'x64' }
+$makePriPath = Resolve-ExistingPath `
+    -Path (Join-Path $packagesPath `
+        "Microsoft.Windows.SDK.BuildTools.$BuildToolsVersion\bin\10.0.26100.0\$makePriArchitecture\makepri.exe") `
+    -Description 'MakePri executable'
+
 $outputProperty = "$outputPath\"
 $intermediateProperty = "$intermediatePath\"
 $generatedFilesProperty = "$generatedFilesPath\"
+$winUiResourceGeneratorPath = Join-Path `
+    $projectRootPath `
+    'scripts\generate_winui_resw.ps1'
+$winUiResourceDirectory = Join-Path $intermediatePath 'winui-resources'
+if (-not (Test-Path -LiteralPath $winUiResourceGeneratorPath -PathType Leaf)) {
+    throw "WinUI resource generator was not found: $winUiResourceGeneratorPath"
+}
+& $winUiResourceGeneratorPath `
+    -TranslationDirectory (Join-Path $projectRootPath 'resources\assets\translations') `
+    -OutputDirectory $winUiResourceDirectory
+if ($LASTEXITCODE -ne 0) {
+    throw "WinUI resource generation failed with exit code $LASTEXITCODE."
+}
 
 $msbuildArguments = @(
     $projectFilePath,
@@ -397,6 +416,7 @@ $msbuildArguments = @(
     "/p:ClassMngrEngineIncludeDirectory=$engineIncludePath",
     "/p:ClassMngrWinUIGeneratedIncludeDirectory=$generatedIncludePath",
     "/p:ClassMngrWinUIResourceFile=$resourceFilePath",
+    "/p:ClassMngrWinUIResourceDirectory=$winUiResourceDirectory",
     "/p:WindowsTargetPlatformVersion=$visualStudioWindowsSdkVersion",
     "/p:TargetPlatformVersion=$visualStudioWindowsSdkVersion",
     "/p:WindowsTargetPlatformMinVersion=$MinimumWindowsVersion",
@@ -427,6 +447,41 @@ finally {
 $executablePath = Join-Path $outputPath 'ClassMngrWinUI.exe'
 if (-not (Test-Path -LiteralPath $executablePath)) {
     throw "MSBuild completed but the staged executable was not found: $executablePath"
+}
+
+$priConfigPath = Join-Path $intermediatePath 'winui-priconfig.xml'
+$applicationPriPath = Join-Path $outputPath 'ClassMngrWinUI.pri'
+Write-Host "Generating WinUI resource index: $applicationPriPath"
+& $makePriPath @(
+    'createconfig',
+    '/cf', $priConfigPath,
+    '/dq', 'en-US',
+    '/o'
+)
+if ($LASTEXITCODE -ne 0) {
+    throw "MakePri configuration generation failed with exit code $LASTEXITCODE."
+}
+$null = $priConfig = [xml] (Get-Content `
+    -LiteralPath $priConfigPath `
+    -Encoding UTF8 `
+    -Raw)
+$packagingNode = $priConfig.resources.SelectSingleNode('packaging')
+if ($null -ne $packagingNode) {
+    $null = $priConfig.resources.RemoveChild($packagingNode)
+}
+$priConfig.Save($priConfigPath)
+& $makePriPath @(
+    'new',
+    '/pr', $winUiResourceDirectory,
+    '/cf', $priConfigPath,
+    '/of', $applicationPriPath,
+    '/o'
+)
+if ($LASTEXITCODE -ne 0) {
+    throw "MakePri resource indexing failed with exit code $LASTEXITCODE."
+}
+if (-not (Test-Path -LiteralPath $applicationPriPath -PathType Leaf)) {
+    throw "MakePri completed without producing the application resource index: $applicationPriPath"
 }
 
 $resourceOutputDirectory = Join-Path $outputPath 'resources'

@@ -4,6 +4,7 @@
 #include "MainWindow.g.h"
 
 #include "classmngr/engine/semantic_version.h"
+#include "winui_localization.h"
 #include "winui_view_model.h"
 
 #include <winrt/Microsoft.UI.Xaml.Navigation.h>
@@ -25,6 +26,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase1ThemeChecks();
     [[nodiscard]] bool runPhase1DpiChecks();
     [[nodiscard]] bool runPhase3NavigationChecks();
+    [[nodiscard]] bool runPhase3LocalizationChecks();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
         runPhase3ViewModelChecks();
 
@@ -93,6 +95,7 @@ private:
     Microsoft::UI::Xaml::Controls::TextBlock m_statusText{nullptr};
 
     classmngr::engine::SemanticVersion m_engineVersion;
+    WinUILocalizer m_localizer;
     std::wstring m_currentPageId;
     Microsoft::UI::Xaml::Controls::ContentDialog m_ownedDialog{nullptr};
 

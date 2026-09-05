@@ -9,6 +9,7 @@
 #include <winrt/Microsoft.UI.Xaml.Automation.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <string>
 #include <string_view>
@@ -320,6 +321,16 @@ MainWindow::MainWindow()
     m_shellInfoButton = RootGrid().FindName(L"ShellInfoButton").as<
         Microsoft::UI::Xaml::Controls::Button>();
 
+    m_aboutNavigationItem.Content(winrt::box_value(winrt::hstring(
+        m_localizer.getString(L"ActionRegistry", L"About")
+        )));
+    m_shellInfoButton.Content(winrt::box_value(winrt::hstring(
+        m_localizer.getString(
+            L"ActionRegistry",
+            L"Show application information"
+            )
+        )));
+
     ExtendsContentIntoTitleBar(true);
     SetTitleBar(m_appTitleBar);
     m_contentFrame.CacheSize(2);
@@ -466,6 +477,41 @@ bool MainWindow::runPhase3NavigationChecks()
 
     navigateTo(homePageId);
     return homeReady && aboutReady && backReady && forwardReady;
+}
+
+bool MainWindow::runPhase3LocalizationChecks()
+{
+    constexpr std::wstring_view actionContext = L"ActionRegistry";
+    constexpr std::wstring_view aboutSource = L"About";
+    constexpr std::wstring_view informationSource =
+        L"Show application information";
+
+    const std::array<std::wstring_view, 4> englishTags{
+        L"en-AU",
+        L"en-CA",
+        L"en-GB",
+        L"en-US"
+    };
+    for (const auto languageTag : englishTags)
+    {
+        const WinUILocalizer english(languageTag);
+        if (!english.hasString(actionContext, aboutSource)
+            || english.getString(actionContext, aboutSource) != L"About"
+            || english.getString(actionContext, informationSource)
+                != L"Show application information")
+        {
+            return false;
+        }
+    }
+
+    const WinUILocalizer korean(L"ko-KR");
+    return korean.hasString(actionContext, aboutSource)
+        && korean.getString(actionContext, aboutSource) == L"정보"
+        && korean.getString(actionContext, informationSource)
+            == L"애플리케이션 정보 표시"
+        && !korean.hasString(L"MissingContext", L"Missing resource")
+        && WinUILocalizer::makeResourceId(actionContext, aboutSource)
+            != WinUILocalizer::makeResourceId(actionContext, L"about");
 }
 
 Windows::Foundation::IAsyncOperation<bool>

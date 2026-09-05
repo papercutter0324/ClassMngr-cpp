@@ -119,7 +119,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>$(ClassMngrEngineLibrary);winsqlite3.lib;advapi32.lib;shell32.lib;user32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ClassMngrEngineLibrary);winsqlite3.lib;advapi32.lib;bcrypt.lib;shell32.lib;user32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
@@ -154,6 +154,7 @@
     <ClInclude Include="winui_view_model.h" />
     <ClInclude Include="winui_lifecycle.h" />
     <ClInclude Include="winui_identity.h" />
+    <ClInclude Include="winui_localization.h" />
   </ItemGroup>
 
   <ItemGroup>
@@ -164,6 +165,19 @@
     <Page Include="Resources\ThemeSpacing.xaml" />
     <Page Include="Resources\ThemeIcons.xaml" />
     <Page Include="Resources\ControlStyles.xaml" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ClassMngrWinUIResourceDirectory)'!=''">
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-AU\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-AU\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-CA\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-CA\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-GB\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-GB\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-US\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-US\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\ko-KR\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\ko-KR\Resources.resw')" />
   </ItemGroup>
 
   <ItemGroup>
@@ -178,6 +192,7 @@
     </ClCompile>
     <ClCompile Include="winui_view_model.cpp" />
     <ClCompile Include="winui_lifecycle.cpp" />
+    <ClCompile Include="winui_localization.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
 
