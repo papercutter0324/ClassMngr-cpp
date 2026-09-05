@@ -172,7 +172,7 @@ void ApplicationServices::closeDatabase()
 bool ApplicationServices::hasOpenDatabase() const
 {
     return m_session
-        && m_session->isOpen();
+        && m_session->isEngineBacked();
 }
 
 QString ApplicationServices::currentDatabasePath() const

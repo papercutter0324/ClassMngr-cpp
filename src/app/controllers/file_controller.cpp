@@ -6,7 +6,6 @@
 #include "core/database_file_format.h"
 #include "core/result.h"
 #include "core/settingsmanager.h"
-#include "data/data_service.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "classmngr/engine/database_lifecycle.h"
 

@@ -1,6 +1,5 @@
 #include "feature_services.h"
 
-#include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/class_info_repository.h"
@@ -108,33 +107,14 @@ Status validateClassScheduleConflicts(
 }
 }
 
-FeatureService::FeatureService(DataService* dataService)
-    : FeatureService(
-        dataService ? dataService->databaseSession() : nullptr,
-        dataService
-        )
-{
-}
-
 FeatureService::FeatureService(DatabaseSession* session)
     : m_session(session)
 {
 }
 
-FeatureService::FeatureService(
-    DatabaseSession* session,
-    DataService* legacyDataService
-    )
-    : m_session(session ? session
-                        : (legacyDataService
-                            ? legacyDataService->databaseSession()
-                            : nullptr))
-{
-}
-
 bool FeatureService::isAvailable() const
 {
-    return m_session && m_session->isOpen();
+    return m_session && m_session->isEngineBacked();
 }
 
 DatabaseSession* FeatureService::session() const

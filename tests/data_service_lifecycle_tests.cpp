@@ -222,6 +222,7 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
+    void memoryDatabaseIsCompatibilityOnly();
     void applicationServicesOwnDatabaseFileOperations();
     void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
@@ -250,8 +251,7 @@ void DataServiceLifecycleTests::personalDetailsRepositoryUsesEngineBoundary()
     QVERIFY(dataService.openDatabase(path).has_value());
 
     SettingsService settings(
-        dataService.databaseSession(),
-        &dataService
+        dataService.databaseSession()
         );
     PersonalDetailsRepository repository(&settings);
 
@@ -1164,19 +1164,43 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.speakingEvalRepository() == nullptr);
 }
 
+void DataServiceLifecycleTests::memoryDatabaseIsCompatibilityOnly()
+{
+    DatabaseSession session;
+
+    QVERIFY(session.open(QStringLiteral(":memory:")).has_value());
+    QVERIFY(session.isOpen());
+    QVERIFY(!session.isEngineBacked());
+    QVERIFY(session.compatibilityDatabase().isOpen());
+    QCOMPARE(session.settingsRepository(), nullptr);
+    QCOMPARE(session.classRepository(), nullptr);
+    QCOMPARE(session.calendarEventRepository(), nullptr);
+
+    SettingsService settings(&session);
+    QVERIFY(!settings.isAvailable());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(QStringLiteral(":memory:")).has_value());
+    QVERIFY(!services.hasOpenDatabase());
+
+    session.close();
+    QVERIFY(!session.isOpen());
+    QVERIFY(!session.isEngineBacked());
+}
+
 void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
     DataService dataService;
-    SettingsService settings(&dataService);
-    TeacherService teachers(&dataService);
-    ClassService classes(&dataService);
-    ScheduleService schedule(&dataService);
-    CalendarService calendar(&dataService);
-    RosterService rosters(&dataService);
-    SpeakingEvaluationService evaluations(&dataService);
+    SettingsService settings(dataService.databaseSession());
+    TeacherService teachers(dataService.databaseSession());
+    ClassService classes(dataService.databaseSession());
+    ScheduleService schedule(dataService.databaseSession());
+    CalendarService calendar(dataService.databaseSession());
+    RosterService rosters(dataService.databaseSession());
+    SpeakingEvaluationService evaluations(dataService.databaseSession());
 
     QVERIFY(!settings.isAvailable());
     QVERIFY(!teachers.isAvailable());

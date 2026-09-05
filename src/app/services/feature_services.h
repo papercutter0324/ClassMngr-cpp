@@ -23,7 +23,6 @@
 #include <QPair>
 #include <QVariant>
 
-class DataService;
 class DatabaseSession;
 
 // The distinct views required by the Class Analytics dashboard.  The selected
@@ -40,11 +39,7 @@ struct SpeakingEvaluationDashboard
 class FeatureService
 {
 public:
-    // Compatibility-only constructors translate DataService to its session at
-    // construction. Feature operations never retain or call DataService.
-    explicit FeatureService(DataService* dataService);
     explicit FeatureService(DatabaseSession* session);
-    FeatureService(DatabaseSession* session, DataService* legacyDataService);
     [[nodiscard]] bool isAvailable() const;
 
 protected:

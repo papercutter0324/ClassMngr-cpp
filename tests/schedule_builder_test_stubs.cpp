@@ -1,6 +1,6 @@
 #include "app/services/feature_services.h"
 
-FeatureService::FeatureService(DataService*)
+FeatureService::FeatureService(DatabaseSession*)
 {
 }
 

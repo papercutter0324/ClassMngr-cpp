@@ -53,10 +53,10 @@ void SpeakingEvaluationServiceTests::dashboardUsesCurrentRosterAndHistoricalTren
     QVERIFY(dataService.openDatabase(
         directory.filePath(QStringLiteral("speaking-analytics.db"))).has_value());
 
-    ClassService classes(dataService.databaseSession(), &dataService);
-    RosterService rosters(dataService.databaseSession(), &dataService);
+    ClassService classes(dataService.databaseSession());
+    RosterService rosters(dataService.databaseSession());
     SpeakingEvaluationService evaluations(
-        dataService.databaseSession(), &dataService);
+        dataService.databaseSession());
     const auto created = classes.create(QStringLiteral("Analytics Class"));
     QVERIFY(created.has_value());
     const int classId = *created;

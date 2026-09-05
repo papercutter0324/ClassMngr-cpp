@@ -49,8 +49,11 @@ public:
         const QString& destinationPath
         );
 
-    // Compatibility adapter for test and legacy callers. It shares
-    // m_session; production feature composition never depends on it.
+    // Explicit compatibility adapter for legacy/test callers. It borrows
+    // m_session; production feature composition must use the narrow services
+    // above. Retirement owner: the Phase 2/3 application-service migration;
+    // deadline: before the Phase 3 application-foundation exit gate; do not
+    // add new production callers or facade operations.
     [[nodiscard]] DataService* dataService() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;

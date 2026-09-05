@@ -891,7 +891,7 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
         directory.filePath(QStringLiteral("validation.db"))
         ));
 
-    TeacherService teachers(dataService.databaseSession(), &dataService);
+    TeacherService teachers(dataService.databaseSession());
     Teacher invalidTeacher;
     invalidTeacher.teacherEn = QStringLiteral("Alex2");
     const Result<int> rejectedTeacher = teachers.create(invalidTeacher);
@@ -919,7 +919,7 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
     QCOMPARE(storedTeacher->internetType, QStringLiteral("WiFi"));
     QCOMPARE(storedTeacher->projectionType, QStringLiteral("HDMI"));
 
-    ClassService classes(dataService.databaseSession(), &dataService);
+    ClassService classes(dataService.databaseSession());
     const Result<int> firstClass = classes.create(QString());
     const Result<int> secondClass = classes.create(QString());
     QVERIFY(firstClass);
@@ -1092,7 +1092,7 @@ void SharedPolicyTests::featureServicesRejectInvalidCalendarMutations()
     QVERIFY(dataService.openDatabase(
         directory.filePath(QStringLiteral("calendar-validation.db"))
         ));
-    CalendarService calendar(dataService.databaseSession(), &dataService);
+    CalendarService calendar(dataService.databaseSession());
 
     CalendarEvent invalid;
     invalid.title = QStringLiteral("Bad event");
@@ -1215,10 +1215,10 @@ void SharedPolicyTests::featureServicesRejectInvalidRosterAndSpeakingEvaluationM
         directory.filePath(QStringLiteral("roster-speaking-validation.db"))
         ));
 
-    ClassService classes(dataService.databaseSession(), &dataService);
-    RosterService rosters(dataService.databaseSession(), &dataService);
+    ClassService classes(dataService.databaseSession());
+    RosterService rosters(dataService.databaseSession());
     SpeakingEvaluationService evaluations(
-        dataService.databaseSession(), &dataService);
+        dataService.databaseSession());
     const Result<int> classId = classes.create(QStringLiteral("Validation"));
     QVERIFY(classId);
 
