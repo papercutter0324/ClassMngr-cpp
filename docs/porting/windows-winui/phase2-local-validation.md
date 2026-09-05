@@ -1424,3 +1424,41 @@ is placed inside the reports directory, covered by
 
 P2-R07 remains deferred until CI or supported devices produce runtime-tested
 exact-Qt 6.12 Linux and macOS reports and the aggregate becomes non-red.
+
+## Application-service and database-session boundary follow-up — 2026-09-05
+
+The production application graph now uses the shared `DatabaseSession` directly
+for every retained feature service. The `FeatureService` `DataService*` and
+mixed-session fallback constructors were removed, and the compatibility
+`ApplicationServices::dataService()` accessor is documented as a temporary,
+shared-session adapter with retirement owned by the Phase 2/3 application-
+service migration before the Phase 3 application-foundation exit gate. The
+source audit found no production `DataService` caller beyond that adapter.
+
+`DatabaseSession` now treats ordinary file-backed profiles as engine-backed:
+the engine performs path preparation and migration, retained repositories own
+engine access, and the Qt compatibility connection is opened lazily only when
+requested. Exact Qt `:memory:` sessions are compatibility-only and construct no
+independent engine repositories, avoiding the previous split in-memory state.
+
+Validation for this follow-up:
+
+- `ClassMngrDataServiceLifecycleTests` passed 1/1 after rebuilding the current
+  x64 Debug lifecycle target, including the new `:memory:` compatibility-only
+  and shared-session assertions.
+- The current x64 Debug focused retained-Qt selection passed 6/6:
+  `ClassMngrEngineSpeakingEvaluationValidatorTests`,
+  `ClassMngrSharedPolicyTests`, `ClassMngrCalendarEventRepositoryTests`,
+  `ClassMngrDataServiceLifecycleTests`, `ClassMngrRosterModelTests`, and
+  `ClassMngrSpeakingEvalModelTests`.
+- The parity additions cover malformed UTF-8, invalid ASCII, normalized
+  duplicate names, Korean unusual/over-limit lengths, and save-validation
+  issue parity in both roster and speaking-evaluation paths.
+- The source audit found no `FeatureService(DataService*)` fallback,
+  three-argument constructor, or unused `data/data_service.h` include in
+  `src`/`tests`; `git diff --check` passed.
+- The broader multi-target CMake rebuild was intentionally stopped after the
+  shared libraries and the roster-model executable compiled; this host's
+  repeated full dependency passes and existing MSVC FileTracker contention
+  prevent claiming a clean all-target rebuild. Full Qt SQL compatibility-handle
+  retirement and the Linux/macOS retained-Qt exit lanes remain open.

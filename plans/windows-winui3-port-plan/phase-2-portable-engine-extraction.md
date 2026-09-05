@@ -195,7 +195,7 @@ coverage for the listed cases.
 
 ### P2-R02 — Unify interactive roster and speaking-evaluation validation
 
-**Status (2026-09-04): Implemented; focused engine validation passed.**
+**Status (2026-09-05): Implemented; focused engine and retained-Qt parity passed.**
 Committed as `b4ff0c8`. Shared UTF-8 name validation and duplicate-pair policy
 now feed the Qt utility and both engine validators.
 
@@ -205,14 +205,17 @@ now feed the Qt utility and both engine validators.
 - [x] Keep Qt responsible for mapping engine issues to localized messages,
   cell/row highlights, and confirmation UI. Remove the duplicate Qt
   character, length, and duplicate-name policy from live paths.
-- [ ] Add parity cases for invalid ASCII/UTF-8 input, Korean suffixes and
+- [x] Add parity cases for invalid ASCII/UTF-8 input, Korean suffixes and
   lengths, duplicate pairs, and normalized names so interactive feedback and
   save-time validation cannot diverge.
 
 Evidence: `src/core/utils/student_name_utils.cpp` delegates the active Qt
 name normalization/validation to the engine, and the roster and speaking
 evaluation UI maps engine issues to localized messages and highlights. The
-remaining open work is parity coverage for the interactive paths.
+focused parity tests now cover malformed UTF-8, invalid ASCII, Korean suffixes,
+unusual/over-limit lengths, normalized duplicate pairs, and save-time issue
+mapping in both interactive models and their engine validators. The current
+x64 Debug retained-Qt/engine selection passes 6/6.
 
 ### P2-R03 — Finish the teacher-import candidate policy boundary
 
@@ -245,57 +248,60 @@ complete.
 
 ### P2-R04 — Collapse legacy application-service fallbacks
 
-**Status (2026-09-04): Partially implemented; migration validation pending.**
-Committed as `b24f35e`. ApplicationServices now owns the session and production
-feature services receive it directly; the legacy DataService API remains as an
-explicit shared-session adapter until remaining fallback branches are retired.
+**Status (2026-09-05): Implemented for production composition; facade retirement
+is tracked for Phase 3.** ApplicationServices owns the session and production
+feature services receive it directly. The legacy DataService API remains an
+explicit shared-session adapter with a named owner and a deadline before the
+Phase 3 application-foundation exit gate.
 
-- [ ] Keep migrated production workflows on the engine-first session/use-case
+- [x] Keep migrated production workflows on the engine-first session/use-case
   graph and make the remaining compatibility object an explicit adapter with
   a named retirement owner and deadline.
-- [ ] Remove the `FeatureService` `DataService*` fallback branches and narrow
+- [x] Remove the `FeatureService` `DataService*` fallback branches and narrow
   `DataService` to compatibility/test callers after equivalent engine paths
   are proven. No new UI or controller code should add another facade method.
-- [ ] Keep the existing Qt-facing service API stable during the transition,
+- [x] Keep the existing Qt-facing service API stable during the transition,
   with tests proving that open/close and all migrated feature operations use
   the same engine-backed session.
 
-Evidence: `src/core/application_services.h/.cpp` now owns the shared
-`DatabaseSession` and constructs production feature services from it, while
-`DataService` remains a lazily-created compatibility facade. The feature
-service compatibility constructors and the broad facade are still present,
-but the source audit found no migrated operation body using `DataService` for
-its engine-backed rules or persistence calls. The remaining work is to prove
-that composition in integration tests and assign the facade's retirement.
+Evidence: `src/core/application_services.h/.cpp` owns the shared
+`DatabaseSession` and constructs production feature services from it. The
+`FeatureService` `DataService*` and mixed-session fallback constructors are
+removed, and the source audit found no production caller of the compatibility
+facade. `ClassMngrDataServiceLifecycleTests` now covers shared-session service
+construction, open/close availability, and the compatibility adapter. The
+broad `DataService` facade remains only as a source-compatible adapter until
+the Phase 3 deadline.
 
 ### P2-R05 — Retire the remaining Qt SQL compatibility path
 
-**Status (2026-09-04): Calendar-cache slice implemented; wider Qt SQL retirement open.**
-Committed as `36be4ef`. CalendarEventCache now reads through the engine service;
-DatabaseSession, DataService, and other Qt SQL compatibility consumers remain.
+**Status (2026-09-05): Compatibility boundary reduced; wider Qt SQL retirement
+open.** CalendarEventCache already reads through the engine service. Ordinary
+file-backed DatabaseSession opens now avoid an eager Qt SQL connection, and
+exact `:memory:` sessions are explicitly compatibility-only.
 
-- [ ] Migrate retained database consumers, including the asynchronous
+- [x] Migrate retained database consumers, including the asynchronous
   `CalendarEventCache`, to engine `SqliteDatabase`/service access, or isolate
   them behind an explicitly temporary adapter boundary.
 - [ ] Retire `DatabaseSession::compatibilityDatabase()` and the remaining Qt
   schema/transaction helpers once compatibility tests have moved to the engine
   path. `DataService::save()` and `ApplicationServices::saveDatabase()` are
   currently no-ops; confirm that no production workflow relies on them.
-- [ ] Define exact `:memory:` ownership: make it a shared engine-backed test
+- [x] Define exact `:memory:` ownership: make it a shared engine-backed test
   mode, or document and isolate it as a compatibility-only path. It must not
   mix one Qt in-memory database with independent repository databases.
 - [ ] Confirm that file-backed open, migration, CRUD, rollback, and cache
   reads no longer depend on a Qt SQL connection or duplicate schema logic.
 
-Evidence: `src/data/database/database_session.h/.cpp` still exposes and
-creates the `QSqlDatabase` compatibility connection. File-backed repository
-constructors then open their own engine SQLite handles, so the live path still
-has duplicate database ownership. Exact `:memory:` opens use
-`DatabaseSchemaManager` and path-backed repositories, with several repositories
-rejecting or independently opening in-memory databases. The calendar cache
-now reads through the engine service but still creates a worker Qt SQL
-connection. The engine already owns the corresponding file-backed SQLite
-pipeline.
+Evidence: `src/data/database/database_session.h/.cpp` now creates the Qt
+`QSqlDatabase` connection lazily only when `compatibilityDatabase()` is called.
+File-backed repositories remain engine-backed, while the compatibility handle
+is explicitly temporary. Exact `:memory:` opens retain only the Qt schema
+compatibility connection and create no engine repository adapters; the
+headless engine mode remains `OpenDatabase::execute(":memory:")`. The
+calendar cache reads through the engine service. Retiring the compatibility
+handle and consolidating the retained repositories onto one engine ownership
+model remain open.
 
 ### P2-R06 — Make platform-service contracts live at engine boundaries
 
