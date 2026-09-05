@@ -347,8 +347,8 @@ operations. `ClassMngrEngineCalendarEventImportServiceTests`,
 
 ### P2-R07 — Close the cross-platform and clean-build exit gate
 
-**Status (2026-09-06): Windows milestone and exact macOS retained-Qt
-fixture lane complete; the full cross-platform gate remains open.**
+**Status (2026-09-06): Windows milestone and exact macOS/Linux retained-Qt
+fixture lanes complete; the full cross-platform gate remains open.**
 The reproducible matrix is executable through
 `.github/workflows/phase2-exit-gate.yml` and
 `scripts/phase2_exit_gate.py`, with the process documented in [the exit-gate
@@ -364,9 +364,10 @@ fixture in both directions. Its clean baseline now configures and builds all
 127 targets and passes 127/127 tests on the permitted native macOS host.
 `ClassMngrInitialSetupWizardTests` remains a bundled Cocoa test; the two
 screen-dependent dialog/report targets and the updater use the offscreen Qt
-platform, while the updater still exercises its loopback server. Linux evidence
-remains CI/device-owned, and the full seven-lane aggregate remains open until
-the Linux lane is current.
+platform, while the updater still exercises its loopback server. The current
+Linux device run uses exact Qt 6.12.0 x64, passes the retained fixture, and
+passes the complete Debug and Release Qt suites. The full seven-lane aggregate
+remains open as a separate report-assembly gate.
 
 - [x] Replace the focused exception in the P2-07 record with a complete,
   reproducible headless x64/x86 matrix, or explicitly repair/update the
@@ -382,20 +383,23 @@ the Linux lane is current.
   partial-failure assertions in the Windows milestone evidence. The four
   Windows engine reports record all five coverage categories as covered by
   `ClassMngrEngineDatabaseFixtureRoundTripTests`.
-- [ ] Obtain the CI/device-owned Linux retained-Qt fixture evidence and
-  regenerate the complete seven-lane aggregate. The macOS fixture lane is
-  `PASS` and the clean baseline builds all 127 targets with 127/127 tests
-  passing on the permitted native host.
+- [x] Obtain current device-owned Linux retained-Qt fixture evidence. The
+  exact Qt 6.12.0 x64 lane is `PASS` with `runtime-tested` evidence; the
+  complete Linux Qt Debug and Release suites also pass 126/126. The report is
+  `artifacts/phase2/linux-qt-6.12-x64/linux-qt-6.12-x64.json`.
+- [ ] Regenerate the complete seven-lane aggregate from one current report set.
+  The macOS fixture lane is `PASS` and the clean baseline builds all 127
+  targets with 127/127 tests passing on the permitted native host.
 
 Evidence: `docs/porting/windows-winui/phase2-local-validation.md` records the
 current Windows milestone matrix, the latest macOS baseline and runtime-tested
-fixture lane, the host-blocked Linux result, the Windows-focused aggregate,
-the full aggregate outcome, and the MSVC FileTracker host limitation. The
-checked-in `artifacts/phase2` macOS lane and aggregate still contain the
-earlier host-blocked matrix and must be regenerated with current
-CI/device-owned reports. P2-R07's Windows and exact-macOS fixture portions
-are complete; the full cross-platform record remains open until the Linux
-lane and a non-red seven-lane aggregate are recorded.
+fixture lane, the current Linux Qt 6.12.0 report, the Windows-focused
+aggregate, the full aggregate outcome, and the MSVC FileTracker host
+limitation. The lane reports and logs under `artifacts/phase2` are generated
+validation outputs; the complete aggregate still must be regenerated from one
+current Windows/Linux/macOS report set. P2-R07's Windows, exact-macOS fixture,
+and Linux fixture portions are complete; the full cross-platform record remains
+open until a non-red seven-lane aggregate is recorded.
 
 ### P2-R08 — Remove or quarantine superseded Qt validation helpers
 
@@ -582,8 +586,11 @@ not introduce a second service graph or change the WinUI foundation.
   The baseline configures/builds successfully and records 127/127 passing
   tests on the permitted native host. The exact retained-Qt P2-R07 report is
   `PASS`.
-- [ ] Obtain the CI/device-owned Linux retained-Qt report and regenerate the
-  non-red seven-lane cross-platform aggregate.
+- [x] Obtain the current Linux retained-Qt report. The exact Qt 6.12.0 x64
+  fixture lane is `PASS` with `runtime-tested` evidence, and the complete Linux
+  Qt Debug and Release suites pass 126/126.
+- [ ] Regenerate the non-red seven-lane cross-platform aggregate from current
+  Windows, Linux, and macOS reports.
 
 The 11-target macOS failure evidence and diagnosis are recorded in
 `docs/porting/windows-winui/phase2-local-validation.md`. The shared fixture

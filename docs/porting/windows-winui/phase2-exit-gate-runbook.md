@@ -1,9 +1,10 @@
 # Phase 2 exit-gate runbook
 
-Status: Windows milestone complete (2026-09-05); the full cross-platform
-evidence gate remains deferred. This is an unofficial port, so Linux is not a
-current Windows-port blocker. The automated full-gate path remains available
-for the point when the port is promoted for official use.
+Status: Windows milestone and retained Linux/macOS fixture lanes complete
+(2026-09-06); the full cross-platform evidence gate remains open. This is an
+unofficial port, so Linux is not a current Windows-port blocker. The automated
+full-gate path remains available for the point when the port is promoted for
+official use.
 
 ## Automated entry point
 
@@ -132,6 +133,26 @@ The CTest entry is named `ClassMngrDatabasePortFixtureTests`, but intentionally
 executes the `ClassMngrDatabasePortFixtureGenerator` target. The automated
 validator treats those as the test name and executable name respectively.
 
+The Linux x64 retained lane uses the same fixture command with the exact Qt
+6.12.0 prefix:
+
+```bash
+export QT_LINUX_PREFIX=/path/to/Qt/6.12.0/gcc_64
+export QT_QPA_PLATFORM=offscreen
+CC=/usr/bin/gcc CXX=/usr/bin/g++ \
+python scripts/phase2_exit_gate.py run \
+  --lane-id linux-qt-6.12-x64 --lane-type retained-qt \
+  --configure-preset linux-gcc-debug --build-dir build/linux-gcc-debug \
+  --qt-version 6.12.0 --qt-architecture x64 \
+  --qt-prefix-env QT_LINUX_PREFIX \
+  --output artifacts/phase2/linux-qt-6.12-x64/linux-qt-6.12-x64.json \
+  --logs-dir artifacts/phase2/linux-qt-6.12-x64/logs
+```
+
+On hosts whose C++ launcher resolves to an unavailable or read-only `ccache`,
+set `CC` and `CXX` to the direct GCC paths as shown. This is a host-toolchain
+workaround, not a product configuration change.
+
 Keep this result separate from the Qt-free engine matrix. Record the exact Qt
 version and whether the test was runtime-tested, compile-only, or blocked.
 To record a build without making a runtime claim, add `--compile-only` to the
@@ -157,21 +178,20 @@ confirming that the required migration slices and failure categories are still
 meaningful, reviewing platform-specific failures or environment issues, and
 deciding whether the documented Phase 2 intent is satisfied.
 
-## Deferred closure conditions for P2-R07
+## Remaining closure conditions for P2-R07
 
-The Windows milestone now has a current five-lane PASS. This repository still
-does not claim a completed seven-lane cross-platform exit gate. Linux remains
-the explicit deferred direction until the Windows port is complete, and the
-broader macOS retained-Qt baseline remains separately documented from the
-portable-engine fixture lane. Those conditions must remain visible as
-missing-artifact, `host-blocked`, or failed evidence; they must not be
-converted into passing runtime results.
+The Windows milestone and the exact retained-Qt Linux and macOS fixture lanes
+now have current runtime-tested PASS reports. This repository still does not
+claim a completed seven-lane cross-platform exit gate: the aggregate must be
+regenerated from one complete current report set. Missing-artifact,
+`host-blocked`, or failed evidence must remain visible; it must not be
+converted into a passing runtime result.
 
 - Fresh artifacts are required for every Windows matrix lane; focused tests
   are not a complete matrix.
 - Missing registered binaries, Qt-version mismatches, MSBuild FileTracker
-  failures, and any Linux/macOS failures must be recorded in the lane report
-  or repaired before the full gate is closed.
+  failures, and any new Linux/macOS failures must be recorded in the lane
+  report or repaired before the full gate is closed.
 - The three retained-Qt lanes must publish current fixture evidence for every
   migrated persistence slice, including invalid input, rollback, migration,
   busy/locked database, and partial-failure outcomes where the lane owns that

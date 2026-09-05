@@ -52,7 +52,7 @@ support are also deferred from the current roadmap.
 | --- | --- | --- |
 | Source and test inventory | initial pass complete | keep it synchronized with Qt behavior changes |
 | Parity matrix | seeded | every applicable x64 cell must have evidence before cutover; ARM64 is informational |
-| Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 11 fixtures | record Linux Qt/native-engine semantic result digests when the cross-platform harness and native engine are available |
+| Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 11 Phase 0 fixtures and the Qt 6.12.0 Phase 2 fixture passed all seven migrated slices in both directions | retain the current Qt 6.12.0 Linux retained-Qt regression and regenerate the seven-lane aggregate when the other current lane reports are collected |
 | Screenshots, keyboard/IME, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, 16 validated baseline Qt captures per DPI run, and a 28-scenario expanded run covering populated, empty, large, dirty, validation, and error editor states at 150% | capture the remaining ledger states and manually review keyboard, IME, and output evidence; UIA/Narrator/high contrast are deferred |
 | Performance | historical x64 Release budget plus three current x64 Debug GUI samples | approve a current x64 Release baseline and capture page/scroll/output samples; ARM64 is deferred |
 | Build preservation | macOS universal Qt Debug/Release validation passed; Linux Qt Debug and Release configured, rebuilt, and tested 67/67 | no Linux-specific gate remains; retain green regression validation as the port advances |
@@ -86,6 +86,12 @@ build/linux-gcc-debug/ClassMngrDatabasePortFixtureGenerator \
 env QT_QPA_PLATFORM=offscreen \
   ctest --test-dir build/linux-gcc-debug --output-on-failure
 ```
+
+The current Phase 2 Linux retained-Qt lane also passed with exact Qt 6.12.0:
+the fixture generator verified all seven migrated persistence slices in both
+directions, and the complete Qt Debug and Release suites passed 126/126. The
+current report and detailed environment record are in
+[`phase2-local-validation.md`](../windows-winui/phase2-local-validation.md).
 
 ## macOS validation
 

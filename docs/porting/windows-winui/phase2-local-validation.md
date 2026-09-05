@@ -1715,7 +1715,47 @@ python scripts/phase2_exit_gate.py validate-windows `
 
 It returned exit code 0 and wrote a `PASS` report. This is a Windows
 milestone result, not a claim that the full seven-lane cross-platform gate is
-green. Linux is intentionally deferred until the remaining Windows porting
-work is complete. The full `validate` command therefore remains expected to
-fail while the local Linux report is host-blocked and the CI/device-owned
-cross-platform evidence is not yet assembled.
+green. At the time of this Windows-host run, Linux was intentionally deferred;
+the current Linux device validation is recorded below. The full `validate`
+command still requires one complete current seven-lane report set.
+
+## Linux Qt 6.12 retained-platform validation — 2026-09-06
+
+The Linux retained-Qt work deferred by P2-R07 was completed on the current
+Linux x86_64 device from source commit
+`d1bc8e7f3235dee0d3f053380a0a6bba50f4785f`, using Fedora 44, GCC, CMake 4.3.0,
+and the exact Qt 6.12.0 prefix
+`/home/papercutter0324/Qt/6.12.0/gcc_64`. The source tree was clean and stable
+through the run. The prescribed retained-Qt report is
+`artifacts/phase2/linux-qt-6.12-x64/linux-qt-6.12-x64.json`; it records
+`PASS`, `runtime-tested`, x64, and exact Qt 6.12.0 metadata.
+
+The P2-R07 lane completed configure, a clean serialized build of the fixture
+generator, a 126-test CTest inventory, and the required
+`ClassMngrDatabasePortFixtureTests` fixture test (1/1). The fixture generator
+reported all seven persisted slices in both directions as `PASS`: teacher,
+class, class-info, calendar-event, roster, speaking-evaluation, and campus.
+
+The broader retained Linux regression was also rerun against Qt 6.12.0:
+
+| Check | Result |
+| --- | --- |
+| Qt Debug build | PASS; all registered targets built |
+| Qt Debug CTest | PASS; 126/126 with `QT_QPA_PLATFORM=offscreen` and loopback enabled |
+| Qt Release configure/build | PASS; all registered targets built |
+| Qt Release CTest | PASS; 126/126 with `QT_QPA_PLATFORM=offscreen` and loopback enabled |
+| Report-validator tests | PASS; 7/7 |
+| Release install | PASS; executable, `qt.conf`, Qt 6.12 libraries, QML, XCB plugin, and resources present |
+| Installed startup probe | PASS; staged executable launched on the host X display and exited 0 |
+| Release archive | PASS; x86_64 ELF bundle archived; SHA-256 `6e4eaed8e966e18ce92a6c9d8f5da31b450f92e122c6c80833079736fe5a8567` |
+
+The updater tests require a loopback-capable environment. The first full
+headless CTest attempt was blocked only at the local HTTP-server bind; the
+updater rerun and the complete Debug/Release suites passed once loopback was
+allowed. The local host's default compiler launcher also resolved to a
+read-only `ccache`; the successful clean configure/build used direct
+`/usr/bin/gcc` and `/usr/bin/g++`. Neither condition is a product failure.
+
+The Linux lane is no longer deferred. The full seven-lane aggregate remains a
+separate report-assembly gate because this checkout does not contain the
+current Windows and macOS lane artifacts in the same reports directory.
