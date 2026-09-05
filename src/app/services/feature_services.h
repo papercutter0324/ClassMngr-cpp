@@ -2,6 +2,7 @@
 
 #include "core/enums/schedule_type.h"
 #include "core/result.h"
+#include "classmngr/engine/teacher_import.h"
 #include "domain/models/calendar_event.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
@@ -71,6 +72,13 @@ public:
 class TeacherService final : public FeatureService
 {
 public:
+    struct TeacherImportDateCheck
+    {
+        classmngr::engine::TeacherImportDateComparison comparison =
+            classmngr::engine::TeacherImportDateComparison::NoPreviousDate;
+        QDate previousDate;
+    };
+
     using FeatureService::FeatureService;
     [[nodiscard]] Result<int> create(const Teacher& teacher) const;
     [[nodiscard]] Result<int> save(const Teacher& teacher) const;
@@ -89,7 +97,9 @@ public:
         const QList<int>& deletedIds
         ) const;
     Result<TeacherImportSummary> importTeachers(const TeacherImportPlan& plan) const;
-    [[nodiscard]] Result<QDate> latestImportDate() const;
+    [[nodiscard]] Result<TeacherImportDateCheck> compareLatestImportDate(
+        const QDate& sourceDate
+        ) const;
 };
 
 class ClassService final : public FeatureService

@@ -5,6 +5,7 @@
 #include "classmngr/engine/teacher.h"
 
 #include <string>
+#include <optional>
 #include <vector>
 
 namespace classmngr::engine
@@ -17,6 +18,21 @@ struct TeacherImportPlan
     std::vector<Teacher> koreanTeachers;
     std::vector<NativeEnglishTeacher> nativeEnglishTeachers;
     std::vector<GsTeamMember> gsTeamMembers;
+};
+
+enum class TeacherImportDateComparison
+{
+    NoPreviousDate,
+    Newer,
+    Equal,
+    Older
+};
+
+struct TeacherImportDateDecision
+{
+    TeacherImportDateComparison comparison =
+        TeacherImportDateComparison::NoPreviousDate;
+    std::optional<std::string> previousDate;
 };
 
 struct TeacherImportCounts

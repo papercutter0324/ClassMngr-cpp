@@ -1,8 +1,10 @@
 #pragma once
 
 #include "core/result.h"
+#include "classmngr/engine/teacher_import.h"
 #include "domain/models/teacher_import.h"
 
+#include <QDate>
 #include <QSqlDatabase>
 
 #include <memory>
@@ -26,6 +28,9 @@ public:
     [[nodiscard]] Result<TeacherImportSummary> importTeachers(
         const TeacherImportPlan& plan
         );
+
+    [[nodiscard]] Result<classmngr::engine::TeacherImportDateDecision>
+        compareLatestSourceDate(const QDate& sourceDate);
 
 private:
     [[nodiscard]] Status ensureEngineDatabase(

@@ -333,21 +333,37 @@ Result<TeacherImportSummary> TeacherService::importTeachers(
     return Result<TeacherImportSummary>(std::unexpected(unavailableError()));
 }
 
-Result<QDate> TeacherService::latestImportDate() const
+Result<TeacherService::TeacherImportDateCheck>
+TeacherService::compareLatestImportDate(const QDate& sourceDate) const
 {
-    const QString key =
-        QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting);
-    if (auto* repository = session() ? session()->settingsRepository() : nullptr)
+    if (auto* repository = session() ? session()->teacherImportRepository() : nullptr)
     {
-        const Result<QVariant> value = repository->loadSetting(key);
-        if (!value)
+        const Result<classmngr::engine::TeacherImportDateDecision> decision =
+            repository->compareLatestSourceDate(sourceDate);
+        if (!decision)
         {
-            return std::unexpected(value.error());
+            return std::unexpected(decision.error());
         }
 
-        return QDate::fromString(value->toString(), Qt::ISODate);
+        QDate previousDate;
+        if (decision->previousDate.has_value())
+        {
+            previousDate = QDate::fromString(
+                QString::fromUtf8(
+                    decision->previousDate->data(),
+                    static_cast<qsizetype>(decision->previousDate->size())
+                    ),
+                Qt::ISODate
+                );
+        }
+        return TeacherImportDateCheck{
+            decision->comparison,
+            previousDate
+        };
     }
-    return Result<QDate>(std::unexpected(unavailableError()));
+    return Result<TeacherImportDateCheck>(
+        std::unexpected(unavailableError())
+        );
 }
 
 Result<int> ClassService::create(const QString& name) const

@@ -21,6 +21,8 @@ using EngineNativeEnglishTeacher =
     classmngr::engine::NativeEnglishTeacher;
 using EngineTeacher = classmngr::engine::Teacher;
 using EngineTeacherImportPlan = classmngr::engine::TeacherImportPlan;
+using EngineTeacherImportDateDecision =
+    classmngr::engine::TeacherImportDateDecision;
 using EngineTeacherImportService =
     classmngr::engine::TeacherImportService;
 using EngineTeacherImportSummary =
@@ -290,4 +292,27 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
     }
 
     return fromEngineSummary(*imported);
+}
+
+Result<EngineTeacherImportDateDecision>
+TeacherImportRepository::compareLatestSourceDate(
+    const QDate& sourceDate
+    )
+{
+    const QString operation = QObject::tr("Comparing teacher import dates");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineTeacherImportService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineTeacherImportDateDecision> decision =
+        service.compareLatestSourceDate(toUtf8(sourceDate.toString(Qt::ISODate)));
+    if (!decision)
+    {
+        return std::unexpected(engineFailure(operation, decision.error()));
+    }
+
+    return *decision;
 }

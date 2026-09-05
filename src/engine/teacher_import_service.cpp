@@ -535,20 +535,24 @@ bool parseIsoDate(
         && date.day >= 1 && date.day <= daysInMonth(date.year, date.month);
 }
 
-bool dateLessOrEqual(
+int compareDates(
     const IsoDate& lhs,
     const IsoDate& rhs
     ) noexcept
 {
     if (lhs.year != rhs.year)
     {
-        return lhs.year < rhs.year;
+        return lhs.year < rhs.year ? -1 : 1;
     }
     if (lhs.month != rhs.month)
     {
-        return lhs.month < rhs.month;
+        return lhs.month < rhs.month ? -1 : 1;
     }
-    return lhs.day <= rhs.day;
+    if (lhs.day != rhs.day)
+    {
+        return lhs.day < rhs.day ? -1 : 1;
+    }
+    return 0;
 }
 
 Status validatePlan(
@@ -1014,7 +1018,7 @@ Status updateLatestDate(
 
     IsoDate currentDate;
     if (parseIsoDate(currentText, currentDate)
-        && dateLessOrEqual(sourceDate, currentDate))
+        && compareDates(sourceDate, currentDate) <= 0)
     {
         return {};
     }
@@ -1031,6 +1035,70 @@ TeacherImportService::TeacherImportService(
     )
     : m_database(database)
 {
+}
+
+Result<TeacherImportDateDecision>
+TeacherImportService::compareLatestSourceDate(
+    std::string_view sourceDate
+    ) const
+{
+    IsoDate candidateDate;
+    if (!parseIsoDate(sourceDate, candidateDate))
+    {
+        return std::unexpected(makeError(
+            ErrorCode::InvalidFormat,
+            "The teacher import source date must be a valid ISO date."
+            ));
+    }
+
+    ApplicationSettingsService settings(m_database);
+    const Result<SettingValue> current = settings.load(
+        LatestSourceDateSetting
+        );
+    if (!current)
+    {
+        return std::unexpected(current.error());
+    }
+    if (std::holds_alternative<std::monostate>(*current))
+    {
+        return TeacherImportDateDecision{
+            TeacherImportDateComparison::NoPreviousDate,
+            std::nullopt
+        };
+    }
+
+    std::string currentText;
+    if (const auto* text = std::get_if<std::string>(&*current))
+    {
+        currentText = *text;
+    }
+    else
+    {
+        return std::unexpected(makeError(
+            ErrorCode::Schema,
+            "SQLite returned a non-text teacher import setting value."
+            ));
+    }
+
+    IsoDate currentDate;
+    if (!parseIsoDate(currentText, currentDate))
+    {
+        return std::unexpected(makeError(
+            ErrorCode::InvalidFormat,
+            "The persisted teacher import source date must be a valid ISO date."
+            ));
+    }
+
+    const int comparison = compareDates(candidateDate, currentDate);
+    const TeacherImportDateComparison decision = comparison < 0
+        ? TeacherImportDateComparison::Older
+        : comparison > 0
+            ? TeacherImportDateComparison::Newer
+            : TeacherImportDateComparison::Equal;
+    return TeacherImportDateDecision{
+        decision,
+        std::move(currentText)
+    };
 }
 
 Result<TeacherImportSummary> TeacherImportService::importTeachers(

@@ -219,32 +219,35 @@ x64 Debug retained-Qt/engine selection passes 6/6.
 
 ### P2-R03 — Finish the teacher-import candidate policy boundary
 
-**Status (2026-09-04): Implemented; broader import validation pending.**
-Committed as `49d6e56`. Template parsing no longer rejects duplicate source
-candidates, while the engine remains responsible for plan policy and matching.
+**Status (2026-09-05): Complete; typed import policy and retained-adapter
+validation passed.** Template parsing remains responsible for workbook and
+source-row extraction, while the engine now owns candidate identity, stored
+record ambiguity, and latest-source-date policy.
 
-- [ ] Keep workbook decoding and template-specific extraction in
+- [x] Keep workbook decoding and template-specific extraction in
   `SectionedContactListTemplate`, but pass all decoded candidates to the
   engine for cross-candidate duplicate/identity validation and import
   matching. The engine must remain authoritative for stored-record
   ambiguity and plan validity.
-- [ ] Expose the latest source-date comparison as a typed engine import or
+- [x] Expose the latest source-date comparison as a typed engine import or
   preview decision. Keep the older/equal-date confirmation prompt in Qt/WinUI,
   but ensure the comparison and persisted-date update use one engine policy.
-- [ ] Preserve source-row diagnostics and localized presentation errors in
+- [x] Preserve source-row diagnostics and localized presentation errors in
   the Qt adapter, and add fixtures for duplicate source candidates,
   ambiguous stored matches, and normalized birthdays/names.
 
 Evidence: `src/features/teacher/import/sectioned_contact_list_template.cpp`
-still performs `normalizedBirthday`, `cleanedKoreanName`,
-`cleanedStaffName`, and source-row identity normalization, while
-`src/engine/teacher_import_service.cpp` validates the plan, duplicate
-candidates, stored-record ambiguity, matching, and persisted source-date
-update. `src/app/services/feature_services.cpp` and
-`src/app/controllers/sidebar_controller_teacher_import.cpp` still read and
-compare the raw latest-import setting for the UI confirmation. Format-specific
-extraction remains intentionally Qt-owned; the policy boundary is not yet
-complete.
+continues to perform `normalizedBirthday`, `cleanedKoreanName`,
+`cleanedStaffName`, and source-row identity normalization, while all decoded
+candidates cross the repository boundary into
+`src/engine/teacher_import_service.cpp` for plan validation, duplicate
+candidates, stored-record ambiguity, matching, and persistence. The engine
+now exposes typed `NoPreviousDate`, `Newer`, `Equal`, and `Older` decisions,
+rejecting invalid candidate or persisted dates for the read-only comparison;
+the monotonic persistence path shares the same date comparator. The Qt
+service/controller maps that decision to the existing localized confirmation
+prompt without reading or comparing the raw setting directly. The focused
+engine and retained-Qt teacher-import tests pass.
 
 ### P2-R04 — Collapse legacy application-service fallbacks
 

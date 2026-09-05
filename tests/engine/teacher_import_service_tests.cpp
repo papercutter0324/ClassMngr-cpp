@@ -19,6 +19,7 @@ using classmngr::engine::SqliteValue;
 using classmngr::engine::Teacher;
 using classmngr::engine::TeacherImportPlan;
 using classmngr::engine::TeacherImportService;
+using classmngr::engine::TeacherImportDateComparison;
 
 bool expect(
     bool condition,
@@ -714,6 +715,83 @@ bool olderDateDoesNotReplaceNewerDate()
         );
     return passed;
 }
+
+bool comparesLatestSourceDate()
+{
+    const auto opened = OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return expect(false, "OpenDatabase failed for date comparison test");
+    }
+
+    auto& database = **opened;
+    TeacherImportService service(database);
+    bool passed = true;
+
+    const auto noPrevious = service.compareLatestSourceDate("2026-07-09");
+    passed &= expect(
+        noPrevious
+            && noPrevious->comparison == TeacherImportDateComparison::NoPreviousDate
+            && !noPrevious->previousDate.has_value(),
+        "missing latest source date was not reported"
+        );
+
+    passed &= expect(
+        database.execute(
+            "INSERT INTO app_settings (key, value) VALUES (?, ?)",
+            SqliteParameters{
+                SqliteValue{
+                    std::string(TeacherImportService::LatestSourceDateSetting)
+                },
+                SqliteValue{std::string("2026-07-09")}
+            }
+            ).has_value(),
+        "could not seed latest source date for comparison test"
+        );
+
+    const auto newer = service.compareLatestSourceDate("2026-07-10");
+    const auto equal = service.compareLatestSourceDate("2026-07-09");
+    const auto older = service.compareLatestSourceDate("2026-07-08");
+    passed &= expect(
+        newer && newer->comparison == TeacherImportDateComparison::Newer,
+        "newer source date comparison was incorrect"
+        );
+    passed &= expect(
+        equal && equal->comparison == TeacherImportDateComparison::Equal,
+        "equal source date comparison was incorrect"
+        );
+    passed &= expect(
+        older && older->comparison == TeacherImportDateComparison::Older,
+        "older source date comparison was incorrect"
+        );
+
+    const auto invalidCandidate = service.compareLatestSourceDate("not-a-date");
+    passed &= expect(
+        !invalidCandidate
+            && invalidCandidate.error().code == ErrorCode::InvalidFormat,
+        "invalid candidate source date was not rejected"
+        );
+
+    passed &= expect(
+        database.execute(
+            "UPDATE app_settings SET value=? WHERE key=?",
+            SqliteParameters{
+                SqliteValue{std::string("not-a-date")},
+                SqliteValue{
+                    std::string(TeacherImportService::LatestSourceDateSetting)
+                }
+            }
+            ).has_value(),
+        "could not seed invalid persisted source date"
+        );
+    const auto invalidCurrent = service.compareLatestSourceDate("2026-07-10");
+    passed &= expect(
+        !invalidCurrent
+            && invalidCurrent.error().code == ErrorCode::InvalidFormat,
+        "invalid persisted source date was not rejected"
+        );
+    return passed;
+}
 } // namespace
 
 int main()
@@ -723,6 +801,7 @@ int main()
         && normalizedNamesMatchStoredRecords()
         && duplicateAndAmbiguousImportsRollBack()
         && ambiguousStoredMatchesAreRejectedForEachDirectory()
-        && olderDateDoesNotReplaceNewerDate();
+        && olderDateDoesNotReplaceNewerDate()
+        && comparesLatestSourceDate();
     return passed ? 0 : 1;
 }

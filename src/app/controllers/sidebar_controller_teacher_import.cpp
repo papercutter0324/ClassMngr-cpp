@@ -24,21 +24,26 @@ void SidebarController::importTeachers()
     }
 
     const TeacherImportPlan plan = dialog.importPlan();
-    const Result<QDate> previousDateResult = teachers->latestImportDate();
-    if (!previousDateResult)
+    const Result<TeacherService::TeacherImportDateCheck> dateCheck =
+        teachers->compareLatestImportDate(plan.sourceDate);
+    if (!dateCheck)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Import Teachers"),
-            previousDateResult.error()
+            dateCheck.error()
             );
         return;
     }
 
-    const QDate previousDate = *previousDateResult;
-    if (previousDate.isValid() && plan.sourceDate <= previousDate)
+    const QDate previousDate = dateCheck->previousDate;
+    if (dateCheck->comparison ==
+            classmngr::engine::TeacherImportDateComparison::Equal
+        || dateCheck->comparison ==
+            classmngr::engine::TeacherImportDateComparison::Older)
     {
-        const bool versionsMatch = plan.sourceDate == previousDate;
+        const bool versionsMatch = dateCheck->comparison ==
+            classmngr::engine::TeacherImportDateComparison::Equal;
         const QString confirmationMessage =
             (versionsMatch
                  ? tr("The selected file's version appears to match the current data. Do you wish to continue?\n"

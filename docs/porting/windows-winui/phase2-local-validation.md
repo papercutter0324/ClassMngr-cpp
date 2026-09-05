@@ -1362,6 +1362,26 @@ Validation for this cleanup:
   Qt binary pass is claimed;
 - `git diff --check` passed.
 
+## Teacher-import policy boundary — 2026-09-05
+
+Teacher-import workbook decoding and source-row diagnostics remain in the Qt
+template adapter. Decoded candidates continue through the repository into the
+engine, which owns candidate duplicate/identity validation, stored-record
+ambiguity, matching, and monotonic latest-source-date persistence. The engine
+also exposes a typed read-only latest-date decision for no previous date,
+newer, equal, and older source versions, with typed invalid-date errors. The
+Qt service and controller use that decision only to select the existing
+localized confirmation prompt.
+
+Validation for this slice:
+
+- `ClassMngrEngineTeacherImportServiceTests` built successfully and passed
+  1/1 under x64 Debug.
+- `ClassMngrTeacherImportTests` built successfully and passed 1/1 under x64
+  Debug.
+- The source audit found no direct latest-setting read or date comparison in
+  the teacher-import controller; `git diff --check` passed.
+
 ## Platform-service workflow composition — 2026-09-05
 
 The retained Qt calendar-import, class-transfer, and ZIP adapters now pass a

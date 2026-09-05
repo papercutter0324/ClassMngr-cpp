@@ -20,6 +20,9 @@ public:
         SqliteDatabase& database
         );
 
+    [[nodiscard]] Result<TeacherImportDateDecision>
+        compareLatestSourceDate(std::string_view sourceDate) const;
+
     [[nodiscard]] Result<TeacherImportSummary> importTeachers(
         const TeacherImportPlan& plan
         );
