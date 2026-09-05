@@ -1,12 +1,12 @@
 {
-  "recorded_at_utc": "2026-09-05T19:39:16.590685+00:00",
-  "git_commit": "6bebfcee471c23a9542dc1ccf094bc7bab38afe2",
-  "git_commit_start": "6bebfcee471c23a9542dc1ccf094bc7bab38afe2",
-  "git_commit_end": "6bebfcee471c23a9542dc1ccf094bc7bab38afe2",
+  "recorded_at_utc": "2026-09-05T20:53:47.714783+00:00",
+  "git_commit": "db70ba81a4b4d9bb2e96e375735e8adb7ffbf50c",
+  "git_commit_start": "db70ba81a4b4d9bb2e96e375735e8adb7ffbf50c",
+  "git_commit_end": "db70ba81a4b4d9bb2e96e375735e8adb7ffbf50c",
   "git_dirty_start": false,
   "git_dirty_end": false,
-  "source_fingerprint_start": "b4c9f24b873effd32d56a5d62fc44ec9ee819f0201636f6ddaf7a6ee6170e2e5",
-  "source_fingerprint_end": "b4c9f24b873effd32d56a5d62fc44ec9ee819f0201636f6ddaf7a6ee6170e2e5",
+  "source_fingerprint_start": "484ffd272e6ac5cbf411a86b44aa69e32f9f41cefc867924aa506f81876eba98",
+  "source_fingerprint_end": "484ffd272e6ac5cbf411a86b44aa69e32f9f41cefc867924aa506f81876eba98",
   "source_stable_during_run": true,
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "python": "3.14.4",
@@ -18,24 +18,19 @@
   "results": {
     "configure_exit_code": 0,
     "build_exit_code": 0,
-    "test_exit_code": 8,
+    "test_exit_code": 0,
     "tests": {
       "total": 127,
-      "failures": 4,
+      "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "failed_tests": [
-        "ClassMngrInitialSetupWizardTests",
-        "ClassMngrUpdaterTests",
-        "ClassMngrTeacherImportDialogTests",
-        "ClassMngrSpeakingEvalBatchReportServiceTests"
-      ]
+      "failed_tests": []
     }
   },
   "duration_seconds": {
-    "configure": 139.493,
-    "clean_build": 606.838,
-    "tests": 134.503
+    "configure": 57.497,
+    "clean_build": 561.593,
+    "tests": 143.9
   },
   "root_cmake_lines": 353,
   "application": {
