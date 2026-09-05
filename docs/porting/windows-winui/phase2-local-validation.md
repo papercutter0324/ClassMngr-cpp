@@ -1648,18 +1648,19 @@ AppleClang 21.0.0, CMake 4.3.3, Qt 6.12.0, and the `macos-clang-debug`
 preset. It was compared against the completed Phase 3 foundation: no WinUI
 composition or production service graph was changed.
 
-The clean baseline now configures and builds successfully. Its 127-target CTest
-run passed 123/127. The only remaining failures are host-capability cases:
+The clean baseline now configures and builds successfully. On the permitted
+native macOS host, its 127-target CTest run passed 127/127. The four prior
+host-capability failures are resolved by the following registered execution
+policy:
 
-- `ClassMngrInitialSetupWizardTests` aborts when Cocoa cannot create the
-  pasteboard/LaunchServices connection in this non-GUI session.
-- `ClassMngrUpdaterTests` has 11 `QTcpServer::listen()` failures because this
-  sandbox denies loopback socket binding; the parser, signature, cleanup, and
-  non-network cases pass.
-- `ClassMngrTeacherImportDialogTests` aborts when a dialog requests a screen.
-- `ClassMngrSpeakingEvalBatchReportServiceTests` passes 24 cases, including
-  the Korean/emoji safe-filename regression, then aborts when the AI prompt
-  preview requests a screen.
+- `ClassMngrInitialSetupWizardTests` stays a bundled Cocoa application on
+  macOS, where its pasteboard/LaunchServices path passes.
+- `ClassMngrUpdaterTests` runs with `QT_QPA_PLATFORM=offscreen` and passes all
+  25 cases, including loopback-server cases on the permitted host.
+- `ClassMngrTeacherImportDialogTests` and
+  `ClassMngrSpeakingEvalBatchReportServiceTests` run with
+  `QT_QPA_PLATFORM=offscreen`, allowing their screen-dependent setup to pass
+  without changing product behavior.
 
 The original retained-Qt failures were repaired as follows:
 
@@ -1681,16 +1682,14 @@ The original retained-Qt failures were repaired as follows:
   Korean/emoji regression coverage.
 - The PDF page keeps its document lifetime attached through teardown, and the
   repeated page-switch regression in `ClassMngrPageManagerTests` passes.
-- `ClassMngrInitialSetupWizardTests` is now a macOS app bundle and selects
-  Cocoa on Apple hosts; native execution remains explicitly pending a
-  GUI-capable session.
+- `ClassMngrInitialSetupWizardTests` is a macOS app bundle and selects Cocoa
+  on Apple hosts; its native execution now passes on the permitted host.
 
 The exact retained-Qt P2-R07 command was rerun with Qt 6.12.0 universal
 metadata and completed `PASS`; the report is
 `artifacts/phase2/macos-qt-6.12-universal/macos-qt-6.12-universal.json`.
 The cross-platform Phase 2 gate remains open for the CI/device-owned Linux
-lane, a non-red seven-lane aggregate, and the host-specific native Cocoa and
-loopback validations above.
+lane and a non-red seven-lane aggregate.
 
 ## Windows Phase 2 milestone gate — 2026-09-05
 

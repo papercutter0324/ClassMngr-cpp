@@ -361,13 +361,12 @@ The Windows-focused aggregate is PASS through
 `artifacts/phase2/windows-aggregate-report.json`. The latest macOS run with
 exact Qt 6.12.0 universal runtime evidence passes the retained database-port
 fixture in both directions. Its clean baseline now configures and builds all
-127 targets and passes 123/127 tests. The four remaining failures are
-host-capability cases: native Cocoa screen/pasteboard setup in
-`ClassMngrInitialSetupWizardTests` and `ClassMngrTeacherImportDialogTests`,
-loopback binding in `ClassMngrUpdaterTests`, and screen access from the AI
-prompt preview in `ClassMngrSpeakingEvalBatchReportServiceTests`. Linux
-evidence remains CI/device-owned, and the full seven-lane aggregate remains
-open until those host-specific validations and the Linux lane are current.
+127 targets and passes 127/127 tests on the permitted native macOS host.
+`ClassMngrInitialSetupWizardTests` remains a bundled Cocoa test; the two
+screen-dependent dialog/report targets and the updater use the offscreen Qt
+platform, while the updater still exercises its loopback server. Linux evidence
+remains CI/device-owned, and the full seven-lane aggregate remains open until
+the Linux lane is current.
 
 - [x] Replace the focused exception in the P2-07 record with a complete,
   reproducible headless x64/x86 matrix, or explicitly repair/update the
@@ -384,11 +383,9 @@ open until those host-specific validations and the Linux lane are current.
   Windows engine reports record all five coverage categories as covered by
   `ClassMngrEngineDatabaseFixtureRoundTripTests`.
 - [ ] Obtain the CI/device-owned Linux retained-Qt fixture evidence and
-  regenerate the complete seven-lane aggregate. The macOS fixture lane is now
-  PASS and the clean baseline builds all 127 targets with 123/127 tests
-  passing; closure still requires GUI-capable native Cocoa validation for the
-  two screen-dependent tests and a loopback-capable host for the updater and
-  speaking-evaluation prompt-preview cases.
+  regenerate the complete seven-lane aggregate. The macOS fixture lane is
+  `PASS` and the clean baseline builds all 127 targets with 127/127 tests
+  passing on the permitted native host.
 
 Evidence: `docs/porting/windows-winui/phase2-local-validation.md` records the
 current Windows milestone matrix, the latest macOS baseline and runtime-tested
@@ -398,8 +395,7 @@ checked-in `artifacts/phase2` macOS lane and aggregate still contain the
 earlier host-blocked matrix and must be regenerated with current
 CI/device-owned reports. P2-R07's Windows and exact-macOS fixture portions
 are complete; the full cross-platform record remains open until the Linux
-lane, host-capability validations, and a non-red seven-lane aggregate are
-recorded.
+lane and a non-red seven-lane aggregate are recorded.
 
 ### P2-R08 — Remove or quarantine superseded Qt validation helpers
 
@@ -538,14 +534,13 @@ round trip before moving to the next; P2-R07 is the final aggregate gate.
 
 ## Phase 2 closure after the Phase 3 foundation — retained macOS repair plan
 
-**Status (2026-09-06): Retained macOS repairs executed; host/device exit
-conditions remain.** Phase 3 completed its Windows WinUI
+**Status (2026-09-06): Retained macOS repairs and host validation complete.**
+Phase 3 completed its Windows WinUI
 application-foundation gate on x64. Its engine-first composition, platform
 service contracts, lifecycle rules, and semantic/visual evidence confirm that
 the intended architecture is already in place for the new client. The
-remaining work is limited to native-session and CI/device-owned cross-platform
-evidence; it must not introduce a second service graph or change the WinUI
-foundation.
+remaining work is limited to CI/device-owned cross-platform evidence; it must
+not introduce a second service graph or change the WinUI foundation.
 
 - [x] Fix the clean-build blocker in
   `tests/class_transfer_tests.cpp` by migrating the four removed two-argument
@@ -571,24 +566,22 @@ foundation.
   locale-sensitive ctype classification to raw UTF-8 bytes, the retained
   adapter uses explicit UTF-8 conversions, and Korean/emoji filename cases
   are covered. The shared-policy and engine output-policy tests pass; the
-  batch target reaches 24 passing cases before its separate no-screen UI case
-  aborts on this host.
+  batch target passes all of its cases under the explicit offscreen CTest
+  platform setting.
 - [x] Prepare the macOS `QWizard` test for native Cocoa by making the target a
   macOS app bundle and selecting Cocoa on Apple hosts; offscreen remains the
-  explicit non-Apple/test fallback. Native execution is still blocked here by
-  pasteboard/LaunchServices errors and the absence of a GUI-capable session.
-- [ ] Re-run that InitialSetupWizard native path in a GUI-capable session.
+  explicit non-Apple/test fallback. Its bundled Cocoa execution passes on the
+  permitted native macOS host.
 - [x] Repair `QPdfView`/`QPdfDocument` teardown ordering exposed by
   `ClassMngrPageManagerTests`; the focused repeated page-switch regression and
   the target pass under the available offscreen host.
-- [ ] Run `ClassMngrUpdaterTests` on a loopback-capable host. Its 11 remaining
-  `server.listen()` failures are caused by this sandbox's socket restriction,
-  not by a product/test change; the test and updater behavior remain intact.
+- [x] Run `ClassMngrUpdaterTests` on a loopback-capable host. Its 25 cases
+  pass with the explicit offscreen CTest platform setting while retaining the
+  loopback-server behavior under test.
 - [x] Re-run the clean macOS baseline and exact Qt 6.12 universal P2-R07 lane.
-  The baseline configures/builds successfully and records 123/127 passing
-  tests; the four failures are the two native no-screen UI targets plus the
-  updater loopback case and the speaking-evaluation no-screen case. The exact
-  retained-Qt P2-R07 report is `PASS`.
+  The baseline configures/builds successfully and records 127/127 passing
+  tests on the permitted native host. The exact retained-Qt P2-R07 report is
+  `PASS`.
 - [ ] Obtain the CI/device-owned Linux retained-Qt report and regenerate the
   non-red seven-lane cross-platform aggregate.
 
