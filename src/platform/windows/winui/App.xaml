@@ -8,19 +8,12 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <controls:XamlControlsResources />
+                <ResourceDictionary Source="ms-appx:///Resources/ThemeColors.xaml" />
+                <ResourceDictionary Source="ms-appx:///Resources/ThemeTypography.xaml" />
+                <ResourceDictionary Source="ms-appx:///Resources/ThemeSpacing.xaml" />
+                <ResourceDictionary Source="ms-appx:///Resources/ThemeIcons.xaml" />
+                <ResourceDictionary Source="ms-appx:///Resources/ControlStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="Phase1SurfaceBrush" Color="#FFF7F9FC" />
-                    <SolidColorBrush x:Key="Phase1TextBrush" Color="#FF1A1A1A" />
-                    <SolidColorBrush x:Key="Phase1AccentBrush" Color="#FF005FB8" />
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="Phase1SurfaceBrush" Color="#FF202124" />
-                    <SolidColorBrush x:Key="Phase1TextBrush" Color="#FFF1F1F1" />
-                    <SolidColorBrush x:Key="Phase1AccentBrush" Color="#FF8AB4F8" />
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -159,6 +159,11 @@
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml" />
     <Page Include="MainWindow.xaml" />
+    <Page Include="Resources\ThemeColors.xaml" />
+    <Page Include="Resources\ThemeTypography.xaml" />
+    <Page Include="Resources\ThemeSpacing.xaml" />
+    <Page Include="Resources\ThemeIcons.xaml" />
+    <Page Include="Resources\ControlStyles.xaml" />
   </ItemGroup>
 
   <ItemGroup>

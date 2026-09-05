@@ -9,7 +9,7 @@
     Title="ClassMngr">
     <Grid
         x:Name="RootGrid"
-        Background="{ThemeResource Phase1SurfaceBrush}"
+        Background="{ThemeResource Phase3WindowBackgroundBrush}"
         RequestedTheme="Default">
         <Grid.RowDefinitions>
             <RowDefinition Height="48" />
@@ -19,8 +19,8 @@
         <Grid
             x:Name="AppTitleBar"
             Grid.Row="0"
-            Padding="16,0,12,0"
-            Background="{ThemeResource Phase1SurfaceBrush}"
+            Padding="{StaticResource Phase3TitleBarPadding}"
+            Background="{ThemeResource Phase3WindowBackgroundBrush}"
             AutomationProperties.Name="Application title bar">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -28,16 +28,14 @@
             </Grid.ColumnDefinitions>
             <TextBlock
                 x:Name="AppTitleBarText"
-                VerticalAlignment="Center"
+                Style="{StaticResource Phase3TitleBarTextBlockStyle}"
                 Text="ClassMngr"
-                FontSize="16"
-                FontWeight="SemiBold"
                 AutomationProperties.Name="Application title" />
             <Button
                 x:Name="ShellInfoButton"
                 Grid.Column="1"
+                Style="{StaticResource Phase3SecondaryButtonStyle}"
                 Content="About shell"
-                Padding="12,4"
                 Click="ShellInfoButton_Click"
                 AutomationProperties.Name="Show shell information" />
         </Grid>
@@ -45,6 +43,7 @@
         <NavigationView
             x:Name="RootNavigationView"
             Grid.Row="1"
+            Style="{StaticResource Phase3NavigationViewStyle}"
             IsBackButtonVisible="Visible"
             IsSettingsVisible="False"
             PaneDisplayMode="Left"
