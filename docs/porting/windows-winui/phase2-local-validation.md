@@ -1640,3 +1640,33 @@ The exact macOS P2-R07 lane is no longer host-blocked, but the phase-2 exit gate
 remains deferred: the Linux lane and the current aggregate are still open, and
 the clean/full retained-Qt validation must be repaired and rerun before the
 complete migrated-feature matrix can be claimed green.
+
+## Windows Phase 2 milestone gate — 2026-09-05
+
+The current Windows milestone was rerun from clean commit
+`e847c10c9c27ad70de7f128e466232a4ff58d6b3` with
+`TrackFileAccess=false`. All five Windows lanes are now current, clean, and
+runtime-tested:
+
+| Lane | Result | Evidence |
+| --- | --- | --- |
+| Windows x64 Debug engine | `PASS` | 56 `ClassMngrEngine*` tests; all five database coverage categories covered |
+| Windows x64 Release engine | `PASS` | 56 `ClassMngrEngine*` tests; all five database coverage categories covered |
+| Windows x86 Debug engine | `PASS` | 56 `ClassMngrEngine*` tests; all five database coverage categories covered |
+| Windows x86 Release engine | `PASS` | 56 `ClassMngrEngine*` tests; all five database coverage categories covered |
+| Windows Qt 6.12.0 x64 retained fixture | `PASS` | `ClassMngrDatabasePortFixtureTests` runtime-tested |
+
+The Windows-focused aggregate command is:
+
+```powershell
+python scripts/phase2_exit_gate.py validate-windows `
+  --reports-dir artifacts/phase2 `
+  --output artifacts/phase2/windows-aggregate-report.json
+```
+
+It returned exit code 0 and wrote a `PASS` report. This is a Windows
+milestone result, not a claim that the full seven-lane cross-platform gate is
+green. Linux is intentionally deferred until the remaining Windows porting
+work is complete. The full `validate` command therefore remains expected to
+fail while the local Linux report is host-blocked and the CI/device-owned
+cross-platform evidence is not yet assembled.

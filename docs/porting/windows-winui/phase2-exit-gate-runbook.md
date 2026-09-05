@@ -1,8 +1,9 @@
 # Phase 2 exit-gate runbook
 
-Status: deferred (2026-09-04). This is an unofficial port, so the
-cross-platform evidence gate is intentionally deferred. The automated path
-remains available for the point when the port is promoted for official use.
+Status: Windows milestone complete (2026-09-05); the full cross-platform
+evidence gate remains deferred. This is an unofficial port, so Linux is not a
+current Windows-port blocker. The automated full-gate path remains available
+for the point when the port is promoted for official use.
 
 ## Automated entry point
 
@@ -28,6 +29,25 @@ but it is not an exit-gate pass. A retained-Qt report is `host-blocked` when
 the exact Qt prefix/version cannot be established; it must include the
 blocking reasons. The four engine lanes remain separate from the three
 retained-Qt lanes, including their x64/x86 results.
+
+## Windows milestone profile
+
+When Linux is intentionally deferred until the remaining Windows porting work
+is complete, validate the Windows milestone with the five current Windows
+lanes:
+
+```powershell
+python scripts/phase2_exit_gate.py validate-windows `
+  --reports-dir artifacts/phase2 `
+  --output artifacts/phase2/windows-aggregate-report.json
+```
+
+This profile requires the four Qt-free Windows x64/x86 Debug/Release engine
+lanes and the retained Windows Qt 6.12.0 x64 fixture. A `PASS` is a Windows
+milestone result only; it does not replace the full `validate` command or
+claim Linux and macOS cross-platform completion. The profile deliberately
+ignores deferred lane reports when they are present in the same reports
+directory.
 
 For a local lane, use the dependency-free runner from the repository root. A
 Windows engine invocation is:
@@ -139,20 +159,19 @@ deciding whether the documented Phase 2 intent is satisfied.
 
 ## Deferred closure conditions for P2-R07
 
-This repository does not claim a completed cross-platform exit gate. The
-current local/plan limitations are concrete: existing build trees are missing
-nine registered engine binaries, the available host Qt is 6.11.1 while the
-gate requires exactly 6.12.0, and the Linux baseline is red. Those conditions
-must remain visible as missing-artifact, `host-blocked`, or failed evidence;
-they must not be converted into passing runtime results. Because
-`NativeWindowsPort` is unofficial, the outcome remains deferred rather than a
-release claim.
+The Windows milestone now has a current five-lane PASS. This repository still
+does not claim a completed seven-lane cross-platform exit gate. Linux remains
+the explicit deferred direction until the Windows port is complete, and the
+broader macOS retained-Qt baseline remains separately documented from the
+portable-engine fixture lane. Those conditions must remain visible as
+missing-artifact, `host-blocked`, or failed evidence; they must not be
+converted into passing runtime results.
 
 - Fresh artifacts are required for every Windows matrix lane; focused tests
   are not a complete matrix.
-- Missing registered binaries, the Qt 6.11.1 versus 6.12.0 host mismatch,
-  MSBuild FileTracker failures, and any Linux/macOS failures must be recorded
-  in the lane report or repaired before the gate is closed.
+- Missing registered binaries, Qt-version mismatches, MSBuild FileTracker
+  failures, and any Linux/macOS failures must be recorded in the lane report
+  or repaired before the full gate is closed.
 - The three retained-Qt lanes must publish current fixture evidence for every
   migrated persistence slice, including invalid input, rollback, migration,
   busy/locked database, and partial-failure outcomes where the lane owns that
