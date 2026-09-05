@@ -34,6 +34,7 @@ QT_LANES = (
     "linux-qt-6.12-x64",
     "macos-qt-6.12-universal",
 )
+WINDOWS_REQUIRED_LANES = ENGINE_LANES + ("windows-qt-6.12-x64",)
 REQUIRED_LANES = ENGINE_LANES + QT_LANES
 ENGINE_TEST_PATTERN = r"^ClassMngrEngine"
 RETAINED_QT_TEST = "ClassMngrDatabasePortFixtureTests"
@@ -61,6 +62,10 @@ EVIDENCE_CLASSES = (
     "compile-only",
     "host-blocked",
     "failed",
+)
+AGGREGATE_FORMATS = (
+    "phase2-exit-gate-aggregate-v1",
+    "phase2-windows-exit-gate-aggregate-v1",
 )
 REQUIRED_ARTIFACTS = (
     "configure_log",
@@ -825,7 +830,14 @@ def validate_report(report: dict[str, Any], report_path: Path) -> list[str]:
     return failures
 
 
-def validate_aggregate(reports_dir: Path, output: Path) -> int:
+def validate_aggregate(
+    reports_dir: Path,
+    output: Path,
+    *,
+    required_lanes: tuple[str, ...] = REQUIRED_LANES,
+    allow_extra_lanes: bool = False,
+    aggregate_format: str = "phase2-exit-gate-aggregate-v1",
+) -> int:
     # Inventory JSON is itself a required lane artifact, not another lane
     # report.  Lane reports have stable, lane-specific filenames.  The
     # aggregate is commonly written inside reports_dir, so exclude it too.
@@ -847,6 +859,8 @@ def validate_aggregate(reports_dir: Path, output: Path) -> int:
         except (OSError, json.JSONDecodeError) as error:
             failures.append(f"invalid report {path}: {error}")
             continue
+        if isinstance(document, dict) and document.get("format") in AGGREGATE_FORMATS:
+            continue
         if not isinstance(document, dict) or not document.get("lane_id"):
             failures.append(f"report has no lane_id: {path}")
             continue
@@ -855,9 +869,11 @@ def validate_aggregate(reports_dir: Path, output: Path) -> int:
     for path, report in reports:
         by_lane.setdefault(str(report["lane_id"]), []).append((path, report))
     found = sorted(by_lane)
-    if found != sorted(REQUIRED_LANES):
-        failures.append(f"lane set mismatch; expected {list(REQUIRED_LANES)}, found {found}")
-    for lane_id in REQUIRED_LANES:
+    expected_lanes = sorted(required_lanes)
+    found_required = sorted(lane_id for lane_id in found if lane_id in required_lanes)
+    if (found_required != expected_lanes) or (not allow_extra_lanes and found != expected_lanes):
+        failures.append(f"lane set mismatch; expected {list(required_lanes)}, found {found}")
+    for lane_id in required_lanes:
         entries = by_lane.get(lane_id, [])
         if not entries:
             failures.append(f"missing lane report: {lane_id}")
@@ -869,18 +885,23 @@ def validate_aggregate(reports_dir: Path, output: Path) -> int:
         failures.extend(f"{lane_id}: {failure}" for failure in validate_report(report, path))
     commits = {
         str(report.get("git_commit"))
-        for _, report in reports
+        for lane_id in required_lanes
+        for _, report in by_lane.get(lane_id, [])
         if report.get("git_commit")
     }
     if len(commits) != 1:
         failures.append(f"lane reports do not share one commit: {sorted(commits)}")
     aggregate = {
-        "format": "phase2-exit-gate-aggregate-v1",
+        "format": aggregate_format,
         "status": "PASS" if not failures else "FAIL",
         "validated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "required_lanes": list(REQUIRED_LANES),
+        "required_lanes": list(required_lanes),
         "found_lanes": found,
-        "lane_reports": {lane: str(entries[0][0]) for lane, entries in by_lane.items() if entries},
+        "lane_reports": {
+            lane: str(by_lane[lane][0][0])
+            for lane in required_lanes
+            if by_lane.get(lane)
+        },
         "failures": failures,
     }
     write_json(output, aggregate)
@@ -889,6 +910,18 @@ def validate_aggregate(reports_dir: Path, output: Path) -> int:
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
     return 0 if not failures else 1
+
+
+def validate_windows_aggregate(reports_dir: Path, output: Path) -> int:
+    """Validate the Windows milestone without claiming the full cross-platform gate."""
+
+    return validate_aggregate(
+        reports_dir,
+        output,
+        required_lanes=WINDOWS_REQUIRED_LANES,
+        allow_extra_lanes=True,
+        aggregate_format="phase2-windows-exit-gate-aggregate-v1",
+    )
 
 
 def parser() -> argparse.ArgumentParser:
@@ -914,6 +947,12 @@ def parser() -> argparse.ArgumentParser:
     validate = commands.add_parser("validate", help="validate all downloaded lane reports")
     validate.add_argument("--reports-dir", required=True, type=Path)
     validate.add_argument("--output", required=True, type=Path)
+    validate_windows = commands.add_parser(
+        "validate-windows",
+        help="validate the Windows milestone lanes without claiming cross-platform completion",
+    )
+    validate_windows.add_argument("--reports-dir", required=True, type=Path)
+    validate_windows.add_argument("--output", required=True, type=Path)
     return root
 
 
@@ -925,6 +964,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.compile_only and args.lane_type != "retained-qt":
             parser().error("--compile-only is only valid for retained-qt lanes")
         return run_lane(args)
+    if args.command == "validate-windows":
+        return validate_windows_aggregate(args.reports_dir, args.output)
     return validate_aggregate(args.reports_dir, args.output)
 
 

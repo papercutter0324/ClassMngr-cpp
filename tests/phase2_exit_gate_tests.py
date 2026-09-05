@@ -18,8 +18,10 @@ from phase2_exit_gate import (  # noqa: E402
     REQUIRED_LANES,
     RETAINED_QT_GENERATOR,
     RETAINED_QT_TEST,
+    WINDOWS_REQUIRED_LANES,
     parse_json_inventory,
     validate_aggregate,
+    validate_windows_aggregate,
 )
 
 
@@ -139,6 +141,24 @@ class Phase2ExitGateTests(unittest.TestCase):
             output = root / "aggregate.json"
             self.assertEqual(validate_aggregate(root, output), 0)
             self.assertEqual(json.loads(output.read_text())["status"], "PASS")
+
+    def test_windows_milestone_ignores_deferred_lanes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for lane_id in WINDOWS_REQUIRED_LANES:
+                make_report(root, lane_id)
+            for lane_id in ("linux-qt-6.12-x64", "macos-qt-6.12-universal"):
+                make_report(root, lane_id)
+                report_path = root / lane_id / f"{lane_id}.json"
+                report = json.loads(report_path.read_text())
+                report["status"] = "BLOCKED"
+                report["evidence_class"] = "host-blocked"
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+            output = root / "windows-aggregate.json"
+            self.assertEqual(validate_windows_aggregate(root, output), 0)
+            aggregate = json.loads(output.read_text())
+            self.assertEqual(aggregate["status"], "PASS")
+            self.assertEqual(aggregate["required_lanes"], list(WINDOWS_REQUIRED_LANES))
 
     def test_aggregate_output_inside_reports_dir_is_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
