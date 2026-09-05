@@ -277,5 +277,9 @@ Invoke-StageSmokeTest `
     -Executable $executablePath `
     -WorkingDirectory $stagePath `
     -Argument '--phase1-dpi-test'
+Invoke-StageSmokeTest `
+    -Executable $executablePath `
+    -WorkingDirectory $stagePath `
+    -Argument '--phase3-lifecycle-test'
 
 Write-Host "Verified WinUI stage ($Platform): $stagePath"

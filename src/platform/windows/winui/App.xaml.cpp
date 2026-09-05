@@ -2,6 +2,7 @@
 
 #include "App.xaml.h"
 #include "MainWindow.xaml.h"
+#include "winui_lifecycle.h"
 #include "winui_identity.h"
 
 #include <shellapi.h>
@@ -10,20 +11,14 @@
 #include <string>
 #include <string_view>
 
+#include <winrt/Windows.ApplicationModel.Activation.h>
+
 #if __has_include("App.g.cpp")
 #include "App.g.cpp"
 #endif
 
 namespace
 {
-
-bool commandLineContains(std::wstring_view value)
-{
-    const wchar_t* commandLine = GetCommandLineW();
-    return commandLine != nullptr
-        && std::wstring_view(commandLine).find(value)
-            != std::wstring_view::npos;
-}
 
 std::wstring embeddedManifest()
 {
@@ -118,6 +113,23 @@ App::App()
     SetCurrentProcessExplicitAppUserModelID(
         ClassMngrWinUIIdentity::AppUserModelId
         );
+    const auto application = Microsoft::UI::Xaml::Application::Current();
+    m_suspendingToken =
+        Windows::ApplicationModel::Core::CoreApplication::Suspending(
+            {this, &App::OnSuspending}
+            );
+    m_resumingToken =
+        Windows::ApplicationModel::Core::CoreApplication::Resuming(
+            {this, &App::OnResuming}
+            );
+    m_unhandledExceptionToken = application.UnhandledException(
+        {this, &App::OnUnhandledException}
+        );
+}
+
+App::~App()
+{
+    closeLifecycle();
 }
 
 void App::OnLaunched(
@@ -126,7 +138,13 @@ void App::OnLaunched(
 {
     static_cast<void>(arguments);
 
-    if (commandLineContains(L"--phase1-manifest-test"))
+    const auto activation = ClassMngrWinUILifecycle::parseWindowsCommandLine(
+        GetCommandLineW()
+        );
+    if (ClassMngrWinUILifecycle::hasArgument(
+            activation,
+            L"--phase1-manifest-test"
+            ))
     {
         ExitProcess(
             verifyEmbeddedManifest()
@@ -136,14 +154,63 @@ void App::OnLaunched(
         return;
     }
 
+    if (activation.lifecycleTest)
+    {
+        ExitProcess(
+            ClassMngrWinUILifecycle::runLifecycleContractChecks()
+                ? ERROR_SUCCESS
+                : ERROR_INVALID_DATA
+            );
+        return;
+    }
+
+    try
+    {
+        if (!initializeSingleInstance())
+        {
+            Microsoft::UI::Xaml::Application::Current().Exit();
+            return;
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        ClassMngrWinUILifecycle::reportFatalError(
+            L"Single-instance activation failed: "
+                + std::wstring(error.message())
+            );
+        terminateAfterFatalError();
+        return;
+    }
+    catch (...)
+    {
+        ClassMngrWinUILifecycle::reportFatalError(
+            L"Single-instance activation failed."
+            );
+        terminateAfterFatalError();
+        return;
+    }
+
     m_window = winrt::make<MainWindow>();
     m_window.Title(ClassMngrWinUIIdentity::WindowTitle);
+    m_dispatcherQueue = m_window.DispatcherQueue();
     m_window.Activate();
 
-    const bool smokeTest = commandLineContains(L"--phase1-smoke-test");
-    const bool inputTest = commandLineContains(L"--phase1-input-test");
-    const bool themeTest = commandLineContains(L"--phase1-theme-test");
-    const bool dpiTest = commandLineContains(L"--phase1-dpi-test");
+    const bool smokeTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase1-smoke-test"
+        );
+    const bool inputTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase1-input-test"
+        );
+    const bool themeTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase1-theme-test"
+        );
+    const bool dpiTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase1-dpi-test"
+        );
     if (smokeTest || inputTest || themeTest || dpiTest)
     {
         const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest]() {
@@ -182,6 +249,173 @@ void App::OnLaunched(
         {
             ExitProcess(ERROR_INVALID_DATA);
         }
+    }
+}
+
+bool App::initializeSingleInstance()
+{
+    using winrt::Microsoft::Windows::AppLifecycle::AppInstance;
+
+    const AppInstance currentInstance = AppInstance::GetCurrent();
+    const auto activationArguments = currentInstance.GetActivatedEventArgs();
+    const AppInstance primaryInstance = AppInstance::FindOrRegisterForKey(
+        ClassMngrWinUIIdentity::SingleInstanceKey
+        );
+    if (!primaryInstance.IsCurrent())
+    {
+        primaryInstance.RedirectActivationToAsync(activationArguments).get();
+        return false;
+    }
+
+    m_instance = primaryInstance;
+    auto weak = get_weak();
+    m_activationToken = m_instance.Activated(
+        [weak](Windows::Foundation::IInspectable const&,
+               Microsoft::Windows::AppLifecycle::AppActivationArguments const&
+                   activationArguments) {
+            if (auto app = weak.get())
+            {
+                app->OnAppInstanceActivated(activationArguments);
+            }
+        }
+        );
+    return true;
+}
+
+void App::OnAppInstanceActivated(
+    Microsoft::Windows::AppLifecycle::AppActivationArguments const& arguments
+    )
+{
+    auto weak = get_weak();
+    if (!m_dispatcherQueue
+        || !m_dispatcherQueue.TryEnqueue(
+            [weak, arguments]() {
+                if (auto app = weak.get())
+                {
+                    app->handleActivation(arguments);
+                }
+            }
+            ))
+    {
+        ClassMngrWinUILifecycle::reportFatalError(
+            L"A redirected activation could not be dispatched to the UI thread."
+            );
+    }
+}
+
+void App::handleActivation(
+    Microsoft::Windows::AppLifecycle::AppActivationArguments const& arguments
+    )
+{
+    if (arguments.Kind()
+        == Microsoft::Windows::AppLifecycle::ExtendedActivationKind::CommandLineLaunch)
+    {
+        const auto commandLineArguments = arguments.Data().try_as<
+            Windows::ApplicationModel::Activation::CommandLineActivatedEventArgs>();
+        if (commandLineArguments)
+        {
+            static_cast<void>(
+                ClassMngrWinUILifecycle::parseCommandLineActivationArguments(
+                    commandLineArguments.Operation().Arguments().c_str()
+                    )
+                );
+        }
+    }
+
+    if (m_window)
+    {
+        m_window.Activate();
+    }
+}
+
+void App::OnSuspending(
+    Windows::Foundation::IInspectable const& sender,
+    Windows::ApplicationModel::SuspendingEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    m_isSuspended = true;
+}
+
+void App::OnResuming(
+    Windows::Foundation::IInspectable const& sender,
+    Windows::Foundation::IInspectable const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    m_isSuspended = false;
+}
+
+void App::OnUnhandledException(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::UnhandledExceptionEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    arguments.Handled(true);
+    ClassMngrWinUILifecycle::reportFatalError(
+        L"Unhandled XAML exception: " + std::wstring(arguments.Message())
+        );
+    terminateAfterFatalError();
+}
+
+void App::closeLifecycle() noexcept
+{
+    try
+    {
+        if (m_instance && m_activationToken.value != 0)
+        {
+            m_instance.Activated(m_activationToken);
+            m_activationToken = {};
+        }
+        if (m_suspendingToken.value != 0)
+        {
+            Windows::ApplicationModel::Core::CoreApplication::Suspending(
+                m_suspendingToken
+                );
+            m_suspendingToken = {};
+        }
+        if (m_resumingToken.value != 0)
+        {
+            Windows::ApplicationModel::Core::CoreApplication::Resuming(
+                m_resumingToken
+                );
+            m_resumingToken = {};
+        }
+        if (m_unhandledExceptionToken.value != 0)
+        {
+            Microsoft::UI::Xaml::Application::Current().as<
+                Microsoft::UI::Xaml::IApplication>().UnhandledException(
+                m_unhandledExceptionToken
+                );
+            m_unhandledExceptionToken = {};
+        }
+        if (m_instance)
+        {
+            m_instance.UnregisterKey();
+            m_instance = nullptr;
+        }
+        m_dispatcherQueue = nullptr;
+        m_window = nullptr;
+    }
+    catch (...)
+    {
+        // Shutdown must not let a failed cleanup escape an App destructor.
+    }
+}
+
+void App::terminateAfterFatalError() noexcept
+{
+    closeLifecycle();
+    try
+    {
+        Microsoft::UI::Xaml::Application::Current().Exit();
+    }
+    catch (...)
+    {
+        // The report is already durable; there is no safe UI recovery path.
     }
 }
 
