@@ -189,10 +189,10 @@ AsyncCommand::AsyncCommand(
     Microsoft::UI::Dispatching::DispatcherQueue const& dispatcherQueue,
     AsyncWork work
     )
-    : m_dispatcherQueue(dispatcherQueue)
+    : m_dispatcher(dispatcherQueue)
     , m_work(std::move(work))
 {
-    if (!m_dispatcherQueue || !m_work)
+    if (!m_dispatcher.isValid() || !m_work)
     {
         throw winrt::hresult_invalid_argument();
     }
@@ -223,14 +223,17 @@ void AsyncCommand::Execute(
 
     try
     {
-        m_operation = m_work(cancellation->token());
+        m_operation = ClassMngrWinUIThreading::runBackgroundWork(
+            m_work,
+            cancellation->token()
+            );
         if (!m_operation)
         {
             throw winrt::hresult_invalid_argument();
         }
         observeCompletion(
             get_weak(),
-            m_dispatcherQueue,
+            m_dispatcher,
             cancellation,
             m_operation
             );
@@ -280,7 +283,7 @@ void AsyncCommand::Cancel()
 
 winrt::fire_and_forget AsyncCommand::observeCompletion(
     winrt::weak_ref<AsyncCommand> weakCommand,
-    Microsoft::UI::Dispatching::DispatcherQueue dispatcherQueue,
+    ClassMngrWinUIThreading::UiThreadDispatcher dispatcher,
     std::shared_ptr<classmngr::engine::CancellationSource> cancellation,
     winrt::Windows::Foundation::IAsyncAction operation
     )
@@ -295,7 +298,7 @@ winrt::fire_and_forget AsyncCommand::observeCompletion(
         // state through ObservableViewModel at their UI boundary.
     }
 
-    static_cast<void>(dispatcherQueue.TryEnqueue(
+    static_cast<void>(dispatcher.enqueue(
         [weakCommand, cancellation]() {
             if (auto command = weakCommand.get())
             {
@@ -322,7 +325,15 @@ void AsyncCommand::complete(
 
 void AsyncCommand::raiseCanExecuteChanged()
 {
-    m_canExecuteChanged(*this, nullptr);
+    const auto weakCommand = get_weak();
+    static_cast<void>(m_dispatcher.enqueue(
+        [weakCommand]() {
+            if (auto command = weakCommand.get())
+            {
+                command->m_canExecuteChanged(*command, nullptr);
+            }
+        }
+        ));
 }
 
 } // namespace winrt::ClassMngrWinUI::implementation

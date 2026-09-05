@@ -63,14 +63,6 @@ std::wstring boxedString(
     }
 }
 
-winrt::Windows::Foundation::IAsyncAction completedPhase3Work(
-    classmngr::engine::CancellationToken const& cancellation
-    )
-{
-    static_cast<void>(cancellation);
-    co_return;
-}
-
 winrt::Windows::Foundation::IAsyncAction phase3PresentationWork(
     classmngr::engine::CancellationToken const& cancellation
     )
@@ -618,12 +610,13 @@ MainWindow::runPhase3ViewModelChecks()
     struct CommandCheckState
     {
         winrt::handle completion{CreateEventW(nullptr, TRUE, FALSE, nullptr)};
+        winrt::handle workStarted{CreateEventW(nullptr, TRUE, FALSE, nullptr)};
         std::atomic_bool workInvoked{};
         std::atomic_bool completionReady{};
         std::atomic_uint32_t stateChanges{};
     };
     auto commandState = std::make_shared<CommandCheckState>();
-    if (!commandState->completion)
+    if (!commandState->completion || !commandState->workStarted)
     {
         co_return false;
     }
@@ -632,7 +625,8 @@ MainWindow::runPhase3ViewModelChecks()
         classmngr::engine::CancellationToken const& cancellation
         ) {
         commandState->workInvoked.store(true, std::memory_order_relaxed);
-        return completedPhase3Work(cancellation);
+        SetEvent(commandState->workStarted.get());
+        return phase3PresentationWork(cancellation);
     };
     auto command = winrt::make_self<AsyncCommand>(
         DispatcherQueue(),
@@ -663,6 +657,7 @@ MainWindow::runPhase3ViewModelChecks()
 
     const bool initiallyEnabled = commandInterface.CanExecute(nullptr);
     commandInterface.Execute(nullptr);
+    co_await winrt::resume_on_signal(commandState->workStarted.get());
     const bool runningAfterExecute = command->IsRunning()
         && !commandInterface.CanExecute(nullptr)
         && commandState->workInvoked.load(std::memory_order_relaxed);

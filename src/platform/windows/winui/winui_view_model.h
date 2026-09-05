@@ -3,6 +3,7 @@
 #include "classmngr/engine/platform_services.h"
 #include "classmngr/engine/result.h"
 #include "classmngr/engine/validation_result.h"
+#include "winui_threading.h"
 
 #include <winrt/Microsoft.UI.Dispatching.h>
 #include <winrt/Microsoft.UI.Xaml.Data.h>
@@ -58,14 +59,15 @@ private:
     bool m_hasValidationErrors{};
 };
 
-// ICommand adapter for platform-neutral asynchronous engine work.  Command
-// state changes are always completed through the supplied DispatcherQueue.
+// ICommand adapter for platform-neutral asynchronous engine work. AsyncWork
+// is entered through ClassMngrWinUIThreading::runBackgroundWork, so callbacks
+// must exchange portable values and never capture XAML objects. Command state
+// changes are completed through the supplied DispatcherQueue.
 struct AsyncCommand : winrt::implements<
     AsyncCommand,
     Microsoft::UI::Xaml::Input::ICommand>
 {
-    using AsyncWork = std::function<winrt::Windows::Foundation::IAsyncAction(
-        classmngr::engine::CancellationToken const&)>;
+    using AsyncWork = ClassMngrWinUIThreading::BackgroundWork;
 
     AsyncCommand(
         Microsoft::UI::Dispatching::DispatcherQueue const& dispatcherQueue,
@@ -89,7 +91,7 @@ struct AsyncCommand : winrt::implements<
 private:
     static winrt::fire_and_forget observeCompletion(
         winrt::weak_ref<AsyncCommand> weakCommand,
-        Microsoft::UI::Dispatching::DispatcherQueue dispatcherQueue,
+        ClassMngrWinUIThreading::UiThreadDispatcher dispatcher,
         std::shared_ptr<classmngr::engine::CancellationSource> cancellation,
         winrt::Windows::Foundation::IAsyncAction operation
         );
@@ -98,7 +100,7 @@ private:
         );
     void raiseCanExecuteChanged();
 
-    Microsoft::UI::Dispatching::DispatcherQueue m_dispatcherQueue{nullptr};
+    ClassMngrWinUIThreading::UiThreadDispatcher m_dispatcher;
     AsyncWork m_work;
     winrt::event<winrt::Windows::Foundation::EventHandler<
         winrt::Windows::Foundation::IInspectable>> m_canExecuteChanged;

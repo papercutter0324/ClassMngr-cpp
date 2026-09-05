@@ -5,6 +5,7 @@
 #include "winui_lifecycle.h"
 #include "winui_identity.h"
 #include "winui_platform_services.h"
+#include "winui_threading.h"
 
 #include <shellapi.h>
 #include <shobjidl_core.h>
@@ -248,10 +249,14 @@ void App::OnLaunched(
         activation,
         L"--phase3-dialog-test"
         );
+    const bool threadingTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase3-threading-test"
+        );
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
-        || viewModelTest || localizationTest || dialogTest)
+        || viewModelTest || localizationTest || dialogTest || threadingTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -291,6 +296,10 @@ void App::OnLaunched(
             else if (dialogTest)
             {
                 passed = mainWindow->runPhase3DialogChecks();
+            }
+            else if (threadingTest)
+            {
+                passed = ClassMngrWinUIThreading::runThreadingContractChecks();
             }
             scheduleTestExit(m_window, passed);
         };

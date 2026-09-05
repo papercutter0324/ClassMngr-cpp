@@ -97,14 +97,14 @@ Status vocabulary:
 
 ## Progress Dashboard
 
-Last updated: 2026-09-05 (Asia/Seoul)
+Last updated: 2026-09-06 (Asia/Seoul)
 
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, testing-class/testing-block persistence and retained adapter wiring, campus-record CRUD and retained campus adapter wiring, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-time validation and retained validator adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, teacher-import workflows and retained teacher-import adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, schedule-time formatter adapter wiring, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, class-tab navigation and retained adapter wiring, evaluation-default selection policy and retained adapter wiring, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, document-catalog policies, application-settings persistence and retained settings adapter wiring, personal-details settings persistence and retained personal-details adapter wiring, file-backed retained Qt DatabaseSession and CalendarEventCache preflight through engine OpenDatabase, the eleven-case fixture corpus round-trip gate, P2-01 report/export adapter boundaries, P2-02 portable file/output contracts, P2-03 retained database/application-service adapter cleanup, P2-04 import/file-codec boundaries, P2-05 resource-pack/catalog policy, and P2-06 platform-service interfaces are extracted; P2-07 per-slice cross-platform fixture coverage and P2-08 retained-adapter/legacy-rule cleanup are complete, while the remaining Phase 2 exit-gate work is tracked in the local validation record. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
-| [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **In progress** | Items 1–6 are committed; item 7 dialogs and dirty-state handling is finished and being checkpointed. Item 8 UI-thread rules is next. |
+| [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **In progress** | Items 1–7 are committed; item 8 UI-thread and background-work rules are finished and being checkpointed. Item 9 scenario protocol is next. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
@@ -113,9 +113,9 @@ Last updated: 2026-09-05 (Asia/Seoul)
 
 ## Current Focus
 
-Phase 3 is in progress: items 1–6 are committed, and item 7 dialogs and
-dirty-state handling is finished and being checkpointed; item 8 UI-thread
-rules is next. Phase 1 is complete and
+Phase 3 is in progress: items 1–7 are committed, and item 8 UI-thread and
+background-work rules are finished and being checkpointed; item 9 scenario
+protocol is next. Phase 1 is complete and
 Phase 2 remains in progress. The Qt-free engine already
 contains the `SemanticVersion` seed slice and typed standard-library result and
 error contracts. The database boundary now owns file-format rules, SQLite
@@ -375,6 +375,20 @@ After meaningful work:
   --check` passed. The full MSBuild/CMake build and staged smoke test remain
   host-limited by the existing FileTracker access failure. Tested revision:
   `d2d258a` plus the item-7 worktree on Windows x64 with VS 2026/v145.
+
+- **2026-09-05 — Phase 3 item 8 started.** UI-thread and background-work
+  rules are now being made explicit so engine operations stay independent of
+  XAML objects and all control updates return through the UI dispatcher.
+
+- **2026-09-06 — Phase 3 item 8 finished.** The WinUI lane now enforces the
+  background boundary for `AsyncCommand` work, exposes a dispatcher-only UI
+  update helper, and provides the `--phase3-threading-test` policy check.
+  Direct VS 2026 x64 compilation of the threading, view-model, shell, and
+  application sources, the linked threading contract probe, project XML
+  parsing, stage-verifier PowerShell parsing, and `git diff --check` passed.
+  The full MSBuild/CMake build and staged smoke test remain host-limited by
+  the existing FileTracker access failure. Tested revision: `9b090ad` plus
+  the item-8 worktree on Windows x64 with VS 2026/v145.
 
 - **2026-09-03 — P2-08 retained-adapter and legacy-rule cleanup completed.**
   The retained Qt audit removed duplicate native-English-teacher and GS-team
