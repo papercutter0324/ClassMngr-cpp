@@ -347,8 +347,8 @@ operations. `ClassMngrEngineCalendarEventImportServiceTests`,
 
 ### P2-R07 — Close the cross-platform and clean-build exit gate
 
-**Status (2026-09-05): Windows-focused gate complete; the full
-cross-platform gate is deferred.**
+**Status (2026-09-06): Windows milestone and exact macOS retained-Qt
+fixture lane complete; the full cross-platform gate remains open.**
 The reproducible matrix is executable through
 `.github/workflows/phase2-exit-gate.yml` and
 `scripts/phase2_exit_gate.py`, with the process documented in [the exit-gate
@@ -358,12 +358,16 @@ reports for all four Qt-free x64/x86
 Debug/Release engine lanes and the retained Windows Qt 6.12.0 x64 lane.
 The Windows-focused aggregate is PASS through
 `validate-windows` and is recorded at
-`artifacts/phase2/windows-aggregate-report.json`. A fresh macOS run with
+`artifacts/phase2/windows-aggregate-report.json`. The latest macOS run with
 exact Qt 6.12.0 universal runtime evidence passes the retained database-port
-fixture in both directions. Linux is intentionally deferred until the
-remaining Windows porting work is complete. The full seven-lane aggregate and
-the broader clean macOS retained-Qt baseline therefore remain open and are
-not treated as current Windows release blockers.
+fixture in both directions. Its clean baseline now configures and builds all
+127 targets and passes 123/127 tests. The four remaining failures are
+host-capability cases: native Cocoa screen/pasteboard setup in
+`ClassMngrInitialSetupWizardTests` and `ClassMngrTeacherImportDialogTests`,
+loopback binding in `ClassMngrUpdaterTests`, and screen access from the AI
+prompt preview in `ClassMngrSpeakingEvalBatchReportServiceTests`. Linux
+evidence remains CI/device-owned, and the full seven-lane aggregate remains
+open until those host-specific validations and the Linux lane are current.
 
 - [x] Replace the focused exception in the P2-07 record with a complete,
   reproducible headless x64/x86 matrix, or explicitly repair/update the
@@ -372,26 +376,30 @@ not treated as current Windows release blockers.
   Windows lane with no missing or unexecuted engine binaries.
 - [x] Record retained-Qt adapter results on the required Qt version and keep
   compile-only or host-blocked results separate from runtime parity for the
-  Windows milestone. The Windows and macOS retained-Qt reports are exact Qt
-  6.12.0 runtime-tested; the macOS fixture covers all seven persisted slices
-  in both directions.
+  Windows milestone. The Windows and latest macOS retained-Qt results are
+  exact Qt 6.12.0 runtime-tested; the macOS fixture covers all seven persisted
+  slices in both directions.
 - [x] Include invalid input, rollback, migration, busy/locked database, and
   partial-failure assertions in the Windows milestone evidence. The four
   Windows engine reports record all five coverage categories as covered by
   `ClassMngrEngineDatabaseFixtureRoundTripTests`.
 - [ ] Obtain the CI/device-owned Linux retained-Qt fixture evidence and
-  regenerate the complete seven-lane aggregate after the Windows port is
-  complete. The broader clean macOS Qt sweep also remains a separate
-  cross-platform follow-up because its stale constructor calls and 11 runtime
-  failures prevent a green full retained-Qt baseline.
+  regenerate the complete seven-lane aggregate. The macOS fixture lane is now
+  PASS and the clean baseline builds all 127 targets with 123/127 tests
+  passing; closure still requires GUI-capable native Cocoa validation for the
+  two screen-dependent tests and a loopback-capable host for the updater and
+  speaking-evaluation prompt-preview cases.
 
-Evidence: `docs/porting/windows-winui/phase2-local-validation.md` records
-the current Windows milestone matrix, the runtime-tested macOS lane, the
-host-blocked Linux result, the Windows-focused aggregate, the full aggregate
-outcome, and the MSVC FileTracker host limitation. P2-R07's Windows milestone
-portion is complete; the full cross-platform record remains open until the
-CI-owned Linux lane and the complete retained-Qt validation produce current
-runtime-tested reports and a non-red seven-lane aggregate.
+Evidence: `docs/porting/windows-winui/phase2-local-validation.md` records the
+current Windows milestone matrix, the latest macOS baseline and runtime-tested
+fixture lane, the host-blocked Linux result, the Windows-focused aggregate,
+the full aggregate outcome, and the MSVC FileTracker host limitation. The
+checked-in `artifacts/phase2` macOS lane and aggregate still contain the
+earlier host-blocked matrix and must be regenerated with current
+CI/device-owned reports. P2-R07's Windows and exact-macOS fixture portions
+are complete; the full cross-platform record remains open until the Linux
+lane, host-capability validations, and a non-red seven-lane aggregate are
+recorded.
 
 ### P2-R08 — Remove or quarantine superseded Qt validation helpers
 
