@@ -102,6 +102,31 @@ steady-state sample maximum and the process peak, and enforces the shared
 The generated JSON report is an input to the separate peak-budget decision;
 this bootstrap does not claim an x86 release budget from a single idle sample.
 
+## WinUI scenario protocol
+
+Use [`run_winui_scenario.ps1`](../../../scripts/porting/windows/run_winui_scenario.ps1)
+from an interactive Windows desktop session for real WinUI evidence. The
+protocol launches the supplied executable, waits for a visible process window,
+settles it, captures a PNG and checksum, optionally captures and closes a
+separately exposed dialog window, requests close, and records process/window
+release in a `classmngr-winui-scenario-v1` JSON sidecar. It never overwrites
+existing artifacts.
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File `
+  .\scripts\porting\windows\run_winui_scenario.ps1 `
+  -Executable .\dist\ClassMngr-windows-winui-x64\Debug\ClassMngrWinUI.exe `
+  -OutputDirectory D:\ClassMngrCapture\winui-foundation `
+  -ScenarioName foundation-shell `
+  -SettleMilliseconds 5000
+```
+
+Pass `-DialogTitle` when the scenario exposes a separate top-level dialog that
+must be captured and released. Use `-PlanOnly` to inspect the ordered launch,
+settle, capture, close, and release protocol without starting an executable.
+The normal WinUI `ContentDialog` remains owned by `MainWindow` and is included
+in the main-window capture when it is visible.
+
 ## Deferred follow-up evidence
 
 The bootstrap source contains a representative Korean text form and explicit
