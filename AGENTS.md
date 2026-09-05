@@ -78,7 +78,7 @@ Always give Spark explicit validation commands or checks.
 
 ## Luna routing
 
-Use Luna for normal bounded implementation when the task:
+Use Luna Max for normal bounded implementation when the task:
 
 - requires more coding judgement than a mechanical edit;
 - may span several related files;
