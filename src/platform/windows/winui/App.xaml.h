@@ -7,6 +7,13 @@
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 
+#include <memory>
+
+namespace classmngr::windows::winui
+{
+class Phase4LargeDataDiagnostics;
+}
+
 namespace winrt::ClassMngrWinUI::implementation
 {
 
@@ -55,6 +62,8 @@ private:
     winrt::event_token m_windowClosedToken{};
     winrt::event_token m_unhandledExceptionToken{};
     bool m_isSuspended{};
+    std::unique_ptr<classmngr::windows::winui::Phase4LargeDataDiagnostics>
+        m_phase4LargeDataDiagnostics;
 };
 
 } // namespace winrt::ClassMngrWinUI::implementation

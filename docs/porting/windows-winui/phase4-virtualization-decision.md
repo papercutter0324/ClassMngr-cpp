@@ -12,7 +12,10 @@ approved.
 | Schedule/time slots | `ItemsRepeater` with `StackLayout` | Repeated slots are bound as data; cells do not own schedule rules. |
 | Speaking evaluation | `ItemsRepeater` with virtualized rows | The focused cell is the only editable cell; rows and scores remain engine-owned data. |
 
-`ScrollViewer` is retained around each scrolling region.  These patterns use
+Each scrolling region receives a finite viewport. `ListView` uses its internal
+`ScrollViewer`; `ItemsRepeater` is placed inside a `ScrollViewer` with a bounded
+viewport and an explicit small cache. An unconstrained vertical `StackPanel`
+must not become the scrolling region's measuring parent. These patterns use
 WinUI focus, automation, clipboard, and input behavior instead of replacing
 them with a custom drawing surface.
 
@@ -34,5 +37,10 @@ grid package.
 
 The gallery's large-data scenarios must show that realized containers and
 view-model projections are bounded by the visible region plus a small cache,
-not the total source row count.  The Phase 4 semantic test asserts this policy
-before any feature page consumes the patterns.
+not the total source row count. The dedicated Phase 4 large-data probe measures
+this policy before feature pages consume the patterns; the small gallery's
+semantic test alone does not establish virtualization.
+
+The primitive and viewport choices follow Microsoft's
+[ItemsRepeater guidance](https://learn.microsoft.com/en-us/windows/apps/develop/ui/controls/items-repeater)
+and [ListView performance guidance](https://learn.microsoft.com/en-us/windows/apps/develop/performance/optimize-gridview-and-listview).

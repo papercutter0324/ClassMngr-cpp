@@ -522,6 +522,17 @@ function(classmngr_add_windows_winui_target)
                 -DCLASSMNGR_RESOURCE_MANIFEST=${CLASSMNGR_RESOURCE_MANIFEST}
                 -P "${PROJECT_SOURCE_DIR}/cmake/verify_resource_manifest.cmake"
         )
+        add_test(
+            NAME ClassMngrWindowsWinUILargeDataArtifactTests
+            COMMAND "${CLASSMNGR_WINUI_POWERSHELL_EXECUTABLE}"
+                -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass
+                -File "${PROJECT_SOURCE_DIR}/scripts/porting/windows/test_phase4_large_data_artifacts.ps1"
+                -OutputDirectory "${CMAKE_CURRENT_BINARY_DIR}/phase4-validator-tests"
+        )
+        set_tests_properties(ClassMngrWindowsWinUILargeDataArtifactTests
+            PROPERTIES
+                LABELS "windows;winui;phase4"
+        )
         set_tests_properties(ClassMngrWindowsWinUIStageTests
             PROPERTIES
                 LABELS "windows;winui;phase1"

@@ -105,7 +105,7 @@ Last updated: 2026-09-06 (Asia/Seoul)
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
-| [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **In progress** | All eight implementation slices are committed; automated evidence plus owner-confirmed Korean IME and DPI pass. Touch, high-contrast, and accessibility automation are out of scope; large-data evidence remains before the exit gate. |
+| [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **In progress** | All eight implementation slices are committed; automated evidence plus owner-confirmed Korean IME and DPI pass. The x64 Release large-data gate now passes three clean repetitions. Touch, high-contrast, and accessibility automation are out of scope; the Phase 4 exit review remains. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
@@ -116,8 +116,12 @@ Last updated: 2026-09-06 (Asia/Seoul)
 Phase 4 is in progress. Its shared UX layer, first-party virtualization
 decision, three editor prototypes, input and Korean IME protocols, large-data
 gate, chart strategy, and staged semantic control check are committed. The
-next incomplete gate is recording real interactive IME, automation, DPI,
-high-contrast, touch, and representative large-data evidence. The Qt-free
+representative large-data virtualization and performance gate now passes on
+x64 Release with three clean repetitions; the supporting Debug and x86
+functional probes also pass. Phase 4 remains in progress pending its exit
+review. Owner-confirmed Korean IME and DPI have passed; touch, high-contrast,
+and accessibility automation are out of scope.
+The Qt-free
 engine already
 contains the `SemanticVersion` seed slice and typed standard-library result and
 error contracts. The database boundary now owns file-format rules, SQLite

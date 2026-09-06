@@ -6,6 +6,7 @@
 #include "winui_identity.h"
 #include "winui_platform_services.h"
 #include "winui_threading.h"
+#include "winui_large_data_diagnostics.h"
 
 #include <shellapi.h>
 #include <shobjidl_core.h>
@@ -184,6 +185,29 @@ void App::OnLaunched(
                 ? ERROR_SUCCESS
                 : ERROR_INVALID_DATA
             );
+        return;
+    }
+
+    // The large-data probe is an isolated diagnostic process mode.  It must
+    // run before both single-instance activation and MainWindow construction so
+    // it cannot redirect to, restore, or save the user's normal shell state.
+    if (classmngr::windows::winui::Phase4LargeDataDiagnostics::requested(
+            GetCommandLineW()
+            ))
+    {
+        const auto options =
+            classmngr::windows::winui::Phase4LargeDataDiagnostics::parse(
+                GetCommandLineW()
+                );
+        if (!options)
+        {
+            ExitProcess(ERROR_INVALID_PARAMETER);
+            return;
+        }
+        m_window = Microsoft::UI::Xaml::Window();
+        m_phase4LargeDataDiagnostics = std::make_unique<
+            classmngr::windows::winui::Phase4LargeDataDiagnostics>(*options);
+        m_phase4LargeDataDiagnostics->start(m_window);
         return;
     }
 

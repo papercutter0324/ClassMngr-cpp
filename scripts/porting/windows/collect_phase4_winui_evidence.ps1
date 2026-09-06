@@ -6,12 +6,17 @@ param(
     [ValidateSet('x64', 'Win32')]
     [string]$Platform = 'x64',
 
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Release',
+
     [Parameter(Mandatory = $true)]
     [string]$OutputDirectory,
 
     [switch]$SkipVisualScenarios,
 
     [switch]$SkipMemory,
+
+    [switch]$SkipLargeData,
 
     [ValidateSet('required', 'passed')]
     [string]$KoreanImeStatus = 'required',
@@ -97,6 +102,8 @@ $stagePath = Get-AbsolutePath -Path $StageDirectory
 $requestedOutputPath = Get-AbsolutePath -Path $OutputDirectory
 $executablePath = Join-Path $stagePath 'ClassMngrWinUI.exe'
 $scenarioScriptPath = Join-Path $PSScriptRoot 'run_winui_scenario.ps1'
+$largeDataScriptPath = Join-Path $PSScriptRoot 'run_phase4_large_data.ps1'
+$expectedLargeDataArchitecture = if ($Platform -eq 'x64') { 'x64' } else { 'x86' }
 $memoryScriptPath = Get-AbsolutePath -Path (
     Join-Path $PSScriptRoot '..\..\measure_windows_winui_memory.ps1'
 )
@@ -110,19 +117,30 @@ $plan = [ordered]@{
     checks = @(
         [ordered]@{
             name = 'phase4-gallery-scenario'
-            enabled = -not $SkipVisualScenarios
+            enabled = $true
+            skipped = $SkipVisualScenarios.IsPresent
             script = $scenarioScriptPath
             scenarioName = 'phase4-gallery'
         },
         [ordered]@{
             name = 'memory-budget'
-            enabled = -not $SkipMemory
+            enabled = $true
+            skipped = $SkipMemory.IsPresent
             script = $memoryScriptPath
         },
         [ordered]@{
             name = 'phase4-semantic-test'
             enabled = $true
             argument = '--phase4-semantic-test'
+        },
+        [ordered]@{
+            name = 'phase4-large-data'
+            enabled = $true
+            script = $largeDataScriptPath
+            repetitions = 3
+            expectedArchitecture = $expectedLargeDataArchitecture
+            expectedConfiguration = $Configuration
+            requiredFullGate = $true
         }
     )
     manualChecks = @(
@@ -168,6 +186,9 @@ if (-not (Test-Path -LiteralPath $executablePath -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $scenarioScriptPath -PathType Leaf)) {
     throw "WinUI scenario helper was not found: $scenarioScriptPath"
 }
+if (-not (Test-Path -LiteralPath $largeDataScriptPath -PathType Leaf)) {
+    throw "WinUI large-data helper was not found: $largeDataScriptPath"
+}
 if (-not (Test-Path -LiteralPath $memoryScriptPath -PathType Leaf)) {
     throw "WinUI memory helper was not found: $memoryScriptPath"
 }
@@ -191,7 +212,7 @@ if ($SkipVisualScenarios) {
     $checks.Add((New-Check `
         -Name 'phase4-gallery-scenario' `
         -Status 'skipped' `
-        -Enabled $false)) | Out-Null
+        -Enabled $true)) | Out-Null
 }
 else {
     $scenarioFailure = ''
@@ -219,7 +240,7 @@ if ($SkipMemory) {
     $checks.Add((New-Check `
         -Name 'memory-budget' `
         -Status 'skipped' `
-        -Enabled $false)) | Out-Null
+        -Enabled $true)) | Out-Null
 }
 else {
     $memoryFailure = ''
@@ -294,14 +315,81 @@ $checks.Add((New-Check `
     -ExitCode $semanticExitCode `
     -Failure $semanticFailure)) | Out-Null
 
+$largeDataSummaryPath = Join-Path $evidencePath 'phase4-large-data-summary.json'
+if ($SkipLargeData) {
+    $checks.Add((New-Check `
+        -Name 'phase4-large-data' `
+        -Status 'skipped' `
+        -Enabled $true `
+        -Path $largeDataSummaryPath `
+        -Failure 'Required large-data gate was explicitly skipped.')) | Out-Null
+}
+else {
+    $largeDataFailure = ''
+    try {
+        & $largeDataScriptPath `
+            -Executable $resolvedExecutablePath `
+            -OutputDirectory $evidencePath `
+            -Repetitions 3 `
+            -ExpectedArchitecture $expectedLargeDataArchitecture `
+            -ExpectedConfiguration $Configuration | Out-Host
+        if (-not (Test-Path -LiteralPath $largeDataSummaryPath -PathType Leaf)) {
+            throw "Large-data runner did not produce its summary: $largeDataSummaryPath"
+        }
+        $largeDataSummary = Get-Content -LiteralPath $largeDataSummaryPath -Raw | ConvertFrom-Json
+        $largeDataOverall = $largeDataSummary.overall
+        if ($null -eq $largeDataOverall) {
+            throw "Large-data runner summary has no overall result: $largeDataSummaryPath"
+        }
+        $largeDataStatus = if ([bool]$largeDataOverall.fullGatePassed -and [string]$largeDataOverall.status -eq 'passed') {
+            'passed'
+        }
+        else {
+            [string]$largeDataOverall.status
+        }
+        if ($largeDataStatus -notin @('passed', 'incomplete', 'failed')) {
+            throw "Large-data runner summary has unsupported overall status '$largeDataStatus': $largeDataSummaryPath"
+        }
+        if ($largeDataStatus -ne 'passed') {
+            $largeDataFailure = "Large-data runner overall status is '$largeDataStatus'; fullGatePassed=$($largeDataOverall.fullGatePassed)."
+        }
+    }
+    catch {
+        $largeDataStatus = 'failed'
+        $largeDataFailure = $_.Exception.Message
+    }
+    $checks.Add((New-Check `
+        -Name 'phase4-large-data' `
+        -Status $largeDataStatus `
+        -Enabled $true `
+        -Path $largeDataSummaryPath `
+        -Failure $largeDataFailure)) | Out-Null
+}
+
 $failedChecks = @($checks | Where-Object { $_.enabled -and $_.status -eq 'failed' })
+$incompleteChecks = @($checks | Where-Object { $_.enabled -and $_.status -ne 'passed' -and $_.status -ne 'failed' })
+$requiredManualChecks = @(
+    [ordered]@{ name = 'korean-ime-composition'; status = $KoreanImeStatus },
+    [ordered]@{ name = 'dpi-100-to-300-percent'; status = $DpiStatus }
+)
+$manualFailedChecks = @($requiredManualChecks | Where-Object { $_.status -eq 'failed' })
+$manualIncompleteChecks = @($requiredManualChecks | Where-Object { $_.status -ne 'passed' -and $_.status -ne 'failed' })
+$automatedStatus = if ($failedChecks.Count -gt 0) { 'failed' } elseif ($incompleteChecks.Count -gt 0) { 'incomplete' } else { 'passed' }
+$manualStatus = if ($manualFailedChecks.Count -gt 0) { 'failed' } elseif ($manualIncompleteChecks.Count -gt 0) { 'incomplete' } else { 'passed' }
+$fullStatus = if ($automatedStatus -eq 'failed' -or $manualStatus -eq 'failed') { 'failed' } elseif ($automatedStatus -ne 'passed' -or $manualStatus -ne 'passed') { 'incomplete' } else { 'passed' }
 $summary = [ordered]@{
     format = 'classmngr-winui-phase4-evidence-v1'
     collectedAtUtc = [DateTime]::UtcNow.ToString('o')
     overall = [ordered]@{
-        status = if ($failedChecks.Count -eq 0) { 'passed' } else { 'failed' }
-        passed = $failedChecks.Count -eq 0
+        status = $fullStatus
+        passed = $fullStatus -eq 'passed'
+        automatedStatus = $automatedStatus
+        manualStatus = $manualStatus
+        fullGatePassed = $fullStatus -eq 'passed'
         failedAutomatedChecks = $failedChecks.Count
+        incompleteAutomatedChecks = $incompleteChecks.Count
+        failedManualChecks = $manualFailedChecks.Count
+        incompleteManualChecks = $manualIncompleteChecks.Count
     }
     host = [ordered]@{
         operatingSystem = [Environment]::OSVersion.VersionString
@@ -310,6 +398,7 @@ $summary = [ordered]@{
     }
     build = [ordered]@{
         platform = $Platform
+        configuration = $Configuration
         stageDirectory = $resolvedStagePath
         executable = $resolvedExecutablePath
     }
@@ -362,6 +451,6 @@ if (Test-Path -LiteralPath $summaryPath) {
 )
 
 Write-Host "Phase 4 evidence summary: $summaryPath"
-if ($failedChecks.Count -gt 0) {
-    throw "Phase 4 evidence collection failed $($failedChecks.Count) enabled automated check(s)."
+if ($fullStatus -ne 'passed') {
+    throw "Phase 4 evidence collection is $fullStatus (automated=$automatedStatus, manual=$manualStatus). Summary: $summaryPath"
 }
