@@ -13,6 +13,12 @@ param(
 
     [switch]$SkipMemory,
 
+    [ValidateSet('required', 'passed')]
+    [string]$KoreanImeStatus = 'required',
+
+    [ValidateSet('required', 'passed')]
+    [string]$DpiStatus = 'required',
+
     [switch]$PlanOnly
 )
 
@@ -122,12 +128,27 @@ $plan = [ordered]@{
     manualChecks = @(
         [ordered]@{
             name = 'korean-ime-composition'
-            status = 'required'
+            status = $KoreanImeStatus
+            automated = $false
+        },
+        [ordered]@{
+            name = 'dpi-100-to-300-percent'
+            status = $DpiStatus
             automated = $false
         },
         [ordered]@{
             name = 'touch-interaction'
-            status = 'required'
+            status = 'not-applicable'
+            automated = $false
+        },
+        [ordered]@{
+            name = 'high-contrast'
+            status = 'not-applicable'
+            automated = $false
+        },
+        [ordered]@{
+            name = 'accessibility-automation'
+            status = 'not-applicable'
             automated = $false
         }
     )
@@ -300,15 +321,33 @@ $summary = [ordered]@{
     manualChecks = @(
         [ordered]@{
             name = 'korean-ime-composition'
-            status = 'required'
+            status = $KoreanImeStatus
             automated = $false
-            note = 'Requires a real interactive Korean IME composition session.'
+            note = 'Manual result supplied from a real interactive Korean IME composition session.'
+        },
+        [ordered]@{
+            name = 'dpi-100-to-300-percent'
+            status = $DpiStatus
+            automated = $false
+            note = 'Manual result supplied from an interactive DPI session.'
         },
         [ordered]@{
             name = 'touch-interaction'
-            status = 'required'
+            status = 'not-applicable'
             automated = $false
-            note = 'Requires a real touch-capable interactive session.'
+            note = 'Touch hardware is not a target feature for this program.'
+        },
+        [ordered]@{
+            name = 'high-contrast'
+            status = 'not-applicable'
+            automated = $false
+            note = 'High-contrast support is not a target feature for this program.'
+        },
+        [ordered]@{
+            name = 'accessibility-automation'
+            status = 'not-applicable'
+            automated = $false
+            note = 'Accessibility automation is not a target feature for this program.'
         }
     )
 }

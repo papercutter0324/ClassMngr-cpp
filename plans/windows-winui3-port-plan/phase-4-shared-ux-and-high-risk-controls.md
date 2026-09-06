@@ -20,7 +20,8 @@ porting feature pages at scale.
    - roster selection, transfer, and keyboard editing;
    - speaking-evaluation scores, pasted ranges, and analytics navigation.
 4. Prove keyboard traversal, accelerators, selection, clipboard, undo/redo,
-   drag/drop where required, touch, pointer capture, and context menus.
+   drag/drop where required, and context menus. Touch and custom pointer
+   interaction are outside this program's target feature set.
 5. Prove Korean and English IME composition, Unicode grapheme navigation,
    selection, replacement, and validation in every editable control pattern.
 6. Test large datasets and require recycling/virtualization so visual and
@@ -34,15 +35,16 @@ porting feature pages at scale.
 ## Validation
 
 - Control gallery passes at 100–300% DPI, light/dark, English/Korean, keyboard,
-  mouse, touch, and high-contrast smoke settings.
+  and mouse settings. Touch and high-contrast smoke settings are out of scope.
 - Large lists and grids meet explicit frame, allocation, and memory budgets.
 - Korean IME and pasted-range behavior pass on a real interactive session.
-- Automation names and relationships remain available for standard controls
-  and custom product components.
+- Accessibility automation is not a target feature for this program. Standard
+  controls retain their platform defaults; no custom accessibility claim is made.
 - No prototype duplicates engine rules or persists data directly.
 
 ## Exit Gate
 
 The high-risk control patterns are proven with representative data and input,
-have an accepted dependency strategy, and meet semantic, IME, accessibility,
-DPI, and performance gates before broad feature migration begins.
+have an accepted dependency strategy, and meet semantic, IME, DPI, and
+performance gates before broad feature migration begins. Touch, high-contrast,
+and accessibility-automation validation are out of scope.

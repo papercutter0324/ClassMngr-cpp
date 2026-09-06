@@ -106,14 +106,17 @@ this bootstrap does not claim an x86 release budget from a single idle sample.
 
 The Phase 4 runner combines the gallery screenshot, staged semantic test, and
 memory evidence into one timestamped JSON report. It never overwrites an
-existing capture. Korean IME composition and touch remain explicitly marked as
-required manual checks in the report.
+existing capture. Korean IME composition and DPI results may be recorded as
+manual checks; touch, high-contrast, and accessibility automation are recorded
+as out of scope for this program.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
   .\scripts\porting\windows\collect_phase4_winui_evidence.ps1 `
   -StageDirectory .\dist\ClassMngr-windows-winui-x64\Debug `
   -Platform x64 `
+  -KoreanImeStatus passed `
+  -DpiStatus passed `
   -OutputDirectory .\artifacts\phase4
 ```
 
