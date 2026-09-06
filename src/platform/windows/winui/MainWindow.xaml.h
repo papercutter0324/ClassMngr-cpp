@@ -59,7 +59,7 @@ struct MainWindow : MainWindowT<MainWindow>
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void RosterSource_SelectionChanged(
-        Microsoft::UI::Xaml::Controls::ListViewBase const& sender,
+        Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
         );
     void RosterTransferButton_Click(

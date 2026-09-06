@@ -950,18 +950,18 @@ void MainWindow::ScheduleApplyButton_Click(
 }
 
 void MainWindow::RosterSource_SelectionChanged(
-    Microsoft::UI::Xaml::Controls::ListViewBase const& sender,
+    Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
     )
 {
     static_cast<void>(arguments);
-    static_cast<void>(sender);
-    if (!m_rosterStatusText)
+    const auto list = sender.try_as<Microsoft::UI::Xaml::Controls::ListViewBase>();
+    if (!m_rosterStatusText || !list)
     {
         return;
     }
 
-    const auto selected = sender.SelectedItem().try_as<
+    const auto selected = list.SelectedItem().try_as<
         Microsoft::UI::Xaml::Controls::TextBox>();
     if (selected)
     {

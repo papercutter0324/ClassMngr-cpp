@@ -370,8 +370,10 @@ namespace ClassMngrWinUISharedUX
         }
         if (!detail.empty())
         {
-            text += L" ";
-            text += detail;
+            text = hstring(
+                std::wstring(text.c_str(), text.size()) + L" "
+                + std::wstring(detail.c_str(), detail.size())
+                );
         }
         surface.state.Text(text);
         winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
