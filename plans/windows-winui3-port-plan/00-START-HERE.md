@@ -302,6 +302,12 @@ After meaningful work:
 
 ## Progress Log
 
+- **2026-09-06 — Phase 4 automated evidence runner added.** The staged
+  verifier now runs `--phase4-semantic-test`, and
+  `collect_phase4_winui_evidence.ps1` emits non-overwriting screenshot,
+  semantic, and memory evidence as one JSON report. Korean IME and touch are
+  recorded as required interactive checks rather than automated passes.
+
 - **2026-09-06 — Phase 4 implementation sequence completed.** Commits
   `f210414`, `9065271`, `e25fe94`, `fb77afe`, `a3e8e37`, `91bec33`,
   `b6730f2`, and `7c71c25` add the shared control layer, first-party

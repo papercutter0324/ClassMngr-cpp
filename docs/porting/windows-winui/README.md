@@ -102,6 +102,25 @@ steady-state sample maximum and the process peak, and enforces the shared
 The generated JSON report is an input to the separate peak-budget decision;
 this bootstrap does not claim an x86 release budget from a single idle sample.
 
+## Phase 4 evidence collection
+
+The Phase 4 runner combines the gallery screenshot, staged semantic test, and
+memory evidence into one timestamped JSON report. It never overwrites an
+existing capture. Korean IME composition and touch remain explicitly marked as
+required manual checks in the report.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
+  .\scripts\porting\windows\collect_phase4_winui_evidence.ps1 `
+  -StageDirectory .\dist\ClassMngr-windows-winui-x64\Debug `
+  -Platform x64 `
+  -OutputDirectory .\artifacts\phase4
+```
+
+Use `-PlanOnly` to inspect the checks without writing evidence, or
+`-SkipVisualScenarios` / `-SkipMemory` when a CI agent cannot supply an
+interactive desktop or a meaningful memory sample.
+
 ## WinUI scenario protocol
 
 Use [`run_winui_scenario.ps1`](../../../scripts/porting/windows/run_winui_scenario.ps1)

@@ -258,11 +258,15 @@ void App::OnLaunched(
         activation,
         L"--phase3-semantic-test"
         );
+    const bool phase4SemanticTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase4-semantic-test"
+        );
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
         || viewModelTest || localizationTest || dialogTest || threadingTest
-        || semanticTest)
+        || semanticTest || phase4SemanticTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -307,7 +311,7 @@ void App::OnLaunched(
             {
                 passed = ClassMngrWinUIThreading::runThreadingContractChecks();
             }
-            else if (semanticTest)
+            else if (semanticTest || phase4SemanticTest)
             {
                 if (!ClassMngrWinUILifecycle::runLifecycleContractChecks())
                 {
@@ -323,7 +327,7 @@ void App::OnLaunched(
             scheduleTestExit(m_window, passed);
         };
 
-        const bool queued = dpiTest || semanticTest
+        const bool queued = dpiTest || semanticTest || phase4SemanticTest
             ? m_window.DispatcherQueue().TryEnqueue(
                 Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
                 runChecks
