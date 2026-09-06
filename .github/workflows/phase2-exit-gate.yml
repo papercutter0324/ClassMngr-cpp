@@ -88,11 +88,11 @@ jobs:
         shell: pwsh
         run: pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/verify_windows_vs2026.ps1
 
+      # The runner snapshots the unfiltered CTest inventory after the build,
+      # then executes the complete ClassMngrEngine selection.
       - name: Run engine exit-gate lane
         shell: pwsh
         run: >-
-          # The runner snapshots the unfiltered CTest inventory after the
-          # build, then executes the complete ClassMngrEngine selection.
           python scripts/phase2_exit_gate.py run
           --lane-id ${{ matrix.lane }}
           --lane-type engine
