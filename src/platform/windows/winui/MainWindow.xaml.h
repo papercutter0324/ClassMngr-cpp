@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <functional>
+#include <vector>
 
 namespace winrt::ClassMngrWinUI::implementation
 {
@@ -49,6 +50,26 @@ struct MainWindow : MainWindowT<MainWindow>
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void UnsavedChangesButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ScheduleApplyButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void RosterSource_SelectionChanged(
+        Microsoft::UI::Xaml::Controls::ListViewBase const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void RosterTransferButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void SpeakingPasteButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void SpeakingAnalyticsButton_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
@@ -132,6 +153,18 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_cancelButton{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_validationSummaryText{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_unsavedChangesButton{nullptr};
+
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleSlotTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_scheduleStatusText{nullptr};
+
+    Microsoft::UI::Xaml::Controls::ListView m_rosterSourceList{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_rosterTransferredList{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_rosterStatusText{nullptr};
+
+    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
+        m_speakingScoreCells;
+    Microsoft::UI::Xaml::Controls::TextBox m_speakingPasteTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_speakingStatusText{nullptr};
 
     classmngr::engine::SemanticVersion m_engineVersion;
     WinUILocalizer m_localizer;

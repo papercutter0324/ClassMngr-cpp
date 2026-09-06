@@ -3,6 +3,7 @@
 #include "MainWindow.xaml.h"
 #include "winui_build_info.h"
 #include "winui_identity.h"
+#include "winui_shared_ux.h"
 
 #include <microsoft.ui.xaml.window.h>
 
@@ -16,6 +17,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #if __has_include("MainWindow.g.cpp")
 #include "MainWindow.g.cpp"
@@ -325,7 +327,57 @@ void setAutomationName(
     winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetName(
         element,
         winrt::hstring(name)
-        );
+    );
+}
+
+std::vector<std::wstring> splitPastedRangeRow(std::wstring_view row)
+{
+    std::vector<std::wstring> values;
+    size_t start = 0;
+    while (start <= row.size())
+    {
+        const size_t separator = row.find(L'\t', start);
+        const size_t end = separator == std::wstring_view::npos
+            ? row.size()
+            : separator;
+        values.emplace_back(row.substr(start, end - start));
+        if (separator == std::wstring_view::npos)
+        {
+            break;
+        }
+        start = separator + 1;
+    }
+    return values;
+}
+
+std::vector<std::vector<std::wstring>> parsePastedRange(
+    std::wstring_view text
+    )
+{
+    std::vector<std::vector<std::wstring>> rows;
+    size_t start = 0;
+    while (start <= text.size())
+    {
+        const size_t separator = text.find(L'\n', start);
+        const size_t end = separator == std::wstring_view::npos
+            ? text.size()
+            : separator;
+        auto row = text.substr(start, end - start);
+        if (!row.empty() && row.back() == L'\r')
+        {
+            row.remove_suffix(1);
+        }
+        if (!row.empty())
+        {
+            rows.emplace_back(splitPastedRangeRow(row));
+        }
+        if (separator == std::wstring_view::npos)
+        {
+            break;
+        }
+        start = separator + 1;
+    }
+    return rows;
 }
 
 } // namespace
@@ -831,6 +883,148 @@ void MainWindow::UnsavedChangesButton_Click(
     showUnsavedChangesConfirmation();
 }
 
+void MainWindow::ScheduleApplyButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_scheduleSlotTextBox || !m_scheduleStatusText)
+    {
+        return;
+    }
+
+    m_dirtyState.markDirty();
+    m_scheduleStatusText.Text(
+        L"Time slot label updated in the prototype (not persisted)."
+        );
+}
+
+void MainWindow::RosterSource_SelectionChanged(
+    Microsoft::UI::Xaml::Controls::ListViewBase const& sender,
+    Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+    )
+{
+    static_cast<void>(arguments);
+    static_cast<void>(sender);
+    if (!m_rosterStatusText)
+    {
+        return;
+    }
+
+    const auto selected = sender.SelectedItem().try_as<
+        Microsoft::UI::Xaml::Controls::TextBox>();
+    if (selected)
+    {
+        m_rosterStatusText.Text(
+            winrt::hstring(L"Selected " + std::wstring(
+                selected.Text().c_str(), selected.Text().size()
+                ) + L" for transfer.")
+            );
+    }
+}
+
+void MainWindow::RosterTransferButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_rosterSourceList || !m_rosterTransferredList
+        || !m_rosterStatusText)
+    {
+        return;
+    }
+
+    const int32_t selectedIndex = m_rosterSourceList.SelectedIndex();
+    const auto selected = m_rosterSourceList.SelectedItem().try_as<
+        Microsoft::UI::Xaml::Controls::TextBox>();
+    if (selectedIndex < 0 || !selected)
+    {
+        m_rosterStatusText.Text(L"Select a student before transferring.");
+        return;
+    }
+
+    auto transferred = Microsoft::UI::Xaml::Controls::TextBox();
+    transferred.Text(selected.Text());
+    transferred.Header(winrt::box_value(winrt::hstring(L"Student name")));
+    transferred.IsTabStop(true);
+    setAutomationName(transferred, L"Transferred student name");
+    transferred.TextChanging({this, &MainWindow::NameTextBox_TextChanged});
+    m_rosterSourceList.Items().RemoveAt(
+        static_cast<uint32_t>(selectedIndex)
+        );
+    m_rosterTransferredList.Items().Append(transferred);
+    m_rosterTransferredList.SelectedItem(transferred);
+    m_dirtyState.markDirty();
+    m_rosterStatusText.Text(L"Student transferred in the prototype.");
+}
+
+void MainWindow::SpeakingPasteButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_speakingPasteTextBox || !m_speakingStatusText)
+    {
+        return;
+    }
+
+    const auto rows = parsePastedRange(std::wstring_view(
+        m_speakingPasteTextBox.Text().c_str(),
+        m_speakingPasteTextBox.Text().size()
+        ));
+    constexpr size_t scoreColumns = 3;
+    size_t applied = 0;
+    for (size_t row = 0; row < rows.size() && row < 3; ++row)
+    {
+        for (size_t column = 0;
+             column < rows[row].size() && column < scoreColumns;
+             ++column)
+        {
+            const size_t cellIndex = row * scoreColumns + column;
+            if (cellIndex < m_speakingScoreCells.size())
+            {
+                m_speakingScoreCells[cellIndex].Text(
+                    winrt::hstring(rows[row][column])
+                    );
+                ++applied;
+            }
+        }
+    }
+
+    if (applied == 0)
+    {
+        m_speakingStatusText.Text(L"Paste a tab/newline range to apply scores.");
+        return;
+    }
+
+    m_dirtyState.markDirty();
+    m_speakingStatusText.Text(winrt::hstring(
+        L"Applied " + std::to_wstring(applied)
+            + L" pasted score cells in the prototype."
+        ));
+}
+
+void MainWindow::SpeakingAnalyticsButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (m_speakingStatusText)
+    {
+        m_speakingStatusText.Text(
+            L"Analytics navigation requested for the selected roster."
+            );
+    }
+}
+
 void MainWindow::NavigationView_SelectionChanged(
     Microsoft::UI::Xaml::Controls::NavigationView const& sender,
     Microsoft::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs const& arguments
@@ -1059,6 +1253,188 @@ void MainWindow::populateHomePage(
     m_unsavedChangesButton.Click({this, &MainWindow::UnsavedChangesButton_Click});
     setAutomationName(m_unsavedChangesButton, L"Review unsaved changes");
 
+    auto scheduleCard = ClassMngrWinUISharedUX::buildCard({
+        L"Schedule/time-slot editing prototype",
+        L"Edit a representative time-slot label in memory. This prototype does not persist data or apply engine rules.",
+        L"Schedule editor"
+        });
+    m_scheduleSlotTextBox = TextBox();
+    m_scheduleSlotTextBox.Header(
+        winrt::box_value(winrt::hstring(L"Time-slot label"))
+        );
+    m_scheduleSlotTextBox.Text(L"09:00–09:45");
+    m_scheduleSlotTextBox.PlaceholderText(L"e.g. 09:00–09:45");
+    m_scheduleSlotTextBox.IsTabStop(true);
+    m_scheduleSlotTextBox.TabIndex(4);
+    m_scheduleSlotTextBox.TextChanging({this, &MainWindow::NameTextBox_TextChanged});
+    setAutomationName(m_scheduleSlotTextBox, L"Schedule time-slot label editor");
+
+    auto scheduleApply = Button();
+    scheduleApply.Content(winrt::box_value(winrt::hstring(L"Apply time-slot label")));
+    scheduleApply.IsTabStop(true);
+    scheduleApply.TabIndex(5);
+    scheduleApply.HorizontalAlignment(HorizontalAlignment::Left);
+    scheduleApply.Click({this, &MainWindow::ScheduleApplyButton_Click});
+    setAutomationName(scheduleApply, L"Schedule apply time-slot label");
+
+    m_scheduleStatusText = TextBlock();
+    m_scheduleStatusText.Text(L"Ready to edit a time slot.");
+    m_scheduleStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_scheduleStatusText, L"Schedule editor status");
+    scheduleCard.content.Children().Append(m_scheduleSlotTextBox);
+    scheduleCard.content.Children().Append(scheduleApply);
+    scheduleCard.content.Children().Append(m_scheduleStatusText);
+
+    auto rosterCard = ClassMngrWinUISharedUX::buildCard({
+        L"Roster selection, transfer, and keyboard editing prototype",
+        L"Select a student, edit the name with the keyboard, and simulate a transfer between lists.",
+        L"Roster editor"
+        });
+    auto rosterLists = StackPanel();
+    rosterLists.Orientation(Orientation::Horizontal);
+    rosterLists.Spacing(8.0);
+
+    m_rosterSourceList = ListView();
+    m_rosterSourceList.Header(
+        winrt::box_value(winrt::hstring(L"Available students"))
+        );
+    m_rosterSourceList.SelectionMode(ListViewSelectionMode::Single);
+    m_rosterSourceList.IsTabStop(true);
+    m_rosterSourceList.Width(220.0);
+    m_rosterSourceList.Height(150.0);
+    setAutomationName(m_rosterSourceList, L"Roster available students");
+    m_rosterSourceList.SelectionChanged({this, &MainWindow::RosterSource_SelectionChanged});
+    for (auto const& name : {L"김민서", L"Alex Kim", L"박서준"})
+    {
+        auto student = TextBox();
+        student.Header(winrt::box_value(winrt::hstring(L"Student name")));
+        student.Text(name);
+        student.IsTabStop(true);
+        student.TextChanging({this, &MainWindow::NameTextBox_TextChanged});
+        setAutomationName(student, L"Roster editable student name");
+        m_rosterSourceList.Items().Append(student);
+    }
+
+    m_rosterTransferredList = ListView();
+    m_rosterTransferredList.Header(
+        winrt::box_value(winrt::hstring(L"Transferred students"))
+        );
+    m_rosterTransferredList.SelectionMode(ListViewSelectionMode::Single);
+    m_rosterTransferredList.IsTabStop(true);
+    m_rosterTransferredList.Width(220.0);
+    m_rosterTransferredList.Height(150.0);
+    setAutomationName(m_rosterTransferredList, L"Roster transferred students");
+
+    rosterLists.Children().Append(m_rosterSourceList);
+    rosterLists.Children().Append(m_rosterTransferredList);
+    auto rosterTransfer = Button();
+    rosterTransfer.Content(winrt::box_value(winrt::hstring(L"Transfer selected →")));
+    rosterTransfer.IsTabStop(true);
+    rosterTransfer.TabIndex(6);
+    rosterTransfer.HorizontalAlignment(HorizontalAlignment::Left);
+    rosterTransfer.Click({this, &MainWindow::RosterTransferButton_Click});
+    setAutomationName(rosterTransfer, L"Roster transfer selected student");
+    m_rosterStatusText = TextBlock();
+    m_rosterStatusText.Text(L"Select a roster row to begin.");
+    m_rosterStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_rosterStatusText, L"Roster selected student status");
+    rosterCard.content.Children().Append(rosterLists);
+    rosterCard.content.Children().Append(rosterTransfer);
+    rosterCard.content.Children().Append(m_rosterStatusText);
+
+    auto speakingCard = ClassMngrWinUISharedUX::buildCard({
+        L"Speaking-evaluation scores and analytics prototype",
+        L"Edit score cells, apply a tab/newline range, and request analytics navigation using standard controls.",
+        L"Speaking evaluation editor"
+        });
+    auto scoreGrid = Grid();
+    for (size_t column = 0; column < 4; ++column)
+    {
+        scoreGrid.ColumnDefinitions().Append(ColumnDefinition());
+    }
+    for (size_t row = 0; row < 4; ++row)
+    {
+        scoreGrid.RowDefinitions().Append(RowDefinition());
+    }
+    setAutomationName(scoreGrid, L"Speaking evaluation score grid");
+
+    auto addScoreHeader = [&scoreGrid](wchar_t const* text, uint32_t row, uint32_t column) {
+        auto header = TextBlock();
+        header.Text(text);
+        header.Margin(Thickness{4.0, 2.0, 4.0, 2.0});
+        Grid::SetRow(header, row);
+        Grid::SetColumn(header, column);
+        scoreGrid.Children().Append(header);
+    };
+    addScoreHeader(L"Student", 0, 0);
+    addScoreHeader(L"Pronunciation", 0, 1);
+    addScoreHeader(L"Fluency", 0, 2);
+    addScoreHeader(L"Interaction", 0, 3);
+    const std::array<wchar_t const*, 3> studentNames{
+        L"김민서", L"Alex Kim", L"박서준"
+    };
+    const std::array<std::array<wchar_t const*, 3>, 3> initialScores{{
+        {{L"8", L"7", L"9"}},
+        {{L"9", L"8", L"8"}},
+        {{L"7", L"8", L"7"}}
+    }};
+    for (uint32_t row = 0; row < 3; ++row)
+    {
+        addScoreHeader(studentNames[row], row + 1, 0);
+        for (uint32_t column = 0; column < 3; ++column)
+        {
+            auto score = TextBox();
+            score.Text(initialScores[row][column]);
+            score.Width(76.0);
+            score.Margin(Thickness{4.0, 2.0, 4.0, 2.0});
+            score.IsTabStop(true);
+            score.TabIndex(7 + row * 3 + column);
+            score.TextChanging({this, &MainWindow::NameTextBox_TextChanged});
+            const std::wstring scoreAutomationName =
+                L"Speaking score " + std::to_wstring(row + 1) + L" "
+                + std::to_wstring(column + 1);
+            setAutomationName(score, scoreAutomationName);
+            Grid::SetRow(score, row + 1);
+            Grid::SetColumn(score, column + 1);
+            scoreGrid.Children().Append(score);
+            m_speakingScoreCells.emplace_back(score);
+        }
+    }
+
+    m_speakingPasteTextBox = TextBox();
+    m_speakingPasteTextBox.Header(
+        winrt::box_value(winrt::hstring(L"Paste scores (tab/newline range)"))
+        );
+    m_speakingPasteTextBox.PlaceholderText(L"8\t7\t9\n9\t8\t8");
+    m_speakingPasteTextBox.AcceptsReturn(true);
+    m_speakingPasteTextBox.Height(72.0);
+    m_speakingPasteTextBox.IsTabStop(true);
+    m_speakingPasteTextBox.TabIndex(20);
+    setAutomationName(m_speakingPasteTextBox, L"Speaking pasted score range");
+    auto speakingPaste = Button();
+    speakingPaste.Content(winrt::box_value(winrt::hstring(L"Apply pasted range")));
+    speakingPaste.IsTabStop(true);
+    speakingPaste.TabIndex(21);
+    speakingPaste.HorizontalAlignment(HorizontalAlignment::Left);
+    speakingPaste.Click({this, &MainWindow::SpeakingPasteButton_Click});
+    setAutomationName(speakingPaste, L"Apply speaking pasted score range");
+    auto speakingAnalytics = Button();
+    speakingAnalytics.Content(winrt::box_value(winrt::hstring(L"Open analytics")));
+    speakingAnalytics.IsTabStop(true);
+    speakingAnalytics.TabIndex(22);
+    speakingAnalytics.HorizontalAlignment(HorizontalAlignment::Left);
+    speakingAnalytics.Click({this, &MainWindow::SpeakingAnalyticsButton_Click});
+    setAutomationName(speakingAnalytics, L"Open speaking analytics");
+    m_speakingStatusText = TextBlock();
+    m_speakingStatusText.Text(L"Scores ready for editing.");
+    m_speakingStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_speakingStatusText, L"Speaking analytics navigation status");
+    speakingCard.content.Children().Append(scoreGrid);
+    speakingCard.content.Children().Append(m_speakingPasteTextBox);
+    speakingCard.content.Children().Append(speakingPaste);
+    speakingCard.content.Children().Append(speakingAnalytics);
+    speakingCard.content.Children().Append(m_speakingStatusText);
+
     m_homeViewModel = winrt::make_self<ObservableViewModel>();
     const auto command = winrt::make_self<AsyncCommand>(
         DispatcherQueue(),
@@ -1089,6 +1465,9 @@ void MainWindow::populateHomePage(
     root.Children().Append(m_statusText);
     root.Children().Append(m_validationSummaryText);
     root.Children().Append(m_unsavedChangesButton);
+    root.Children().Append(scheduleCard.root);
+    root.Children().Append(rosterCard.root);
+    root.Children().Append(speakingCard.root);
     page.Content(root);
 }
 
