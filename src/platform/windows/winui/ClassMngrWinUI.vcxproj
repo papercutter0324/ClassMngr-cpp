@@ -158,6 +158,7 @@
     <ClInclude Include="winui_identity.h" />
     <ClInclude Include="winui_localization.h" />
     <ClInclude Include="winui_platform_services.h" />
+    <ClInclude Include="winui_shared_ux.h" />
   </ItemGroup>
 
   <ItemGroup>
@@ -199,6 +200,7 @@
     <ClCompile Include="winui_lifecycle.cpp" />
     <ClCompile Include="winui_localization.cpp" />
     <ClCompile Include="winui_platform_services.cpp" />
+    <ClCompile Include="winui_shared_ux.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
 
