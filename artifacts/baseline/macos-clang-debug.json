@@ -1,0 +1,46 @@
+{
+  "recorded_at_utc": "2026-09-05T20:53:47.714783+00:00",
+  "git_commit": "db70ba81a4b4d9bb2e96e375735e8adb7ffbf50c",
+  "git_commit_start": "db70ba81a4b4d9bb2e96e375735e8adb7ffbf50c",
+  "git_commit_end": "db70ba81a4b4d9bb2e96e375735e8adb7ffbf50c",
+  "git_dirty_start": false,
+  "git_dirty_end": false,
+  "source_fingerprint_start": "484ffd272e6ac5cbf411a86b44aa69e32f9f41cefc867924aa506f81876eba98",
+  "source_fingerprint_end": "484ffd272e6ac5cbf411a86b44aa69e32f9f41cefc867924aa506f81876eba98",
+  "source_stable_during_run": true,
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.14.4",
+  "cmake": "cmake version 4.3.3",
+  "preset": "macos-clang-debug",
+  "configuration": null,
+  "parallel_build_jobs": 2,
+  "test_timeout_seconds": 120,
+  "results": {
+    "configure_exit_code": 0,
+    "build_exit_code": 0,
+    "test_exit_code": 0,
+    "tests": {
+      "total": 127,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_tests": []
+    }
+  },
+  "duration_seconds": {
+    "configure": 57.497,
+    "clean_build": 561.593,
+    "tests": 143.9
+  },
+  "root_cmake_lines": 353,
+  "application": {
+    "path": "build/macos-clang-debug/ClassMngr.app/Contents/MacOS/ClassMngr",
+    "size_bytes": 100800120
+  },
+  "compilation": {
+    "compile_commands": "build/macos-clang-debug/compile_commands.json",
+    "production_entries": 356,
+    "unique_production_sources": 356,
+    "recompiled_production_sources": 0
+  }
+}

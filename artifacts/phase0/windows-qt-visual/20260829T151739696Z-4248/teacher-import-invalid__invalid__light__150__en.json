@@ -1,0 +1,42 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Show teacher-import-invalid dialog and wait for native exposure",
+        "Wait for deterministic invalid-input validation",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "teacher-import-invalid__invalid__light__150__en.png",
+        "sha256": "9168b70f29d79969c72476be7132cde8c2fc1277898944dd47c8b3077b58c970"
+    },
+    "displayScalePercent": 150,
+    "fixtureId": "invalid-input",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "dialog.teacher-import",
+    "observations": {
+        "accessibility": "UI Automation, screen-reader, and high-contrast evidence are deferred from the current roadmap.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "0bcc8c7",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 680,
+        "width": 460,
+        "x": 1050,
+        "y": 326
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

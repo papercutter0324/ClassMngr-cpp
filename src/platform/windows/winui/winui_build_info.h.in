@@ -1,0 +1,15 @@
+#pragma once
+
+namespace ClassMngrWinUI::BuildInfo
+{
+
+inline constexpr char Version[] =
+    "@PROJECT_VERSION@";
+
+inline constexpr char GitRevision[] =
+    "@CLASSMNGR_GIT_REVISION@";
+
+inline constexpr char BuildTimestamp[] =
+    "@CLASSMNGR_BUILD_TIMESTAMP@";
+
+} // namespace ClassMngrWinUI::BuildInfo

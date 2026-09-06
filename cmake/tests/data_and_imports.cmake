@@ -93,7 +93,6 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrIntensiveSlotStateRepositoryTests
         tests/intensive_slot_state_repository_tests.cpp
-        src/data/database/sql_query_utils.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
     )
 
@@ -109,6 +108,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrIntensiveSlotStateRepositoryTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test
@@ -121,7 +121,6 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrTestingBlockRepositoryTests
         tests/testing_block_repository_tests.cpp
-        src/data/database/database_transaction.cpp
         src/data/repositories/testing_block_repository.cpp
     )
 
@@ -137,6 +136,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrTestingBlockRepositoryTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test
@@ -149,8 +149,6 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrTestingClassRepositoryTests
         tests/testing_class_repository_tests.cpp
-        src/data/database/database_transaction.cpp
-        src/data/database/sql_query_utils.cpp
         src/data/repositories/class_info_repository.cpp
         src/data/repositories/class_repository.cpp
         src/data/repositories/testing_class_repository.cpp
@@ -169,6 +167,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrTestingClassRepositoryTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test
@@ -181,9 +180,6 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrCalendarEventRepositoryTests
         tests/calendar_event_repository_tests.cpp
-        src/data/database/database_schema_manager.cpp
-        src/data/database/database_transaction.cpp
-        src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
     )
 
@@ -211,9 +207,6 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrCalendarEventCacheTests
         tests/calendar_event_cache_tests.cpp
-        src/data/database/database_schema_manager.cpp
-        src/data/database/database_transaction.cpp
-        src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
         src/features/calendar/calendar_event_campus_filter.cpp
         src/features/calendar/ui/calendar_event_cache.cpp
@@ -232,6 +225,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrCalendarEventCacheTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Concurrent
             Qt6::Core
             Qt6::Sql
@@ -248,9 +242,6 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         src/app/services/feature_services.cpp
         src/data/data_service.cpp
         src/data/database/database_session.cpp
-        src/data/database/database_schema_manager.cpp
-        src/data/database/database_transaction.cpp
-        src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
         src/data/repositories/campus_record_repository.cpp
         src/data/repositories/class_info_repository.cpp
@@ -284,6 +275,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrDataServiceLifecycleTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Sql

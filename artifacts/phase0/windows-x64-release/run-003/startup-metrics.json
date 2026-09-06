@@ -1,0 +1,8 @@
+{
+    "finalProgress": 100,
+    "processStartToReadyMs": 3204,
+    "processStartToWindowConstructedMs": 1034,
+    "progressUpdates": 15,
+    "windowConstructedPrivateBytes": 658370560,
+    "windowConstructedWorkingSetBytes": 748699648
+}

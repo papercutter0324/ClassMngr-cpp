@@ -402,7 +402,7 @@ bool SidebarMarqueeDelegate::eventFilter(
 
             setHoveredIndex(
                 m_tree->indexAt(
-                    mouseEvent->pos()
+                    mouseEvent->position().toPoint()
                     )
                 );
         }

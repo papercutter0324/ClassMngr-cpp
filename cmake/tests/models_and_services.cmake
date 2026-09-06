@@ -51,6 +51,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSchedulePrintModelTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )
@@ -58,6 +59,16 @@ qt_add_executable(ClassMngrBasePageTests
     add_test(
         NAME ClassMngrSchedulePrintModelTests
         COMMAND ClassMngrSchedulePrintModelTests
+    )
+
+    classmngr_add_qt_test(
+        NAME ScheduleTimeFormatter
+        SOURCES
+            tests/schedule_time_formatter_tests.cpp
+        LIBRARIES
+            ClassMngrEngine
+            Qt6::Core
+            Qt6::Test
     )
 
     qt_add_executable(ClassMngrScheduleBuilderTests
@@ -78,6 +89,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrScheduleBuilderTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Sql
@@ -109,6 +121,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSchedulePrintPdfTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -143,6 +156,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSubPrepPrintPdfTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -189,6 +203,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSubPrepPackageServiceTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -242,6 +257,17 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrRosterModelTests
     )
 
+    classmngr_add_qt_test(
+        NAME SpeakingEvalModel
+        SOURCES
+            tests/speaking_eval_model_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+        OFFSCREEN
+    )
+
     qt_add_executable(ClassMngrRosterTemplatePrintServiceTests
         tests/roster_template_print_service_tests.cpp
         src/core/fontmanager.cpp
@@ -266,6 +292,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrRosterTemplatePrintServiceTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -432,6 +459,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrEvaluationDefaultSelectionTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )

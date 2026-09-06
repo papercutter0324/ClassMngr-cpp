@@ -6,12 +6,22 @@
 #include <QList>
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class TestingClassRepository
 {
 public:
+    explicit TestingClassRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit TestingClassRepository(
         QSqlDatabase& database
         );
+    ~TestingClassRepository();
 
     [[nodiscard]] Result<int> createTestingClass(
         const TestingClass& testingClass,
@@ -38,5 +48,13 @@ public:
         );
 
 private:
-    QSqlDatabase& m_database;
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        ) const;
+
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
+    mutable std::unique_ptr<classmngr::engine::SqliteDatabase>
+        m_engineDatabase;
+    mutable QString m_engineDatabasePath;
 };

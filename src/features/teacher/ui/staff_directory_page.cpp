@@ -20,7 +20,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QSet>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QStyledItemDelegate>
@@ -177,10 +176,6 @@ QString cellText(const QTableWidget* table, int row, int column)
     return item ? item->text().trimmed() : QString();
 }
 
-QString normalizedName(const QString& value)
-{
-    return value.simplified().toCaseFolded();
-}
 }
 
 StaffDirectoryPage::StaffDirectoryPage(
@@ -460,6 +455,9 @@ void StaffDirectoryPage::deleteSelectedRows()
 
 bool StaffDirectoryPage::validateBirthday(const QString& value) const
 {
+    // Directory identity and uniqueness are enforced by the engine services
+    // during save. This retained Qt preflight only preserves the legacy
+    // MM-dd input rule and its immediate localized feedback.
     if (value.trimmed().isEmpty()) return true;
     const QDate date = QDate::fromString(
         QStringLiteral("2000-%1").arg(value.trimmed()),
@@ -479,7 +477,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
         QList<NativeEnglishTeacher> teachers;
-        QSet<QString> names;
         for (int row = 0; row < m_table->rowCount(); ++row)
         {
             NativeEnglishTeacher teacher;
@@ -491,13 +488,11 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             teacher.email = cellText(m_table, row, 3);
             teacher.birthday = cellText(m_table, row, 4);
             teacher.nationality = cellText(m_table, row, 5);
-            const QString key = normalizedName(teacher.name);
-            if (key.isEmpty() || names.contains(key) || !validateBirthday(teacher.birthday))
+            if (!validateBirthday(teacher.birthday))
             {
-                status = std::unexpected(tr("Each Native English Teacher needs a unique name and a valid MM-dd birthday."));
+                status = std::unexpected(tr("Each Native English Teacher needs a valid MM-dd birthday."));
                 break;
             }
-            names.insert(key);
             teachers.append(teacher);
         }
         if (status)
@@ -509,8 +504,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
     else
     {
         QList<GsTeamMember> members;
-        QSet<QString> englishNames;
-        QSet<QString> koreanNames;
         for (int row = 0; row < m_table->rowCount(); ++row)
         {
             GsTeamMember member;
@@ -521,18 +514,11 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             member.position = cellText(m_table, row, 2);
             member.phoneNumber = cellText(m_table, row, 3);
             member.birthday = cellText(m_table, row, 4);
-            const QString english = normalizedName(member.name);
-            const QString korean = normalizedName(member.koreanName);
-            if ((english.isEmpty() && korean.isEmpty())
-                || (!english.isEmpty() && englishNames.contains(english))
-                || (!korean.isEmpty() && koreanNames.contains(korean))
-                || !validateBirthday(member.birthday))
+            if (!validateBirthday(member.birthday))
             {
-                status = std::unexpected(tr("Each GS Team member needs a unique name or Korean name and a valid MM-dd birthday."));
+                status = std::unexpected(tr("Each GS Team member needs a valid MM-dd birthday."));
                 break;
             }
-            if (!english.isEmpty()) englishNames.insert(english);
-            if (!korean.isEmpty()) koreanNames.insert(korean);
             members.append(member);
         }
         if (status)

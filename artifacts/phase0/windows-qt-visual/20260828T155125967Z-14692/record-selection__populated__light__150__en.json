@@ -1,0 +1,41 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Show record-selection dialog and wait for native exposure",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "record-selection__populated__light__150__en.png",
+        "sha256": "c1d30f6772dda9b0e03c483b71c4c87716256b6eec340dff4da4f8136d547707"
+    },
+    "displayScalePercent": 150,
+    "fixtureId": "synthetic-records",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "dialog.record-selection",
+    "observations": {
+        "accessibility": "UI Automation, screen-reader, and high-contrast evidence are deferred from the current roadmap.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "4615cbd",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 179,
+        "width": 360,
+        "x": 462,
+        "y": 505
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

@@ -1,0 +1,42 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Open Classes page and select class section 1",
+        "Assert the fixed 25-row editor surface backed by the 1,000-row fixture",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "roster-large__large__light__100__en.png",
+        "sha256": "ff86158761670fb3d3a188e1e4578beec71d355c0e84278d697b586d24e02f9c"
+    },
+    "displayScalePercent": 100,
+    "fixtureId": "roster-large",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "editor.roster",
+    "observations": {
+        "accessibility": "UI Automation, screen-reader, and high-contrast evidence are deferred from the current roadmap.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "0bcc8c7",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 1040,
+        "width": 1270,
+        "x": 1285,
+        "y": 505
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

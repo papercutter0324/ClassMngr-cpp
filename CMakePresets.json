@@ -52,6 +52,8 @@
       "name": "windows-msvc-base",
       "hidden": true,
       "inherits": "base",
+      "generator": "Visual Studio 18 2026",
+      "toolset": "v145",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -79,6 +81,14 @@
       "inherits": "windows-x64-base"
     },
     {
+      "name": "windows-x64-phase0-visual",
+      "displayName": "Windows x64 Phase 0 Visual Evidence",
+      "inherits": "windows-x64-debug",
+      "cacheVariables": {
+        "CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS": "ON"
+      }
+    },
+    {
       "name": "windows-x64-release",
       "displayName": "Windows x64 Release",
       "inherits": "windows-x64-base",
@@ -86,6 +96,68 @@
         "BUILD_TESTING": "OFF",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64",
         "CLASSMNGR_RUN_WINDEPLOYQT": "ON"
+      }
+    },
+    {
+      "name": "windows-x64-winui-base",
+      "hidden": true,
+      "inherits": "windows-msvc-base",
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION": "10.0.26100.0",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_WINUI": "ON",
+        "CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT": "${sourceDir}/dist/ClassMngr-windows-winui-x64"
+      }
+    },
+    {
+      "name": "windows-x64-winui-debug",
+      "displayName": "Windows x64 WinUI Debug",
+      "inherits": "windows-x64-winui-base"
+    },
+    {
+      "name": "windows-x64-winui-release",
+      "displayName": "Windows x64 WinUI Release",
+      "inherits": "windows-x64-winui-base",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON"
+      }
+    },
+    {
+      "name": "windows-x86-winui-base",
+      "hidden": true,
+      "inherits": "windows-msvc-base",
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "Win32",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION": "10.0.26100.0",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_WINUI": "ON",
+        "CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT": "${sourceDir}/dist/ClassMngr-windows-winui-x86"
+      }
+    },
+    {
+      "name": "windows-x86-winui-debug",
+      "displayName": "Windows x86 WinUI Debug",
+      "inherits": "windows-x86-winui-base"
+    },
+    {
+      "name": "windows-x86-winui-release",
+      "displayName": "Windows x86 WinUI Release",
+      "inherits": "windows-x86-winui-base",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON"
       }
     },
     {
@@ -104,6 +176,14 @@
       "name": "windows-arm64-debug",
       "displayName": "Windows ARM64 Debug",
       "inherits": "windows-arm64-base"
+    },
+    {
+      "name": "windows-arm64-phase0-visual",
+      "displayName": "Windows ARM64 Phase 0 Visual Evidence",
+      "inherits": "windows-arm64-debug",
+      "cacheVariables": {
+        "CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS": "ON"
+      }
     },
     {
       "name": "windows-arm64-release",
@@ -179,6 +259,11 @@
       "configuration": "Debug"
     },
     {
+      "name": "windows-x64-phase0-visual",
+      "configurePreset": "windows-x64-phase0-visual",
+      "configuration": "Debug"
+    },
+    {
       "name": "windows-x64-release",
       "configurePreset": "windows-x64-release",
       "configuration": "Release"
@@ -192,6 +277,38 @@
       ]
     },
     {
+      "name": "windows-x64-winui-debug",
+      "configurePreset": "windows-x64-winui-debug",
+      "configuration": "Debug",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
+    },
+    {
+      "name": "windows-x64-winui-release",
+      "configurePreset": "windows-x64-winui-release",
+      "configuration": "Release",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
+    },
+    {
+      "name": "windows-x86-winui-debug",
+      "configurePreset": "windows-x86-winui-debug",
+      "configuration": "Debug",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
+    },
+    {
+      "name": "windows-x86-winui-release",
+      "configurePreset": "windows-x86-winui-release",
+      "configuration": "Release",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
+    },
+    {
       "name": "windows-x64-release-installer",
       "configurePreset": "windows-x64-release",
       "configuration": "Release",
@@ -202,6 +319,11 @@
     {
       "name": "windows-arm64-debug",
       "configurePreset": "windows-arm64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-arm64-phase0-visual",
+      "configurePreset": "windows-arm64-phase0-visual",
       "configuration": "Debug"
     },
     {

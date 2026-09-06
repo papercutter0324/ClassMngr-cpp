@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="ClassMngrWinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="ClassMngr">
+    <Grid
+        x:Name="RootGrid"
+        Background="{ThemeResource Phase3WindowBackgroundBrush}"
+        RequestedTheme="Default">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="AppTitleBar"
+            Grid.Row="0"
+            Padding="{StaticResource Phase3TitleBarPadding}"
+            Background="{ThemeResource Phase3WindowBackgroundBrush}"
+            AutomationProperties.Name="Application title bar">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                x:Name="AppTitleBarText"
+                Style="{StaticResource Phase3TitleBarTextBlockStyle}"
+                Text="ClassMngr"
+                AutomationProperties.Name="Application title" />
+            <Button
+                x:Name="ShellInfoButton"
+                Grid.Column="1"
+                Style="{StaticResource Phase3SecondaryButtonStyle}"
+                Content="About shell"
+                Click="ShellInfoButton_Click"
+                AutomationProperties.Name="Show shell information" />
+        </Grid>
+
+        <NavigationView
+            x:Name="RootNavigationView"
+            Grid.Row="1"
+            Style="{StaticResource Phase3NavigationViewStyle}"
+            IsBackButtonVisible="Visible"
+            IsSettingsVisible="False"
+            PaneDisplayMode="Left"
+            AutomationProperties.Name="Primary navigation">
+            <NavigationView.MenuItems>
+                <NavigationViewItem
+                    x:Name="HomeNavigationItem"
+                    Content="Home"
+                    Tag="home"
+                    AutomationProperties.Name="Home navigation item" />
+                <NavigationViewItem
+                    x:Name="AboutNavigationItem"
+                    Content="About"
+                    Tag="about"
+                    AutomationProperties.Name="About navigation item" />
+            </NavigationView.MenuItems>
+            <Frame
+                x:Name="ContentFrame"
+                IsNavigationStackEnabled="True"
+                AutomationProperties.Name="Page content" />
+        </NavigationView>
+    </Grid>
+</Window>

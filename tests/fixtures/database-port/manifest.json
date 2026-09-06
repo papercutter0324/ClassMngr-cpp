@@ -1,0 +1,160 @@
+{
+  "format": "classmngr-database-port-fixtures-v1",
+  "schemaVersion": 6,
+  "generatorTarget": "ClassMngrDatabasePortFixtureGenerator",
+  "fixtures": [
+    {
+      "id": "empty",
+      "file": "empty.tps",
+      "sha256": "a7afd09e2f290838f5e2ed87703c81a8fe0e40996d8e89846a2b5f274bb0a35a",
+      "kind": "current",
+      "expect": "opens as an empty schema-v6 profile",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "teachers": 0,
+        "classes": 0,
+        "calendarEvents": 0,
+        "campuses": 0
+      }
+    },
+    {
+      "id": "typical",
+      "file": "typical.tps",
+      "sha256": "99232578785ccda1c055d634c98e0acbd505b1e4ffb59ff6836530343c2380f6",
+      "kind": "current",
+      "expect": "round-trips English and Korean teacher, class, roster, calendar, campus, and speaking-evaluation data",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "teacher": {
+          "english": "Fixture Teacher",
+          "korean": "대표 교사"
+        },
+        "className": "Fixture Class / 수업",
+        "rosterRows": 2,
+        "calendarTitle": "Fixture Event / 행사",
+        "campusName": "Fixture Campus",
+      "speakingEvaluation": "Winter"
+      }
+    },
+    {
+      "id": "roster-large",
+      "file": "roster-large.tps",
+      "sha256": "47feac8d6591bb8600ac2307e640996f0f819a640311fe2e8af99de23e35499c",
+      "kind": "current",
+      "expect": "contains the maximum 25-row roster editor fixture with valid bilingual names",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "className": "Fixture Class / 수업",
+        "rosterRows": 25
+      }
+    },
+    {
+      "id": "large",
+      "file": "large.tps",
+      "sha256": "edb04a191f0917d039b4cd835bdae9d7c33ae4f35947cd59ce5f838e87dcf9ff",
+      "kind": "current",
+      "expect": "contains a 1,000-row roster and scored Winter evaluation for virtualized-table and performance checks",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "className": "Fixture Class / 수업",
+        "rosterRows": 1000
+      }
+    },
+    {
+      "id": "analytics-empty",
+      "file": "analytics-empty.tps",
+      "sha256": "46509c9bfb8bf3b22a20e6ba5c9a1eca1681361f45d6b99444fca9cf6a1dea96",
+      "kind": "current",
+      "expect": "contains a class and roster without speaking-evaluation records for the analytics empty state",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "className": "Fixture Class / 수업",
+        "rosterRows": 2,
+        "speakingEvaluations": 0
+      }
+    },
+    {
+      "id": "legacy-v2",
+      "file": "legacy-v2.db",
+      "sha256": "dc70a7c03660266eed4906a7a31c7c0c98195372f4b85450e583125fde51436a",
+      "kind": "legacy",
+      "expect": "migrates to schema v6 and repairs the unassigned teacher",
+      "semantic": {
+        "sourceSchemaVersion": 2,
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "repairsUnassignedTeacherToNull": true,
+        "backupSuffix": ".pre-schema-v4-backup"
+      }
+    },
+    {
+      "id": "legacy-v5",
+      "file": "legacy-v5.db",
+      "sha256": "ae2fc7dee6c20230298c54b93626a0ffe7e3514c40108247203e667258618672",
+      "kind": "legacy",
+      "expect": "migrates to schema v6 and creates the v6 pre-migration backup",
+      "semantic": {
+        "sourceSchemaVersion": 5,
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "backupSuffix": ".pre-schema-v6-backup"
+      }
+    },
+    {
+      "id": "migration-invalid",
+      "file": "migration-invalid.db",
+      "sha256": "ca61ee51d2d284e4eb696765cfc3f22076bc70fb9ae171cc0988a69e46712ca0",
+      "kind": "failure",
+      "expect": "rejects invalid legacy data without mutation",
+      "semantic": {
+        "sourceSchemaVersion": 2,
+        "opens": false,
+        "errorContains": "unsupported internet type",
+        "sourceUnchanged": true
+      }
+    },
+    {
+      "id": "migration-rollback",
+      "file": "migration-rollback.db",
+      "sha256": "898d0aae740bec3780e60c944fca205bfa1a267463d1d244dfa55e837f39d9f5",
+      "kind": "failure",
+      "expect": "rolls back a partial constrained-table migration",
+      "semantic": {
+        "opens": false,
+        "schemaVersionAfterFailure": 3,
+        "errorContains": "Database migration 4",
+        "sourceDataPreserved": true,
+        "backupSuffix": ".pre-schema-v4-backup"
+      }
+    },
+    {
+      "id": "newer-schema",
+      "file": "newer-schema.tps",
+      "sha256": "5c00ec6c19b616059711b0c7a3e11b5884e8b622547622bb9d01bb43ee4b9f73",
+      "kind": "failure",
+      "expect": "rejects a schema version newer than v6 without mutation",
+      "semantic": {
+        "sourceSchemaVersion": 7,
+        "opens": false,
+        "errorContains": "schema version 7",
+        "sourceUnchanged": true
+      }
+    },
+    {
+      "id": "corrupt",
+      "file": "corrupt.tps",
+      "sha256": "11626154acb504b3d0f0358f9e67e428cd1abcd10671466137e2f78ba761576c",
+      "kind": "failure",
+      "expect": "fails to open a non-SQLite file safely",
+      "semantic": {
+        "opens": false,
+        "sourceUnchanged": true
+      }
+    }
+  ]
+}

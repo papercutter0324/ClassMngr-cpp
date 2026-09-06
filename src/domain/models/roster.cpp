@@ -1,13 +1,23 @@
 #include "roster.h"
 
-const QStringList Roster::BaseColumns{
-    "English",
-    "Korean",
-    "Winter",
-    "Speech Contest",
-    "Summer",
-    "Fall",
-};
+#include "classmngr/engine/roster.h"
+
+const QStringList Roster::BaseColumns = []
+{
+    QStringList result;
+    result.reserve(
+        static_cast<qsizetype>(classmngr::engine::RosterBaseColumns.size())
+        );
+    for (const std::string_view column
+         : classmngr::engine::RosterBaseColumns)
+    {
+        result.append(QString::fromUtf8(
+            column.data(),
+            static_cast<qsizetype>(column.size())
+            ));
+    }
+    return result;
+}();
 
 void Roster::reset()
 {

@@ -1,954 +1,188 @@
 #include "class_tab_navigation_model.h"
 
-#include "features/classes/config/class_info_config.h"
-
-#include <algorithm>
-#include <utility>
+#include "classmngr/engine/class_tab_navigation.h"
 
 #include <QObject>
-#include <QTime>
+
+#include <string>
+#include <vector>
 
 namespace
 {
-constexpr int UnknownOrder = 1000;
+using EngineService = classmngr::engine::ClassTabNavigationService;
 
-struct TabCandidate
+std::string toEngineString(const QString& value)
 {
-    ClassTabNavigation::ClassTab tab;
-    QString baseLabel;
-    QString teacherLabel;
-};
-
-QString trimmedOr(
-    const QString& value,
-    const QString& fallback
-    )
-{
-    const QString trimmed =
-        value.trimmed();
-
-    return trimmed.isEmpty()
-        ? fallback
-        : trimmed;
+    return value.toUtf8().toStdString();
 }
 
-int gradeOrder(
-    const QString& grade
-    )
+QString toQtString(const std::string& value)
 {
-    const int index =
-        ClassInfoConfig::Grades.indexOf(
-            grade.trimmed()
-            );
-
-    return index >= 0
-        ? index
-        : UnknownOrder;
-}
-
-int levelOrder(
-    const QString& grade,
-    const QString& level
-    )
-{
-    const int index =
-        ClassInfoConfig::levelsForGrade(
-            grade.trimmed()
-            )
-            .indexOf(
-                level.trimmed()
-                );
-
-    return index >= 0
-        ? index
-        : UnknownOrder;
-}
-
-QString gradeKey(
-    const ClassTabNavigation::ClassEntry& entry
-    )
-{
-    const QString grade =
-        entry.grade.trimmed();
-
-    return gradeOrder(grade) == UnknownOrder
-        ? QString()
-        : grade;
-}
-
-QString gradeLabel(
-    const QString& key
-    )
-{
-    return key.trimmed().isEmpty()
-        ? QObject::tr("Other")
-        : key.trimmed();
-}
-
-QString compactStartTime(
-    const QString& value
-    )
-{
-    const QString trimmed =
-        value.trimmed();
-
-    if (trimmed.isEmpty())
-    {
-        return QString();
-    }
-
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
-    const bool usesMeridiem =
-        trimmed.contains(
-            QStringLiteral("AM"),
-            Qt::CaseInsensitive
-            )
-        || trimmed.contains(
-            QStringLiteral("PM"),
-            Qt::CaseInsensitive
-            );
-
-    for (const QString& format : formats)
-    {
-        const QTime time =
-            QTime::fromString(
-                trimmed,
-                format
-                );
-
-        if (time.isValid())
-        {
-            if (usesMeridiem)
-            {
-                QString formatted =
-                    time.toString(
-                        QStringLiteral("h:mm AP")
-                        );
-
-                formatted.remove(
-                    QStringLiteral(" AM")
-                    );
-                formatted.remove(
-                    QStringLiteral(" PM")
-                    );
-
-                return formatted;
-            }
-
-            return time.toString(
-                QStringLiteral("H:mm")
-                );
-        }
-    }
-
-    QString fallback =
-        trimmed;
-
-    fallback.remove(
-        QStringLiteral(" AM"),
-        Qt::CaseInsensitive
-        );
-    fallback.remove(
-        QStringLiteral(" PM"),
-        Qt::CaseInsensitive
-        );
-
-    return fallback;
-}
-
-QString dayCode(
-    const QString& day
-    )
-{
-    if (day == QStringLiteral("Monday"))
-    {
-        return QStringLiteral("M");
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
-        return QStringLiteral("T");
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
-        return QStringLiteral("W");
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
-        return QStringLiteral("Th");
-    }
-    if (day == QStringLiteral("Friday"))
-    {
-        return QStringLiteral("F");
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
-        return QStringLiteral("Sat");
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
-        return QStringLiteral("Sun");
-    }
-
-    return day.trimmed();
-}
-
-int dayOrder(
-    const QString& day
-    )
-{
-    const int index =
-        ClassInfoConfig::Days.indexOf(
-            day.trimmed()
-            );
-
-    return index >= 0
-        ? index
-        : UnknownOrder;
-}
-
-QString compressedDays(
-    QStringList days
-    )
-{
-    days.removeDuplicates();
-
-    std::sort(
-        days.begin(),
-        days.end(),
-        [](const QString& left, const QString& right)
-        {
-            return dayOrder(left) < dayOrder(right);
-        }
-        );
-
-    QStringList codes;
-
-    for (const QString& day : std::as_const(days))
-    {
-        const QString code =
-            dayCode(day);
-
-        if (!code.isEmpty())
-        {
-            codes.append(code);
-        }
-    }
-
-    if (codes == QStringList{QStringLiteral("M"), QStringLiteral("W")})
-    {
-        return QStringLiteral("M/W");
-    }
-    if (codes == QStringList{QStringLiteral("M"), QStringLiteral("F")})
-    {
-        return QStringLiteral("M/F");
-    }
-    if (codes == QStringList{QStringLiteral("W"), QStringLiteral("F")})
-    {
-        return QStringLiteral("W/F");
-    }
-    if (
-        codes == QStringList{
-            QStringLiteral("M"),
-            QStringLiteral("W"),
-            QStringLiteral("F")
-        }
-        )
-    {
-        return QStringLiteral("M/W/F");
-    }
-    if (codes == QStringList{QStringLiteral("T"), QStringLiteral("Th")})
-    {
-        return QStringLiteral("T/Th");
-    }
-
-    return codes.join(
-        QStringLiteral("/")
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
 }
 
-QString scheduleText(
-    const QList<ClassTime>& times
-    )
+classmngr::engine::ClassTime toEngineClassTime(const ClassTime& value)
 {
-    if (times.isEmpty())
-    {
-        return QString();
-    }
-
-    struct TimeGroup
-    {
-        QString startTime;
-        QStringList days;
-    };
-
-    QList<TimeGroup> groups;
-
-    for (const ClassTime& time : times)
-    {
-        const QString start =
-            compactStartTime(
-                time.startTime
-                );
-
-        if (start.isEmpty())
-        {
-            continue;
-        }
-
-        auto group =
-            std::find_if(
-                groups.begin(),
-                groups.end(),
-                [&start](const TimeGroup& candidate)
-                {
-                    return candidate.startTime == start;
-                }
-                );
-
-        if (group == groups.end())
-        {
-            TimeGroup newGroup;
-            newGroup.startTime = start;
-            newGroup.days.append(
-                time.day.trimmed()
-                );
-            groups.append(newGroup);
-        }
-        else
-        {
-            group->days.append(
-                time.day.trimmed()
-                );
-        }
-    }
-
-    QStringList labels;
-
-    for (const TimeGroup& group : groups)
-    {
-        labels.append(
-            QStringLiteral("%1 %2")
-                .arg(
-                    compressedDays(group.days),
-                    group.startTime
-                    )
-            );
-    }
-
-    return labels.join(
-        QStringLiteral("; ")
-        );
-}
-
-const QList<ClassTime>& preferredTimes(
-    const ClassTabNavigation::ClassEntry& entry
-    )
-{
-    return entry.regularTimes.isEmpty()
-        ? entry.intensiveTimes
-        : entry.regularTimes;
-}
-
-const QList<ClassTime>& timesForFilter(
-    const ClassTabNavigation::ClassEntry& entry,
-    ClassTabNavigation::ScheduleSource scheduleSource
-    )
-{
-    return scheduleSource == ClassTabNavigation::ScheduleSource::Intensive
-        ? entry.intensiveTimes
-        : entry.regularTimes;
-}
-
-QString normalizedDay(
-    const QString& day
-    )
-{
-    return day.trimmed().toCaseFolded();
-}
-
-QSet<QString> expandedFilterDays(
-    const ClassTabNavigation::DayFilter& dayFilter
-    )
-{
-    QSet<QString> result;
-
-    for (const QString& day : dayFilter.selectedDays)
-    {
-        const QString normalized = normalizedDay(day);
-
-        if (normalized == QStringLiteral("wkend")
-            || normalized == QStringLiteral("weekend"))
-        {
-            result.insert(QStringLiteral("saturday"));
-            result.insert(QStringLiteral("sunday"));
-            continue;
-        }
-
-        if (!normalized.isEmpty())
-        {
-            result.insert(normalized);
-        }
-    }
-
+    classmngr::engine::ClassTime result;
+    result.day = toEngineString(value.day);
+    result.startTime = toEngineString(value.startTime);
+    result.endTime = toEngineString(value.endTime);
     return result;
 }
 
-bool matchesDayFilter(
-    const ClassTabNavigation::ClassEntry& entry,
-    const ClassTabNavigation::DayFilter& dayFilter
+std::vector<classmngr::engine::ClassTime> toEngineClassTimes(
+    const QList<ClassTime>& values
     )
 {
-    const QList<ClassTime>& scheduleTimes =
-        timesForFilter(entry, dayFilter.scheduleSource);
+    std::vector<classmngr::engine::ClassTime> result;
+    result.reserve(static_cast<std::size_t>(values.size()));
+    for (const ClassTime& value : values)
+    {
+        result.push_back(toEngineClassTime(value));
+    }
+    return result;
+}
 
-    if (
-        dayFilter.visibilityScope
+EngineService::ClassEntry toEngineClassEntry(
+    const ClassTabNavigation::ClassEntry& value
+    )
+{
+    EngineService::ClassEntry result;
+    result.classId = value.classId;
+    result.classroomName = toEngineString(value.classroomName);
+    result.grade = toEngineString(value.grade);
+    result.level = toEngineString(value.level);
+    result.regularTimes = toEngineClassTimes(value.regularTimes);
+    result.intensiveTimes = toEngineClassTimes(value.intensiveTimes);
+    result.teacherEn = toEngineString(value.teacherEn);
+    result.teacherKr = toEngineString(value.teacherKr);
+    return result;
+}
+
+std::vector<EngineService::ClassEntry> toEngineEntries(
+    const QList<ClassTabNavigation::ClassEntry>& values
+    )
+{
+    std::vector<EngineService::ClassEntry> result;
+    result.reserve(static_cast<std::size_t>(values.size()));
+    for (const ClassTabNavigation::ClassEntry& value : values)
+    {
+        result.push_back(toEngineClassEntry(value));
+    }
+    return result;
+}
+
+EngineService::GroupingPolicy toEngineGroupingPolicy(
+    ClassTabNavigation::GroupingPolicy value
+    )
+{
+    return value == ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+        ? EngineService::GroupingPolicy::AlwaysGradeGrouped
+        : EngineService::GroupingPolicy::Adaptive;
+}
+
+EngineService::DayFilter toEngineDayFilter(
+    const ClassTabNavigation::DayFilter& value
+    )
+{
+    EngineService::DayFilter result;
+    result.selectedDays.reserve(
+        static_cast<std::size_t>(value.selectedDays.size())
+        );
+    for (const QString& day : value.selectedDays)
+    {
+        result.selectedDays.push_back(toEngineString(day));
+    }
+
+    result.scheduleSource =
+        value.scheduleSource == ClassTabNavigation::ScheduleSource::Intensive
+        ? EngineService::ScheduleSource::Intensive
+        : EngineService::ScheduleSource::Regular;
+    result.visibilityScope =
+        value.visibilityScope
             == ClassTabNavigation::VisibilityScope::ActiveSchedule
-        && scheduleTimes.isEmpty()
-        )
-    {
-        return false;
-    }
-
-    const QSet<QString> selectedDays = expandedFilterDays(dayFilter);
-
-    if (selectedDays.isEmpty())
-    {
-        return true;
-    }
-
-    for (const ClassTime& time : scheduleTimes)
-    {
-        if (selectedDays.contains(normalizedDay(time.day)))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-QList<ClassTabNavigation::ClassEntry> filteredEntries(
-    const QList<ClassTabNavigation::ClassEntry>& entries,
-    const ClassTabNavigation::DayFilter& dayFilter
-    )
-{
-    QList<ClassTabNavigation::ClassEntry> result;
-
-    for (const ClassTabNavigation::ClassEntry& entry : entries)
-    {
-        if (matchesDayFilter(entry, dayFilter))
-        {
-            result.append(entry);
-        }
-    }
-
+        ? EngineService::VisibilityScope::ActiveSchedule
+        : EngineService::VisibilityScope::AllClasses;
     return result;
 }
 
-int timeOrder(
-    const QString& value
-    )
+EngineService::Labels translatedLabels()
 {
-    const QString trimmed =
-        value.trimmed();
-
-    if (trimmed.isEmpty())
-    {
-        return UnknownOrder;
-    }
-
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
-    for (const QString& format : formats)
-    {
-        const QTime time =
-            QTime::fromString(
-                trimmed,
-                format
-                );
-
-        if (time.isValid())
-        {
-            return (time.hour() * 60) + time.minute();
-        }
-    }
-
-    return UnknownOrder;
-}
-
-int firstDayOrder(
-    const ClassTabNavigation::ClassEntry& entry
-    )
-{
-    int result = UnknownOrder;
-
-    for (const ClassTime& time : preferredTimes(entry))
-    {
-        result =
-            std::min(
-                result,
-                dayOrder(time.day)
-                );
-    }
-
+    EngineService::Labels result;
+    result.other = toEngineString(QObject::tr("Other"));
+    result.intensive = toEngineString(QObject::tr("Int"));
+    result.noTime = toEngineString(QObject::tr("No time"));
+    result.classFallback = toEngineString(QObject::tr("Class %1"));
     return result;
 }
 
-int firstTimeOrder(
-    const ClassTabNavigation::ClassEntry& entry
+ClassTabNavigation::ClassTab toQtClassTab(
+    const EngineService::ClassTab& value
     )
 {
-    int result = UnknownOrder;
-
-    for (const ClassTime& time : preferredTimes(entry))
-    {
-        if (dayOrder(time.day) != firstDayOrder(entry))
-        {
-            continue;
-        }
-
-        result =
-            std::min(
-                result,
-                timeOrder(time.startTime)
-                );
-    }
-
+    ClassTabNavigation::ClassTab result;
+    result.classId = value.classId;
+    result.label = toQtString(value.label);
     return result;
 }
 
-QString preferredScheduleText(
-    const ClassTabNavigation::ClassEntry& entry
+ClassTabNavigation::GradeGroup toQtGradeGroup(
+    const EngineService::GradeGroup& value
     )
 {
-    const QString regular =
-        scheduleText(
-            entry.regularTimes
-            );
-
-    if (!regular.isEmpty())
+    ClassTabNavigation::GradeGroup result;
+    result.grade = toQtString(value.grade);
+    result.label = toQtString(value.label);
+    for (const EngineService::ClassTab& classTab : value.classes)
     {
-        return regular;
+        result.classes.append(toQtClassTab(classTab));
     }
-
-    const QString intensive =
-        scheduleText(
-            entry.intensiveTimes
-            );
-
-    if (!intensive.isEmpty())
-    {
-        return QStringLiteral("%1 %2")
-            .arg(
-                QObject::tr("Int"),
-                intensive
-                );
-    }
-
-    return QObject::tr("No time");
-}
-
-QString classNameText(
-    const ClassTabNavigation::ClassEntry& entry,
-    bool includeGrade
-    )
-{
-    const QString grade =
-        entry.grade.trimmed();
-    const QString level =
-        entry.level.trimmed();
-
-    if (includeGrade)
-    {
-        if (!grade.isEmpty() && !level.isEmpty())
-        {
-            return QStringLiteral("%1 %2")
-                .arg(grade, level);
-        }
-
-        if (!grade.isEmpty())
-        {
-            return grade;
-        }
-    }
-
-    if (!level.isEmpty())
-    {
-        return level;
-    }
-
-    if (!grade.isEmpty())
-    {
-        return grade;
-    }
-
-    return trimmedOr(
-        entry.classroomName,
-        QObject::tr("Class %1").arg(entry.classId)
-        );
-}
-
-QString baseLabel(
-    const ClassTabNavigation::ClassEntry& entry,
-    bool includeGrade
-    )
-{
-    return QStringLiteral("%1 %2 %3")
-        .arg(
-            classNameText(
-                entry,
-                includeGrade
-                ),
-            QStringLiteral("•"),
-            preferredScheduleText(entry)
-            );
-}
-
-QString teacherLabel(
-    const ClassTabNavigation::ClassEntry& entry
-    )
-{
-    const QString english =
-        entry.teacherEn.trimmed();
-
-    if (!english.isEmpty())
-    {
-        return english;
-    }
-
-    return entry.teacherKr.trimmed();
-}
-
-bool entryLessThan(
-    const ClassTabNavigation::ClassEntry& left,
-    const ClassTabNavigation::ClassEntry& right
-    )
-{
-    const int leftGradeOrder =
-        gradeOrder(
-            left.grade
-            );
-    const int rightGradeOrder =
-        gradeOrder(
-            right.grade
-            );
-
-    if (leftGradeOrder != rightGradeOrder)
-    {
-        return leftGradeOrder < rightGradeOrder;
-    }
-
-    const int leftLevelOrder =
-        levelOrder(
-            left.grade,
-            left.level
-            );
-    const int rightLevelOrder =
-        levelOrder(
-            right.grade,
-            right.level
-            );
-
-    if (leftLevelOrder != rightLevelOrder)
-    {
-        return leftLevelOrder < rightLevelOrder;
-    }
-
-    const int leftDayOrder =
-        firstDayOrder(left);
-    const int rightDayOrder =
-        firstDayOrder(right);
-
-    if (leftDayOrder != rightDayOrder)
-    {
-        return leftDayOrder < rightDayOrder;
-    }
-
-    const int leftTimeOrder =
-        firstTimeOrder(left);
-    const int rightTimeOrder =
-        firstTimeOrder(right);
-
-    if (leftTimeOrder != rightTimeOrder)
-    {
-        return leftTimeOrder < rightTimeOrder;
-    }
-
-    const int labelComparison =
-        QString::localeAwareCompare(
-            baseLabel(left, true),
-            baseLabel(right, true)
-            );
-
-    if (labelComparison != 0)
-    {
-        return labelComparison < 0;
-    }
-
-    return left.classId < right.classId;
-}
-
-QList<ClassTabNavigation::ClassEntry> sortedEntries(
-    const QList<ClassTabNavigation::ClassEntry>& entries
-    )
-{
-    QList<ClassTabNavigation::ClassEntry> result =
-        entries;
-
-    std::sort(
-        result.begin(),
-        result.end(),
-        entryLessThan
-        );
-
     return result;
 }
 
-void applyUniqueLabels(
-    QList<TabCandidate>* candidates
-    )
+ClassTabNavigation::Model toQtModel(const EngineService::Model& value)
 {
-    if (!candidates)
+    ClassTabNavigation::Model result;
+    result.mode = value.mode == EngineService::Mode::GradeGrouped
+        ? ClassTabNavigation::Mode::GradeGrouped
+        : ClassTabNavigation::Mode::Flat;
+
+    for (const EngineService::ClassTab& classTab : value.allClasses)
     {
-        return;
+        result.allClasses.append(toQtClassTab(classTab));
     }
-
-    for (int index = 0; index < candidates->size(); ++index)
+    for (const EngineService::ClassTab& classTab : value.flatClasses)
     {
-        TabCandidate& candidate =
-            (*candidates)[index];
-
-        int duplicateCount = 0;
-
-        for (const TabCandidate& other : std::as_const(*candidates))
-        {
-            if (other.baseLabel == candidate.baseLabel)
-            {
-                ++duplicateCount;
-            }
-        }
-
-        if (duplicateCount <= 1)
-        {
-            candidate.tab.label =
-                candidate.baseLabel;
-            continue;
-        }
-
-        QString expandedLabel =
-            candidate.baseLabel;
-
-        if (!candidate.teacherLabel.isEmpty())
-        {
-            expandedLabel =
-                QStringLiteral("%1 %2 %3")
-                    .arg(
-                        candidate.baseLabel,
-                        QStringLiteral("•"),
-                        candidate.teacherLabel
-                        );
-        }
-
-        bool stillDuplicated =
-            candidate.teacherLabel.isEmpty();
-
-        if (!stillDuplicated)
-        {
-            for (int otherIndex = 0; otherIndex < candidates->size(); ++otherIndex)
-            {
-                if (otherIndex == index)
-                {
-                    continue;
-                }
-
-                const TabCandidate& other =
-                    (*candidates)[otherIndex];
-
-                if (other.baseLabel != candidate.baseLabel)
-                {
-                    continue;
-                }
-
-                QString otherExpandedLabel =
-                    other.baseLabel;
-
-                if (!other.teacherLabel.isEmpty())
-                {
-                    otherExpandedLabel =
-                        QStringLiteral("%1 %2 %3")
-                            .arg(
-                                other.baseLabel,
-                                QStringLiteral("•"),
-                                other.teacherLabel
-                                );
-                }
-
-                if (otherExpandedLabel == expandedLabel)
-                {
-                    stillDuplicated = true;
-                    break;
-                }
-            }
-        }
-
-        candidate.tab.label =
-            stillDuplicated
-                ? QStringLiteral("%1 #%2")
-                    .arg(
-                        expandedLabel,
-                        QString::number(candidate.tab.classId)
-                        )
-                : expandedLabel;
+        result.flatClasses.append(toQtClassTab(classTab));
     }
+    for (const EngineService::GradeGroup& gradeGroup : value.gradeGroups)
+    {
+        result.gradeGroups.append(toQtGradeGroup(gradeGroup));
+    }
+    return result;
 }
-
-QList<ClassTabNavigation::ClassTab> makeClassTabs(
-    const QList<ClassTabNavigation::ClassEntry>& entries,
-    bool includeGrade
-    )
-{
-    QList<TabCandidate> candidates;
-
-    for (const ClassTabNavigation::ClassEntry& entry : entries)
-    {
-        TabCandidate candidate;
-        candidate.tab.classId =
-            entry.classId;
-        candidate.baseLabel =
-            baseLabel(
-                entry,
-                includeGrade
-                );
-        candidate.teacherLabel =
-            teacherLabel(entry);
-
-        candidates.append(candidate);
-    }
-
-    applyUniqueLabels(&candidates);
-
-    QList<ClassTabNavigation::ClassTab> tabs;
-
-    for (const TabCandidate& candidate : std::as_const(candidates))
-    {
-        tabs.append(
-            candidate.tab
-            );
-    }
-
-    return tabs;
-}
-}
+} // namespace
 
 namespace ClassTabNavigation
 {
+
 Model build(
     const QList<ClassEntry>& entries,
     GroupingPolicy groupingPolicy,
     const DayFilter& dayFilter
     )
 {
-    const QList<ClassEntry> filtered =
-        filteredEntries(entries, dayFilter);
-
-    Model model;
-    model.mode =
-        groupingPolicy == GroupingPolicy::AlwaysGradeGrouped
-        || filtered.size() > FlatClassThreshold
-            ? Mode::GradeGrouped
-            : Mode::Flat;
-
-    const QList<ClassEntry> sorted =
-        sortedEntries(filtered);
-
-    model.allClasses =
-        makeClassTabs(
-            sorted,
-            true
-            );
-
-    if (model.mode == Mode::Flat)
-    {
-        model.flatClasses = model.allClasses;
-        return model;
-    }
-
-    QList<QString> groupKeys;
-
-    for (const ClassEntry& entry : sorted)
-    {
-        const QString key =
-            gradeKey(entry);
-
-        if (!groupKeys.contains(key))
-        {
-            groupKeys.append(key);
-        }
-    }
-
-    std::sort(
-        groupKeys.begin(),
-        groupKeys.end(),
-        [](const QString& left, const QString& right)
-        {
-            const int leftOrder =
-                left.isEmpty()
-                    ? UnknownOrder
-                    : gradeOrder(left);
-            const int rightOrder =
-                right.isEmpty()
-                    ? UnknownOrder
-                    : gradeOrder(right);
-
-            return leftOrder < rightOrder;
-        }
+    const EngineService::Labels labels = translatedLabels();
+    const EngineService::Model model = EngineService::build(
+        toEngineEntries(entries),
+        toEngineGroupingPolicy(groupingPolicy),
+        toEngineDayFilter(dayFilter),
+        labels
         );
-
-    for (const QString& key : std::as_const(groupKeys))
-    {
-        QList<ClassEntry> groupEntries;
-
-        for (const ClassEntry& entry : sorted)
-        {
-            if (gradeKey(entry) == key)
-            {
-                groupEntries.append(entry);
-            }
-        }
-
-        GradeGroup group;
-        group.grade = key;
-        group.label =
-            gradeLabel(key);
-        group.classes =
-            makeClassTabs(
-                groupEntries,
-                false
-                );
-
-        model.gradeGroups.append(group);
-    }
-
-    return model;
+    return toQtModel(model);
 }
-}
+
+} // namespace ClassTabNavigation

@@ -16,6 +16,164 @@ classmngr_add_qt_test(
         Qt6::Sql
 )
 
+qt_add_executable(ClassMngrDatabasePortFixtureGenerator
+    tests/database_port_fixture_generator.cpp
+)
+
+target_compile_features(ClassMngrDatabasePortFixtureGenerator
+    PRIVATE
+        cxx_std_23
+)
+
+if(WIN32)
+    target_compile_options(ClassMngrDatabasePortFixtureGenerator
+        PRIVATE
+            /utf-8
+    )
+endif()
+
+target_include_directories(ClassMngrDatabasePortFixtureGenerator
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/src
+)
+
+target_link_libraries(ClassMngrDatabasePortFixtureGenerator
+    PRIVATE
+        ClassMngrEngine
+        ClassMngrRuntime
+        Qt6::Core
+        Qt6::Sql
+)
+
+add_test(
+    NAME ClassMngrDatabasePortFixtureTests
+    COMMAND
+        ClassMngrDatabasePortFixtureGenerator
+        --verify-directory
+        "${PROJECT_SOURCE_DIR}/tests/fixtures/database-port"
+)
+
+set_tests_properties(
+    ClassMngrDatabasePortFixtureTests
+    PROPERTIES
+        LABELS "phase2;database-port;retained-qt-adapter"
+)
+
+if(WIN32)
+    set_tests_properties(
+        ClassMngrDatabasePortFixtureTests
+        PROPERTIES
+            ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+endif()
+
+if(WIN32 AND CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS)
+    classmngr_add_qt_test(
+        NAME WindowsQtVisualCapture
+        MANUAL_FINALIZATION
+        SOURCES
+            tests/windows/visual_scenario_registry.cpp
+            tests/windows/windows_qt_visual_capture_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+        COMPILE_DEFINITIONS
+            CLASSMNGR_PHASE0_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/tests/fixtures/database-port"
+        ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        WORKING_DIRECTORY
+            "${PROJECT_SOURCE_DIR}"
+    )
+
+    # Keep the native capture executable DPI-aware so Qt observes the real
+    # per-monitor scale instead of Windows DPI virtualization.
+    target_sources(ClassMngrWindowsQtVisualCaptureTests
+        PRIVATE
+            resources/windows/ClassMngrQtVisualCapture.manifest
+    )
+
+    add_dependencies(
+        ClassMngrWindowsQtVisualCaptureTests
+        ClassMngrcampusesResourcePack
+        ClassMngrdocumentsResourcePack
+        ClassMngrfilesResourcePack
+        ClassMngrimagesResourcePack
+        ClassMngrsplashResourcePack
+        ClassMngrtemplatesResourcePack
+    )
+
+    qt_add_resources(ClassMngrWindowsQtVisualCaptureTests
+        phase0_visual_capture_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/fonts/Inter.ttc
+            resources/assets/fonts/PretendardVariable.ttf
+            resources/assets/icons/check.png
+            resources/assets/icons/combo_arrow_dark.svg
+            resources/assets/icons/combo_arrow_light.svg
+            resources/assets/icons/keyboard_dark.svg
+            resources/assets/icons/keyboard_light.svg
+            resources/assets/icons/radio_checked.png
+            resources/assets/icons/spin_up_dark.svg
+            resources/assets/icons/spin_up_light.svg
+            resources/assets/styles/dark.qss
+            resources/assets/styles/light.qss
+    )
+
+    set_source_files_properties(
+        src/features/calendar/ui/qml/EventCalendar.qml
+        PROPERTIES
+            QT_RESOURCE_ALIAS EventCalendar.qml
+    )
+
+    set_source_files_properties(
+        src/features/calendar/ui/qml/MonthGridDelegate.qml
+        PROPERTIES
+            QT_RESOURCE_ALIAS MonthGridDelegate.qml
+    )
+
+    qt_add_qml_module(ClassMngrWindowsQtVisualCaptureTests
+        URI ClassMngr.Calendar
+        VERSION 1.0
+        OUTPUT_DIRECTORY
+            "${CMAKE_CURRENT_BINARY_DIR}/qml/ClassMngrWindowsQtVisualCapture/Calendar"
+        RESOURCE_PREFIX
+            /qt/qml
+        QML_FILES
+            src/features/calendar/ui/qml/EventCalendar.qml
+            src/features/calendar/ui/qml/MonthGridDelegate.qml
+    )
+
+    qt_add_translations(
+        TARGETS ClassMngrWindowsQtVisualCaptureTests
+        TS_FILES
+            resources/assets/translations/ClassMngr_en_AU.ts
+            resources/assets/translations/ClassMngr_en_CA.ts
+            resources/assets/translations/ClassMngr_en_GB.ts
+            resources/assets/translations/ClassMngr_en_US.ts
+            resources/assets/translations/ClassMngr_ko_KR.ts
+    )
+
+    # Finalize after all target sources are present so Qt honors the custom
+    # manifest instead of generating its DPI-unaware default.
+    qt_finalize_target(ClassMngrWindowsQtVisualCaptureTests)
+
+    set_tests_properties(
+        ClassMngrWindowsQtVisualCaptureTests
+        PROPERTIES
+            LABELS "phase0;windows;visual"
+            # The scenario registry includes app-owned dialogs in addition to
+            # the page/editor matrix. Use CLASSMNGR_PHASE0_SCENARIO_FILTER to
+            # run a focused subset when an interactive runner has a tighter
+            # wall-clock budget.
+            TIMEOUT 600
+    )
+endif()
+
 classmngr_add_qt_test(
     NAME PageComponents
     SOURCES
@@ -44,6 +202,17 @@ qt_add_resources(ClassMngrDialogShellTests dialog_shell_keyboard_test_resources
         resources/assets/icons/keyboard_light.svg
 )
 
+# QWizard's macOS implementation requires the Cocoa platform: Qt's native
+# wizard-pixmap path needs a real macOS application session. Keep the test
+# headless on other platforms.
+if(APPLE)
+    set(CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT
+        "QT_QPA_PLATFORM=cocoa")
+else()
+    set(CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT
+        "QT_QPA_PLATFORM=offscreen")
+endif()
+
 classmngr_add_qt_test(
     NAME InitialSetupWizard
     SOURCES
@@ -51,8 +220,22 @@ classmngr_add_qt_test(
     LIBRARIES
         Qt6::Test
         Qt6::Widgets
-    OFFSCREEN
+    ENVIRONMENT
+        ${CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT}
 )
+
+# Qt's native macOS QWizard style consults the process bundle for its
+# platform pixmaps. Keep this focused test a real app bundle so NSBundle's
+# mainBundle URL is available when the Cocoa backend is selected.
+if(APPLE)
+    set_target_properties(ClassMngrInitialSetupWizardTests
+        PROPERTIES
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_GUI_IDENTIFIER
+                com.classmngr.tests.initialsetupwizard
+            MACOSX_BUNDLE_BUNDLE_NAME ClassMngrInitialSetupWizardTests
+    )
+endif()
 
 qt_add_resources(ClassMngrInitialSetupWizardTests initial_setup_keyboard_test_resources
     PREFIX "/"
@@ -109,6 +292,7 @@ classmngr_add_qt_test(
 
     target_link_libraries(ClassMngrUpdaterTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Network
             Qt6::Test
@@ -126,6 +310,12 @@ classmngr_add_qt_test(
     add_test(
         NAME ClassMngrUpdaterTests
         COMMAND ClassMngrUpdaterTests
+    )
+
+    set_tests_properties(
+        ClassMngrUpdaterTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrResourcePackTests
@@ -168,6 +358,7 @@ classmngr_add_qt_test(
 
     target_link_libraries(ClassMngrResourcePackTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )

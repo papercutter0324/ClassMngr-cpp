@@ -1,0 +1,17 @@
+********* Start testing of CampusMapTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : CampusMapTests::initTestCase()
+PASS   : CampusMapTests::mapConfigurationRoundTrips()
+PASS   : CampusMapTests::legacyAddressNoteMigratesToSharedField()
+PASS   : CampusMapTests::legacyImageMainRemainsSupported()
+PASS   : CampusMapTests::explicitEmptyMapDoesNotRestoreLegacyImage()
+PASS   : CampusMapTests::mapUrlsRequireAbsoluteHttps()
+PASS   : CampusMapTests::bundledCampusImagesLoad()
+PASS   : CampusMapTests::gallerySwitchesAtBreakpoint()
+PASS   : CampusMapTests::retainedSourceImagesAreBoundedDuringDecode()
+PASS   : CampusMapTests::mapControlsStayCenteredOverFirstImage()
+PASS   : CampusMapTests::wideMapControlsAreNotCompressed()
+PASS   : CampusMapTests::galleryHandlesMissingImagesAndCampusChanges()
+PASS   : CampusMapTests::cleanupTestCase()
+Totals: 13 passed, 0 failed, 0 skipped, 0 blacklisted, 1915ms
+********* Finished testing of CampusMapTests *********

@@ -1,0 +1,41 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Show class-import dialog and wait for native exposure",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "class-import__valid__light__150__en.png",
+        "sha256": "3eb3fa0565fc1721a3a5bbeb10ffad37b7c86bb7a367591aef3b5fdc6fc3b6d5"
+    },
+    "displayScalePercent": 150,
+    "fixtureId": "synthetic-package",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "dialog.class-import",
+    "observations": {
+        "accessibility": "UI Automation, screen-reader, and high-contrast evidence are deferred from the current roadmap.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "4615cbd",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 640,
+        "width": 820,
+        "x": 232,
+        "y": 200
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

@@ -45,18 +45,17 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Keep release builds on the Visual Studio 2022 toolchain even when a
-  # future hosted image includes a newer Visual Studio release.
-  CMAKE_GENERATOR: "Visual Studio 17 2022"
-  QT_VERSION: "6.11.1"
+  # Keep release builds on the Visual Studio 2026 toolchain.
+  CMAKE_GENERATOR: "Visual Studio 18 2026"
+  QT_VERSION: "6.12.0"
   QT_ROOT: "C:\\Qt"
-  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
-  QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_arm64"
+  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.12.0\\msvc2022_64"
+  QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.12.0\\msvc2022_arm64"
 
 jobs:
   build:
     name: Windows ${{ matrix.architecture == 'x64' && 'x64' || 'ARM64' }}
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -77,13 +76,15 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install aqtinstall with Qt 6.11 Windows support
+      - name: Install aqtinstall with Qt 6.12 Windows support
         shell: pwsh
         run: |
           cd $Env:GITHUB_WORKSPACE
-          # aqtinstall 3.3.0 predates Qt 6.11's architecture-specific
+          # aqtinstall 3.3.0 predates Qt 6.12's architecture-specific
           # Windows repository layout. Pin the upstream fix until released.
           python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
+          # py7zr 1.1.1+ can sporadically fail while extracting Qt archives on Windows.
+          python -m pip install --disable-pip-version-check "py7zr==1.1.0"
 
       - name: Show available Qt versions
         shell: pwsh

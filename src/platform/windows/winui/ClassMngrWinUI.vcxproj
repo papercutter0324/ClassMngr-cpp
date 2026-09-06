@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0"
+         DefaultTargets="Build"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <NugetPackageDirectory Condition="'$(NugetPackageDirectory)'==''">packages</NugetPackageDirectory>
+  </PropertyGroup>
+
+  <Import Project="$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.props')" />
+  <Import Project="$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props"
+          Condition="Exists('$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props')" />
+
+  <PropertyGroup Label="Globals">
+    <CppWinRTOptimized>true</CppWinRTOptimized>
+    <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
+    <MinimalCoreWin>true</MinimalCoreWin>
+    <ProjectGuid>{2B8EAE0C-0A55-4E59-A92E-3FB3292F7A6C}</ProjectGuid>
+    <ProjectName>ClassMngrWinUI</ProjectName>
+    <RootNamespace>ClassMngrWinUI</RootNamespace>
+    <TargetName>ClassMngrWinUI</TargetName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <MinimumVisualStudioVersion>18.0</MinimumVisualStudioVersion>
+    <AppContainerApplication>false</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
+    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <UseCrtSDKReferenceStaticWarning>false</UseCrtSDKReferenceStaticWarning>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <AppxPackage>false</AppxPackage>
+    <WindowsPackageType>None</WindowsPackageType>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <DesktopCompatible>true</DesktopCompatible>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup>
+    <!-- Keep unpackaged PRI resource URIs rooted at the application. -->
+    <AppxPriInitialPath></AppxPriInitialPath>
+  </PropertyGroup>
+
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
+            Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
+            Label="LocalAppDataPlatform" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <OutDir Condition="'$(OutDir)'==''">$(MSBuildThisFileDirectory)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(IntDir)'==''">$(MSBuildThisFileDirectory)obj\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level4</WarningLevel>
+      <LanguageStandard>stdcpp23</LanguageStandard>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /utf-8</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ClassMngrEngineIncludeDirectory);$(ClassMngrWinUIGeneratedIncludeDirectory);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>$(ClassMngrEngineLibrary);winsqlite3.lib;advapi32.lib;bcrypt.lib;crypt32.lib;dbghelp.lib;psapi.lib;shell32.lib;user32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="App.xaml.h">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="MainWindow.xaml.h">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="winui_dialogs.h" />
+    <ClInclude Include="winui_threading.h" />
+    <ClInclude Include="winui_view_model.h" />
+    <ClInclude Include="winui_lifecycle.h" />
+    <ClInclude Include="winui_identity.h" />
+    <ClInclude Include="winui_localization.h" />
+    <ClInclude Include="winui_platform_services.h" />
+    <ClInclude Include="winui_shared_ux.h" />
+    <ClInclude Include="winui_large_data_diagnostics.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+    <Page Include="MainWindow.xaml" />
+    <Page Include="Resources\ThemeColors.xaml" />
+    <Page Include="Resources\ThemeTypography.xaml" />
+    <Page Include="Resources\ThemeSpacing.xaml" />
+    <Page Include="Resources\ThemeIcons.xaml" />
+    <Page Include="Resources\ControlStyles.xaml" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ClassMngrWinUIResourceDirectory)'!=''">
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-AU\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-AU\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-CA\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-CA\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-GB\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-GB\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-US\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-US\Resources.resw')" />
+    <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\ko-KR\Resources.resw"
+                 Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\ko-KR\Resources.resw')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="App.xaml.cpp">
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="MainWindow.xaml.cpp">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="winui_view_model.cpp" />
+    <ClCompile Include="winui_dialogs.cpp" />
+    <ClCompile Include="winui_threading.cpp" />
+    <ClCompile Include="winui_lifecycle.cpp" />
+    <ClCompile Include="winui_localization.cpp" />
+    <ClCompile Include="winui_platform_services.cpp" />
+    <ClCompile Include="winui_shared_ux.cpp" />
+    <ClCompile Include="winui_large_data_diagnostics.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Midl Include="Project.idl">
+      <SubType>Code</SubType>
+    </Midl>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ResourceCompile Include="$(ClassMngrWinUIResourceFile)"
+                     Condition="'$(ClassMngrWinUIResourceFile)'!=''" />
+    <ResourceCompile Include="ClassMngrWinUI.rc"
+                     Condition="'$(ClassMngrWinUIResourceFile)'==''" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Directory.Build.props" />
+    <None Include="HybridCRT.props" />
+    <None Include="NuGet.Config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.Web.WebView2.1.0.3719.77\build\native\Microsoft.Web.WebView2.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.Web.WebView2.1.0.3719.77\build\native\Microsoft.Web.WebView2.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.targets')" />
+    <Import Project="$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.targets"
+            Condition="Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.targets')" />
+  </ImportGroup>
+
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet packages that are missing on this computer. Restore packages before building. Missing file: {0}</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.10.0.26100.4654\build\Microsoft.Windows.SDK.BuildTools.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.2.4.0\build\native\Microsoft.WindowsAppSDK.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Base.2.0.4\build\native\Microsoft.WindowsAppSDK.Base.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Foundation.2.3.9\build\native\Microsoft.WindowsAppSDK.Foundation.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.6\build\native\Microsoft.WindowsAppSDK.InteractiveExperiences.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.WinUI.2.3.6\build\native\Microsoft.WindowsAppSDK.WinUI.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.WindowsAppSDK.Runtime.2.4.0\build\native\Microsoft.WindowsAppSDK.Runtime.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.props')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.props'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.Windows.SDK.BuildTools.MSIX.1.7.251221100\build\Microsoft.Windows.SDK.BuildTools.MSIX.targets'))" />
+    <Error Condition="!Exists('$(NugetPackageDirectory)\Microsoft.Web.WebView2.1.0.3719.77\build\native\Microsoft.Web.WebView2.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(NugetPackageDirectory)\Microsoft.Web.WebView2.1.0.3719.77\build\native\Microsoft.Web.WebView2.targets'))" />
+  </Target>
+</Project>

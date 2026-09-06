@@ -1,0 +1,41 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Show calendar-event-edit dialog and wait for native exposure",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "calendar-event-edit__edit__light__100__en.png",
+        "sha256": "62407ee0bba25bdaf9b2308d37260e2128cb3c9d4b1c62bb91fd418cb3a0ef66"
+    },
+    "displayScalePercent": 100,
+    "fixtureId": "no-database",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "dialog.calendar-event",
+    "observations": {
+        "accessibility": "UI Automation, screen-reader, and high-contrast evidence are deferred from the current roadmap.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "0bcc8c7",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 452,
+        "width": 442,
+        "x": 1870,
+        "y": 1010
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

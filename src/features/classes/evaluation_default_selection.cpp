@@ -1,21 +1,60 @@
 #include "features/classes/evaluation_default_selection.h"
 
-#include <algorithm>
-#include <ranges>
+#include "classmngr/engine/evaluation_default_selection.h"
+
+#include <QByteArray>
+
+#include <cstddef>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace
 {
-AcademicTerm previousTerm(AcademicTerm term)
+using EngineSelection = classmngr::engine::EvaluationDefaultSelection;
+using EngineRow = classmngr::engine::SpeakingEvaluationRow;
+using EngineRows = classmngr::engine::SpeakingEvaluationRows;
+
+std::string toUtf8(const QString& value)
 {
-    switch (term)
+    const QByteArray utf8 = value.toUtf8();
+    return std::string(
+        utf8.constData(),
+        static_cast<std::size_t>(utf8.size())
+        );
+}
+
+QString fromUtf8(const std::string& value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+classmngr::engine::AcademicTerm toEngineTerm(AcademicTerm term)
+{
+    return static_cast<classmngr::engine::AcademicTerm>(
+        static_cast<int>(term)
+        );
+}
+
+EngineRows toEngineRows(const SpeakingEvalRows& rows)
+{
+    EngineRows result;
+    result.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& row : rows)
     {
-    case AcademicTerm::Winter: return AcademicTerm::Fall;
-    case AcademicTerm::Spring: return AcademicTerm::Winter;
-    case AcademicTerm::Summer: return AcademicTerm::Spring;
-    case AcademicTerm::Fall: return AcademicTerm::Summer;
+        EngineRow engineRow;
+        engineRow.reserve(static_cast<std::size_t>(row.size()));
+        for (const QString& value : row)
+        {
+            engineRow.push_back(toUtf8(value));
+        }
+        result.push_back(std::move(engineRow));
     }
 
-    return AcademicTerm::Winter;
+    return result;
 }
 
 } // namespace
@@ -25,32 +64,14 @@ namespace EvaluationDefaultSelection
 
 QString evaluationNameForTerm(AcademicTerm term)
 {
-    switch (term)
-    {
-    case AcademicTerm::Winter: return QStringLiteral("Winter");
-    case AcademicTerm::Spring: return QStringLiteral("Speech Contest");
-    case AcademicTerm::Summer: return QStringLiteral("Summer");
-    case AcademicTerm::Fall: return QStringLiteral("Fall");
-    }
-
-    return {};
+    return fromUtf8(
+        EngineSelection::evaluationNameForTerm(toEngineTerm(term))
+        );
 }
 
 bool isPopulated(const SpeakingEvalRows& rows)
 {
-    return std::ranges::any_of(
-        rows,
-        [](const QStringList& row)
-        {
-            return std::ranges::any_of(
-                row,
-                [](const QString& value)
-                {
-                    return !value.trimmed().isEmpty();
-                }
-                );
-        }
-        );
+    return EngineSelection::isPopulated(toEngineRows(rows));
 }
 
 QString forTermSchedule(
@@ -71,10 +92,13 @@ QString forTermSchedule(
         return {};
     }
 
-    return evaluationNameForTerm(
-        currentTermEvaluationIsPopulated
-            ? position.term
-            : previousTerm(position.term)
+    const classmngr::engine::AcademicTerm selectedTerm =
+        EngineSelection::termForEvaluation(
+            toEngineTerm(position.term),
+            currentTermEvaluationIsPopulated
+            );
+    return fromUtf8(
+        EngineSelection::evaluationNameForTerm(selectedTerm)
         );
 }
 

@@ -59,4 +59,19 @@ data/app.db
 data/app.tps
 .DS_Store
 .continue/
-artifacts/
+# Local Phase 4 large-data diagnostics and validator output
+/artifacts/phase4/large-data-*/
+/artifacts/phase4/validator-*/
+/artifacts/phase4/phase4-*/
+
+# Local CMake/Qt generated state
+/.qt/
+/.rcc/
+/CMakeFiles/
+/generated/
+/meta_types/
+/qml/
+/artifacts/phase2/
+*.exe.manifest
+DartConfiguration.tcl
+*.depends

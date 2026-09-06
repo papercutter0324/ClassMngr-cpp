@@ -1,14 +1,13 @@
 #pragma once
 
+#include "classmngr/engine/speaking_evaluation_report_template.h"
+
 #include <QRectF>
 #include <QSizeF>
 #include <QString>
 
-enum class SpeakingEvalReportTemplate
-{
-    Standard,
-    Advanced
-};
+using SpeakingEvalReportTemplate =
+    classmngr::engine::SpeakingEvaluationReportTemplate;
 
 struct SpeakingEvalReportTemplateLayout
 {
@@ -24,24 +23,37 @@ speakingEvalReportTemplateLayout(
     SpeakingEvalReportTemplate reportTemplate
     )
 {
-    static const SpeakingEvalReportTemplateLayout standard{
-        QSizeF(540.0, 780.0),
-        QRectF(374.0, 731.0, 131.0, 26.0),
-        QStringLiteral(
-            "Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
-            ),
-        false,
-        true
+    const auto toQtLayout = [](
+        const classmngr::engine::SpeakingEvaluationReportTemplatePolicy& policy
+        )
+    {
+        return SpeakingEvalReportTemplateLayout{
+            QSizeF(policy.pageWidth, policy.pageHeight),
+            QRectF(
+                policy.signatureBounds.left,
+                policy.signatureBounds.top,
+                policy.signatureBounds.width,
+                policy.signatureBounds.height
+                ),
+            QString::fromUtf8(
+                policy.powerPointResourcePath.data(),
+                static_cast<qsizetype>(policy.powerPointResourcePath.size())
+                ),
+            policy.usesAdvancedScoreTable,
+            policy.signatureAlignsBottomLeft
+        };
     };
-    static const SpeakingEvalReportTemplateLayout advanced{
-        QSizeF(540.0, 780.0),
-        QRectF(408.5, 746.25, 114.0, 24.75),
-        QStringLiteral(
-            "Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
-            ),
-        true,
-        true
-    };
+
+    static const SpeakingEvalReportTemplateLayout standard = toQtLayout(
+        classmngr::engine::SpeakingEvaluationReportTemplateService::policy(
+            classmngr::engine::SpeakingEvaluationReportTemplate::Standard
+            )
+        );
+    static const SpeakingEvalReportTemplateLayout advanced = toQtLayout(
+        classmngr::engine::SpeakingEvaluationReportTemplateService::policy(
+            classmngr::engine::SpeakingEvaluationReportTemplate::Advanced
+            )
+        );
 
     switch (reportTemplate)
     {

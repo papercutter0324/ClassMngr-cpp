@@ -1,0 +1,43 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Open Classes page and select class section 3",
+        "Edit the first evaluation score and retain unsaved state",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Discard synthetic changes before teardown",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "speaking-evaluation-dirty__dirty__light__150__en.png",
+        "sha256": "bbd5c61b7ce0ef0b61999421d0bc15693a0b19f4f3de01ba455653920180d678"
+    },
+    "displayScalePercent": 150,
+    "fixtureId": "typical",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "editor.speaking-evaluation",
+    "observations": {
+        "accessibility": "UI Automation, screen-reader, and high-contrast evidence are deferred from the current roadmap.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "fb4f268",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 1040,
+        "width": 1270,
+        "x": 7,
+        "y": 0
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

@@ -42,6 +42,7 @@ public:
     ~ScheduleWidget() override;
 
     void refreshSchedule();
+    void refreshDisplaySettings();
     void clearDatabaseState();
     void retranslateUi();
     [[nodiscard]] ScheduleDisplayState displayState() const;

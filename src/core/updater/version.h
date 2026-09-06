@@ -2,6 +2,8 @@
 
 #include "core/result.h"
 
+#include "classmngr/engine/semantic_version.h"
+
 #include <QString>
 
 class Version
@@ -36,9 +38,7 @@ public:
         );
 
 private:
-    int m_majorVersion = -1;
-    int m_minorVersion = -1;
-    int m_patchVersion = -1;
+    classmngr::engine::SemanticVersion m_value;
 };
 
 bool operator!=(

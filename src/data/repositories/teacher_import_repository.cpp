@@ -1,490 +1,318 @@
 #include "teacher_import_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
-#include "features/teacher/import/teacher_import_name_utils.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
+#include "classmngr/engine/teacher_import_service.h"
 
+#include <QByteArray>
 #include <QObject>
-#include <QSet>
-#include <QSqlError>
-#include <QSqlQuery>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-QString normalizedName(const QString& value)
-{
-    return value.simplified().toCaseFolded();
-}
+using EngineError = classmngr::engine::Error;
+using EngineGsTeamMember = classmngr::engine::GsTeamMember;
+using EngineNativeEnglishTeacher =
+    classmngr::engine::NativeEnglishTeacher;
+using EngineTeacher = classmngr::engine::Teacher;
+using EngineTeacherImportPlan = classmngr::engine::TeacherImportPlan;
+using EngineTeacherImportDateDecision =
+    classmngr::engine::TeacherImportDateDecision;
+using EngineTeacherImportService =
+    classmngr::engine::TeacherImportService;
+using EngineTeacherImportSummary =
+    classmngr::engine::TeacherImportSummary;
 
-QString koreanTeacherNameKey(const QString& value)
-{
-    return TeacherImportNameUtils::hangulOnly(value);
-}
-
-QString queryFailure(const QSqlQuery& query, const QString& action)
-{
-    return SqlQueryUtils::errorFor(query, action).userMessage();
-}
-
-Status validatePlan(const TeacherImportPlan& plan)
-{
-    if (!plan.sourceDate.isValid())
-    {
-        return std::unexpected(QObject::tr("The teacher import date is invalid."));
-    }
-
-    QSet<QString> korean;
-    for (const Teacher& teacher : plan.koreanTeachers)
-    {
-        const QString key = koreanTeacherNameKey(teacher.teacherKr);
-        if (key.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every imported Korean teacher must have a name."));
-        }
-        if (korean.contains(key))
-        {
-            return std::unexpected(QObject::tr("The import contains a duplicate Korean teacher name."));
-        }
-        korean.insert(key);
-    }
-
-    QSet<QString> native;
-    for (const NativeEnglishTeacher& teacher : plan.nativeEnglishTeachers)
-    {
-        const QString key = normalizedName(teacher.name);
-        if (key.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every imported Native English Teacher must have a name."));
-        }
-        if (native.contains(key))
-        {
-            return std::unexpected(QObject::tr("The import contains a duplicate Native English Teacher name."));
-        }
-        native.insert(key);
-    }
-
-    QSet<QString> gsEnglish;
-    QSet<QString> gsKorean;
-    for (const GsTeamMember& member : plan.gsTeamMembers)
-    {
-        const QString english = normalizedName(member.name);
-        const QString koreanName = normalizedName(member.koreanName);
-        if (english.isEmpty() && koreanName.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every imported GS Team member must have a name."));
-        }
-        if ((!english.isEmpty() && gsEnglish.contains(english))
-            || (!koreanName.isEmpty() && gsKorean.contains(koreanName)))
-        {
-            return std::unexpected(QObject::tr("The import contains a duplicate GS Team name."));
-        }
-        if (!english.isEmpty()) gsEnglish.insert(english);
-        if (!koreanName.isEmpty()) gsKorean.insert(koreanName);
-    }
-
-    return {};
-}
-
-Result<QList<Teacher>> loadKoreanTeachers(QSqlDatabase& database)
-{
-    QList<Teacher> result;
-    QSqlQuery query(database);
-    if (!query.exec(R"(
-        SELECT id, teacher_kr, teacher_en, preferred_romanization, preferred_name,
-               room_number, birthday, phone_number, wifi_name, wifi_password,
-               internet_type, zoom_id, zoom_password, projection_type, notes
-        FROM teachers
-    )"))
-    {
-        return std::unexpected(queryFailure(query, QObject::tr("Loading Korean teachers")));
-    }
-
-    while (query.next())
-    {
-        Teacher teacher;
-        teacher.id = query.value(0).toInt();
-        teacher.teacherKr = query.value(1).toString();
-        teacher.teacherEn = query.value(2).toString();
-        teacher.preferredRomanization = query.value(3).toString();
-        teacher.preferredName = query.value(4).toString();
-        teacher.roomNumber = query.value(5).toString();
-        teacher.birthday = query.value(6).toString();
-        teacher.phoneNumber = query.value(7).toString();
-        teacher.wifiName = query.value(8).toString();
-        teacher.wifiPassword = query.value(9).toString();
-        teacher.internetType = query.value(10).toString();
-        teacher.zoomId = query.value(11).toString();
-        teacher.zoomPassword = query.value(12).toString();
-        teacher.projectionType = query.value(13).toString();
-        teacher.notes = query.value(14).toString();
-        result.append(teacher);
-    }
-    return result;
-}
-
-Result<QList<NativeEnglishTeacher>> loadNativeTeachers(QSqlDatabase& database)
-{
-    QList<NativeEnglishTeacher> result;
-    QSqlQuery query(database);
-    if (!query.exec(R"(
-        SELECT id, name, position, phone_number, birthday, nationality, email
-        FROM native_english_teachers
-    )"))
-    {
-        return std::unexpected(queryFailure(query, QObject::tr("Loading Native English Teachers")));
-    }
-    while (query.next())
-    {
-        result.append({
-            query.value(0).toInt(), query.value(1).toString(),
-            query.value(2).toString(), query.value(3).toString(),
-            query.value(4).toString(), query.value(5).toString(),
-            query.value(6).toString()
-        });
-    }
-    return result;
-}
-
-Result<QList<GsTeamMember>> loadGsTeam(QSqlDatabase& database)
-{
-    QList<GsTeamMember> result;
-    QSqlQuery query(database);
-    if (!query.exec(R"(
-        SELECT id, name, korean_name, position, phone_number, birthday
-        FROM gs_team
-    )"))
-    {
-        return std::unexpected(queryFailure(query, QObject::tr("Loading GS Team members")));
-    }
-    while (query.next())
-    {
-        result.append({
-            query.value(0).toInt(), query.value(1).toString(),
-            query.value(2).toString(), query.value(3).toString(),
-            query.value(4).toString(), query.value(5).toString()
-        });
-    }
-    return result;
-}
-
-template<typename T, typename Name>
-QList<int> matchingIndexes(const QList<T>& values, const QString& key, Name name)
-{
-    QList<int> result;
-    for (int index = 0; index < values.size(); ++index)
-    {
-        if (normalizedName(name(values.at(index))) == key)
-        {
-            result.append(index);
-        }
-    }
-    return result;
-}
-
-QList<int> matchingKoreanTeacherIndexes(
-    const QList<Teacher>& teachers,
-    const QString& key
+std::string toUtf8(
+    const QString& value
     )
 {
-    QList<int> result;
-    for (int index = 0; index < teachers.size(); ++index)
-    {
-        if (koreanTeacherNameKey(teachers.at(index).teacherKr) == key)
-        {
-            result.append(index);
-        }
-    }
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
+}
+
+QString fromUtf8(
+    std::string_view value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+EngineTeacher toEngineTeacher(
+    const Teacher& source
+    )
+{
+    EngineTeacher result;
+    result.id = source.id;
+    result.teacherKr = toUtf8(source.teacherKr);
+    result.teacherEn = toUtf8(source.teacherEn);
+    result.preferredRomanization = toUtf8(source.preferredRomanization);
+    result.preferredName = toUtf8(source.preferredName);
+    result.roomNumber = toUtf8(source.roomNumber);
+    result.birthday = toUtf8(source.birthday);
+    result.phoneNumber = toUtf8(source.phoneNumber);
+    result.wifiName = toUtf8(source.wifiName);
+    result.wifiPassword = toUtf8(source.wifiPassword);
+    result.internetType = toUtf8(source.internetType);
+    result.zoomId = toUtf8(source.zoomId);
+    result.zoomPassword = toUtf8(source.zoomPassword);
+    result.projectionType = toUtf8(source.projectionType);
+    result.notes = toUtf8(source.notes);
     return result;
 }
 
-Status updateLatestDate(QSqlDatabase& database, const QDate& sourceDate)
+EngineNativeEnglishTeacher toEngineNativeEnglishTeacher(
+    const NativeEnglishTeacher& source
+    )
 {
-    QDate current;
-    QSqlQuery query(database);
-    query.prepare(QStringLiteral("SELECT value FROM app_settings WHERE key=?"));
-    query.addBindValue(QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting));
-    if (!query.exec())
+    return {
+        source.id,
+        toUtf8(source.name),
+        toUtf8(source.position),
+        toUtf8(source.phoneNumber),
+        toUtf8(source.birthday),
+        toUtf8(source.nationality),
+        toUtf8(source.email)
+    };
+}
+
+EngineGsTeamMember toEngineGsTeamMember(
+    const GsTeamMember& source
+    )
+{
+    return {
+        source.id,
+        toUtf8(source.name),
+        toUtf8(source.koreanName),
+        toUtf8(source.position),
+        toUtf8(source.phoneNumber),
+        toUtf8(source.birthday)
+    };
+}
+
+EngineTeacherImportPlan toEnginePlan(
+    const TeacherImportPlan& source
+    )
+{
+    EngineTeacherImportPlan result;
+    result.templateId = toUtf8(source.templateId);
+    result.sourceDate = toUtf8(source.sourceDate.toString(Qt::ISODate));
+
+    result.koreanTeachers.reserve(
+        static_cast<std::size_t>(source.koreanTeachers.size())
+        );
+    for (const Teacher& teacher : source.koreanTeachers)
     {
-        return std::unexpected(queryFailure(query, QObject::tr("Loading the previous teacher import date")));
-    }
-    if (query.next())
-    {
-        current = QDate::fromString(query.value(0).toString(), Qt::ISODate);
+        result.koreanTeachers.push_back(toEngineTeacher(teacher));
     }
 
-    if (current.isValid() && sourceDate <= current)
+    result.nativeEnglishTeachers.reserve(
+        static_cast<std::size_t>(source.nativeEnglishTeachers.size())
+        );
+    for (const NativeEnglishTeacher& teacher : source.nativeEnglishTeachers)
+    {
+        result.nativeEnglishTeachers.push_back(
+            toEngineNativeEnglishTeacher(teacher)
+            );
+    }
+
+    result.gsTeamMembers.reserve(
+        static_cast<std::size_t>(source.gsTeamMembers.size())
+        );
+    for (const GsTeamMember& member : source.gsTeamMembers)
+    {
+        result.gsTeamMembers.push_back(toEngineGsTeamMember(member));
+    }
+
+    return result;
+}
+
+TeacherImportCounts fromEngineCounts(
+    const classmngr::engine::TeacherImportCounts& source
+    )
+{
+    return {
+        source.created,
+        source.updated,
+        source.unchanged
+    };
+}
+
+TeacherImportSummary fromEngineSummary(
+    const EngineTeacherImportSummary& source
+    )
+{
+    return {
+        fromEngineCounts(source.koreanTeachers),
+        fromEngineCounts(source.nativeEnglishTeachers),
+        fromEngineCounts(source.gsTeamMembers)
+    };
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail = {}
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error
+    )
+{
+    return operationFailure(operation, engineErrorDetail(error));
+}
+} // namespace
+
+TeacherImportRepository::TeacherImportRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
+
+TeacherImportRepository::TeacherImportRepository(
+    QSqlDatabase& database
+    )
+    : TeacherImportRepository(database.databaseName())
+{
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
+}
+
+TeacherImportRepository::~TeacherImportRepository() = default;
+
+Status TeacherImportRepository::ensureEngineDatabase(
+    const QString& operation
+    )
+{
+    if (!m_compatibilityDatabaseWasOpen)
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_databasePath;
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
     {
         return {};
     }
 
-    query.prepare(R"(
-        INSERT INTO app_settings (key, value) VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET value=excluded.value
-    )");
-    query.addBindValue(QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting));
-    query.addBindValue(sourceDate.toString(Qt::ISODate));
-    if (!query.exec())
-    {
-        return std::unexpected(queryFailure(query, QObject::tr("Saving the teacher import date")));
-    }
-    return {};
-}
-}
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
 
-TeacherImportRepository::TeacherImportRepository(QSqlDatabase& database)
-    : m_database(database)
-{
+    auto opened = classmngr::engine::OpenDatabase::execute(toUtf8(databasePath));
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
 }
 
 Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
     const TeacherImportPlan& plan
     )
 {
-    const Status valid = validatePlan(plan);
-    if (!valid)
+    const QString operation = QObject::tr("Importing teachers");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(valid.error());
+        return std::unexpected(engineReady.error());
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    EngineTeacherImportService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineTeacherImportSummary> imported =
+        service.importTeachers(toEnginePlan(plan));
+    if (!imported)
     {
-        return std::unexpected(QObject::tr("Unable to start the teacher import transaction."));
+        return std::unexpected(engineFailure(operation, imported.error()));
     }
 
-    auto koreanResult = loadKoreanTeachers(m_database);
-    auto nativeResult = loadNativeTeachers(m_database);
-    auto gsResult = loadGsTeam(m_database);
-    if (!koreanResult) return std::unexpected(koreanResult.error());
-    if (!nativeResult) return std::unexpected(nativeResult.error());
-    if (!gsResult) return std::unexpected(gsResult.error());
+    return fromEngineSummary(*imported);
+}
 
-    QList<Teacher> korean = *koreanResult;
-    QList<NativeEnglishTeacher> native = *nativeResult;
-    QList<GsTeamMember> gs = *gsResult;
-    TeacherImportSummary summary;
-
-    for (const Teacher& source : plan.koreanTeachers)
+Result<EngineTeacherImportDateDecision>
+TeacherImportRepository::compareLatestSourceDate(
+    const QDate& sourceDate
+    )
+{
+    const QString operation = QObject::tr("Comparing teacher import dates");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        const QString key = koreanTeacherNameKey(source.teacherKr);
-        const QList<int> matches = matchingKoreanTeacherIndexes(korean, key);
-        if (matches.size() > 1)
-        {
-            return std::unexpected(QObject::tr("More than one stored Korean teacher matches %1.").arg(source.teacherKr));
-        }
-
-        if (matches.isEmpty())
-        {
-            QSqlQuery query(m_database);
-            query.prepare(R"(
-                INSERT INTO teachers
-                    (teacher_kr, teacher_en, preferred_romanization, preferred_name,
-                     room_number, birthday, phone_number,
-                     wifi_name, wifi_password, internet_type,
-                     zoom_id, zoom_password, projection_type, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            )");
-            query.addBindValue(key);
-            query.addBindValue(source.teacherEn.trimmed());
-            query.addBindValue(source.preferredRomanization.trimmed());
-            query.addBindValue(source.preferredName.trimmed());
-            query.addBindValue(source.roomNumber.trimmed());
-            query.addBindValue(source.birthday.trimmed());
-            query.addBindValue(source.phoneNumber.trimmed());
-            query.addBindValue(source.wifiName.trimmed());
-            query.addBindValue(source.wifiPassword.trimmed());
-            query.addBindValue(source.internetType.trimmed());
-            query.addBindValue(source.zoomId.trimmed());
-            query.addBindValue(source.zoomPassword.trimmed());
-            query.addBindValue(source.projectionType.trimmed());
-            query.addBindValue(source.notes.trimmed());
-            if (!query.exec())
-            {
-                return std::unexpected(queryFailure(query, QObject::tr("Creating a Korean teacher")));
-            }
-            ++summary.koreanTeachers.created;
-            continue;
-        }
-
-        const Teacher& existing = korean.at(matches.first());
-        const QString name = key;
-        const QString room = source.roomNumber.trimmed().isEmpty()
-            ? existing.roomNumber : source.roomNumber.trimmed();
-        const QString birthday = source.birthday.trimmed().isEmpty()
-            ? existing.birthday : source.birthday.trimmed();
-        const QString phone = source.phoneNumber.trimmed().isEmpty()
-            ? existing.phoneNumber : source.phoneNumber.trimmed();
-        if (name == existing.teacherKr && room == existing.roomNumber
-            && birthday == existing.birthday && phone == existing.phoneNumber)
-        {
-            ++summary.koreanTeachers.unchanged;
-            continue;
-        }
-
-        QSqlQuery query(m_database);
-        query.prepare(R"(
-            UPDATE teachers
-            SET teacher_kr=?, room_number=?, birthday=?, phone_number=?
-            WHERE id=?
-        )");
-        query.addBindValue(name);
-        query.addBindValue(room);
-        query.addBindValue(birthday);
-        query.addBindValue(phone);
-        query.addBindValue(existing.id);
-        if (!query.exec())
-        {
-            return std::unexpected(queryFailure(query, QObject::tr("Updating a Korean teacher")));
-        }
-        ++summary.koreanTeachers.updated;
+        return std::unexpected(engineReady.error());
     }
 
-    for (const NativeEnglishTeacher& source : plan.nativeEnglishTeachers)
+    EngineTeacherImportService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineTeacherImportDateDecision> decision =
+        service.compareLatestSourceDate(toUtf8(sourceDate.toString(Qt::ISODate)));
+    if (!decision)
     {
-        const QString key = normalizedName(source.name);
-        const QList<int> matches = matchingIndexes(
-            native, key, [](const NativeEnglishTeacher& value) { return value.name; });
-        if (matches.size() > 1)
-        {
-            return std::unexpected(QObject::tr("More than one stored Native English Teacher matches %1.").arg(source.name));
-        }
-
-        if (matches.isEmpty())
-        {
-            QSqlQuery query(m_database);
-            query.prepare(R"(
-                INSERT INTO native_english_teachers
-                    (name, position, phone_number, birthday, nationality, email)
-                VALUES (?, ?, ?, ?, ?, ?)
-            )");
-            query.addBindValue(source.name.simplified());
-            query.addBindValue(source.position.trimmed());
-            query.addBindValue(source.phoneNumber.trimmed());
-            query.addBindValue(source.birthday.trimmed());
-            query.addBindValue(source.nationality.trimmed());
-            query.addBindValue(source.email.trimmed());
-            if (!query.exec())
-            {
-                return std::unexpected(queryFailure(query, QObject::tr("Creating a Native English Teacher")));
-            }
-            ++summary.nativeEnglishTeachers.created;
-            continue;
-        }
-
-        const NativeEnglishTeacher& existing = native.at(matches.first());
-        NativeEnglishTeacher updated = existing;
-        updated.name = source.name.simplified();
-        if (!source.position.trimmed().isEmpty()) updated.position = source.position.trimmed();
-        if (!source.phoneNumber.trimmed().isEmpty()) updated.phoneNumber = source.phoneNumber.trimmed();
-        if (!source.birthday.trimmed().isEmpty()) updated.birthday = source.birthday.trimmed();
-        if (!source.nationality.trimmed().isEmpty()) updated.nationality = source.nationality.trimmed();
-        if (!source.email.trimmed().isEmpty()) updated.email = source.email.trimmed();
-        if (updated.name == existing.name && updated.position == existing.position
-            && updated.phoneNumber == existing.phoneNumber && updated.birthday == existing.birthday
-            && updated.nationality == existing.nationality && updated.email == existing.email)
-        {
-            ++summary.nativeEnglishTeachers.unchanged;
-            continue;
-        }
-
-        QSqlQuery query(m_database);
-        query.prepare(R"(
-            UPDATE native_english_teachers
-            SET name=?, position=?, phone_number=?, birthday=?, nationality=?, email=?
-            WHERE id=?
-        )");
-        query.addBindValue(updated.name);
-        query.addBindValue(updated.position);
-        query.addBindValue(updated.phoneNumber);
-        query.addBindValue(updated.birthday);
-        query.addBindValue(updated.nationality);
-        query.addBindValue(updated.email);
-        query.addBindValue(existing.id);
-        if (!query.exec())
-        {
-            return std::unexpected(queryFailure(query, QObject::tr("Updating a Native English Teacher")));
-        }
-        ++summary.nativeEnglishTeachers.updated;
+        return std::unexpected(engineFailure(operation, decision.error()));
     }
 
-    for (const GsTeamMember& source : plan.gsTeamMembers)
-    {
-        const bool useKorean = !source.koreanName.trimmed().isEmpty();
-        const QString key = normalizedName(useKorean ? source.koreanName : source.name);
-        const QList<int> matches = useKorean
-            ? matchingIndexes(gs, key, [](const GsTeamMember& value) { return value.koreanName; })
-            : matchingIndexes(gs, key, [](const GsTeamMember& value) { return value.name; });
-        if (matches.size() > 1)
-        {
-            return std::unexpected(QObject::tr("More than one stored GS Team member matches %1.")
-                .arg(useKorean ? source.koreanName : source.name));
-        }
-
-        if (matches.isEmpty())
-        {
-            QSqlQuery query(m_database);
-            query.prepare(R"(
-                INSERT INTO gs_team
-                    (name, korean_name, position, phone_number, birthday)
-                VALUES (?, ?, ?, ?, ?)
-            )");
-            query.addBindValue(source.name.simplified());
-            query.addBindValue(source.koreanName.simplified());
-            query.addBindValue(source.position.trimmed());
-            query.addBindValue(source.phoneNumber.trimmed());
-            query.addBindValue(source.birthday.trimmed());
-            if (!query.exec())
-            {
-                return std::unexpected(queryFailure(query, QObject::tr("Creating a GS Team member")));
-            }
-            ++summary.gsTeamMembers.created;
-            continue;
-        }
-
-        const GsTeamMember& existing = gs.at(matches.first());
-        GsTeamMember updated = existing;
-        if (!source.name.trimmed().isEmpty()) updated.name = source.name.simplified();
-        if (!source.koreanName.trimmed().isEmpty()) updated.koreanName = source.koreanName.simplified();
-        if (!source.position.trimmed().isEmpty()) updated.position = source.position.trimmed();
-        if (!source.phoneNumber.trimmed().isEmpty()) updated.phoneNumber = source.phoneNumber.trimmed();
-        if (!source.birthday.trimmed().isEmpty()) updated.birthday = source.birthday.trimmed();
-        if (updated.name == existing.name && updated.koreanName == existing.koreanName
-            && updated.position == existing.position && updated.phoneNumber == existing.phoneNumber
-            && updated.birthday == existing.birthday)
-        {
-            ++summary.gsTeamMembers.unchanged;
-            continue;
-        }
-
-        QSqlQuery query(m_database);
-        query.prepare(R"(
-            UPDATE gs_team
-            SET name=?, korean_name=?, position=?, phone_number=?, birthday=?
-            WHERE id=?
-        )");
-        query.addBindValue(updated.name);
-        query.addBindValue(updated.koreanName);
-        query.addBindValue(updated.position);
-        query.addBindValue(updated.phoneNumber);
-        query.addBindValue(updated.birthday);
-        query.addBindValue(existing.id);
-        if (!query.exec())
-        {
-            return std::unexpected(queryFailure(query, QObject::tr("Updating a GS Team member")));
-        }
-        ++summary.gsTeamMembers.updated;
-    }
-
-    const Status dateStatus = updateLatestDate(m_database, plan.sourceDate);
-    if (!dateStatus)
-    {
-        return std::unexpected(dateStatus.error());
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(QObject::tr("Unable to commit the teacher import transaction."));
-    }
-
-    return summary;
+    return *decision;
 }

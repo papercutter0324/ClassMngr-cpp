@@ -7,12 +7,22 @@
 #include <QSqlDatabase>
 #include <QString>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class IntensiveSlotStateRepository
 {
 public:
+    explicit IntensiveSlotStateRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit IntensiveSlotStateRepository(
         QSqlDatabase& database
         );
+    ~IntensiveSlotStateRepository();
 
     [[nodiscard]] Result<QList<IntensiveSlotState>> loadIntensiveSlotStates();
 
@@ -24,5 +34,12 @@ public:
         );
 
 private:
-    QSqlDatabase& m_database;
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        ) const;
+
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
+    mutable std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    mutable QString m_engineDatabasePath;
 };

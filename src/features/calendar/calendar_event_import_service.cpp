@@ -6,11 +6,9 @@
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
 
-#include <QDate>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QSet>
 #include <QUrl>
 
 namespace
@@ -132,73 +130,19 @@ void CalendarEventImportService::handleFinished(
             campusCodesFromDirectory()
             );
 
-    if (parsed.events.isEmpty())
-    {
-        emit importFinished(
-            0,
+    const Result<CalendarEventImportSummary> imported =
+        m_calendarService->importEvents(
+            parsed.events,
             parsed.skippedCount
             );
-        return;
-    }
-
-    QDate firstDate =
-        parsed.events.first().startDate;
-    QDate lastDate =
-        parsed.events.first().endDate;
-
-    for (const CalendarEvent& event : parsed.events)
+    if (!imported)
     {
-        firstDate =
-            qMin(firstDate, event.startDate);
-        lastDate =
-            qMax(lastDate, event.endDate);
-    }
-
-    QSet<QString> existingSignatures;
-    const Result<QList<CalendarEvent>> existingEvents =
-        m_calendarService->eventsInRange(
-            firstDate,
-            lastDate
-            );
-    if (!existingEvents)
-    {
-        emit importFailed(existingEvents.error());
-        return;
-    }
-
-    for (const CalendarEvent& event : *existingEvents)
-    {
-        existingSignatures.insert(
-            CalendarImport::calendarEventImportSignature(event)
-            );
-    }
-
-    QList<CalendarEvent> eventsToSave;
-    for (const CalendarEvent& event : parsed.events)
-    {
-        const QString signature =
-            CalendarImport::calendarEventImportSignature(event);
-
-        if (existingSignatures.contains(signature))
-        {
-            ++parsed.skippedCount;
-            continue;
-        }
-
-        eventsToSave.append(event);
-        existingSignatures.insert(signature);
-    }
-
-    const Result<QList<int>> saved =
-        m_calendarService->saveEvents(eventsToSave);
-    if (!saved)
-    {
-        emit importFailed(saved.error());
+        emit importFailed(imported.error());
         return;
     }
 
     emit importFinished(
-        saved->size(),
-        parsed.skippedCount
+        imported->importedCount,
+        imported->skippedCount
         );
 }

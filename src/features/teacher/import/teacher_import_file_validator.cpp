@@ -72,21 +72,6 @@ TeacherImportFileValidation validateTeacherImportData(
     }
 
     validation.previewCounts = previewCounts(*preview);
-    if (!preview->sourceDate.isValid())
-    {
-        validation.status = TeacherImportFileStatus::RecognizedButInvalid;
-        validation.diagnostics.append(
-            QObject::tr("The recognized template did not provide a valid source date."));
-        return validation;
-    }
-    if (validation.previewCounts.total() == 0)
-    {
-        validation.status = TeacherImportFileStatus::RecognizedButInvalid;
-        validation.diagnostics.append(
-            QObject::tr("The recognized template contains no importable people."));
-        return validation;
-    }
-
     validation.status = TeacherImportFileStatus::Valid;
     validation.preview = *preview;
     validation.sourceDate = preview->sourceDate;

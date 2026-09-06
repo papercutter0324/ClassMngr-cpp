@@ -2,6 +2,7 @@
 
 #include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "features/speaking_eval/services/speaking_eval_report_data_assembler.h"
 
 #include <QMouseEvent>
 #include <QPainter>
@@ -242,47 +243,5 @@ void SpeakingEvalReportWidget::updateCommentEditor()
 
 QString SpeakingEvalReportWidget::overallGrade() const
 {
-    const QHash<QString, int> gradeValues{
-        { QStringLiteral("C"), 1 },
-        { QStringLiteral("B"), 2 },
-        { QStringLiteral("B+"), 3 },
-        { QStringLiteral("A"), 4 },
-        { QStringLiteral("A+"), 5 }
-    };
-    const QStringList grades{
-        QStringLiteral("C"),
-        QStringLiteral("B"),
-        QStringLiteral("B+"),
-        QStringLiteral("A"),
-        QStringLiteral("A+")
-    };
-
-    int sum = 0;
-
-    for (const QString& score : m_data.scores)
-    {
-        if (!gradeValues.contains(score))
-        {
-            return QStringLiteral("N/A");
-        }
-
-        sum +=
-            gradeValues.value(score);
-    }
-
-    const double average =
-        static_cast<double>(sum) / m_data.scores.size();
-
-    int rounded =
-        static_cast<int>(average);
-
-    if (average - rounded >= 0.4)
-    {
-        ++rounded;
-    }
-
-    return grades.value(
-        qBound(1, rounded, 5) - 1,
-        QStringLiteral("N/A")
-        );
+    return SpeakingEvalReportDataAssembler::overallGrade(m_data.scores);
 }

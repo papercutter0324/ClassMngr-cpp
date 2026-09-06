@@ -1,6 +1,7 @@
 #include "document_catalog.h"
 
 #include "core/resource_paths.h"
+#include "classmngr/engine/document_catalog.h"
 
 #include <QDir>
 #include <QFile>
@@ -10,10 +11,10 @@
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QJsonValue>
-#include <QSet>
-
-#include <algorithm>
-#include <limits>
+#include <map>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
@@ -31,54 +32,29 @@ Result<QString> relativeDirectoryPath(
             );
     }
 
-    QString path =
-        value.toString().trimmed();
-
-    path.replace(QLatin1Char('\\'), QLatin1Char('/'));
-
-    if (
-        path.isEmpty()
-        || QDir::isAbsolutePath(path)
-        || path.startsWith(QLatin1Char('/'))
-        )
+    const QByteArray utf8Path = value.toString().toUtf8();
+    const auto path =
+        classmngr::engine::normalizeRelativeDirectoryPath(
+            std::string_view(utf8Path.constData(), utf8Path.size())
+            );
+    if (!path)
     {
         return std::unexpected(
-            QStringLiteral("%1 must be a non-empty relative directory path.")
-                .arg(fieldName)
+            QStringLiteral("%1 %2")
+                .arg(
+                    fieldName,
+                    QString::fromUtf8(
+                        path.error().message.data(),
+                        static_cast<qsizetype>(path.error().message.size())
+                        )
+                    )
             );
     }
 
-    const QStringList parts =
-        path.split(QLatin1Char('/'), Qt::KeepEmptyParts);
-
-    if (
-        parts.contains(QString())
-        || parts.contains(QStringLiteral("."))
-        || parts.contains(QStringLiteral(".."))
-        )
-    {
-        return std::unexpected(
-            QStringLiteral("%1 contains an unsafe path segment.")
-                .arg(fieldName)
-            );
-    }
-
-    const QString cleaned =
-        QDir::cleanPath(path);
-
-    if (
-        cleaned == QStringLiteral(".")
-        || cleaned.startsWith(QStringLiteral("../"))
-        || cleaned.contains(QStringLiteral("/../"))
-        )
-    {
-        return std::unexpected(
-            QStringLiteral("%1 escapes the Documents root.")
-                .arg(fieldName)
-            );
-    }
-
-    return cleaned;
+    return QString::fromUtf8(
+        path->data(),
+        static_cast<qsizetype>(path->size())
+        );
 }
 
 Result<QString> plainFileName(
@@ -93,25 +69,34 @@ Result<QString> plainFileName(
             );
     }
 
-    const QString fileName =
-        value.toString().trimmed();
-
-    if (
-        fileName.isEmpty()
-        || fileName == QStringLiteral(".")
-        || fileName == QStringLiteral("..")
-        || fileName.contains(QLatin1Char('/'))
-        || fileName.contains(QLatin1Char('\\'))
-        || QFileInfo(fileName).fileName() != fileName
-        )
+    const QByteArray utf8FileName = value.toString().toUtf8();
+    const auto fileName =
+        classmngr::engine::validatePlainFileName(
+            std::string_view(
+                utf8FileName.constData(),
+                utf8FileName.size()
+                )
+            );
+    if (!fileName)
     {
         return std::unexpected(
-            QStringLiteral("%1 must be a plain file name.")
-                .arg(fieldName)
+            QStringLiteral("%1 %2")
+                .arg(
+                    fieldName,
+                    QString::fromUtf8(
+                        fileName.error().message.data(),
+                        static_cast<qsizetype>(
+                            fileName.error().message.size()
+                            )
+                        )
+                    )
             );
     }
 
-    return fileName;
+    return QString::fromUtf8(
+        fileName->data(),
+        static_cast<qsizetype>(fileName->size())
+        );
 }
 
 Result<int> orderValue(
@@ -126,18 +111,26 @@ Result<int> orderValue(
             );
     }
 
-    const qint64 order =
-        value.toInteger(-1);
+    const auto order =
+        classmngr::engine::validateOrder(
+            static_cast<long long>(value.toInteger(-1))
+            );
 
-    if (order < 0 || order > std::numeric_limits<int>::max())
+    if (!order)
     {
         return std::unexpected(
-            QStringLiteral("%1 must be a non-negative integer.")
-                .arg(fieldName)
+            QStringLiteral("%1 %2")
+                .arg(
+                    fieldName,
+                    QString::fromUtf8(
+                        order.error().message.data(),
+                        static_cast<qsizetype>(order.error().message.size())
+                        )
+                    )
             );
     }
 
-    return static_cast<int>(order);
+    return *order;
 }
 
 Result<DocumentLocalizedNames> localizedNames(
@@ -165,9 +158,7 @@ Result<DocumentLocalizedNames> localizedNames(
             );
     }
 
-    DocumentLocalizedNames names;
-    names.defaultName =
-        defaultName;
+    std::map<std::string, std::string> localeNameValues;
 
     for (auto it = object.constBegin(); it != object.constEnd(); ++it)
     {
@@ -184,10 +175,7 @@ Result<DocumentLocalizedNames> localizedNames(
                 );
         }
 
-        QString localeName =
-            it.key().trimmed();
-
-        localeName.replace(QLatin1Char('-'), QLatin1Char('_'));
+        const QString localeName = it.key().trimmed();
 
         if (localeName.isEmpty())
         {
@@ -197,13 +185,57 @@ Result<DocumentLocalizedNames> localizedNames(
                 );
         }
 
-        names.localeNames.insert(
-            localeName,
-            it.value().toString().trimmed()
+        const QByteArray localeUtf8 = localeName.toUtf8();
+        const QByteArray localizedValueUtf8 =
+            it.value().toString().trimmed().toUtf8();
+        localeNameValues.insert_or_assign(
+            std::string(localeUtf8.constData(), localeUtf8.size()),
+            std::string(
+                localizedValueUtf8.constData(),
+                localizedValueUtf8.size()
+                )
             );
     }
 
-    return names;
+    const QByteArray defaultUtf8 = defaultName.toUtf8();
+    const auto names =
+        classmngr::engine::normalizeLocalizedNames(
+            std::string_view(defaultUtf8.constData(), defaultUtf8.size()),
+            localeNameValues
+            );
+    if (!names)
+    {
+        return std::unexpected(
+            QStringLiteral("%1 %2")
+                .arg(
+                    fieldName,
+                    QString::fromUtf8(
+                        names.error().message.data(),
+                        static_cast<qsizetype>(names.error().message.size())
+                        )
+                    )
+            );
+    }
+
+    DocumentLocalizedNames result;
+    result.defaultName = QString::fromUtf8(
+        names->defaultName.data(),
+        static_cast<qsizetype>(names->defaultName.size())
+        );
+    for (const auto& [locale, localizedValue] : names->localeNames)
+    {
+        result.localeNames.insert(
+            QString::fromUtf8(
+                locale.data(),
+                static_cast<qsizetype>(locale.size())
+                ),
+            QString::fromUtf8(
+                localizedValue.data(),
+                static_cast<qsizetype>(localizedValue.size())
+                )
+            );
+    }
+    return result;
 }
 
 Result<DocumentAssetReference> assetReference(
@@ -277,12 +309,14 @@ QString parentPathFor(
     const QString& path
     )
 {
-    const int separator =
-        path.lastIndexOf(QLatin1Char('/'));
-
-    return separator < 0
-        ? QString()
-        : path.left(separator);
+    const QByteArray utf8Path = path.toUtf8();
+    const std::string result = classmngr::engine::parentPath(
+        std::string_view(utf8Path.constData(), utf8Path.size())
+        );
+    return QString::fromUtf8(
+        result.data(),
+        static_cast<qsizetype>(result.size())
+        );
 }
 
 QString entryName(
@@ -303,24 +337,10 @@ bool validIdentifier(
     const QString& id
     )
 {
-    if (id.isEmpty())
-    {
-        return false;
-    }
-
-    for (const QChar character : id)
-    {
-        if (
-            !character.isLetterOrNumber()
-            && character != QLatin1Char('_')
-            && character != QLatin1Char('-')
-            )
-        {
-            return false;
-        }
-    }
-
-    return true;
+    const QByteArray utf8Id = id.toUtf8();
+    return classmngr::engine::validIdentifier(
+        std::string_view(utf8Id.constData(), utf8Id.size())
+        );
 }
 }
 
@@ -401,8 +421,7 @@ Result<DocumentCatalog> DocumentCatalog::loadCatalogRoot(
     catalog.m_rootPath =
         rootPath;
 
-    QSet<QString> folderIds;
-    QSet<QString> folderPaths;
+    classmngr::engine::DocumentCatalogInput engineInput;
 
     const QJsonArray folderArray =
         foldersValue.toArray();
@@ -463,18 +482,6 @@ Result<DocumentCatalog> DocumentCatalog::loadCatalogRoot(
             error =
                 names.error();
         }
-        else if (folderIds.contains(id))
-        {
-            error =
-                QStringLiteral("%1 duplicates folder id '%2'.")
-                    .arg(name, id);
-        }
-        else if (folderPaths.contains(*path))
-        {
-            error =
-                QStringLiteral("%1 duplicates folder path '%2'.")
-                    .arg(name, *path);
-        }
         else if (!QDir(QDir(rootPath).filePath(*path)).exists())
         {
             error =
@@ -490,55 +497,46 @@ Result<DocumentCatalog> DocumentCatalog::loadCatalogRoot(
             continue;
         }
 
-        folderIds.insert(id);
-        folderPaths.insert(*path);
-        catalog.m_folders.append({
-            id,
-            *path,
-            parentPathFor(*path),
+        const QByteArray idUtf8 = id.toUtf8();
+        const QByteArray pathUtf8 = path->toUtf8();
+        const QByteArray parentPathUtf8 = parentPathFor(*path).toUtf8();
+        const QByteArray defaultNameUtf8 = names->defaultName.toUtf8();
+        engineInput.folders.push_back({
+            std::string(idUtf8.constData(), idUtf8.size()),
+            std::string(pathUtf8.constData(), pathUtf8.size()),
+            std::string(
+                parentPathUtf8.constData(),
+                parentPathUtf8.size()
+                ),
             *order,
-            *names
-        });
-    }
-
-    QSet<QString> reachableFolderPaths;
-    bool changed = true;
-
-    while (changed)
-    {
-        changed = false;
-
-        for (const DocumentFolderDefinition& folder : catalog.m_folders)
-        {
-            if (
-                reachableFolderPaths.contains(folder.path)
-                || (
-                    !folder.parentPath.isEmpty()
-                    && !reachableFolderPaths.contains(folder.parentPath)
-                    )
-                )
             {
-                continue;
+                std::string(
+                    defaultNameUtf8.constData(),
+                    defaultNameUtf8.size()
+                    ),
+                {}
             }
+        });
 
-            reachableFolderPaths.insert(folder.path);
-            changed = true;
-        }
-    }
-
-    for (const DocumentFolderDefinition& folder : catalog.m_folders)
-    {
-        if (!reachableFolderPaths.contains(folder.path))
+        auto& engineNames = engineInput.folders.back().sidebarNames;
+        for (
+            auto it = names->localeNames.constBegin();
+            it != names->localeNames.constEnd();
+            ++it
+            )
         {
-            catalog.m_warnings.append(
-                QStringLiteral(
-                    "folder '%1' has no valid metadata for an ancestor and will not be displayed."
-                    ).arg(folder.id)
+            const QByteArray localeUtf8 = it.key().toUtf8();
+            const QByteArray localizedValueUtf8 = it.value().toUtf8();
+            engineNames.localeNames.emplace(
+                std::string(localeUtf8.constData(), localeUtf8.size()),
+                std::string(
+                    localizedValueUtf8.constData(),
+                    localizedValueUtf8.size()
+                    )
                 );
         }
     }
 
-    QSet<QString> documentIds;
     const QJsonArray documentArray =
         documentsValue.toArray();
 
@@ -584,12 +582,6 @@ Result<DocumentCatalog> DocumentCatalog::loadCatalogRoot(
             error =
                 QStringLiteral("%1.id is invalid.").arg(name);
         }
-        else if (documentIds.contains(id))
-        {
-            error =
-                QStringLiteral("%1 duplicates document id '%2'.")
-                    .arg(name, id);
-        }
         else if (!order)
         {
             error =
@@ -615,12 +607,6 @@ Result<DocumentCatalog> DocumentCatalog::loadCatalogRoot(
             error =
                 QStringLiteral("%1.pdf.fileName must have a .pdf extension.")
                     .arg(name);
-        }
-        else if (!reachableFolderPaths.contains(pdf->path))
-        {
-            error =
-                QStringLiteral("%1 references folder '%2' without valid metadata.")
-                    .arg(name, pdf->path);
         }
 
         const QJsonValue printingValue =
@@ -673,30 +659,196 @@ Result<DocumentCatalog> DocumentCatalog::loadCatalogRoot(
             continue;
         }
 
-        documentIds.insert(id);
-        catalog.m_documents.append({
-            id,
-            pdf->path,
+        const QByteArray idUtf8 = id.toUtf8();
+        const QByteArray folderPathUtf8 = pdf->path.toUtf8();
+        const QByteArray defaultNameUtf8 = names->defaultName.toUtf8();
+        const QByteArray pdfPathUtf8 = pdf->path.toUtf8();
+        const QByteArray pdfFileNameUtf8 = pdf->fileName.toUtf8();
+        classmngr::engine::DocumentDefinition engineDocument{
+            std::string(idUtf8.constData(), idUtf8.size()),
+            std::string(folderPathUtf8.constData(), folderPathUtf8.size()),
             *order,
-            *names,
-            *pdf,
+            {
+                std::string(
+                    defaultNameUtf8.constData(),
+                    defaultNameUtf8.size()
+                    ),
+                {}
+            },
+            {
+                std::string(
+                    pdfPathUtf8.constData(),
+                    pdfPathUtf8.size()
+                    ),
+                std::string(
+                    pdfFileNameUtf8.constData(),
+                    pdfFileNameUtf8.size()
+                    )
+            },
             printingValue.toBool(),
             exportingValue.toBool(),
-            exportFile
+            std::nullopt
+        };
+
+        for (
+            auto it = names->localeNames.constBegin();
+            it != names->localeNames.constEnd();
+            ++it
+            )
+        {
+            const QByteArray localeUtf8 = it.key().toUtf8();
+            const QByteArray localizedValueUtf8 = it.value().toUtf8();
+            engineDocument.sidebarNames.localeNames.emplace(
+                std::string(localeUtf8.constData(), localeUtf8.size()),
+                std::string(
+                    localizedValueUtf8.constData(),
+                    localizedValueUtf8.size()
+                    )
+                );
+        }
+
+        if (exportFile)
+        {
+            const QByteArray exportPathUtf8 = exportFile->path.toUtf8();
+            const QByteArray exportFileNameUtf8 = exportFile->fileName.toUtf8();
+            engineDocument.exportFile =
+                classmngr::engine::DocumentAssetReference{
+                    std::string(
+                        exportPathUtf8.constData(),
+                        exportPathUtf8.size()
+                        ),
+                    std::string(
+                        exportFileNameUtf8.constData(),
+                        exportFileNameUtf8.size()
+                        )
+                };
+        }
+
+        engineInput.documents.push_back(std::move(engineDocument));
+    }
+
+    const classmngr::engine::DocumentCatalogModel engineModel =
+        classmngr::engine::DocumentCatalogService::build(engineInput);
+
+    for (const std::string& warning : engineModel.warnings)
+    {
+        catalog.m_warnings.append(
+            QString::fromUtf8(
+                warning.data(),
+                static_cast<qsizetype>(warning.size())
+                )
+            );
+    }
+
+    for (
+        const classmngr::engine::DocumentFolderDefinition& folder
+            : engineModel.folders
+        )
+    {
+        DocumentLocalizedNames names;
+        names.defaultName = QString::fromUtf8(
+            folder.sidebarNames.defaultName.data(),
+            static_cast<qsizetype>(folder.sidebarNames.defaultName.size())
+            );
+        for (const auto& [locale, localizedValue] : folder.sidebarNames.localeNames)
+        {
+            names.localeNames.insert(
+                QString::fromUtf8(
+                    locale.data(),
+                    static_cast<qsizetype>(locale.size())
+                    ),
+                QString::fromUtf8(
+                    localizedValue.data(),
+                    static_cast<qsizetype>(localizedValue.size())
+                    )
+                );
+        }
+
+        catalog.m_folders.append({
+            QString::fromUtf8(
+                folder.id.data(),
+                static_cast<qsizetype>(folder.id.size())
+                ),
+            QString::fromUtf8(
+                folder.path.data(),
+                static_cast<qsizetype>(folder.path.size())
+                ),
+            QString::fromUtf8(
+                folder.parentPath.data(),
+                static_cast<qsizetype>(folder.parentPath.size())
+                ),
+            folder.order,
+            std::move(names)
         });
     }
 
-    catalog.m_folders.erase(
-        std::remove_if(
-            catalog.m_folders.begin(),
-            catalog.m_folders.end(),
-            [&reachableFolderPaths](const DocumentFolderDefinition& folder)
-            {
-                return !reachableFolderPaths.contains(folder.path);
-            }
-            ),
-        catalog.m_folders.end()
-        );
+    for (const classmngr::engine::DocumentDefinition& document : engineModel.documents)
+    {
+        DocumentLocalizedNames names;
+        names.defaultName = QString::fromUtf8(
+            document.sidebarNames.defaultName.data(),
+            static_cast<qsizetype>(document.sidebarNames.defaultName.size())
+            );
+        for (const auto& [locale, localizedValue] : document.sidebarNames.localeNames)
+        {
+            names.localeNames.insert(
+                QString::fromUtf8(
+                    locale.data(),
+                    static_cast<qsizetype>(locale.size())
+                    ),
+                QString::fromUtf8(
+                    localizedValue.data(),
+                    static_cast<qsizetype>(localizedValue.size())
+                    )
+                );
+        }
+
+        const QString pdfPath = QString::fromUtf8(
+            document.pdf.path.data(),
+            static_cast<qsizetype>(document.pdf.path.size())
+            );
+        const QString pdfFileName = QString::fromUtf8(
+            document.pdf.fileName.data(),
+            static_cast<qsizetype>(document.pdf.fileName.size())
+            );
+        DocumentAssetReference pdf{
+            pdfPath,
+            pdfFileName,
+            QDir(QDir(rootPath).filePath(pdfPath)).filePath(pdfFileName)
+        };
+
+        std::optional<DocumentAssetReference> exportFile;
+        if (document.exportFile)
+        {
+            const QString exportPath = QString::fromUtf8(
+                document.exportFile->path.data(),
+                static_cast<qsizetype>(document.exportFile->path.size())
+                );
+            const QString exportFileName = QString::fromUtf8(
+                document.exportFile->fileName.data(),
+                static_cast<qsizetype>(document.exportFile->fileName.size())
+                );
+            exportFile = DocumentAssetReference{
+                exportPath,
+                exportFileName,
+                QDir(QDir(rootPath).filePath(exportPath)).filePath(exportFileName)
+            };
+        }
+
+        catalog.m_documents.append({
+            QString::fromUtf8(
+                document.id.data(),
+                static_cast<qsizetype>(document.id.size())
+                ),
+            pdfPath,
+            document.order,
+            std::move(names),
+            std::move(pdf),
+            document.printingEnabled,
+            document.exportingEnabled,
+            std::move(exportFile)
+        });
+    }
 
     catalog.buildDocumentIndex();
 
@@ -707,27 +859,33 @@ QString DocumentLocalizedNames::forLocale(
     const QString& localeName
     ) const
 {
-    QString normalizedLocale =
-        localeName.trimmed();
-
-    normalizedLocale.replace(QLatin1Char('-'), QLatin1Char('_'));
-
-    const auto exact =
-        localeNames.constFind(normalizedLocale);
-
-    if (exact != localeNames.constEnd())
+    classmngr::engine::DocumentLocalizedNames engineNames;
+    const QByteArray defaultUtf8 = defaultName.toUtf8();
+    engineNames.defaultName = std::string(
+        defaultUtf8.constData(),
+        defaultUtf8.size()
+        );
+    for (auto it = localeNames.constBegin(); it != localeNames.constEnd(); ++it)
     {
-        return exact.value();
+        const QByteArray localeUtf8 = it.key().toUtf8();
+        const QByteArray localizedValueUtf8 = it.value().toUtf8();
+        engineNames.localeNames.emplace(
+            std::string(localeUtf8.constData(), localeUtf8.size()),
+            std::string(
+                localizedValueUtf8.constData(),
+                localizedValueUtf8.size()
+                )
+            );
     }
 
-    const QString language =
-        normalizedLocale.section(QLatin1Char('_'), 0, 0);
-    const auto languageMatch =
-        localeNames.constFind(language);
-
-    return languageMatch != localeNames.constEnd()
-        ? languageMatch.value()
-        : defaultName;
+    const QByteArray localeUtf8 = localeName.toUtf8();
+    const std::string result = engineNames.forLocale(
+        std::string_view(localeUtf8.constData(), localeUtf8.size())
+        );
+    return QString::fromUtf8(
+        result.data(),
+        static_cast<qsizetype>(result.size())
+        );
 }
 
 Status DocumentCatalog::initialize()
@@ -788,24 +946,33 @@ Result<DocumentCatalog> DocumentCatalog::loadFromRoots(
 {
     QString activeError;
 
+    std::optional<DocumentCatalog> activeCatalog;
     if (!activeRootPath.trimmed().isEmpty())
     {
-        auto activeCatalog =
-            loadCatalogRoot(activeRootPath);
-
-        if (activeCatalog)
+        auto loadedActiveCatalog = loadCatalogRoot(activeRootPath);
+        if (loadedActiveCatalog)
         {
-            return activeCatalog;
+            activeCatalog = std::move(*loadedActiveCatalog);
         }
-
-        activeError =
-            activeCatalog.error();
+        else
+        {
+            activeError = loadedActiveCatalog.error();
+        }
     }
 
     auto embeddedCatalog =
         loadCatalogRoot(embeddedRootPath);
 
-    if (!embeddedCatalog)
+    const auto selection = classmngr::engine::DocumentCatalogService::selectSource(
+        activeCatalog.has_value(),
+        embeddedCatalog.has_value()
+        );
+    if (selection.source == classmngr::engine::DocumentCatalogSource::Active)
+    {
+        return std::move(*activeCatalog);
+    }
+
+    if (selection.source == classmngr::engine::DocumentCatalogSource::None)
     {
         return std::unexpected(
             activeError.isEmpty()

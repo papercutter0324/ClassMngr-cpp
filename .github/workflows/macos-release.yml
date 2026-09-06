@@ -42,7 +42,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  QT_VERSION: "6.11.1"
+  QT_VERSION: "6.12.0"
 
 jobs:
   build:
@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 90
     env:
       QT_ROOT: ${{ github.workspace }}/Qt
-      QT_MACOS_PREFIX: ${{ github.workspace }}/Qt/6.11.1/macos
+      QT_MACOS_PREFIX: ${{ github.workspace }}/Qt/6.12.0/macos
 
     steps:
       - name: Check out repository

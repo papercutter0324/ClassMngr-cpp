@@ -1,26 +1,37 @@
 #include "core/database_file_format.h"
 
-#include <QFileInfo>
+#include "classmngr/engine/database_file_format.h"
+
+#include <QByteArray>
+
+#include <cstddef>
+#include <string_view>
 
 namespace DatabaseFileFormat
 {
 QString nativeExtension()
 {
-    return QStringLiteral(".tps");
+    return QString::fromUtf8(
+        classmngr::engine::DatabaseFileFormat::nativeExtension().data(),
+        qsizetype(classmngr::engine::DatabaseFileFormat::nativeExtension().size())
+        );
 }
 
 QString legacyExtension()
 {
-    return QStringLiteral(".db");
+    return QString::fromUtf8(
+        classmngr::engine::DatabaseFileFormat::legacyExtension().data(),
+        qsizetype(classmngr::engine::DatabaseFileFormat::legacyExtension().size())
+        );
 }
 
 bool isNativePath(
     const QString& filePath
     )
 {
-    return filePath.endsWith(
-        nativeExtension(),
-        Qt::CaseInsensitive
+    const QByteArray utf8Path = filePath.toUtf8();
+    return classmngr::engine::DatabaseFileFormat::isNativePath(
+        std::string_view(utf8Path.constData(), std::size_t(utf8Path.size()))
         );
 }
 
@@ -28,9 +39,9 @@ bool isLegacyPath(
     const QString& filePath
     )
 {
-    return filePath.endsWith(
-        legacyExtension(),
-        Qt::CaseInsensitive
+    const QByteArray utf8Path = filePath.toUtf8();
+    return classmngr::engine::DatabaseFileFormat::isLegacyPath(
+        std::string_view(utf8Path.constData(), std::size_t(utf8Path.size()))
         );
 }
 
@@ -46,44 +57,29 @@ QString nativeOutputPath(
     const QString& filePath
     )
 {
-    if (
-        filePath.trimmed().isEmpty()
-        || isNativePath(filePath)
-        )
-    {
-        return filePath;
-    }
-
-    QString result = filePath;
-
-    if (isLegacyPath(result))
-    {
-        result.chop(
-            legacyExtension().size()
+    const QByteArray utf8Path = filePath.toUtf8();
+    const std::string result =
+        classmngr::engine::DatabaseFileFormat::nativeOutputPath(
+            std::string_view(utf8Path.constData(), std::size_t(utf8Path.size()))
             );
-    }
-
-    result += nativeExtension();
-    return result;
+    return QString::fromUtf8(
+        result.data(),
+        qsizetype(result.size())
+        );
 }
 
 QString supportedInputPath(
     const QString& filePath
     )
 {
-    if (
-        filePath.trimmed().isEmpty()
-        || isSupportedInputPath(filePath)
-        )
-    {
-        return filePath;
-    }
-
-    if (QFileInfo(filePath).suffix().isEmpty())
-    {
-        return filePath + nativeExtension();
-    }
-
-    return filePath;
+    const QByteArray utf8Path = filePath.toUtf8();
+    const std::string result =
+        classmngr::engine::DatabaseFileFormat::supportedInputPath(
+            std::string_view(utf8Path.constData(), std::size_t(utf8Path.size()))
+            );
+    return QString::fromUtf8(
+        result.data(),
+        qsizetype(result.size())
+        );
 }
 }

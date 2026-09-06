@@ -1,7 +1,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -79,13 +79,13 @@ private slots:
 namespace
 {
 void saveSettingOrFail(
-    DataService* dataService,
+    SettingsService* settingsService,
     const QString& key,
     const QVariant& value
     )
 {
-    QVERIFY(dataService);
-    QVERIFY(dataService->saveSetting(key, value).has_value());
+    QVERIFY(settingsService);
+    QVERIFY(settingsService->save(key, value).has_value());
 }
 
 constexpr int ExpectedSourceDialogWidth = 436;
@@ -522,7 +522,7 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
-    saveSettingOrFail(services.dataService(),
+    saveSettingOrFail(services.settingsService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("A Name That Is Not In The Workbook")
         );
@@ -815,7 +815,7 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
-    saveSettingOrFail(services.dataService(),
+    saveSettingOrFail(services.settingsService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("Alice")
         );
@@ -853,7 +853,7 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
-    saveSettingOrFail(services.dataService(),
+    saveSettingOrFail(services.settingsService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("Alice")
         );
@@ -1899,11 +1899,11 @@ void ScheduleImportDialogTests
             );
     }
 
-    saveSettingOrFail(services.dataService(),
+    saveSettingOrFail(services.settingsService(),
         QStringLiteral("schedule_use_24h"),
         QStringLiteral("true")
         );
-    saveSettingOrFail(services.dataService(),
+    saveSettingOrFail(services.settingsService(),
         QStringLiteral("schedule_show_weekends"),
         QStringLiteral("true")
         );
@@ -2153,7 +2153,7 @@ void ScheduleImportDialogTests
     }
 
     ApplicationServices services;
-    saveSettingOrFail(services.dataService(),
+    saveSettingOrFail(services.settingsService(),
         QStringLiteral("myInfo/name"),
         QString()
         );
@@ -2323,6 +2323,15 @@ void ScheduleImportDialogTests
         );
 }
 
-QTEST_MAIN(ScheduleImportDialogTests)
+int main(int argc, char** argv)
+{
+    qputenv(
+        "QT_QPA_PLATFORM",
+        QByteArrayLiteral("offscreen")
+        );
+    QApplication app(argc, argv);
+    ScheduleImportDialogTests tests;
+    return QTest::qExec(&tests, argc, argv);
+}
 
 #include "schedule_import_dialog_tests.moc"

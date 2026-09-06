@@ -195,20 +195,32 @@ void setTestingClassAssignment(
 
 ApplicationServices::ApplicationServices()
 {
-    m_dataService =
-        std::make_unique<DataService>();
+    m_settingsService =
+        std::make_unique<SettingsService>(nullptr);
+    m_teacherService =
+        std::make_unique<TeacherService>(nullptr);
+    m_classService =
+        std::make_unique<ClassService>(nullptr);
+    m_scheduleService =
+        std::make_unique<ScheduleService>(nullptr);
+    m_calendarService =
+        std::make_unique<CalendarService>(nullptr);
+    m_rosterService =
+        std::make_unique<RosterService>(nullptr);
+    m_speakingEvaluationService =
+        std::make_unique<SpeakingEvaluationService>(nullptr);
 }
 
 ApplicationServices::~ApplicationServices() = default;
 
-DataService* ApplicationServices::dataService() const
-{
-    return m_dataService.get();
-}
-
 ThemeService* ApplicationServices::themeService() const
 {
     return nullptr;
+}
+
+bool ApplicationServices::hasOpenDatabase() const
+{
+    return ScheduleWidgetTestStubs::databaseOpen;
 }
 
 DataService::DataService(
@@ -330,6 +342,13 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
     }
 
     return preview;
+}
+
+Status DataService::validateScheduleImport(
+    const ScheduleImportPlan&
+    )
+{
+    return {};
 }
 
 Result<ScheduleImportSummary> DataService::importSchedule(
@@ -803,6 +822,21 @@ Result<SpeakingEvalRows> DataService::loadSpeakingEval(
         QStringLiteral("%1:%2").arg(classId).arg(evaluationName));
 }
 
+Status DataService::saveSpeakingEval(
+    int classId,
+    const QString& evaluationName,
+    const SpeakingEvalRows& rows,
+    const QList<SpeakingEvalCellChange>& dirtyCells
+    )
+{
+    Q_UNUSED(dirtyCells);
+    ScheduleWidgetTestStubs::speakingEvaluations.insert(
+        QStringLiteral("%1:%2").arg(classId).arg(evaluationName),
+        rows
+        );
+    return {};
+}
+
 Result<int> DataService::getRosterStudentCount(
     int classId
     )
@@ -860,6 +894,452 @@ Result<QList<Teacher>> DataService::getAllTeachers()
         getTeacher(7).value_or(Teacher{}),
         getTeacher(8).value_or(Teacher{})
     };
+}
+
+namespace
+{
+DataService& scheduleWidgetCompatibilityData()
+{
+    static DataService service;
+    return service;
+}
+}
+
+bool FeatureService::isAvailable() const
+{
+    return ScheduleWidgetTestStubs::databaseOpen;
+}
+
+Status SettingsService::save(
+    const QString& key,
+    const QVariant& value
+    ) const
+{
+    return scheduleWidgetCompatibilityData().saveSetting(key, value);
+}
+
+Status SettingsService::saveAll(
+    const QVariantMap& values
+    ) const
+{
+    return scheduleWidgetCompatibilityData().saveSettings(values);
+}
+
+Result<QVariant> SettingsService::load(
+    const QString& key
+    ) const
+{
+    return scheduleWidgetCompatibilityData().loadSetting(key);
+}
+
+QVariant SettingsService::loadOrDefault(
+    const QString& key,
+    const QVariant& defaultValue
+    ) const
+{
+    const Result<QVariant> value = load(key);
+    return value && value->isValid() ? *value : defaultValue;
+}
+
+Result<int> TeacherService::create(const Teacher& teacher) const
+{
+    Q_UNUSED(teacher);
+    return 9;
+}
+
+Result<int> TeacherService::save(const Teacher& teacher) const
+{
+    return create(teacher);
+}
+
+Status TeacherService::update(const Teacher& teacher) const
+{
+    Q_UNUSED(teacher);
+    return {};
+}
+
+Result<Teacher> TeacherService::teacher(int teacherId) const
+{
+    return scheduleWidgetCompatibilityData().getTeacher(teacherId);
+}
+
+Result<QList<Teacher>> TeacherService::teachers() const
+{
+    return scheduleWidgetCompatibilityData().getAllTeachers();
+}
+
+Status TeacherService::remove(int teacherId) const
+{
+    Q_UNUSED(teacherId);
+    return {};
+}
+
+Result<QList<NativeEnglishTeacher>> TeacherService::nativeEnglishTeachers() const
+{
+    return QList<NativeEnglishTeacher>{};
+}
+
+Status TeacherService::saveNativeEnglishTeacherDirectory(
+    const QList<NativeEnglishTeacher>& teachers,
+    const QList<int>& deletedIds
+    ) const
+{
+    Q_UNUSED(teachers);
+    Q_UNUSED(deletedIds);
+    return {};
+}
+
+Result<QList<GsTeamMember>> TeacherService::gsTeamMembers() const
+{
+    return QList<GsTeamMember>{};
+}
+
+Status TeacherService::saveGsTeamDirectory(
+    const QList<GsTeamMember>& members,
+    const QList<int>& deletedIds
+    ) const
+{
+    Q_UNUSED(members);
+    Q_UNUSED(deletedIds);
+    return {};
+}
+
+Result<TeacherImportSummary> TeacherService::importTeachers(
+    const TeacherImportPlan& plan
+    ) const
+{
+    Q_UNUSED(plan);
+    return TeacherImportSummary{};
+}
+
+Result<TeacherService::TeacherImportDateCheck>
+TeacherService::compareLatestImportDate(const QDate& sourceDate) const
+{
+    Q_UNUSED(sourceDate);
+    return TeacherImportDateCheck{};
+}
+
+Result<QList<Classroom>> ClassService::classes() const
+{
+    return scheduleWidgetCompatibilityData().getClasses();
+}
+
+Result<QList<ClassTeacherAssignment>>
+ClassService::classTeacherAssignments() const
+{
+    QList<ClassTeacherAssignment> assignments;
+    const QList<Classroom> classrooms = classes().value_or(QList<Classroom>{});
+    for (const Classroom& classroom : classrooms)
+    {
+        assignments.append({
+            classroom.id,
+            scheduleWidgetCompatibilityData().loadClassInfo(classroom.id)
+                .value_or(ClassInfo{})
+                .teacherId
+        });
+    }
+    return assignments;
+}
+
+Result<QList<ClassInfo>> ClassService::scheduleClassInfos() const
+{
+    QList<ClassInfo> infos;
+    const QList<Classroom> classrooms = classes().value_or(QList<Classroom>{});
+    for (const Classroom& classroom : classrooms)
+    {
+        infos.append(
+            scheduleWidgetCompatibilityData().loadClassInfo(classroom.id)
+                .value_or(ClassInfo{})
+            );
+    }
+    return infos;
+}
+
+Result<Classroom> ClassService::classroom(int classId) const
+{
+    return scheduleWidgetCompatibilityData().getClassById(classId);
+}
+
+Result<int> ClassService::create(const QString& name) const
+{
+    Q_UNUSED(name);
+    return 99;
+}
+
+Status ClassService::rename(int classId, const QString& name) const
+{
+    Q_UNUSED(classId);
+    Q_UNUSED(name);
+    return {};
+}
+
+Status ClassService::remove(int classId) const
+{
+    Q_UNUSED(classId);
+    return {};
+}
+
+Result<ClassInfo> ClassService::classInfo(int classId) const
+{
+    return scheduleWidgetCompatibilityData().loadClassInfo(classId);
+}
+
+Status ClassService::saveClassInfo(const ClassInfo& info) const
+{
+    return scheduleWidgetCompatibilityData().saveClassInfo(info);
+}
+
+Status ClassService::saveClassNotes(
+    int classId,
+    const QString& notes,
+    const QString& timeFillerActivities
+    ) const
+{
+    return scheduleWidgetCompatibilityData().saveClassNotes(
+        classId,
+        notes,
+        timeFillerActivities
+        );
+}
+
+Result<QList<ClassConflict>> ClassService::conflicts(
+    int classId,
+    const QList<ClassTime>& times,
+    ScheduleType type
+    ) const
+{
+    return scheduleWidgetCompatibilityData().getClassTimeConflicts(
+        classId,
+        times,
+        type
+        );
+}
+
+Result<ClassTransferPackage> ClassService::buildTransferPackage(
+    const QList<int>& classIds
+    ) const
+{
+    Q_UNUSED(classIds);
+    return ClassTransferPackage{};
+}
+
+Result<ClassImportPreview> ClassService::previewImport(
+    const ClassTransferPackage& package
+    ) const
+{
+    Q_UNUSED(package);
+    return ClassImportPreview{};
+}
+
+Result<ClassImportSummary> ClassService::importClasses(
+    const ClassTransferPackage& package,
+    const ClassImportPlan& plan
+    ) const
+{
+    Q_UNUSED(package);
+    Q_UNUSED(plan);
+    return ClassImportSummary{};
+}
+
+Result<ScheduleImportPreview> ScheduleService::previewImport(
+    const ScheduleImportUserBlock& user,
+    ScheduleImportKind kind
+    ) const
+{
+    return scheduleWidgetCompatibilityData().previewScheduleImport(user, kind);
+}
+
+Status ScheduleService::validateImport(const ScheduleImportPlan& plan) const
+{
+    return scheduleWidgetCompatibilityData().validateScheduleImport(plan);
+}
+
+Result<ScheduleImportSummary> ScheduleService::importSchedule(
+    const ScheduleImportPlan& plan
+    ) const
+{
+    return scheduleWidgetCompatibilityData().importSchedule(plan);
+}
+
+Result<QList<IntensiveSlotState>> ScheduleService::intensiveSlotStates() const
+{
+    return scheduleWidgetCompatibilityData().loadIntensiveSlotStates();
+}
+
+Status ScheduleService::saveIntensiveSlotState(
+    const QString& day,
+    const QString& startTime,
+    const QString& state,
+    const QString& defaultState
+    ) const
+{
+    return scheduleWidgetCompatibilityData().saveIntensiveSlotState(
+        day,
+        startTime,
+        state,
+        defaultState
+        );
+}
+
+Result<QList<TestingAssignment>> ScheduleService::testingAssignments() const
+{
+    return scheduleWidgetCompatibilityData().loadTestingAssignments();
+}
+
+Result<QList<TestingBlock>> ScheduleService::testingBlocks() const
+{
+    return scheduleWidgetCompatibilityData().loadTestingBlocks();
+}
+
+Status ScheduleService::saveTestingBlock(
+    const QString& day,
+    const QString& startTime,
+    const QString& room,
+    bool replaceExisting
+    ) const
+{
+    return scheduleWidgetCompatibilityData().saveTestingBlock(
+        day,
+        startTime,
+        room,
+        replaceExisting
+        );
+}
+
+Status ScheduleService::assignTestingClass(
+    const QString& day,
+    const QString& startTime,
+    int classId,
+    bool replaceExisting
+    ) const
+{
+    return scheduleWidgetCompatibilityData().assignTestingClass(
+        day,
+        startTime,
+        classId,
+        replaceExisting
+        );
+}
+
+Status ScheduleService::deleteTestingAssignment(
+    const QString& day,
+    const QString& startTime
+    ) const
+{
+    return scheduleWidgetCompatibilityData().deleteTestingAssignment(day, startTime);
+}
+
+Status ScheduleService::deleteTestingBlock(
+    const QString& day,
+    const QString& startTime
+    ) const
+{
+    return scheduleWidgetCompatibilityData().deleteTestingBlock(day, startTime);
+}
+
+Status ScheduleService::clearTestingAssignments() const
+{
+    return scheduleWidgetCompatibilityData().clearTestingAssignments();
+}
+
+Status ScheduleService::clearTestingBlocks() const
+{
+    return scheduleWidgetCompatibilityData().clearTestingBlocks();
+}
+
+Result<int> ScheduleService::createTestingClass(
+    const TestingClass& testingClass,
+    const QString& assignmentDay,
+    const QString& assignmentStartTime
+    ) const
+{
+    return scheduleWidgetCompatibilityData().createTestingClass(
+        testingClass,
+        assignmentDay,
+        assignmentStartTime
+        );
+}
+
+Status ScheduleService::updateTestingClass(
+    const TestingClass& testingClass
+    ) const
+{
+    return scheduleWidgetCompatibilityData().updateTestingClass(testingClass);
+}
+
+Result<TestingClass> ScheduleService::testingClass(int classId) const
+{
+    return scheduleWidgetCompatibilityData().loadTestingClass(classId);
+}
+
+Result<QList<TestingClass>> ScheduleService::testingClasses() const
+{
+    return scheduleWidgetCompatibilityData().loadTestingClasses();
+}
+
+Status ScheduleService::deleteTestingClass(int classId) const
+{
+    return scheduleWidgetCompatibilityData().deleteTestingClass(classId);
+}
+
+Result<bool> ScheduleService::isTestingClass(int classId) const
+{
+    return scheduleWidgetCompatibilityData().isTestingClass(classId);
+}
+
+Status RosterService::saveRoster(
+    int classId,
+    const Roster& roster,
+    bool allowQuestionableKoreanNameLengths
+    ) const
+{
+    Q_UNUSED(allowQuestionableKoreanNameLengths);
+    return scheduleWidgetCompatibilityData().saveRoster(classId, roster);
+}
+
+Status RosterService::saveRosters(
+    const QList<QPair<int, Roster>>& rosters
+    ) const
+{
+    return scheduleWidgetCompatibilityData().saveRosters(rosters);
+}
+
+Result<Roster> RosterService::roster(int classId) const
+{
+    return scheduleWidgetCompatibilityData().loadRoster(classId);
+}
+
+Result<int> RosterService::studentCount(int classId) const
+{
+    return scheduleWidgetCompatibilityData().getRosterStudentCount(classId);
+}
+
+Status SpeakingEvaluationService::saveEvaluation(
+    int classId,
+    const QString& evaluationName,
+    const SpeakingEvalRows& rows,
+    const QList<SpeakingEvalCellChange>& dirtyCells,
+    bool allowQuestionableKoreanNameLengths
+    ) const
+{
+    Q_UNUSED(dirtyCells);
+    Q_UNUSED(allowQuestionableKoreanNameLengths);
+    return scheduleWidgetCompatibilityData().saveSpeakingEval(
+        classId,
+        evaluationName,
+        rows
+        );
+}
+
+Result<SpeakingEvalRows> SpeakingEvaluationService::evaluation(
+    int classId,
+    const QString& evaluationName
+    ) const
+{
+    return scheduleWidgetCompatibilityData().loadSpeakingEval(
+        classId,
+        evaluationName
+        );
 }
 
 #ifndef CLASSMNGR_TEST_USE_REAL_RESOURCE_PACK_MANAGER

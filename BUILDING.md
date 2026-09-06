@@ -14,20 +14,20 @@ ClassMngr is built with CMake, C++23, and Qt 6. Release installs run Qt's deploy
 ## Requirements
 
 * CMake 3.25 or newer
-* Qt 6.11.1 or newer, built for the compiler you are using
+* Qt 6.12 or newer, built for the compiler you are using
 * A C++23 compiler
 * zlib development files (Windows builds can use Qt's bundled fallback)
 * Ninja for Linux and macOS preset builds
 * Linux only: `patchelf`, used by Qt's deployment tooling
 * Linux only: a configured CUPS or system printer stack for printing
-* Windows only: Visual Studio or Build Tools with the Desktop development with C++ workload
+* Windows only: Visual Studio 2026 or Build Tools 2026 with the Desktop development with C++ workload
 
 When configuring CMake, set `CMAKE_PREFIX_PATH` to the Qt kit directory that contains `lib/cmake/Qt6`. Common examples are:
 
 ```text
-C:/Qt/6.11.1/msvc2022_64
-/Users/you/Qt/6.11.1/macos
-$HOME/Qt/6.11.1/gcc_64
+C:/Qt/6.12.0/msvc2022_64
+/Users/you/Qt/6.12.0/macos
+$HOME/Qt/6.12.0/gcc_64
 ```
 
 ## Windows
@@ -44,17 +44,17 @@ winget install --id Ninja-build.Ninja -e
 winget install --id JRSoftware.InnoSetup -e
 ```
 
-Install Visual Studio or Visual Studio Build Tools with the C++ workload. In the installer, select:
+Install Visual Studio 2026 or Visual Studio Build Tools 2026 with the C++ workload. In the installer, select:
 
 * Desktop development with C++
 * MSVC C++ compiler for your target architecture
 * Windows SDK
 * C++ CMake tools for Windows
 
-With `winget`, start the Build Tools installation with:
+With `winget`, start the Visual Studio 2026 Build Tools installation with:
 
 ```powershell
-winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+winget install --id Microsoft.VisualStudio.BuildTools -e --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
 Open VS Code and install these extensions:
@@ -62,12 +62,12 @@ Open VS Code and install these extensions:
 * C/C++ (`ms-vscode.cpptools`)
 * CMake Tools (`ms-vscode.cmake-tools`)
 
-Install the Qt Windows desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.11.1 MSVC desktop kit matching your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
+Install the Qt Windows desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12.0 MSVC desktop kit matching your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
 Set `QT_MSVC_X64_PREFIX` to the Qt kit directory on each Windows machine. The same presets work regardless of where that kit is installed:
 
 ```powershell
-$qtX64Prefix = "D:\Development\Qt\6.11.1\msvc2022_64"
+$qtX64Prefix = "D:\Development\Qt\6.12.0\msvc2022_64"
 [Environment]::SetEnvironmentVariable(
     "QT_MSVC_X64_PREFIX",
     $qtX64Prefix,
@@ -76,7 +76,11 @@ $qtX64Prefix = "D:\Development\Qt\6.11.1\msvc2022_64"
 $env:QT_MSVC_X64_PREFIX = $qtX64Prefix
 ```
 
-Use the local path for the machine, such as `C:\Qt\6.11.1\msvc2022_64` on a different installation. On a resource-constrained machine, set `CMAKE_BUILD_PARALLEL_LEVEL` locally or pass `--parallel 4` to `cmake --build`; the shared presets do not impose a job limit.
+Use the local path for the machine, such as `C:\Qt\6.12.0\msvc2022_64` on a different installation. On a resource-constrained machine, set `CMAKE_BUILD_PARALLEL_LEVEL` locally or pass `--parallel 4` to `cmake --build`; the shared presets do not impose a job limit.
+
+The `msvc2022_*` Qt kit names are Qt package identifiers and do not select the
+Visual Studio generator. Windows builds use the VS 2026 `v145` toolset described
+below.
 
 Open the project from an x64 Native Tools Command Prompt or Developer PowerShell so MSVC is available to VS Code:
 
@@ -95,7 +99,10 @@ cmake --build --preset windows-x64-release-install
 
 Release presets run `windeployqt` after building. The install preset copies the standalone app under `dist/ClassMngr-windows-x64`. Run and distribute the whole installed directory, keeping `ClassMngr.exe` together with the copied Qt DLLs, plugins, QML files, and license files.
 
-ClassMngr supports x64 and ARM64 Windows; it does not produce a Win32 build. Build an x64 installer with:
+The retained Qt product supports x64 and ARM64 Windows; it does not produce a
+Win32 public installer. The WinUI Phase 1 lane separately builds and tests an
+x86/Win32 stage, but that stage is not a public installer target. Build an x64
+installer with:
 
 ```powershell
 cmake --build --preset windows-x64-release-installer
@@ -111,7 +118,40 @@ To build every locally available Windows installer and its SHA-256 checksum file
 
 Installers are written under `dist` as `ClassMngr-<version>-win-{x64,arm64}.exe`. They install the matching Visual C++ runtime prerequisite and support in-place upgrades through a shared application identity.
 
-The Windows presets use the Visual Studio generator configured in `CMakePresets.json`. If CMake reports that the generator is not installed, either install the matching Visual Studio or Build Tools version, or update the preset to the Visual Studio generator installed on your machine.
+The Windows presets use the `Visual Studio 18 2026` generator and `v145`
+toolset configured in `CMakePresets.json`. The Windows presets therefore require
+CMake 4.2 or newer. Linux and macOS continue to use their existing Ninja
+presets and CMake baseline. Existing Windows build directories created with a
+different Visual Studio generator must be reconfigured with `cmake --fresh`.
+
+### WinUI 3 Phase 1 bootstrap
+
+The isolated Windows WinUI lane is unpackaged and self-contained. It does not
+discover or deploy Qt. It requires Visual Studio 2026 with the Desktop
+development with C++ workload, the Windows 10.0.26100.0 SDK, CMake, NuGet, and
+PowerShell. NuGet may be installed on `PATH` or supplied as
+`build/tools/nuget.exe`; the CI job provisions it explicitly. The project pins the
+[`Microsoft.WindowsAppSDK` 2.4.0](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads),
+[`Microsoft.Windows.CppWinRT` 3.0.260818.1](https://www.nuget.org/packages/Microsoft.Windows.CppWinRT/3.0.260818.1),
+and [`Microsoft.Windows.SDK.BuildTools` 10.0.26100.4654](https://www.nuget.org/packages/Microsoft.Windows.SDK.BuildTools/10.0.26100.4654)
+packages in `src/platform/windows/winui/packages.config`.
+
+From a Visual Studio Developer PowerShell, build and test the x64 Debug
+bootstrap with:
+
+```powershell
+./scripts/verify_windows_vs2026.ps1
+cmake --fresh --preset windows-x64-winui-debug
+cmake --build --preset windows-x64-winui-debug --parallel 2
+ctest --test-dir build/windows-x64-winui-debug -C Debug --output-on-failure
+```
+
+The x64 Release lane and the required x86/Win32 lanes use the corresponding
+`windows-x64-winui-release`, `windows-x86-winui-debug`, and
+`windows-x86-winui-release` presets. Each stage is written below
+`dist/ClassMngr-windows-winui-{x64,x86}/<Debug|Release>` and is verified by
+`scripts/verify_windows_winui_stage.ps1`. The x86 stage is a build-and-test
+artifact only; it is not a public installer target.
 
 ## macOS
 
@@ -134,12 +174,12 @@ Install the command-line build tools used by the CMake presets. Homebrew is the 
 brew install cmake ninja git
 ```
 
-Install the Qt macOS desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.11.1 `macos` desktop kit. If you use another Qt installation, make sure it is Qt 6.11.1 or newer and includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
+Install the Qt macOS desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12 `macos` desktop kit. If you use another Qt installation, make sure it is Qt 6.12 or newer and includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
 Set `QT_MACOS_PREFIX` to that Qt kit. The same presets then work regardless of where Qt is installed. The macOS release preset builds a universal `arm64;x86_64` app bundle targeting macOS 13.0 or newer.
 
 ```sh
-export QT_MACOS_PREFIX="$HOME/Qt/6.11.1/macos"
+export QT_MACOS_PREFIX="$HOME/Qt/6.12.0/macos"
 
 cmake --preset macos-clang-release
 cmake --build --preset macos-clang-release
@@ -252,13 +292,13 @@ sudo zypper install \
   xcb-util-wm-devel
 ```
 
-Install the Qt Linux desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.11.1 `gcc_64` desktop kit, because many distro repositories ship an older Qt 6 than this project requires. If your distro provides Qt 6.11.1 or newer, distro Qt packages are fine too as long as they include Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
+Install the Qt Linux desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12 `gcc_64` desktop kit, because many distro repositories ship an older Qt 6 than this project requires. If your distro provides Qt 6.12 or newer, distro Qt packages are fine too as long as they include Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
 The checked-in Linux preset contains a maintainer-specific default Qt path. Override it with the Qt kit installed on your machine:
 
 ```sh
 cmake --preset linux-gcc-release \
-  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.11.1/gcc_64"
+  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.12.0/gcc_64"
 cmake --build --preset linux-gcc-release
 
 cmake --install build/linux-gcc-release \

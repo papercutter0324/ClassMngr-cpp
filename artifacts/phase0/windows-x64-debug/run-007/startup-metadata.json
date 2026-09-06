@@ -1,0 +1,38 @@
+﻿{
+    "format":  "classmngr-phase0-startup-baseline-v1",
+    "capturedAtUtc":  "2026-08-27T17:08:49.6215305Z",
+    "appPath":  "C:\\Git\\ClassMngr-cpp\\build\\windows-x64-debug\\Debug\\ClassMngr.exe",
+    "buildConfiguration":  "Debug",
+    "architecture":  "X64",
+    "operatingSystem":  {
+                            "caption":  "Microsoft Windows 11 Pro",
+                            "version":  "10.0.26200",
+                            "buildNumber":  "26200"
+                        },
+    "hardware":  {
+                     "manufacturer":  "Gigabyte Technology Co., Ltd.",
+                     "model":  "X870E AORUS PRO",
+                     "processor":  "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+                     "logicalProcessors":  32,
+                     "totalPhysicalMemoryBytes":  68235767808
+                 },
+    "graphics":  [
+                     {
+                         "name":  "AMD Radeon(TM) Graphics",
+                         "adapterCompatibility":  "Advanced Micro Devices, Inc.",
+                         "driverVersion":  "32.0.21045.5002",
+                         "videoProcessor":  "AMD Radeon Graphics Processor (0x13C0)"
+                     },
+                     {
+                         "name":  "NVIDIA GeForce RTX 3070",
+                         "adapterCompatibility":  "NVIDIA",
+                         "driverVersion":  "32.0.16.1088",
+                         "videoProcessor":  "NVIDIA GeForce RTX 3070"
+                     }
+                 ],
+    "display":  {
+                    "systemDpi":  96,
+                    "systemScalePercent":  100
+                },
+    "metricsFile":  "startup-metrics.json"
+}

@@ -1,16 +1,18 @@
 #include "calendar_event_cache.h"
 
-#include "core/memory_usage_diagnostics.h"
-#include "data/database/database_schema_manager.h"
-#include "data/repositories/calendar_event_repository.h"
+#include "classmngr/engine/calendar_event_service.h"
+#include "classmngr/engine/open_database.h"
 
-#include <QSqlDatabase>
-#include <QSqlError>
+#include "core/memory_usage_diagnostics.h"
+
+#include <QByteArray>
 #include <QSet>
-#include <QUuid>
 #include <QtConcurrentRun>
 
 #include <algorithm>
+#include <cstddef>
+#include <string>
+#include <string_view>
 
 namespace
 {
@@ -409,73 +411,72 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
     LoadResult result;
     result.request = request;
 
-    const QString connectionName =
-        QStringLiteral("calendar-event-cache-%1").arg(
-            QUuid::createUuid().toString(QUuid::WithoutBraces)
-            );
-
+    const QByteArray utf8Path = databasePath.toUtf8();
+    auto engineDatabase = classmngr::engine::OpenDatabase::execute(
+        std::string_view(
+            utf8Path.constData(),
+            static_cast<std::size_t>(utf8Path.size())
+            )
+        );
+    if (!engineDatabase)
     {
-        QSqlDatabase database =
-            QSqlDatabase::addDatabase(
-                QStringLiteral("QSQLITE"),
-                connectionName
+        const std::string& engineError = engineDatabase.error().message;
+        result.error = QStringLiteral(
+            "Unable to initialize calendar event cache database:\n%1\n\n%2"
+            )
+            .arg(
+                databasePath,
+                QString::fromUtf8(
+                    engineError.data(),
+                    static_cast<qsizetype>(engineError.size())
+                    )
                 );
-        database.setDatabaseName(databasePath);
+        return result;
+    }
 
-        if (!database.open())
+    classmngr::engine::CalendarEventService service(**engineDatabase);
+    if (request.kind == RequestKind::Range)
+    {
+        const auto events = service.loadInRange(
+            calendar_event_detail::toEngineDate(request.startDate),
+            calendar_event_detail::toEngineDate(request.endDate)
+            );
+        if (!events)
         {
-            result.error = database.lastError().text();
+            result.error = QString::fromUtf8(
+                events.error().message.data(),
+                static_cast<qsizetype>(events.error().message.size())
+                );
+            return result;
         }
-        else if (const Status foreignKeyStatus =
-                     DatabaseSchemaManager::enableForeignKeyEnforcement(
-                         database
-                         );
-                 !foreignKeyStatus)
+
+        result.events.reserve(static_cast<qsizetype>(events->size()));
+        for (const classmngr::engine::CalendarEvent& event : *events)
         {
-            result.error = foreignKeyStatus.error();
-            database.close();
+            result.events.append(calendarEventFromEngine(event));
         }
-        else
+    }
+    else
+    {
+        const auto nextEventDate = service.findNextStartDate(
+            calendar_event_detail::toEngineDate(request.startDate)
+            );
+        if (!nextEventDate)
         {
-            CalendarEventRepository repository(database);
+            result.error = QString::fromUtf8(
+                nextEventDate.error().message.data(),
+                static_cast<qsizetype>(nextEventDate.error().message.size())
+                );
+            return result;
+        }
 
-            if (request.kind == RequestKind::Range)
-            {
-                const Result<QList<CalendarEvent>> events =
-                    repository.loadCalendarEventsInRange(
-                        request.startDate,
-                        request.endDate
-                        );
-                if (events)
-                {
-                    result.events = *events;
-                }
-                else
-                {
-                    result.error = events.error();
-                }
-            }
-            else
-            {
-                const Result<QDate> nextEventDate =
-                    repository.findNextCalendarEventStartDate(
-                        request.startDate
-                        );
-                if (nextEventDate)
-                {
-                    result.nextEventDate = *nextEventDate;
-                }
-                else
-                {
-                    result.error = nextEventDate.error();
-                }
-            }
-
-            database.close();
+        if (nextEventDate->has_value())
+        {
+            result.nextEventDate =
+                calendar_event_detail::fromEngineDate(**nextEventDate);
         }
     }
 
-    QSqlDatabase::removeDatabase(connectionName);
     return result;
 }
 

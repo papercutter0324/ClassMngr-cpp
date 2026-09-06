@@ -363,6 +363,7 @@ bool ScheduleImportReviewDialog::prepare()
         && m_preview.inventory.hasIntensiveHours
         );
     m_updateIntensiveRadio->setChecked(true);
+    m_previewWidget->refreshDisplaySettings();
     m_previewWidget->setPreviewModel(
         previewModel(
             m_preview.user,
@@ -1176,7 +1177,34 @@ void ScheduleImportReviewDialog::updateReviewState()
         {
             message =
                 tr("Acknowledge the unrecognized cells before importing.");
+        }
+    }
+
+    if (valid)
+    {
+        ScheduleService* scheduleService =
+            openScheduleImportService(m_services);
+        if (!scheduleService)
+        {
+            valid = false;
+            if (message.isEmpty())
+            {
+                message = tr("No Teacher Profile is open.");
             }
+        }
+        else
+        {
+            const Status validation =
+                scheduleService->validateImport(importPlan());
+            if (!validation)
+            {
+                valid = false;
+                if (message.isEmpty())
+                {
+                    message = validation.error();
+                }
+            }
+        }
     }
 
     int cleared = 0;

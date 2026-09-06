@@ -1,0 +1,918 @@
+********* Start testing of ScheduleImportDialogTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+INFO   : ScheduleImportDialogTests::initTestCase() entering
+PASS   : ScheduleImportDialogTests::initTestCase()
+INFO   : ScheduleImportDialogTests::selectsHighestContrastFontColor() entering
+INFO   : ScheduleImportDialogTests::selectsHighestContrastFontColor() QCOMPARE(ColorUtils::getContrastingFontColor( QColor(QStringLiteral("#10DDDD")) ), QStringLiteral("#000000"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(402) : message location
+INFO   : ScheduleImportDialogTests::selectsHighestContrastFontColor() QCOMPARE(ColorUtils::getContrastingFontColor( QColor(QStringLiteral("#E36363")) ), QStringLiteral("#000000"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(408) : message location
+INFO   : ScheduleImportDialogTests::selectsHighestContrastFontColor() QCOMPARE(ColorUtils::getContrastingFontColor( QColor(QStringLiteral("#B52A2A")) ), QStringLiteral("#FFFFFF"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(414) : message location
+INFO   : ScheduleImportDialogTests::selectsHighestContrastFontColor() QCOMPARE(ColorUtils::getContrastingFontColor( QColor(QStringLiteral("#E4DFC6")) ), QStringLiteral("#000000"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(420) : message location
+PASS   : ScheduleImportDialogTests::selectsHighestContrastFontColor()
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() entering
+QWARN  : ScheduleImportDialogTests::requiresFileAndScheduleKind() QFontDatabase: Cannot find font directory C:/Qt/6.11.1/msvc2022_64/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(next)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(451) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(normal)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(452) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(status)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(453) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(browse)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(454) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(scheduleTypeSection)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(455) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(fileSection)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(456) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(!next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(457) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(dialog.width(), ExpectedSourceDialogWidth)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(458) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(dialog.minimumHeight(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(459) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(dialog.maximumHeight(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(460) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(next->text(), QStringLiteral("Load"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(461) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(browse->text(), QStringLiteral("Browse"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(462) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(status->text(), QStringLiteral("Choose a file and schedule type."))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(466) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QVERIFY(status->alignment().testFlag(Qt::AlignHCenter))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(467) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(status->parentWidget()->layout()->indexOf(status), 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(468) : message location
+INFO   : ScheduleImportDialogTests::requiresFileAndScheduleKind() QCOMPARE(status->parentWidget()->layout()->spacing(), 12)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(469) : message location
+FAIL!  : ScheduleImportDialogTests::requiresFileAndScheduleKind() Compared values are not the same
+   Actual   (status->parentWidget()->layout()->spacing()): 10
+   Expected (12)                                         : 12
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(469) : failure location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() entering
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(normal)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(685) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(next)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(686) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(browse)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(687) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(status)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(688) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(progress)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(689) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QCOMPARE(status->text(), QStringLiteral("Loading workbook..."))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(696) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(!progress->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(697) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(!next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(698) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(!browse->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(699) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(progress->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(701) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QCOMPARE(status->text(), QStringLiteral( "The selected workbook could not be opened." ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(707) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(708) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(browse->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(709) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(directory.isValid())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(712) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(malformedFile.open(QIODevice::WriteOnly))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(718) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QCOMPARE(malformedFile.write( QByteArrayLiteral("not an xlsx workbook") ), 20)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(724) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(!progress->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(729) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(!next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(730) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(progress->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(731) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(status->text().startsWith( QStringLiteral("Invalid workbook:") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(736) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(737) : message location
+INFO   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure() QVERIFY(browse->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(738) : message location
+PASS   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure()
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() entering
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(directory.isValid())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(744) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(!path.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(747) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(normal)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(772) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(next)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(773) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(status)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(774) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(progress)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(775) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(sheets)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(776) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(!progress->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(780) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QCOMPARE(status->text(), QStringLiteral( "Ready to read the spreadsheet." ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(789) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(progress->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(790) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QCOMPARE(sheets->count(), 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(791) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QCOMPARE(status->text(), QStringLiteral( "Ready to read the spreadsheet." ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(798) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QCOMPARE(sheets->count(), 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(799) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(closingNormal)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(816) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(closingNext)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(817) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(closingProgress)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(818) : message location
+INFO   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads() QVERIFY(!closingProgress->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(821) : message location
+PASS   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads()
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() entering
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() QVERIFY(directory.isValid())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(831) : message location
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() QVERIFY(!path.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(834) : message location
+QWARN  : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() This plugin does not support propagateSizeHints()
+QWARN  : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() This plugin does not support propagateSizeHints()
+QWARN  : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() QVERIFY(loadSourceSelections(&dialog))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(846) : message location
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() QVERIFY(next)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(852) : message location
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() QVERIFY(next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(853) : message location
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() QVERIFY(review)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(858) : message location
+INFO   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog() QCOMPARE(dialog.result(), QDialog::Accepted)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(860) : message location
+PASS   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog()
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() entering
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(directory.isValid())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(506) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(!path.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(509) : message location
+QWARN  : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QCOMPARE(dialog.height(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(520) : message location
+QWARN  : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() This plugin does not support propagateSizeHints()
+QWARN  : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() This plugin does not support propagateSizeHints()
+QWARN  : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(loadSourceSelections(&dialog))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(521) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(users)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(539) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(confirmation)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(540) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(next)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(541) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(status)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(542) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(!confirmation->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(552) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(!confirmation->isChecked())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(553) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QCOMPARE(confirmation->text(), QStringLiteral( "Update my name on the My Information page to match the selected name." ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(559) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QCOMPARE(status->text(), QStringLiteral( "Entered name on the My Information page: " "A Name That Is Not In The Workbook" ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(566) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(567) : message location
+QWARN  : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(messageBox)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(578) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QCOMPARE(messageBox->windowTitle(), QStringLiteral("Name Mismatch"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(582) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QCOMPARE(messageBox->text(), QStringLiteral( "The selected name does not match the name entered " "on the My Information page. Do you want to continue anyway?" ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(589) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(rejectButton)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(594) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(mismatchWarningShown)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(599) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(!dialog.findChild<ScheduleImportReviewDialog*>())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(602) : message location
+QWARN  : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(messageBox)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(613) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(acceptButton)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(618) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(continueWarningShown)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(623) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(continueReview)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(626) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(closedReview.isNull())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(634) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(637) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(review)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(642) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(reviewSummary)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(647) : message location
+INFO   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation() QVERIFY(reviewSummary->text().contains( QStringLiteral( "My Information name will be updated to “Alice”." ) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(654) : message location
+PASS   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation()
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() entering
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(directory.isValid())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(869) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!path.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(872) : message location
+QWARN  : ScheduleImportDialogTests::compactFlowAndReviewPresentation() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.height(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(883) : message location
+QWARN  : ScheduleImportDialogTests::compactFlowAndReviewPresentation() This plugin does not support propagateSizeHints()
+QWARN  : ScheduleImportDialogTests::compactFlowAndReviewPresentation() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(loadSourceSelections(&dialog))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(884) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(users)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(919) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(next)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(920) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(sourceStatus)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(921) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(continuationHint)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(922) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(continuationSpacer)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(923) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(userSection)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(924) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(worksheetSection)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(925) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(userStatus)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(926) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(next->text(), QStringLiteral("Next"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(927) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(sourceStatus->text(), QStringLiteral("Workbook and worksheet are valid."))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(931) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(continuationHint->text(), QStringLiteral("Click Next to continue."))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(935) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(continuationHint->alignment().testFlag(Qt::AlignHCenter))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(936) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(sourceLayout)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(939) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(sourceLayout->indexOf(continuationSpacer), sourceLayout->indexOf(userSection) + 1)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(943) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(sourceLayout->indexOf(continuationHint), sourceLayout->indexOf(continuationSpacer) + 1)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(947) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(continuationSpacer->height(), 8)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(948) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(userSection->title(), QStringLiteral("Select the schedule to import"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(952) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(worksheetSection->title(), QStringLiteral("Worksheet"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(953) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!worksheetSection->title().endsWith(QLatin1Char(':')))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(954) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(userStatus->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(955) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.findChildren<QDialogButtonBox*>().size(), 1)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(956) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.findChildren<QPushButton*>( QStringLiteral("scheduleImportNextButton") ).size(), 1)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(962) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.findChildren<QPushButton*>( QStringLiteral("scheduleImportBackButton") ).size(), 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(968) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.height(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(969) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.minimumHeight(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(970) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.maximumHeight(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(971) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.width(), ExpectedSourceDialogWidth)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(972) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(users->height() >= users->sizeHint().height())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(973) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(983) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(review)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(988) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(review->isVisible())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(989) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.height(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(990) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(review->height() > 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(991) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(review->height() <= 820)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(992) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(review->width() <= 1180)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(993) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(reviewHeading)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(999) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(reviewHeading->text(), QStringLiteral("Review & Reconcile"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1000) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(reviewHeading->font().pointSize(), UiConstants::Pages::TitleFontSize)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1004) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(reviewHeading->font().bold())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1005) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(reviewSubtitle)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1011) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(reviewSubtitle->text(), QStringLiteral( "Review imported classes and resolve any conflicts before continuing." ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1017) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(reviewSubtitle->font().pointSize(), UiConstants::Pages::SubtitleFontSize)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1021) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(splitter)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1027) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(splitter->orientation(), Qt::Horizontal)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1028) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(splitter->count(), 2)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1029) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(splitter->sizes()[0] > 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1030) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(splitter->sizes()[1] > 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1031) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(tabs)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1037) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(tabs->count(), 2)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1038) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(tabs->tabText(0), QStringLiteral("Classes"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1039) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(tabs->tabText(1), QStringLiteral("Korean Teachers"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1040) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(preview)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1049) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(previewHeading)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1050) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(previewHeading->text(), QStringLiteral("Schedule Preview"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1054) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(previewHeading->alignment().testFlag( Qt::AlignHCenter ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1059) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(preview->geometry().top() - previewHeading->geometry().bottom() - 1, 16)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1065) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(splitter->widget(0)->isAncestorOf(preview))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1066) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(splitter->widget(1), tabs)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1067) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(preview->width(), 540)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1068) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(teacherScrollArea)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1078) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(classScrollArea)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1079) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(tabs->currentWidget(), classScrollArea)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1080) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(teacherScrollArea->horizontalScrollBarPolicy(), Qt::ScrollBarAlwaysOff)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1084) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(classScrollArea->horizontalScrollBarPolicy(), Qt::ScrollBarAlwaysOff)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1088) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!roomCombos.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1096) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!teacherActionCombos.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1103) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->minimumContentsLength(), 14)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1106) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->sizeAdjustPolicy(), QComboBox::AdjustToMinimumContentsLengthWithIcon)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1110) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->minimumContentsLength(), 14)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1106) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->sizeAdjustPolicy(), QComboBox::AdjustToMinimumContentsLengthWithIcon)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1110) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->minimumContentsLength(), 14)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1106) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->sizeAdjustPolicy(), QComboBox::AdjustToMinimumContentsLengthWithIcon)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1110) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstTeacherSource)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1124) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstTeacherAction)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1125) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstTeacherRoom)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1126) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstTeacherCard)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1131) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstTeacherCard->isAncestorOf(firstTeacherSource))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1132) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstTeacherCard->isAncestorOf(firstTeacherAction))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1133) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstTeacherCard->isAncestorOf(firstTeacherRoom))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1134) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(tabs->currentWidget(), teacherScrollArea)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1138) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(splitterHandle)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1142) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(preview->width() > initialPreviewWidth)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1161) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(classCards.size(), 3)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1168) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(candidateLabels.size(), 3)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1176) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(candidateLabels[0]->text().contains(QStringLiteral("E4 Theseus")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1177) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("E4 Hercules")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1178) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(candidateLabels[2]->text().contains(QStringLiteral("M3 Song's")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1179) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("Tues.")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1180) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("Thurs.")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1181) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("\n(")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1182) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(classActionCombos.size(), 3)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1190) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->minimumContentsLength(), 14)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1193) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->sizeAdjustPolicy(), QComboBox::AdjustToMinimumContentsLengthWithIcon)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1197) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->minimumContentsLength(), 14)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1193) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->sizeAdjustPolicy(), QComboBox::AdjustToMinimumContentsLengthWithIcon)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1197) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->minimumContentsLength(), 14)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1193) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(combo->sizeAdjustPolicy(), QComboBox::AdjustToMinimumContentsLengthWithIcon)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1197) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButtons.size(), 3)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1206) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->text(), QString())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1209) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->width(), UiConstants::ClassInfo::Details::ColorPreviewWidth)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1213) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->height(), UiConstants::ClassInfo::Details::ColorPreviewHeight)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1217) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!colorButton->toolTip().isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1218) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->accessibleName(), colorButton->toolTip())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1222) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->text(), QString())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1209) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->width(), UiConstants::ClassInfo::Details::ColorPreviewWidth)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1213) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->height(), UiConstants::ClassInfo::Details::ColorPreviewHeight)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1217) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!colorButton->toolTip().isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1218) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->accessibleName(), colorButton->toolTip())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1222) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->text(), QString())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1209) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->width(), UiConstants::ClassInfo::Details::ColorPreviewWidth)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1213) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->height(), UiConstants::ClassInfo::Details::ColorPreviewHeight)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1217) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!colorButton->toolTip().isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1218) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(colorButton->accessibleName(), colorButton->toolTip())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1222) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstColorLabel)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1240) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstClassCandidate)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1241) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstColorButton)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1242) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstClassAction)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1243) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(firstColorLabel->text(), QStringLiteral("Color"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1244) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstColorLabel->alignment().testFlag(Qt::AlignRight))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1247) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(firstClassCandidate->geometry().bottom(), firstColorButton->geometry().bottom())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1251) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstClassCandidate->geometry().right() < firstColorLabel->geometry().left())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1255) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(firstColorButton->geometry().bottom() < firstClassAction->geometry().top())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1259) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(firstColorButton->geometry().right(), firstClassAction->geometry().right())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1263) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(changedDetailsLabel)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1282) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!changedDetails.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1283) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!changedDetails.contains(QStringLiteral("Imported Class:")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1284) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(changedDetails.contains( QStringLiteral( "<b style=\"color:%1\">Changes:</b>" ) .arg( changedDetailsLabel->palette() .color(QPalette::Text) .name(QColor::HexRgb) ) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1296) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(gradePosition >= 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1307) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(gradePosition < levelPosition)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1308) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(levelPosition < teacherPosition)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1309) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(teacherPosition < daysPosition)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1310) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(daysPosition < colorPosition)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1311) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(changedDetails.contains( QStringLiteral("— ? Tues. 5:00pm - 5:55pm") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1317) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(changedDetails.contains( QStringLiteral("<br>Thurs. 5:00pm - 5:50pm ? Thurs. 5:00pm - 5:55pm") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1322) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(changedDetails.contains( review->palette() .color(QPalette::Link) .name(QColor::HexRgb) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1329) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(!combos.isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1333) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(qobject_cast<NoWheelComboBox*>(combo))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1336) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(wheelCombo)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1352) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(wheelCombo->currentIndex(), originalIndex)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1366) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(back)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1372) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QCOMPARE(dialog.height(), 520)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1375) : message location
+INFO   : ScheduleImportDialogTests::compactFlowAndReviewPresentation() QVERIFY(next->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1376) : message location
+PASS   : ScheduleImportDialogTests::compactFlowAndReviewPresentation()
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() entering
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1400) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QVERIFY(tabs)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1416) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QVERIFY(warningScrollArea)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1417) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QVERIFY(acknowledgement)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1418) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QCOMPARE(tabs->count(), 3)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1419) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QCOMPARE(tabs->tabText(0), QStringLiteral("Classes"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1420) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QCOMPARE(tabs->tabText(2), QStringLiteral("Unrecognized cells"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1421) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QCOMPARE(tabs->currentWidget(), review.findChild<QScrollArea*>( QStringLiteral("scheduleImportClassScrollArea") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1427) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QCOMPARE(warningScrollArea->horizontalScrollBarPolicy(), Qt::ScrollBarAlwaysOff)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1431) : message location
+INFO   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab() QVERIFY(warningScrollArea->isAncestorOf(acknowledgement))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1432) : message location
+PASS   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab()
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() entering
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1448) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(section)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1453) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(section->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1454) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1462) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(section)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1482) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(update)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1483) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(replace)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1484) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(summary)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1485) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(section->isVisible())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1486) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(update->isChecked())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1487) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(summary->text().contains( QStringLiteral("will be retained") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1492) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(replace->isChecked())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1496) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(summary->text().contains( QStringLiteral("brand-new intensive schedule") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1501) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(regularReview.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1508) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(regularSection)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1513) : message location
+INFO   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule() QVERIFY(regularSection->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1514) : message location
+PASS   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule()
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() entering
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1543) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1551) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(table->rowCount(), 6)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1552) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(table->item(0, 0))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1553) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(table->item(5, 0))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1554) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(table->item(0, 0)->text(), QStringLiteral("4:00 -\n4:55 PM"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1558) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(table->item(5, 0)->text(), QStringLiteral("9:00 -\n9:55 PM"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1562) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell->text() != QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1575) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QVERIFY(cell)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1572) : message location
+INFO   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid() QCOMPARE(cell->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1579) : message location
+PASS   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid()
+INFO   : ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate() entering
+INFO   : ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1614) : message location
+INFO   : ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate() QVERIFY(action)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1620) : message location
+INFO   : ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate() QCOMPARE(action->currentData(Qt::UserRole).toInt(), static_cast<int>(ScheduleImportClassAction::UpdateExisting))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1624) : message location
+INFO   : ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate() QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 43)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1625) : message location
+PASS   : ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() entering
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1668) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(import)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1675) : message location
+QWARN  : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(review.findChild<QMessageBox*>( (QString(QtPrivate::qMakeStringPrivate(u"" "scheduleImportConflictWarning"))) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1681) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(warning)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1686) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(warning->isModal())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1687) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(warning->text().contains( QStringLiteral("Multiple imported classes are assigned") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1692) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(warning->text().contains(QStringLiteral("E5 Athena")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1693) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(!import->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1694) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(!review.findChild<QMessageBox*>( (QString(QtPrivate::qMakeStringPrivate(u"" "scheduleImportConflictWarning"))) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1700) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(!review.findChild<QMessageBox*>( QStringLiteral("scheduleImportConflictWarning") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1706) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(secondAction)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1712) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(alternateTargetIndex >= 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1719) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(import->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1721) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(duplicateTargetIndex >= 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1729) : message location
+QWARN  : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(review.findChild<QMessageBox*>( (QString(QtPrivate::qMakeStringPrivate(u"" "scheduleImportConflictWarning"))) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1735) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets() QVERIFY(warning)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1740) : message location
+PASS   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() entering
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1787) : message location
+QWARN  : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(review.findChild<QMessageBox*>( (QString(QtPrivate::qMakeStringPrivate(u"" "scheduleImportConflictWarning"))) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1794) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(warning)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1799) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(warning->text().contains(QStringLiteral("overlaps")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1800) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(warning->text().contains(QStringLiteral("Monday")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1801) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(warning->text().contains(QStringLiteral("4:00pm")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1802) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(!warning->text().contains( QStringLiteral("Multiple imported classes are assigned") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1807) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(import)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1812) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes() QVERIFY(!import->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1813) : message location
+PASS   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() entering
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1846) : message location
+QWARN  : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() This plugin does not support propagateSizeHints()
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() QVERIFY(review.findChild<QMessageBox*>( (QString(QtPrivate::qMakeStringPrivate(u"" "scheduleImportConflictWarning"))) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1853) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() QVERIFY(warning)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1858) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() QVERIFY(warning->text().contains(QStringLiteral("overlaps")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1859) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() QVERIFY(warning->text().contains(QStringLiteral("Tuesday")))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1860) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() QVERIFY(import)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1865) : message location
+INFO   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps() QVERIFY(!import->isEnabled())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1866) : message location
+PASS   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps()
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() entering
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1899) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1907) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->columnCount(), 6)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1908) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(table->horizontalHeaderItem(5))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1909) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->horizontalHeaderItem(5)->text(), QStringLiteral("Friday"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1913) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(table->item(0, 0))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1914) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->item(0, 0)->text(), QStringLiteral("9:00 -\n9:55 AM"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1918) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1934) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1946) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(preview)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1947) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->geometry().top(), 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1948) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(preview->height() > table->height())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1949) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(tabs)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1954) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(preview->width(), 540)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1961) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(tabs->width() > initialTabsWidth)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1962) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->columnCount(), 8)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1963) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(table->horizontalHeaderItem(6))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1964) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(table->horizontalHeaderItem(7))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1965) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->horizontalHeaderItem(6)->text(), QStringLiteral("Saturday"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1969) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->horizontalHeaderItem(7)->text(), QStringLiteral("Sunday"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1973) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(table->item(0, 0))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1974) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->item(0, 0)->text(), QStringLiteral("09:00 - 09:55"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1978) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->horizontalHeader()->font().pointSize(), FontManager::adjustedPointSize(8))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1982) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->item(0, 0)->font().pointSize(), FontManager::adjustedPointSize(9))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1986) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->columnWidth(0), 84)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1987) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QCOMPARE(table->rowHeight(0), 51)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1988) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(scheduledClass)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1994) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(scheduledClass->text().contains( QStringLiteral("font-size:%1pt").arg( FontManager::adjustedPointSize(11) ) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2001) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(scheduledClass->text().contains( QStringLiteral("font-size:%1pt").arg( FontManager::adjustedPointSize(10) ) ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2008) : message location
+INFO   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() QVERIFY(scheduledClass->styleSheet().contains( QStringLiteral("padding:2.4px 3px") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2013) : message location
+PASS   : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings()
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() entering
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(review.prepare())
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2062) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2070) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(table->rowCount(), 8)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2071) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(table->item(0, 0))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2072) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(table->item(7, 0))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2073) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(table->item(0, 0)->text(), QStringLiteral("11:00 -\n11:50 AM"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2077) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(table->item(7, 0)->text(), QStringLiteral("6:00 -\n6:50 PM"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2081) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(table->verticalScrollBarPolicy(), Qt::ScrollBarAsNeeded)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2085) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(table->verticalScrollBar()->maximum() > 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2086) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(table->height(), expectedTableHeight)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2095) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(table->verticalScrollBar()->maximum() == 0)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2101) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(table->height(), expandedTableHeight)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2110) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(essay)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2136) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(lunch)
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2137) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(essay->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2138) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(lunch->text(), QStringLiteral("Lunch"))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2139) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(essay->font().pointSize(), FontManager::adjustedPointSize(12))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2143) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QCOMPARE(lunch->font().pointSize(), FontManager::adjustedPointSize(12))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2147) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(essay->styleSheet().contains( QStringLiteral("padding:3.2px 4px") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2152) : message location
+INFO   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks() QVERIFY(lunch->styleSheet().contains( QStringLiteral("padding:3.2px 4px") ))
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2157) : message location
+PASS   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks()
+INFO   : ScheduleImportDialogTests::suppliedWorkbookBuildsStagedReview() entering
+SKIP   : ScheduleImportDialogTests::suppliedWorkbookBuildsStagedReview() Set CLASSMNGR_SCHEDULE_IMPORT_SAMPLE to validate the staged dialog with an external workbook.
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2171) : failure location
+INFO   : ScheduleImportDialogTests::cleanupTestCase() entering
+PASS   : ScheduleImportDialogTests::cleanupTestCase()
+Totals: 17 passed, 1 failed, 1 skipped, 0 blacklisted, 2774ms
+********* Finished testing of ScheduleImportDialogTests *********

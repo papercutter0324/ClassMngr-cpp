@@ -1,11 +1,13 @@
 #include "sub_prep_pdf_renderer.h"
 
+#include "classmngr/engine/sub_prep_pagination.h"
 #include "core/fontmanager.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <algorithm>
 #include <cmath>
 #include <optional>
+#include <vector>
 
 #include <QAbstractTextDocumentLayout>
 #include <QColor>
@@ -908,39 +910,30 @@ QSet<int> teacherSectionsThatSpanPages(
     qreal pageHeight
     )
 {
-    QSet<int> groups;
-
-    if (pageHeight <= 0.0)
-    {
-        return groups;
-    }
-
     const QList<QTextTable*> cards =
         teacherCardTables(document);
+    std::vector<classmngr::engine::SubPrepTeacherSectionMeasurement>
+        measurements;
+    measurements.reserve(cards.size());
 
-    for (int index = 0; index < cards.size(); ++index)
+    for (QTextTable* card : cards)
     {
         const QRectF bounds =
-            document.documentLayout()->frameBoundingRect(cards.at(index));
-
-        if (bounds.isEmpty() || bounds.height() >= pageHeight)
-        {
-            continue;
-        }
-
-        const int firstPage =
-            static_cast<int>(std::floor(bounds.top() / pageHeight));
-        const int lastPage =
-            static_cast<int>(std::floor(
-                (bounds.bottom() - 0.01) / pageHeight
-                ));
-
-        if (firstPage != lastPage)
-        {
-            groups.insert(index);
-        }
+            document.documentLayout()->frameBoundingRect(card);
+        measurements.push_back({bounds.top(), bounds.height()});
     }
 
+    const std::vector<int> spanningSections =
+        classmngr::engine::SubPrepPaginationService::
+            teacherSectionsThatSpanPages(
+                measurements,
+                pageHeight
+                );
+    QSet<int> groups;
+    for (const int index : spanningSections)
+    {
+        groups.insert(index);
+    }
     return groups;
 }
 
@@ -1106,17 +1099,11 @@ bool shouldStartSubNotesOnNewPage(
         return false;
     }
 
-    const int pageIndex =
-        std::max(
-            0,
-            static_cast<int>(std::floor(
-                (headingBounds->bottom() - 0.01) / pageHeight
-                ))
+    return classmngr::engine::SubPrepPaginationService::
+        shouldStartSubNotesOnNewPage(
+            headingBounds->bottom(),
+            pageHeight
             );
-    const qreal availableBelowHeading =
-        ((pageIndex + 1) * pageHeight) - headingBounds->bottom();
-
-    return availableBelowHeading < (pageHeight / 3.0);
 }
 
 QPageLayout pageLayout()
@@ -1491,31 +1478,21 @@ Result renderPdf(
 
         if (contentBottom)
         {
-            const int contentPageIndex =
-                std::max(
-                    0,
-                    static_cast<int>(std::floor(
-                        (*contentBottom - 0.01) / body.height()
-                        ))
-                    );
-            const qreal contentBottomOnPage =
-                *contentBottom
-                - (contentPageIndex * body.height());
-            const qreal availableHeight =
-                body.height() - contentBottomOnPage;
-
-            if (
-                contentPageIndex == documentPageCount - 1
-                && availableHeight >= (body.height() / 2.0)
-                )
-            {
-                placeFallbackSubNotesOnLastPage = true;
-                fallbackSubNotesTop =
-                    contentBottomOnPage
-                    + pixelsForPoints(
+            const std::optional<double> fallbackTop =
+                classmngr::engine::SubPrepPaginationService::fallbackSubNotesTop(
+                    *contentBottom,
+                    documentPageCount,
+                    body.height(),
+                    pixelsForPoints(
                         MajorSectionSpacingPoints,
                         writer.resolution()
-                        );
+                        )
+                    );
+
+            if (fallbackTop)
+            {
+                placeFallbackSubNotesOnLastPage = true;
+                fallbackSubNotesTop = *fallbackTop;
             }
         }
     }

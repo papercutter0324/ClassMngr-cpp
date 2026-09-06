@@ -1,0 +1,46 @@
+{
+  "recorded_at_utc": "2026-08-13T13:32:34.148710+00:00",
+  "git_commit": "5a3c12846c2dc0bb1955649c28f142c0cdf3c587",
+  "git_commit_start": "5a3c12846c2dc0bb1955649c28f142c0cdf3c587",
+  "git_commit_end": "5a3c12846c2dc0bb1955649c28f142c0cdf3c587",
+  "git_dirty_start": true,
+  "git_dirty_end": true,
+  "source_fingerprint_start": "29424ebe33d50d1dbf6f1d11424130c35d04f6f085e2bd8a17ea30a464ddb6c6",
+  "source_fingerprint_end": "29424ebe33d50d1dbf6f1d11424130c35d04f6f085e2bd8a17ea30a464ddb6c6",
+  "source_stable_during_run": true,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.14.7",
+  "cmake": "cmake version 4.4.2",
+  "preset": "windows-x64-debug",
+  "configuration": "Debug",
+  "parallel_build_jobs": 2,
+  "test_timeout_seconds": 120,
+  "results": {
+    "configure_exit_code": 0,
+    "build_exit_code": 0,
+    "test_exit_code": 0,
+    "tests": {
+      "total": 53,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_tests": []
+    }
+  },
+  "duration_seconds": {
+    "configure": 64.775,
+    "clean_build": 169.845,
+    "tests": 88.716
+  },
+  "root_cmake_lines": 190,
+  "application": {
+    "path": "build\\windows-x64-debug\\Debug\\ClassMngr.exe",
+    "size_bytes": 89556480
+  },
+  "compilation": {
+    "compile_commands": null,
+    "production_entries": null,
+    "unique_production_sources": null,
+    "recompiled_production_sources": null
+  }
+}

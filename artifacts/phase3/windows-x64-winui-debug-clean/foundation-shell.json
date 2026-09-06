@@ -1,0 +1,105 @@
+{
+    "format":  "classmngr-winui-scenario-v1",
+    "capturedAtUtc":  "2026-09-05T16:54:47.6624010Z",
+    "scenario":  {
+                     "name":  "foundation-shell",
+                     "arguments":  [
+
+                                   ],
+                     "settleMilliseconds":  5000,
+                     "windowTimeoutMilliseconds":  30000,
+                     "closeTimeoutMilliseconds":  10000,
+                     "windowTitle":  "",
+                     "dialogTitle":  ""
+                 },
+    "host":  {
+                 "operatingSystem":  "Microsoft Windows NT 10.0.26200.0",
+                 "architecture":  "X64",
+                 "powershell":  "5.1.26100.9278"
+             },
+    "process":  {
+                    "executable":  "C:\\Git\\ClassMngr-cpp\\dist\\ClassMngr-windows-winui-x64\\Debug\\ClassMngrWinUI.exe",
+                    "id":  11688,
+                    "exited":  true,
+                    "forcedTermination":  false,
+                    "exitCode":  0
+                },
+    "window":  {
+                   "title":  "",
+                   "mainReleased":  true,
+                   "capture":  {
+                                   "file":  "foundation-shell.png",
+                                   "width":  2304,
+                                   "height":  1240,
+                                   "sha256":  "ab3bc21c34a8af37fdf7c1388f345e91faefdb9144d0d0ca7d5323bc5b40d46b",
+                                   "method":  "CopyFromScreen"
+                               }
+               },
+    "dialog":  {
+                   "title":  "",
+                   "requested":  false,
+                   "released":  true,
+                   "capture":  null
+               },
+    "steps":  [
+                  {
+                      "sequence":  1,
+                      "name":  "launch-requested",
+                      "elapsedMs":  6.7,
+                      "detail":  "C:\\Git\\ClassMngr-cpp\\dist\\ClassMngr-windows-winui-x64\\Debug\\ClassMngrWinUI.exe"
+                  },
+                  {
+                      "sequence":  2,
+                      "name":  "process-started",
+                      "elapsedMs":  44.9,
+                      "detail":  "pid=11688"
+                  },
+                  {
+                      "sequence":  3,
+                      "name":  "window-shown",
+                      "elapsedMs":  273.9,
+                      "detail":  "handle=6425170;title=ClassMngr"
+                  },
+                  {
+                      "sequence":  4,
+                      "name":  "settled",
+                      "elapsedMs":  5284.1,
+                      "detail":  "milliseconds=5000"
+                  },
+                  {
+                      "sequence":  5,
+                      "name":  "capture-started",
+                      "elapsedMs":  5284.4,
+                      "detail":  "main-window"
+                  },
+                  {
+                      "sequence":  6,
+                      "name":  "captured",
+                      "elapsedMs":  5381.3,
+                      "detail":  "main-window=foundation-shell.png"
+                  },
+                  {
+                      "sequence":  7,
+                      "name":  "close-requested",
+                      "elapsedMs":  5381.5,
+                      "detail":  "main-window"
+                  },
+                  {
+                      "sequence":  8,
+                      "name":  "process-exited",
+                      "elapsedMs":  5461.8,
+                      "detail":  "exitCode=0"
+                  },
+                  {
+                      "sequence":  9,
+                      "name":  "resources-released",
+                      "elapsedMs":  5465.9,
+                      "detail":  "mainWindowReleased=True"
+                  }
+              ],
+    "result":  {
+                   "status":  "passed",
+                   "passed":  true,
+                   "failure":  null
+               }
+}

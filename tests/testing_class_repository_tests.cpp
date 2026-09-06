@@ -4,6 +4,7 @@
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QtTest>
 
 class TestingClassRepositoryTests : public QObject
@@ -31,6 +32,25 @@ bool createSchema(
             CREATE TABLE classes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT
+            )
+        )"),
+        QStringLiteral(R"(
+            CREATE TABLE teachers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                teacher_kr TEXT,
+                teacher_en TEXT,
+                preferred_romanization TEXT,
+                preferred_name TEXT,
+                room_number TEXT,
+                birthday TEXT,
+                phone_number TEXT,
+                wifi_name TEXT,
+                wifi_password TEXT,
+                internet_type TEXT NOT NULL DEFAULT 'WiFi',
+                zoom_id TEXT,
+                zoom_password TEXT,
+                projection_type TEXT NOT NULL DEFAULT 'HDMI',
+                notes TEXT
             )
         )"),
         QStringLiteral(R"(
@@ -91,19 +111,36 @@ bool createSchema(
         QStringLiteral(R"(
             CREATE TABLE speaking_eval_data (
                 evaluation_id INTEGER,
-                row_index INTEGER
+                row_index INTEGER,
+                col_0 TEXT,
+                col_1 TEXT,
+                col_2 TEXT,
+                col_3 TEXT,
+                col_4 TEXT,
+                col_5 TEXT,
+                col_6 TEXT,
+                col_7 TEXT,
+                col_8 TEXT,
+                col_9 TEXT,
+                col_10 TEXT
             )
         )"),
         QStringLiteral(R"(
             CREATE TABLE class_times (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                class_id INTEGER
+                class_id INTEGER,
+                day TEXT,
+                start_time TEXT,
+                end_time TEXT
             )
         )"),
         QStringLiteral(R"(
             CREATE TABLE class_intensive_times (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                class_id INTEGER
+                class_id INTEGER,
+                day TEXT,
+                start_time TEXT,
+                end_time TEXT
             )
         )")
     };
@@ -127,14 +164,24 @@ void TestingClassRepositoryTests
         QStringLiteral("testing_class_repository_crud");
 
     {
+        QTemporaryDir profileDirectory;
+        QVERIFY(profileDirectory.isValid());
+
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
+
+        QSqlQuery schemaVersionQuery(database);
+        QVERIFY(schemaVersionQuery.exec(
+            QStringLiteral("PRAGMA user_version = 6")
+            ));
 
         ClassRepository classRepository(database);
         const Result<int> regularClass =
@@ -262,6 +309,9 @@ void TestingClassRepositoryTests
 
 void TestingClassRepositoryTests::rejectsIncompleteTestingClasses()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_class_repository_validation");
 
@@ -271,7 +321,9 @@ void TestingClassRepositoryTests::rejectsIncompleteTestingClasses()
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
 
@@ -299,6 +351,9 @@ void TestingClassRepositoryTests::rejectsIncompleteTestingClasses()
 
 void TestingClassRepositoryTests::persistsEverySupportedMixedLevel()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_class_repository_mixed_levels");
 
@@ -308,7 +363,9 @@ void TestingClassRepositoryTests::persistsEverySupportedMixedLevel()
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
 
@@ -396,6 +453,9 @@ void TestingClassRepositoryTests
 void TestingClassRepositoryTests
     ::createsClassAndAssignmentAtomically()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_class_repository_atomic_assignment");
 
@@ -405,7 +465,9 @@ void TestingClassRepositoryTests
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
 
@@ -467,13 +529,23 @@ void TestingClassRepositoryTests
         QStringLiteral("testing_class_repository_sidebar_snapshot");
 
     {
+        QTemporaryDir profileDirectory;
+        QVERIFY(profileDirectory.isValid());
+
         QSqlDatabase database = QSqlDatabase::addDatabase(
             QStringLiteral("QSQLITE"),
             connectionName
             );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
+
+        QSqlQuery schemaVersionQuery(database);
+        QVERIFY(schemaVersionQuery.exec(
+            QStringLiteral("PRAGMA user_version = 6")
+            ));
 
         ClassRepository classRepository(database);
         const int firstClassId =
@@ -485,6 +557,14 @@ void TestingClassRepositoryTests
         QVERIFY(firstClassId > 0);
         QVERIFY(secondClassId > 0);
         QVERIFY(testingClassId > 0);
+
+        QSqlQuery teacherQuery(database);
+        QVERIFY(teacherQuery.exec(
+            QStringLiteral(
+                "INSERT INTO teachers (id, teacher_kr) VALUES "
+                "(11, 'Teacher 11'), (22, 'Teacher 22')"
+                )
+            ));
 
         auto insertAssignment = [&](int classId, const QVariant& teacherId)
         {
@@ -509,6 +589,11 @@ void TestingClassRepositoryTests
                 "INSERT INTO testing_classes (class_id, room) VALUES (%1, 'T1')"
                 ).arg(testingClassId)
             ));
+        query.finish();
+        teacherQuery.finish();
+        schemaVersionQuery.finish();
+        database.close();
+        QVERIFY(database.open());
 
         ClassInfoRepository repository(database);
         const auto assignments = repository.loadClassTeacherAssignments();

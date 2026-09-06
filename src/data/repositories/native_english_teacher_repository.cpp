@@ -1,76 +1,219 @@
 #include "native_english_teacher_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
+#include "classmngr/engine/native_english_teacher_service.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QHash>
+#include <QByteArray>
 #include <QObject>
-#include <QSet>
-#include <QSqlError>
-#include <QSqlQuery>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-QString normalizedName(const QString& value)
+using EngineError = classmngr::engine::Error;
+using EngineNativeEnglishTeacher =
+    classmngr::engine::NativeEnglishTeacher;
+using EngineNativeEnglishTeacherService =
+    classmngr::engine::NativeEnglishTeacherService;
+
+std::string toUtf8(
+    const QString& value
+    )
 {
-    return value.simplified().toCaseFolded();
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-Status queryError(const QSqlQuery& query, const QString& action)
+QString fromUtf8(
+    std::string_view value
+    )
 {
-    return std::unexpected(
-        SqlQueryUtils::errorFor(query, action).userMessage()
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
 }
+
+EngineNativeEnglishTeacher toEngineNativeEnglishTeacher(
+    const NativeEnglishTeacher& source
+    )
+{
+    EngineNativeEnglishTeacher result;
+    result.id = source.id;
+    result.name = toUtf8(source.name);
+    result.position = toUtf8(source.position);
+    result.phoneNumber = toUtf8(source.phoneNumber);
+    result.birthday = toUtf8(source.birthday);
+    result.nationality = toUtf8(source.nationality);
+    result.email = toUtf8(source.email);
+    return result;
+}
+
+NativeEnglishTeacher fromEngineNativeEnglishTeacher(
+    const EngineNativeEnglishTeacher& source
+    )
+{
+    NativeEnglishTeacher result;
+    result.id = source.id;
+    result.name = fromUtf8(source.name);
+    result.position = fromUtf8(source.position);
+    result.phoneNumber = fromUtf8(source.phoneNumber);
+    result.birthday = fromUtf8(source.birthday);
+    result.nationality = fromUtf8(source.nationality);
+    result.email = fromUtf8(source.email);
+    return result;
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error
+    )
+{
+    return operationFailure(operation, engineErrorDetail(error));
+}
+}
+
+NativeEnglishTeacherRepository::NativeEnglishTeacherRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
 }
 
 NativeEnglishTeacherRepository::NativeEnglishTeacherRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : NativeEnglishTeacherRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
 }
 
-Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() const
-{
-    QList<NativeEnglishTeacher> result;
-    QSqlQuery query(m_database);
+NativeEnglishTeacherRepository::~NativeEnglishTeacherRepository() = default;
 
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QStringLiteral(R"(
-        SELECT id, name, position, phone_number, birthday, nationality, email
-        FROM native_english_teachers
-        ORDER BY CASE position
-            WHEN 'Co-ordinator' THEN 1
-            WHEN 'Team Leader' THEN 2
-            WHEN 'M3 Song''s' THEN 3
-            WHEN 'M2 Song''s' THEN 4
-            WHEN 'M1 Song''s' THEN 5
-            WHEN 'E6 Song''s' THEN 6
-            WHEN 'E5 Athena' THEN 7
-            WHEN 'NET' THEN 8
-            ELSE 9
-        END, name COLLATE NOCASE, id
-    )"),
-        QObject::tr("Loading Native English Teacher directory")
-        );
-    if (!executed)
+Status NativeEnglishTeacherRepository::ensureEngineDatabase(
+    const QString& operation
+    ) const
+{
+    if (!m_compatibilityDatabaseWasOpen)
     {
-        return std::unexpected(executed.error().userMessage());
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
     }
 
-    while (query.next())
+    const QString databasePath = m_databasePath;
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
     {
-        NativeEnglishTeacher teacher;
-        teacher.id = query.value(0).toInt();
-        teacher.name = query.value(1).toString();
-        teacher.position = query.value(2).toString();
-        teacher.phoneNumber = query.value(3).toString();
-        teacher.birthday = query.value(4).toString();
-        teacher.nationality = query.value(5).toString();
-        teacher.email = query.value(6).toString();
-        result.append(teacher);
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(toUtf8(databasePath));
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
+}
+
+Result<QList<NativeEnglishTeacher>>
+NativeEnglishTeacherRepository::getAll() const
+{
+    const QString operation =
+        QObject::tr("Loading Native English Teacher directory");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineNativeEnglishTeacherService service(*m_engineDatabase);
+    const classmngr::engine::Result<
+        std::vector<EngineNativeEnglishTeacher>> loaded = service.list();
+    if (!loaded)
+    {
+        return std::unexpected(engineFailure(operation, loaded.error()));
+    }
+
+    QList<NativeEnglishTeacher> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineNativeEnglishTeacher& teacher : *loaded)
+    {
+        result.append(fromEngineNativeEnglishTeacher(teacher));
     }
 
     return result;
@@ -81,93 +224,36 @@ Status NativeEnglishTeacherRepository::saveDirectory(
     const QList<int>& deletedIds
     )
 {
-    QSet<QString> names;
+    const QString operation =
+        QObject::tr("Saving Native English Teacher directory");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return engineReady;
+    }
 
+    std::vector<EngineNativeEnglishTeacher> engineTeachers;
+    engineTeachers.reserve(static_cast<std::size_t>(teachers.size()));
     for (const NativeEnglishTeacher& teacher : teachers)
     {
-        const QString name = normalizedName(teacher.name);
-        if (name.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every Native English Teacher must have a name."));
-        }
-        if (names.contains(name))
-        {
-            return std::unexpected(QObject::tr("Native English Teacher names must be unique."));
-        }
-        names.insert(name);
+        engineTeachers.push_back(toEngineNativeEnglishTeacher(teacher));
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    std::vector<int> engineDeletedIds;
+    engineDeletedIds.reserve(static_cast<std::size_t>(deletedIds.size()));
+    for (const int id : deletedIds)
     {
-        return std::unexpected(QObject::tr("Unable to start the directory save transaction."));
+        engineDeletedIds.push_back(id);
     }
 
-    for (int id : deletedIds)
+    EngineNativeEnglishTeacherService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.saveDirectory(
+        engineTeachers,
+        engineDeletedIds
+        );
+    if (!saved)
     {
-        if (id <= 0)
-        {
-            continue;
-        }
-        QSqlQuery query(m_database);
-        query.prepare(QStringLiteral("DELETE FROM native_english_teachers WHERE id=?"));
-        query.addBindValue(id);
-        if (!query.exec())
-        {
-            return queryError(query, QObject::tr("Deleting a Native English Teacher"));
-        }
-    }
-
-    for (const NativeEnglishTeacher& source : teachers)
-    {
-        NativeEnglishTeacher teacher = source;
-        teacher.name = teacher.name.simplified();
-        teacher.position = teacher.position.trimmed();
-        teacher.phoneNumber = teacher.phoneNumber.trimmed();
-        teacher.birthday = teacher.birthday.trimmed();
-        teacher.nationality = teacher.nationality.trimmed();
-        teacher.email = teacher.email.trimmed();
-
-        QSqlQuery query(m_database);
-        if (teacher.id > 0)
-        {
-            query.prepare(R"(
-                UPDATE native_english_teachers
-                SET name=?, position=?, phone_number=?, birthday=?, nationality=?, email=?
-                WHERE id=?
-            )");
-            query.addBindValue(teacher.name);
-            query.addBindValue(teacher.position);
-            query.addBindValue(teacher.phoneNumber);
-            query.addBindValue(teacher.birthday);
-            query.addBindValue(teacher.nationality);
-            query.addBindValue(teacher.email);
-            query.addBindValue(teacher.id);
-        }
-        else
-        {
-            query.prepare(R"(
-                INSERT INTO native_english_teachers
-                    (name, position, phone_number, birthday, nationality, email)
-                VALUES (?, ?, ?, ?, ?, ?)
-            )");
-            query.addBindValue(teacher.name);
-            query.addBindValue(teacher.position);
-            query.addBindValue(teacher.phoneNumber);
-            query.addBindValue(teacher.birthday);
-            query.addBindValue(teacher.nationality);
-            query.addBindValue(teacher.email);
-        }
-
-        if (!query.exec())
-        {
-            return queryError(query, QObject::tr("Saving a Native English Teacher"));
-        }
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(QObject::tr("Unable to commit the Native English Teacher directory."));
+        return std::unexpected(engineFailure(operation, saved.error()));
     }
 
     return {};

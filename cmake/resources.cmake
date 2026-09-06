@@ -1,15 +1,20 @@
 include_guard(GLOBAL)
 
-file(GLOB_RECURSE CLASSMNGR_EMBEDDED_PACK_FILES CONFIGURE_DEPENDS
-    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*"
-    "${PROJECT_SOURCE_DIR}/resources/assets/documents/*"
-    "${PROJECT_SOURCE_DIR}/resources/assets/files/*"
-    "${PROJECT_SOURCE_DIR}/resources/assets/templates/*"
-    "${PROJECT_SOURCE_DIR}/resources/assets/roster-designs/*"
-)
+include(cmake/resource_catalog.cmake)
 
-file(GLOB CLASSMNGR_FILE_DIALOG_ICONS CONFIGURE_DEPENDS
-    "${PROJECT_SOURCE_DIR}/resources/assets/icons/file_dialog/*.svg"
+set(CLASSMNGR_EMBEDDED_PACK_FILES)
+foreach(classmngr_embedded_root IN LISTS
+        CLASSMNGR_RESOURCE_CATALOG_EMBEDDED_ROOTS)
+    file(GLOB_RECURSE classmngr_embedded_root_files CONFIGURE_DEPENDS
+        "${classmngr_embedded_root}/*"
+    )
+    list(APPEND CLASSMNGR_EMBEDDED_PACK_FILES
+        ${classmngr_embedded_root_files}
+    )
+endforeach()
+
+set(CLASSMNGR_FILE_DIALOG_ICONS
+    ${CLASSMNGR_RESOURCE_CATALOG_FILE_DIALOG_ICONS}
 )
 
 list(FILTER CLASSMNGR_EMBEDDED_PACK_FILES EXCLUDE REGEX "/~\\$[^/]+$")
@@ -64,7 +69,9 @@ function(classmngr_add_scoped_resource_pack pack_id asset_directory)
     add_custom_target("ClassMngr${pack_id}ResourcePack"
         DEPENDS "${pack_file}"
     )
-    add_dependencies(ClassMngr "ClassMngr${pack_id}ResourcePack")
+    add_dependencies(${CLASSMNGR_QT_DESKTOP_TARGET}
+        "ClassMngr${pack_id}ResourcePack"
+    )
     list(APPEND CLASSMNGR_RESOURCE_PACK_FILES "${pack_file}")
     set(CLASSMNGR_RESOURCE_PACK_FILES
         "${CLASSMNGR_RESOURCE_PACK_FILES}"
@@ -141,7 +148,9 @@ add_custom_command(
 add_custom_target(ClassMngrtemplatesResourcePack
     DEPENDS "${CLASSMNGR_TEMPLATES_PACK_FILE}"
 )
-add_dependencies(ClassMngr ClassMngrtemplatesResourcePack)
+add_dependencies(${CLASSMNGR_QT_DESKTOP_TARGET}
+    ClassMngrtemplatesResourcePack
+)
 list(APPEND CLASSMNGR_RESOURCE_PACK_FILES "${CLASSMNGR_TEMPLATES_PACK_FILE}")
 
 list(
@@ -171,7 +180,7 @@ foreach(scoped_resource_directory IN ITEMS
     endforeach()
 endforeach()
 
-qt_add_resources(ClassMngr app_resources
+qt_add_resources(${CLASSMNGR_QT_DESKTOP_TARGET} app_resources
     BIG_RESOURCES
     PREFIX "/"
     BASE "${PROJECT_SOURCE_DIR}/resources"
@@ -198,7 +207,7 @@ qt_add_resources(ClassMngr app_resources
         ${CLASSMNGR_EMBEDDED_PACK_FILES}
 )
 
-target_compile_definitions(ClassMngrBuildSettings
+target_compile_definitions(ClassMngrQtBuildSettings
     INTERFACE
         CLASSMNGR_RESOURCE_PACK_DIR="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}"
 )
@@ -212,30 +221,30 @@ if(APPLE)
             MACOSX_PACKAGE_LOCATION Resources
     )
 
-    target_sources(ClassMngr
+    target_sources(${CLASSMNGR_QT_DESKTOP_TARGET}
         PRIVATE
             ${CLASSMNGR_MACOS_ICON}
     )
 
-    set_target_properties(ClassMngr
+    set_target_properties(${CLASSMNGR_QT_DESKTOP_TARGET}
         PROPERTIES
             MACOSX_BUNDLE_ICON_FILE app_icon.icns
     )
 endif()
 
 set_source_files_properties(
-    src/features/calendar/ui/qml/EventCalendar.qml
+    ${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/EventCalendar.qml
     PROPERTIES
         QT_RESOURCE_ALIAS EventCalendar.qml
 )
 
 set_source_files_properties(
-    src/features/calendar/ui/qml/MonthGridDelegate.qml
+    ${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/MonthGridDelegate.qml
     PROPERTIES
         QT_RESOURCE_ALIAS MonthGridDelegate.qml
 )
 
-qt_add_qml_module(ClassMngr
+qt_add_qml_module(${CLASSMNGR_QT_DESKTOP_TARGET}
     URI ClassMngr.Calendar
     VERSION 1.0
     OUTPUT_DIRECTORY
@@ -243,16 +252,11 @@ qt_add_qml_module(ClassMngr
     RESOURCE_PREFIX
         /qt/qml
     QML_FILES
-        src/features/calendar/ui/qml/EventCalendar.qml
-        src/features/calendar/ui/qml/MonthGridDelegate.qml
+        ${CLASSMNGR_RESOURCE_CATALOG_QML_FILES}
 )
 
 qt_add_translations(
-    TARGETS ClassMngr
+    TARGETS ${CLASSMNGR_QT_DESKTOP_TARGET}
     TS_FILES
-        resources/assets/translations/ClassMngr_en_AU.ts
-        resources/assets/translations/ClassMngr_en_CA.ts
-        resources/assets/translations/ClassMngr_en_GB.ts
-        resources/assets/translations/ClassMngr_en_US.ts
-        resources/assets/translations/ClassMngr_ko_KR.ts
+        ${CLASSMNGR_RESOURCE_CATALOG_TRANSLATION_FILES}
 )

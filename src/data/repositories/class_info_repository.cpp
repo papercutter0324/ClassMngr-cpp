@@ -1,438 +1,394 @@
 #include "class_info_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
-#include "domain/models/classroom.h"
+#include "classmngr/engine/class_info_service.h"
+#include "classmngr/engine/class_schedule_service.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QDebug>
-#include <QHash>
+#include <QByteArray>
 #include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QStringList>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-struct TimeInterval
-{
-    int start{-1};
-    int end{-1};
-};
+using EngineClassConflict = classmngr::engine::ClassConflict;
+using EngineClassInfo = classmngr::engine::ClassInfo;
+using EngineClassInfoService = classmngr::engine::ClassInfoService;
+using EngineClassScheduleService = classmngr::engine::ClassScheduleService;
+using EngineClassTeacherAssignment =
+    classmngr::engine::ClassTeacherAssignment;
+using EngineClassTime = classmngr::engine::ClassTime;
+using EngineError = classmngr::engine::Error;
 
-constexpr int MinutesPerDay = 24 * 60;
-constexpr int MinutesPerWeek = 7 * MinutesPerDay;
-
-int dayIndex(
-    const QString& day
+std::string toUtf8(
+    const QString& value
     )
 {
-    static const QStringList days{
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday"
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
+}
+
+QString fromUtf8(
+    std::string_view value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+EngineClassTime toEngineClassTime(
+    const ClassTime& source
+    )
+{
+    return {
+        toUtf8(source.day),
+        toUtf8(source.startTime),
+        toUtf8(source.endTime)
+    };
+}
+
+ClassTime fromEngineClassTime(
+    const EngineClassTime& source
+    )
+{
+    return {
+        fromUtf8(source.day),
+        fromUtf8(source.startTime),
+        fromUtf8(source.endTime)
+    };
+}
+
+EngineClassInfo toEngineClassInfo(
+    const ClassInfo& source
+    )
+{
+    EngineClassInfo result;
+    result.classId = source.classId;
+    result.teacherId = source.teacherId;
+    result.teacherKr = toUtf8(source.teacherKr);
+    result.teacherEn = toUtf8(source.teacherEn);
+    result.teacherPreferredName = toUtf8(source.teacherPreferredName);
+    result.roomNumber = toUtf8(source.roomNumber);
+    result.wifiName = toUtf8(source.wifiName);
+    result.wifiPassword = toUtf8(source.wifiPassword);
+    result.internetType = toUtf8(source.internetType);
+    result.zoomId = toUtf8(source.zoomId);
+    result.zoomPassword = toUtf8(source.zoomPassword);
+    result.projectionType = toUtf8(source.projectionType);
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
+    result.readingBook = toUtf8(source.readingBook);
+    result.essayBook = toUtf8(source.essayBook);
+    result.classColor = toUtf8(source.classColor);
+    result.fontColor = toUtf8(source.fontColor);
+    result.notes = toUtf8(source.notes);
+    result.timeFillerActivities = toUtf8(source.timeFillerActivities);
+
+    result.classTimes.reserve(
+        static_cast<std::size_t>(source.classTimes.size())
+        );
+    for (const ClassTime& time : source.classTimes)
+    {
+        result.classTimes.push_back(toEngineClassTime(time));
+    }
+
+    result.intensiveTimes.reserve(
+        static_cast<std::size_t>(source.intensiveTimes.size())
+        );
+    for (const ClassTime& time : source.intensiveTimes)
+    {
+        result.intensiveTimes.push_back(toEngineClassTime(time));
+    }
+
+    return result;
+}
+
+ClassInfo fromEngineClassInfo(
+    const EngineClassInfo& source
+    )
+{
+    ClassInfo result;
+    result.classId = source.classId;
+    result.teacherId = source.teacherId;
+    result.teacherKr = fromUtf8(source.teacherKr);
+    result.teacherEn = fromUtf8(source.teacherEn);
+    result.teacherPreferredName = fromUtf8(source.teacherPreferredName);
+    result.roomNumber = fromUtf8(source.roomNumber);
+    result.wifiName = fromUtf8(source.wifiName);
+    result.wifiPassword = fromUtf8(source.wifiPassword);
+    result.internetType = fromUtf8(source.internetType);
+    result.zoomId = fromUtf8(source.zoomId);
+    result.zoomPassword = fromUtf8(source.zoomPassword);
+    result.projectionType = fromUtf8(source.projectionType);
+    result.classGrade = fromUtf8(source.classGrade);
+    result.classLevel = fromUtf8(source.classLevel);
+    result.readingBook = fromUtf8(source.readingBook);
+    result.essayBook = fromUtf8(source.essayBook);
+
+    const QString classColor = fromUtf8(source.classColor);
+    if (!classColor.isEmpty())
+    {
+        result.classColor = classColor;
+    }
+
+    const QString fontColor = fromUtf8(source.fontColor);
+    if (!fontColor.isEmpty())
+    {
+        result.fontColor = fontColor;
+    }
+
+    result.notes = fromUtf8(source.notes);
+    result.timeFillerActivities = fromUtf8(source.timeFillerActivities);
+
+    result.classTimes.reserve(
+        static_cast<qsizetype>(source.classTimes.size())
+        );
+    for (const EngineClassTime& time : source.classTimes)
+    {
+        result.classTimes.append(fromEngineClassTime(time));
+    }
+
+    result.intensiveTimes.reserve(
+        static_cast<qsizetype>(source.intensiveTimes.size())
+        );
+    for (const EngineClassTime& time : source.intensiveTimes)
+    {
+        result.intensiveTimes.append(fromEngineClassTime(time));
+    }
+
+    return result;
+}
+
+const char* operationPrefix(
+    const QString& detail
+    )
+{
+    constexpr const char* operations[] = {
+        {"Saving class information"},
+        {"Saving class notes"},
+        {"Loading class information"},
+        {"Loading regular class times"},
+        {"Loading intensive class times"},
+        {"Loading class teacher assignments"},
+        {"Loading schedule class information"},
+        {"Loading schedule class times"},
+        {"Loading class time conflicts"},
+        {"Starting class information save transaction"},
+        {"Committing class information"},
+        {"Deleting regular class times"},
+        {"Inserting regular class time"},
+        {"Deleting intensive class times"},
+        {"Inserting intensive class time"}
     };
 
-    return days.indexOf(day);
-}
-
-int timeToMinutes(
-    const QString& value
-    )
-{
-    const QStringList parts =
-        value.trimmed().split(
-            ' ',
-            Qt::SkipEmptyParts
-            );
-
-    if (parts.size() != 2)
+    for (const char* operation : operations)
     {
-        return -1;
-    }
-
-    const QStringList timeParts =
-        parts[0].split(':');
-
-    if (timeParts.size() != 2)
-    {
-        return -1;
-    }
-
-    bool hourOk = false;
-    bool minuteOk = false;
-
-    int hour =
-        timeParts[0].toInt(&hourOk);
-
-    const int minute =
-        timeParts[1].toInt(&minuteOk);
-
-    const QString period =
-        parts[1].toUpper();
-
-    if (
-        !hourOk
-        || !minuteOk
-        || hour < 1
-        || hour > 12
-        || minute < 0
-        || minute > 59
-        || (period != "AM" && period != "PM")
-        )
-    {
-        return -1;
-    }
-
-    if (period == "AM")
-    {
-        if (hour == 12)
+        if (detail.startsWith(QString::fromLatin1(operation)))
         {
-            hour = 0;
-        }
-    }
-    else if (hour != 12)
-    {
-        hour += 12;
-    }
-
-    return hour * 60 + minute;
-}
-
-bool toInterval(
-    const ClassTime& time,
-    TimeInterval& interval
-    )
-{
-    const int day =
-        dayIndex(time.day);
-
-    const int start =
-        timeToMinutes(time.startTime);
-
-    const int end =
-        timeToMinutes(time.endTime);
-
-    if (day < 0 || start < 0 || end < 0)
-    {
-        return false;
-    }
-
-    interval.start =
-        day * MinutesPerDay + start;
-
-    interval.end =
-        day * MinutesPerDay + end;
-
-    if (interval.end <= interval.start)
-    {
-        interval.end += MinutesPerDay;
-    }
-
-    return true;
-}
-
-bool intervalsOverlap(
-    const TimeInterval& first,
-    const TimeInterval& second
-    )
-{
-    for (int offset : { -MinutesPerWeek, 0, MinutesPerWeek })
-    {
-        const int secondStart =
-            second.start + offset;
-
-        const int secondEnd =
-            second.end + offset;
-
-        if (first.start < secondEnd && secondStart < first.end)
-        {
-            return true;
+            return operation;
         }
     }
 
-    return false;
+    return nullptr;
 }
 
-QString classDisplayName(
-    const QString& className,
+QString localizedOperation(
+    const QString& detail,
+    const QString& fallback
+    )
+{
+    const char* source = operationPrefix(detail);
+    return source == nullptr ? fallback : QObject::tr(source);
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& fallbackOperation,
+    int classId,
+    const EngineError& error
+    )
+{
+    const QString detail = engineErrorDetail(error);
+    const char* source = operationPrefix(detail);
+    QString remaining = detail;
+    QString context;
+    if (source != nullptr)
+    {
+        remaining = detail.mid(
+            static_cast<qsizetype>(std::char_traits<char>::length(source))
+            ).trimmed();
+        const qsizetype separator = remaining.indexOf(QStringLiteral(": "));
+        if (remaining.startsWith(QStringLiteral("for class id "))
+            && separator >= 0)
+        {
+            context = remaining.left(separator);
+            remaining = remaining.mid(separator + 2).trimmed();
+        }
+    }
+
+    QString message = QObject::tr("%1 failed")
+        .arg(localizedOperation(detail, fallbackOperation));
+
+    if (!context.isEmpty())
+    {
+        message += QStringLiteral(" ") + context;
+    }
+    else if (classId > 0 && !detail.contains(QStringLiteral("class id ")))
+    {
+        message += QObject::tr(" for class id %1").arg(classId);
+    }
+
+    if (!remaining.isEmpty())
+    {
+        message += QStringLiteral(": ") + remaining;
+    }
+
+    return message;
+}
+
+QString invalidClassIdError(
+    const QString& operation,
     int classId
     )
 {
-    if (!className.trimmed().isEmpty())
-    {
-        return className.trimmed();
-    }
-
-    return QString("Class %1").arg(classId);
+    return QObject::tr("%1 failed: invalid class id %2.")
+        .arg(operation)
+        .arg(classId);
 }
+} // namespace
 
-QString normalizedTeacherChoice(
-    const QString& value,
-    const QStringList& choices
-    )
+ClassInfoRepository::ClassInfoRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
 {
-    const QString trimmed =
-        value.trimmed();
-
-    for (const QString& choice : choices)
-    {
-        if (choice.compare(trimmed, Qt::CaseInsensitive) == 0)
-        {
-            return choice;
-        }
-    }
-
-    // Preserve unrecognized values from existing profiles rather than
-    // fabricating a valid-looking default during a read.
-    return trimmed;
-}
-
-QString normalizedInternetType(
-    const QString& value
-    )
-{
-    return normalizedTeacherChoice(
-        value,
-        {
-            QStringLiteral("WiFi"),
-            QStringLiteral("LAN"),
-            QStringLiteral("Both"),
-            QStringLiteral("N/A")
-        }
-        );
-}
-
-QString normalizedProjectionType(
-    const QString& value
-    )
-{
-    return normalizedTeacherChoice(
-        value,
-        {
-            QStringLiteral("HDMI"),
-            QStringLiteral("Zoom"),
-            QStringLiteral("Any"),
-            QStringLiteral("N/A")
-        }
-        );
-}
-
-Result<Classroom> loadClassById(
-    QSqlDatabase& database,
-    int classId
-    )
-{
-    QSqlQuery query(database);
-
-    query.prepare(R"(
-        SELECT *
-        FROM classes
-        WHERE id=?
-    )");
-
-    query.addBindValue(classId);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading class for conflict detection"),
-        QObject::tr("class id %1").arg(classId)
-        );
-    if (!executed)
-    {
-        return std::unexpected(executed.error().userMessage());
-    }
-
-    if (!query.next())
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Loading class for conflict detection failed for class id "
-                "%1: no matching record exists."
-                ).arg(classId)
-            );
-    }
-
-    Classroom classroom;
-    classroom.id =
-        query.value("id").toInt();
-
-    classroom.name =
-        query.value("name").toString();
-
-    return classroom;
-}
 }
 
 ClassInfoRepository::ClassInfoRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : ClassInfoRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
+}
+
+ClassInfoRepository::~ClassInfoRepository() = default;
+
+Status ClassInfoRepository::ensureEngineDatabase(
+    const QString& operation,
+    int classId
+    )
+{
+    if (!m_compatibilityDatabaseWasOpen)
+    {
+        QString message = QObject::tr("%1 failed").arg(operation);
+        if (classId > 0)
+        {
+            message += QObject::tr(" for class id %1").arg(classId);
+        }
+        message += QObject::tr(": No Teacher Profile is open.");
+        return std::unexpected(message);
+    }
+
+    const QString databasePath = m_databasePath;
+    if (databasePath.trimmed().isEmpty())
+    {
+        QString message = QObject::tr("%1 failed").arg(operation);
+        if (classId > 0)
+        {
+            message += QObject::tr(" for class id %1").arg(classId);
+        }
+        message += QObject::tr(": No database path is available.");
+        return std::unexpected(message);
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    const std::string encodedPath = toUtf8(databasePath);
+    auto opened = classmngr::engine::OpenDatabase::execute(encodedPath);
+    if (!opened || *opened == nullptr)
+    {
+        if (!opened)
+        {
+            return std::unexpected(
+                engineFailure(operation, classId, opened.error())
+                );
+        }
+
+        QString message = QObject::tr("%1 failed").arg(operation);
+        if (classId > 0)
+        {
+            message += QObject::tr(" for class id %1").arg(classId);
+        }
+        message += QObject::tr(
+            ": The engine database could not be opened."
+            );
+        return std::unexpected(message);
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
 }
 
 Status ClassInfoRepository::saveClassInfo(
     const ClassInfo& info
     )
 {
+    const QString operation = QObject::tr("Saving class information");
     if (info.classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Saving class information failed: invalid class id %1.")
-                .arg(info.classId)
-            );
+        return std::unexpected(invalidClassIdError(operation, info.classId));
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    const Status engineReady = ensureEngineDatabase(operation, info.classId);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr(
-                "Starting class information save transaction failed for "
-                "class id %1: %2"
-                ).arg(info.classId)
-                 .arg(m_database.lastError().text())
-            );
+        return engineReady;
     }
 
-    QSqlQuery query(m_database);
-    const QString identity = QObject::tr("class id %1").arg(info.classId);
-    auto execute = [&](const QString& action) -> Status
-    {
-        const auto result = SqlQueryUtils::executePrepared(
-            query, action, identity);
-        return result
-            ? Status{}
-            : Status(std::unexpected(result.error().userMessage()));
-    };
-
-    query.prepare(R"(
-        INSERT INTO class_info (
-            class_id,
-            teacher_id,
-            class_grade,
-            class_level,
-            reading_book,
-            essay_book,
-            class_color,
-            font_color,
-            notes,
-            time_filler_activities
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
-        ON CONFLICT(class_id)
-        DO UPDATE SET
-            teacher_id=excluded.teacher_id,
-            class_grade=excluded.class_grade,
-            class_level=excluded.class_level,
-            reading_book=excluded.reading_book,
-            essay_book=excluded.essay_book,
-            class_color=excluded.class_color,
-            font_color=excluded.font_color,
-            notes=excluded.notes,
-            time_filler_activities=excluded.time_filler_activities
-    )");
-
-    query.addBindValue(info.classId);
-    query.addBindValue(
-        info.teacherId > 0
-            ? QVariant(info.teacherId)
-            : QVariant()
+    EngineClassInfoService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.save(
+        toEngineClassInfo(info)
         );
-    query.addBindValue(info.classGrade);
-    query.addBindValue(info.classLevel);
-    query.addBindValue(info.readingBook);
-    query.addBindValue(info.essayBook);
-    query.addBindValue(info.classColor);
-    query.addBindValue(info.fontColor);
-    query.addBindValue(info.notes);
-    query.addBindValue(info.timeFillerActivities);
-
-    Status statement = execute(QObject::tr("Saving class information"));
-    if (!statement)
-    {
-        return statement;
-    }
-
-    query.prepare(
-        "DELETE FROM class_times WHERE class_id=?"
-        );
-
-    query.addBindValue(info.classId);
-    statement = execute(QObject::tr("Deleting regular class times"));
-    if (!statement)
-    {
-        return statement;
-    }
-
-    for (const ClassTime& time : info.classTimes)
-    {
-        query.prepare(R"(
-            INSERT INTO class_times (
-                class_id,
-                day,
-                start_time,
-                end_time
-            )
-            VALUES (?, ?, ?, ?)
-        )");
-
-        query.addBindValue(info.classId);
-        query.addBindValue(time.day);
-        query.addBindValue(time.startTime);
-        query.addBindValue(time.endTime);
-
-        statement = execute(QObject::tr("Inserting regular class time"));
-        if (!statement)
-        {
-            return statement;
-        }
-    }
-
-    query.prepare(
-        "DELETE FROM class_intensive_times WHERE class_id=?"
-        );
-
-    query.addBindValue(info.classId);
-    statement = execute(QObject::tr("Deleting intensive class times"));
-    if (!statement)
-    {
-        return statement;
-    }
-
-    for (const ClassTime& time : info.intensiveTimes)
-    {
-        query.prepare(R"(
-            INSERT INTO class_intensive_times (
-                class_id,
-                day,
-                start_time,
-                end_time
-            )
-            VALUES (?, ?, ?, ?)
-        )");
-
-        query.addBindValue(info.classId);
-        query.addBindValue(time.day);
-        query.addBindValue(time.startTime);
-        query.addBindValue(time.endTime);
-
-        statement = execute(QObject::tr("Inserting intensive class time"));
-        if (!statement)
-        {
-            return statement;
-        }
-    }
-
-    if (!transaction.commit())
+    if (!saved)
     {
         return std::unexpected(
-            QObject::tr("Committing class information failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
+            engineFailure(operation, info.classId, saved.error())
             );
     }
 
@@ -445,42 +401,31 @@ Status ClassInfoRepository::saveClassNotes(
     const QString& timeFillerActivities
     )
 {
+    const QString operation = QObject::tr("Saving class notes");
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Saving class notes failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(invalidClassIdError(operation, classId));
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        INSERT INTO class_info (
-            class_id,
-            notes,
-            time_filler_activities
-        )
-        VALUES (?, ?, ?)
-
-        ON CONFLICT(class_id)
-        DO UPDATE SET
-            notes=excluded.notes,
-            time_filler_activities=excluded.time_filler_activities
-    )");
-
-    query.addBindValue(classId);
-    query.addBindValue(notes);
-    query.addBindValue(timeFillerActivities);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Saving class notes"),
-        QObject::tr("class id %1").arg(classId)
-        );
-    if (!executed)
+    const Status engineReady = ensureEngineDatabase(operation, classId);
+    if (!engineReady)
     {
-        return std::unexpected(executed.error().userMessage());
+        return engineReady;
+    }
+
+    const std::string encodedNotes = toUtf8(notes);
+    const std::string encodedActivities = toUtf8(timeFillerActivities);
+    EngineClassInfoService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.saveNotes(
+        classId,
+        encodedNotes,
+        encodedActivities
+        );
+    if (!saved)
+    {
+        return std::unexpected(
+            engineFailure(operation, classId, saved.error())
+            );
     }
 
     return {};
@@ -490,332 +435,92 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     int classId
     )
 {
+    const QString operation = QObject::tr("Loading class information");
     if (classId <= 0)
     {
+        return std::unexpected(invalidClassIdError(operation, classId));
+    }
+
+    const Status engineReady = ensureEngineDatabase(operation, classId);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineClassInfoService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineClassInfo> loaded = service.load(
+        classId
+        );
+    if (!loaded)
+    {
         return std::unexpected(
-            QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+            engineFailure(operation, classId, loaded.error())
             );
     }
 
-    ClassInfo info;
-    info.classId =    classId;
-    info.classColor = "#FFFFFF";
-    info.fontColor =  "#000000";
-
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT
-            ci.*,
-
-            t.teacher_kr,
-            t.teacher_en,
-            t.preferred_name,
-            t.room_number,
-            t.wifi_name,
-            t.wifi_password,
-            t.internet_type,
-            t.zoom_id,
-            t.zoom_password,
-            t.projection_type
-
-        FROM class_info ci
-
-        LEFT JOIN teachers t
-        ON ci.teacher_id = t.id
-
-        WHERE ci.class_id = ?
-    )");
-
-    query.addBindValue(classId);
-
-    const QString identity = QObject::tr("class id %1").arg(classId);
-    const auto loadedInfo = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading class information"),
-        identity
-        );
-    if (!loadedInfo)
-    {
-        return std::unexpected(loadedInfo.error().userMessage());
-    }
-
-    if (query.next())
-    {
-        const QVariant teacherId = query.value("teacher_id");
-        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
-        info.teacherKr =    query.value("teacher_kr").toString();
-        info.teacherEn =    query.value("teacher_en").toString();
-        info.teacherPreferredName =
-            query.value("preferred_name").toString();
-        info.roomNumber =   query.value("room_number").toString();
-        info.wifiName =     query.value("wifi_name").toString();
-        info.wifiPassword = query.value("wifi_password").toString();
-        info.internetType =
-            normalizedInternetType(
-                query.value("internet_type").toString()
-                );
-        info.zoomId =       query.value("zoom_id").toString();
-        info.zoomPassword = query.value("zoom_password").toString();
-        info.projectionType =
-            normalizedProjectionType(
-                query.value("projection_type").toString()
-                );
-        info.classGrade =   query.value("class_grade").toString();
-        info.classLevel =   query.value("class_level").toString();
-        info.readingBook =  query.value("reading_book").toString();
-        info.essayBook =    query.value("essay_book").toString();
-
-        const QString classColor =
-            query.value("class_color").toString();
-
-        if (!classColor.isEmpty())
-        {
-            info.classColor = classColor;
-        }
-
-        const QString fontColor =
-            query.value("font_color").toString();
-
-        if (!fontColor.isEmpty())
-        {
-            info.fontColor = fontColor;
-        }
-
-        info.notes =
-            query.value("notes").toString();
-
-        info.timeFillerActivities =
-            query.value("time_filler_activities").toString();
-    }
-
-    query.prepare(R"(
-        SELECT *
-        FROM class_times
-        WHERE class_id = ?
-        ORDER BY id
-    )");
-
-    query.addBindValue(classId);
-
-    const auto loadedRegularTimes = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading regular class times"),
-        identity
-        );
-    if (!loadedRegularTimes)
-    {
-        return std::unexpected(loadedRegularTimes.error().userMessage());
-    }
-
-    while (query.next())
-    {
-        ClassTime time;
-
-        time.day =       query.value("day").toString();
-        time.startTime = query.value("start_time").toString();
-        time.endTime =   query.value("end_time").toString();
-
-        info.classTimes.append(time);
-    }
-
-    query.prepare(R"(
-        SELECT *
-        FROM class_intensive_times
-        WHERE class_id = ?
-        ORDER BY id
-    )");
-
-    query.addBindValue(classId);
-
-    const auto loadedIntensiveTimes = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading intensive class times"),
-        identity
-        );
-    if (!loadedIntensiveTimes)
-    {
-        return std::unexpected(loadedIntensiveTimes.error().userMessage());
-    }
-
-    while (query.next())
-    {
-        ClassTime time;
-
-        time.day =       query.value("day").toString();
-        time.startTime = query.value("start_time").toString();
-        time.endTime =   query.value("end_time").toString();
-
-        info.intensiveTimes.append(time);
-    }
-
-    return info;
+    return fromEngineClassInfo(*loaded);
 }
 
 Result<QList<ClassTeacherAssignment>>
 ClassInfoRepository::loadClassTeacherAssignments()
 {
-    QList<ClassTeacherAssignment> assignments;
-    QSqlQuery query(m_database);
-
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QStringLiteral(R"(
-            SELECT
-                c.id AS class_id,
-                ci.teacher_id
-            FROM classes c
-            LEFT JOIN testing_classes tc
-            ON tc.class_id = c.id
-            LEFT JOIN class_info ci
-            ON ci.class_id = c.id
-            WHERE tc.class_id IS NULL
-            ORDER BY c.name, c.id
-        )"),
-        QObject::tr("Loading class teacher assignments")
-        );
-    if (!executed)
+    const QString operation =
+        QObject::tr("Loading class teacher assignments");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(engineReady.error());
     }
 
-    while (query.next())
+    EngineClassScheduleService service(*m_engineDatabase);
+    const classmngr::engine::Result<
+        std::vector<EngineClassTeacherAssignment>> loaded =
+        service.loadClassTeacherAssignments();
+    if (!loaded)
     {
-        const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
-        assignments.append({
-            query.value(QStringLiteral("class_id")).toInt(),
-            teacherId.isNull() ? -1 : teacherId.toInt()
-        });
+        return std::unexpected(
+            engineFailure(operation, -1, loaded.error())
+            );
     }
 
-    return assignments;
+    QList<ClassTeacherAssignment> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineClassTeacherAssignment& assignment : *loaded)
+    {
+        result.append({assignment.classId, assignment.teacherId});
+    }
+
+    return result;
 }
 
 Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
 {
-    QList<ClassInfo> infos;
-    QHash<int, qsizetype> indexesByClassId;
-    QSqlQuery query(m_database);
-
-    const auto loadedClasses = SqlQueryUtils::execute(
-        query,
-        QStringLiteral(R"(
-            SELECT
-                c.id AS class_id,
-                ci.teacher_id,
-                ci.class_grade,
-                ci.class_level,
-                ci.class_color,
-                ci.font_color,
-                t.teacher_kr,
-                t.teacher_en,
-                t.preferred_name,
-                t.room_number
-            FROM classes c
-            LEFT JOIN testing_classes tc
-            ON tc.class_id = c.id
-            LEFT JOIN class_info ci
-            ON ci.class_id = c.id
-            LEFT JOIN teachers t
-            ON t.id = ci.teacher_id
-            WHERE tc.class_id IS NULL
-            ORDER BY c.name, c.id
-        )"),
-        QObject::tr("Loading schedule class information")
-        );
-    if (!loadedClasses)
+    const QString operation =
+        QObject::tr("Loading schedule class information");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(loadedClasses.error().userMessage());
+        return std::unexpected(engineReady.error());
     }
 
-    while (query.next())
+    EngineClassScheduleService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineClassInfo>> loaded =
+        service.loadScheduleClassInfos();
+    if (!loaded)
     {
-        ClassInfo info;
-        info.classId = query.value(QStringLiteral("class_id")).toInt();
-        const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
-        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
-        info.teacherKr = query.value(QStringLiteral("teacher_kr")).toString();
-        info.teacherEn = query.value(QStringLiteral("teacher_en")).toString();
-        info.teacherPreferredName =
-            query.value(QStringLiteral("preferred_name")).toString();
-        info.roomNumber = query.value(QStringLiteral("room_number")).toString();
-        info.classGrade = query.value(QStringLiteral("class_grade")).toString();
-        info.classLevel = query.value(QStringLiteral("class_level")).toString();
-
-        const QString classColor = query.value(QStringLiteral("class_color")).toString();
-        if (!classColor.isEmpty())
-        {
-            info.classColor = classColor;
-        }
-
-        const QString fontColor = query.value(QStringLiteral("font_color")).toString();
-        if (!fontColor.isEmpty())
-        {
-            info.fontColor = fontColor;
-        }
-
-        indexesByClassId.insert(info.classId, infos.size());
-        infos.append(std::move(info));
-    }
-
-    auto loadTimes = [&]<typename Times>(const QString& tableName, Times ClassInfo::* times)
-        -> Status
-    {
-        QSqlQuery timesQuery(m_database);
-        const auto executed = SqlQueryUtils::execute(
-            timesQuery,
-            QStringLiteral(R"(
-                SELECT
-                    times.class_id,
-                    times.day,
-                    times.start_time,
-                    times.end_time
-                FROM %1 times
-                INNER JOIN classes c
-                ON c.id = times.class_id
-                LEFT JOIN testing_classes tc
-                ON tc.class_id = c.id
-                WHERE tc.class_id IS NULL
-                ORDER BY c.name, c.id, times.id
-            )").arg(tableName),
-            QObject::tr("Loading schedule class times")
+        return std::unexpected(
+            engineFailure(operation, -1, loaded.error())
             );
-        if (!executed)
-        {
-            return std::unexpected(executed.error().userMessage());
-        }
-
-        while (timesQuery.next())
-        {
-            const auto index = indexesByClassId.constFind(
-                timesQuery.value(QStringLiteral("class_id")).toInt()
-                );
-            if (index == indexesByClassId.cend())
-            {
-                continue;
-            }
-
-            (infos[*index].*times).append({
-                timesQuery.value(QStringLiteral("day")).toString(),
-                timesQuery.value(QStringLiteral("start_time")).toString(),
-                timesQuery.value(QStringLiteral("end_time")).toString()
-            });
-        }
-
-        return {};
-    };
-
-    if (const Status status = loadTimes(QStringLiteral("class_times"), &ClassInfo::classTimes); !status)
-    {
-        return std::unexpected(status.error());
-    }
-    if (const Status status = loadTimes(QStringLiteral("class_intensive_times"), &ClassInfo::intensiveTimes); !status)
-    {
-        return std::unexpected(status.error());
     }
 
-    return infos;
+    QList<ClassInfo> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineClassInfo& info : *loaded)
+    {
+        result.append(fromEngineClassInfo(info));
+    }
+
+    return result;
 }
 
 Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
@@ -824,162 +529,53 @@ Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
     ScheduleType type
     )
 {
-    QList<ClassConflict> conflicts;
-
-    const Result<Classroom> currentClass =
-        loadClassById(
-            m_database,
-            classId
-            );
-    if (!currentClass)
+    const QString operation = QObject::tr("Loading class time conflicts");
+    if (classId <= 0)
     {
-        return std::unexpected(currentClass.error());
+        return std::unexpected(invalidClassIdError(operation, classId));
     }
 
-    const QString currentClassName =
-        classDisplayName(
-            currentClass->name,
-            classId
-            );
+    const Status engineReady = ensureEngineDatabase(operation, classId);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
 
-    QList<TimeInterval> candidateIntervals;
-
+    std::vector<EngineClassTime> engineTimes;
+    engineTimes.reserve(static_cast<std::size_t>(times.size()));
     for (const ClassTime& time : times)
     {
-        TimeInterval interval;
-
-        if (toInterval(time, interval))
-        {
-            candidateIntervals.append(interval);
-        }
-        else
-        {
-            candidateIntervals.append(TimeInterval{});
-        }
+        engineTimes.push_back(toEngineClassTime(time));
     }
 
-    for (int i = 0; i < times.size(); ++i)
-    {
-        if (candidateIntervals[i].start < 0)
-        {
-            continue;
-        }
-
-        for (int j = i + 1; j < times.size(); ++j)
-        {
-            if (candidateIntervals[j].start < 0)
-            {
-                continue;
-            }
-
-            if (
-                intervalsOverlap(
-                    candidateIntervals[i],
-                    candidateIntervals[j]
-                    )
-                )
-            {
-                ClassConflict conflict;
-                conflict.classId = classId;
-                conflict.className = currentClassName;
-                conflict.day = times[i].day;
-                conflict.startTime = times[i].startTime;
-                conflict.endTime = times[i].endTime;
-                conflict.conflictingClassName =
-                    currentClassName;
-
-                conflicts.append(conflict);
-            }
-        }
-    }
-
-    const QString tableName =
+    const classmngr::engine::ScheduleType engineType =
         type == ScheduleType::Regular
-            ? QString("class_times")
-            : QString("class_intensive_times");
+            ? classmngr::engine::ScheduleType::Regular
+            : classmngr::engine::ScheduleType::Intensive;
 
-    QSqlQuery query(m_database);
-
-    query.prepare(
-        QString(R"(
-            SELECT
-                times.class_id,
-                classes.name AS class_name,
-                times.day,
-                times.start_time,
-                times.end_time
-            FROM %1 times
-            LEFT JOIN classes
-            ON classes.id = times.class_id
-            WHERE times.class_id != ?
-        )").arg(tableName)
-        );
-
-    query.addBindValue(classId);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading class time conflicts"),
-        QObject::tr("class id %1").arg(classId)
-        );
-    if (!executed)
+    EngineClassScheduleService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineClassConflict>> loaded =
+        service.getClassTimeConflicts(classId, engineTimes, engineType);
+    if (!loaded)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(
+            engineFailure(operation, classId, loaded.error())
+            );
     }
 
-    while (query.next())
+    QList<ClassConflict> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineClassConflict& conflict : *loaded)
     {
-        ClassTime existingTime;
-        existingTime.day =
-            query.value("day").toString();
-        existingTime.startTime =
-            query.value("start_time").toString();
-        existingTime.endTime =
-            query.value("end_time").toString();
-
-        TimeInterval existingInterval;
-
-        if (!toInterval(existingTime, existingInterval))
-        {
-            continue;
-        }
-
-        const int conflictingClassId =
-            query.value("class_id").toInt();
-
-        const QString conflictingClassName =
-            classDisplayName(
-                query.value("class_name").toString(),
-                conflictingClassId
-                );
-
-        for (int i = 0; i < times.size(); ++i)
-        {
-            if (candidateIntervals[i].start < 0)
-            {
-                continue;
-            }
-
-            if (
-                intervalsOverlap(
-                    candidateIntervals[i],
-                    existingInterval
-                    )
-                )
-            {
-                ClassConflict conflict;
-                conflict.classId = classId;
-                conflict.className = currentClassName;
-                conflict.day = times[i].day;
-                conflict.startTime = times[i].startTime;
-                conflict.endTime = times[i].endTime;
-                conflict.conflictingClassName =
-                    conflictingClassName;
-
-                conflicts.append(conflict);
-            }
-        }
+        result.append({
+            conflict.classId,
+            fromUtf8(conflict.className),
+            fromUtf8(conflict.day),
+            fromUtf8(conflict.startTime),
+            fromUtf8(conflict.endTime),
+            fromUtf8(conflict.conflictingClassName)
+        });
     }
 
-    return conflicts;
+    return result;
 }

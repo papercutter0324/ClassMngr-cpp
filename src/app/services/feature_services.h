@@ -2,6 +2,7 @@
 
 #include "core/enums/schedule_type.h"
 #include "core/result.h"
+#include "classmngr/engine/teacher_import.h"
 #include "domain/models/calendar_event.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
@@ -23,7 +24,6 @@
 #include <QPair>
 #include <QVariant>
 
-class DataService;
 class DatabaseSession;
 
 // The distinct views required by the Class Analytics dashboard.  The selected
@@ -40,23 +40,21 @@ struct SpeakingEvaluationDashboard
 class FeatureService
 {
 public:
-    explicit FeatureService(DataService* dataService);
-    FeatureService(DatabaseSession* session, DataService* legacyDataService);
+    explicit FeatureService(DatabaseSession* session);
     [[nodiscard]] bool isAvailable() const;
 
 protected:
     DatabaseSession* session() const;
-    DataService* dataService() const;
 
 private:
     DatabaseSession* m_session = nullptr;
-    DataService* m_legacyDataService = nullptr;
 };
 
 class SettingsService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
+    [[nodiscard]] DatabaseSession* databaseSession() const;
     [[nodiscard]] Status save(
         const QString& key,
         const QVariant& value
@@ -74,6 +72,13 @@ public:
 class TeacherService final : public FeatureService
 {
 public:
+    struct TeacherImportDateCheck
+    {
+        classmngr::engine::TeacherImportDateComparison comparison =
+            classmngr::engine::TeacherImportDateComparison::NoPreviousDate;
+        QDate previousDate;
+    };
+
     using FeatureService::FeatureService;
     [[nodiscard]] Result<int> create(const Teacher& teacher) const;
     [[nodiscard]] Result<int> save(const Teacher& teacher) const;
@@ -92,7 +97,9 @@ public:
         const QList<int>& deletedIds
         ) const;
     Result<TeacherImportSummary> importTeachers(const TeacherImportPlan& plan) const;
-    [[nodiscard]] Result<QDate> latestImportDate() const;
+    [[nodiscard]] Result<TeacherImportDateCheck> compareLatestImportDate(
+        const QDate& sourceDate
+        ) const;
 };
 
 class ClassService final : public FeatureService
@@ -135,6 +142,7 @@ public:
         const ScheduleImportUserBlock& user,
         ScheduleImportKind kind
         ) const;
+    [[nodiscard]] Status validateImport(const ScheduleImportPlan& plan) const;
     Result<ScheduleImportSummary> importSchedule(const ScheduleImportPlan& plan) const;
     [[nodiscard]] Result<QList<IntensiveSlotState>> intensiveSlotStates() const;
     [[nodiscard]] Status saveIntensiveSlotState(
@@ -185,9 +193,27 @@ public:
         const QString& repeatSeriesId,
         const QDate& startDate
         ) const;
+    [[nodiscard]] Result<QList<CalendarEvent>> expandRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const QDate& untilDate
+        ) const;
+    [[nodiscard]] Result<QList<int>> createRepeatSeries(
+        const CalendarEvent& event,
+        CalendarEventRepeatFrequency frequency,
+        const QDate& untilDate
+        ) const;
+    [[nodiscard]] Status updateRepeatSeriesFromDate(
+        const CalendarEvent& originalEvent,
+        const CalendarEvent& editedEvent
+        ) const;
     [[nodiscard]] Result<int> saveEvent(const CalendarEvent& event) const;
     [[nodiscard]] Result<QList<int>> saveEvents(
         const QList<CalendarEvent>& events
+        ) const;
+    [[nodiscard]] Result<CalendarEventImportSummary> importEvents(
+        const QList<CalendarEvent>& events,
+        int parserSkippedCount
         ) const;
     [[nodiscard]] Status deleteEvent(int eventId) const;
     [[nodiscard]] Status deleteRepeatSeriesFromDate(

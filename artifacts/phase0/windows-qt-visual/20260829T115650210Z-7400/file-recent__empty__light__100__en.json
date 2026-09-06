@@ -1,0 +1,41 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Open File menu",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "file-recent__empty__light__100__en.png",
+        "sha256": "32ce90984a28f071cb45360374404c1404050dfdb3cf8d1a12ade7280f8e0259"
+    },
+    "displayScalePercent": 100,
+    "fixtureId": "no-database",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "command.file-recent",
+    "observations": {
+        "accessibility": "Manual UI Automation and screen-reader review remains pending.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "48fc5c5",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 1040,
+        "width": 1270,
+        "x": 901,
+        "y": 290
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

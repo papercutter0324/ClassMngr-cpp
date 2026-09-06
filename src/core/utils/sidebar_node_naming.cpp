@@ -1,192 +1,82 @@
 #include "sidebar_node_naming.h"
 
+#include "classmngr/engine/class_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 
-#include <QMap>
-#include <QStringList>
+#include <string>
 
 namespace
 {
+using PortableClassInfo = classmngr::engine::ClassInfo;
+using PortableClassTime = classmngr::engine::ClassTime;
+using PortableTeacher = classmngr::engine::Teacher;
 
-const QMap<QString, QString> DayAbbreviations =
+std::string toUtf8(const QString& value)
+{
+    const QByteArray encoded = value.toUtf8();
+    return {encoded.constData(), static_cast<std::size_t>(encoded.size())};
+}
+
+PortableClassTime toPortable(const ClassTime& source)
+{
+    return {
+        toUtf8(source.day),
+        toUtf8(source.startTime),
+        toUtf8(source.endTime)
+    };
+}
+
+PortableClassInfo toPortable(const ClassInfo& source)
+{
+    PortableClassInfo result;
+    result.classId = source.classId;
+    result.teacherId = source.teacherId;
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
+    result.classTimes.reserve(source.classTimes.size());
+    for (const ClassTime& time : source.classTimes)
     {
-        {"Monday",    "Mon"},
-        {"Tuesday",   "Tues"},
-        {"Wednesday", "Wed"},
-        {"Thursday",  "Thurs"},
-        {"Friday",    "Fri"},
-        {"Saturday",  "Sat"},
-        {"Sunday",    "Sun"}
-};
+        result.classTimes.push_back(toPortable(time));
+    }
+    return result;
+}
 
-const QMap<QStringList, QString> SpecialDayPatterns =
-    {
-        {QStringList{"Mon", "Wed"},              "M/W"},
-        {QStringList{"Mon", "Fri"},              "M/F"},
-        {QStringList{"Wed", "Fri"},              "W/F"},
-        {QStringList{"Mon", "Wed", "Fri"},       "M/W/F"},
-        {QStringList{"Tues", "Thurs"},           "T/Th"}
-};
-
+PortableTeacher toPortable(const Teacher& source)
+{
+    PortableTeacher result;
+    result.id = source.id;
+    result.teacherKr = toUtf8(source.teacherKr);
+    result.teacherEn = toUtf8(source.teacherEn);
+    result.preferredRomanization = toUtf8(source.preferredRomanization);
+    result.preferredName = toUtf8(source.preferredName);
+    return result;
+}
 } // namespace
-
-
 
 QString SidebarNodeNaming::formatClassDisplayName(
     const ClassInfo& classInfo,
     const Teacher& teacher
     )
 {
-    // ============================================
-    // Level
-    // ============================================
-
-    const QString grade =
-        classInfo.classGrade.trimmed();
-
-    const QString level =
-        classInfo.classLevel.trimmed();
-
-    QString levelText;
-
-    if (!grade.isEmpty() &&
-        !level.isEmpty())
-    {
-        levelText =
-            QString("%1 %2")
-                .arg(grade)
-                .arg(level);
-    }
-    else if (!grade.isEmpty())
-    {
-        levelText = grade;
-    }
-    else if (!level.isEmpty())
-    {
-        levelText = level;
-    }
-    else
-    {
-        levelText = "Unknown Class";
-    }
-
-    // ============================================
-    // Teacher
-    // ============================================
-
-    QString teacherName =
-        teacher.preferredDisplayName();
-
-    if (teacherName.isEmpty())
-    {
-        teacherName = "No Teacher";
-    }
-
-    // ============================================
-    // Times
-    // ============================================
-
-    if (classInfo.classTimes.isEmpty())
-    {
-        return QString("%1 • %2")
-            .arg(levelText)
-            .arg(teacherName);
-    }
-
-    QStringList dayLabels;
-    QStringList timeLabels;
-
-    for (const auto& row : classInfo.classTimes)
-    {
-        const QString day =
-            DayAbbreviations.value(
-                row.day,
-                row.day
-                );
-
-        QString startTime =
-            row.startTime;
-
-        startTime.replace(" AM", "");
-        startTime.replace(" PM", "");
-
-        dayLabels.append(day);
-        timeLabels.append(startTime);
-    }
-
-    // ============================================
-    // Compress common day patterns
-    // ============================================
-
-    QString daysText;
-
-    if (SpecialDayPatterns.contains(dayLabels))
-    {
-        daysText =
-            SpecialDayPatterns.value(
-                dayLabels
-                );
-    }
-    else
-    {
-        daysText =
-            dayLabels.join("/");
-    }
-
-    // ============================================
-    // Compress duplicate times
-    // ============================================
-
-    QStringList uniqueTimes;
-
-    for (const auto& time : timeLabels)
-    {
-        if (!uniqueTimes.contains(time))
-        {
-            uniqueTimes.append(time);
-        }
-    }
-
-    QString timeText;
-
-    if (uniqueTimes.size() == 1)
-    {
-        timeText =
-            uniqueTimes.first();
-    }
-    else
-    {
-        timeText =
-            timeLabels.join(" / ");
-    }
-
-    // ============================================
-    // Final
-    // ============================================
-
-    return QString(
-               "%1 • %2 • %3 (%4)"
-               )
-        .arg(levelText)
-        .arg(teacherName)
-        .arg(daysText)
-        .arg(timeText);
+    const std::string value = classmngr::engine::ClassNamingService::
+        classDisplayName(toPortable(classInfo), toPortable(teacher));
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
-
-
-
 
 QString SidebarNodeNaming::formatTeacherDisplayName(
     const Teacher& teacher
     )
 {
-    const QString preferredName =
-        teacher.preferredDisplayName();
-
-    return preferredName.isEmpty()
-        ? QStringLiteral("New Teacher")
-        : preferredName;
+    const std::string value = classmngr::engine::ClassNamingService::
+        teacherDisplayName(toPortable(teacher));
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
 
 bool SidebarNodeNaming::teacherDisplayLessThan(
@@ -194,42 +84,8 @@ bool SidebarNodeNaming::teacherDisplayLessThan(
     const Teacher& right
     )
 {
-    const QString leftEnglish =
-        left.teacherEn.trimmed();
-    const QString rightEnglish =
-        right.teacherEn.trimmed();
-
-    const bool leftHasEnglish =
-        !leftEnglish.isEmpty();
-    const bool rightHasEnglish =
-        !rightEnglish.isEmpty();
-
-    if (leftHasEnglish != rightHasEnglish)
-    {
-        return leftHasEnglish;
-    }
-
-    const int englishComparison =
-        QString::localeAwareCompare(
-            leftEnglish,
-            rightEnglish
-            );
-
-    if (englishComparison != 0)
-    {
-        return englishComparison < 0;
-    }
-
-    const int koreanComparison =
-        QString::localeAwareCompare(
-            left.teacherKr.trimmed(),
-            right.teacherKr.trimmed()
-            );
-
-    if (koreanComparison != 0)
-    {
-        return koreanComparison < 0;
-    }
-
-    return left.id < right.id;
+    return classmngr::engine::ClassNamingService::teacherDisplayLessThan(
+        toPortable(left),
+        toPortable(right)
+        );
 }

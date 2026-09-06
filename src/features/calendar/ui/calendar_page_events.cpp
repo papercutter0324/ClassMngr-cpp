@@ -72,71 +72,6 @@ bool settingToBool(
     return value.toBool();
 }
 
-QDate nextRepeatDate(
-    const QDate& date,
-    CalendarEventRepeatFrequency frequency
-    )
-{
-    switch (frequency)
-    {
-    case CalendarEventRepeatFrequency::Daily:
-        return date.addDays(1);
-
-    case CalendarEventRepeatFrequency::Monthly:
-        return date.addMonths(1);
-
-    case CalendarEventRepeatFrequency::Weekly:
-        return date.addDays(7);
-    }
-
-    return date.addDays(7);
-}
-
-QList<CalendarEvent> repeatedCalendarEvents(
-    const CalendarEvent& event,
-    CalendarEventRepeatFrequency frequency,
-    const QDate& untilDate
-    )
-{
-    QList<CalendarEvent> events;
-
-    if (
-        !event.startDate.isValid()
-        || !event.endDate.isValid()
-        || !untilDate.isValid()
-        || untilDate < event.startDate
-        )
-    {
-        events.append(event);
-        return events;
-    }
-
-    const int durationDays =
-        event.startDate.daysTo(
-            event.endDate
-            );
-
-    for (
-        QDate occurrenceDate = event.startDate;
-        occurrenceDate.isValid() && occurrenceDate <= untilDate;
-        occurrenceDate = nextRepeatDate(occurrenceDate, frequency)
-        )
-    {
-        CalendarEvent occurrence =
-            event;
-        occurrence.id =
-            -1;
-        occurrence.startDate =
-            occurrenceDate;
-        occurrence.endDate =
-            occurrenceDate.addDays(durationDays);
-
-        events.append(occurrence);
-    }
-
-    return events;
-}
-
 bool isRepeatSeriesEvent(
     const CalendarEvent& event
     )
@@ -151,87 +86,6 @@ QString newRepeatSeriesId()
         );
 }
 
-Status saveRepeatSeriesFromDate(
-    CalendarService* calendarService,
-    const CalendarEvent& originalEvent,
-    const CalendarEvent& editedEvent
-    )
-{
-    if (
-        !calendarService
-        || !isRepeatSeriesEvent(originalEvent)
-        || !originalEvent.startDate.isValid()
-        || !editedEvent.startDate.isValid()
-        || !editedEvent.endDate.isValid()
-        )
-    {
-        return std::unexpected(
-            QObject::tr("The calendar repeat series is invalid.")
-            );
-    }
-
-    const QString repeatSeriesId =
-        originalEvent.repeatSeriesId.trimmed();
-    const int startDateOffset =
-        originalEvent.startDate.daysTo(
-            editedEvent.startDate
-            );
-    const int durationDays =
-        editedEvent.startDate.daysTo(
-            editedEvent.endDate
-            );
-    const Result<QList<CalendarEvent>> seriesEvents =
-        calendarService->repeatSeriesFromDate(
-            repeatSeriesId,
-            originalEvent.startDate
-            );
-    if (!seriesEvents)
-    {
-        return std::unexpected(seriesEvents.error());
-    }
-
-    QList<CalendarEvent> updatedEvents;
-    updatedEvents.reserve(seriesEvents->size());
-    for (const CalendarEvent& seriesEvent : *seriesEvents)
-    {
-        CalendarEvent updatedEvent =
-            seriesEvent;
-
-        updatedEvent.title =
-            editedEvent.title;
-        updatedEvent.eventType =
-            editedEvent.eventType;
-        updatedEvent.timeStatus =
-            editedEvent.timeStatus;
-        updatedEvent.allDay =
-            editedEvent.allDay;
-        updatedEvent.startTime =
-            editedEvent.startTime;
-        updatedEvent.endTime =
-            editedEvent.endTime;
-        updatedEvent.repeatSeriesId =
-            repeatSeriesId;
-        updatedEvent.startDate =
-            seriesEvent.startDate.addDays(
-                startDateOffset
-                );
-        updatedEvent.endDate =
-            updatedEvent.startDate.addDays(
-                durationDays
-                );
-
-        updatedEvents.append(updatedEvent);
-    }
-
-    const Result<QList<int>> saved =
-        calendarService->saveEvents(updatedEvents);
-    if (!saved)
-    {
-        return std::unexpected(saved.error());
-    }
-
-    return {};
-}
 }
 
 void CalendarPage::handleCalendarDayActivated(
@@ -857,8 +711,7 @@ void CalendarPage::openCalendarDialog(
 
         if (thisAndFollowing)
         {
-            const Status saved = saveRepeatSeriesFromDate(
-                calendarService,
+            const Status saved = calendarService->updateRepeatSeriesFromDate(
                 event,
                 savedEvent
                 );
@@ -884,17 +737,14 @@ void CalendarPage::openCalendarDialog(
                     newRepeatSeriesId();
             }
 
-            const QList<CalendarEvent> eventsToSave =
+            const Result<QList<int>> saved =
                 dialog.repeatEnabled()
-                    ? repeatedCalendarEvents(
+                    ? calendarService->createRepeatSeries(
                         savedEvent,
                         dialog.repeatFrequency(),
                         dialog.repeatUntilDate()
                         )
-                    : QList<CalendarEvent>{savedEvent};
-
-            const Result<QList<int>> saved =
-                calendarService->saveEvents(eventsToSave);
+                    : calendarService->saveEvents({savedEvent});
             if (!saved)
             {
                 DialogServices::showWarning(

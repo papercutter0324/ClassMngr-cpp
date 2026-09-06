@@ -924,7 +924,8 @@ ScheduleImportUserBlock parseBlock(
     const QVector<CalendarImport::Style>& styles,
     const QHash<qint64, const CalendarImport::Cell*>& cells,
     const CalendarImport::Cell& header,
-    ScheduleImportKind kind
+    ScheduleImportKind kind,
+    const ScheduleImportCancellation& isCancelled
     )
 {
     ScheduleImportUserBlock result;
@@ -953,6 +954,11 @@ ScheduleImportUserBlock parseBlock(
          row <= header.row + 20;
          ++row)
     {
+        if (isCancelled && isCancelled())
+        {
+            return result;
+        }
+
         const CalendarImport::Cell* timeCell =
             cellAt(cells, row, header.column);
 
@@ -982,6 +988,11 @@ ScheduleImportUserBlock parseBlock(
     {
         for (const TimetableRow& row : timetableRows)
         {
+            if (isCancelled && isCancelled())
+            {
+                return result;
+            }
+
             for (int dayOffset = 0;
                  dayOffset < days.size();
                  ++dayOffset)
@@ -1015,6 +1026,11 @@ ScheduleImportUserBlock parseBlock(
     QHash<int, TimetableRow> timeByRow;
     for (const TimetableRow& row : timetableRows)
     {
+        if (isCancelled && isCancelled())
+        {
+            return result;
+        }
+
         timeByRow.insert(row.row, row);
     }
 
@@ -1090,6 +1106,11 @@ ScheduleImportUserBlock parseBlock(
              dayOffset < days.size();
              ++dayOffset)
         {
+            if (isCancelled && isCancelled())
+            {
+                return result;
+            }
+
             if (days[dayOffset].isEmpty())
             {
                 continue;
@@ -1270,9 +1291,20 @@ bool validHeader(
 
 Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
     const QByteArray& data,
-    ScheduleImportKind kind
+    ScheduleImportKind kind,
+    const ScheduleImportCancellation& isCancelled
     )
 {
+    const auto cancelled = [&isCancelled]()
+    {
+        return isCancelled && isCancelled();
+    };
+
+    if (cancelled())
+    {
+        return std::unexpected(QObject::tr("The schedule import was cancelled."));
+    }
+
     QString errorMessage;
     const CalendarImport::Workbook workbook =
         CalendarImport::parseWorkbook(
@@ -1293,6 +1325,11 @@ Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
 
     for (const CalendarImport::Worksheet& worksheet : workbook.worksheets)
     {
+        if (cancelled())
+        {
+            return std::unexpected(QObject::tr("The schedule import was cancelled."));
+        }
+
         ScheduleImportSheet sheet;
         sheet.name = worksheet.name;
         sheet.visible = worksheet.visible;
@@ -1300,6 +1337,11 @@ Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
         QHash<qint64, const CalendarImport::Cell*> cells;
         for (const CalendarImport::Cell& cell : worksheet.cells)
         {
+            if (cancelled())
+            {
+                return std::unexpected(QObject::tr("The schedule import was cancelled."));
+            }
+
             cells.insert(
                 positionKey(cell.row, cell.column),
                 &cell
@@ -1319,8 +1361,14 @@ Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
                     workbook.styles,
                     cells,
                     cell,
-                    kind
+                    kind,
+                    isCancelled
                     );
+
+            if (cancelled())
+            {
+                return std::unexpected(QObject::tr("The schedule import was cancelled."));
+            }
 
             if (!block.classes.isEmpty())
             {

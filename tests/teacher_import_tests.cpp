@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest>
 
@@ -22,10 +23,12 @@ class TeacherImportTests : public QObject
 private slots:
     void parsesSectionedTemplate();
     void invalidVersionIsRecognizedButRejected();
+    void preservesSourceRowDiagnostics();
     void readsNamedMultiSheetWorkbookMetadata();
     void validatorReportsRecognitionStatusesAndMetadata();
     void registryAcceptsAdditionalTemplateAdapters();
     void unreadableDataFailsValidation();
+    void acceptsDuplicateSourceCandidates();
     void matchesStoredKoreanTeacherAfterRemovingSuffix();
     void importsIntoSeparateTablesAndPreservesManualFields();
     void sortsGsTeamPositions();
@@ -284,6 +287,24 @@ void TeacherImportTests::invalidVersionIsRecognizedButRejected()
     QVERIFY(preview.error().contains(QStringLiteral("A1")));
 }
 
+void TeacherImportTests::preservesSourceRowDiagnostics()
+{
+    CalendarImport::Workbook workbook = sectionedWorkbook();
+    for (CalendarImport::Cell& cell : workbook.worksheets.first().cells)
+    {
+        if (cell.row == 4 && cell.column == 5)
+        {
+            cell.value = QStringLiteral("not-a-birthday");
+        }
+    }
+    workbook.cells = workbook.worksheets.first().cells;
+
+    SectionedContactListTemplate importTemplate;
+    const auto preview = importTemplate.parse(workbook);
+    QVERIFY(!preview.has_value());
+    QVERIFY(preview.error().contains(QStringLiteral("row 4")));
+}
+
 void TeacherImportTests::readsNamedMultiSheetWorkbookMetadata()
 {
     QString error;
@@ -380,13 +401,51 @@ void TeacherImportTests::unreadableDataFailsValidation()
     QVERIFY(!validation.diagnostics.isEmpty());
 }
 
+void TeacherImportTests::acceptsDuplicateSourceCandidates()
+{
+    CalendarImport::Workbook workbook = sectionedWorkbook();
+    auto& cells = workbook.worksheets.first().cells;
+    cells.append({5, 3, 0,
+                  QString::fromUtf8("\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99 E4/6"), {}});
+    cells.append({5, 5, 0, QStringLiteral("07/09"), {}});
+    cells.append({50, 3, 0, QStringLiteral(" alex "), {}});
+    cells.append({50, 5, 0, QStringLiteral("07/10"), {}});
+    cells.append({62, 3, 0, QStringLiteral("TaylorM3"), {}});
+    cells.append({62, 5, 0, QStringLiteral("07/11"), {}});
+    workbook.cells = cells;
+
+    SectionedContactListTemplate importTemplate;
+    const auto preview = importTemplate.parse(workbook);
+    if (!preview)
+    {
+        QFAIL(qPrintable(preview.error()));
+    }
+
+    QCOMPARE(preview->koreanGroups.first().candidates.size(), 2);
+    QCOMPARE(preview->koreanGroups.first().candidates.at(1).teacher.teacherKr,
+             QString::fromUtf8("\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99"));
+    QCOMPARE(preview->koreanGroups.first().candidates.at(1).teacher.birthday,
+             QStringLiteral("07-09"));
+    QCOMPARE(preview->nativeEnglishTeachers.size(), 4);
+    QCOMPARE(preview->nativeEnglishTeachers.at(3).name, QStringLiteral("alex"));
+    QCOMPARE(preview->nativeEnglishTeachers.at(3).birthday,
+             QStringLiteral("07-10"));
+    QCOMPARE(preview->gsTeamMembers.size(), 3);
+    QCOMPARE(preview->gsTeamMembers.at(2).name, QStringLiteral("Taylor"));
+    QCOMPARE(preview->gsTeamMembers.at(2).birthday, QStringLiteral("07-11"));
+}
+
 void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
 {
     const QString connectionName =
         QStringLiteral("teacher-import-suffix-test-%1").arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(temporaryDirectory.filePath(
+            QStringLiteral("teacher-import-suffix.tps")
+            ));
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
@@ -426,9 +485,13 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
 {
     const QString connectionName =
         QStringLiteral("teacher-import-test-%1").arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(temporaryDirectory.filePath(
+            QStringLiteral("teacher-import.tps")
+            ));
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
@@ -482,6 +545,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QCOMPARE(counts.value(2).toString(), QStringLiteral("Canadian"));
         QCOMPARE(counts.value(3).toString(), QStringLiteral("alex@example.com"));
 
+        counts.finish();
         TeacherImportPlan older = plan;
         older.templateId = QStringLiteral("alternate-template-v2");
         older.sourceDate = QDate(2026, 1, 1);
@@ -493,6 +557,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QVERIFY(dateQuery.exec());
         QVERIFY(dateQuery.next());
         QCOMPARE(dateQuery.value(0).toString(), QStringLiteral("2026-07-09"));
+        dateQuery.finish();
 
         TeacherImportPlan duplicatePlan;
         duplicatePlan.templateId = QStringLiteral("duplicate-test");
@@ -531,6 +596,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         ambiguousPlan.nativeEnglishTeachers.append(
             {-1, QStringLiteral("JAMIE"), QStringLiteral("Team Leader"),
              QString(), QString(), QString()});
+        counts.finish();
         QVERIFY(!repository.importTeachers(ambiguousPlan).has_value());
         QVERIFY(counts.exec(QStringLiteral(
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='원자성교사'")));
@@ -545,9 +611,13 @@ void TeacherImportTests::sortsGsTeamPositions()
 {
     const QString connectionName =
         QStringLiteral("gs-team-order-test-%1").arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(temporaryDirectory.filePath(
+            QStringLiteral("gs-team-order.tps")
+            ));
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 

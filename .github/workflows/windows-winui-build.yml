@@ -1,0 +1,157 @@
+name: Windows WinUI Bootstrap Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/windows-winui-build.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/catalog/**"
+      - "resources/windows/**"
+      - "scripts/build_windows_winui.ps1"
+      - "scripts/measure_windows_winui_memory.ps1"
+      - "scripts/verify_windows_vs2026.ps1"
+      - "scripts/verify_windows_winui_stage.ps1"
+      - "src/engine/**"
+      - "src/platform/windows/winui/**"
+      - "tests/engine/**"
+  pull_request:
+    paths:
+      - ".github/workflows/windows-winui-build.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/catalog/**"
+      - "resources/windows/**"
+      - "scripts/build_windows_winui.ps1"
+      - "scripts/measure_windows_winui_memory.ps1"
+      - "scripts/verify_windows_vs2026.ps1"
+      - "scripts/verify_windows_winui_stage.ps1"
+      - "src/engine/**"
+      - "src/platform/windows/winui/**"
+      - "tests/engine/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-windows-winui-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_GENERATOR: "Visual Studio 18 2026"
+  TrackFileAccess: "false"
+
+jobs:
+  build:
+    name: Windows WinUI ${{ matrix.stage_arch }} ${{ matrix.configuration }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: windows-x64-winui-debug
+            stage_arch: x64
+            platform: x64
+            configuration: Debug
+          - preset: windows-x64-winui-release
+            stage_arch: x64
+            platform: x64
+            configuration: Release
+          - preset: windows-x86-winui-debug
+            stage_arch: x86
+            platform: Win32
+            configuration: Debug
+          - preset: windows-x86-winui-release
+            stage_arch: x86
+            platform: Win32
+            configuration: Release
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Remove inherited Qt environment
+        shell: pwsh
+        run: |
+          Get-ChildItem Env: | Where-Object {
+            $_.Name -eq "CMAKE_PREFIX_PATH" -or $_.Name -match "^QT_"
+          } | ForEach-Object {
+            Remove-Item -LiteralPath "Env:$($_.Name)"
+          }
+          Write-Host "WinUI job has no Qt package, Qt prefix, or Qt environment variables."
+
+      - name: Set up NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Verify Visual Studio 2026/v145 toolchain
+        shell: pwsh
+        run: pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/verify_windows_vs2026.ps1
+
+      - name: Configure WinUI ${{ matrix.configuration }}
+        shell: pwsh
+        run: cmake --fresh --preset ${{ matrix.preset }}
+
+      - name: Build WinUI ${{ matrix.configuration }}
+        shell: pwsh
+        run: >-
+          cmake --build --preset ${{ matrix.preset }} --parallel 2
+          -- /p:TrackFileAccess=false
+
+      - name: Verify Qt-free CMake cache
+        shell: pwsh
+        run: |
+          $cache = Get-Content -Raw "build/${{ matrix.preset }}/CMakeCache.txt"
+          if ($cache -match "(?im)^Qt6[^=]*_DIR:") {
+            throw "A Qt package entry was created in the WinUI-only CMake cache."
+          }
+
+      - name: Test WinUI
+        shell: pwsh
+        run: ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.configuration }} --output-on-failure
+
+      - name: Verify self-contained WinUI stage
+        shell: pwsh
+        run: >-
+          pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass
+          -File scripts/verify_windows_winui_stage.ps1
+          -StageDirectory
+          dist/ClassMngr-windows-winui-${{ matrix.stage_arch }}/${{ matrix.configuration }}
+          -Platform ${{ matrix.platform }}
+
+      - name: Measure x86 idle memory
+        if: matrix.platform == 'Win32' && matrix.configuration == 'Release'
+        shell: pwsh
+        run: >-
+          pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass
+          -File scripts/measure_windows_winui_memory.ps1
+          -StageDirectory
+          dist/ClassMngr-windows-winui-${{ matrix.stage_arch }}/${{ matrix.configuration }}
+          -Platform ${{ matrix.platform }}
+          -WarmupSeconds 5
+          -SampleSeconds 15
+          -ReportPath
+          artifacts/phase1-memory-${{ matrix.stage_arch }}-${{ matrix.configuration }}.json
+
+      - name: Upload x86 memory report
+        if: matrix.platform == 'Win32' && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassMngr-windows-winui-${{ matrix.stage_arch }}-${{ matrix.configuration }}-memory
+          path: artifacts/phase1-memory-${{ matrix.stage_arch }}-${{ matrix.configuration }}.json
+          if-no-files-found: error
+
+      - name: Upload WinUI stage
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassMngr-windows-winui-${{ matrix.stage_arch }}-${{ matrix.configuration }}
+          path: dist/ClassMngr-windows-winui-${{ matrix.stage_arch }}/${{ matrix.configuration }}
+          if-no-files-found: error

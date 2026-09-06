@@ -1,5 +1,7 @@
 #include "schedule_cell_renderer_policy.h"
 
+#include "classmngr/engine/schedule_report.h"
+
 QString ScheduleCellRendererPolicy::escaped(const QString& text)
 {
     return text.toHtmlEscaped();
@@ -26,14 +28,10 @@ QString ScheduleCellRendererPolicy::classStyle(
 
 QString ScheduleCellRendererPolicy::englishLine(const ScheduleEntry& entry)
 {
-    QStringList parts;
-    if (!entry.classGrade.trimmed().isEmpty())
-    {
-        parts.append(entry.classGrade.trimmed());
-    }
-    if (!entry.classLevel.trimmed().isEmpty())
-    {
-        parts.append(entry.classLevel.trimmed());
-    }
-    return parts.join(QStringLiteral(" - "));
+    return QString::fromUtf8(
+        classmngr::engine::ScheduleReportService::classLine(
+            entry.classGrade.toStdString(),
+            entry.classLevel.toStdString()
+            )
+        );
 }

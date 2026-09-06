@@ -1,14 +1,16 @@
 #pragma once
 
-#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
+#include "classmngr/engine/speaking_evaluation_report_content.h"
 
+#include <QByteArray>
 #include <QString>
 
 class SpeakingEvalInternalPdfRenderer final
 {
 public:
     [[nodiscard]] static bool render(
-        const SpeakingEvalReportData& data,
+        const classmngr::engine::SpeakingEvaluationReportContent& content,
+        const QByteArray& signatureImage,
         const QString& documentPath,
         QString* errorMessage
         );
