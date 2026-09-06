@@ -93,13 +93,14 @@ bool verifyEmbeddedManifest()
 
 void scheduleTestExit(
     winrt::Microsoft::UI::Xaml::Window const& window,
-    bool passed
+    bool passed,
+    DWORD failureExitCode = ERROR_INVALID_DATA
     )
 {
     window.DispatcherQueue().TryEnqueue(
-        [window, passed]() {
+        [window, passed, failureExitCode]() {
             window.Close();
-            ExitProcess(passed ? ERROR_SUCCESS : ERROR_INVALID_DATA);
+            ExitProcess(passed ? ERROR_SUCCESS : failureExitCode);
         }
         );
 }
@@ -326,7 +327,13 @@ void App::OnLaunched(
             }
             else if (phase4SemanticTest)
             {
-                passed = mainWindow->runPhase4SemanticChecks();
+                const auto failureMask = mainWindow->phase4SemanticFailureMask();
+                scheduleTestExit(
+                    m_window,
+                    failureMask == 0,
+                    ERROR_INVALID_DATA + failureMask
+                    );
+                return;
             }
             scheduleTestExit(m_window, passed);
         };

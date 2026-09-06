@@ -33,6 +33,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase3LocalizationChecks();
     [[nodiscard]] bool runPhase3DialogChecks();
     [[nodiscard]] bool runPhase4SemanticChecks();
+    [[nodiscard]] uint32_t phase4SemanticFailureMask();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
         runPhase3ViewModelChecks();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>

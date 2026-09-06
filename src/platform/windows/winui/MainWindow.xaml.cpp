@@ -336,7 +336,10 @@ std::vector<std::wstring> splitPastedRangeRow(std::wstring_view row)
     size_t start = 0;
     while (start <= row.size())
     {
-        const size_t separator = row.find(L'\t', start);
+        // WinUI TextBox normalizes clipboard tab characters to spaces. Treat
+        // both representations as column separators so a TSV range remains
+        // usable after the platform text-control boundary.
+        const size_t separator = row.find_first_of(L"\t ", start);
         const size_t end = separator == std::wstring_view::npos
             ? row.size()
             : separator;
@@ -358,15 +361,11 @@ std::vector<std::vector<std::wstring>> parsePastedRange(
     size_t start = 0;
     while (start <= text.size())
     {
-        const size_t separator = text.find(L'\n', start);
+        const size_t separator = text.find_first_of(L"\r\n", start);
         const size_t end = separator == std::wstring_view::npos
             ? text.size()
             : separator;
-        auto row = text.substr(start, end - start);
-        if (!row.empty() && row.back() == L'\r')
-        {
-            row.remove_suffix(1);
-        }
+        const auto row = text.substr(start, end - start);
         if (!row.empty())
         {
             rows.emplace_back(splitPastedRangeRow(row));
@@ -376,6 +375,11 @@ std::vector<std::vector<std::wstring>> parsePastedRange(
             break;
         }
         start = separator + 1;
+        if (text[separator] == L'\r' && start < text.size()
+            && text[start] == L'\n')
+        {
+            ++start;
+        }
     }
     return rows;
 }
@@ -697,21 +701,28 @@ MainWindow::runPhase3SemanticChecks()
 
 bool MainWindow::runPhase4SemanticChecks()
 {
+    return phase4SemanticFailureMask() == 0;
+}
+
+uint32_t MainWindow::phase4SemanticFailureMask()
+{
     if (!ensureHomePage() || !m_scheduleSlotTextBox || !m_scheduleStatusText
         || !m_rosterSourceList || !m_rosterTransferredList || !m_rosterStatusText
         || !m_speakingPasteTextBox || !m_speakingStatusText
         || m_speakingScoreCells.size() != 9)
     {
-        return false;
+        return 1;
     }
 
+    const auto contains = [](winrt::hstring const& value, std::wstring_view text) {
+        return std::wstring_view(value.c_str(), value.size()).find(text)
+            != std::wstring_view::npos;
+    };
     const auto eventArguments = Microsoft::UI::Xaml::RoutedEventArgs();
     m_scheduleSlotTextBox.Text(L"09:45–10:30");
     ScheduleApplyButton_Click(nullptr, eventArguments);
-    const bool scheduleReady = std::wstring_view(
-        m_scheduleStatusText.Text().c_str(),
-        m_scheduleStatusText.Text().size()
-        ).find(L"not persisted") != std::wstring_view::npos;
+    const auto scheduleStatus = m_scheduleStatusText.Text();
+    const bool scheduleReady = contains(scheduleStatus, L"not persisted");
 
     const auto sourceCount = m_rosterSourceList.Items().Size();
     const auto transferredCount = m_rosterTransferredList.Items().Size();
@@ -724,22 +735,29 @@ bool MainWindow::runPhase4SemanticChecks()
 
     m_speakingPasteTextBox.Text(L"8\t7\t9\n9\t8\t8");
     SpeakingPasteButton_Click(nullptr, eventArguments);
-    const bool pasteReady = m_speakingScoreCells[0].Text() == L"8"
-        && m_speakingScoreCells[1].Text() == L"7"
-        && m_speakingScoreCells[5].Text() == L"8"
-        && std::wstring_view(
-               m_speakingStatusText.Text().c_str(),
-               m_speakingStatusText.Text().size()
-               ).find(L"Applied 6") != std::wstring_view::npos;
+    const bool firstScoreReady = m_speakingScoreCells[0].Text() == L"8";
+    const bool secondScoreReady = m_speakingScoreCells[1].Text() == L"7";
+    const bool sixthScoreReady = m_speakingScoreCells[5].Text() == L"8";
+    const auto pasteStatus = m_speakingStatusText.Text();
+    const bool pasteStatusReady = contains(pasteStatus, L"Applied 6");
 
     SpeakingAnalyticsButton_Click(nullptr, eventArguments);
-    const bool analyticsReady = std::wstring_view(
-        m_speakingStatusText.Text().c_str(),
-        m_speakingStatusText.Text().size()
-        ).find(L"Analytics navigation requested") != std::wstring_view::npos;
+    const auto analyticsStatus = m_speakingStatusText.Text();
+    const bool analyticsReady = contains(
+        analyticsStatus,
+        L"Analytics navigation requested"
+        );
 
-    return scheduleReady && rosterReady && pasteReady && analyticsReady
-        && m_dirtyState.isDirty();
+    uint32_t failureMask = 0;
+    failureMask |= scheduleReady ? 0 : 2;
+    failureMask |= rosterReady ? 0 : 4;
+    failureMask |= firstScoreReady ? 0 : 8;
+    failureMask |= secondScoreReady ? 0 : 16;
+    failureMask |= sixthScoreReady ? 0 : 32;
+    failureMask |= pasteStatusReady ? 0 : 64;
+    failureMask |= analyticsReady ? 0 : 128;
+    failureMask |= m_dirtyState.isDirty() ? 0 : 256;
+    return failureMask;
 }
 
 Windows::Foundation::IAsyncOperation<bool>
@@ -1022,9 +1040,10 @@ void MainWindow::SpeakingPasteButton_Click(
         return;
     }
 
+    const auto pastedText = m_speakingPasteTextBox.Text();
     const auto rows = parsePastedRange(std::wstring_view(
-        m_speakingPasteTextBox.Text().c_str(),
-        m_speakingPasteTextBox.Text().size()
+        pastedText.c_str(),
+        pastedText.size()
         ));
     constexpr size_t scoreColumns = 3;
     size_t applied = 0;
