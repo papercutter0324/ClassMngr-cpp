@@ -1395,6 +1395,7 @@ void MainWindow::populateHomePage(
         L"Edit score cells, apply a tab/newline range, and request analytics navigation using standard controls.",
         L"Speaking evaluation editor"
         });
+    m_speakingScoreCells.clear();
     auto scoreGrid = Grid();
     for (size_t column = 0; column < 4; ++column)
     {
