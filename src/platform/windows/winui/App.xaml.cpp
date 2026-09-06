@@ -311,7 +311,7 @@ void App::OnLaunched(
             {
                 passed = ClassMngrWinUIThreading::runThreadingContractChecks();
             }
-            else if (semanticTest || phase4SemanticTest)
+            else if (semanticTest)
             {
                 if (!ClassMngrWinUILifecycle::runLifecycleContractChecks())
                 {
@@ -321,8 +321,12 @@ void App::OnLaunched(
                 completeViewModelTest(
                     m_window,
                     mainWindow->runPhase3SemanticChecks()
-                    );
+                );
                 return;
+            }
+            else if (phase4SemanticTest)
+            {
+                passed = mainWindow->runPhase4SemanticChecks();
             }
             scheduleTestExit(m_window, passed);
         };
