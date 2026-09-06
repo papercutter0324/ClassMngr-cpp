@@ -97,7 +97,7 @@ Status vocabulary:
 
 ## Progress Dashboard
 
-Last updated: 2026-09-06 (Asia/Seoul)
+Last updated: 2026-09-07 (Asia/Seoul)
 
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ Last updated: 2026-09-06 (Asia/Seoul)
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
-| [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **In progress** | All eight implementation slices are committed; automated evidence plus owner-confirmed Korean IME and DPI pass. The x64 Release large-data gate now passes three clean repetitions. Touch, high-contrast, and accessibility automation are out of scope; the Phase 4 exit review remains. |
+| [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
@@ -113,14 +113,12 @@ Last updated: 2026-09-06 (Asia/Seoul)
 
 ## Current Focus
 
-Phase 4 is in progress. Its shared UX layer, first-party virtualization
-decision, three editor prototypes, input and Korean IME protocols, large-data
-gate, chart strategy, and staged semantic control check are committed. The
-representative large-data virtualization and performance gate now passes on
-x64 Release with three clean repetitions; the supporting Debug and x86
-functional probes also pass. Phase 4 remains in progress pending its exit
-review. Owner-confirmed Korean IME and DPI have passed; touch, high-contrast,
-and accessibility automation are out of scope.
+Phase 4 is complete. Its shared UX layer, first-party virtualization decision,
+three editor prototypes, input and Korean IME protocols, large-data gate,
+chart strategy, and staged semantic control check passed the accepted exit
+review on 2026-09-07. Phase 5 is the next incomplete phase; no Phase 5
+implementation has started. Touch, high-contrast, and accessibility automation
+remain out of scope for Phase 4.
 The Qt-free
 engine already
 contains the `SemanticVersion` seed slice and typed standard-library result and
@@ -305,6 +303,17 @@ After meaningful work:
    long logs.
 
 ## Progress Log
+
+- **2026-09-07 — Phase 4 exit review accepted.** The shared UX and high-risk
+  control implementation sequence was reviewed through `62f247f`, with the
+  current `8093421` revision changing only generated-artifact ignores. The
+  automated gallery, memory, semantic, and large-data evidence passed; the
+  owner-confirmed Korean IME and 100–300% DPI checks passed; and the x64
+  Release large-data gate passed three clean repetitions. The deterministic
+  large-data validator passed 21/21 cases, the registered artifact CTest
+  passed 1/1, and x64 Debug and Release staged semantic verification passed.
+  Touch, high-contrast, and accessibility automation are out of scope. See
+  the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md).
 
 - **2026-09-06 — Phase 4 automated evidence runner added.** The staged
   verifier now runs `--phase4-semantic-test`, and
