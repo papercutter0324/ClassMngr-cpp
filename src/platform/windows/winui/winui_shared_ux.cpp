@@ -5,8 +5,8 @@
 
 namespace
 {
-    using namespace Microsoft::UI::Xaml;
-    using namespace Microsoft::UI::Xaml::Controls;
+    using namespace winrt::Microsoft::UI::Xaml;
+    using namespace winrt::Microsoft::UI::Xaml::Controls;
     using winrt::box_value;
     using winrt::hstring;
 
@@ -18,14 +18,14 @@ namespace
     {
         if (!name.empty())
         {
-            Microsoft::UI::Xaml::Automation::AutomationProperties::SetName(
+            winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetName(
                 element,
                 name
                 );
         }
         if (!helpText.empty())
         {
-            Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
+            winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
                 element,
                 helpText
                 );
@@ -126,7 +126,7 @@ namespace ClassMngrWinUISharedUX
         {
             field.validation.Text({});
             field.validation.Visibility(Visibility::Collapsed);
-            Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
+            winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
                 field.input,
                 {}
                 );
@@ -135,7 +135,7 @@ namespace ClassMngrWinUISharedUX
 
         field.validation.Text(tonePrefix(tone) + message);
         field.validation.Visibility(Visibility::Visible);
-        Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
+        winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
             field.input,
             message
             );
@@ -319,7 +319,7 @@ namespace ClassMngrWinUISharedUX
         const bool busy = tone == StatusTone::Busy;
         surface.progress.IsActive(busy);
         surface.progress.Visibility(busy ? Visibility::Visible : Visibility::Collapsed);
-        Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
+        winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
             surface.root,
             message
             );
@@ -374,7 +374,7 @@ namespace ClassMngrWinUISharedUX
             text += detail;
         }
         surface.state.Text(text);
-        Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
+        winrt::Microsoft::UI::Xaml::Automation::AutomationProperties::SetHelpText(
             surface.root,
             text
             );

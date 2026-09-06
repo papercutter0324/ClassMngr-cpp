@@ -46,9 +46,9 @@ namespace ClassMngrWinUISharedUX
 
     struct FormField
     {
-        Microsoft::UI::Xaml::Controls::StackPanel root{nullptr};
-        Microsoft::UI::Xaml::Controls::TextBox input{nullptr};
-        Microsoft::UI::Xaml::Controls::TextBlock validation{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::StackPanel root{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::TextBox input{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock validation{nullptr};
     };
 
     struct StateSurfaceOptions
@@ -61,10 +61,10 @@ namespace ClassMngrWinUISharedUX
 
     struct StateSurface
     {
-        Microsoft::UI::Xaml::Controls::Border root{nullptr};
-        Microsoft::UI::Xaml::Controls::TextBlock title{nullptr};
-        Microsoft::UI::Xaml::Controls::TextBlock description{nullptr};
-        Microsoft::UI::Xaml::Controls::Button action{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::Border root{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock title{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock description{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::Button action{nullptr};
     };
 
     struct CardOptions
@@ -76,8 +76,8 @@ namespace ClassMngrWinUISharedUX
 
     struct Card
     {
-        Microsoft::UI::Xaml::Controls::Border root{nullptr};
-        Microsoft::UI::Xaml::Controls::StackPanel content{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::Border root{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::StackPanel content{nullptr};
     };
 
     struct FilterBarOptions
@@ -91,23 +91,23 @@ namespace ClassMngrWinUISharedUX
 
     struct FilterBar
     {
-        Microsoft::UI::Xaml::Controls::StackPanel root{nullptr};
-        Microsoft::UI::Xaml::Controls::TextBox query{nullptr};
-        Microsoft::UI::Xaml::Controls::ComboBox filter{nullptr};
-        Microsoft::UI::Xaml::Controls::Button clear{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::StackPanel root{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::TextBox query{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::ComboBox filter{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::Button clear{nullptr};
     };
 
     struct StatusSurface
     {
-        Microsoft::UI::Xaml::Controls::Border root{nullptr};
-        Microsoft::UI::Xaml::Controls::ProgressRing progress{nullptr};
-        Microsoft::UI::Xaml::Controls::TextBlock message{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::Border root{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::ProgressRing progress{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock message{nullptr};
     };
 
     struct AutosaveSurface
     {
-        Microsoft::UI::Xaml::Controls::Border root{nullptr};
-        Microsoft::UI::Xaml::Controls::TextBlock state{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::Border root{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock state{nullptr};
     };
 
     FormField buildFormField(FormFieldOptions const& options);
