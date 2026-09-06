@@ -685,13 +685,61 @@ MainWindow::runPhase3SemanticChecks()
     const bool resourcesReady = runPhase3LocalizationChecks();
     const bool dialogsReady = runPhase3DialogChecks();
     const bool threadingReady = ClassMngrWinUIThreading::runThreadingContractChecks();
+    const bool phase4Ready = runPhase4SemanticChecks();
     if (!navigationReady || !inputReady || !focusReady || !resourcesReady
-        || !dialogsReady || !threadingReady)
+        || !dialogsReady || !threadingReady || !phase4Ready)
     {
         co_return false;
     }
 
     co_return co_await runPhase3ViewModelChecks();
+}
+
+bool MainWindow::runPhase4SemanticChecks()
+{
+    if (!ensureHomePage() || !m_scheduleSlotTextBox || !m_scheduleStatusText
+        || !m_rosterSourceList || !m_rosterTransferredList || !m_rosterStatusText
+        || !m_speakingPasteTextBox || !m_speakingStatusText
+        || m_speakingScoreCells.size() != 9)
+    {
+        return false;
+    }
+
+    const auto eventArguments = Microsoft::UI::Xaml::RoutedEventArgs();
+    m_scheduleSlotTextBox.Text(L"09:45–10:30");
+    ScheduleApplyButton_Click(nullptr, eventArguments);
+    const bool scheduleReady = std::wstring_view(
+        m_scheduleStatusText.Text().c_str(),
+        m_scheduleStatusText.Text().size()
+        ).find(L"not persisted") != std::wstring_view::npos;
+
+    const auto sourceCount = m_rosterSourceList.Items().Size();
+    const auto transferredCount = m_rosterTransferredList.Items().Size();
+    m_rosterSourceList.SelectedIndex(0);
+    RosterTransferButton_Click(nullptr, eventArguments);
+    const bool rosterReady = sourceCount > 0
+        && m_rosterSourceList.Items().Size() + 1 == sourceCount
+        && m_rosterTransferredList.Items().Size() == transferredCount + 1
+        && m_rosterTransferredList.SelectedIndex() >= 0;
+
+    m_speakingPasteTextBox.Text(L"8\t7\t9\n9\t8\t8");
+    SpeakingPasteButton_Click(nullptr, eventArguments);
+    const bool pasteReady = m_speakingScoreCells[0].Text() == L"8"
+        && m_speakingScoreCells[1].Text() == L"7"
+        && m_speakingScoreCells[5].Text() == L"8"
+        && std::wstring_view(
+               m_speakingStatusText.Text().c_str(),
+               m_speakingStatusText.Text().size()
+               ).find(L"Applied 6") != std::wstring_view::npos;
+
+    SpeakingAnalyticsButton_Click(nullptr, eventArguments);
+    const bool analyticsReady = std::wstring_view(
+        m_speakingStatusText.Text().c_str(),
+        m_speakingStatusText.Text().size()
+        ).find(L"Analytics navigation requested") != std::wstring_view::npos;
+
+    return scheduleReady && rosterReady && pasteReady && analyticsReady
+        && m_dirtyState.isDirty();
 }
 
 Windows::Foundation::IAsyncOperation<bool>
