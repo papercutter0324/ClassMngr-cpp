@@ -4,7 +4,6 @@
 #include "core/application_services.h"
 #include "core/theme_service.h"
 #include "data/database/database_session.h"
-#include "data/data_service.h"
 #include "domain/models/teacher.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -128,11 +127,6 @@ SubPrepPackageService::Request packageRequest(
 ApplicationServices::ApplicationServices() = default;
 
 ApplicationServices::~ApplicationServices() = default;
-
-DataService* ApplicationServices::dataService() const
-{
-    return nullptr;
-}
 
 bool ApplicationServices::hasOpenDatabase() const
 {

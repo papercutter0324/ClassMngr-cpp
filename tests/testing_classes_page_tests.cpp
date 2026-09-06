@@ -1,5 +1,5 @@
 #include "core/application_services.h"
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "domain/models/roster.h"
 #include "domain/models/testing_class.h"
 #include "features/classes/ui/testing_classes_page.h"
@@ -134,7 +134,7 @@ void TestingClassesPageTests
     ::rosterEditorOmitsRemoveButtonAndKeepsContextAction()
 {
     ApplicationServices services;
-    QVERIFY(services.dataService()->saveRoster(
+    QVERIFY(services.rosterService()->saveRoster(
         42,
         rosterWithEvaluation()
         ).has_value());
@@ -360,7 +360,7 @@ void TestingClassesPageTests
 {
     ApplicationServices services;
     const Result<int> created =
-        services.dataService()->createTestingClass(
+        services.scheduleService()->createTestingClass(
             testingClass(QStringLiteral("Output Availability"))
             );
     QVERIFY(created);
@@ -396,7 +396,7 @@ void TestingClassesPageTests
             "Exceptionally Long Testing Class Name for Marquee Verification"
             );
     const Result<int> created =
-        services.dataService()->createTestingClass(
+        services.scheduleService()->createTestingClass(
             testingClass(longName)
             );
     QVERIFY(created);
@@ -476,13 +476,13 @@ void TestingClassesPageTests
 {
     ApplicationServices services;
     const Result<int> created =
-        services.dataService()->createTestingClass(
+        services.scheduleService()->createTestingClass(
             testingClass(
                 QStringLiteral("Writing Lab")
                 )
             );
     QVERIFY(created);
-    QVERIFY(services.dataService()->saveRoster(
+    QVERIFY(services.rosterService()->saveRoster(
         *created,
         rosterWithEvaluation()
         ).has_value());
@@ -548,7 +548,7 @@ void TestingClassesPageTests
     testingEditor->saveData();
 
     const Result<Roster> savedResult =
-        services.dataService()->loadRoster(*created);
+        services.rosterService()->roster(*created);
     QVERIFY(savedResult);
     const Roster& saved = *savedResult;
     const int winterColumn =

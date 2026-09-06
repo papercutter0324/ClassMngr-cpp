@@ -7,7 +7,6 @@
 #include <QString>
 #include <memory>
 
-class DataService;
 class DatabaseSession;
 class ThemeService;
 class SettingsService;
@@ -49,12 +48,6 @@ public:
         const QString& destinationPath
         );
 
-    // Explicit compatibility adapter for legacy/test callers. It borrows
-    // m_session; production feature composition must use the narrow services
-    // above. Retirement owner: the remaining Phase 2 retained-Qt closure;
-    // Phase 3 confirms the engine-first boundary for the WinUI client. Do not
-    // add new production callers or facade operations.
-    [[nodiscard]] DataService* dataService() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;
     [[nodiscard]] ClassService* classService() const;
@@ -67,7 +60,6 @@ public:
 
 private:
     std::unique_ptr<DatabaseSession> m_session;
-    mutable std::unique_ptr<DataService> m_legacyDataService;
     mutable std::unique_ptr<SettingsService> m_settingsService;
     mutable std::unique_ptr<TeacherService> m_teacherService;
     mutable std::unique_ptr<ClassService> m_classService;

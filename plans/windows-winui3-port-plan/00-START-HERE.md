@@ -103,7 +103,7 @@ Last updated: 2026-09-06 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, testing-class/testing-block persistence and retained adapter wiring, campus-record CRUD and retained campus adapter wiring, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-time validation and retained validator adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, teacher-import workflows and retained teacher-import adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, schedule-time formatter adapter wiring, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, class-tab navigation and retained adapter wiring, evaluation-default selection policy and retained evaluation-default adapter wiring, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, document-catalog policies, application-settings persistence and retained settings adapter wiring, personal-details settings persistence and retained personal-details adapter wiring, file-backed retained Qt DatabaseSession and CalendarEventCache preflight through engine OpenDatabase, the eleven-case fixture corpus round-trip gate, P2-01 report/export adapter boundaries, P2-02 portable file/output contracts, P2-03 retained database/application-service adapter cleanup, P2-04 import/file-codec boundaries, P2-05 resource-pack/catalog policy, and P2-06 platform-service interfaces are extracted; P2-07 per-slice cross-platform fixture coverage and P2-08 retained-adapter/legacy-rule cleanup are complete. The latest macOS repair builds all 127 targets and passes 127/127 tests on the permitted native host, the exact Qt 6.12 universal fixture lane passes, and the current Linux Qt 6.12.0 x64 retained fixture lane passes; remaining closure work is retained DataService-facade retirement and a non-red seven-lane aggregate. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -117,10 +117,11 @@ Phase 3 is complete: items 1–10 each have a dedicated sequence commit, and
 correction commit `db50929` records the unpackaged PRI merge, visual-tree
 timing, and normal-close lifecycle fixes. The full x64 staged verifier and
 the passed visual/semantic evidence are recorded under
-`artifacts/phase3/windows-x64-winui-debug-clean/`. Phase 1 is complete and
-Phase 2 remains in progress; the retained macOS repair and the Linux Qt 6.12.0
-retained fixture lane are complete, while DataService-facade retirement and a
-non-red seven-lane aggregate remain closure work. The Qt-free engine already
+`artifacts/phase3/windows-x64-winui-debug-clean/`. Phase 1 and Phase 2 are
+complete: the retained macOS repair, Linux Qt 6.12.0 retained fixture lane,
+seven-lane aggregate, and DataService-facade retirement are all closed. The
+next active work is Phase 4, shared UX and high-risk controls. The Qt-free
+engine already
 contains the `SemanticVersion` seed slice and typed standard-library result and
 error contracts. The database boundary now owns file-format rules, SQLite
 connection/transaction behavior, six-version schema migration, `OpenDatabase`,
@@ -1432,6 +1433,14 @@ After meaningful work:
   runnable x64 XCB bundle; the installed startup probe, Qt deployment files,
   archive, and SHA-256 checksum were verified. Phase 2 remains open only for
   report aggregation and the retained DataService-facade follow-up.
+
+- **2026-09-06 - Phase 2 closure accepted.** The seven-lane report set was
+  revalidated with `scripts/phase2_exit_gate.py validate` and returned `PASS`
+  with all required lane reports and logs present. The remaining
+  `ApplicationServices::dataService()` facade, borrowed `DataService` session
+  constructor, and synchronization hook were removed; migrated Qt callers now
+  use narrow settings, roster, and schedule services. The focused Windows Qt
+  build and CTest selection passed 5/5.
 
 ## Shared Completion Rules
 

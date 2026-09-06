@@ -1,7 +1,6 @@
 #include "application_services.h"
 
 #include "classmngr/engine/file_system.h"
-#include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
 #include "core/theme_service.h"
@@ -149,12 +148,7 @@ Status ApplicationServices::openDatabase(
             );
     }
 
-    const Status status = m_session->open(databasePath);
-    if (m_legacyDataService)
-    {
-        m_legacyDataService->synchronizeCompatibilityAdapters();
-    }
-    return status;
+    return m_session->open(databasePath);
 }
 
 void ApplicationServices::closeDatabase()
@@ -162,10 +156,6 @@ void ApplicationServices::closeDatabase()
     if (m_session)
     {
         m_session->close();
-        if (m_legacyDataService)
-        {
-            m_legacyDataService->synchronizeCompatibilityAdapters();
-        }
     }
 }
 
@@ -234,16 +224,6 @@ Status ApplicationServices::exportDatabaseAs(
         m_session->databasePath(),
         destinationPath
         );
-}
-
-DataService* ApplicationServices::dataService() const
-{
-    if (!m_legacyDataService)
-    {
-        m_legacyDataService = std::make_unique<DataService>(*m_session);
-    }
-
-    return m_legacyDataService.get();
 }
 
 SettingsService* ApplicationServices::settingsService() const

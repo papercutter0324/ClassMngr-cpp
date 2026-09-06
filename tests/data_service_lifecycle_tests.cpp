@@ -359,13 +359,8 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
         directory.filePath(QStringLiteral("exported.db"));
 
     ApplicationServices services;
-    DataService* compatibilityAdapter = services.dataService();
-    QCOMPARE(
-        services.settingsService()->databaseSession(),
-        compatibilityAdapter->databaseSession()
-        );
     QVERIFY(services.openDatabase(sourcePath).has_value());
-    QVERIFY(compatibilityAdapter->saveSetting(
+    QVERIFY(services.settingsService()->save(
         QStringLiteral("application-services/compatibility"),
         QStringLiteral("shared-session")
         ).has_value());
@@ -396,7 +391,7 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
         );
 
     services.closeDatabase();
-    QVERIFY(!compatibilityAdapter->isOpen());
+    QVERIFY(!services.hasOpenDatabase());
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
 }

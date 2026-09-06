@@ -254,17 +254,15 @@ engine and retained-Qt teacher-import tests pass.
 
 ### P2-R04 — Collapse legacy application-service fallbacks
 
-**Status (2026-09-06): Implemented for production composition; facade
-retirement remains open after Phase 3.** ApplicationServices owns the session
-and production feature services receive it directly. The legacy DataService
-API remains an explicit shared-session adapter. Phase 3's application
-foundation exit gate is complete, but it validated the WinUI shell and Windows
-adapters rather than retiring the retained Qt compatibility facade. Retirement
-is now part of the remaining Phase 2 closure work.
+**Status (2026-09-06): Complete.** ApplicationServices owns the session and
+production feature services receive it directly. The legacy
+`ApplicationServices::dataService()` facade, its borrowed-session constructor,
+and its synchronization hook have been removed. Phase 3's application
+foundation remains independent of the retained Qt test fixtures.
 
 - [x] Keep migrated production workflows on the engine-first session/use-case
-  graph and make the remaining compatibility object an explicit adapter with
-  a named retirement owner and deadline.
+  graph and limit the remaining direct `DataService` compatibility class to
+  explicit standalone test and fixture callers.
 - [x] Remove the `FeatureService` `DataService*` fallback branches and narrow
   `DataService` to compatibility/test callers after equivalent engine paths
   are proven. No new UI or controller code should add another facade method.
@@ -274,13 +272,13 @@ is now part of the remaining Phase 2 closure work.
 
 Evidence: `src/core/application_services.h/.cpp` owns the shared
 `DatabaseSession` and constructs production feature services from it. The
-`FeatureService` `DataService*` and mixed-session fallback constructors are
-removed, and the source audit found no production caller of the compatibility
-facade. `ClassMngrDataServiceLifecycleTests` now covers shared-session service
-construction, open/close availability, and the compatibility adapter. The
-broad `DataService` facade remains only as a source-compatible adapter until
-the remaining retained Qt test and compatibility callers are migrated or
-explicitly quarantined.
+source audit found no `ApplicationServices::dataService()`,
+`m_legacyDataService`, or compatibility-synchronization references in the
+production or retained-test source. Settings, roster, and testing-class callers
+now use their narrow services. Standalone `DataService(QString)` remains only
+for explicit direct-compatibility tests and fixture support; it is no longer
+part of `ApplicationServices` composition. `ClassMngrDataServiceLifecycleTests`
+and the four migrated UI test targets pass against the resulting boundary.
 
 ### P2-R05 — Retire the remaining Qt SQL compatibility path
 
@@ -347,18 +345,19 @@ operations. `ClassMngrEngineCalendarEventImportServiceTests`,
 
 ### P2-R07 — Close the cross-platform and clean-build exit gate
 
-**Status (2026-09-06): Windows milestone and exact macOS/Linux retained-Qt
-fixture lanes complete; the full cross-platform gate remains open.**
+**Status (2026-09-06): Complete.** The Windows milestone and exact
+macOS/Linux retained-Qt fixture lanes all have runtime-tested PASS reports.
 The reproducible matrix is executable through
 `.github/workflows/phase2-exit-gate.yml` and
 `scripts/phase2_exit_gate.py`, with the process documented in [the exit-gate
 runbook](../../docs/porting/windows-winui/phase2-exit-gate-runbook.md). At the
-current clean `HEAD`, the refreshed Windows matrix has runtime-tested PASS
-reports for all four Qt-free x64/x86
+the validated report set, the Windows matrix has runtime-tested PASS reports
+for
+all four Qt-free x64/x86
 Debug/Release engine lanes and the retained Windows Qt 6.12.0 x64 lane.
-The Windows-focused aggregate is PASS through
-`validate-windows` and is recorded at
-`artifacts/phase2/windows-aggregate-report.json`. The latest macOS run with
+The complete seven-lane aggregate is PASS through `validate` and is recorded
+at `artifacts/phase2/aggregate-report.json`; all required lane reports are
+present, share one commit, and contain the required logs. The latest macOS run with
 exact Qt 6.12.0 universal runtime evidence passes the retained database-port
 fixture in both directions. Its clean baseline now configures and builds all
 127 targets and passes 127/127 tests on the permitted native macOS host.
@@ -366,8 +365,8 @@ fixture in both directions. Its clean baseline now configures and builds all
 screen-dependent dialog/report targets and the updater use the offscreen Qt
 platform, while the updater still exercises its loopback server. The current
 Linux device run uses exact Qt 6.12.0 x64, passes the retained fixture, and
-passes the complete Debug and Release Qt suites. The full seven-lane aggregate
-remains open as a separate report-assembly gate.
+passes the complete Debug and Release Qt suites. The seven-lane report-
+assembly gate is now closed.
 
 - [x] Replace the focused exception in the P2-07 record with a complete,
   reproducible headless x64/x86 matrix, or explicitly repair/update the
@@ -387,19 +386,19 @@ remains open as a separate report-assembly gate.
   exact Qt 6.12.0 x64 lane is `PASS` with `runtime-tested` evidence; the
   complete Linux Qt Debug and Release suites also pass 126/126. The report is
   `artifacts/phase2/linux-qt-6.12-x64/linux-qt-6.12-x64.json`.
-- [ ] Regenerate the complete seven-lane aggregate from one current report set.
-  The macOS fixture lane is `PASS` and the clean baseline builds all 127
-  targets with 127/127 tests passing on the permitted native host.
+- [x] Regenerate the complete seven-lane aggregate from one current report set.
+  `artifacts/phase2/aggregate-report.json` is `PASS`; all seven required lane
+  reports are present, runtime-tested, and free of validator failures.
 
 Evidence: `docs/porting/windows-winui/phase2-local-validation.md` records the
 current Windows milestone matrix, the latest macOS baseline and runtime-tested
 fixture lane, the current Linux Qt 6.12.0 report, the Windows-focused
 aggregate, the full aggregate outcome, and the MSVC FileTracker host
 limitation. The lane reports and logs under `artifacts/phase2` are generated
-validation outputs; the complete aggregate still must be regenerated from one
-current Windows/Linux/macOS report set. P2-R07's Windows, exact-macOS fixture,
-and Linux fixture portions are complete; the full cross-platform record remains
-open until a non-red seven-lane aggregate is recorded.
+validation outputs; the complete aggregate was validated from one current
+Windows/Linux/macOS report set with no missing or failed evidence. P2-R07's
+Windows, exact-macOS fixture, Linux fixture, and seven-lane aggregate portions
+are complete.
 
 ### P2-R08 — Remove or quarantine superseded Qt validation helpers
 
@@ -589,8 +588,9 @@ not introduce a second service graph or change the WinUI foundation.
 - [x] Obtain the current Linux retained-Qt report. The exact Qt 6.12.0 x64
   fixture lane is `PASS` with `runtime-tested` evidence, and the complete Linux
   Qt Debug and Release suites pass 126/126.
-- [ ] Regenerate the non-red seven-lane cross-platform aggregate from current
-  Windows, Linux, and macOS reports.
+- [x] Regenerate the non-red seven-lane cross-platform aggregate from current
+  Windows, Linux, and macOS reports. The aggregate report is `PASS` with all
+  seven required lanes present and no failures.
 
 The 11-target macOS failure evidence and diagnosis are recorded in
 `docs/porting/windows-winui/phase2-local-validation.md`. The shared fixture

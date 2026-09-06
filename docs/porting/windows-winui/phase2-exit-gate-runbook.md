@@ -1,10 +1,9 @@
 # Phase 2 exit-gate runbook
 
-Status: Windows milestone and retained Linux/macOS fixture lanes complete
-(2026-09-06); the full cross-platform evidence gate remains open. This is an
-unofficial port, so Linux is not a current Windows-port blocker. The automated
-full-gate path remains available for the point when the port is promoted for
-official use.
+Status: Phase 2 seven-lane portable-engine exit gate complete (2026-09-06).
+This is an unofficial port, so Linux remains supporting retained-platform
+evidence rather than a Windows-port blocker. The automated full-gate path
+remains available for future changes and official promotion.
 
 ## Automated entry point
 
@@ -178,21 +177,20 @@ confirming that the required migration slices and failure categories are still
 meaningful, reviewing platform-specific failures or environment issues, and
 deciding whether the documented Phase 2 intent is satisfied.
 
-## Remaining closure conditions for P2-R07
+## P2-R07 closure record — 2026-09-06
 
 The Windows milestone and the exact retained-Qt Linux and macOS fixture lanes
-now have current runtime-tested PASS reports. This repository still does not
-claim a completed seven-lane cross-platform exit gate: the aggregate must be
-regenerated from one complete current report set. Missing-artifact,
-`host-blocked`, or failed evidence must remain visible; it must not be
-converted into a passing runtime result.
+have runtime-tested PASS reports. The downloaded report set was regenerated
+into `artifacts/phase2/aggregate-report.json`; the validator returned `PASS`
+with the exact seven required lanes, one commit across all lane reports, and
+no missing-artifact, `host-blocked`, or failed evidence.
 
-- Fresh artifacts are required for every Windows matrix lane; focused tests
-  are not a complete matrix.
-- Missing registered binaries, Qt-version mismatches, MSBuild FileTracker
-  failures, and any new Linux/macOS failures must be recorded in the lane
-  report or repaired before the full gate is closed.
-- The three retained-Qt lanes must publish current fixture evidence for every
-  migrated persistence slice, including invalid input, rollback, migration,
+- All four Windows engine lanes and the retained Windows Qt lane have complete
+  runtime-tested evidence with the required logs.
+- The three retained-Qt lanes publish fixture evidence for the migrated
+  persistence slices, including invalid input, rollback, migration,
   busy/locked database, and partial-failure outcomes where the lane owns that
   fixture.
+- The `ApplicationServices::dataService()` facade and borrowed-session
+  compatibility path are retired; migrated Qt callers use narrow services,
+  while direct standalone `DataService` fixtures remain explicitly scoped.

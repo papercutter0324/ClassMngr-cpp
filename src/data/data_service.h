@@ -60,12 +60,6 @@ public:
         const QString &dbPath = QString()
         );
 
-    // Explicit compatibility adapter for legacy callers that must share an
-    // ApplicationServices-owned session during the transition.
-    explicit DataService(
-        DatabaseSession& session
-        );
-
     ~DataService();
 
 
@@ -90,10 +84,6 @@ public:
     // and support legacy migration callers. UI and controllers must not use
     // the session or its repositories directly.
     [[nodiscard]] DatabaseSession* databaseSession() const;
-
-    // Compatibility-only lifecycle hook for an adapter borrowing an
-    // ApplicationServices-owned session. New production code must not call it.
-    void synchronizeCompatibilityAdapters();
 
     // =====================================================
     // Settings

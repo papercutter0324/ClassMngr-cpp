@@ -131,14 +131,6 @@ DataService::DataService(
 {
 }
 
-DataService::DataService(
-    DatabaseSession& session
-    )
-    : m_session(&session)
-{
-    refreshRepositoryAdapters();
-}
-
 DataService::~DataService()
 {
     if (m_ownsSession)
@@ -185,11 +177,6 @@ QString DataService::currentDatabasePath() const
 DatabaseSession* DataService::databaseSession() const
 {
     return m_session;
-}
-
-void DataService::synchronizeCompatibilityAdapters()
-{
-    refreshRepositoryAdapters();
 }
 
 void DataService::refreshRepositoryAdapters()

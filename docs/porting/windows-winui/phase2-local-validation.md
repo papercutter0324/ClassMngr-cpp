@@ -1688,8 +1688,9 @@ The original retained-Qt failures were repaired as follows:
 The exact retained-Qt P2-R07 command was rerun with Qt 6.12.0 universal
 metadata and completed `PASS`; the report is
 `artifacts/phase2/macos-qt-6.12-universal/macos-qt-6.12-universal.json`.
-The cross-platform Phase 2 gate remains open for the CI/device-owned Linux
-lane and a non-red seven-lane aggregate.
+At the time of this validation entry, the cross-platform Phase 2 gate remained
+open for the CI/device-owned Linux lane and a non-red seven-lane aggregate;
+the later Linux report and aggregate closure are recorded below.
 
 ## Windows Phase 2 milestone gate — 2026-09-05
 
@@ -1756,6 +1757,33 @@ allowed. The local host's default compiler launcher also resolved to a
 read-only `ccache`; the successful clean configure/build used direct
 `/usr/bin/gcc` and `/usr/bin/g++`. Neither condition is a product failure.
 
-The Linux lane is no longer deferred. The full seven-lane aggregate remains a
-separate report-assembly gate because this checkout does not contain the
-current Windows and macOS lane artifacts in the same reports directory.
+The Linux lane is no longer deferred. The complete seven-lane report set is
+available under `artifacts/phase2/reports` and was validated successfully.
+
+## Phase 2 closure - 2026-09-06
+
+The final retained compatibility cleanup is complete. `ApplicationServices`
+no longer exposes `dataService()`, owns a legacy `DataService`, or synchronizes
+borrowed compatibility adapters. The borrowed `DataService(DatabaseSession&)`
+constructor and synchronization hook were removed as well. Direct standalone
+`DataService(QString)` use remains limited to explicit compatibility tests,
+fixture generation, and narrow-service test backends; production composition
+uses the shared `DatabaseSession` and narrow feature services.
+
+The source audit found no `ApplicationServices::dataService()`,
+`m_legacyDataService`, or `synchronizeCompatibilityAdapters` references in
+`src`, `tests`, or `cmake`. The Windows validation commands completed as
+follows:
+
+| Check | Result |
+| --- | --- |
+| `cmake --fresh --preset windows-x64-debug` | PASS |
+| Focused five-target Debug build with `/p:TrackFileAccess=false` | PASS |
+| Focused lifecycle/UI CTest selection | PASS; 5/5 |
+| `python scripts/phase2_exit_gate.py validate ...` | PASS; seven required lanes, no failures |
+
+The aggregate report is `artifacts/phase2/aggregate-report.json`; its seven
+lane reports share one commit and include the required configure, build, and
+CTest logs. The aggregate covers the engine/fixture exit gate, while the
+current Qt facade retirement is covered by the focused Windows build and
+CTest results above.

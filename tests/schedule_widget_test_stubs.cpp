@@ -195,8 +195,6 @@ void setTestingClassAssignment(
 
 ApplicationServices::ApplicationServices()
 {
-    m_legacyDataService =
-        std::make_unique<DataService>();
     m_settingsService =
         std::make_unique<SettingsService>(nullptr);
     m_teacherService =
@@ -214,11 +212,6 @@ ApplicationServices::ApplicationServices()
 }
 
 ApplicationServices::~ApplicationServices() = default;
-
-DataService* ApplicationServices::dataService() const
-{
-    return m_legacyDataService.get();
-}
 
 ThemeService* ApplicationServices::themeService() const
 {
