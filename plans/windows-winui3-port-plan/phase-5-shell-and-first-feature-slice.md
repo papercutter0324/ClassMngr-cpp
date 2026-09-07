@@ -13,7 +13,8 @@ through the shared engine.
    accelerators, sidebar, navigation history, theme/language switching, and
    update notifications.
 2. Port database create/open/recent-file flows through engine use cases and
-   Windows file/folder pickers.
+   native Windows file/folder pickers (`FileOpenPicker`, `FileSavePicker`, and
+   `FolderPicker`), rather than recreating the Qt custom `QFileDialog` UI.
 3. Mirror `PageManager` lazy construction and state-retention semantics without
    creating pages to query navigation state.
 4. Port the Getting Started experience and global error/dirty-state behavior.
@@ -24,6 +25,16 @@ through the shared engine.
    navigation, empty/populated/error states, and the selected feature.
 7. Measure cold/warm startup, first paint, first navigation, resize, memory,
    and handle counts against the Phase 0 budgets.
+
+## File-dialog decision
+
+The WinUI port uses the operating system's native file-selection surfaces for
+file and folder workflows. The existing Phase 5 Open path uses an HWND-bound
+`FileOpenPicker` and keeps the picker outside the XAML shell. Future create,
+save, import, export, and directory-selection slices must use the matching
+native picker instead of porting the Qt-only `QFileDialog` customization and
+icon/sidebar styling. The full create/save/export flow remains a later Phase 5
+gate.
 
 ## Validation
 
