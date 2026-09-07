@@ -1,6 +1,7 @@
 # Phase 3 — WinUI Application Foundation
 
-> Progress is tracked in [00-START-HERE.md](00-START-HERE.md).
+> Cross-phase progress history is tracked in [progress-log.md](progress-log.md);
+> the active-phase handoff is in [00-START-HERE.md](00-START-HERE.md).
 
 ## Goal
 

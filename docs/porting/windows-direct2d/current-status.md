@@ -4,7 +4,9 @@ Last recorded: 2026-08-29 (Asia/Seoul)
 
 > This file preserves the evidence state at the point the presentation
 > direction changed from a custom Direct2D/DirectComposition UI to WinUI 3.
-> Current progress is tracked only in
+> Cross-phase progress history is tracked in
+> [`plans/windows-winui3-port-plan/progress-log.md`](../../../plans/windows-winui3-port-plan/progress-log.md);
+> the active-phase handoff is in
 > [`plans/windows-winui3-port-plan/00-START-HERE.md`](../../../plans/windows-winui3-port-plan/00-START-HERE.md).
 
 > The current minimum supported macOS is 14.4 or newer. The macOS 13.0
