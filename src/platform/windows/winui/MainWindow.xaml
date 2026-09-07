@@ -105,18 +105,34 @@
                         x:Name="SaveFileMenuItem"
                         Text="Save"
                         Tag="file.save"
-                        IsEnabled="False"
+                        Click="SaveDatabaseMenuItem_Click"
                         AutomationProperties.Name="Save file command">
                         <MenuFlyoutItem.KeyboardAccelerators>
                             <KeyboardAccelerator Key="S" Modifiers="Control" />
                         </MenuFlyoutItem.KeyboardAccelerators>
                     </MenuFlyoutItem>
                     <MenuFlyoutItem
+                        x:Name="SaveAsFileMenuItem"
+                        Text="Save As..."
+                        Tag="file.save_as"
+                        Click="SaveDatabaseAsMenuItem_Click"
+                        AutomationProperties.Name="Save database as command" />
+                    <MenuFlyoutItem
+                        x:Name="ExportFileMenuItem"
+                        Text="Export As..."
+                        Tag="file.export"
+                        Click="ExportDatabaseMenuItem_Click"
+                        AutomationProperties.Name="Export database command" />
+                    <MenuFlyoutItem
                         x:Name="CloseFileMenuItem"
                         Text="Close"
                         Tag="file.close"
-                        IsEnabled="False"
-                        AutomationProperties.Name="Close file command" />
+                        Click="CloseDatabaseMenuItem_Click"
+                        AutomationProperties.Name="Close file command">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="W" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
                 </MenuBarItem>
                 <MenuBarItem
                     x:Name="EditMenu"
@@ -173,7 +189,18 @@
                     Title="Print / Export"
                     AutomationProperties.Name="Print and export menu">
                     <MenuFlyoutItem Text="Print current page" Tag="print.current_page" IsEnabled="False" AutomationProperties.Name="Print current page command" />
-                    <MenuFlyoutItem Text="Save current page as..." Tag="print.save_page" IsEnabled="False" AutomationProperties.Name="Save current page command" />
+                    <MenuFlyoutItem
+                        x:Name="SaveCurrentPageMenuItem"
+                        Text="Save current page as..."
+                        Tag="print.save_page"
+                        Click="SaveCurrentPageMenuItem_Click"
+                        AutomationProperties.Name="Save current page command" />
+                    <MenuFlyoutItem
+                        x:Name="ExportCampusResourcesMenuItem"
+                        Text="Export campus resources..."
+                        Tag="print.export_campus_resources"
+                        Click="ExportCampusResourcesMenuItem_Click"
+                        AutomationProperties.Name="Export campus resources command" />
                 </MenuBarItem>
                 <MenuBarItem
                     x:Name="HelpMenu"

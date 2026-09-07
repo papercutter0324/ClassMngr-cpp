@@ -70,6 +70,30 @@ struct MainWindow : MainWindowT<MainWindow>
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
+    void SaveDatabaseMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void SaveDatabaseAsMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ExportDatabaseMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void CloseDatabaseMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void SaveCurrentPageMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ExportCampusResourcesMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
     void RecentDatabaseMenuItem_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
@@ -152,6 +176,14 @@ private:
         );
     winrt::fire_and_forget openDatabasePicker();
     winrt::fire_and_forget openNewDatabasePicker();
+    winrt::fire_and_forget openSaveDatabasePicker(bool exportOnly);
+    winrt::fire_and_forget openCurrentPageSavePicker();
+    winrt::fire_and_forget openCampusResourcesFolderPicker();
+    [[nodiscard]] bool saveDatabasePath(std::wstring_view path);
+    [[nodiscard]] bool exportDatabasePath(std::wstring_view path);
+    [[nodiscard]] bool saveCurrentPagePath(std::wstring_view path);
+    [[nodiscard]] bool exportCampusResourcesPath(std::wstring_view path);
+    [[nodiscard]] std::string currentPageExportJson() const;
     void restoreShellState();
     void restoreWindowBounds() noexcept;
     void saveShellState() noexcept;
@@ -181,6 +213,12 @@ private:
         std::wstring_view path,
         std::string_view message
         );
+    void reportOutputError(
+        std::wstring_view title,
+        std::wstring_view path,
+        std::string_view message
+        );
+    void updateFileCommandState();
 
     [[nodiscard]] std::wstring selectedPageId() const;
     [[nodiscard]] bool ensureHomePage();
@@ -194,6 +232,12 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_shellDatabaseStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveFileMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveAsFileMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportFileMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_closeFileMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveCurrentPageMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportCampusResourcesMenu{nullptr};
 
     Microsoft::UI::Xaml::Controls::TextBlock m_engineVersionText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_nameTextBox{nullptr};

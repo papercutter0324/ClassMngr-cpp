@@ -6,6 +6,7 @@
 #include "classmngr/engine/open_database.h"
 #include "winui_build_info.h"
 #include "winui_identity.h"
+#include "winui_platform_services.h"
 #include "winui_shared_ux.h"
 
 #include <microsoft.ui.xaml.window.h>
@@ -18,8 +19,10 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cwctype>
 #include <coroutine>
 #include <filesystem>
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -86,6 +89,94 @@ bool samePath(std::wstring_view lhs, std::wstring_view rhs) noexcept;
 std::vector<std::wstring> pruneRecentDatabasePaths(
     std::vector<std::wstring> const& paths
     );
+
+void appendJsonEscaped(std::string& output, std::string_view value)
+{
+    output.push_back('"');
+    for (const unsigned char character : value)
+    {
+        switch (character)
+        {
+        case '"':
+            output += "\\\"";
+            break;
+        case '\\':
+            output += "\\\\";
+            break;
+        case '\b':
+            output += "\\b";
+            break;
+        case '\f':
+            output += "\\f";
+            break;
+        case '\n':
+            output += "\\n";
+            break;
+        case '\r':
+            output += "\\r";
+            break;
+        case '\t':
+            output += "\\t";
+            break;
+        default:
+            if (character < 0x20)
+            {
+                constexpr char hex[] = "0123456789abcdef";
+                output += "\\u00";
+                output.push_back(hex[(character >> 4) & 0x0f]);
+                output.push_back(hex[character & 0x0f]);
+            }
+            else
+            {
+                output.push_back(static_cast<char>(character));
+            }
+            break;
+        }
+    }
+    output.push_back('"');
+}
+
+std::string campusResourceFileName(std::string_view reference)
+{
+    const std::size_t separator = reference.find_last_of("/\\");
+    const std::string_view name = separator == std::string_view::npos
+        ? reference
+        : reference.substr(separator + 1);
+    if (name.empty() || name == "." || name == ".."
+        || name.find_first_of("<>:\"/\\|?*") != std::string_view::npos
+        || name.back() == '.' || name.back() == ' ')
+    {
+        return {};
+    }
+    return std::string(name);
+}
+
+std::string uniqueCampusResourceFileName(
+    std::string name,
+    std::set<std::string>& usedNames
+    )
+{
+    if (usedNames.insert(name).second)
+    {
+        return name;
+    }
+
+    const std::size_t extension = name.find_last_of('.');
+    const std::string stem = extension == std::string::npos
+        ? name
+        : name.substr(0, extension);
+    const std::string suffix = extension == std::string::npos
+        ? std::string{}
+        : name.substr(extension);
+    for (std::size_t index = 2;; ++index)
+    {
+        std::string candidate = stem + "_" + std::to_string(index) + suffix;
+        if (usedNames.insert(candidate).second)
+        {
+            return candidate;
+        }
+    }
+}
 
 bool isKnownPageId(std::wstring_view pageId) noexcept
 {
@@ -563,6 +654,20 @@ MainWindow::MainWindow()
     m_shellDatabaseStatusText = RootGrid().FindName(
         L"ShellDatabaseStatusText"
         ).as<Microsoft::UI::Xaml::Controls::TextBlock>();
+    m_saveFileMenu = RootGrid().FindName(L"SaveFileMenuItem").as<
+        Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    m_saveAsFileMenu = RootGrid().FindName(L"SaveAsFileMenuItem").as<
+        Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    m_exportFileMenu = RootGrid().FindName(L"ExportFileMenuItem").as<
+        Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    m_closeFileMenu = RootGrid().FindName(L"CloseFileMenuItem").as<
+        Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    m_saveCurrentPageMenu = RootGrid().FindName(
+        L"SaveCurrentPageMenuItem"
+        ).as<Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    m_exportCampusResourcesMenu = RootGrid().FindName(
+        L"ExportCampusResourcesMenuItem"
+        ).as<Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
 
     m_aboutNavigationItem.Content(winrt::box_value(winrt::hstring(
         m_localizer.getString(L"ActionRegistry", L"About")
@@ -622,6 +727,7 @@ MainWindow::MainWindow()
 
     restoreShellState();
     refreshRecentDatabaseMenu();
+    updateFileCommandState();
 }
 
 MainWindow::~MainWindow()
@@ -1201,6 +1307,93 @@ void MainWindow::NewDatabaseMenuItem_Click(
     openNewDatabasePicker();
 }
 
+void MainWindow::SaveDatabaseMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        reportOutputError(L"Save database", {}, "No database is open.");
+        return;
+    }
+
+    // Engine-backed writes commit at the service boundary.  The shell-level
+    // save command therefore closes the prototype dirty-state transaction
+    // and records the successful save without issuing ad hoc SQL.
+    m_dirtyState.markClean();
+    if (m_statusText)
+    {
+        m_statusText.Text(L"Changes saved.");
+    }
+    updateFileCommandState();
+}
+
+void MainWindow::SaveDatabaseAsMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    openSaveDatabasePicker(false);
+}
+
+void MainWindow::ExportDatabaseMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    openSaveDatabasePicker(true);
+}
+
+void MainWindow::CloseDatabaseMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    m_dirtyState.markClean();
+    if (m_shellDatabaseStatusText)
+    {
+        m_shellDatabaseStatusText.Text(L"No database open");
+    }
+    if (m_statusText)
+    {
+        m_statusText.Text(L"Database closed.");
+    }
+    refreshCampusInformationPage();
+    updateFileCommandState();
+    saveShellState();
+}
+
+void MainWindow::SaveCurrentPageMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    openCurrentPageSavePicker();
+}
+
+void MainWindow::ExportCampusResourcesMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    openCampusResourcesFolderPicker();
+}
+
 void MainWindow::RecentDatabaseMenuItem_Click(
     Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::RoutedEventArgs const& arguments
@@ -1214,7 +1407,7 @@ void MainWindow::RecentDatabaseMenuItem_Click(
         const std::wstring path = boxedString(item.Tag());
         if (!path.empty())
         {
-            openDatabasePath(path);
+            static_cast<void>(openDatabasePath(path));
         }
     }
 }
@@ -1248,7 +1441,7 @@ winrt::fire_and_forget MainWindow::openDatabasePicker()
             const auto file = co_await picker.PickSingleFileAsync();
             if (file)
             {
-                openDatabasePath(asWString(file.Path()));
+                static_cast<void>(openDatabasePath(asWString(file.Path())));
             }
         }
     }
@@ -1301,7 +1494,7 @@ winrt::fire_and_forget MainWindow::openNewDatabasePicker()
             const auto file = co_await picker.PickSaveFileAsync();
             if (file)
             {
-                createDatabasePath(asWString(file.Path()));
+                static_cast<void>(createDatabasePath(asWString(file.Path())));
             }
         }
     }
@@ -1314,6 +1507,202 @@ winrt::fire_and_forget MainWindow::openNewDatabasePicker()
         reportDatabaseOpenError(
             {},
             "The database save picker could not be opened."
+            );
+    }
+
+    m_filePickerActive = false;
+}
+
+winrt::fire_and_forget MainWindow::openSaveDatabasePicker(bool exportOnly)
+{
+    auto lifetime = get_strong();
+    if (m_filePickerActive)
+    {
+        co_return;
+    }
+    m_filePickerActive = true;
+
+    try
+    {
+        auto picker = winrt::Windows::Storage::Pickers::FileSavePicker();
+        const HWND handle = windowHandle(this);
+        if (!handle)
+        {
+            reportOutputError(
+                exportOnly ? L"Export database" : L"Save database",
+                {},
+                "The database save picker is not available."
+                );
+        }
+        else
+        {
+            const auto initializer = picker.as<::IInitializeWithWindow>();
+            winrt::check_hresult(initializer->Initialize(handle));
+            picker.CommitButtonText(
+                exportOnly
+                    ? winrt::hstring(L"Export")
+                    : winrt::hstring(L"Save")
+                );
+
+            std::wstring suggestedName = L"Teacher Profile.tps";
+            if (!m_currentDatabasePath.empty())
+            {
+                const std::filesystem::path currentPath(m_currentDatabasePath);
+                if (!currentPath.filename().empty())
+                {
+                    suggestedName = currentPath.filename().wstring();
+                }
+            }
+            picker.SuggestedFileName(winrt::hstring(suggestedName));
+            picker.DefaultFileExtension(L".tps");
+            picker.FileTypeChoices().Insert(
+                L"Teacher Profile database",
+                winrt::single_threaded_vector<winrt::hstring>({L".tps"})
+                );
+            const auto file = co_await picker.PickSaveFileAsync();
+            if (file)
+            {
+                const std::wstring selectedPath = asWString(file.Path());
+                if (exportOnly)
+                {
+                    static_cast<void>(exportDatabasePath(selectedPath));
+                }
+                else
+                {
+                    static_cast<void>(saveDatabasePath(selectedPath));
+                }
+            }
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        reportOutputError(
+            exportOnly ? L"Export database" : L"Save database",
+            {},
+            winrt::to_string(error.message())
+            );
+    }
+    catch (...)
+    {
+        reportOutputError(
+            exportOnly ? L"Export database" : L"Save database",
+            {},
+            "The database save picker could not be opened."
+            );
+    }
+
+    m_filePickerActive = false;
+}
+
+winrt::fire_and_forget MainWindow::openCurrentPageSavePicker()
+{
+    auto lifetime = get_strong();
+    if (m_filePickerActive)
+    {
+        co_return;
+    }
+    m_filePickerActive = true;
+
+    try
+    {
+        auto picker = winrt::Windows::Storage::Pickers::FileSavePicker();
+        const HWND handle = windowHandle(this);
+        if (!handle)
+        {
+            reportOutputError(
+                L"Save current page",
+                {},
+                "The page save picker is not available."
+                );
+        }
+        else
+        {
+            const auto initializer = picker.as<::IInitializeWithWindow>();
+            winrt::check_hresult(initializer->Initialize(handle));
+            picker.CommitButtonText(L"Save");
+            picker.SuggestedFileName(L"campus-information.json");
+            picker.DefaultFileExtension(L".json");
+            picker.FileTypeChoices().Insert(
+                L"JSON document",
+                winrt::single_threaded_vector<winrt::hstring>({L".json"})
+                );
+            const auto file = co_await picker.PickSaveFileAsync();
+            if (file)
+            {
+                static_cast<void>(saveCurrentPagePath(asWString(file.Path())));
+            }
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        reportOutputError(
+            L"Save current page",
+            {},
+            winrt::to_string(error.message())
+            );
+    }
+    catch (...)
+    {
+        reportOutputError(
+            L"Save current page",
+            {},
+            "The page save picker could not be opened."
+            );
+    }
+
+    m_filePickerActive = false;
+}
+
+winrt::fire_and_forget MainWindow::openCampusResourcesFolderPicker()
+{
+    auto lifetime = get_strong();
+    if (m_filePickerActive)
+    {
+        co_return;
+    }
+    m_filePickerActive = true;
+
+    try
+    {
+        auto picker = winrt::Windows::Storage::Pickers::FolderPicker();
+        const HWND handle = windowHandle(this);
+        if (!handle)
+        {
+            reportOutputError(
+                L"Export campus resources",
+                {},
+                "The folder picker is not available."
+                );
+        }
+        else
+        {
+            const auto initializer = picker.as<::IInitializeWithWindow>();
+            winrt::check_hresult(initializer->Initialize(handle));
+            picker.SuggestedStartLocation(
+                winrt::Windows::Storage::Pickers::PickerLocationId::DocumentsLibrary
+                );
+            picker.FileTypeFilter().Append(L"*");
+            const auto folder = co_await picker.PickSingleFolderAsync();
+            if (folder)
+            {
+                static_cast<void>(exportCampusResourcesPath(asWString(folder.Path())));
+            }
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        reportOutputError(
+            L"Export campus resources",
+            {},
+            winrt::to_string(error.message())
+            );
+    }
+    catch (...)
+    {
+        reportOutputError(
+            L"Export campus resources",
+            {},
+            "The folder picker could not be opened."
             );
     }
 
@@ -1359,6 +1748,7 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
 
         m_openDatabase = std::move(*opened);
         m_currentDatabasePath = candidate;
+        m_dirtyState.markClean();
         addRecentDatabasePath(candidate);
         const std::wstring status = L"Database: " + candidate;
         if (m_shellDatabaseStatusText)
@@ -1370,6 +1760,7 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
             m_statusText.Text(L"Database opened.");
         }
         refreshCampusInformationPage();
+        updateFileCommandState();
         saveShellState();
         return true;
     }
@@ -1447,6 +1838,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
 
         m_openDatabase = std::move(*opened);
         m_currentDatabasePath = candidate;
+        m_dirtyState.markClean();
         addRecentDatabasePath(candidate);
         const std::wstring status = L"Database: " + candidate;
         if (m_shellDatabaseStatusText)
@@ -1458,6 +1850,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
             m_statusText.Text(L"New database created.");
         }
         refreshCampusInformationPage();
+        updateFileCommandState();
         saveShellState();
         return true;
     }
@@ -1472,6 +1865,332 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
     return false;
 }
 
+bool MainWindow::saveDatabasePath(std::wstring_view path)
+{
+    if (!m_openDatabase || m_currentDatabasePath.empty())
+    {
+        reportOutputError(L"Save database", path, "No file-backed database is open.");
+        return false;
+    }
+
+    const std::wstring candidate = absolutePath(path);
+    if (!classmngr::engine::DatabaseFileFormat::isNativePath(asUtf8(candidate)))
+    {
+        reportOutputError(
+            L"Save database",
+            candidate,
+            "Saved databases must use the .tps file type."
+            );
+        return false;
+    }
+
+    if (samePath(candidate, m_currentDatabasePath))
+    {
+        m_dirtyState.markClean();
+        if (m_statusText)
+        {
+            m_statusText.Text(L"Changes saved.");
+        }
+        updateFileCommandState();
+        return true;
+    }
+
+    classmngr::windows::winui::WindowsFileSystem fileSystem;
+    const auto copied = fileSystem.copyFile(
+        asUtf8(m_currentDatabasePath),
+        asUtf8(candidate),
+        true
+        );
+    if (!copied)
+    {
+        reportOutputError(L"Save database", candidate, copied.error().message);
+        return false;
+    }
+
+    if (!openDatabasePath(candidate))
+    {
+        reportOutputError(
+            L"Save database",
+            candidate,
+            "The saved database could not be reopened."
+            );
+        return false;
+    }
+
+    m_dirtyState.markClean();
+    if (m_statusText)
+    {
+        m_statusText.Text(L"Database saved as a new file.");
+    }
+    updateFileCommandState();
+    return true;
+}
+
+bool MainWindow::exportDatabasePath(std::wstring_view path)
+{
+    if (!m_openDatabase || m_currentDatabasePath.empty())
+    {
+        reportOutputError(L"Export database", path, "No file-backed database is open.");
+        return false;
+    }
+
+    const std::wstring candidate = absolutePath(path);
+    if (!classmngr::engine::DatabaseFileFormat::isNativePath(asUtf8(candidate)))
+    {
+        reportOutputError(
+            L"Export database",
+            candidate,
+            "Exported databases must use the .tps file type."
+            );
+        return false;
+    }
+
+    if (!samePath(candidate, m_currentDatabasePath))
+    {
+        classmngr::windows::winui::WindowsFileSystem fileSystem;
+        const auto copied = fileSystem.copyFile(
+            asUtf8(m_currentDatabasePath),
+            asUtf8(candidate),
+            true
+            );
+        if (!copied)
+        {
+            reportOutputError(L"Export database", candidate, copied.error().message);
+            return false;
+        }
+    }
+
+    if (m_statusText)
+    {
+        m_statusText.Text(L"Database exported.");
+    }
+    return true;
+}
+
+bool MainWindow::saveCurrentPagePath(std::wstring_view path)
+{
+    if (m_currentPageId != campusInformationPageId)
+    {
+        reportOutputError(
+            L"Save current page",
+            path,
+            "Only the Campus Information page is available for export."
+            );
+        return false;
+    }
+
+    const std::wstring candidate = absolutePath(path);
+    const std::wstring extension = std::filesystem::path(candidate).extension().wstring();
+    if (extension.size() != 5
+        || extension[0] != L'.'
+        || std::towlower(extension[1]) != L'j'
+        || std::towlower(extension[2]) != L's'
+        || std::towlower(extension[3]) != L'o'
+        || std::towlower(extension[4]) != L'n')
+    {
+        reportOutputError(
+            L"Save current page",
+            candidate,
+            "The current page must be saved as a .json file."
+            );
+        return false;
+    }
+
+    classmngr::windows::winui::WindowsFileSystem fileSystem;
+    const std::string json = currentPageExportJson();
+    const auto written = fileSystem.writeBytes(asUtf8(candidate), json, true);
+    if (!written)
+    {
+        reportOutputError(L"Save current page", candidate, written.error().message);
+        return false;
+    }
+
+    if (m_statusText)
+    {
+        m_statusText.Text(L"Campus information page saved.");
+    }
+    return true;
+}
+
+std::string MainWindow::currentPageExportJson() const
+{
+    std::string output;
+    output.reserve(4096);
+    output += "{\n  \"format\": ";
+    appendJsonEscaped(output, "classmngr.phase5.campus-information.v1");
+    output += ",\n  \"page\": ";
+    appendJsonEscaped(output, asUtf8(m_currentPageId));
+    output += ",\n  \"state\": ";
+    appendJsonEscaped(output, asUtf8(m_campusInformationState));
+    output += ",\n  \"campuses\": [";
+
+    const auto appendField = [](std::string& value,
+                                char const* key,
+                                std::string_view fieldValue,
+                                bool last) {
+        value += "\n      \"";
+        value += key;
+        value += "\": ";
+        appendJsonEscaped(value, fieldValue);
+        value += last ? "\n" : ",";
+    };
+
+    for (std::size_t index = 0; index < m_campusRecords.size(); ++index)
+    {
+        const classmngr::engine::CampusRecord& campus = m_campusRecords[index];
+        output += index == 0 ? "\n    {" : ",\n    {";
+        output += "\n      \"id\": ";
+        output += std::to_string(campus.id);
+        appendField(output, "name", campus.name, false);
+        appendField(output, "buildingName", campus.buildingName, false);
+        appendField(output, "address", campus.address, false);
+        appendField(output, "phoneNumber", campus.phoneNumber, false);
+        appendField(output, "officeNumber", campus.officeNumber, false);
+        appendField(output, "transitSteps", campus.transitSteps, false);
+        appendField(output, "arrivalInfo", campus.arrivalInfo, false);
+        appendField(output, "imagePath", campus.imagePath, false);
+        appendField(output, "officeWifi", campus.officeWifi, false);
+        appendField(output, "officeWifiPassword", campus.officeWifiPassword, false);
+        appendField(output, "printerName", campus.printerName, false);
+        appendField(output, "printerSteps", campus.printerSteps, false);
+        appendField(output, "photocopierCode", campus.photocopierCode, false);
+        appendField(output, "housingLocations", campus.housingLocations, true);
+        output += "    }";
+    }
+    if (!m_campusRecords.empty())
+    {
+        output += "\n  ";
+    }
+    output += "]\n}\n";
+    return output;
+}
+
+bool MainWindow::exportCampusResourcesPath(std::wstring_view path)
+{
+    if (m_currentPageId != campusInformationPageId)
+    {
+        reportOutputError(
+            L"Export campus resources",
+            path,
+            "Only the Campus Information page is available for resource export."
+            );
+        return false;
+    }
+
+    const std::wstring candidate = absolutePath(path);
+    std::error_code directoryError;
+    if (!std::filesystem::is_directory(
+            std::filesystem::path(candidate),
+            directoryError
+            ) || directoryError)
+    {
+        reportOutputError(
+            L"Export campus resources",
+            candidate,
+            "The selected export location is not a folder."
+            );
+        return false;
+    }
+
+    classmngr::windows::winui::WindowsFileSystem fileSystem;
+    const std::filesystem::path resourceDirectory =
+        std::filesystem::path(candidate) / L"campus-resources";
+    const auto created = fileSystem.createDirectories(
+        asUtf8(resourceDirectory.wstring())
+        );
+    if (!created)
+    {
+        reportOutputError(
+            L"Export campus resources",
+            resourceDirectory.wstring(),
+            created.error().message
+            );
+        return false;
+    }
+
+    const std::filesystem::path jsonPath =
+        std::filesystem::path(candidate) / L"campus-information.json";
+    const auto jsonWritten = fileSystem.writeBytes(
+        asUtf8(jsonPath.wstring()),
+        currentPageExportJson(),
+        true
+        );
+    if (!jsonWritten)
+    {
+        reportOutputError(
+            L"Export campus resources",
+            jsonPath.wstring(),
+            jsonWritten.error().message
+            );
+        return false;
+    }
+
+    classmngr::windows::winui::WindowsResourceProvider resourceProvider;
+    std::set<std::string> usedNames;
+    for (classmngr::engine::CampusRecord const& campus : m_campusRecords)
+    {
+        if (campus.imagePath.empty())
+        {
+            continue;
+        }
+
+        const std::string fileName = campusResourceFileName(campus.imagePath);
+        if (fileName.empty())
+        {
+            reportOutputError(
+                L"Export campus resources",
+                candidate,
+                "A campus image reference has an unsafe file name."
+                );
+            return false;
+        }
+
+        const auto bytes = resourceProvider.readBytes(campus.imagePath);
+        if (!bytes)
+        {
+            reportOutputError(
+                L"Export campus resources",
+                candidate,
+                bytes.error().message
+                );
+            return false;
+        }
+
+        const std::string uniqueName = uniqueCampusResourceFileName(
+            fileName,
+            usedNames
+            );
+        const std::filesystem::path outputPath =
+            resourceDirectory / std::filesystem::path(
+                winrt::to_hstring(uniqueName).c_str()
+                );
+        const std::string bytesAsString(
+            reinterpret_cast<char const*>(bytes->data()),
+            bytes->size()
+            );
+        const auto written = fileSystem.writeBytes(
+            asUtf8(outputPath.wstring()),
+            bytesAsString,
+            true
+            );
+        if (!written)
+        {
+            reportOutputError(
+                L"Export campus resources",
+                outputPath.wstring(),
+                written.error().message
+                );
+            return false;
+        }
+    }
+
+    if (m_statusText)
+    {
+        m_statusText.Text(L"Campus information and resources exported.");
+    }
+    return true;
+}
+
 void MainWindow::openMostRecentDatabase()
 {
     m_recentDatabasePaths = pruneRecentDatabasePaths(m_recentDatabasePaths);
@@ -1479,7 +2198,7 @@ void MainWindow::openMostRecentDatabase()
     saveShellState();
     if (!m_recentDatabasePaths.empty())
     {
-        openDatabasePath(m_recentDatabasePaths.front());
+        static_cast<void>(openDatabasePath(m_recentDatabasePaths.front()));
     }
 }
 
@@ -1727,6 +2446,7 @@ void MainWindow::ContentFrame_Navigated(
         );
     m_selectionChanging = false;
     updateNavigationState();
+    updateFileCommandState();
     if (!m_restoringState)
     {
         saveShellState();
@@ -2337,6 +3057,7 @@ void MainWindow::populateCampusInformationPage(
     page.Content(pageScroll);
     m_campusList.SelectedIndex(0);
     presentSelectedCampus();
+    updateFileCommandState();
 }
 
 void MainWindow::refreshCampusInformationPage()
@@ -2352,6 +3073,7 @@ void MainWindow::refreshCampusInformationPage()
     {
         populateCampusInformationPage(page, true);
     }
+    updateFileCommandState();
 }
 
 void MainWindow::CampusList_SelectionChanged(
@@ -2523,6 +3245,68 @@ void MainWindow::reportDatabaseOpenError(
         L"Close",
         {}
         );
+}
+
+void MainWindow::reportOutputError(
+    std::wstring_view title,
+    std::wstring_view path,
+    std::string_view message
+    )
+{
+    if (m_statusText)
+    {
+        m_statusText.Text(winrt::hstring(
+            std::wstring(title) + L" failed."
+            ));
+    }
+    showDialog(
+        winrt::hstring(title),
+        winrt::to_hstring(std::string(message)),
+        {},
+        {},
+        L"Close",
+        {}
+        );
+    if (m_shellDatabaseStatusText && !path.empty())
+    {
+        m_shellDatabaseStatusText.Text(winrt::hstring(
+            std::wstring(title) + L": " + std::wstring(path)
+            ));
+    }
+}
+
+void MainWindow::updateFileCommandState()
+{
+    const bool hasDatabase = static_cast<bool>(m_openDatabase);
+    if (m_saveFileMenu)
+    {
+        m_saveFileMenu.IsEnabled(hasDatabase);
+    }
+    if (m_saveAsFileMenu)
+    {
+        m_saveAsFileMenu.IsEnabled(hasDatabase && !m_currentDatabasePath.empty());
+    }
+    if (m_exportFileMenu)
+    {
+        m_exportFileMenu.IsEnabled(hasDatabase && !m_currentDatabasePath.empty());
+    }
+    if (m_closeFileMenu)
+    {
+        m_closeFileMenu.IsEnabled(hasDatabase);
+    }
+
+    const bool pageCanBeSaved = m_currentPageId == campusInformationPageId
+        && (m_campusInformationState == L"no_database"
+            || m_campusInformationState == L"empty"
+            || m_campusInformationState == L"populated");
+    if (m_saveCurrentPageMenu)
+    {
+        m_saveCurrentPageMenu.IsEnabled(pageCanBeSaved);
+    }
+    if (m_exportCampusResourcesMenu)
+    {
+        m_exportCampusResourcesMenu.IsEnabled(pageCanBeSaved);
+    }
 }
 
 void MainWindow::restoreWindowBounds() noexcept

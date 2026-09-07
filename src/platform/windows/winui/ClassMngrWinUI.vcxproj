@@ -47,6 +47,9 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <AppxPackage>false</AppxPackage>
     <WindowsPackageType>None</WindowsPackageType>
+    <!-- The project is also built from CMake custom-build targets. Keep
+         MSBuild's file tracker disabled in restricted build environments. -->
+    <TrackFileAccess>false</TrackFileAccess>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

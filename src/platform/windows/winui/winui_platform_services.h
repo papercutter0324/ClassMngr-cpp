@@ -70,6 +70,33 @@ private:
     engine::StandardFileSystem m_fileSystem;
 };
 
+// Resolves the portable campus resource references used by the Qt shell to
+// files below the unpackaged WinUI executable's resources\campuses directory.
+// The public contract remains UTF-8 and engine::Result based.
+class WindowsResourceProvider final : public engine::ResourceProvider
+{
+public:
+    WindowsResourceProvider();
+
+    [[nodiscard]] engine::Result<bool> exists(
+        std::string_view logicalPath
+        ) const override;
+    [[nodiscard]] engine::Result<engine::ByteBuffer> readBytes(
+        std::string_view logicalPath
+        ) const override;
+    [[nodiscard]] engine::Result<engine::ResourceMetadata> metadata(
+        std::string_view logicalPath
+        ) const override;
+
+private:
+    [[nodiscard]] engine::Result<std::wstring> resolvePath(
+        std::string_view logicalPath
+        ) const;
+
+    std::wstring m_campusRoot;
+    engine::StandardFileSystem m_fileSystem;
+};
+
 class WindowsClipboard final
 {
 public:

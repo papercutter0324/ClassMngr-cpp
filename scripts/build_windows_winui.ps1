@@ -139,14 +139,14 @@ function Resolve-CommandPath {
 function Resolve-NuGetPath {
     param([Parameter(Mandatory = $true)][string] $ProjectRootPath)
 
-    $fromPath = Resolve-CommandPath -Names @('nuget.exe', 'nuget')
-    if ($null -ne $fromPath) {
-        return $fromPath
-    }
-
     $repoLocalNuGet = Join-Path $ProjectRootPath 'build\tools\nuget.exe'
     if (Test-Path -LiteralPath $repoLocalNuGet -PathType Leaf) {
         return $repoLocalNuGet
+    }
+
+    $fromPath = Resolve-CommandPath -Names @('nuget.exe', 'nuget')
+    if ($null -ne $fromPath) {
+        return $fromPath
     }
 
     return $null
@@ -429,6 +429,7 @@ $msbuildArguments = @(
     '/p:WinUISDKReferences=false',
     '/p:UseCrtSDKReferenceStaticWarning=false',
     '/p:RestorePackages=false',
+    '/p:TrackFileAccess=false',
     '/p:PreferredToolArchitecture=x64'
 )
 
@@ -505,6 +506,16 @@ $resourceOutputDirectory = Join-Path $outputPath 'resources'
 Ensure-Directory -Path $resourceOutputDirectory
 Copy-Item -LiteralPath $resourceManifestPath `
     -Destination (Join-Path $resourceOutputDirectory 'manifest.json') `
+    -Force
+
+$campusResourceSourceDirectory = Resolve-ExistingPath `
+    -Path (Join-Path $projectRootPath 'resources\assets\campuses') `
+    -Description 'Campus resource directory'
+$campusResourceOutputDirectory = Join-Path $resourceOutputDirectory 'campuses'
+Ensure-Directory -Path $campusResourceOutputDirectory
+Copy-Item -LiteralPath $campusResourceSourceDirectory `
+    -Destination $campusResourceOutputDirectory `
+    -Recurse `
     -Force
 
 $licenseRelativePaths = @(

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <filesystem>
 #include <cstring>
 #include <limits>
 #include <memory>
@@ -28,10 +29,19 @@ namespace classmngr::windows::winui
 {
 namespace
 {
+namespace fs = std::filesystem;
+
 using engine::ByteBuffer;
 using engine::Error;
 using engine::ErrorCode;
 using engine::PlatformSettingValue;
+
+Error failure(
+    ErrorCode code,
+    std::string message,
+    std::optional<int> nativeCode = std::nullopt
+    );
+engine::Result<std::wstring> toWide(std::string_view value, char const* what);
 
 constexpr std::array<std::byte, 4> settingMagic{
     std::byte{'C'}, std::byte{'M'}, std::byte{'S'}, std::byte{'1'}
@@ -39,6 +49,128 @@ constexpr std::array<std::byte, 4> settingMagic{
 constexpr std::size_t settingHeaderSize = settingMagic.size() + 1;
 constexpr wchar_t applicationLogName[] = L"app.log";
 constexpr wchar_t crashDumpName[] = L"unhandled-exception.dmp";
+
+std::wstring packagedCampusRoot()
+{
+    std::vector<wchar_t> modulePath(512);
+    for (;;)
+    {
+        const DWORD length = GetModuleFileNameW(
+            nullptr,
+            modulePath.data(),
+            static_cast<DWORD>(modulePath.size())
+            );
+        if (length == 0)
+        {
+            return {};
+        }
+        if (length < modulePath.size())
+        {
+            std::wstring result(modulePath.data(), length);
+            const auto separator = result.find_last_of(L"\\/");
+            if (separator == std::wstring::npos)
+            {
+                return {};
+            }
+            result.resize(separator + 1);
+            result += L"resources\\campuses";
+            return result;
+        }
+        if (modulePath.size() >= 32768)
+        {
+            return {};
+        }
+        modulePath.resize(modulePath.size() * 2);
+    }
+}
+
+engine::Result<std::string> campusRelativePath(std::string_view logicalPath)
+{
+    constexpr std::array<std::string_view, 6> prefixes{
+        ":/assets/campuses/",
+        "qrc:/assets/campuses/",
+        ":/resource-packs/campuses/",
+        "resources/campuses/",
+        "assets/campuses/",
+        "campuses/"
+    };
+
+    if (logicalPath.empty())
+    {
+        return std::unexpected(failure(ErrorCode::InvalidArgument, "The campus resource path is empty."));
+    }
+    if (logicalPath.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+    {
+        return std::unexpected(failure(ErrorCode::NumericOverflow, "The campus resource path is too large."));
+    }
+
+    for (const auto prefix : prefixes)
+    {
+        if (logicalPath.starts_with(prefix))
+        {
+            logicalPath.remove_prefix(prefix.size());
+            break;
+        }
+    }
+    if (logicalPath.empty()
+        || logicalPath.front() == '/' || logicalPath.front() == '\\'
+        || (logicalPath.size() >= 2
+            && ((logicalPath.front() >= 'A' && logicalPath.front() <= 'Z')
+                || (logicalPath.front() >= 'a' && logicalPath.front() <= 'z'))
+            && logicalPath[1] == ':'))
+    {
+        return std::unexpected(failure(ErrorCode::InvalidArgument, "The campus resource path is invalid."));
+    }
+
+    std::string normalized;
+    normalized.reserve(logicalPath.size());
+    std::size_t segmentStart = 0;
+    for (std::size_t index = 0; index <= logicalPath.size(); ++index)
+    {
+        const bool atEnd = index == logicalPath.size();
+        const char character = atEnd ? '/' : logicalPath[index];
+        if (character != '/' && character != '\\')
+        {
+            if (character == ':' || character == '\0'
+                || static_cast<unsigned char>(character) < 0x20
+                || character == '<' || character == '>' || character == '"'
+                || character == '|' || character == '?' || character == '*')
+            {
+                return std::unexpected(failure(ErrorCode::InvalidArgument, "The campus resource path is unsafe."));
+            }
+            continue;
+        }
+
+        const std::string_view segment = logicalPath.substr(segmentStart, index - segmentStart);
+        if (segment.empty() || segment == "." || segment == ".."
+            || segment.back() == '.' || segment.back() == ' ')
+        {
+            return std::unexpected(failure(ErrorCode::InvalidArgument, "The campus resource path is unsafe."));
+        }
+        if (!normalized.empty())
+        {
+            normalized.push_back('/');
+        }
+        normalized.append(segment);
+        segmentStart = index + 1;
+    }
+
+    const auto wide = toWide(normalized, "The campus resource path");
+    if (!wide)
+    {
+        return std::unexpected(failure(ErrorCode::InvalidArgument, "The campus resource path is not valid UTF-8."));
+    }
+    return normalized;
+}
+
+bool pathIsBelowRoot(fs::path const& root, fs::path const& candidate)
+{
+    const std::wstring rootText = root.wstring();
+    const std::wstring candidateText = candidate.wstring();
+    return candidateText.size() > rootText.size()
+        && _wcsnicmp(candidateText.c_str(), rootText.c_str(), rootText.size()) == 0
+        && (candidateText[rootText.size()] == L'\\' || candidateText[rootText.size()] == L'/');
+}
 
 enum class StoredSettingType : unsigned char
 {
@@ -52,7 +184,7 @@ enum class StoredSettingType : unsigned char
 Error failure(
     ErrorCode code,
     std::string message,
-    std::optional<int> nativeCode = std::nullopt
+    std::optional<int> nativeCode
     )
 {
     return Error{code, std::move(message), nativeCode};
@@ -591,6 +723,165 @@ engine::Status WindowsFileSystem::replaceDirectoryAtomically(std::string_view te
 engine::Status WindowsFileSystem::removeFile(std::string_view path) const { return m_fileSystem.removeFile(path); }
 engine::Result<std::string> WindowsFileSystem::createTemporaryDirectory(std::string_view parent) const { return m_fileSystem.createTemporaryDirectory(parent); }
 engine::Status WindowsFileSystem::removeTemporaryDirectory(std::string_view path) const { return m_fileSystem.removeTemporaryDirectory(path); }
+
+WindowsResourceProvider::WindowsResourceProvider()
+    : m_campusRoot(packagedCampusRoot())
+{
+}
+
+engine::Result<std::wstring> WindowsResourceProvider::resolvePath(
+    std::string_view logicalPath
+    ) const
+{
+    try
+    {
+        const auto relative = campusRelativePath(logicalPath);
+        if (!relative)
+        {
+            return std::unexpected(relative.error());
+        }
+        if (m_campusRoot.empty())
+        {
+            return std::unexpected(failure(ErrorCode::Io, "The packaged campus resource root is unavailable."));
+        }
+
+        const auto relativeWide = toWide(*relative, "The campus resource path");
+        if (!relativeWide)
+        {
+            return std::unexpected(failure(ErrorCode::InvalidArgument, "The campus resource path is not valid UTF-8."));
+        }
+
+        const fs::path root(m_campusRoot);
+        std::error_code error;
+        fs::path canonicalRoot = fs::weakly_canonical(root, error);
+        if (error)
+        {
+            error.clear();
+            canonicalRoot = fs::absolute(root, error);
+        }
+        if (error)
+        {
+            return std::unexpected(failure(
+                ErrorCode::Io,
+                "The packaged campus resource root could not be resolved.",
+                error.value()));
+        }
+
+        fs::path candidate = fs::weakly_canonical(root / fs::path(*relativeWide), error);
+        if (error)
+        {
+            error.clear();
+            candidate = fs::absolute(root / fs::path(*relativeWide), error);
+        }
+        if (error)
+        {
+            return std::unexpected(failure(
+                ErrorCode::Io,
+                "The campus resource path could not be resolved.",
+                error.value()));
+        }
+        candidate = candidate.lexically_normal();
+        if (!pathIsBelowRoot(canonicalRoot.lexically_normal(), candidate))
+        {
+            return std::unexpected(failure(ErrorCode::InvalidArgument, "The campus resource path escapes its packaged root."));
+        }
+        return candidate.wstring();
+    }
+    catch (const std::bad_alloc&)
+    {
+        return std::unexpected(failure(ErrorCode::Internal, "Unable to resolve the campus resource path."));
+    }
+    catch (...)
+    {
+        return std::unexpected(failure(ErrorCode::Io, "Unable to resolve the campus resource path."));
+    }
+}
+
+engine::Result<bool> WindowsResourceProvider::exists(
+    std::string_view logicalPath
+    ) const
+{
+    const auto path = resolvePath(logicalPath);
+    if (!path)
+    {
+        return std::unexpected(path.error());
+    }
+    const DWORD attributes = GetFileAttributesW(path->c_str());
+    if (attributes != INVALID_FILE_ATTRIBUTES)
+    {
+        return true;
+    }
+    const DWORD error = GetLastError();
+    if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND)
+    {
+        return false;
+    }
+    return std::unexpected(windowsFailure(
+        "Unable to inspect the campus resource.",
+        error));
+}
+
+engine::Result<ByteBuffer> WindowsResourceProvider::readBytes(
+    std::string_view logicalPath
+    ) const
+{
+    const auto path = resolvePath(logicalPath);
+    if (!path)
+    {
+        return std::unexpected(path.error());
+    }
+    const auto utf8Path = toUtf8(*path, "The campus resource path");
+    if (!utf8Path)
+    {
+        return std::unexpected(failure(ErrorCode::Internal, "The packaged campus path cannot be represented as UTF-8."));
+    }
+    const auto bytes = m_fileSystem.readBytes(*utf8Path);
+    if (!bytes)
+    {
+        return std::unexpected(bytes.error());
+    }
+
+    ByteBuffer result(bytes->size());
+    if (!bytes->empty())
+    {
+        std::memcpy(result.data(), bytes->data(), bytes->size());
+    }
+    return result;
+}
+
+engine::Result<engine::ResourceMetadata> WindowsResourceProvider::metadata(
+    std::string_view logicalPath
+    ) const
+{
+    const auto path = resolvePath(logicalPath);
+    if (!path)
+    {
+        return std::unexpected(path.error());
+    }
+
+    WIN32_FILE_ATTRIBUTE_DATA attributes{};
+    if (!GetFileAttributesExW(
+            path->c_str(),
+            GetFileExInfoStandard,
+            &attributes))
+    {
+        const DWORD error = GetLastError();
+        if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND)
+        {
+            return std::unexpected(failure(ErrorCode::NotFound, "The campus resource was not found.", static_cast<int>(error)));
+        }
+        return std::unexpected(windowsFailure(
+            "Unable to inspect campus resource metadata.",
+            error));
+    }
+
+    const auto size = (static_cast<std::uintmax_t>(attributes.nFileSizeHigh) << 32)
+        | static_cast<std::uintmax_t>(attributes.nFileSizeLow);
+    return engine::ResourceMetadata{
+        size,
+        (attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0
+    };
+}
 
 engine::Result<std::string> WindowsClipboard::readText() noexcept
 {
