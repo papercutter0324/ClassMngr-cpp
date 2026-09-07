@@ -7,10 +7,19 @@
     <x:Double x:Key="Phase3Spacing12">12</x:Double>
     <x:Double x:Key="Phase3Spacing16">16</x:Double>
     <x:Double x:Key="Phase3Spacing24">24</x:Double>
+    <!-- Phase 5 shell geometry mirrors the Qt main-window contract. -->
+    <x:Double x:Key="Phase5ShellMinimumWidth">800</x:Double>
+    <x:Double x:Key="Phase5ShellMinimumHeight">600</x:Double>
+    <x:Double x:Key="Phase5SidebarMinimumWidth">150</x:Double>
+    <x:Double x:Key="Phase5SidebarMaximumWidth">400</x:Double>
+    <x:Double x:Key="Phase5ContentMinimumWidth">600</x:Double>
     <x:Double x:Key="Phase3ControlMinHeight">32</x:Double>
 
     <Thickness x:Key="Phase3PagePadding">24,20,24,24</Thickness>
     <Thickness x:Key="Phase3TitleBarPadding">16,0,12,0</Thickness>
+    <Thickness x:Key="Phase5ShellBodyMargin">0,0,9,4</Thickness>
+    <Thickness x:Key="Phase5ShellContentMargin">5,0,5,0</Thickness>
+    <Thickness x:Key="Phase5SidebarMargin">5,8,5,18</Thickness>
     <Thickness x:Key="Phase3ButtonPadding">12,4</Thickness>
     <Thickness x:Key="Phase3NavigationPadding">0,8,0,0</Thickness>
     <Thickness x:Key="Phase3SectionSpacing">0,0,0,16</Thickness>

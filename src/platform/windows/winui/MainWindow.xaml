@@ -10,6 +10,8 @@
     <Grid
         x:Name="RootGrid"
         Background="{ThemeResource Phase3WindowBackgroundBrush}"
+        MinWidth="{StaticResource Phase5ShellMinimumWidth}"
+        MinHeight="{StaticResource Phase5ShellMinimumHeight}"
         RequestedTheme="Default">
         <Grid.RowDefinitions>
             <RowDefinition Height="48" />
@@ -40,30 +42,61 @@
                 AutomationProperties.Name="Show shell information" />
         </Grid>
 
-        <NavigationView
-            x:Name="RootNavigationView"
+        <Grid
+            x:Name="ShellBodyGrid"
             Grid.Row="1"
-            Style="{StaticResource Phase3NavigationViewStyle}"
-            IsBackButtonVisible="Visible"
-            IsSettingsVisible="False"
-            PaneDisplayMode="Left"
-            AutomationProperties.Name="Primary navigation">
-            <NavigationView.MenuItems>
-                <NavigationViewItem
-                    x:Name="HomeNavigationItem"
-                    Content="Home"
-                    Tag="home"
-                    AutomationProperties.Name="Home navigation item" />
-                <NavigationViewItem
-                    x:Name="AboutNavigationItem"
-                    Content="About"
-                    Tag="about"
-                    AutomationProperties.Name="About navigation item" />
-            </NavigationView.MenuItems>
-            <Frame
-                x:Name="ContentFrame"
-                IsNavigationStackEnabled="True"
-                AutomationProperties.Name="Page content" />
-        </NavigationView>
+            Margin="{StaticResource Phase5ShellBodyMargin}">
+            <Grid
+                x:Name="ShellContentGrid"
+                Margin="{StaticResource Phase5ShellContentMargin}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition
+                        x:Name="SidebarColumn"
+                        Width="2*"
+                        MinWidth="{StaticResource Phase5SidebarMinimumWidth}"
+                        MaxWidth="{StaticResource Phase5SidebarMaximumWidth}" />
+                    <ColumnDefinition
+                        x:Name="ContentColumn"
+                        Width="*"
+                        MinWidth="{StaticResource Phase5ContentMinimumWidth}" />
+                </Grid.ColumnDefinitions>
+
+                <NavigationView
+                    x:Name="RootNavigationView"
+                    Grid.Column="0"
+                    Margin="{StaticResource Phase5SidebarMargin}"
+                    Style="{StaticResource Phase3NavigationViewStyle}"
+                    IsBackButtonVisible="Visible"
+                    IsPaneOpen="True"
+                    IsPaneToggleButtonVisible="False"
+                    IsSettingsVisible="False"
+                    OpenPaneLength="{StaticResource Phase5SidebarMinimumWidth}"
+                    PaneDisplayMode="Left"
+                    AutomationProperties.Name="Primary navigation">
+                    <NavigationView.MenuItems>
+                        <NavigationViewItem
+                            x:Name="HomeNavigationItem"
+                            Content="Home"
+                            Tag="home"
+                            AutomationProperties.Name="Home navigation item" />
+                        <NavigationViewItem
+                            x:Name="AboutNavigationItem"
+                            Content="About"
+                            Tag="about"
+                            AutomationProperties.Name="About navigation item" />
+                    </NavigationView.MenuItems>
+                </NavigationView>
+
+                <!-- Keep the frame as the shell's content region so its
+                     existing lazy navigation and state persistence remain
+                     independent of the sidebar's layout. -->
+                <Frame
+                    x:Name="ContentFrame"
+                    Grid.Column="1"
+                    MinWidth="{StaticResource Phase5ContentMinimumWidth}"
+                    IsNavigationStackEnabled="True"
+                    AutomationProperties.Name="Page content" />
+            </Grid>
+        </Grid>
     </Grid>
 </Window>

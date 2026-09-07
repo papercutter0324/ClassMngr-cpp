@@ -28,6 +28,10 @@ namespace
 
 constexpr std::wstring_view homePageId = L"home";
 constexpr std::wstring_view aboutPageId = L"about";
+constexpr int32_t minimumShellWidth = 800;
+constexpr int32_t minimumShellHeight = 600;
+constexpr int32_t defaultShellWidth = 1270;
+constexpr int32_t defaultShellHeight = 1040;
 
 struct ResumeOnDispatcherQueue
 {
@@ -309,9 +313,9 @@ bool isUsableWindowBounds(RECT const& bounds) noexcept
 {
     const LONG width = bounds.right - bounds.left;
     const LONG height = bounds.bottom - bounds.top;
-    return width >= 640
+    return width >= minimumShellWidth
         && width <= 10000
-        && height >= 420
+        && height >= minimumShellHeight
         && height <= 10000
         && bounds.left > -100000
         && bounds.left < 100000
@@ -426,6 +430,35 @@ MainWindow::MainWindow()
 
     ExtendsContentIntoTitleBar(true);
     SetTitleBar(m_appTitleBar);
+    try
+    {
+        const auto appWindow = AppWindow();
+        appWindow.Resize(
+            Windows::Graphics::SizeInt32{
+                defaultShellWidth,
+                defaultShellHeight
+                }
+            );
+
+        const auto presenter = appWindow.Presenter().try_as<
+            Microsoft::UI::Windowing::OverlappedPresenter>();
+        if (presenter)
+        {
+            presenter.PreferredMinimumWidth(
+                winrt::box_value(minimumShellWidth).as<
+                    Windows::Foundation::IReference<int32_t>>()
+                );
+            presenter.PreferredMinimumHeight(
+                winrt::box_value(minimumShellHeight).as<
+                    Windows::Foundation::IReference<int32_t>>()
+                );
+        }
+    }
+    catch (...)
+    {
+        // Persisted bounds and XAML minimums remain the safe fallback when
+        // the windowing presenter is unavailable during early startup.
+    }
     m_contentFrame.CacheSize(2);
     m_contentFrame.IsNavigationStackEnabled(true);
 
