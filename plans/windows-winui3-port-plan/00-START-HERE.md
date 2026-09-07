@@ -106,7 +106,7 @@ Last updated: 2026-09-07 (Asia/Seoul)
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
-| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell geometry and the Qt-ordered menu/sidebar shell are committed; startup, database flows, and feature parity remain. |
+| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell geometry, the Qt-ordered menu/sidebar shell, and engine-backed Open/recent startup flow are committed; create flow and feature parity remain. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
@@ -117,8 +117,9 @@ Phase 4 is complete. Its shared UX layer, first-party virtualization decision,
 three editor prototypes, input and Korean IME protocols, large-data gate,
 chart strategy, and staged semantic control check passed the accepted exit
 review on 2026-09-07. Phase 5 is now in progress; its shell geometry slice is
-committed, and its Qt-ordered menu/sidebar shell is now committed. Startup,
-database flows, and feature parity remain. Touch, high-contrast, and
+committed, its Qt-ordered menu/sidebar shell is committed, and the
+engine-backed existing-database Open/recent startup flow is committed. Create
+flow and feature parity remain. Touch, high-contrast, and
 accessibility automation remain out of
 scope for Phase 4.
 The Qt-free
@@ -305,6 +306,16 @@ After meaningful work:
    long logs.
 
 ## Progress Log
+
+- **2026-09-07 - Phase 5 engine-backed open/recent flow committed.** Revision
+  `0295020` enables File > Open... through an HWND-bound native WinUI file
+  picker for `.tps` and `.db`, opens selected files through engine
+  `OpenDatabase`, retains up to ten existing recent paths in shell state, and
+  honors explicit startup targets or most-recent startup restore while leaving
+  create/save/close disabled. The x64 Debug `ClassMngrWindowsWinUI` build and
+  staged verifier passed all existing Phase 1/3/4 checks. Existing SDK/PRI
+  warnings remain non-blocking. The next gate is create/new database flow and
+  broader file-dialog coverage.
 
 - **2026-09-07 - Phase 5 menu/sidebar shell slice committed.** Revision `a1fab16`
   adds the Qt-ordered File, Edit, Classes, Teachers, Print / Export, Help,
