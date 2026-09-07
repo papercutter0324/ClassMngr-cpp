@@ -1108,6 +1108,16 @@ void MainWindow::OpenDatabaseMenuItem_Click(
     openDatabasePicker();
 }
 
+void MainWindow::NewDatabaseMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    openNewDatabasePicker();
+}
+
 void MainWindow::RecentDatabaseMenuItem_Click(
     Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::RoutedEventArgs const& arguments
@@ -1174,6 +1184,59 @@ winrt::fire_and_forget MainWindow::openDatabasePicker()
     m_filePickerActive = false;
 }
 
+winrt::fire_and_forget MainWindow::openNewDatabasePicker()
+{
+    auto lifetime = get_strong();
+    if (m_filePickerActive)
+    {
+        co_return;
+    }
+    m_filePickerActive = true;
+
+    try
+    {
+        auto picker = winrt::Windows::Storage::Pickers::FileSavePicker();
+        const HWND handle = windowHandle(this);
+        if (!handle)
+        {
+            reportDatabaseOpenError(
+                {},
+                "The database save picker is not available."
+                );
+        }
+        else
+        {
+            const auto initializer = picker.as<::IInitializeWithWindow>();
+            winrt::check_hresult(initializer->Initialize(handle));
+            picker.CommitButtonText(L"Create");
+            picker.SuggestedFileName(L"Teacher Profile.tps");
+            picker.DefaultFileExtension(L".tps");
+            picker.FileTypeChoices().Insert(
+                L"Teacher Profile database",
+                winrt::single_threaded_vector<winrt::hstring>({L".tps"})
+                );
+            const auto file = co_await picker.PickSaveFileAsync();
+            if (file)
+            {
+                createDatabasePath(asWString(file.Path()));
+            }
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        reportDatabaseOpenError({}, winrt::to_string(error.message()));
+    }
+    catch (...)
+    {
+        reportDatabaseOpenError(
+            {},
+            "The database save picker could not be opened."
+            );
+    }
+
+    m_filePickerActive = false;
+}
+
 bool MainWindow::openDatabasePath(std::wstring_view path)
 {
     if (path.empty())
@@ -1233,6 +1296,92 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
     catch (...)
     {
         reportDatabaseOpenError(candidate, "The database could not be opened.");
+    }
+    return false;
+}
+
+bool MainWindow::createDatabasePath(std::wstring_view path)
+{
+    if (path.empty())
+    {
+        reportDatabaseOpenError(path, "A new database path was not provided.");
+        return false;
+    }
+
+    const std::wstring candidate = absolutePath(path);
+    if (!classmngr::engine::DatabaseFileFormat::isNativePath(
+            asUtf8(candidate)
+            ))
+    {
+        reportDatabaseOpenError(
+            candidate,
+            "New databases must use the .tps file type."
+            );
+        return false;
+    }
+
+    // The Qt controller closes the active database before replacing or
+    // creating the selected path. Release the SQLite owner before the native
+    // picker-selected replacement is removed, even when the destination is a
+    // different file.
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+
+    if (pathExists(candidate))
+    {
+        std::error_code removeError;
+        const bool removed = std::filesystem::remove(
+            std::filesystem::path(candidate),
+            removeError
+            );
+        if (removeError || !removed)
+        {
+            reportDatabaseOpenError(
+                candidate,
+                removeError
+                    ? removeError.message()
+                    : "The selected database file could not be replaced."
+                );
+            return false;
+        }
+    }
+
+    try
+    {
+        classmngr::engine::OpenDatabaseOptions options;
+        options.createParentDirectories = true;
+        auto opened = classmngr::engine::OpenDatabase::execute(
+            asUtf8(candidate),
+            options
+            );
+        if (!opened)
+        {
+            reportDatabaseOpenError(candidate, opened.error().message);
+            return false;
+        }
+
+        m_openDatabase = std::move(*opened);
+        m_currentDatabasePath = candidate;
+        addRecentDatabasePath(candidate);
+        const std::wstring status = L"Database: " + candidate;
+        if (m_shellDatabaseStatusText)
+        {
+            m_shellDatabaseStatusText.Text(winrt::hstring(status));
+        }
+        if (m_statusText)
+        {
+            m_statusText.Text(L"New database created.");
+        }
+        saveShellState();
+        return true;
+    }
+    catch (std::exception const& error)
+    {
+        reportDatabaseOpenError(candidate, error.what());
+    }
+    catch (...)
+    {
+        reportDatabaseOpenError(candidate, "The new database could not be created.");
     }
     return false;
 }

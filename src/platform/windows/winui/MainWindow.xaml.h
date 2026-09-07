@@ -41,6 +41,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase4SemanticChecks();
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
+    [[nodiscard]] bool createDatabasePath(std::wstring_view path);
     void openMostRecentDatabase();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
         runPhase3ViewModelChecks();
@@ -60,6 +61,10 @@ struct MainWindow : MainWindowT<MainWindow>
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void OpenDatabaseMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void NewDatabaseMenuItem_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
@@ -134,6 +139,7 @@ private:
         Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
         );
     winrt::fire_and_forget openDatabasePicker();
+    winrt::fire_and_forget openNewDatabasePicker();
     void restoreShellState();
     void restoreWindowBounds() noexcept;
     void saveShellState() noexcept;
