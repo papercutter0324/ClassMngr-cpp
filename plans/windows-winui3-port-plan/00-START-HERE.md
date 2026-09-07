@@ -106,7 +106,7 @@ Last updated: 2026-09-07 (Asia/Seoul)
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
-| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell geometry, the Qt-ordered menu/sidebar shell, engine-backed Open/recent startup flow, and the native file-dialog policy are committed; create/save/export flows and feature parity remain. |
+| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell geometry, the Qt-ordered menu/sidebar shell, engine-backed Open/recent startup flow, the native file-dialog policy, and the native New/create flow are committed; save/export/folder flows and feature parity remain. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
@@ -116,11 +116,11 @@ Last updated: 2026-09-07 (Asia/Seoul)
 Phase 4 is complete. Its shared UX layer, first-party virtualization decision,
 three editor prototypes, input and Korean IME protocols, large-data gate,
 chart strategy, and staged semantic control check passed the accepted exit
-review on 2026-09-07. Phase 5 is now in progress; its shell geometry slice is
-committed, its Qt-ordered menu/sidebar shell is committed, and the
-engine-backed existing-database Open/recent startup flow and native file-dialog
-policy are committed. Create/save/export/folder flows and feature parity
-remain. Touch, high-contrast, and
+review on 2026-09-07. Phase 5 is now in progress; its shell geometry slice,
+Qt-ordered menu/sidebar shell, engine-backed existing-database Open/recent
+startup flow, native file-dialog policy, and native New/create flow are
+committed. Save/export/folder flows and feature parity remain. Touch,
+high-contrast, and
 accessibility automation remain out of
 scope for Phase 4.
 The Qt-free
@@ -307,6 +307,15 @@ After meaningful work:
    long logs.
 
 ## Progress Log
+
+- **2026-09-07 - Phase 5 native New/create flow committed.** Revision
+  `ddeb818` enables File > New through an HWND-bound native `FileSavePicker`,
+  restricts new profiles to `.tps`, closes/replaces the selected active
+  database, creates through engine `OpenDatabase` with parent-directory
+  creation, updates recents/status, and keeps Save/Close disabled. The x64
+  Debug `ClassMngrWindowsWinUI` build and staged verifier passed; established
+  SDK/PRI/lib-path warnings remain non-blocking. The next gate is save/export/
+  folder flow and the first read-only feature slice.
 
 - **2026-09-07 - Phase 5 native file-dialog policy recorded.** Revision
   `097e15d` records that WinUI file and folder workflows use native Windows
