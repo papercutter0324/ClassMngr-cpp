@@ -15,7 +15,13 @@
 #include <string>
 #include <string_view>
 #include <functional>
+#include <memory>
 #include <vector>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
 
 namespace winrt::ClassMngrWinUI::implementation
 {
@@ -34,6 +40,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase3DialogChecks();
     [[nodiscard]] bool runPhase4SemanticChecks();
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
+    [[nodiscard]] bool openDatabasePath(std::wstring_view path);
+    void openMostRecentDatabase();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
         runPhase3ViewModelChecks();
     [[nodiscard]] Windows::Foundation::IAsyncOperation<bool>
@@ -48,6 +56,14 @@ struct MainWindow : MainWindowT<MainWindow>
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void ShellInfoMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void OpenDatabaseMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void RecentDatabaseMenuItem_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
@@ -117,6 +133,7 @@ private:
         Microsoft::UI::Xaml::Controls::TextBox const& sender,
         Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
         );
+    winrt::fire_and_forget openDatabasePicker();
     void restoreShellState();
     void restoreWindowBounds() noexcept;
     void saveShellState() noexcept;
@@ -140,6 +157,12 @@ private:
         classmngr::engine::ValidationResult const& validation
         );
     void closeShell() noexcept;
+    void refreshRecentDatabaseMenu();
+    void addRecentDatabasePath(std::wstring_view path);
+    void reportDatabaseOpenError(
+        std::wstring_view path,
+        std::string_view message
+        );
 
     [[nodiscard]] std::wstring selectedPageId() const;
     [[nodiscard]] bool ensureHomePage();
@@ -150,6 +173,8 @@ private:
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_aboutNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::Frame m_contentFrame{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_shellDatabaseStatusText{nullptr};
 
     Microsoft::UI::Xaml::Controls::TextBlock m_engineVersionText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_nameTextBox{nullptr};
@@ -178,6 +203,9 @@ private:
     winrt::com_ptr<AsyncCommand> m_homeCommand;
     ClassMngrWinUIDialogs::DirtyState m_dirtyState;
     std::wstring m_currentPageId;
+    std::wstring m_currentDatabasePath;
+    std::vector<std::wstring> m_recentDatabasePaths;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_openDatabase;
     Microsoft::UI::Xaml::Controls::ContentDialog m_ownedDialog{nullptr};
 
     winrt::event_token m_selectionChangedToken{};
@@ -189,6 +217,7 @@ private:
     bool m_restoringState{};
     bool m_selectionChanging{};
     bool m_windowBoundsRestored{};
+    bool m_filePickerActive{};
 };
 
 } // namespace winrt::ClassMngrWinUI::implementation

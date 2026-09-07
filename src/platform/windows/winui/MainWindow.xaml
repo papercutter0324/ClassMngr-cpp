@@ -27,15 +27,26 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock
                 x:Name="AppTitleBarText"
                 Style="{StaticResource Phase3TitleBarTextBlockStyle}"
                 Text="ClassMngr"
                 AutomationProperties.Name="Application title" />
+            <TextBlock
+                x:Name="ShellDatabaseStatusText"
+                Grid.Column="1"
+                Margin="{StaticResource Phase5DatabaseStatusMargin}"
+                Style="{StaticResource Phase3BodyTextBlockStyle}"
+                Text="No database open"
+                TextTrimming="CharacterEllipsis"
+                MaxWidth="360"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="Current database status" />
             <Button
                 x:Name="ShellInfoButton"
-                Grid.Column="1"
+                Grid.Column="2"
                 Style="{StaticResource Phase3SecondaryButtonStyle}"
                 Content="About shell"
                 Click="ShellInfoButton_Click"
@@ -78,12 +89,17 @@
                         x:Name="OpenFileMenuItem"
                         Text="Open..."
                         Tag="file.open"
-                        IsEnabled="False"
+                        Click="OpenDatabaseMenuItem_Click"
                         AutomationProperties.Name="Open file command">
                         <MenuFlyoutItem.KeyboardAccelerators>
                             <KeyboardAccelerator Key="O" Modifiers="Control" />
                         </MenuFlyoutItem.KeyboardAccelerators>
                     </MenuFlyoutItem>
+                    <MenuFlyoutSubItem
+                        x:Name="RecentFilesMenuItem"
+                        Text="Recent Files"
+                        Tag="file.recent"
+                        AutomationProperties.Name="Recent database files submenu" />
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem
                         x:Name="SaveFileMenuItem"

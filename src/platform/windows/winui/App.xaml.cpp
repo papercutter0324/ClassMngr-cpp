@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "App.xaml.h"
+#include "classmngr/engine/database_file_format.h"
 #include "MainWindow.xaml.h"
 #include "winui_lifecycle.h"
 #include "winui_identity.h"
@@ -11,8 +12,10 @@
 #include <shellapi.h>
 #include <shobjidl_core.h>
 
+#include <algorithm>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include <winrt/Windows.ApplicationModel.Activation.h>
 
@@ -121,6 +124,19 @@ winrt::fire_and_forget completeViewModelTest(
         passed = false;
     }
     scheduleTestExit(window, passed);
+}
+
+bool isPhaseTestActivation(
+    ClassMngrWinUILifecycle::CommandLineActivation const& activation
+    )
+{
+    return std::any_of(
+        activation.arguments.begin(),
+        activation.arguments.end(),
+        [](std::wstring const& argument) {
+            return argument.rfind(L"--phase", 0) == 0;
+        }
+        );
 }
 
 } // namespace
@@ -242,6 +258,32 @@ void App::OnLaunched(
     m_dispatcherQueue = m_window.DispatcherQueue();
     m_windowClosedToken = m_window.Closed({this, &App::OnWindowClosed});
     m_window.Activate();
+
+    // Normal launches restore the most recent existing database, while an
+    // explicit supported target takes precedence. Automated phase launches
+    // remain shell-only so persisted user data cannot affect their hooks.
+    if (!isPhaseTestActivation(activation))
+    {
+        auto* mainWindow = winrt::get_self<MainWindow>(
+            m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
+            );
+        bool hasSupportedTarget = false;
+        for (std::wstring const& target : activation.openTargets)
+        {
+            if (classmngr::engine::DatabaseFileFormat::isSupportedInputPath(
+                    winrt::to_string(winrt::hstring(target))
+                    ))
+            {
+                mainWindow->openDatabasePath(target);
+                hasSupportedTarget = true;
+                break;
+            }
+        }
+        if (!hasSupportedTarget)
+        {
+            mainWindow->openMostRecentDatabase();
+        }
+    }
 
     const bool smokeTest = ClassMngrWinUILifecycle::hasArgument(
         activation,

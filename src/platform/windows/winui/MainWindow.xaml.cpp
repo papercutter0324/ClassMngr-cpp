@@ -1,19 +1,24 @@
 #include "pch.h"
 
 #include "MainWindow.xaml.h"
+#include "classmngr/engine/database_file_format.h"
+#include "classmngr/engine/open_database.h"
 #include "winui_build_info.h"
 #include "winui_identity.h"
 #include "winui_shared_ux.h"
 
 #include <microsoft.ui.xaml.window.h>
+#include <shobjidl_core.h>
 
 #include <winrt/Microsoft.UI.Xaml.Automation.h>
+#include <winrt/Windows.Storage.Pickers.h>
 
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
 #include <coroutine>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -32,6 +37,7 @@ constexpr int32_t minimumShellWidth = 800;
 constexpr int32_t minimumShellHeight = 600;
 constexpr int32_t defaultShellWidth = 1270;
 constexpr int32_t defaultShellHeight = 1040;
+constexpr std::size_t maximumRecentDatabasePaths = 10;
 
 struct ResumeOnDispatcherQueue
 {
@@ -65,13 +71,127 @@ struct PersistedShellState
 {
     std::wstring selectedPage{std::wstring(homePageId)};
     std::wstring navigationState;
+    std::vector<std::wstring> recentDatabasePaths;
     RECT windowBounds{};
     bool hasWindowBounds{};
 };
 
+std::string asUtf8(std::wstring_view value);
+bool isSupportedDatabasePath(std::wstring_view path) noexcept;
+bool pathExists(std::wstring_view path) noexcept;
+std::wstring absolutePath(std::wstring_view path);
+bool samePath(std::wstring_view lhs, std::wstring_view rhs) noexcept;
+std::vector<std::wstring> pruneRecentDatabasePaths(
+    std::vector<std::wstring> const& paths
+    );
+
 bool isKnownPageId(std::wstring_view pageId) noexcept
 {
     return pageId == homePageId || pageId == aboutPageId;
+}
+
+std::string asUtf8(std::wstring_view value)
+{
+    return winrt::to_string(winrt::hstring(value));
+}
+
+bool isSupportedDatabasePath(std::wstring_view path) noexcept
+{
+    try
+    {
+        return classmngr::engine::DatabaseFileFormat::isSupportedInputPath(
+            asUtf8(path)
+            );
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+bool pathExists(std::wstring_view path) noexcept
+{
+    std::error_code error;
+    return std::filesystem::exists(
+        std::filesystem::path(std::wstring(path)),
+        error
+        ) && !error;
+}
+
+std::wstring absolutePath(std::wstring_view path)
+{
+    std::error_code error;
+    const auto absolute = std::filesystem::absolute(
+        std::filesystem::path(std::wstring(path)),
+        error
+        );
+    return error ? std::wstring(path) : absolute.wstring();
+}
+
+bool samePath(std::wstring_view lhs, std::wstring_view rhs) noexcept
+{
+    if (lhs.size() != rhs.size())
+    {
+        return false;
+    }
+
+    for (std::size_t index = 0; index < lhs.size(); ++index)
+    {
+        wchar_t left = lhs[index];
+        wchar_t right = rhs[index];
+        if (left >= L'A' && left <= L'Z')
+        {
+            left = static_cast<wchar_t>(left - L'A' + L'a');
+        }
+        if (right >= L'A' && right <= L'Z')
+        {
+            right = static_cast<wchar_t>(right - L'A' + L'a');
+        }
+        if (left == L'\\')
+        {
+            left = L'/';
+        }
+        if (right == L'\\')
+        {
+            right = L'/';
+        }
+        if (left != right)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::vector<std::wstring> pruneRecentDatabasePaths(
+    std::vector<std::wstring> const& paths
+    )
+{
+    std::vector<std::wstring> result;
+    result.reserve(std::min(paths.size(), maximumRecentDatabasePaths));
+    for (std::wstring const& path : paths)
+    {
+        if (!isSupportedDatabasePath(path) || !pathExists(path))
+        {
+            continue;
+        }
+        if (std::any_of(
+                result.begin(),
+                result.end(),
+                [&path](std::wstring const& existing) {
+                    return samePath(existing, path);
+                }
+                ))
+        {
+            continue;
+        }
+        result.emplace_back(path);
+        if (result.size() == maximumRecentDatabasePaths)
+        {
+            break;
+        }
+    }
+    return result;
 }
 
 std::wstring asWString(winrt::hstring const& value)
@@ -233,6 +353,20 @@ PersistedShellState loadShellState() noexcept
         state.selectedPage = std::move(selectedPage);
     }
     readRegistryString(key, L"NavigationState", state.navigationState);
+
+    for (std::size_t index = 0; index < maximumRecentDatabasePaths; ++index)
+    {
+        const std::wstring valueName =
+            L"RecentDatabase" + std::to_wstring(index);
+        std::wstring path;
+        if (readRegistryString(key, valueName.c_str(), path))
+        {
+            state.recentDatabasePaths.emplace_back(std::move(path));
+        }
+    }
+    state.recentDatabasePaths = pruneRecentDatabasePaths(
+        state.recentDatabasePaths
+        );
 
     DWORD value{};
     const bool hasLeft = readRegistryDword(key, L"WindowLeft", value);
@@ -417,6 +551,11 @@ MainWindow::MainWindow()
         Microsoft::UI::Xaml::Controls::Frame>();
     m_shellInfoButton = RootGrid().FindName(L"ShellInfoButton").as<
         Microsoft::UI::Xaml::Controls::Button>();
+    m_recentFilesMenu = RootGrid().FindName(L"RecentFilesMenuItem").as<
+        Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem>();
+    m_shellDatabaseStatusText = RootGrid().FindName(
+        L"ShellDatabaseStatusText"
+        ).as<Microsoft::UI::Xaml::Controls::TextBlock>();
 
     m_aboutNavigationItem.Content(winrt::box_value(winrt::hstring(
         m_localizer.getString(L"ActionRegistry", L"About")
@@ -475,6 +614,7 @@ MainWindow::MainWindow()
     m_closedToken = Closed({this, &MainWindow::Window_Closed});
 
     restoreShellState();
+    refreshRecentDatabaseMenu();
 }
 
 MainWindow::~MainWindow()
@@ -956,6 +1096,156 @@ void MainWindow::ShellInfoButton_Click(
     static_cast<void>(sender);
     static_cast<void>(arguments);
     showOwnedDialog();
+}
+
+void MainWindow::OpenDatabaseMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    openDatabasePicker();
+}
+
+void MainWindow::RecentDatabaseMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(arguments);
+    const auto item = sender.try_as<
+        Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    if (item)
+    {
+        const std::wstring path = boxedString(item.Tag());
+        if (!path.empty())
+        {
+            openDatabasePath(path);
+        }
+    }
+}
+
+winrt::fire_and_forget MainWindow::openDatabasePicker()
+{
+    auto lifetime = get_strong();
+    if (m_filePickerActive)
+    {
+        co_return;
+    }
+    m_filePickerActive = true;
+
+    try
+    {
+        auto picker = winrt::Windows::Storage::Pickers::FileOpenPicker();
+        const HWND handle = windowHandle(this);
+        if (!handle)
+        {
+            reportDatabaseOpenError(
+                {},
+                "The database file picker is not available."
+                );
+        }
+        else
+        {
+            const auto initializer = picker.as<::IInitializeWithWindow>();
+            winrt::check_hresult(initializer->Initialize(handle));
+            picker.FileTypeFilter().Append(L".tps");
+            picker.FileTypeFilter().Append(L".db");
+            const auto file = co_await picker.PickSingleFileAsync();
+            if (file)
+            {
+                openDatabasePath(asWString(file.Path()));
+            }
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        reportDatabaseOpenError({}, winrt::to_string(error.message()));
+    }
+    catch (...)
+    {
+        reportDatabaseOpenError(
+            {},
+            "The database file picker could not be opened."
+            );
+    }
+
+    m_filePickerActive = false;
+}
+
+bool MainWindow::openDatabasePath(std::wstring_view path)
+{
+    if (path.empty())
+    {
+        reportDatabaseOpenError(path, "A database path was not provided.");
+        return false;
+    }
+
+    const std::wstring candidate = absolutePath(path);
+    if (!isSupportedDatabasePath(candidate))
+    {
+        reportDatabaseOpenError(
+            candidate,
+            "Only .tps and .db database files are supported."
+            );
+        return false;
+    }
+    if (!pathExists(candidate))
+    {
+        reportDatabaseOpenError(candidate, "The database file does not exist.");
+        return false;
+    }
+
+    try
+    {
+        classmngr::engine::OpenDatabaseOptions options;
+        options.createParentDirectories = false;
+        auto opened = classmngr::engine::OpenDatabase::execute(
+            asUtf8(candidate),
+            options
+            );
+        if (!opened)
+        {
+            reportDatabaseOpenError(candidate, opened.error().message);
+            return false;
+        }
+
+        m_openDatabase = std::move(*opened);
+        m_currentDatabasePath = candidate;
+        addRecentDatabasePath(candidate);
+        const std::wstring status = L"Database: " + candidate;
+        if (m_shellDatabaseStatusText)
+        {
+            m_shellDatabaseStatusText.Text(winrt::hstring(status));
+        }
+        if (m_statusText)
+        {
+            m_statusText.Text(L"Database opened.");
+        }
+        saveShellState();
+        return true;
+    }
+    catch (std::exception const& error)
+    {
+        reportDatabaseOpenError(candidate, error.what());
+    }
+    catch (...)
+    {
+        reportDatabaseOpenError(candidate, "The database could not be opened.");
+    }
+    return false;
+}
+
+void MainWindow::openMostRecentDatabase()
+{
+    m_recentDatabasePaths = pruneRecentDatabasePaths(m_recentDatabasePaths);
+    refreshRecentDatabaseMenu();
+    saveShellState();
+    if (!m_recentDatabasePaths.empty())
+    {
+        openDatabasePath(m_recentDatabasePaths.front());
+    }
 }
 
 void MainWindow::ShellInfoMenuItem_Click(
@@ -1632,6 +1922,7 @@ void MainWindow::populateAboutPage(
 void MainWindow::restoreShellState()
 {
     const auto state = loadShellState();
+    m_recentDatabasePaths = state.recentDatabasePaths;
     m_restoringState = true;
 
     bool restored = false;
@@ -1660,6 +1951,82 @@ void MainWindow::restoreShellState()
     }
     m_restoringState = false;
     updateNavigationState();
+}
+
+void MainWindow::refreshRecentDatabaseMenu()
+{
+    if (!m_recentFilesMenu)
+    {
+        return;
+    }
+
+    m_recentFilesMenu.Items().Clear();
+    if (m_recentDatabasePaths.empty())
+    {
+        auto empty = Microsoft::UI::Xaml::Controls::MenuFlyoutItem();
+        empty.Text(L"No recent databases");
+        empty.IsEnabled(false);
+        setAutomationName(empty, L"No recent databases");
+        m_recentFilesMenu.Items().Append(empty);
+        return;
+    }
+
+    for (std::wstring const& path : m_recentDatabasePaths)
+    {
+        auto item = Microsoft::UI::Xaml::Controls::MenuFlyoutItem();
+        item.Text(winrt::hstring(path));
+        item.Tag(winrt::box_value(winrt::hstring(path)));
+        setAutomationName(item, L"Open recent database");
+        item.Click({this, &MainWindow::RecentDatabaseMenuItem_Click});
+        m_recentFilesMenu.Items().Append(item);
+    }
+}
+
+void MainWindow::addRecentDatabasePath(std::wstring_view path)
+{
+    const std::wstring normalized = absolutePath(path);
+    std::vector<std::wstring> updated;
+    updated.reserve(maximumRecentDatabasePaths);
+    updated.emplace_back(normalized);
+    for (std::wstring const& existing : m_recentDatabasePaths)
+    {
+        if (!samePath(existing, normalized))
+        {
+            updated.emplace_back(existing);
+        }
+        if (updated.size() == maximumRecentDatabasePaths)
+        {
+            break;
+        }
+    }
+    m_recentDatabasePaths = pruneRecentDatabasePaths(updated);
+    refreshRecentDatabaseMenu();
+}
+
+void MainWindow::reportDatabaseOpenError(
+    std::wstring_view path,
+    std::string_view message
+    )
+{
+    if (m_shellDatabaseStatusText)
+    {
+        const std::wstring status = path.empty()
+            ? L"Database open failed."
+            : L"Database open failed: " + std::wstring(path);
+        m_shellDatabaseStatusText.Text(winrt::hstring(status));
+    }
+    if (m_statusText)
+    {
+        m_statusText.Text(L"Database open failed.");
+    }
+    showDialog(
+        L"Open database",
+        winrt::to_hstring(std::string(message)),
+        {},
+        {},
+        L"Close",
+        {}
+        );
 }
 
 void MainWindow::restoreWindowBounds() noexcept
@@ -1702,6 +2069,23 @@ void MainWindow::saveShellState() noexcept
         L"SelectedPage",
         selectedPageId()
         );
+    for (std::size_t index = 0; index < maximumRecentDatabasePaths; ++index)
+    {
+        const std::wstring valueName =
+            L"RecentDatabase" + std::to_wstring(index);
+        if (index < m_recentDatabasePaths.size())
+        {
+            writeRegistryString(
+                key,
+                valueName.c_str(),
+                m_recentDatabasePaths[index]
+                );
+        }
+        else
+        {
+            RegDeleteValueW(key, valueName.c_str());
+        }
+    }
     try
     {
         const auto navigationState = m_contentFrame.GetNavigationState();
@@ -1957,8 +2341,11 @@ void MainWindow::closeShell() noexcept
         }
         m_homeCommand = nullptr;
         m_homeViewModel = nullptr;
+        m_recentFilesMenu = nullptr;
+        m_shellDatabaseStatusText = nullptr;
         m_contentFrame = nullptr;
         m_navigationView = nullptr;
+        m_openDatabase.reset();
     }
     catch (...)
     {

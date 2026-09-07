@@ -21,6 +21,7 @@
     <Thickness x:Key="Phase5ShellBodyMargin">0,0,9,4</Thickness>
     <Thickness x:Key="Phase5ShellContentMargin">5,0,5,0</Thickness>
     <Thickness x:Key="Phase5SidebarMargin">5,8,5,18</Thickness>
+    <Thickness x:Key="Phase5DatabaseStatusMargin">12,0,12,0</Thickness>
     <Thickness x:Key="Phase3ButtonPadding">12,4</Thickness>
     <Thickness x:Key="Phase3NavigationPadding">0,8,0,0</Thickness>
     <Thickness x:Key="Phase3SectionSpacing">0,0,0,16</Thickness>
