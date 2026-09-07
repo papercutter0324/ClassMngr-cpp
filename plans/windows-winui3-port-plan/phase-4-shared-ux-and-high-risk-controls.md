@@ -32,6 +32,17 @@ porting feature pages at scale.
 8. Add semantic tests for measurement, commands, selection, edit commit/cancel,
    scrolling, focus, validation, and dirty-state behavior.
 
+## Required follow-up revisit
+
+Phase 4 is complete for primitive selection, high-risk interaction prototypes,
+input/IME coverage, and virtualization performance. It did not accept the
+full Qt layout/design/style parity of every production table. Revisit the
+completed table work as the first shared work item in Phase 6 using the
+[WinUI table layout and style parity plan](../../docs/porting/windows-winui/table-parity-plan.md).
+The revisit must inventory every retained Qt table, compare its layout and
+visual states, and carry the accepted evidence into the roster, schedule,
+speaking-evaluation, and remaining table-like feature slices.
+
 ## Validation
 
 - Control gallery passes at 100–300% DPI, light/dark, English/Korean, keyboard,

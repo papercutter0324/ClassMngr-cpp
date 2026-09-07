@@ -26,6 +26,17 @@ through the shared engine.
 7. Measure cold/warm startup, first paint, first navigation, resize, memory,
    and handle counts against the Phase 0 budgets.
 
+## Revisit before Phase 5 handoff
+
+The completed Phase 5 read-only list/detail slice and the Phase 4 control
+gallery predate the full cross-feature Qt table parity review. Before Phase 6
+starts, record the table-parity handoff and revisit any table-like list or
+detail surface already implemented, including its density, selection, focus,
+empty/error states, localization, and DPI behavior. Use the shared
+[WinUI table layout and style parity plan](../../docs/porting/windows-winui/table-parity-plan.md);
+do not treat the existing prototype captures as acceptance evidence for the
+production table families.
+
 ## File-dialog decision
 
 The WinUI port uses the operating system's native file-selection surfaces for

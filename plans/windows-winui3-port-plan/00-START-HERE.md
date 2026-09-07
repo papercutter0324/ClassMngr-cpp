@@ -105,7 +105,7 @@ Last updated: 2026-09-07 (Asia/Seoul)
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
-| [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
+| [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell/database flows and the engine-backed Campus Information read-only baseline are committed; native save/export/folder workflows, image/resource/localization parity, and paired feature evidence remain. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
@@ -174,7 +174,11 @@ Next work, in order:
 3. Capture first-paint/first-navigation, cold/warm startup, resize, memory,
    and handle-count evidence; rebuild and run the required x86 Debug/Release
    lanes before the Phase 5 exit review.
-4. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
+4. Record the [table layout and style parity plan](../../docs/porting/windows-winui/table-parity-plan.md)
+   as the first Phase 6 shared work item; revisit the completed Phase 4
+   prototypes and Phase 5 read-only list/detail surface before accepting any
+   table-heavy feature slice.
+5. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
    gate and paired evidence are accepted.
 
 The Qt-free
