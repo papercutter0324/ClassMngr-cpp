@@ -65,6 +65,23 @@ std::string pathToUtf8(
     return result;
 }
 
+std::filesystem::path pathFromUtf8(
+    std::string_view value
+    )
+{
+    std::u8string encoded;
+    encoded.reserve(value.size());
+    for (const char character : value)
+    {
+        encoded.push_back(
+            static_cast<char8_t>(
+                static_cast<unsigned char>(character)
+                )
+            );
+    }
+    return std::filesystem::path(encoded);
+}
+
 Result<std::string> normalizeDatabasePath(
     std::string_view databasePath,
     bool createParentDirectories
@@ -91,10 +108,7 @@ Result<std::string> normalizeDatabasePath(
 
     try
     {
-        const std::filesystem::path inputPath = std::filesystem::u8path(
-            databasePath.begin(),
-            databasePath.end()
-            );
+        const std::filesystem::path inputPath = pathFromUtf8(databasePath);
         std::error_code filesystemError;
         const std::filesystem::path absolutePath = std::filesystem::absolute(
             inputPath,

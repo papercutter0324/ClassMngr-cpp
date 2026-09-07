@@ -114,6 +114,23 @@ std::string pathToUtf8(
         );
 }
 
+std::filesystem::path pathFromUtf8(
+    std::string_view value
+    )
+{
+    std::u8string encoded;
+    encoded.reserve(value.size());
+    for (const char character : value)
+    {
+        encoded.push_back(
+            static_cast<char8_t>(
+                static_cast<unsigned char>(character)
+                )
+            );
+    }
+    return std::filesystem::path(encoded);
+}
+
 bool ensureLatest(
     SqliteDatabase& database
     )
@@ -343,7 +360,7 @@ int main()
                 "file-backed legacy schema did not migrate"
                 );
             const std::filesystem::path backupPath =
-                std::filesystem::u8path(
+                pathFromUtf8(
                     pathToUtf8(databasePath)
                     + ".pre-schema-v4-backup"
                     );

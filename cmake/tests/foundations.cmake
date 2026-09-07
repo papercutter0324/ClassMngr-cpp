@@ -39,7 +39,6 @@ target_include_directories(ClassMngrDatabasePortFixtureGenerator
 
 target_link_libraries(ClassMngrDatabasePortFixtureGenerator
     PRIVATE
-        ClassMngrEngine
         ClassMngrRuntime
         Qt6::Core
         Qt6::Sql

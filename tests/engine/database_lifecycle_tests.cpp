@@ -29,6 +29,23 @@ std::string pathToUtf8(
     };
 }
 
+fs::path pathFromUtf8(
+    std::string_view value
+    )
+{
+    std::u8string encoded;
+    encoded.reserve(value.size());
+    for (const char character : value)
+    {
+        encoded.push_back(
+            static_cast<char8_t>(
+                static_cast<unsigned char>(character)
+                )
+            );
+    }
+    return fs::path(encoded);
+}
+
 bool expect(
     bool condition,
     std::string_view message
@@ -238,7 +255,7 @@ int main()
         return 1;
     }
 
-    const fs::path root = fs::u8path(*temporaryRoot);
+    const fs::path root = pathFromUtf8(*temporaryRoot);
     const std::string databasePath = pathToUtf8(root / "profile.tps");
     const std::string backupPath = pathToUtf8(root / "profile.backup");
     const std::string incompletePath = pathToUtf8(root / "profile.incomplete");

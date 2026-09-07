@@ -142,6 +142,13 @@ function(classmngr_finalize_test_targets)
             continue()
         endif()
 
+        # Engine tests are intentionally Qt-free and already own their
+        # portable engine link. Do not attach the retained Qt runtime or its
+        # Qt SQL test support to them.
+        if(test_name MATCHES "^ClassMngrEngine")
+            continue()
+        endif()
+
         target_link_libraries("${test_name}"
             PRIVATE
                 ClassMngrQtSqlTestSupport
@@ -179,6 +186,18 @@ function(classmngr_finalize_test_targets)
         endforeach()
 
         set_property(TARGET "${test_name}" PROPERTY SOURCES "${test_sources}")
+
+        get_target_property(test_libraries "${test_name}" LINK_LIBRARIES)
+        if(test_libraries)
+            # ClassMngrRuntime and ClassMngrTestRuntime both expose the
+            # engine transitively. Keep one owner for the archive so the
+            # linker does not receive duplicate libClassMngrEngine inputs.
+            list(REMOVE_ITEM test_libraries ClassMngrEngine)
+            set_property(
+                TARGET "${test_name}"
+                PROPERTY LINK_LIBRARIES "${test_libraries}"
+            )
+        endif()
 
         # Apple's current linker no longer honors -multiply_defined suppress.
         # Use the flat-namespace shared runtime for the few tests that provide

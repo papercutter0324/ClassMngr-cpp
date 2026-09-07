@@ -179,10 +179,12 @@ if(WIN32)
     )
 else()
     find_package(SQLite3 REQUIRED)
-    if(TARGET SQLite::SQLite3)
-        target_link_libraries(ClassMngrEngine PUBLIC SQLite::SQLite3)
-    elseif(TARGET SQLite3::SQLite3)
+    if(TARGET SQLite3::SQLite3)
         target_link_libraries(ClassMngrEngine PUBLIC SQLite3::SQLite3)
+    elseif(TARGET SQLite::SQLite3)
+        # CMake versions before the imported-target rename expose this
+        # deprecated spelling. Keep it as a compatibility fallback.
+        target_link_libraries(ClassMngrEngine PUBLIC SQLite::SQLite3)
     else()
         target_include_directories(ClassMngrEngine
             PUBLIC

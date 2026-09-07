@@ -174,21 +174,21 @@ const char* operationPrefix(
     )
 {
     constexpr const char* operations[] = {
-        {"Saving class information"},
-        {"Saving class notes"},
-        {"Loading class information"},
-        {"Loading regular class times"},
-        {"Loading intensive class times"},
-        {"Loading class teacher assignments"},
-        {"Loading schedule class information"},
-        {"Loading schedule class times"},
-        {"Loading class time conflicts"},
-        {"Starting class information save transaction"},
-        {"Committing class information"},
-        {"Deleting regular class times"},
-        {"Inserting regular class time"},
-        {"Deleting intensive class times"},
-        {"Inserting intensive class time"}
+        "Saving class information",
+        "Saving class notes",
+        "Loading class information",
+        "Loading regular class times",
+        "Loading intensive class times",
+        "Loading class teacher assignments",
+        "Loading schedule class information",
+        "Loading schedule class times",
+        "Loading class time conflicts",
+        "Starting class information save transaction",
+        "Committing class information",
+        "Deleting regular class times",
+        "Inserting regular class time",
+        "Deleting intensive class times",
+        "Inserting intensive class time"
     };
 
     for (const char* operation : operations)

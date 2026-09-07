@@ -7,6 +7,10 @@ Last recorded: 2026-08-29 (Asia/Seoul)
 > Current progress is tracked only in
 > [`plans/windows-winui3-port-plan/00-START-HERE.md`](../../../plans/windows-winui3-port-plan/00-START-HERE.md).
 
+> The current minimum supported macOS is 14.4 or newer. The macOS 13.0
+> deployment target mentioned in the dated validation record below is
+> historical evidence only.
+
 This is the cross-device handoff for the Windows port. The Phase 0 baseline
 gate was accepted by the product owner on 2026-08-29. Phase 1 build-split work
 may proceed; native-platform parity checks remain carry-forward work for the

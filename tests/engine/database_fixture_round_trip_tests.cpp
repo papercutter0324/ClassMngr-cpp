@@ -92,7 +92,17 @@ Filesystem::path pathFromUtf8(
     std::string_view path
     )
 {
-    return Filesystem::u8path(path.begin(), path.end());
+    std::u8string encoded;
+    encoded.reserve(path.size());
+    for (const char character : path)
+    {
+        encoded.push_back(
+            static_cast<char8_t>(
+                static_cast<unsigned char>(character)
+                )
+            );
+    }
+    return Filesystem::path(encoded);
 }
 
 std::optional<std::string> readBytes(

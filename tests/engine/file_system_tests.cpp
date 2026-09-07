@@ -45,6 +45,23 @@ std::string pathToUtf8(
         );
 }
 
+fs::path pathFromUtf8(
+    std::string_view value
+    )
+{
+    std::u8string encoded;
+    encoded.reserve(value.size());
+    for (const char character : value)
+    {
+        encoded.push_back(
+            static_cast<char8_t>(
+                static_cast<unsigned char>(character)
+                )
+            );
+    }
+    return fs::path(encoded);
+}
+
 bool hasTemporaryArtifacts(
     const fs::path& root
     )
@@ -139,8 +156,9 @@ int main()
         );
     passed &= expect(
         relative
-            && fs::u8path(*relative).is_absolute()
-            && fs::u8path(*relative).filename() == "classmngr-relative-file.bin",
+            && pathFromUtf8(*relative).is_absolute()
+            && pathFromUtf8(*relative).filename()
+                == "classmngr-relative-file.bin",
         "relative UTF-8 paths were not normalized to absolute paths"
         );
 
@@ -208,7 +226,7 @@ int main()
         return 1;
     }
     TemporaryDirectoryGuard temporaryRootGuard(fileSystem, *temporaryRoot);
-    const fs::path root = fs::u8path(temporaryRootGuard.path());
+    const fs::path root = pathFromUtf8(temporaryRootGuard.path());
 
     const std::string koreanDirectory =
         "\xed\x8c\x8c\xec\x9d\xbc-\xed\x85\x8c\xec\x8a\xa4\xed\x8a\xb8";
@@ -441,7 +459,7 @@ int main()
     if (temporaryChild)
     {
         const std::string childFile = pathToUtf8(
-            fs::u8path(*temporaryChild) / "child.bin"
+            pathFromUtf8(*temporaryChild) / "child.bin"
             );
         passed &= expect(
             fileSystem.writeBytes(childFile, "child").has_value(),
@@ -470,7 +488,7 @@ int main()
     passed &= expect(
         directoryStage
             && fileSystem.createDirectories(
-                pathToUtf8(fs::u8path(*directoryStage) / "new-file")
+                pathToUtf8(pathFromUtf8(*directoryStage) / "new-file")
                 ).has_value()
             && fileSystem.createDirectories(directoryDestination).has_value(),
         "directory replacement fixture could not be prepared"
@@ -478,13 +496,13 @@ int main()
     if (directoryStage)
     {
         const std::string oldMarker = pathToUtf8(
-            fs::u8path(directoryDestination) / "old-file"
+            pathFromUtf8(directoryDestination) / "old-file"
             );
         const std::string newMarker = pathToUtf8(
-            fs::u8path(*directoryStage) / "new-file" / "marker"
+            pathFromUtf8(*directoryStage) / "new-file" / "marker"
             );
         const std::string finalMarker = pathToUtf8(
-            fs::u8path(directoryDestination) / "new-file" / "marker"
+            pathFromUtf8(directoryDestination) / "new-file" / "marker"
             );
         passed &= expect(
             fileSystem.writeBytes(oldMarker, "old").has_value()

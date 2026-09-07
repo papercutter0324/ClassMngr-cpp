@@ -133,7 +133,17 @@ fs::path pathFromUtf8(
     std::string_view value
     )
 {
-    return fs::u8path(value.begin(), value.end());
+    std::u8string encoded;
+    encoded.reserve(value.size());
+    for (const char character : value)
+    {
+        encoded.push_back(
+            static_cast<char8_t>(
+                static_cast<unsigned char>(character)
+                )
+            );
+    }
+    return fs::path(encoded);
 }
 
 std::string pathToUtf8(

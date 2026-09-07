@@ -176,7 +176,7 @@ brew install cmake ninja git
 
 Install the Qt macOS desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12 `macos` desktop kit. If you use another Qt installation, make sure it is Qt 6.12 or newer and includes Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
-Set `QT_MACOS_PREFIX` to that Qt kit. The same presets then work regardless of where Qt is installed. The macOS release preset builds a universal `arm64;x86_64` app bundle targeting macOS 13.0 or newer.
+Set `QT_MACOS_PREFIX` to that Qt kit. The same presets then work regardless of where Qt is installed. The macOS release preset builds a universal `arm64;x86_64` app bundle targeting macOS 14.4 or newer.
 
 ```sh
 export QT_MACOS_PREFIX="$HOME/Qt/6.12.0/macos"

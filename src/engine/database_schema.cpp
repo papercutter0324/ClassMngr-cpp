@@ -1105,6 +1105,23 @@ std::string pathToUtf8(
         );
 }
 
+std::filesystem::path pathFromUtf8(
+    std::string_view value
+    )
+{
+    std::u8string encoded;
+    encoded.reserve(value.size());
+    for (const char character : value)
+    {
+        encoded.push_back(
+            static_cast<char8_t>(
+                static_cast<unsigned char>(character)
+                )
+            );
+    }
+    return std::filesystem::path(encoded);
+}
+
 Status createPreConstraintMigrationBackup(
     SqliteDatabase& database,
     int migrationVersion
@@ -1119,10 +1136,7 @@ Status createPreConstraintMigrationBackup(
     std::filesystem::path path;
     try
     {
-        path = std::filesystem::u8path(
-            databasePath.begin(),
-            databasePath.end()
-            );
+        path = pathFromUtf8(databasePath);
     }
     catch (const std::exception& exception)
     {
@@ -1178,7 +1192,7 @@ Status createPreConstraintMigrationBackup(
         + "-backup";
     filesystemError.clear();
     if (std::filesystem::exists(
-            std::filesystem::u8path(backupPath.begin(), backupPath.end()),
+            pathFromUtf8(backupPath),
             filesystemError
             ))
     {
