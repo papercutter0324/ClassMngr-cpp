@@ -106,7 +106,7 @@ Last updated: 2026-09-07 (Asia/Seoul)
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
-| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell geometry, the Qt-ordered menu/sidebar shell, engine-backed Open/recent startup flow, the native file-dialog policy, and the native New/create flow are committed; save/export/folder flows and feature parity remain. |
+| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell/database flows and the engine-backed Campus Information read-only baseline are committed; native save/export/folder workflows, image/resource/localization parity, and paired feature evidence remain. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
@@ -119,10 +119,64 @@ chart strategy, and staged semantic control check passed the accepted exit
 review on 2026-09-07. Phase 5 is now in progress; its shell geometry slice,
 Qt-ordered menu/sidebar shell, engine-backed existing-database Open/recent
 startup flow, native file-dialog policy, and native New/create flow are
-committed. Save/export/folder flows and feature parity remain. Touch,
+committed. The engine-backed Campus Information read-only baseline is also
+committed: the page uses `CampusRecordService`, retains list/detail state,
+and covers no-database, empty, populated, engine-error, and Korean-text
+semantic states. Native save/export/folder flows, image/resource loading,
+localized feature parity, paired Qt/WinUI scenarios, and startup/runtime
+measurements remain. Touch,
 high-contrast, and
 accessibility automation remain out of
 scope for Phase 4.
+
+## Phase 5 Resume Handoff
+
+Resume from commit `697f1fb` (`Phase 5 - Add campus information read-only
+slice`). The implementation and the staged verifier are accepted on this
+Windows host; the progress-record update below should be committed as the
+follow-up documentation commit before handing the repository to another
+computer.
+
+Finished Phase 5 work:
+
+- shell geometry, the Qt-ordered menu/sidebar shell, and retained navigation
+  state;
+- engine-backed existing-database Open, recent-database startup, native
+  `FileOpenPicker` policy, and native New/create through `FileSavePicker`;
+- Campus Directory > Information as a read-only `CampusRecordService` page
+  with list/detail state, scrolling, all record fields, and explicit
+  no-database, empty, populated, and engine-error states;
+- the deterministic `--phase5-campus-test`, including an in-memory Korean
+  campus fixture; and
+- the staged verifier invocation for the new Phase 5 activation check.
+
+Validation already passed:
+
+```text
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\verify_windows_winui_stage.ps1 -StageDirectory .\dist\ClassMngr-windows-winui-x64\Debug -Platform x64
+ctest --test-dir build\windows-x64-winui-debug -C Debug -R ClassMngrEngineCampusRecordServiceTests --output-on-failure
+git diff --check
+```
+
+The x64 Debug staged verifier passed all Phase 1-5 checks, and the focused
+engine CTest passed 1/1. The stage used for that evidence is
+`dist/ClassMngr-windows-winui-x64/Debug`; the native WinUI build depends on the
+pinned packages and the VS 2026/v145 toolset described by the Windows build
+scripts.
+
+Next work, in order:
+
+1. Finish native save/export/folder workflows with `FileSavePicker` and
+   `FolderPicker`; keep the operating-system picker policy from the phase file.
+2. Extend Campus Information with Windows resource/image loading and localized
+   labels/content, then add paired Qt/WinUI scenarios for startup, empty,
+   populated, and error states.
+3. Capture first-paint/first-navigation, cold/warm startup, resize, memory,
+   and handle-count evidence; rebuild and run the required x86 Debug/Release
+   lanes before the Phase 5 exit review.
+4. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
+   gate and paired evidence are accepted.
+
 The Qt-free
 engine already
 contains the `SemanticVersion` seed slice and typed standard-library result and
@@ -307,6 +361,18 @@ After meaningful work:
    long logs.
 
 ## Progress Log
+
+- **2026-09-07 - Phase 5 Campus Information read-only slice committed.**
+  Revision `697f1fb` enables the Campus Directory > Information navigation
+  item and renders a scrollable engine-backed campus list/details page without
+  ad hoc SQL. No-database, empty, populated, and engine-error states are
+  explicit; all campus record fields are shown read-only; and
+  `--phase5-campus-test` seeds an in-memory Korean campus and checks the
+  populated and reset states. The x64 Debug WinUI build, staged verifier
+  (including all Phase 1-5 checks), and
+  `ClassMngrEngineCampusRecordServiceTests` CTest passed. Image/resource
+  loading, localized feature parity, native save/export/folder workflows,
+  paired Qt/WinUI scenarios, and startup/runtime measurements remain.
 
 - **2026-09-07 - Phase 5 native New/create flow committed.** Revision
   `ddeb818` enables File > New through an HWND-bound native `FileSavePicker`,
