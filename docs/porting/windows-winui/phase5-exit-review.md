@@ -49,7 +49,7 @@ cmake --build build/windows-x86-winui-debug --config Debug --target ClassMngrWin
 cmake --build build/windows-x86-winui-release --config Release --target ClassMngrWindowsWinUI --parallel 2
 
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/verify_windows_winui_stage.ps1 -StageDirectory <stage> -Platform <x64-or-Win32>
-powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/porting/windows/run_phase5_paired_scenarios.ps1 -StageDirectory <x64-debug-stage> -Platform x64 -Configuration Debug -OutputDirectory <paired-output> -QtCaptureRoot artifacts/phase0/windows-qt-visual
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/porting/windows/run_phase5_paired_scenarios.ps1 -Executable <x64-debug-executable> -OutputDirectory <paired-output> -QtArtifactRoot artifacts/phase0/windows-qt-visual
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/porting/windows/validate_winui_scenario_artifacts.ps1 -ArtifactRoot artifacts/phase5/paired-20260908-x64-debug-clean2 -RequirePassed
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/porting/windows/measure_phase5_winui.ps1 -StageDirectory <x64-stage> -Platform x64 -Iterations 3 -ScenarioArguments '--phase5-campus-populated' -SettleMilliseconds 1000
 

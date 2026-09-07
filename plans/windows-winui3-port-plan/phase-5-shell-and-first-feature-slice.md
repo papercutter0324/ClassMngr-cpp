@@ -44,7 +44,9 @@ file and folder workflows. The existing Phase 5 Open path uses an HWND-bound
 `FileOpenPicker` and keeps the picker outside the XAML shell. Future create,
 save, import, export, and directory-selection slices must use the matching
 native picker instead of porting the Qt-only `QFileDialog` customization and
-icon/sidebar styling. The full create/save/export flow remains a later Phase 5
+icon/sidebar styling. The current Phase 5 slice implements the create,
+save/export, close, and folder-export paths through those native boundaries;
+their interactive picker and unsaved-change review remains part of the exit
 gate.
 
 ## Validation
