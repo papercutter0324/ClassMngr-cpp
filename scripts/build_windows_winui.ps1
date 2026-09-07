@@ -513,10 +513,18 @@ $campusResourceSourceDirectory = Resolve-ExistingPath `
     -Description 'Campus resource directory'
 $campusResourceOutputDirectory = Join-Path $resourceOutputDirectory 'campuses'
 Ensure-Directory -Path $campusResourceOutputDirectory
-Copy-Item -LiteralPath $campusResourceSourceDirectory `
-    -Destination $campusResourceOutputDirectory `
-    -Recurse `
-    -Force
+# Copy the source contents. Copy-Item on the directory itself creates a
+# nested resources\campuses\campuses directory when the destination exists.
+$legacyNestedCampusDirectory = Join-Path $campusResourceOutputDirectory 'campuses'
+if (Test-Path -LiteralPath $legacyNestedCampusDirectory -PathType Container) {
+    Remove-Item -LiteralPath $legacyNestedCampusDirectory -Recurse -Force
+}
+Get-ChildItem -LiteralPath $campusResourceSourceDirectory -Force | ForEach-Object {
+    Copy-Item -LiteralPath $_.FullName `
+        -Destination $campusResourceOutputDirectory `
+        -Recurse `
+        -Force
+}
 
 $licenseRelativePaths = @(
     'licenses\fonts\inter\LICENSE.txt',
