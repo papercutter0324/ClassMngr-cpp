@@ -145,6 +145,32 @@ namespace ClassMngrWinUIScenario
         [DllImport("user32.dll")]
         public static extern bool IsWindowVisible(IntPtr window);
 
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr window, int command);
+
+        [DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr window);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr window);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(
+            IntPtr window,
+            IntPtr insertAfter,
+            int x,
+            int y,
+            int width,
+            int height,
+            uint flags
+            );
+
+        private static readonly IntPtr TopmostWindow = new IntPtr(-1);
+        private static readonly IntPtr NotTopmostWindow = new IntPtr(-2);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool GetWindowRect(
             IntPtr window,
@@ -158,6 +184,41 @@ namespace ClassMngrWinUIScenario
             IntPtr wParam,
             IntPtr lParam
             );
+
+        public static bool ActivateWindow(IntPtr window)
+        {
+            ShowWindow(window, 9); // SW_RESTORE
+            BringWindowToTop(window);
+            const uint SwpNoSize = 0x0001;
+            const uint SwpNoMove = 0x0002;
+            const uint SwpShowWindow = 0x0040;
+            var positioned = SetWindowPos(
+                window,
+                TopmostWindow,
+                0,
+                0,
+                0,
+                0,
+                SwpNoSize | SwpNoMove | SwpShowWindow
+                );
+            var foreground = SetForegroundWindow(window);
+            return positioned || foreground || GetForegroundWindow() == window;
+        }
+
+        public static void RestoreWindowZOrder(IntPtr window)
+        {
+            const uint SwpNoSize = 0x0001;
+            const uint SwpNoMove = 0x0002;
+            SetWindowPos(
+                window,
+                NotTopmostWindow,
+                0,
+                0,
+                0,
+                0,
+                SwpNoSize | SwpNoMove
+                );
+        }
 
         public static IntPtr FindProcessWindow(int processId, string title)
         {
@@ -378,6 +439,13 @@ try
         [ClassMngrWinUIScenario.NativeMethods]::GetTitle($mainWindowHandle)
         )
 
+    if (-not [ClassMngrWinUIScenario.NativeMethods]::ActivateWindow(
+            $mainWindowHandle
+            ))
+    {
+        throw 'Could not bring the WinUI window to the foreground for capture.'
+    }
+
     if ($SettleMilliseconds -gt 0)
     {
         Start-Sleep -Milliseconds $SettleMilliseconds
@@ -465,6 +533,13 @@ catch
 }
 finally
 {
+    if ($mainWindowHandle -ne [IntPtr]::Zero)
+    {
+        [ClassMngrWinUIScenario.NativeMethods]::RestoreWindowZOrder(
+            $mainWindowHandle
+            )
+    }
+
     if ($null -ne $ownedProcess)
     {
         try

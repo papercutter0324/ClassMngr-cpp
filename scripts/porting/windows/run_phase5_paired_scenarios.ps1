@@ -53,6 +53,9 @@ function Find-QtCapture {
         [string]$LedgerId,
 
         [Parameter(Mandatory = $true)]
+        [string]$ExpectedFixtureId,
+
+        [Parameter(Mandatory = $true)]
         [string]$State
     )
 
@@ -73,7 +76,7 @@ function Find-QtCapture {
 
                 if ($metadata.format -ne 'classmngr-phase0-capture-v1' `
                     -or [string]$metadata.ledgerId -ne $LedgerId `
-                    -or [string]$metadata.fixtureId -ne 'no-database' `
+                    -or [string]$metadata.fixtureId -ne $ExpectedFixtureId `
                     -or [string]$metadata.artifact.file -notlike "*$State*") {
                     return
                 }
@@ -208,6 +211,7 @@ foreach ($item in $selectedCatalog) {
     $qtCapture = Find-QtCapture `
         -Root $QtArtifactRoot `
         -LedgerId ([string]$item.ledgerId) `
+        -ExpectedFixtureId ([string]$item.fixtureId) `
         -State ([string]$item.qtState)
     $winuiPassed = [bool]$winuiMetadata.result.passed
     $pairStatus = if (-not $winuiPassed) {
