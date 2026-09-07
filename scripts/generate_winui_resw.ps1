@@ -60,7 +60,7 @@ function Get-LocaleTag {
         $match.Groups['region'].Value.ToUpperInvariant()
 }
 
-function Get-MessageText {
+function Get-MessageValue {
     param(
         [Parameter(Mandatory = $true)]
         [System.Xml.XmlElement] $Message
@@ -73,7 +73,15 @@ function Get-MessageText {
     $null = $source = [string] $sourceNode.InnerText
     $null = $translation = $Message.SelectSingleNode('translation')
     if ($null -eq $translation) {
-        return $source
+        return $null
+    }
+
+    if ($translation.GetAttribute('type') -in @(
+            'unfinished'
+            'vanished'
+            'obsolete'
+        )) {
+        return $null
     }
 
     $null = $pluralForms = @($translation.SelectNodes('numerusform'))
@@ -81,19 +89,15 @@ function Get-MessageText {
         throw "Plural translation is not supported by the WinUI string-resource bridge: '$source'"
     }
 
-    if ($translation.GetAttribute('type') -eq 'unfinished') {
-        return $source
-    }
-
     $null = $translated = [string] $translation.InnerText
     if ([string]::IsNullOrWhiteSpace($translated)) {
-        return $source
+        return $null
     }
 
     return $translated
 }
 
-function New-ResourceDocument {
+function Read-TranslationCatalog {
     param(
         [Parameter(Mandatory = $true)]
         [System.IO.FileInfo] $TranslationFile
@@ -103,14 +107,8 @@ function New-ResourceDocument {
         -LiteralPath $TranslationFile.FullName `
         -Encoding UTF8 `
         -Raw)
-    $null = $resourceDocument = New-Object System.Xml.XmlDocument
-    $null = $resourceDocument.AppendChild(
-        $resourceDocument.CreateXmlDeclaration('1.0', 'utf-8', $null)
-    )
-    $null = $root = $resourceDocument.CreateElement('root')
-    $null = $resourceDocument.AppendChild($root)
 
-    $null = $entries = New-Object 'System.Collections.Generic.Dictionary[string,string]'
+    $null = $entries = [ordered]@{}
     foreach ($context in @($translationDocument.SelectNodes('/TS/context'))) {
         $null = $nameNode = $context.SelectSingleNode('name')
         if ($null -eq $nameNode) {
@@ -124,28 +122,98 @@ function New-ResourceDocument {
             }
             $null = $source = [string] $sourceNode.InnerText
             $null = $key = Get-ResourceKey -Context $contextName -Source $source
-            $null = $value = Get-MessageText -Message $message
 
-            if ($entries.ContainsKey($key)) {
-                if ($entries[$key] -ne $value) {
+            $translation = $message.SelectSingleNode('translation')
+            if ($null -ne $translation -and $translation.GetAttribute('type') -in @(
+                    'vanished'
+                    'obsolete'
+                )) {
+                continue
+            }
+
+            $null = $value = Get-MessageValue -Message $message
+
+            if ($entries.Contains($key)) {
+                $existing = $entries[$key]
+                if ($existing.Source -ne $source) {
+                    throw "Conflicting translation sources generated the same resource key: $key"
+                }
+                if ($null -eq $existing.Value -and $null -ne $value) {
+                    $existing.Value = $value
+                }
+                elseif ($null -ne $existing.Value -and $null -ne $value `
+                    -and $existing.Value -ne $value) {
                     throw "Conflicting translations generated the same resource key: $key"
                 }
                 continue
             }
-            $null = $entries.Add($key, $value)
 
-            $null = $data = $resourceDocument.CreateElement('data')
-            $null = $data.SetAttribute('name', $key)
-            $null = $data.SetAttribute(
-                'space',
-                'http://www.w3.org/XML/1998/namespace',
-                'preserve'
-            )
-            $null = $valueElement = $resourceDocument.CreateElement('value')
-            $null = $valueElement.InnerText = $value
-            $null = $data.AppendChild($valueElement)
-            $null = $root.AppendChild($data)
+            $entries[$key] = [pscustomobject]@{
+                Key = $key
+                Context = $contextName
+                Source = $source
+                Value = $value
+            }
         }
+    }
+
+    return [pscustomobject]@{
+        File = $TranslationFile
+        Entries = $entries
+    }
+}
+
+function New-ResourceDocument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Collections.IDictionary] $TranslationEntries,
+
+        [Parameter(Mandatory = $true)]
+        [System.Collections.IDictionary] $FallbackEntries
+    )
+
+    $null = $resourceDocument = New-Object System.Xml.XmlDocument
+    $null = $resourceDocument.AppendChild(
+        $resourceDocument.CreateXmlDeclaration('1.0', 'utf-8', $null)
+    )
+    $null = $root = $resourceDocument.CreateElement('root')
+    $null = $resourceDocument.AppendChild($root)
+
+    $null = $entries = New-Object 'System.Collections.Generic.Dictionary[string,string]'
+    foreach ($fallbackEntry in $FallbackEntries.Values) {
+        $null = $key = $fallbackEntry.Key
+        $null = $value = $fallbackEntry.Value
+
+        if ($TranslationEntries.Contains($key)) {
+            $localizedValue = $TranslationEntries[$key].Value
+            if ($null -ne $localizedValue) {
+                $value = $localizedValue
+            }
+        }
+
+        if ($null -eq $value) {
+            throw "No fallback text exists for resource key: $key"
+        }
+
+        if ($entries.ContainsKey($key)) {
+            if ($entries[$key] -ne $value) {
+                throw "Conflicting translations generated the same resource key: $key"
+            }
+            continue
+        }
+        $null = $entries.Add($key, $value)
+
+        $null = $data = $resourceDocument.CreateElement('data')
+        $null = $data.SetAttribute('name', $key)
+        $null = $data.SetAttribute(
+            'space',
+            'http://www.w3.org/XML/1998/namespace',
+            'preserve'
+        )
+        $null = $valueElement = $resourceDocument.CreateElement('value')
+        $null = $valueElement.InnerText = $value
+        $null = $data.AppendChild($valueElement)
+        $null = $root.AppendChild($data)
     }
 
     return [pscustomobject]@{
@@ -170,10 +238,38 @@ if ($translationFiles.Count -eq 0) {
     throw "No shared translation catalogs were found in: $translationPath"
 }
 
+$null = $defaultFiles = @($translationFiles | Where-Object {
+    $_.BaseName -eq 'ClassMngr_en_US'
+})
+if ($defaultFiles.Count -ne 1) {
+    throw "Exactly one ClassMngr_en_US.ts catalog is required in: $translationPath"
+}
+
+$defaultCatalog = Read-TranslationCatalog -TranslationFile $defaultFiles[0]
+$null = $defaultEntries = [ordered]@{}
+foreach ($entry in $defaultCatalog.Entries.Values) {
+    $null = $fallbackValue = $entry.Value
+    if ($null -eq $fallbackValue) {
+        $fallbackValue = $entry.Source
+    }
+    $defaultEntries[$entry.Key] = [pscustomobject]@{
+        Key = $entry.Key
+        Context = $entry.Context
+        Source = $entry.Source
+        Value = $fallbackValue
+    }
+}
+if ($defaultEntries.Count -eq 0) {
+    throw "The ClassMngr_en_US.ts catalog contains no active messages."
+}
+
 $null = $totalEntries = 0
 foreach ($translationFile in $translationFiles) {
     $null = $locale = Get-LocaleTag -File $translationFile
-    $null = $generated = New-ResourceDocument -TranslationFile $translationFile
+    $catalog = Read-TranslationCatalog -TranslationFile $translationFile
+    $null = $generated = New-ResourceDocument `
+        -TranslationEntries $catalog.Entries `
+        -FallbackEntries $defaultEntries
     $null = $localeDirectory = Join-Path $outputPath (Join-Path 'Strings' $locale)
     $null = New-Item -ItemType Directory -Path $localeDirectory -Force
     $null = $outputFile = Join-Path $localeDirectory 'Resources.resw'
