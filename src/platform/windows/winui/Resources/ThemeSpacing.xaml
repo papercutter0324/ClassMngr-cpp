@@ -13,6 +13,7 @@
     <x:Double x:Key="Phase5SidebarMinimumWidth">150</x:Double>
     <x:Double x:Key="Phase5SidebarMaximumWidth">400</x:Double>
     <x:Double x:Key="Phase5ContentMinimumWidth">600</x:Double>
+    <x:Double x:Key="Phase5MenuBarHeight">28</x:Double>
     <x:Double x:Key="Phase3ControlMinHeight">32</x:Double>
 
     <Thickness x:Key="Phase3PagePadding">24,20,24,24</Thickness>

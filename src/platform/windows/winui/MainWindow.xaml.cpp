@@ -958,6 +958,16 @@ void MainWindow::ShellInfoButton_Click(
     showOwnedDialog();
 }
 
+void MainWindow::ShellInfoMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    showOwnedDialog();
+}
+
 void MainWindow::CancelButton_Click(
     Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::RoutedEventArgs const& arguments
