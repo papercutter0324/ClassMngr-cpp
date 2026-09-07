@@ -15,6 +15,7 @@
 
 #include <string>
 #include <string_view>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -42,6 +43,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase4SemanticChecks();
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
     [[nodiscard]] bool runPhase5CampusChecks();
+    void preparePhase5CampusScenario(std::wstring_view scenario);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
     [[nodiscard]] bool createDatabasePath(std::wstring_view path);
     void openMostRecentDatabase();
@@ -170,6 +172,10 @@ private:
         Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
         );
     void presentSelectedCampus();
+    winrt::fire_and_forget loadCampusImage(
+        std::string logicalPath,
+        std::uint64_t requestId
+        );
     void NameTextBox_TextChanged(
         Microsoft::UI::Xaml::Controls::TextBox const& sender,
         Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
@@ -262,8 +268,11 @@ private:
 
     Microsoft::UI::Xaml::Controls::ListView m_campusList{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel m_campusDetailsPanel{nullptr};
+    Microsoft::UI::Xaml::Controls::Image m_campusImage{nullptr};
     std::vector<classmngr::engine::CampusRecord> m_campusRecords;
     std::wstring m_campusInformationState;
+    std::wstring m_phase5CampusScenario;
+    std::uint64_t m_campusImageRequest{};
 
     classmngr::engine::SemanticVersion m_engineVersion;
     WinUILocalizer m_localizer;

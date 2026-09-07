@@ -13,7 +13,9 @@
 #include <shobjidl_core.h>
 
 #include <winrt/Microsoft.UI.Xaml.Automation.h>
+#include <winrt/Microsoft.UI.Xaml.Media.Imaging.h>
 #include <winrt/Windows.Storage.Pickers.h>
+#include <winrt/Windows.Storage.Streams.h>
 
 #include <algorithm>
 #include <array>
@@ -1051,6 +1053,7 @@ bool MainWindow::runPhase5CampusChecks()
     // Phase activation tests are shell-only, so this in-memory owner cannot
     // replace or observe a user database. Start by checking the explicit
     // no-database state, then seed the same service used by the page.
+    m_phase5CampusScenario.clear();
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
     navigateTo(campusInformationPageId);
@@ -1067,6 +1070,25 @@ bool MainWindow::runPhase5CampusChecks()
 
     auto& database = **opened;
     classmngr::engine::CampusRecordService service(database);
+    const auto emptyResult = service.list();
+    if (!emptyResult || !emptyResult->empty())
+    {
+        return false;
+    }
+
+    m_openDatabase = std::move(*opened);
+    refreshCampusInformationPage();
+    const bool emptyReady = m_campusInformationState == L"empty"
+        && !m_campusList
+        && static_cast<bool>(m_contentFrame.Content());
+    if (!emptyReady)
+    {
+        m_openDatabase.reset();
+        refreshCampusInformationPage();
+        return false;
+    }
+
+    classmngr::engine::CampusRecordService populatedService(*m_openDatabase);
     classmngr::engine::CampusRecord campus;
     campus.name = winrt::to_string(winrt::hstring(L"서울 캠퍼스"));
     campus.buildingName = winrt::to_string(winrt::hstring(L"본관"));
@@ -1075,20 +1097,21 @@ bool MainWindow::runPhase5CampusChecks()
     campus.officeNumber = winrt::to_string(winrt::hstring(L"사무실 101호"));
     campus.transitSteps = winrt::to_string(winrt::hstring(L"2호선에서 하차"));
     campus.arrivalInfo = winrt::to_string(winrt::hstring(L"안내 데스크로 오세요"));
-    campus.imagePath = "assets/seoul-campus.png";
+    campus.imagePath = ":/assets/campuses/bundang/bundang_map.png";
     campus.officeWifi = "TeacherNet";
     campus.officeWifiPassword = "password";
     campus.printerName = "Printer-1";
     campus.printerSteps = "Load paper, then print.";
     campus.photocopierCode = "42";
     campus.housingLocations = winrt::to_string(winrt::hstring(L"강남, 서초"));
-    const auto created = service.create(campus);
+    const auto created = populatedService.create(campus);
     if (!created)
     {
+        m_openDatabase.reset();
+        refreshCampusInformationPage();
         return false;
     }
 
-    m_openDatabase = std::move(*opened);
     refreshCampusInformationPage();
     if (!m_campusList || m_campusInformationState != L"populated"
         || m_campusList.Items().Size() != 1)
@@ -1100,6 +1123,7 @@ bool MainWindow::runPhase5CampusChecks()
 
     m_campusList.SelectedIndex(0);
     presentSelectedCampus();
+    const bool imageControlReady = static_cast<bool>(m_campusImage);
     bool koreanTextReady = false;
     for (uint32_t index = 0; index < m_campusDetailsPanel.Children().Size(); ++index)
     {
@@ -1115,11 +1139,103 @@ bool MainWindow::runPhase5CampusChecks()
         }
     }
 
+    const WinUILocalizer korean(L"ko-KR");
+    const bool localizationReady = korean.hasString(
+        L"CampusInformationPage",
+        L"Campus Information"
+        )
+        && korean.getString(L"CampusInformationPage", L"Campus Information")
+            == L"\xCEA0\xD37C\xC2A4 \xC815\xBCF4"
+        && korean.getString(L"CampusInformationPage", L"Name")
+            == L"\xC774\xB984";
+
+    classmngr::windows::winui::WindowsResourceProvider resourceProvider;
+    const auto imageExists = resourceProvider.exists(
+        ":/assets/campuses/bundang/bundang_map.png"
+        );
+    const auto imageBytes = resourceProvider.readBytes(
+        ":/assets/campuses/bundang/bundang_map.png"
+        );
+    const bool resourceReady = imageExists && *imageExists
+        && imageBytes && !imageBytes->empty();
+
     m_openDatabase.reset();
+    m_currentDatabasePath.clear();
     refreshCampusInformationPage();
     const bool resetReady = m_campusInformationState == L"no_database"
         && !m_campusList;
-    return noDatabaseReady && koreanTextReady && resetReady;
+    return noDatabaseReady && emptyReady && koreanTextReady
+        && imageControlReady && localizationReady && resourceReady
+        && resetReady;
+}
+
+void MainWindow::preparePhase5CampusScenario(std::wstring_view scenario)
+{
+    const bool noDatabase = scenario == L"no-database";
+    const bool empty = scenario == L"empty";
+    const bool populated = scenario == L"populated";
+    const bool error = scenario == L"error";
+    m_phase5CampusScenario = error || (!noDatabase && !empty && !populated)
+        ? L"error"
+        : std::wstring(scenario);
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    m_dirtyState.markClean();
+
+    if (m_phase5CampusScenario != L"error")
+    {
+        auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+        if (!opened || *opened == nullptr)
+        {
+            m_phase5CampusScenario = L"error";
+        }
+        else
+        {
+            if (populated)
+            {
+                classmngr::engine::CampusRecordService service(**opened);
+                const auto makeCampus = [](wchar_t const* name,
+                                           char const* imagePath) {
+                    classmngr::engine::CampusRecord campus;
+                    campus.name = winrt::to_string(winrt::hstring(name));
+                    campus.buildingName = "Main building";
+                    campus.address = "Bundang-gu, Seongnam-si";
+                    campus.phoneNumber = "+82-31-1234-5678";
+                    campus.officeNumber = "Office 101";
+                    campus.transitSteps = "Exit 3, then walk north.";
+                    campus.arrivalInfo = "Check in at the information desk.";
+                    campus.imagePath = imagePath;
+                    campus.officeWifi = "TeacherNet";
+                    campus.officeWifiPassword = "password";
+                    campus.printerName = "Printer-1";
+                    campus.printerSteps = "Load paper, then print.";
+                    campus.photocopierCode = "42";
+                    campus.housingLocations = "Bundang, Suji";
+                    return campus;
+                };
+                const auto first = service.create(makeCampus(
+                    L"\xBD84\xB2F9 \xCEA0\xD37C\xC2A4",
+                    ":/assets/campuses/bundang/bundang_map.png"
+                    ));
+                const auto second = service.create(makeCampus(
+                    L"\xCCAD\xAD6C \xCEA0\xD37C\xC2A4",
+                    ":/assets/campuses/bundang/cheonggu_map.png"
+                    ));
+                if (!first || !second)
+                {
+                    m_phase5CampusScenario = L"error";
+                }
+            }
+            if (m_phase5CampusScenario != L"error")
+            {
+                m_openDatabase = std::move(*opened);
+            }
+        }
+    }
+
+    navigateTo(campusInformationPageId);
+    refreshCampusInformationPage();
+    updateFileCommandState();
 }
 
 Windows::Foundation::IAsyncOperation<bool>
@@ -2887,6 +3003,9 @@ void MainWindow::populateCampusInformationPage(
 {
     using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
+    const auto localize = [this](std::wstring_view source) {
+        return m_localizer.getString(L"CampusInformationPage", source);
+    };
 
     if (page.Content() && !refresh)
     {
@@ -2896,6 +3015,8 @@ void MainWindow::populateCampusInformationPage(
     m_campusRecords.clear();
     m_campusList = nullptr;
     m_campusDetailsPanel = nullptr;
+    m_campusImage = nullptr;
+    ++m_campusImageRequest;
     m_campusInformationState.clear();
 
     auto root = StackPanel();
@@ -2906,17 +3027,37 @@ void MainWindow::populateCampusInformationPage(
     root.VerticalAlignment(VerticalAlignment::Top);
 
     auto title = TextBlock();
-    title.Text(L"Campus Information");
+    title.Text(winrt::hstring(localize(L"Campus Information")));
     title.FontSize(28.0);
     setAutomationName(title, L"Campus Information");
     root.Children().Append(title);
+
+    if (m_phase5CampusScenario == L"error")
+    {
+        m_campusInformationState = L"engine_error";
+        const auto state = ClassMngrWinUISharedUX::buildErrorState({
+            winrt::hstring(localize(L"Campus information unavailable")),
+            winrt::hstring(localize(
+                L"The engine returned an unexpected campus loading failure."
+                )),
+            L"Campus information engine error state",
+            {}
+            });
+        root.Children().Append(state.root);
+        auto pageScroll = ScrollViewer();
+        pageScroll.Content(root);
+        page.Content(pageScroll);
+        return;
+    }
 
     if (!m_openDatabase)
     {
         m_campusInformationState = L"no_database";
         const auto state = ClassMngrWinUISharedUX::buildEmptyState({
-            L"No database open",
-            L"Open or create a database to view campus information.",
+            winrt::hstring(localize(L"No database open")),
+            winrt::hstring(localize(
+                L"Open or create a database to view campus information."
+                )),
             L"Campus information no database state",
             {}
             });
@@ -2934,12 +3075,17 @@ void MainWindow::populateCampusInformationPage(
         if (!result)
         {
             m_campusInformationState = L"engine_error";
+            std::wstring errorMessage = localize(
+                L"The engine could not load campus records:"
+                );
+            errorMessage += L" ";
+            const auto errorText = winrt::to_hstring(
+                std::string(result.error().message)
+                );
+            errorMessage.append(errorText.c_str(), errorText.size());
             const auto state = ClassMngrWinUISharedUX::buildErrorState({
-                L"Campus information unavailable",
-                winrt::to_hstring(
-                    std::string("The engine could not load campus records: ")
-                        + result.error().message
-                    ),
+                winrt::hstring(localize(L"Campus information unavailable")),
+                winrt::hstring(errorMessage),
                 L"Campus information engine error state",
                 {}
                 });
@@ -2954,12 +3100,17 @@ void MainWindow::populateCampusInformationPage(
     catch (std::exception const& error)
     {
         m_campusInformationState = L"engine_error";
+        std::wstring errorMessage = localize(
+            L"The engine could not load campus records:"
+            );
+        errorMessage += L" ";
+        const auto errorText = winrt::to_hstring(
+            std::string(error.what())
+            );
+        errorMessage.append(errorText.c_str(), errorText.size());
         const auto state = ClassMngrWinUISharedUX::buildErrorState({
-            L"Campus information unavailable",
-            winrt::to_hstring(
-                std::string("The engine could not load campus records: ")
-                    + error.what()
-                ),
+            winrt::hstring(localize(L"Campus information unavailable")),
+            winrt::hstring(errorMessage),
             L"Campus information engine error state",
             {}
             });
@@ -2973,8 +3124,10 @@ void MainWindow::populateCampusInformationPage(
     {
         m_campusInformationState = L"engine_error";
         const auto state = ClassMngrWinUISharedUX::buildErrorState({
-            L"Campus information unavailable",
-            L"The engine returned an unexpected campus loading failure.",
+            winrt::hstring(localize(L"Campus information unavailable")),
+            winrt::hstring(localize(
+                L"The engine returned an unexpected campus loading failure."
+                )),
             L"Campus information engine error state",
             {}
             });
@@ -2989,8 +3142,10 @@ void MainWindow::populateCampusInformationPage(
     {
         m_campusInformationState = L"empty";
         const auto state = ClassMngrWinUISharedUX::buildEmptyState({
-            L"No campuses found",
-            L"This database does not contain any campus records.",
+            winrt::hstring(localize(L"No campuses found")),
+            winrt::hstring(localize(
+                L"This database does not contain any campus records."
+                )),
             L"Campus information empty state",
             {}
             });
@@ -3013,8 +3168,10 @@ void MainWindow::populateCampusInformationPage(
         );
 
     auto listCard = ClassMngrWinUISharedUX::buildCard({
-        L"Campuses",
-        L"Select a campus to view its read-only information.",
+        winrt::hstring(localize(L"Campuses")),
+        winrt::hstring(localize(
+            L"Select a campus to view its read-only information."
+            )),
         L"Campus information list"
         });
     m_campusList = ListView();
@@ -3040,8 +3197,10 @@ void MainWindow::populateCampusInformationPage(
     layout.Children().Append(listCard.root);
 
     auto detailsCard = ClassMngrWinUISharedUX::buildCard({
-        L"Campus details",
-        L"Read-only information provided by the campus record service.",
+        winrt::hstring(localize(L"Campus details")),
+        winrt::hstring(localize(
+            L"Read-only information provided by the campus record service."
+            )),
         L"Selected campus details"
         });
     m_campusDetailsPanel = StackPanel();
@@ -3093,13 +3252,18 @@ void MainWindow::presentSelectedCampus()
         return;
     }
 
+    const std::uint64_t requestId = ++m_campusImageRequest;
+    m_campusImage = nullptr;
     m_campusDetailsPanel.Children().Clear();
     const int32_t selectedIndex = m_campusList.SelectedIndex();
     if (selectedIndex < 0
         || static_cast<std::size_t>(selectedIndex) >= m_campusRecords.size())
     {
         auto status = Microsoft::UI::Xaml::Controls::TextBlock();
-        status.Text(L"Select a campus to view its details.");
+        status.Text(winrt::hstring(m_localizer.getString(
+            L"CampusInformationPage",
+            L"Select a campus to view its details."
+            )));
         status.TextWrapping(Microsoft::UI::Xaml::TextWrapping::Wrap);
         setAutomationName(status, L"Campus details selection prompt");
         m_campusDetailsPanel.Children().Append(status);
@@ -3108,9 +3272,28 @@ void MainWindow::presentSelectedCampus()
 
     const classmngr::engine::CampusRecord& campus =
         m_campusRecords[static_cast<std::size_t>(selectedIndex)];
+
+    if (!campus.imagePath.empty())
+    {
+        m_campusImage = Microsoft::UI::Xaml::Controls::Image();
+        m_campusImage.MaxWidth(720.0);
+        m_campusImage.MaxHeight(360.0);
+        m_campusImage.Stretch(Microsoft::UI::Xaml::Media::Stretch::Uniform);
+        m_campusImage.HorizontalAlignment(
+            Microsoft::UI::Xaml::HorizontalAlignment::Center
+            );
+        m_campusImage.Visibility(Microsoft::UI::Xaml::Visibility::Collapsed);
+        setAutomationName(m_campusImage, L"Campus image preview");
+        m_campusDetailsPanel.Children().Append(m_campusImage);
+        loadCampusImage(campus.imagePath, requestId);
+    }
+
     const auto appendField = [this](std::wstring_view label, std::string const& value) {
         auto field = Microsoft::UI::Xaml::Controls::TextBlock();
-        std::wstring text(label);
+        std::wstring text = m_localizer.getString(
+            L"CampusInformationPage",
+            label
+            );
         text += L": ";
         const winrt::hstring valueText = winrt::to_hstring(value);
         text.append(valueText.c_str(), valueText.size());
@@ -3135,6 +3318,70 @@ void MainWindow::presentSelectedCampus()
     appendField(L"Printer steps", campus.printerSteps);
     appendField(L"Photocopier code", campus.photocopierCode);
     appendField(L"Housing locations", campus.housingLocations);
+}
+
+winrt::fire_and_forget MainWindow::loadCampusImage(
+    std::string logicalPath,
+    std::uint64_t requestId
+    )
+{
+    auto lifetime = get_strong();
+    const auto dispatcher = DispatcherQueue();
+    if (logicalPath.empty() || !dispatcher)
+    {
+        co_return;
+    }
+
+    try
+    {
+        co_await winrt::resume_background();
+        classmngr::windows::winui::WindowsResourceProvider resourceProvider;
+        const auto bytes = resourceProvider.readBytes(logicalPath);
+        if (!bytes || bytes->empty())
+        {
+            co_return;
+        }
+
+        std::vector<std::uint8_t> payload(bytes->size());
+        for (std::size_t index = 0; index < bytes->size(); ++index)
+        {
+            payload[index] = std::to_integer<std::uint8_t>((*bytes)[index]);
+        }
+
+        co_await ResumeOnDispatcherQueue{
+            dispatcher,
+            Microsoft::UI::Dispatching::DispatcherQueuePriority::Normal
+            };
+        if (requestId != m_campusImageRequest || !m_campusImage)
+        {
+            co_return;
+        }
+
+        auto stream = winrt::Windows::Storage::Streams::InMemoryRandomAccessStream();
+        auto writer = winrt::Windows::Storage::Streams::DataWriter(stream);
+        writer.WriteBytes(winrt::array_view<std::uint8_t const>(
+            payload.data(),
+            payload.data() + payload.size()
+            ));
+        co_await writer.StoreAsync();
+        co_await writer.FlushAsync();
+        writer.DetachStream();
+        stream.Seek(0);
+
+        auto bitmap = winrt::Microsoft::UI::Xaml::Media::Imaging::BitmapImage();
+        co_await bitmap.SetSourceAsync(stream);
+        if (requestId != m_campusImageRequest || !m_campusImage)
+        {
+            co_return;
+        }
+        m_campusImage.Source(bitmap);
+        m_campusImage.Visibility(Microsoft::UI::Xaml::Visibility::Visible);
+    }
+    catch (...)
+    {
+        // A missing or undecodable optional image must not replace the
+        // engine-backed campus details. The source path remains visible.
+    }
 }
 
 void MainWindow::restoreShellState()

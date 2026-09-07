@@ -274,7 +274,7 @@ void App::OnLaunched(
                     winrt::to_string(winrt::hstring(target))
                     ))
             {
-                mainWindow->openDatabasePath(target);
+                static_cast<void>(mainWindow->openDatabasePath(target));
                 hasSupportedTarget = true;
                 break;
             }
@@ -332,6 +332,22 @@ void App::OnLaunched(
     const bool phase5CampusTest = ClassMngrWinUILifecycle::hasArgument(
         activation,
         L"--phase5-campus-test"
+        );
+    const bool phase5CampusEmpty = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase5-campus-empty"
+        );
+    const bool phase5CampusNoDatabase = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase5-campus-no-database"
+        );
+    const bool phase5CampusPopulated = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase5-campus-populated"
+        );
+    const bool phase5CampusError = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase5-campus-error"
         );
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
         || viewModelTest || localizationTest || dialogTest || threadingTest
@@ -420,6 +436,31 @@ void App::OnLaunched(
             : m_window.DispatcherQueue().TryEnqueue(
                 runChecks
                 );
+        if (!queued)
+        {
+            ExitProcess(ERROR_INVALID_DATA);
+        }
+    }
+
+    if (phase5CampusNoDatabase || phase5CampusEmpty || phase5CampusPopulated
+        || phase5CampusError)
+    {
+        const std::wstring scenario = phase5CampusError
+            ? L"error"
+            : phase5CampusPopulated
+                ? L"populated"
+                : phase5CampusEmpty
+                    ? L"empty"
+                    : L"no-database";
+        const bool queued = m_window.DispatcherQueue().TryEnqueue(
+            Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
+            [this, scenario]() {
+                auto* mainWindow = winrt::get_self<MainWindow>(
+                    m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
+                    );
+                mainWindow->preparePhase5CampusScenario(scenario);
+            }
+            );
         if (!queued)
         {
             ExitProcess(ERROR_INVALID_DATA);

@@ -9647,4 +9647,35 @@ Version: %2</source>
         <translation>화면 키보드를 사용하려면 편집할 수 있는 텍스트 셀을 선택하세요.</translation>
     </message>
 </context>
+    <context>
+        <name>CampusInformationPage</name>
+        <message><source>Campus Information</source><translation>캠퍼스 정보</translation></message>
+        <message><source>No database open</source><translation>데이터베이스가 열려 있지 않습니다</translation></message>
+        <message><source>Open or create a database to view campus information.</source><translation>캠퍼스 정보를 보려면 데이터베이스를 열거나 새로 만드세요.</translation></message>
+        <message><source>Campus information unavailable</source><translation>캠퍼스 정보를 사용할 수 없습니다</translation></message>
+        <message><source>The engine could not load campus records:</source><translation>엔진이 캠퍼스 기록을 불러올 수 없습니다:</translation></message>
+        <message><source>The engine returned an unexpected campus loading failure.</source><translation>엔진에서 예기치 않은 캠퍼스 로드 오류를 반환했습니다.</translation></message>
+        <message><source>No campuses found</source><translation>캠퍼스가 없습니다</translation></message>
+        <message><source>This database does not contain any campus records.</source><translation>이 데이터베이스에는 캠퍼스 기록이 없습니다.</translation></message>
+        <message><source>Campuses</source><translation>캠퍼스</translation></message>
+        <message><source>Select a campus to view its read-only information.</source><translation>캠퍼스를 선택하여 읽기 전용 정보를 확인하세요.</translation></message>
+        <message><source>Campus details</source><translation>캠퍼스 세부 정보</translation></message>
+        <message><source>Read-only information provided by the campus record service.</source><translation>캠퍼스 기록 서비스에서 제공하는 읽기 전용 정보입니다.</translation></message>
+        <message><source>Select a campus to view its details.</source><translation>캠퍼스를 선택하여 세부 정보를 확인하세요.</translation></message>
+        <message><source>Campus ID</source><translation>캠퍼스 ID</translation></message>
+        <message><source>Name</source><translation>이름</translation></message>
+        <message><source>Building</source><translation>건물</translation></message>
+        <message><source>Address</source><translation>주소</translation></message>
+        <message><source>Phone</source><translation>전화번호</translation></message>
+        <message><source>Office</source><translation>사무실</translation></message>
+        <message><source>Transit steps</source><translation>대중교통 안내</translation></message>
+        <message><source>Arrival information</source><translation>도착 안내</translation></message>
+        <message><source>Image path</source><translation>이미지 경로</translation></message>
+        <message><source>Office Wi-Fi</source><translation>사무실 Wi-Fi</translation></message>
+        <message><source>Office Wi-Fi password</source><translation>사무실 Wi-Fi 비밀번호</translation></message>
+        <message><source>Printer</source><translation>프린터</translation></message>
+        <message><source>Printer steps</source><translation>프린터 사용 방법</translation></message>
+        <message><source>Photocopier code</source><translation>복사기 코드</translation></message>
+        <message><source>Housing locations</source><translation>숙소 위치</translation></message>
+    </context>
 </TS>
