@@ -46,6 +46,7 @@ function Read-JsonFile {
 function Find-QtCapture {
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Root,
 
         [Parameter(Mandatory = $true)]

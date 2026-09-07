@@ -124,7 +124,15 @@ foreach ($metadataFile in $metadataFiles)
         throw "WinUI scenario metadata is not valid JSON: $($metadataFile.FullName)"
     }
 
-    if ((Get-MetadataValue $metadata 'format') -ne 'classmngr-winui-scenario-v1')
+    $metadataFormat = [string](Get-MetadataValue $metadata 'format')
+    if ($metadataFormat -eq 'classmngr-phase5-paired-scenarios-v1')
+    {
+        # A Phase 5 pair manifest is an index over the sidecars; validate the
+        # referenced WinUI sidecars in this same tree, not the index as one.
+        continue
+    }
+
+    if ($metadataFormat -ne 'classmngr-winui-scenario-v1')
     {
         throw "Unsupported WinUI scenario metadata format: $($metadataFile.FullName)"
     }
@@ -239,6 +247,11 @@ foreach ($metadataFile in $metadataFiles)
     }
 
     $validatedCount++
+}
+
+if ($validatedCount -eq 0)
+{
+    throw "No WinUI scenario metadata sidecars found under $ArtifactRoot."
 }
 
 Write-Host "WinUI scenario artifacts valid: $validatedCount metadata sidecars."
