@@ -104,8 +104,10 @@ and covers no-database, empty, populated, engine-error, and Korean-text
 semantic states. Native save/export/folder commands use `FileSavePicker`,
 `FolderPicker`, and engine/file-system boundaries. Campus resources are staged
 through `WindowsResourceProvider`, optional map images are loaded asynchronously,
-the feature labels/content are localized, and deterministic paired-scenario
-hooks cover startup, no-database, empty, populated, and error states. The
+the feature labels/content are localized, and required WinUI-only Campus
+resource keys are guarded during `.resw` generation. Deterministic
+paired-scenario hooks cover startup, no-database, empty, populated, and error
+states. The
 paired-scenario manifest, WinUI captures, x64 runtime measurements, and
 x64/x86 Debug/Release host builds are recorded. Qt evidence is complete only
 for startup/no-database; empty/populated/error need matching Qt fixtures or an
@@ -117,7 +119,7 @@ scope for Phase 4.
 
 ## Phase 5 Resume Handoff
 
-Resume from commit `32ced5b` (`Phase 5 - Record interactive campus evidence`).
+Resume from commit `8d11eec` (`Phase 5 - Guard required WinUI resources`).
 Host-level x64/x86 Debug/Release builds and staged verification are complete;
 the remaining work is owner acceptance of the recorded evidence and the
 unresolved paired-Qt and interaction-review gates.
@@ -138,6 +140,9 @@ Finished Phase 5 work:
   folder export through the operating-system picker boundary;
 - packaged campus resource staging, `WindowsResourceProvider` reads, optional
   Campus map image loading, and localized Campus Information labels/content;
+- the shared-catalog fallback for WinUI resources, including restoration of the
+  required `CampusInformationPage` context and a generator guard for its
+  `Campus Information` and `Name` keys; and
 - deterministic `--phase5-campus-no-database`, `--phase5-campus-empty`,
   `--phase5-campus-populated`, and `--phase5-campus-error` launch hooks; and
 - the paired-scenario runner that records real WinUI captures and honestly
@@ -227,6 +232,16 @@ After meaningful work:
    long logs.
 
 ## Current Phase Progress
+
+- **2026-09-08 - Phase 5 catalog fallback regression repaired and guarded.**
+  Revision `27cf1d0` restores the WinUI-only `CampusInformationPage` context
+  that was absent after the shared catalog refresh, preserving English fallback
+  text and the Korean `Campus Information`/`Name` values. Revision `8d11eec`
+  makes the generator fail clearly if either required default-catalog key is
+  removed in a future refresh. Clean generation emits 2,048 entries per locale
+  (10,240 total), all five `.ts` catalogs and generated `.resw` files parse,
+  and the x64/x86 Debug/Release host builds plus complete staged verifiers pass
+  against the repaired resources.
 
 - **2026-09-08 - Phase 5 host verification and resource staging corrected.**
   Revisions `9fce845` and `4612eaa` correct the campus-resource destination

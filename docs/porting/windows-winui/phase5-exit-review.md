@@ -6,6 +6,8 @@ Status: **In progress — the Phase 5 exit gate is not accepted.** The shell,
 native database/output boundary, and engine-backed Campus Information slice are
 implemented. Host-level x64/x86 Debug/Release builds, staged verifiers,
 interactive WinUI captures, and x64 runtime measurements are recorded. The
+shared catalog bridge now preserves the WinUI-only Campus Information context
+and fails generation early if its required fallback keys are removed. The
 remaining acceptance work is complete paired Qt coverage or an approved
 exception, owner review, and the final picker/unsaved-change, keyboard/Korean
 IME, focus, DPI, and accessibility review.
@@ -16,7 +18,7 @@ IME, focus, DPI, and accessibility review.
 | --- | --- | --- |
 | Shell, startup, menu/sidebar, navigation history, theme, language, and dirty/error state | Implemented and staged-verified | Existing Phase 3/4 semantic and staged evidence remains the baseline. The latest Phase 5 source is included in the four fresh x64/x86 Debug/Release staged verifier passes. |
 | Database create/open/recent and native picker policy | Implemented | `FileOpenPicker`, `FileSavePicker`, and `FolderPicker` are wired through engine/file-system boundaries. Latest WinUI translation units pass strict direct MSVC compilation. Interactive picker/unsaved-change review remains part of the final desktop pass. |
-| Campus Information read-only feature | Implemented and captured | Uses `CampusRecordService`, retains list/detail state, renders all record fields, loads optional staged map images through `WindowsResourceProvider`, and localizes the feature catalogs. Focused engine tests, staged Phase 5 checks, and five WinUI scenario sidecars pass. Owner visual review remains. |
+| Campus Information read-only feature | Implemented and captured | Uses `CampusRecordService`, retains list/detail state, renders all record fields, loads optional staged map images through `WindowsResourceProvider`, and localizes the feature catalogs. The shared `.ts` to `.resw` bridge requires the `CampusInformationPage` fallback keys so a catalog refresh cannot silently remove the feature resources. Focused engine tests, staged Phase 5 checks, and five WinUI scenario sidecars pass. Owner visual review remains. |
 | Paired Qt/WinUI scenarios | WinUI captured; Qt coverage partial | The [paired-scenario manifest](../../../artifacts/phase5/paired-20260908-x64-debug-clean2/phase5-paired-scenarios.json) covers startup, no-database, empty, populated, and error. All five WinUI sidecars validate; the startup and no-database records link to matching Qt evidence. The empty, populated, and error records explicitly report missing matching Qt fixtures. Obtain owner review and either add those Qt fixtures or record an approved exception. |
 | Cold/warm startup and first paint | Captured for x64 Debug/Release | The [Debug report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-debug.json) and [Release report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-release.json) contain three successful iterations each. Visible-window timing is explicitly a first-paint proxy; it is not the Phase 0 window-constructed or ready checkpoint. |
 | First navigation | Tooling-ready proxy | The requested Campus launch argument records a scenario-ready proxy. Phase 0 leaves the first-navigation cap to be agreed after representative capture, so no pass/fail claim is made. |
@@ -58,7 +60,8 @@ ctest --test-dir build/windows-x86-winui-debug -C Debug -R ClassMngrEngineCampus
 ctest --test-dir build/windows-x86-winui-release -C Release -R ClassMngrEngineCampusRecordServiceTests --output-on-failure
 ```
 
-The four host-level builds and four staged verifiers passed. The paired
+The four host-level builds and four staged verifiers passed against the guarded
+catalog generation. The paired
 manifest validator reported five valid WinUI metadata sidecars, and the two
 measurement reports each contain three successful iterations with clean
 process/window release. The source scripts pass PowerShell AST parsing and
