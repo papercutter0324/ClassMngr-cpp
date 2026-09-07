@@ -180,10 +180,10 @@ Use `-Scenario startup`, `-Scenario empty`, `-Scenario populated`, or
 with `validate_winui_scenario_artifacts.ps1` before review. The Phase 5
 measurement helper records cold/warm launch timing, visible-window timing as a
 first-paint proxy, scenario-ready timing as a first-navigation proxy, resize
-bounds, working-set/private memory, and process handle counts. It reports the
-shared 200 MiB working-set target when a numeric sample exists, but it does not
-invent startup, navigation, resize, or handle budgets that Phase 0 did not
-freeze.
+latency/bounds, working-set/private memory, and process handle counts. It
+reports the shared 200 MiB working-set target when a numeric sample exists, but
+it does not invent startup, navigation, resize, or handle budgets that Phase 0
+did not freeze.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File `

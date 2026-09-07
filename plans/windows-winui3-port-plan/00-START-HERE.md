@@ -390,6 +390,17 @@ After meaningful work:
   `FileTracker` access denial; real paired captures, measurements, and x86
   Debug/Release evidence remain required.
 
+- **2026-09-08 - Phase 5 measurement and interim exit review recorded.** The
+  Phase 5 measurement helper now records cold/warm launch timing, visible-window
+  first-paint and scenario-ready proxies, resize latency/bounds, working-set
+  and private memory, peak working set, and process handles without inventing
+  unavailable budgets. The interim [Phase 5 exit review](../../docs/porting/windows-winui/phase5-exit-review.md)
+  keeps the phase **In progress**. The focused Campus/ResourcePack engine tests
+  pass 2/2 in x86 Debug and 2/2 in x86 Release; full x86 WinUI Debug and
+  Release builds reach pinned resource generation but remain blocked by the
+  host `FileTracker` access-denied failure. Runtime captures and measurement
+  JSON remain pending a usable rebuilt stage and interactive desktop.
+
 - **2026-09-07 - Phase 5 Campus Information read-only slice committed.**
   Revision `697f1fb` enables the Campus Directory > Information navigation
   item and renders a scrollable engine-backed campus list/details page without
