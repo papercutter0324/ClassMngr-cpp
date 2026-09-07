@@ -11148,4 +11148,35 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
+<context>
+    <name>CampusInformationPage</name>
+    <message><source>Campus Information</source><translation>Campus Information</translation></message>
+    <message><source>No database open</source><translation>No database open</translation></message>
+    <message><source>Open or create a database to view campus information.</source><translation>Open or create a database to view campus information.</translation></message>
+    <message><source>Campus information unavailable</source><translation>Campus information unavailable</translation></message>
+    <message><source>The engine could not load campus records:</source><translation>The engine could not load campus records:</translation></message>
+    <message><source>The engine returned an unexpected campus loading failure.</source><translation>The engine returned an unexpected campus loading failure.</translation></message>
+    <message><source>No campuses found</source><translation>No campuses found</translation></message>
+    <message><source>This database does not contain any campus records.</source><translation>This database does not contain any campus records.</translation></message>
+    <message><source>Campuses</source><translation>Campuses</translation></message>
+    <message><source>Select a campus to view its read-only information.</source><translation>Select a campus to view its read-only information.</translation></message>
+    <message><source>Campus details</source><translation>Campus details</translation></message>
+    <message><source>Read-only information provided by the campus record service.</source><translation>Read-only information provided by the campus record service.</translation></message>
+    <message><source>Select a campus to view its details.</source><translation>Select a campus to view its details.</translation></message>
+    <message><source>Campus ID</source><translation>Campus ID</translation></message>
+    <message><source>Name</source><translation>Name</translation></message>
+    <message><source>Building</source><translation>Building</translation></message>
+    <message><source>Address</source><translation>Address</translation></message>
+    <message><source>Phone</source><translation>Phone</translation></message>
+    <message><source>Office</source><translation>Office</translation></message>
+    <message><source>Transit steps</source><translation>Transit steps</translation></message>
+    <message><source>Arrival information</source><translation>Arrival information</translation></message>
+    <message><source>Image path</source><translation>Image path</translation></message>
+    <message><source>Office Wi-Fi</source><translation>Office Wi-Fi</translation></message>
+    <message><source>Office Wi-Fi password</source><translation>Office Wi-Fi password</translation></message>
+    <message><source>Printer</source><translation>Printer</translation></message>
+    <message><source>Printer steps</source><translation>Printer steps</translation></message>
+    <message><source>Photocopier code</source><translation>Photocopier code</translation></message>
+    <message><source>Housing locations</source><translation>Housing locations</translation></message>
+</context>
 </TS>
