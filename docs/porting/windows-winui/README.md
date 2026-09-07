@@ -194,6 +194,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
   -ReportPath .\artifacts\phase5\windows-x64-debug-measurements.json
 ```
 
+Host evidence recorded on 2026-09-08 is available in the [Phase 5 paired
+manifest](../../../artifacts/phase5/paired-20260908-x64-debug-clean2/phase5-paired-scenarios.json),
+the [x64 Debug measurement report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-debug.json),
+and the [x64 Release measurement report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-release.json).
+The five WinUI sidecars validate and the six measurement iterations complete
+cleanly. The pair manifest links matching Qt evidence for startup and
+no-database; empty, populated, and error remain explicitly unpaired because
+the current Qt registry has no matching fixture captures.
+
 ## Deferred follow-up evidence
 
 The bootstrap source contains a representative Korean text form and explicit

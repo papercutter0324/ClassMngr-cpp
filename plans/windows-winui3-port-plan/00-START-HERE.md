@@ -106,7 +106,7 @@ Last updated: 2026-09-08 (Asia/Seoul)
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
-| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information resource/localization baseline are committed; paired feature evidence, runtime measurements, and x86 lanes remain. |
+| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. Matching Qt fixtures for empty/populated/error, owner review, and final interaction review remain. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
@@ -126,18 +126,22 @@ semantic states. Native save/export/folder commands use `FileSavePicker`,
 `FolderPicker`, and engine/file-system boundaries. Campus resources are staged
 through `WindowsResourceProvider`, optional map images are loaded asynchronously,
 the feature labels/content are localized, and deterministic paired-scenario
-hooks cover startup, no-database, empty, populated, and error states. Paired
-Qt/WinUI captures, startup/runtime measurements, and x86 lanes remain. Touch,
+hooks cover startup, no-database, empty, populated, and error states. The
+paired-scenario manifest, WinUI captures, x64 runtime measurements, and
+x64/x86 Debug/Release host builds are recorded. Qt evidence is complete only
+for startup/no-database; empty/populated/error need matching Qt fixtures or an
+approved exception. Owner review and interactive picker/unsaved-change,
+keyboard/Korean IME, focus, DPI, and accessibility review remain. Touch,
 high-contrast, and
 accessibility automation remain out of
 scope for Phase 4.
 
 ## Phase 5 Resume Handoff
 
-Resume from commit `266ee11` (`Phase 5 - Add campus resources and parity
-scenarios`). The implementation and focused source checks are accepted on this
-Windows host; interactive capture and architecture-lane evidence still require
-a usable WinUI build and desktop session.
+Resume from commit `32ced5b` (`Phase 5 - Record interactive campus evidence`).
+Host-level x64/x86 Debug/Release builds and staged verification are complete;
+the remaining work is owner acceptance of the recorded evidence and the
+unresolved paired-Qt and interaction-review gates.
 
 Finished Phase 5 work:
 
@@ -163,21 +167,26 @@ Finished Phase 5 work:
 Validation already passed:
 
 ```text
-powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\verify_windows_winui_stage.ps1 -StageDirectory .\dist\ClassMngr-windows-winui-x64\Debug -Platform x64
-ctest --test-dir build\windows-x64-winui-debug -C Debug -R ClassMngrEngineCampusRecordServiceTests --output-on-failure
 ctest --test-dir build\windows-x64-winui-debug -C Debug -R "ClassMngrEngine(CampusRecordService|ResourcePackPolicy)Tests" --output-on-failure
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\verify_windows_winui_stage.ps1 -StageDirectory .\dist\ClassMngr-windows-winui-x64\Debug -Platform x64
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\verify_windows_winui_stage.ps1 -StageDirectory .\dist\ClassMngr-windows-winui-x64\Release -Platform x64
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\verify_windows_winui_stage.ps1 -StageDirectory .\dist\ClassMngr-windows-winui-x86\Debug -Platform Win32
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\verify_windows_winui_stage.ps1 -StageDirectory .\dist\ClassMngr-windows-winui-x86\Release -Platform Win32
+ctest --test-dir build\windows-x86-winui-debug -C Debug -R ClassMngrEngineCampusRecordServiceTests --output-on-failure
+ctest --test-dir build\windows-x86-winui-release -C Release -R ClassMngrEngineCampusRecordServiceTests --output-on-failure
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\porting\windows\validate_winui_scenario_artifacts.ps1 -ArtifactRoot .\artifacts\phase5\paired-20260908-x64-debug-clean2 -RequirePassed
 git diff --check
 ```
 
-The x64 Debug staged verifier passed all Phase 1-5 checks, and the focused
-engine CTest passed 2/2. Strict `/WX` direct MSVC translation-unit checks for
-the changed WinUI sources, translation-catalog XML validation, and generated
-`.resw` validation also passed. The stage used for that evidence is
-`dist/ClassMngr-windows-winui-x64/Debug`; the native WinUI build depends on the
-pinned packages and the VS 2026/v145 toolset described by the Windows build
-scripts. The local CMake WinUI target remains blocked by the environment's
-`Microsoft.Build.Utilities.FileTracker` `UnauthorizedAccessException`; no
-interactive screen capture or runtime measurement is claimed from that block.
+All four host-level WinUI targets build successfully, and all four staged
+verifiers pass the complete Phase 1-5 sequence. The focused Campus/ResourcePack
+engine tests pass in x64 Debug and x86 Debug/Release; strict `/WX` direct MSVC
+translation-unit checks, translation-catalog XML validation, generated `.resw`
+validation, and PowerShell AST parsing also pass. The paired manifest validator
+accepts five WinUI sidecars, and the x64 Debug/Release measurement reports each
+contain three successful clean iterations. The restricted local CMake WinUI
+target still reproduces the environment's `Microsoft.Build.Utilities.FileTracker`
+`UnauthorizedAccessException`; the host-level workaround is documented below.
 
 ### Avoiding the WinUI FileTracker error
 
@@ -197,18 +206,19 @@ cmake --build build\windows-x64-winui-debug --config Debug --target ClassMngrWin
 The WinUI project already sets `TrackFileAccess=false`, and the build wrapper
 passes the same property, but that property does not prevent MIDL's static
 `FileTracker` initialization. Do not keep changing application source or
-package inputs when this exact stack trace occurs: the x64 Debug target builds
-successfully once the command has host-level filesystem access. Apply the same
-host rule to the x86 Debug/Release and x64 Release lanes before collecting
-runtime evidence.
+package inputs when this exact stack trace occurs: all four required targets
+build successfully once the command has host-level filesystem access. Apply
+the same host rule to the x86 Debug/Release and x64 Release lanes before
+collecting runtime evidence.
 
 Next work, in order:
 
-1. Capture the paired Qt/WinUI startup and Campus scenarios on a usable
-   interactive desktop, then validate the sidecars and obtain owner review.
-2. Capture first-paint/first-navigation proxies, cold/warm startup, resize,
-   memory, and handle-count evidence; rebuild and run the required x86
-   Debug/Release lanes before the Phase 5 exit review.
+1. Obtain owner review of the five recorded WinUI scenarios and their paired
+   manifest. Add matching Qt empty/populated/error fixtures, or record an
+   explicitly approved exception for the missing Qt evidence.
+2. Complete interactive review of native picker and unsaved-change behavior,
+   keyboard/Korean IME, focus, DPI, and accessibility; also decide the
+   first-navigation cap that Phase 0 left open.
 3. Record the [table layout and style parity plan](../../docs/porting/windows-winui/table-parity-plan.md)
    as the first Phase 6 shared work item; revisit the completed Phase 4
    prototypes and Phase 5 read-only list/detail surface before accepting any
@@ -400,6 +410,23 @@ After meaningful work:
    long logs.
 
 ## Progress Log
+
+- **2026-09-08 - Phase 5 host verification and resource staging corrected.**
+  Revisions `9fce845` and `4612eaa` correct the campus-resource destination
+  layout and make the Phase 1 smoke hook independent of prior hook order. All
+  four host-level x64/x86 Debug/Release WinUI targets build successfully; all
+  four staged verifiers pass the complete Phase 1-5 sequence, and each stage
+  contains the expected top-level campus resource files without a nested
+  `resources/campuses/campuses` directory.
+
+- **2026-09-08 - Phase 5 evidence tooling and interactive evidence recorded.**
+  Revisions `9782f2b` and `32ced5b` make Qt-less paired-capture mode explicit,
+  prevent fixture-mismatched Qt reuse, validate the known pair manifest, and
+  keep captures in the foreground. The clean x64 Debug record contains five
+  WinUI scenario PNG/metadata pairs; startup and no-database link matching Qt
+  evidence, while empty/populated/error report missing Qt fixtures. The x64
+  Debug and Release measurement reports each contain three successful clean
+  iterations and pass the evaluated 200 MiB working-set target.
 
 - **2026-09-08 - Phase 5 native output and Campus resource/parity hooks
   committed.** Revisions `11ae126` and `266ee11` add native Save, Save As,
