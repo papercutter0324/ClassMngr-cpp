@@ -122,7 +122,20 @@ if(CLASSMNGR_BUILD_QT_DESKTOP
         if(_classmngr_cache_variable MATCHES "^Qt6.+_DIR$"
            AND NOT _classmngr_cache_variable STREQUAL "Qt6_DIR"
            AND NOT "${${_classmngr_cache_variable}}" MATCHES "-NOTFOUND$")
-            file(REAL_PATH "${${_classmngr_cache_variable}}" _classmngr_component_dir)
+            set(_classmngr_component_cache_value
+                "${${_classmngr_cache_variable}}"
+            )
+
+            if(NOT IS_DIRECTORY "${_classmngr_component_cache_value}")
+                message(STATUS
+                    "Discarding stale ${_classmngr_cache_variable}: "
+                    "${_classmngr_component_cache_value}"
+                )
+                unset(${_classmngr_cache_variable} CACHE)
+                continue()
+            endif()
+
+            file(REAL_PATH "${_classmngr_component_cache_value}" _classmngr_component_dir)
             cmake_path(IS_PREFIX _classmngr_qt6_cmake_root
                 "${_classmngr_component_dir}" NORMALIZE
                 _classmngr_component_uses_selected_qt)
@@ -130,7 +143,8 @@ if(CLASSMNGR_BUILD_QT_DESKTOP
             if(NOT _classmngr_component_uses_selected_qt)
                 message(STATUS
                     "Discarding stale ${_classmngr_cache_variable}: "
-                    "${${_classmngr_cache_variable}}")
+                    "${_classmngr_component_cache_value}"
+                )
                 unset(${_classmngr_cache_variable} CACHE)
             endif()
         endif()

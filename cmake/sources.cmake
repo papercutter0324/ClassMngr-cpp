@@ -113,10 +113,12 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrEngine
     )
 
-    target_link_options(ClassMngrTestRuntime
-        PRIVATE
-            LINKER:-flat_namespace
-    )
+    if(APPLE)
+        target_link_options(ClassMngrTestRuntime
+            PRIVATE
+                LINKER:-flat_namespace
+        )
+    endif()
 endif()
 
 if(WIN32)

@@ -217,7 +217,16 @@ function(classmngr_finalize_test_targets)
             target_link_libraries("${test_name}" PRIVATE ClassMngrRuntime)
 
             if(has_production_overrides AND MSVC)
-                target_link_options("${test_name}" PRIVATE /FORCE:MULTIPLE)
+                # These tests intentionally interpose focused definitions over
+                # the shared runtime. /INCREMENTAL:NO removes the conflicting
+                # incremental-link option and /IGNORE:4006 suppresses the
+                # duplicate-definition diagnostics; LNK4088 itself cannot be
+                # suppressed by MSVC while /FORCE:MULTIPLE is in use.
+                target_link_options("${test_name}" PRIVATE
+                    /FORCE:MULTIPLE
+                    /INCREMENTAL:NO
+                    /IGNORE:4006
+                )
             elseif(
                 has_production_overrides
                 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"
