@@ -739,6 +739,14 @@ MainWindow::~MainWindow()
 
 bool MainWindow::runPhase1SmokeChecks()
 {
+    // Phase hooks can be run after a previous hook has persisted another
+    // page. Normalize the shell before checking the Home-page contract so
+    // the verifier remains independent of hook order and prior test state.
+    if (m_currentPageId != homePageId)
+    {
+        navigateTo(homePageId);
+    }
+
     return m_engineVersion.isValid()
         && static_cast<bool>(RootGrid())
         && static_cast<bool>(m_navigationView)
