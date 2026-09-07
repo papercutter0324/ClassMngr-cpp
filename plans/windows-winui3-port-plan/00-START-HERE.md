@@ -179,6 +179,29 @@ scripts. The local CMake WinUI target remains blocked by the environment's
 `Microsoft.Build.Utilities.FileTracker` `UnauthorizedAccessException`; no
 interactive screen capture or runtime measurement is claimed from that block.
 
+### Avoiding the WinUI FileTracker error
+
+If a WinUI build reports `MSB4018` from the MIDL task with
+`Microsoft.Build.Utilities.FileTracker` and `E_ACCESSDENIED`, run the build
+from a full Windows developer or CI host rather than a restricted sandbox.
+That host must grant the invoking account write access to the repository,
+architecture/configuration build tree, the Windows SDK/MSBuild intermediate
+directories, and the normal user temporary/AppData locations; NuGet restore
+also needs its configured package source to be reachable. The reproducible
+host-level command is:
+
+```powershell
+cmake --build build\windows-x64-winui-debug --config Debug --target ClassMngrWindowsWinUI --parallel 2
+```
+
+The WinUI project already sets `TrackFileAccess=false`, and the build wrapper
+passes the same property, but that property does not prevent MIDL's static
+`FileTracker` initialization. Do not keep changing application source or
+package inputs when this exact stack trace occurs: the x64 Debug target builds
+successfully once the command has host-level filesystem access. Apply the same
+host rule to the x86 Debug/Release and x64 Release lanes before collecting
+runtime evidence.
+
 Next work, in order:
 
 1. Capture the paired Qt/WinUI startup and Campus scenarios on a usable
