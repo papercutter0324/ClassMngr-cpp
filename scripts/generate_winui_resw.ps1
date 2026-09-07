@@ -263,6 +263,25 @@ if ($defaultEntries.Count -eq 0) {
     throw "The ClassMngr_en_US.ts catalog contains no active messages."
 }
 
+$requiredWinUiMessages = @(
+    [pscustomobject]@{
+        Context = 'CampusInformationPage'
+        Source = 'Campus Information'
+    }
+    [pscustomobject]@{
+        Context = 'CampusInformationPage'
+        Source = 'Name'
+    }
+)
+foreach ($requiredMessage in $requiredWinUiMessages) {
+    $null = $requiredKey = Get-ResourceKey `
+        -Context $requiredMessage.Context `
+        -Source $requiredMessage.Source
+    if (-not $defaultEntries.Contains($requiredKey)) {
+        throw "The ClassMngr_en_US.ts catalog is missing the required WinUI message '$($requiredMessage.Context)/$($requiredMessage.Source)'. Preserve the WinUI-only catalog context when refreshing translations."
+    }
+}
+
 $null = $totalEntries = 0
 foreach ($translationFile in $translationFiles) {
     $null = $locale = Get-LocaleTag -File $translationFile
