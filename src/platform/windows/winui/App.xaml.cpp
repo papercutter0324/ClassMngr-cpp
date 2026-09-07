@@ -329,11 +329,15 @@ void App::OnLaunched(
         activation,
         L"--phase4-semantic-test"
         );
+    const bool phase5CampusTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase5-campus-test"
+        );
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
         || viewModelTest || localizationTest || dialogTest || threadingTest
-        || semanticTest || phase4SemanticTest)
+        || semanticTest || phase4SemanticTest || phase5CampusTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -400,6 +404,10 @@ void App::OnLaunched(
                     ERROR_INVALID_DATA + failureMask
                     );
                 return;
+            }
+            else if (phase5CampusTest)
+            {
+                passed = mainWindow->runPhase5CampusChecks();
             }
             scheduleTestExit(m_window, passed);
         };

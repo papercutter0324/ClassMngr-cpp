@@ -310,11 +310,10 @@
                             x:Name="CampusDirectoryNavigationItem"
                             Content="Campus Directory"
                             Tag="campus_info"
-                            IsEnabled="False"
                             IsExpanded="True"
-                            AutomationProperties.Name="Campus Directory navigation root unavailable in prototype shell">
+                            AutomationProperties.Name="Campus Directory navigation root">
                             <NavigationViewItem.MenuItems>
-                                <NavigationViewItem Content="Information" Tag="campus_information" IsEnabled="False" AutomationProperties.Name="Campus Information navigation item unavailable in prototype shell" />
+                                <NavigationViewItem x:Name="CampusInformationNavigationItem" Content="Information" Tag="campus_information" AutomationProperties.Name="Campus Information navigation item" />
                                 <NavigationViewItem Content="Directions" Tag="campus_directions" IsEnabled="False" AutomationProperties.Name="Campus Directions navigation item unavailable in prototype shell" />
                                 <NavigationViewItem Content="Address" Tag="campus_address" IsEnabled="False" AutomationProperties.Name="Campus Address navigation item unavailable in prototype shell" />
                                 <NavigationViewItem Content="Housing" Tag="campus_housing" IsEnabled="False" AutomationProperties.Name="Campus Housing navigation item unavailable in prototype shell" />

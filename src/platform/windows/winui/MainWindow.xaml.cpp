@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "MainWindow.xaml.h"
+#include "classmngr/engine/campus_record_service.h"
 #include "classmngr/engine/database_file_format.h"
 #include "classmngr/engine/open_database.h"
 #include "winui_build_info.h"
@@ -33,6 +34,7 @@ namespace
 
 constexpr std::wstring_view homePageId = L"home";
 constexpr std::wstring_view aboutPageId = L"about";
+constexpr std::wstring_view campusInformationPageId = L"campus_information";
 constexpr int32_t minimumShellWidth = 800;
 constexpr int32_t minimumShellHeight = 600;
 constexpr int32_t defaultShellWidth = 1270;
@@ -87,7 +89,9 @@ std::vector<std::wstring> pruneRecentDatabasePaths(
 
 bool isKnownPageId(std::wstring_view pageId) noexcept
 {
-    return pageId == homePageId || pageId == aboutPageId;
+    return pageId == homePageId
+        || pageId == aboutPageId
+        || pageId == campusInformationPageId;
 }
 
 std::string asUtf8(std::wstring_view value)
@@ -547,6 +551,9 @@ MainWindow::MainWindow()
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_aboutNavigationItem = RootGrid().FindName(L"AboutNavigationItem").as<
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_campusInformationNavigationItem = RootGrid().FindName(
+        L"CampusInformationNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_contentFrame = RootGrid().FindName(L"ContentFrame").as<
         Microsoft::UI::Xaml::Controls::Frame>();
     m_shellInfoButton = RootGrid().FindName(L"ShellInfoButton").as<
@@ -598,7 +605,7 @@ MainWindow::MainWindow()
         // Persisted bounds and XAML minimums remain the safe fallback when
         // the windowing presenter is unavailable during early startup.
     }
-    m_contentFrame.CacheSize(2);
+    m_contentFrame.CacheSize(3);
     m_contentFrame.IsNavigationStackEnabled(true);
 
     m_selectionChangedToken = m_navigationView.SelectionChanged(
@@ -931,6 +938,82 @@ uint32_t MainWindow::phase4SemanticFailureMask()
     failureMask |= analyticsReady ? 0 : 128;
     failureMask |= m_dirtyState.isDirty() ? 0 : 256;
     return failureMask;
+}
+
+bool MainWindow::runPhase5CampusChecks()
+{
+    // Phase activation tests are shell-only, so this in-memory owner cannot
+    // replace or observe a user database. Start by checking the explicit
+    // no-database state, then seed the same service used by the page.
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    navigateTo(campusInformationPageId);
+    refreshCampusInformationPage();
+    const bool noDatabaseReady = m_currentPageId == campusInformationPageId
+        && m_campusInformationState == L"no_database"
+        && static_cast<bool>(m_contentFrame.Content());
+
+    auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return false;
+    }
+
+    auto& database = **opened;
+    classmngr::engine::CampusRecordService service(database);
+    classmngr::engine::CampusRecord campus;
+    campus.name = winrt::to_string(winrt::hstring(L"서울 캠퍼스"));
+    campus.buildingName = winrt::to_string(winrt::hstring(L"본관"));
+    campus.address = winrt::to_string(winrt::hstring(L"서울특별시 강남구"));
+    campus.phoneNumber = "+82-2-1234-5678";
+    campus.officeNumber = winrt::to_string(winrt::hstring(L"사무실 101호"));
+    campus.transitSteps = winrt::to_string(winrt::hstring(L"2호선에서 하차"));
+    campus.arrivalInfo = winrt::to_string(winrt::hstring(L"안내 데스크로 오세요"));
+    campus.imagePath = "assets/seoul-campus.png";
+    campus.officeWifi = "TeacherNet";
+    campus.officeWifiPassword = "password";
+    campus.printerName = "Printer-1";
+    campus.printerSteps = "Load paper, then print.";
+    campus.photocopierCode = "42";
+    campus.housingLocations = winrt::to_string(winrt::hstring(L"강남, 서초"));
+    const auto created = service.create(campus);
+    if (!created)
+    {
+        return false;
+    }
+
+    m_openDatabase = std::move(*opened);
+    refreshCampusInformationPage();
+    if (!m_campusList || m_campusInformationState != L"populated"
+        || m_campusList.Items().Size() != 1)
+    {
+        m_openDatabase.reset();
+        refreshCampusInformationPage();
+        return false;
+    }
+
+    m_campusList.SelectedIndex(0);
+    presentSelectedCampus();
+    bool koreanTextReady = false;
+    for (uint32_t index = 0; index < m_campusDetailsPanel.Children().Size(); ++index)
+    {
+        const auto text = m_campusDetailsPanel.Children().GetAt(index).try_as<
+            Microsoft::UI::Xaml::Controls::TextBlock>();
+        if (text
+            && std::wstring_view(text.Text().c_str(), text.Text().size()).find(
+                L"서울 캠퍼스"
+                ) != std::wstring_view::npos)
+        {
+            koreanTextReady = true;
+            break;
+        }
+    }
+
+    m_openDatabase.reset();
+    refreshCampusInformationPage();
+    const bool resetReady = m_campusInformationState == L"no_database"
+        && !m_campusList;
+    return noDatabaseReady && koreanTextReady && resetReady;
 }
 
 Windows::Foundation::IAsyncOperation<bool>
@@ -1286,6 +1369,7 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
         {
             m_statusText.Text(L"Database opened.");
         }
+        refreshCampusInformationPage();
         saveShellState();
         return true;
     }
@@ -1326,6 +1410,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
     // different file.
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
+    refreshCampusInformationPage();
 
     if (pathExists(candidate))
     {
@@ -1372,6 +1457,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
         {
             m_statusText.Text(L"New database created.");
         }
+        refreshCampusInformationPage();
         saveShellState();
         return true;
     }
@@ -1635,7 +1721,9 @@ void MainWindow::ContentFrame_Navigated(
     m_navigationView.SelectedItem(
         pageId == homePageId
             ? m_homeNavigationItem
-            : m_aboutNavigationItem
+            : pageId == aboutPageId
+                ? m_aboutNavigationItem
+                : m_campusInformationNavigationItem
         );
     m_selectionChanging = false;
     updateNavigationState();
@@ -1705,6 +1793,10 @@ void MainWindow::populatePage(
     if (pageId == homePageId)
     {
         populateHomePage(page);
+    }
+    else if (pageId == campusInformationPageId)
+    {
+        populateCampusInformationPage(page, false);
     }
     else
     {
@@ -2066,6 +2158,261 @@ void MainWindow::populateAboutPage(
     root.Children().Append(description);
     root.Children().Append(navigationContract);
     page.Content(root);
+}
+
+void MainWindow::populateCampusInformationPage(
+    Microsoft::UI::Xaml::Controls::Page const& page,
+    bool refresh
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (page.Content() && !refresh)
+    {
+        return;
+    }
+
+    m_campusRecords.clear();
+    m_campusList = nullptr;
+    m_campusDetailsPanel = nullptr;
+    m_campusInformationState.clear();
+
+    auto root = StackPanel();
+    root.Padding(Thickness{32.0, 32.0, 32.0, 32.0});
+    root.Spacing(16.0);
+    root.MaxWidth(1100.0);
+    root.HorizontalAlignment(HorizontalAlignment::Center);
+    root.VerticalAlignment(VerticalAlignment::Top);
+
+    auto title = TextBlock();
+    title.Text(L"Campus Information");
+    title.FontSize(28.0);
+    setAutomationName(title, L"Campus Information");
+    root.Children().Append(title);
+
+    if (!m_openDatabase)
+    {
+        m_campusInformationState = L"no_database";
+        const auto state = ClassMngrWinUISharedUX::buildEmptyState({
+            L"No database open",
+            L"Open or create a database to view campus information.",
+            L"Campus information no database state",
+            {}
+            });
+        root.Children().Append(state.root);
+        auto pageScroll = ScrollViewer();
+        pageScroll.Content(root);
+        page.Content(pageScroll);
+        return;
+    }
+
+    try
+    {
+        classmngr::engine::CampusRecordService service(*m_openDatabase);
+        const auto result = service.list();
+        if (!result)
+        {
+            m_campusInformationState = L"engine_error";
+            const auto state = ClassMngrWinUISharedUX::buildErrorState({
+                L"Campus information unavailable",
+                winrt::to_hstring(
+                    std::string("The engine could not load campus records: ")
+                        + result.error().message
+                    ),
+                L"Campus information engine error state",
+                {}
+                });
+            root.Children().Append(state.root);
+            auto pageScroll = ScrollViewer();
+            pageScroll.Content(root);
+            page.Content(pageScroll);
+            return;
+        }
+        m_campusRecords = *result;
+    }
+    catch (std::exception const& error)
+    {
+        m_campusInformationState = L"engine_error";
+        const auto state = ClassMngrWinUISharedUX::buildErrorState({
+            L"Campus information unavailable",
+            winrt::to_hstring(
+                std::string("The engine could not load campus records: ")
+                    + error.what()
+                ),
+            L"Campus information engine error state",
+            {}
+            });
+        root.Children().Append(state.root);
+        auto pageScroll = ScrollViewer();
+        pageScroll.Content(root);
+        page.Content(pageScroll);
+        return;
+    }
+    catch (...)
+    {
+        m_campusInformationState = L"engine_error";
+        const auto state = ClassMngrWinUISharedUX::buildErrorState({
+            L"Campus information unavailable",
+            L"The engine returned an unexpected campus loading failure.",
+            L"Campus information engine error state",
+            {}
+            });
+        root.Children().Append(state.root);
+        auto pageScroll = ScrollViewer();
+        pageScroll.Content(root);
+        page.Content(pageScroll);
+        return;
+    }
+
+    if (m_campusRecords.empty())
+    {
+        m_campusInformationState = L"empty";
+        const auto state = ClassMngrWinUISharedUX::buildEmptyState({
+            L"No campuses found",
+            L"This database does not contain any campus records.",
+            L"Campus information empty state",
+            {}
+            });
+        root.Children().Append(state.root);
+        auto pageScroll = ScrollViewer();
+        pageScroll.Content(root);
+        page.Content(pageScroll);
+        return;
+    }
+
+    m_campusInformationState = L"populated";
+    auto layout = Grid();
+    layout.ColumnDefinitions().Append(ColumnDefinition());
+    layout.ColumnDefinitions().Append(ColumnDefinition());
+    layout.ColumnDefinitions().GetAt(0).Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    layout.ColumnDefinitions().GetAt(1).Width(
+        GridLengthHelper::FromValueAndType(2.0, GridUnitType::Star)
+        );
+
+    auto listCard = ClassMngrWinUISharedUX::buildCard({
+        L"Campuses",
+        L"Select a campus to view its read-only information.",
+        L"Campus information list"
+        });
+    m_campusList = ListView();
+    m_campusList.SelectionMode(ListViewSelectionMode::Single);
+    m_campusList.IsTabStop(true);
+    m_campusList.TabIndex(0);
+    m_campusList.Height(480.0);
+    m_campusList.SelectionChanged({this, &MainWindow::CampusList_SelectionChanged});
+    setAutomationName(m_campusList, L"Campus information list");
+    for (classmngr::engine::CampusRecord const& campus : m_campusRecords)
+    {
+        auto item = TextBlock();
+        item.Text(winrt::to_hstring(campus.name));
+        item.TextWrapping(TextWrapping::Wrap);
+        const winrt::hstring campusName = winrt::to_hstring(campus.name);
+        std::wstring itemAutomationName = L"Campus name ";
+        itemAutomationName.append(campusName.c_str(), campusName.size());
+        setAutomationName(item, itemAutomationName);
+        m_campusList.Items().Append(item);
+    }
+    listCard.content.Children().Append(m_campusList);
+    Grid::SetColumn(listCard.root, 0);
+    layout.Children().Append(listCard.root);
+
+    auto detailsCard = ClassMngrWinUISharedUX::buildCard({
+        L"Campus details",
+        L"Read-only information provided by the campus record service.",
+        L"Selected campus details"
+        });
+    m_campusDetailsPanel = StackPanel();
+    m_campusDetailsPanel.Spacing(8.0);
+    setAutomationName(m_campusDetailsPanel, L"Selected campus details");
+    detailsCard.content.Children().Append(m_campusDetailsPanel);
+    Grid::SetColumn(detailsCard.root, 1);
+    layout.Children().Append(detailsCard.root);
+
+    root.Children().Append(layout);
+    auto pageScroll = ScrollViewer();
+    pageScroll.Content(root);
+    page.Content(pageScroll);
+    m_campusList.SelectedIndex(0);
+    presentSelectedCampus();
+}
+
+void MainWindow::refreshCampusInformationPage()
+{
+    if (m_currentPageId != campusInformationPageId || !m_contentFrame)
+    {
+        return;
+    }
+
+    const auto page = m_contentFrame.Content().try_as<
+        Microsoft::UI::Xaml::Controls::Page>();
+    if (page)
+    {
+        populateCampusInformationPage(page, true);
+    }
+}
+
+void MainWindow::CampusList_SelectionChanged(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    presentSelectedCampus();
+}
+
+void MainWindow::presentSelectedCampus()
+{
+    if (!m_campusList || !m_campusDetailsPanel)
+    {
+        return;
+    }
+
+    m_campusDetailsPanel.Children().Clear();
+    const int32_t selectedIndex = m_campusList.SelectedIndex();
+    if (selectedIndex < 0
+        || static_cast<std::size_t>(selectedIndex) >= m_campusRecords.size())
+    {
+        auto status = Microsoft::UI::Xaml::Controls::TextBlock();
+        status.Text(L"Select a campus to view its details.");
+        status.TextWrapping(Microsoft::UI::Xaml::TextWrapping::Wrap);
+        setAutomationName(status, L"Campus details selection prompt");
+        m_campusDetailsPanel.Children().Append(status);
+        return;
+    }
+
+    const classmngr::engine::CampusRecord& campus =
+        m_campusRecords[static_cast<std::size_t>(selectedIndex)];
+    const auto appendField = [this](std::wstring_view label, std::string const& value) {
+        auto field = Microsoft::UI::Xaml::Controls::TextBlock();
+        std::wstring text(label);
+        text += L": ";
+        const winrt::hstring valueText = winrt::to_hstring(value);
+        text.append(valueText.c_str(), valueText.size());
+        field.Text(winrt::hstring(text));
+        field.TextWrapping(Microsoft::UI::Xaml::TextWrapping::Wrap);
+        setAutomationName(field, label);
+        m_campusDetailsPanel.Children().Append(field);
+    };
+
+    appendField(L"Campus ID", std::to_string(campus.id));
+    appendField(L"Name", campus.name);
+    appendField(L"Building", campus.buildingName);
+    appendField(L"Address", campus.address);
+    appendField(L"Phone", campus.phoneNumber);
+    appendField(L"Office", campus.officeNumber);
+    appendField(L"Transit steps", campus.transitSteps);
+    appendField(L"Arrival information", campus.arrivalInfo);
+    appendField(L"Image path", campus.imagePath);
+    appendField(L"Office Wi-Fi", campus.officeWifi);
+    appendField(L"Office Wi-Fi password", campus.officeWifiPassword);
+    appendField(L"Printer", campus.printerName);
+    appendField(L"Printer steps", campus.printerSteps);
+    appendField(L"Photocopier code", campus.photocopierCode);
+    appendField(L"Housing locations", campus.housingLocations);
 }
 
 void MainWindow::restoreShellState()

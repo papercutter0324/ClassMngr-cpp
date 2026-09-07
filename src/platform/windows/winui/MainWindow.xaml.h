@@ -4,6 +4,7 @@
 #include "MainWindow.g.h"
 
 #include "classmngr/engine/semantic_version.h"
+#include "classmngr/engine/campus_record.h"
 #include "classmngr/engine/validation_result.h"
 #include "winui_dialogs.h"
 #include "winui_localization.h"
@@ -40,6 +41,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase3DialogChecks();
     [[nodiscard]] bool runPhase4SemanticChecks();
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
+    [[nodiscard]] bool runPhase5CampusChecks();
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
     [[nodiscard]] bool createDatabasePath(std::wstring_view path);
     void openMostRecentDatabase();
@@ -134,6 +136,16 @@ private:
     void populateAboutPage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
+    void populateCampusInformationPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        bool refresh
+        );
+    void refreshCampusInformationPage();
+    void CampusList_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void presentSelectedCampus();
     void NameTextBox_TextChanged(
         Microsoft::UI::Xaml::Controls::TextBox const& sender,
         Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
@@ -177,6 +189,7 @@ private:
     Microsoft::UI::Xaml::Controls::NavigationView m_navigationView{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_homeNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_aboutNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusInformationNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::Frame m_contentFrame{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
@@ -202,6 +215,11 @@ private:
         m_speakingScoreCells;
     Microsoft::UI::Xaml::Controls::TextBox m_speakingPasteTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_speakingStatusText{nullptr};
+
+    Microsoft::UI::Xaml::Controls::ListView m_campusList{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel m_campusDetailsPanel{nullptr};
+    std::vector<classmngr::engine::CampusRecord> m_campusRecords;
+    std::wstring m_campusInformationState;
 
     classmngr::engine::SemanticVersion m_engineVersion;
     WinUILocalizer m_localizer;
