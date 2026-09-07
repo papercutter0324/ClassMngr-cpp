@@ -158,6 +158,42 @@ powershell.exe -ExecutionPolicy Bypass -File `
   -RequirePassed
 ```
 
+## Phase 5 paired scenarios and measurements
+
+The Phase 5 pair runner adds deterministic WinUI launch modes for the shell and
+Campus Information states. It writes one capture and one
+`classmngr-winui-scenario-v1` sidecar per state, then writes a manifest. When a
+Qt artifact root is supplied, the runner links matching Phase 0 evidence; when
+it is omitted, the manifest records `winui-captured-qt-evidence-missing` and
+does not claim parity acceptance.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
+  .\scripts\porting\windows\run_phase5_paired_scenarios.ps1 `
+  -Executable .\dist\ClassMngr-windows-winui-x64\Debug\ClassMngrWinUI.exe `
+  -OutputDirectory D:\ClassMngrCapture\phase5-paired `
+  -QtArtifactRoot D:\ClassMngrCapture\phase0-qt
+```
+
+Use `-Scenario startup`, `-Scenario empty`, `-Scenario populated`, or
+`-Scenario error` to collect one state. Validate the generated WinUI sidecars
+with `validate_winui_scenario_artifacts.ps1` before review. The Phase 5
+measurement helper records cold/warm launch timing, visible-window timing as a
+first-paint proxy, scenario-ready timing as a first-navigation proxy, resize
+bounds, working-set/private memory, and process handle counts. It reports the
+shared 200 MiB working-set target when a numeric sample exists, but it does not
+invent startup, navigation, resize, or handle budgets that Phase 0 did not
+freeze.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
+  .\scripts\porting\windows\measure_phase5_winui.ps1 `
+  -StageDirectory .\dist\ClassMngr-windows-winui-x64\Debug `
+  -Platform x64 `
+  -ScenarioArguments '--phase5-campus-populated' `
+  -ReportPath .\artifacts\phase5\windows-x64-debug-measurements.json
+```
+
 ## Deferred follow-up evidence
 
 The bootstrap source contains a representative Korean text form and explicit
