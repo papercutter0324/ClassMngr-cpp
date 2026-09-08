@@ -194,6 +194,23 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
   -ReportPath .\artifacts\phase5\windows-x64-debug-measurements.json
 ```
 
+The Terra-recommended semantic first-navigation gate uses x64 Release and
+exactly 20 independent fresh processes:
+
+```powershell
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `
+  .\scripts\porting\windows\measure_phase5_winui.ps1 `
+  -StageDirectory .\dist\ClassMngr-windows-winui-x64\Release `
+  -Platform x64 `
+  -FirstNavigation `
+  -Iterations 20 `
+  -ReportPath .\artifacts\phase5\measurements-20260908-x64\phase5-first-navigation-x64-release.json
+```
+
+The [x64 Release first-navigation report](../../../artifacts/phase5/measurements-20260908-x64/phase5-first-navigation-x64-release.json)
+records 20/20 valid samples, nearest-rank p95 `52.881 ms`, and maximum
+`63.1 ms`; the raw application results are retained beside it.
+
 Host evidence recorded on 2026-09-08 is available in the [Phase 5 paired
 manifest](../../../artifacts/phase5/paired-20260908-x64-debug-clean2/phase5-paired-scenarios.json),
 the [x64 Debug measurement report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-debug.json),

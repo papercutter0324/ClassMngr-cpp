@@ -227,9 +227,17 @@ void App::OnLaunched(
         return;
     }
 
+    const bool phase5FirstNavigation = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase5-first-navigation"
+        );
+
     try
     {
-        if (!initializeSingleInstance())
+        // Each sample requires a fresh shell. This isolated diagnostic launch
+        // therefore does not redirect to another instance; normal launches
+        // retain the single-instance contract.
+        if (!phase5FirstNavigation && !initializeSingleInstance())
         {
             Microsoft::UI::Xaml::Application::Current().Exit();
             return;
@@ -459,6 +467,27 @@ void App::OnLaunched(
                     m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                     );
                 mainWindow->preparePhase5CampusScenario(scenario);
+            }
+            );
+        if (!queued)
+        {
+            ExitProcess(ERROR_INVALID_DATA);
+        }
+    }
+
+    if (phase5FirstNavigation)
+    {
+        const bool queued = m_window.DispatcherQueue().TryEnqueue(
+            Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
+            [this]() {
+                auto* mainWindow = winrt::get_self<MainWindow>(
+                    m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
+                    );
+                mainWindow->startPhase5FirstNavigationMeasurement(
+                    [window = m_window](bool passed) {
+                        scheduleTestExit(window, passed);
+                    }
+                    );
             }
             );
         if (!queued)

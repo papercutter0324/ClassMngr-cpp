@@ -1,0 +1,21 @@
+{
+  "format": "classmngr.phase5.first-navigation.v1",
+  "targetPage": "campus_information",
+  "fixtureId": "phase5-campus-populated-v1",
+  "expectedRecordCount": 2,
+  "cacheState": "frame-cache-cleared; home-rendered; campus-not-visited",
+  "navigationStartEvent": "navigateTo(campus_information)",
+  "navigationReadyEvent": "CompositionTarget::Rendering",
+  "firstNavigationReadyMs": 47.498800,
+  "semanticReadiness": {
+    "pageId": "campus_information",
+    "pageReady": true,
+    "populatedState": true,
+    "populatedListExists": true,
+    "selectedDetailPanelExists": true,
+    "expectedRecordCountPresent": true
+  },
+  "deferredImageStatus": "excluded-asynchronous",
+  "ready": true,
+  "failure": null
+}

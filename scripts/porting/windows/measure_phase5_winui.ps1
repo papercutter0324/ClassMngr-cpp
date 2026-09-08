@@ -9,8 +9,10 @@ param(
 
     [string]$ReportPath = '',
 
-    [ValidateRange(1, 10)]
+    [ValidateRange(1, 20)]
     [int]$Iterations = 3,
+
+    [switch]$FirstNavigation,
 
     [string[]]$ScenarioArguments = @(),
 
@@ -57,13 +59,23 @@ else {
 }
 
 $plan = [ordered]@{
-    format = 'classmngr-winui-phase5-measurement-plan-v1'
+    format = if ($FirstNavigation) {
+        'classmngr-winui-phase5-first-navigation-plan-v1'
+    }
+    else {
+        'classmngr-winui-phase5-measurement-plan-v1'
+    }
     platform = $Platform
     stageDirectory = $stagePath
     executable = $executablePath
     reportPath = $resolvedReportPath
     iterations = $Iterations
-    categories = @('cold (first run)', 'warm (remaining runs)')
+    categories = if ($FirstNavigation) {
+        @('independent first-navigation samples')
+    }
+    else {
+        @('cold (first run)', 'warm (remaining runs)')
+    }
     scenarioArguments = @($ScenarioArguments)
     windowTimeoutMilliseconds = $WindowTimeoutMilliseconds
     settleMilliseconds = $SettleMilliseconds
@@ -71,22 +83,43 @@ $plan = [ordered]@{
         width = $ResizeWidth
         height = $ResizeHeight
     }
-    steps = @(
-        'launch-process',
-        'wait-for-visible-process-window',
-        'record-launch-to-window-visible-and-scenario-ready-proxy',
-        'wait-for-settle',
-        'collect-memory-and-handle-sample',
-        'move-and-resize-window',
-        'request-close-and-verify-clean-exit',
-        'verify-window-release'
-    )
-    targetNotes = @(
-        'The only evaluated target is the shared steady-state working-set target of 200 MiB when at least one numeric working-set sample exists.',
-        'First-navigation readiness is represented by the requested-arguments visible-window event as a proxy; no first-navigation threshold is fabricated.',
-        'Resize latency is reported for comparison with the Phase 0 provisional p95 target of 32 ms; this helper does not assert a resize pass/fail result.',
-        'No startup or handle-count pass/fail budget is supplied by this helper.'
-    )
+    steps = if ($FirstNavigation) {
+        @(
+            'launch-fresh-process',
+            'wait-for-app-first-navigation-result',
+            'preserve-raw-result-and-failure',
+            'verify-process-exit',
+            'compute-nearest-rank-p95'
+        )
+    }
+    else {
+        @(
+            'launch-process',
+            'wait-for-visible-process-window',
+            'record-launch-to-window-visible-and-scenario-ready-proxy',
+            'wait-for-settle',
+            'collect-memory-and-handle-sample',
+            'move-and-resize-window',
+            'request-close-and-verify-clean-exit',
+            'verify-window-release'
+        )
+    }
+    targetNotes = if ($FirstNavigation) {
+        @(
+            'This mode measures the app-reported first navigation from rendered Home to populated Campus Information.',
+            'Readiness is the first CompositionTarget::Rendering callback after semantic page, list, detail, and record-count checks pass.',
+            'All requested samples are retained. Failed samples are reported and never silently discarded from the run list.',
+            'The report does not assert a performance-cap pass or fail result.'
+        )
+    }
+    else {
+        @(
+            'The only evaluated target is the shared steady-state working-set target of 200 MiB when at least one numeric working-set sample exists.',
+            'First-navigation readiness is represented by the requested-arguments visible-window event as a proxy; no first-navigation threshold is fabricated.',
+            'Resize latency is reported for comparison with the Phase 0 provisional p95 target of 32 ms; this helper does not assert a resize pass/fail result.',
+            'No startup or handle-count pass/fail budget is supplied by this helper.'
+        )
+    }
 }
 
 if ($PlanOnly) {
@@ -324,6 +357,248 @@ function Get-NumberSummary {
         median = [Math]::Round($median, 1)
         maximum = [Math]::Round($numericValues[$numericValues.Count - 1], 1)
     }
+}
+
+function Get-FirstNavigationSummary {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]]$Values
+    )
+
+    $summary = Get-NumberSummary -Values $Values
+    $numericValues = @($Values | ForEach-Object { [double]$_ } | Sort-Object)
+    if ($numericValues.Count -eq 0) {
+        $summary.p95 = $null
+        $summary.nearestRank = $null
+        return $summary
+    }
+
+    $rank = [int][Math]::Ceiling(0.95 * $numericValues.Count)
+    $summary.p95 = [Math]::Round($numericValues[$rank - 1], 3)
+    $summary.nearestRank = $rank
+    return $summary
+}
+
+function Invoke-FirstNavigationMeasurement {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExecutablePath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$StagePath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ReportPath,
+
+        [Parameter(Mandatory = $true)]
+        [int]$SampleCount,
+
+        [Parameter(Mandatory = $true)]
+        [int]$TimeoutMilliseconds
+    )
+
+    if ($Platform -ne 'x64') {
+        throw 'First-navigation measurement is gated for x64 Release only; specify -Platform x64.'
+    }
+    if ($SampleCount -ne 20) {
+        throw 'First-navigation measurement requires exactly 20 independent samples.'
+    }
+
+    $resultPath = Join-Path -Path $StagePath -ChildPath 'phase5-first-navigation.json'
+    $rawDirectory = "$ReportPath.first-navigation-raw"
+    if (Test-Path -LiteralPath $resultPath -PathType Leaf) {
+        throw "Refusing to overwrite existing first-navigation result: $resultPath"
+    }
+    if (Test-Path -LiteralPath $rawDirectory) {
+        throw "Refusing to overwrite existing first-navigation raw results: $rawDirectory"
+    }
+
+    $reportDirectory = Split-Path -Parent $ReportPath
+    if (-not (Test-Path -LiteralPath $reportDirectory -PathType Container)) {
+        New-Item -ItemType Directory -Path $reportDirectory -Force | Out-Null
+    }
+    New-Item -ItemType Directory -Path $rawDirectory | Out-Null
+
+    $runs = [System.Collections.Generic.List[object]]::new()
+    for ($iteration = 1; $iteration -le $SampleCount; $iteration++) {
+        $process = $null
+        $forcedTermination = $false
+        $processExited = $false
+        $closeRequested = $false
+        $failure = $null
+        $rawResultPath = $null
+        $applicationResult = $null
+        $run = [ordered]@{
+            iteration = $iteration
+            arguments = @('--phase5-first-navigation')
+            rawResultPath = $null
+            applicationResult = $null
+            firstNavigationReadyMs = $null
+            processExited = $false
+            exitCode = $null
+            closeRequested = $false
+            forcedTermination = $false
+            status = 'failed'
+            failure = $null
+        }
+
+        try {
+            $process = Start-Process `
+                -FilePath $ExecutablePath `
+                -ArgumentList '--phase5-first-navigation' `
+                -WorkingDirectory $StagePath `
+                -PassThru `
+                -WindowStyle Normal
+            if (-not $process.WaitForExit($TimeoutMilliseconds)) {
+                $failure = "Timed out waiting for first-navigation result ($TimeoutMilliseconds ms)."
+                $closeRequested = $process.CloseMainWindow()
+                if (-not $process.WaitForExit(5000)) {
+                    $forcedTermination = $true
+                    $process.Kill()
+                    $process.WaitForExit(5000) | Out-Null
+                }
+            }
+            $process.Refresh()
+            $processExited = $process.HasExited
+            if ($processExited) {
+                $run.exitCode = $process.ExitCode
+            }
+
+            if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
+                if ($null -eq $failure) {
+                    $failure = 'First-navigation result JSON was not written.'
+                }
+            }
+            else {
+                try {
+                    $applicationResult = Get-Content -LiteralPath $resultPath -Raw |
+                        ConvertFrom-Json
+                    $rawResultPath = Join-Path `
+                        -Path $rawDirectory `
+                        -ChildPath ('sample-{0:D2}.json' -f $iteration)
+                    Move-Item -LiteralPath $resultPath -Destination $rawResultPath
+                    $run.rawResultPath = $rawResultPath
+                    $run.applicationResult = $applicationResult
+                    $run.firstNavigationReadyMs = $applicationResult.firstNavigationReadyMs
+
+                    $semantic = $applicationResult.semanticReadiness
+                    $semanticReady = $applicationResult.format -eq
+                        'classmngr.phase5.first-navigation.v1' -and
+                        $applicationResult.targetPage -eq 'campus_information' -and
+                        $applicationResult.expectedRecordCount -eq 2 -and
+                        $applicationResult.ready -eq $true -and
+                        $null -eq $applicationResult.failure -and
+                        $semantic.pageId -eq 'campus_information' -and
+                        $semantic.pageReady -eq $true -and
+                        $semantic.populatedState -eq $true -and
+                        $semantic.populatedListExists -eq $true -and
+                        $semantic.selectedDetailPanelExists -eq $true -and
+                        $semantic.expectedRecordCountPresent -eq $true -and
+                        $null -ne $applicationResult.firstNavigationReadyMs
+                    if (-not $semanticReady -and $null -eq $failure) {
+                        $failure = 'Application result did not satisfy first-navigation semantic readiness.'
+                    }
+                }
+                catch {
+                    if ($null -eq $failure) {
+                        $failure = "Could not parse or preserve first-navigation result: $($_.Exception.Message)"
+                    }
+                }
+            }
+
+            if (-not $processExited -and $null -eq $failure) {
+                $failure = 'First-navigation process did not exit.'
+            }
+            elseif ($forcedTermination -and $null -eq $failure) {
+                $failure = 'First-navigation process required forced termination.'
+            }
+            elseif ($processExited -and $run.exitCode -ne 0 -and $null -eq $failure) {
+                $failure = "First-navigation process exited with code $($run.exitCode)."
+            }
+        }
+        catch {
+            if ($null -eq $failure) {
+                $failure = $_.Exception.Message
+            }
+        }
+        finally {
+            if ($null -ne $process) {
+                try {
+                    $process.Refresh()
+                    $processExited = $process.HasExited
+                    if ($processExited -and $null -eq $run.exitCode) {
+                        $run.exitCode = $process.ExitCode
+                    }
+                }
+                catch {
+                    if ($null -eq $failure) {
+                        $failure = "Process exit verification failed: $($_.Exception.Message)"
+                    }
+                }
+            }
+
+            $run.processExited = [bool]$processExited
+            $run.closeRequested = [bool]$closeRequested
+            $run.forcedTermination = [bool]$forcedTermination
+            if ($null -ne $failure) {
+                $run.failure = $failure
+            }
+            else {
+                $run.status = 'measured'
+            }
+        }
+
+        $runs.Add($run) | Out-Null
+    }
+
+    $successfulRuns = @($runs | Where-Object { $_.status -eq 'measured' })
+    $failedRuns = @($runs | Where-Object { $_.status -eq 'failed' })
+    $readySamples = @($successfulRuns | ForEach-Object {
+            [double]$_.firstNavigationReadyMs
+        })
+    $report = [ordered]@{
+        format = 'classmngr-winui-phase5-first-navigation-measurements-v1'
+        measuredAtUtc = [DateTime]::UtcNow.ToString('o')
+        platform = $Platform
+        stageDirectory = $StagePath
+        executable = $ExecutablePath
+        requestedSamples = $SampleCount
+        timeoutMilliseconds = $TimeoutMilliseconds
+        targetPage = 'campus_information'
+        fixtureId = 'phase5-campus-populated-v1'
+        expectedRecordCount = 2
+        readinessDefinition = 'First CompositionTarget::Rendering callback after the Campus Information page, populated list, selected detail panel, and expected record count are all present; asynchronous images excluded.'
+        runs = @($runs.ToArray())
+        summary = [ordered]@{
+            completedSamples = $runs.Count
+            validReadySamples = $successfulRuns.Count
+            failedSamples = $failedRuns.Count
+            allRequestedSamplesValid = ($successfulRuns.Count -eq $SampleCount)
+            firstNavigationReadyMs = Get-FirstNavigationSummary -Values $readySamples
+        }
+    }
+
+    [System.IO.File]::WriteAllText(
+        $ReportPath,
+        ($report | ConvertTo-Json -Depth 16) + [Environment]::NewLine,
+        [System.Text.UTF8Encoding]::new($false)
+        )
+    Write-Host (
+        'WinUI Phase 5 first-navigation measurement complete: {0} valid, {1} failed; report: {2}' -f
+        $successfulRuns.Count,
+        $failedRuns.Count,
+        $ReportPath
+        )
+}
+
+if ($FirstNavigation) {
+    Invoke-FirstNavigationMeasurement `
+        -ExecutablePath $executablePath `
+        -StagePath $stagePath `
+        -ReportPath $resolvedReportPath `
+        -SampleCount $Iterations `
+        -TimeoutMilliseconds $WindowTimeoutMilliseconds
+    return
 }
 
 $closeTimeoutMilliseconds = [Math]::Max(5000, $WindowTimeoutMilliseconds)

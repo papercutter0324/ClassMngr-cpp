@@ -114,8 +114,9 @@ for startup/no-database; the owner-approved Phase 5 exception covers the
 missing empty/populated/error Qt fixtures. Owner review of all five WinUI
 scenarios and interactive picker/unsaved-change, keyboard/Korean IME, focus,
 DPI, and accessibility review are approved. The Terra first-navigation
-recommendation, its measurement, and the Qt-derived table-parity handoff
-remain before the phase can advance. Touch, high-contrast, and
+recommendation and measurement are complete and pass the provisional
+guardrails; only the Qt-derived table-parity handoff remains before the phase
+can advance. Touch, high-contrast, and
 accessibility automation remain out of
 scope for Phase 4.
 
@@ -123,8 +124,8 @@ scope for Phase 4.
 
 Resume from commit `8d11eec` (`Phase 5 - Guard required WinUI resources`).
 Host-level x64/x86 Debug/Release builds and staged verification are complete;
-the remaining work is the first-navigation measurement and reconciliation of
-the Qt-derived table-parity handoff with the Phase 5 Campus surface.
+the remaining work is reconciliation of the Qt-derived table-parity handoff
+with the Phase 5 Campus surface.
 
 Finished Phase 5 work:
 
@@ -148,7 +149,10 @@ Finished Phase 5 work:
 - deterministic `--phase5-campus-no-database`, `--phase5-campus-empty`,
   `--phase5-campus-populated`, and `--phase5-campus-error` launch hooks; and
 - the paired-scenario runner that records real WinUI captures and honestly
-  marks missing Qt evidence instead of fabricating a pair.
+  marks missing Qt evidence instead of fabricating a pair; and
+- the Terra-recommended x64 Release first-navigation measurement: 20/20
+  independent samples passed, with nearest-rank p95 `52.881 ms` and maximum
+  `63.1 ms`.
 
 Validation already passed:
 
@@ -161,6 +165,7 @@ powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File 
 ctest --test-dir build\windows-x86-winui-debug -C Debug -R ClassMngrEngineCampusRecordServiceTests --output-on-failure
 ctest --test-dir build\windows-x86-winui-release -C Release -R ClassMngrEngineCampusRecordServiceTests --output-on-failure
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\porting\windows\validate_winui_scenario_artifacts.ps1 -ArtifactRoot .\artifacts\phase5\paired-20260908-x64-debug-clean2 -RequirePassed
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\porting\windows\measure_phase5_winui.ps1 -StageDirectory .\dist\ClassMngr-windows-winui-x64\Release -Platform x64 -FirstNavigation -Iterations 20 -ReportPath .\artifacts\phase5\measurements-20260908-x64\phase5-first-navigation-x64-release.json
 git diff --check
 ```
 
@@ -173,6 +178,9 @@ accepts five WinUI sidecars, and the x64 Debug/Release measurement reports each
 contain three successful clean iterations. The restricted local CMake WinUI
 target still reproduces the environment's `Microsoft.Build.Utilities.FileTracker`
 `UnauthorizedAccessException`; the host-level workaround is documented below.
+The dedicated x64 Release first-navigation report contains 20/20 valid
+samples, nearest-rank p95 `52.881 ms`, and maximum `63.1 ms`; its raw samples
+are retained beside the report.
 
 ### Avoiding the WinUI FileTracker error
 
@@ -199,14 +207,12 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Run the [Terra first-navigation recommendation](../../docs/porting/windows-winui/phase5-exit-review.md#first-navigation-recommendation)
-   in x64 Release: 20 independent runs, p95 as sample 19, provisional
-   p95 `<= 500 ms`, maximum `<= 750 ms`, and no discarded failures.
-2. Review the [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md)
+1. Review the [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md)
    against the retained Qt table families and reconcile the current Campus
    selector/tab/form design before starting any Phase 6 table-heavy slice.
-3. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
-   gate, first-navigation evidence, and table-parity handoff are accepted.
+2. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
+   gate and table-parity handoff are accepted. The first-navigation report has
+   passed the provisional guardrails and is linked from the Phase 5 exit review.
 
 For the all-phase dashboard, completed-phase evidence, and historical progress
 log, see [progress-log.md](progress-log.md).

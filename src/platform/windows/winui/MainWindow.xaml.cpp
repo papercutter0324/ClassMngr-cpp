@@ -25,6 +25,7 @@
 #include <cwctype>
 #include <coroutine>
 #include <filesystem>
+#include <fstream>
 #include <set>
 #include <string>
 #include <string_view>
@@ -1694,6 +1695,14 @@ bool MainWindow::runPhase5CampusChecks()
 
 void MainWindow::preparePhase5CampusScenario(std::wstring_view scenario)
 {
+    static_cast<void>(preparePhase5CampusFixture(scenario));
+    navigateTo(campusInformationPageId);
+    refreshCampusInformationPage();
+    updateFileCommandState();
+}
+
+bool MainWindow::preparePhase5CampusFixture(std::wstring_view scenario)
+{
     const bool noDatabase = scenario == L"no-database";
     const bool empty = scenario == L"empty";
     const bool populated = scenario == L"populated";
@@ -1756,9 +1765,205 @@ void MainWindow::preparePhase5CampusScenario(std::wstring_view scenario)
         }
     }
 
-    navigateTo(campusInformationPageId);
-    refreshCampusInformationPage();
     updateFileCommandState();
+    return m_phase5CampusScenario != L"error" && static_cast<bool>(m_openDatabase);
+}
+
+void MainWindow::startPhase5FirstNavigationMeasurement(
+    std::function<void(bool)> completion
+    )
+{
+    if (m_phase5FirstNavigationCompleted || m_phase5FirstNavigationAwaitingHome
+        || m_phase5FirstNavigationStarted)
+    {
+        return;
+    }
+
+    m_phase5FirstNavigationCompletion = std::move(completion);
+    m_contentFrame.CacheSize(0);
+    m_contentFrame.BackStack().Clear();
+    m_contentFrame.ForwardStack().Clear();
+    m_contentFrame.CacheSize(3);
+    if (!ensureHomePage())
+    {
+        completePhase5FirstNavigationMeasurement("Home shell was not ready.");
+        return;
+    }
+
+    m_phase5FirstNavigationAwaitingHome = true;
+    m_phase5FirstNavigationRenderingToken =
+        Microsoft::UI::Xaml::Media::CompositionTarget::Rendering(
+            {this, &MainWindow::Phase5FirstNavigation_Rendering}
+            );
+}
+
+void MainWindow::Phase5FirstNavigation_Rendering(
+    Windows::Foundation::IInspectable const& sender,
+    Windows::Foundation::IInspectable const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+
+    if (m_phase5FirstNavigationCompleted)
+    {
+        return;
+    }
+
+    if (m_phase5FirstNavigationAwaitingHome)
+    {
+        if (m_currentPageId != homePageId || !m_nameTextBox || !m_continueButton
+            || !m_statusText)
+        {
+            return;
+        }
+
+        m_phase5FirstNavigationAwaitingHome = false;
+        if (!preparePhase5CampusFixture(L"populated"))
+        {
+            completePhase5FirstNavigationMeasurement(
+                "The populated Campus fixture could not be prepared."
+                );
+            return;
+        }
+
+        m_phase5FirstNavigationStarted = true;
+        m_phase5FirstNavigationStart = std::chrono::steady_clock::now();
+        navigateTo(campusInformationPageId);
+        return;
+    }
+
+    if (!m_phase5FirstNavigationStarted)
+    {
+        return;
+    }
+
+    const auto renderingTime = std::chrono::steady_clock::now();
+    constexpr uint32_t expectedRecordCount = 2;
+    const bool pageReady = m_currentPageId == campusInformationPageId;
+    const bool stateReady = m_campusInformationState == L"populated";
+    const bool listReady = m_campusList
+        && m_campusList.Items().Size() == expectedRecordCount;
+    const bool selectedDetailReady = m_campusDetailsPanel
+        && m_campusDetailsPanel.Children().Size() > 0
+        && m_campusList.SelectedIndex() >= 0
+        && m_campusList.SelectedIndex() < static_cast<int32_t>(expectedRecordCount);
+    const bool recordCountReady = m_campusRecords.size() == expectedRecordCount
+        && m_campusResourceRecords.size() == expectedRecordCount;
+
+    if (pageReady && stateReady && listReady && selectedDetailReady
+        && recordCountReady)
+    {
+        m_phase5FirstNavigationReady = renderingTime;
+        completePhase5FirstNavigationMeasurement({});
+    }
+}
+
+void MainWindow::completePhase5FirstNavigationMeasurement(
+    std::string_view failure
+    )
+{
+    if (m_phase5FirstNavigationCompleted)
+    {
+        return;
+    }
+
+    m_phase5FirstNavigationCompleted = true;
+    if (m_phase5FirstNavigationRenderingToken.value != 0)
+    {
+        Microsoft::UI::Xaml::Media::CompositionTarget::Rendering(
+            m_phase5FirstNavigationRenderingToken
+            );
+        m_phase5FirstNavigationRenderingToken = {};
+    }
+
+    const bool written = writePhase5FirstNavigationResult(failure);
+    const auto completion = std::move(m_phase5FirstNavigationCompletion);
+    if (completion)
+    {
+        completion(written && failure.empty());
+    }
+}
+
+bool MainWindow::writePhase5FirstNavigationResult(std::string_view failure) const
+{
+    constexpr uint32_t expectedRecordCount = 2;
+    const bool pageReady = m_currentPageId == campusInformationPageId;
+    const bool stateReady = m_campusInformationState == L"populated";
+    const bool listReady = m_campusList
+        && m_campusList.Items().Size() == expectedRecordCount;
+    const bool selectedDetailReady = m_campusDetailsPanel
+        && m_campusDetailsPanel.Children().Size() > 0
+        && m_campusList.SelectedIndex() >= 0
+        && m_campusList.SelectedIndex() < static_cast<int32_t>(expectedRecordCount);
+    const bool recordCountReady = m_campusRecords.size() == expectedRecordCount
+        && m_campusResourceRecords.size() == expectedRecordCount;
+    const bool ready = failure.empty() && m_phase5FirstNavigationStarted
+        && pageReady && stateReady && listReady && selectedDetailReady
+        && recordCountReady;
+
+    std::string output;
+    output.reserve(1024);
+    output += "{\n  \"format\": \"classmngr.phase5.first-navigation.v1\"";
+    output += ",\n  \"targetPage\": ";
+    appendJsonEscaped(output, asUtf8(campusInformationPageId));
+    output += ",\n  \"fixtureId\": \"phase5-campus-populated-v1\"";
+    output += ",\n  \"expectedRecordCount\": 2";
+    output += ",\n  \"cacheState\": \"frame-cache-cleared; home-rendered; campus-not-visited\"";
+    output += ",\n  \"navigationStartEvent\": \"navigateTo(campus_information)\"";
+    output += ",\n  \"navigationReadyEvent\": \"CompositionTarget::Rendering\"";
+    output += ",\n  \"firstNavigationReadyMs\": ";
+    if (m_phase5FirstNavigationStarted)
+    {
+        const auto elapsed = std::chrono::duration<double, std::milli>(
+            m_phase5FirstNavigationReady - m_phase5FirstNavigationStart
+            ).count();
+        output += std::to_string(elapsed);
+    }
+    else
+    {
+        output += "null";
+    }
+    output += ",\n  \"semanticReadiness\": {\n";
+    output += "    \"pageId\": ";
+    appendJsonEscaped(output, asUtf8(m_currentPageId));
+    output += ",\n    \"pageReady\": ";
+    output += pageReady ? "true" : "false";
+    output += ",\n    \"populatedState\": ";
+    output += stateReady ? "true" : "false";
+    output += ",\n    \"populatedListExists\": ";
+    output += listReady ? "true" : "false";
+    output += ",\n    \"selectedDetailPanelExists\": ";
+    output += selectedDetailReady ? "true" : "false";
+    output += ",\n    \"expectedRecordCountPresent\": ";
+    output += recordCountReady ? "true" : "false";
+    output += "\n  },\n  \"deferredImageStatus\": \"excluded-asynchronous\"";
+    output += ",\n  \"ready\": ";
+    output += ready ? "true" : "false";
+    output += ",\n  \"failure\": ";
+    if (failure.empty())
+    {
+        output += "null";
+    }
+    else
+    {
+        appendJsonEscaped(output, failure);
+    }
+    output += "\n}\n";
+
+    try
+    {
+        std::ofstream result(
+            std::filesystem::current_path() / L"phase5-first-navigation.json",
+            std::ios::binary | std::ios::trunc
+            );
+        result.write(output.data(), static_cast<std::streamsize>(output.size()));
+        return static_cast<bool>(result);
+    }
+    catch (...)
+    {
+        return false;
+    }
 }
 
 Windows::Foundation::IAsyncOperation<bool>
@@ -4959,6 +5164,13 @@ void MainWindow::closeShell() noexcept
             m_homeCommand.as<Microsoft::UI::Xaml::Input::ICommand>()
                 .CanExecuteChanged(m_homeCommandStateToken);
             m_homeCommandStateToken = {};
+        }
+        if (m_phase5FirstNavigationRenderingToken.value != 0)
+        {
+            Microsoft::UI::Xaml::Media::CompositionTarget::Rendering(
+                m_phase5FirstNavigationRenderingToken
+                );
+            m_phase5FirstNavigationRenderingToken = {};
         }
         m_homeCommand = nullptr;
         m_homeViewModel = nullptr;

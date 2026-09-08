@@ -15,6 +15,7 @@
 
 #include <string>
 #include <string_view>
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -100,6 +101,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
     [[nodiscard]] bool runPhase5CampusChecks();
     void preparePhase5CampusScenario(std::wstring_view scenario);
+    void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
     [[nodiscard]] bool createDatabasePath(std::wstring_view path);
     void openMostRecentDatabase();
@@ -228,6 +230,15 @@ private:
         bool refresh
         );
     void refreshCampusInformationPage();
+    [[nodiscard]] bool preparePhase5CampusFixture(std::wstring_view scenario);
+    void Phase5FirstNavigation_Rendering(
+        Windows::Foundation::IInspectable const& sender,
+        Windows::Foundation::IInspectable const& arguments
+        );
+    void completePhase5FirstNavigationMeasurement(std::string_view failure);
+    [[nodiscard]] bool writePhase5FirstNavigationResult(
+        std::string_view failure
+        ) const;
     void CampusList_SelectionChanged(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
@@ -351,6 +362,9 @@ private:
     std::wstring m_campusInformationState;
     std::wstring m_phase5CampusScenario;
     std::uint64_t m_campusImageRequest{};
+    std::chrono::steady_clock::time_point m_phase5FirstNavigationStart{};
+    std::chrono::steady_clock::time_point m_phase5FirstNavigationReady{};
+    std::function<void(bool)> m_phase5FirstNavigationCompletion;
 
     classmngr::engine::SemanticVersion m_engineVersion;
     WinUILocalizer m_localizer;
@@ -369,10 +383,14 @@ private:
     winrt::event_token m_activatedToken{};
     winrt::event_token m_closedToken{};
     winrt::event_token m_homeCommandStateToken{};
+    winrt::event_token m_phase5FirstNavigationRenderingToken{};
     bool m_restoringState{};
     bool m_selectionChanging{};
     bool m_windowBoundsRestored{};
     bool m_filePickerActive{};
+    bool m_phase5FirstNavigationAwaitingHome{};
+    bool m_phase5FirstNavigationStarted{};
+    bool m_phase5FirstNavigationCompleted{};
 };
 
 } // namespace winrt::ClassMngrWinUI::implementation

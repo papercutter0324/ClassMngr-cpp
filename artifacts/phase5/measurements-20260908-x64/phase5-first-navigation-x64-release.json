@@ -1,0 +1,729 @@
+{
+    "format":  "classmngr-winui-phase5-first-navigation-measurements-v1",
+    "measuredAtUtc":  "2026-09-08T12:01:22.2979069Z",
+    "platform":  "x64",
+    "stageDirectory":  "C:\\Git\\ClassMngr-cpp\\dist\\ClassMngr-windows-winui-x64\\Release",
+    "executable":  "C:\\Git\\ClassMngr-cpp\\dist\\ClassMngr-windows-winui-x64\\Release\\ClassMngrWinUI.exe",
+    "requestedSamples":  20,
+    "timeoutMilliseconds":  30000,
+    "targetPage":  "campus_information",
+    "fixtureId":  "phase5-campus-populated-v1",
+    "expectedRecordCount":  2,
+    "readinessDefinition":  "First CompositionTarget::Rendering callback after the Campus Information page, populated list, selected detail panel, and expected record count are all present; asynchronous images excluded.",
+    "runs":  [
+                 {
+                     "iteration":  1,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-01.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  63.069400,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  63.069400,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  2,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-02.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  47.498800,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  47.498800,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  3,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-03.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  41.261300,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  41.261300,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  4,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-04.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  44.603600,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  44.603600,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  5,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-05.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  39.590800,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  39.590800,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  6,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-06.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  39.636000,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  39.636000,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  7,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-07.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  43.455100,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  43.455100,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  8,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-08.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  38.611300,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  38.611300,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  9,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-09.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  38.834200,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  38.834200,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  10,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-10.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  39.110800,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  39.110800,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  11,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-11.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  40.388400,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  40.388400,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  12,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-12.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  38.241200,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  38.241200,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  13,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-13.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  52.881400,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  52.881400,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  14,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-14.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  44.501100,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  44.501100,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  15,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-15.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  49.196100,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  49.196100,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  16,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-16.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  41.972800,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  41.972800,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  17,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-17.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  48.130200,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  48.130200,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  18,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-18.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  50.509600,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  50.509600,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  19,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-19.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  47.470000,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  47.470000,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  20,
+                     "arguments":  [
+                                       "--phase5-first-navigation"
+                                   ],
+                     "rawResultPath":  "C:\\Git\\ClassMngr-cpp\\artifacts\\phase5\\measurements-20260908-x64\\phase5-first-navigation-x64-release.json.first-navigation-raw\\sample-20.json",
+                     "applicationResult":  {
+                                               "format":  "classmngr.phase5.first-navigation.v1",
+                                               "targetPage":  "campus_information",
+                                               "fixtureId":  "phase5-campus-populated-v1",
+                                               "expectedRecordCount":  2,
+                                               "cacheState":  "frame-cache-cleared; home-rendered; campus-not-visited",
+                                               "navigationStartEvent":  "navigateTo(campus_information)",
+                                               "navigationReadyEvent":  "CompositionTarget::Rendering",
+                                               "firstNavigationReadyMs":  52.742800,
+                                               "semanticReadiness":  {
+                                                                         "pageId":  "campus_information",
+                                                                         "pageReady":  true,
+                                                                         "populatedState":  true,
+                                                                         "populatedListExists":  true,
+                                                                         "selectedDetailPanelExists":  true,
+                                                                         "expectedRecordCountPresent":  true
+                                                                     },
+                                               "deferredImageStatus":  "excluded-asynchronous",
+                                               "ready":  true,
+                                               "failure":  null
+                                           },
+                     "firstNavigationReadyMs":  52.742800,
+                     "processExited":  true,
+                     "exitCode":  0,
+                     "closeRequested":  false,
+                     "forcedTermination":  false,
+                     "status":  "measured",
+                     "failure":  null
+                 }
+             ],
+    "summary":  {
+                    "completedSamples":  20,
+                    "validReadySamples":  20,
+                    "failedSamples":  0,
+                    "allRequestedSamplesValid":  true,
+                    "firstNavigationReadyMs":  {
+                                                   "sampleCount":  20,
+                                                   "minimum":  38.2,
+                                                   "median":  44,
+                                                   "maximum":  63.1,
+                                                   "p95":  52.881,
+                                                   "nearestRank":  19
+                                               }
+                }
+}
