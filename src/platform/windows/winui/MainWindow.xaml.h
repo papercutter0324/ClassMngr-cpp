@@ -9,11 +9,15 @@
 #include "classmngr/engine/campus_record.h"
 #include "classmngr/engine/class_info.h"
 #include "classmngr/engine/classroom.h"
+#include "classmngr/engine/class_schedule.h"
+#include "classmngr/engine/schedule_import.h"
 #include "classmngr/engine/gs_team_member.h"
 #include "classmngr/engine/native_english_teacher.h"
 #include "classmngr/engine/personal_details_service.h"
 #include "classmngr/engine/roster.h"
 #include "classmngr/engine/teacher.h"
+#include "classmngr/engine/testing_block.h"
+#include "classmngr/engine/testing_class.h"
 #include "classmngr/engine/validation_result.h"
 #include "winui_dialogs.h"
 #include "winui_localization.h"
@@ -120,6 +124,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] uint32_t phase6CalendarFailureMask() const noexcept;
     [[nodiscard]] bool runPhase6RosterChecks();
     [[nodiscard]] uint32_t phase6RosterFailureMask() const noexcept;
+    [[nodiscard]] bool runPhase6ScheduleChecks();
+    [[nodiscard]] uint32_t phase6ScheduleFailureMask() const noexcept;
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -237,6 +243,12 @@ private:
     void populateHomePage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
+    void populateScheduleWorkspace(
+        Microsoft::UI::Xaml::Controls::StackPanel const& scheduleRoot
+        );
+    void refreshScheduleWorkspace();
+    void saveScheduleEntry();
+    void clearScheduleEntry();
     void populateCalendarWorkspace(
         Microsoft::UI::Xaml::Controls::StackPanel const& calendarRoot
         );
@@ -672,6 +684,23 @@ private:
 
     Microsoft::UI::Xaml::Controls::TextBox m_scheduleSlotTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_scheduleStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::Pivot m_scheduleTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_scheduleHeaderGrid{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_scheduleList{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_scheduleClassSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_scheduleDayCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_scheduleTypeCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleStartTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleEndTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_scheduleWorkspaceStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_scheduleValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleClearButton{nullptr};
+    std::vector<classmngr::engine::Classroom> m_scheduleClasses;
+    std::vector<classmngr::engine::ClassInfo> m_scheduleInfos;
+    std::wstring m_scheduleEditingKey;
+    bool m_scheduleLoading{};
+    uint32_t m_phase6ScheduleFailureMask{};
 
     Microsoft::UI::Xaml::Controls::ListView m_rosterSourceList{nullptr};
     Microsoft::UI::Xaml::Controls::ListView m_rosterTransferredList{nullptr};

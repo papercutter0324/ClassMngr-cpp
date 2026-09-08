@@ -11,6 +11,7 @@
 #include "classmngr/engine/class_info_service.h"
 #include "classmngr/engine/class_info_validator.h"
 #include "classmngr/engine/class_repository.h"
+#include "classmngr/engine/class_schedule_service.h"
 #include "classmngr/engine/class_transfer_service.h"
 #include "classmngr/engine/database_file_format.h"
 #include "classmngr/engine/gs_team_service.h"
@@ -1113,6 +1114,99 @@ int boxedInt(
     }
 }
 
+struct ScheduleSelection
+{
+    int classId = -1;
+    classmngr::engine::ScheduleType type =
+        classmngr::engine::ScheduleType::Regular;
+    std::wstring day;
+    std::wstring startTime;
+    std::wstring endTime;
+};
+
+std::vector<std::wstring> splitScheduleKey(std::wstring_view value)
+{
+    std::vector<std::wstring> parts;
+    std::size_t start = 0;
+    while (start <= value.size())
+    {
+        const std::size_t separator = value.find(L'|', start);
+        const std::size_t end = separator == std::wstring_view::npos
+            ? value.size()
+            : separator;
+        parts.emplace_back(value.substr(start, end - start));
+        if (separator == std::wstring_view::npos)
+        {
+            break;
+        }
+        start = separator + 1;
+    }
+    return parts;
+}
+
+std::optional<ScheduleSelection> scheduleSelectionFromKey(
+    std::wstring_view value
+    )
+{
+    const auto parts = splitScheduleKey(value);
+    if (parts.size() != 5 || parts[1].size() != 1)
+    {
+        return std::nullopt;
+    }
+
+    int classId = -1;
+    try
+    {
+        std::size_t parsed = 0;
+        classId = std::stoi(parts[0], &parsed);
+        if (parsed != parts[0].size())
+        {
+            return std::nullopt;
+        }
+    }
+    catch (...)
+    {
+        return std::nullopt;
+    }
+    if (classId <= 0 || (parts[1][0] != L'r' && parts[1][0] != L'i'))
+    {
+        return std::nullopt;
+    }
+
+    return ScheduleSelection{
+        classId,
+        parts[1][0] == L'i'
+            ? classmngr::engine::ScheduleType::Intensive
+            : classmngr::engine::ScheduleType::Regular,
+        parts[2],
+        parts[3],
+        parts[4]
+    };
+}
+
+std::wstring scheduleSelectionKey(
+    int classId,
+    classmngr::engine::ScheduleType type,
+    std::wstring_view day,
+    std::wstring_view startTime,
+    std::wstring_view endTime
+    )
+{
+    return std::to_wstring(classId)
+        + L'|'
+        + (type == classmngr::engine::ScheduleType::Intensive ? L"i" : L"r")
+        + L'|' + std::wstring(day)
+        + L'|' + std::wstring(startTime)
+        + L'|' + std::wstring(endTime);
+}
+
+std::wstring scheduleTypeText(classmngr::engine::ScheduleType type)
+{
+    return type == classmngr::engine::ScheduleType::Intensive
+        ? L"Intensive"
+        : L"Regular";
+}
+
 classmngr::engine::Roster defaultRoster()
 {
     classmngr::engine::Roster roster;
@@ -1883,6 +1977,222 @@ MainWindow::runPhase3SemanticChecks()
 bool MainWindow::runPhase4SemanticChecks()
 {
     return phase4SemanticFailureMask() == 0;
+}
+
+bool MainWindow::runPhase6ScheduleChecks()
+{
+    m_phase6ScheduleFailureMask = 0;
+    const auto fail = [this](uint32_t failureMask) {
+        m_phase6ScheduleFailureMask = failureMask;
+        return false;
+    };
+    const auto selectClass = [this](int classId) {
+        if (!m_scheduleClassSelector)
+        {
+            return false;
+        }
+        for (int index = 0;
+             index < static_cast<int>(m_scheduleClassSelector.Items().Size());
+             ++index)
+        {
+            const auto item = m_scheduleClassSelector.Items().GetAt(index)
+                .try_as<Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+            if (item && boxedInt(item.Tag()) == classId)
+            {
+                m_scheduleClassSelector.SelectedIndex(index);
+                return true;
+            }
+        }
+        return false;
+    };
+    const auto selectRow = [this](int classId,
+                                  classmngr::engine::ScheduleType type,
+                                  std::wstring_view day) {
+        if (!m_scheduleList)
+        {
+            return false;
+        }
+        for (int index = 0;
+             index < static_cast<int>(m_scheduleList.Items().Size());
+             ++index)
+        {
+            const auto item = m_scheduleList.Items().GetAt(index)
+                .try_as<Microsoft::UI::Xaml::Controls::ListViewItem>();
+            if (!item)
+            {
+                continue;
+            }
+            const auto selection = scheduleSelectionFromKey(boxedString(item.Tag()));
+            if (selection && selection->classId == classId
+                && selection->type == type && selection->day == day)
+            {
+                m_scheduleList.SelectedIndex(index);
+                return true;
+            }
+        }
+        return false;
+    };
+
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    m_dirtyState.markClean();
+    m_scheduleLoading = false;
+    m_scheduleEditingKey.clear();
+    if (!ensureHomePage())
+    {
+        return fail(1);
+    }
+    refreshScheduleWorkspace();
+    const bool noDatabaseReady =
+        m_scheduleTabs && m_scheduleWorkspaceStatusText
+        && m_scheduleWorkspaceStatusText.Text() == L"No database open."
+        && m_scheduleList && !m_scheduleList.IsEnabled()
+        && m_scheduleSaveButton && !m_scheduleSaveButton.IsEnabled();
+    if (!noDatabaseReady)
+    {
+        return fail(1);
+    }
+
+    auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return fail(2);
+    }
+    m_openDatabase = std::move(*opened);
+
+    classmngr::engine::ClassRepository repository(*m_openDatabase);
+    const auto scheduledClassId = repository.create("Schedule A");
+    const auto conflictingClassId = repository.create("Schedule B");
+    if (!scheduledClassId || !conflictingClassId)
+    {
+        return fail(4);
+    }
+
+    const auto& grades = classmngr::engine::ClassInfoConfig::grades();
+    if (grades.empty())
+    {
+        return fail(8);
+    }
+    const auto levels = classmngr::engine::ClassInfoConfig::levelsForGrade(
+        grades.front()
+        );
+    const auto readingBooks = classmngr::engine::ClassInfoConfig::readingBooks(
+        grades.front(),
+        levels.empty() ? std::string_view{} : levels.front()
+        );
+    const auto essayBooks = classmngr::engine::ClassInfoConfig::essayBooks(
+        grades.front(),
+        levels.empty() ? std::string_view{} : levels.front()
+        );
+    if (levels.empty() || readingBooks.empty() || essayBooks.empty())
+    {
+        return fail(8);
+    }
+
+    const auto createInfo = [&grades, &levels, &readingBooks, &essayBooks](
+                                int classId,
+                                std::vector<classmngr::engine::ClassTime> times
+                                ) {
+        classmngr::engine::ClassInfo info;
+        info.classId = classId;
+        info.classGrade = grades.front();
+        info.classLevel = levels.front();
+        info.readingBook = readingBooks.front();
+        info.essayBook = essayBooks.front();
+        info.classColor = "#FFFFFF";
+        info.fontColor = "#000000";
+        info.classTimes = std::move(times);
+        return info;
+    };
+    classmngr::engine::ClassInfoService infoService(*m_openDatabase);
+    if (!infoService.save(createInfo(*scheduledClassId, {}))
+        || !infoService.save(createInfo(
+            *conflictingClassId,
+            { {"Monday", "5:00 PM", "5:55 PM"} }
+            )))
+    {
+        return fail(16);
+    }
+
+    refreshScheduleWorkspace();
+    const bool populatedReady =
+        m_scheduleHeaderGrid && m_scheduleHeaderGrid.Children().Size() == 5
+        && m_scheduleClassSelector
+        && m_scheduleClassSelector.Items().Size() == 2
+        && m_scheduleList && m_scheduleList.Items().Size() == 2;
+    if (!populatedReady || !selectClass(*scheduledClassId))
+    {
+        return fail(32);
+    }
+
+    m_scheduleTypeCombo.SelectedIndex(0);
+    m_scheduleDayCombo.SelectedIndex(0);
+    m_scheduleStartTextBox.Text(L"4:00 PM");
+    m_scheduleEndTextBox.Text(L"4:55 PM");
+    saveScheduleEntry();
+    auto regularInfo = infoService.load(*scheduledClassId);
+    const bool regularSaved = regularInfo
+        && regularInfo->classTimes.size() == 1
+        && regularInfo->classTimes.front().day == "Monday";
+    if (!regularSaved)
+    {
+        return fail(64);
+    }
+
+    const bool selectedRegular = selectRow(
+        *scheduledClassId,
+        classmngr::engine::ScheduleType::Regular,
+        L"Monday"
+        );
+    if (!selectedRegular)
+    {
+        return fail(128);
+    }
+    m_scheduleStartTextBox.Text(L"5:15 PM");
+    m_scheduleEndTextBox.Text(L"6:00 PM");
+    saveScheduleEntry();
+    regularInfo = infoService.load(*scheduledClassId);
+    const bool conflictRejected =
+        m_scheduleValidationText
+        && m_scheduleValidationText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && regularInfo && regularInfo->classTimes.size() == 1
+        && regularInfo->classTimes.front().startTime == "4:00 PM";
+    if (!conflictRejected)
+    {
+        return fail(256);
+    }
+
+    m_scheduleStartTextBox.Text(L"4:00 PM");
+    m_scheduleEndTextBox.Text(L"4:55 PM");
+    saveScheduleEntry();
+    m_scheduleTypeCombo.SelectedIndex(1);
+    m_scheduleDayCombo.SelectedIndex(1);
+    m_scheduleStartTextBox.Text(L"09:00");
+    m_scheduleEndTextBox.Text(L"09:50");
+    saveScheduleEntry();
+    const auto savedWithIntensive = infoService.load(*scheduledClassId);
+    const bool intensiveSaved = savedWithIntensive
+        && savedWithIntensive->classTimes.size() == 1
+        && savedWithIntensive->intensiveTimes.size() == 1
+        && savedWithIntensive->intensiveTimes.front().day == "Tuesday";
+    if (!intensiveSaved)
+    {
+        return fail(512);
+    }
+
+    m_openDatabase.reset();
+    refreshScheduleWorkspace();
+    const bool clearedReady =
+        m_scheduleWorkspaceStatusText.Text() == L"No database open."
+        && !m_scheduleList.IsEnabled()
+        && !m_scheduleClassSelector.IsEnabled();
+    return clearedReady ? true : fail(1024);
+}
+
+uint32_t MainWindow::phase6ScheduleFailureMask() const noexcept
+{
+    return m_phase6ScheduleFailureMask;
 }
 
 uint32_t MainWindow::phase4SemanticFailureMask()
@@ -4791,6 +5101,7 @@ void MainWindow::populatePage(
         }
         else if (pageId == homePageId)
         {
+            refreshScheduleWorkspace();
             refreshCalendarPage();
         }
         return;
@@ -5139,7 +5450,12 @@ void MainWindow::populateHomePage(
     scheduleRoot.Spacing(16.0);
     scheduleRoot.MaxWidth(900.0);
     scheduleRoot.HorizontalAlignment(HorizontalAlignment::Center);
+    // Keep the original phase-4 controls available to the semantic hook, but
+    // make the engine-backed workspace below the only user-facing schedule
+    // editor.
+    scheduleCard.root.Visibility(Visibility::Collapsed);
     scheduleRoot.Children().Append(scheduleCard.root);
+    populateScheduleWorkspace(scheduleRoot);
 
     auto calendarRoot = StackPanel();
     calendarRoot.Padding(Thickness{32.0, 16.0, 32.0, 32.0});
@@ -5186,6 +5502,641 @@ void MainWindow::populateHomePage(
         L"Calendar workspace tab"
         ));
     page.Content(tabs);
+}
+
+void MainWindow::populateScheduleWorkspace(
+    Microsoft::UI::Xaml::Controls::StackPanel const& scheduleRoot
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (m_scheduleTabs)
+    {
+        scheduleRoot.Children().Append(m_scheduleTabs);
+        refreshScheduleWorkspace();
+        return;
+    }
+
+    auto makeText = [](std::wstring_view text, double fontSize = 0.0) {
+        auto value = TextBlock();
+        value.Text(winrt::hstring(text));
+        value.TextWrapping(TextWrapping::Wrap);
+        if (fontSize > 0.0)
+        {
+            value.FontSize(fontSize);
+        }
+        return value;
+    };
+    const auto appendColumn = [](Grid const& grid, double width) {
+        auto definition = ColumnDefinition();
+        definition.Width(
+            GridLengthHelper::FromValueAndType(width, GridUnitType::Pixel)
+            );
+        grid.ColumnDefinitions().Append(definition);
+    };
+
+    auto editorContent = StackPanel();
+    editorContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
+    editorContent.Spacing(12.0);
+    editorContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+
+    auto heading = makeText(L"Class schedules", 24.0);
+    setAutomationName(heading, L"Class schedules heading");
+    editorContent.Children().Append(heading);
+    auto description = makeText(
+        L"View regular and intensive class times, edit one slot, and let the "
+        L"engine reject invalid or overlapping schedules. The table remains "
+        L"virtualized by the WinUI ListView for larger class directories."
+        );
+    setAutomationName(description, L"Class schedules description");
+    editorContent.Children().Append(description);
+
+    m_scheduleHeaderGrid = Grid();
+    m_scheduleHeaderGrid.ColumnSpacing(8.0);
+    m_scheduleHeaderGrid.MinWidth(680.0);
+    setAutomationName(m_scheduleHeaderGrid, L"Class schedule column headers");
+    const std::array<double, 5> columnWidths{190.0, 105.0, 125.0, 120.0, 120.0};
+    for (const double width : columnWidths)
+    {
+        appendColumn(m_scheduleHeaderGrid, width);
+    }
+    const std::array<std::wstring_view, 5> headers{
+        L"Class", L"Type", L"Day", L"Start", L"End"
+    };
+    for (std::size_t column = 0; column < headers.size(); ++column)
+    {
+        auto header = makeText(headers[column]);
+        header.Margin(Thickness{4.0, 4.0, 4.0, 4.0});
+        Grid::SetColumn(header, static_cast<int32_t>(column));
+        m_scheduleHeaderGrid.Children().Append(header);
+    }
+    editorContent.Children().Append(m_scheduleHeaderGrid);
+
+    m_scheduleList = ListView();
+    m_scheduleList.SelectionMode(ListViewSelectionMode::Single);
+    m_scheduleList.IsTabStop(true);
+    m_scheduleList.TabIndex(21);
+    m_scheduleList.Height(280.0);
+    m_scheduleList.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_scheduleList.SelectionChanged(
+        [this](auto const&, auto const&) {
+            if (m_scheduleLoading || !m_scheduleList)
+            {
+                return;
+            }
+
+            const auto item = m_scheduleList.SelectedItem().try_as<
+                ListViewItem>();
+            if (!item)
+            {
+                m_scheduleEditingKey.clear();
+                return;
+            }
+            const auto selection = scheduleSelectionFromKey(
+                boxedString(item.Tag())
+                );
+            if (!selection)
+            {
+                return;
+            }
+
+            m_scheduleLoading = true;
+            for (int index = 0;
+                 index < static_cast<int>(m_scheduleClassSelector.Items().Size());
+                 ++index)
+            {
+                const auto classItem = m_scheduleClassSelector.Items().GetAt(
+                    index
+                    ).try_as<ComboBoxItem>();
+                if (classItem && boxedInt(classItem.Tag()) == selection->classId)
+                {
+                    m_scheduleClassSelector.SelectedIndex(index);
+                    break;
+                }
+            }
+            m_scheduleTypeCombo.SelectedIndex(
+                selection->type == classmngr::engine::ScheduleType::Intensive
+                    ? 1
+                    : 0
+                );
+            for (int index = 0;
+                 index < static_cast<int>(m_scheduleDayCombo.Items().Size());
+                 ++index)
+            {
+                const auto dayItem = m_scheduleDayCombo.Items().GetAt(
+                    index
+                    ).try_as<ComboBoxItem>();
+                if (dayItem && boxedString(dayItem.Tag()) == selection->day)
+                {
+                    m_scheduleDayCombo.SelectedIndex(index);
+                    break;
+                }
+            }
+            m_scheduleStartTextBox.Text(selection->startTime);
+            m_scheduleEndTextBox.Text(selection->endTime);
+            m_scheduleEditingKey = boxedString(item.Tag());
+            m_scheduleLoading = false;
+            if (m_scheduleWorkspaceStatusText)
+            {
+                m_scheduleWorkspaceStatusText.Text(
+                    selection->startTime.empty()
+                        ? L"Choose a day and time to add a schedule slot."
+                        : L"Editing the selected schedule slot."
+                    );
+            }
+        }
+        );
+    setAutomationName(m_scheduleList, L"Class schedule table");
+    editorContent.Children().Append(m_scheduleList);
+
+    auto formCard = ClassMngrWinUISharedUX::buildCard({
+        L"Schedule slot editor",
+        L"Use the same weekday and time formats as the retained class editor. "
+        L"Saving is validated and persisted through the shared engine service.",
+        L"Schedule slot editor"
+        });
+    m_scheduleClassSelector = ComboBox();
+    m_scheduleClassSelector.Header(box_value(hstring(L"Class")));
+    m_scheduleClassSelector.PlaceholderText(L"Select a class");
+    m_scheduleClassSelector.MinWidth(300.0);
+    m_scheduleClassSelector.IsTabStop(true);
+    m_scheduleClassSelector.TabIndex(22);
+    setAutomationName(m_scheduleClassSelector, L"Schedule class selector");
+    formCard.content.Children().Append(m_scheduleClassSelector);
+
+    m_scheduleTypeCombo = ComboBox();
+    m_scheduleTypeCombo.Header(box_value(hstring(L"Schedule type")));
+    m_scheduleTypeCombo.MinWidth(220.0);
+    m_scheduleTypeCombo.IsTabStop(true);
+    m_scheduleTypeCombo.TabIndex(23);
+    for (const auto& choice : {
+             std::pair{L"Regular", 0},
+             std::pair{L"Intensive", 1}})
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(choice.first)));
+        item.Tag(box_value(choice.second));
+        setAutomationName(item, choice.first);
+        m_scheduleTypeCombo.Items().Append(item);
+    }
+    m_scheduleTypeCombo.SelectedIndex(0);
+    setAutomationName(m_scheduleTypeCombo, L"Schedule type selector");
+    formCard.content.Children().Append(m_scheduleTypeCombo);
+
+    m_scheduleDayCombo = ComboBox();
+    m_scheduleDayCombo.Header(box_value(hstring(L"Weekday")));
+    m_scheduleDayCombo.MinWidth(220.0);
+    m_scheduleDayCombo.IsTabStop(true);
+    m_scheduleDayCombo.TabIndex(24);
+    for (const std::string& day : classmngr::engine::ClassInfoConfig::days())
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(asWide(day))));
+        item.Tag(box_value(hstring(asWide(day))));
+        setAutomationName(item, asWide(day));
+        m_scheduleDayCombo.Items().Append(item);
+    }
+    m_scheduleDayCombo.SelectedIndex(0);
+    setAutomationName(m_scheduleDayCombo, L"Schedule weekday selector");
+    formCard.content.Children().Append(m_scheduleDayCombo);
+
+    m_scheduleStartTextBox = TextBox();
+    m_scheduleStartTextBox.Header(box_value(hstring(L"Start time")));
+    m_scheduleStartTextBox.PlaceholderText(L"e.g. 4:00 PM");
+    m_scheduleStartTextBox.MinWidth(220.0);
+    m_scheduleStartTextBox.IsTabStop(true);
+    m_scheduleStartTextBox.TabIndex(25);
+    m_scheduleStartTextBox.TextChanging(
+        [this](auto const&, auto const&) {
+            if (!m_scheduleLoading && m_scheduleValidationText)
+            {
+                m_scheduleValidationText.Visibility(Visibility::Collapsed);
+            }
+        }
+        );
+    setAutomationName(m_scheduleStartTextBox, L"Schedule start time");
+    formCard.content.Children().Append(m_scheduleStartTextBox);
+
+    m_scheduleEndTextBox = TextBox();
+    m_scheduleEndTextBox.Header(box_value(hstring(L"End time")));
+    m_scheduleEndTextBox.PlaceholderText(L"e.g. 4:55 PM");
+    m_scheduleEndTextBox.MinWidth(220.0);
+    m_scheduleEndTextBox.IsTabStop(true);
+    m_scheduleEndTextBox.TabIndex(26);
+    m_scheduleEndTextBox.TextChanging(
+        [this](auto const&, auto const&) {
+            if (!m_scheduleLoading && m_scheduleValidationText)
+            {
+                m_scheduleValidationText.Visibility(Visibility::Collapsed);
+            }
+        }
+        );
+    setAutomationName(m_scheduleEndTextBox, L"Schedule end time");
+    formCard.content.Children().Append(m_scheduleEndTextBox);
+
+    auto actions = StackPanel();
+    actions.Orientation(Orientation::Horizontal);
+    actions.Spacing(8.0);
+    m_scheduleSaveButton = Button();
+    m_scheduleSaveButton.Content(box_value(hstring(L"Save schedule slot")));
+    m_scheduleSaveButton.IsTabStop(true);
+    m_scheduleSaveButton.TabIndex(27);
+    m_scheduleSaveButton.Click(
+        [this](auto const&, auto const&) { saveScheduleEntry(); }
+        );
+    setAutomationName(m_scheduleSaveButton, L"Save schedule slot");
+    actions.Children().Append(m_scheduleSaveButton);
+    m_scheduleClearButton = Button();
+    m_scheduleClearButton.Content(box_value(hstring(L"Clear editor")));
+    m_scheduleClearButton.IsTabStop(true);
+    m_scheduleClearButton.TabIndex(28);
+    m_scheduleClearButton.Click(
+        [this](auto const&, auto const&) { clearScheduleEntry(); }
+        );
+    setAutomationName(m_scheduleClearButton, L"Clear schedule editor");
+    actions.Children().Append(m_scheduleClearButton);
+    formCard.content.Children().Append(actions);
+
+    m_scheduleWorkspaceStatusText = makeText(L"Schedule editor is ready.");
+    setAutomationName(m_scheduleWorkspaceStatusText, L"Schedule workspace status");
+    formCard.content.Children().Append(m_scheduleWorkspaceStatusText);
+    m_scheduleValidationText = makeText(L"");
+    m_scheduleValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(m_scheduleValidationText, L"Schedule validation");
+    formCard.content.Children().Append(m_scheduleValidationText);
+    editorContent.Children().Append(formCard.root);
+
+    auto scrollTab = [](StackPanel const& content) {
+        auto scroll = ScrollViewer();
+        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.Content(content);
+        return scroll;
+    };
+    auto scheduleItem = PivotItem();
+    scheduleItem.Header(box_value(hstring(L"Schedule")));
+    scheduleItem.Content(scrollTab(editorContent));
+    setAutomationName(scheduleItem, L"Schedule editor tab");
+
+    m_scheduleTabs = Pivot();
+    m_scheduleTabs.IsTabStop(true);
+    m_scheduleTabs.TabIndex(0);
+    m_scheduleTabs.Items().Append(scheduleItem);
+    setAutomationName(m_scheduleTabs, L"Schedule workspace tabs");
+    scheduleRoot.Children().Append(m_scheduleTabs);
+    refreshScheduleWorkspace();
+}
+
+void MainWindow::refreshScheduleWorkspace()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_scheduleTabs || !m_scheduleList || !m_scheduleWorkspaceStatusText)
+    {
+        return;
+    }
+
+    const bool hasDatabase = static_cast<bool>(m_openDatabase);
+    const auto setEnabled = [hasDatabase](auto const& control) {
+        if (control)
+        {
+            control.IsEnabled(hasDatabase);
+        }
+    };
+    setEnabled(m_scheduleList);
+    setEnabled(m_scheduleClassSelector);
+    setEnabled(m_scheduleTypeCombo);
+    setEnabled(m_scheduleDayCombo);
+    setEnabled(m_scheduleStartTextBox);
+    setEnabled(m_scheduleEndTextBox);
+    setEnabled(m_scheduleSaveButton);
+    setEnabled(m_scheduleClearButton);
+
+    m_scheduleLoading = true;
+    m_scheduleClasses.clear();
+    m_scheduleInfos.clear();
+    m_scheduleList.Items().Clear();
+    m_scheduleClassSelector.Items().Clear();
+    m_scheduleEditingKey.clear();
+
+    if (!hasDatabase)
+    {
+        m_scheduleWorkspaceStatusText.Text(L"No database open.");
+        if (m_scheduleValidationText)
+        {
+            m_scheduleValidationText.Text({});
+            m_scheduleValidationText.Visibility(Visibility::Collapsed);
+        }
+        m_scheduleLoading = false;
+        return;
+    }
+
+    classmngr::engine::ClassRepository repository(*m_openDatabase);
+    const auto classes = repository.list();
+    classmngr::engine::ClassScheduleService scheduleService(*m_openDatabase);
+    const auto infos = scheduleService.loadScheduleClassInfos();
+    if (!classes || !infos)
+    {
+        const std::string message = !classes
+            ? classes.error().message
+            : infos.error().message;
+        m_scheduleWorkspaceStatusText.Text(winrt::hstring(
+            L"Schedules could not be loaded: " + asWide(message)
+            ));
+        if (m_scheduleValidationText)
+        {
+            m_scheduleValidationText.Text(winrt::hstring(
+                L"Engine loading error: " + asWide(message)
+                ));
+            m_scheduleValidationText.Visibility(Visibility::Visible);
+        }
+        m_scheduleLoading = false;
+        return;
+    }
+
+    m_scheduleClasses = *classes;
+    m_scheduleInfos = *infos;
+    int previousClassId = -1;
+    if (m_scheduleClassSelector.SelectedItem())
+    {
+        const auto item = m_scheduleClassSelector.SelectedItem().try_as<
+            ComboBoxItem>();
+        previousClassId = item ? boxedInt(item.Tag()) : -1;
+    }
+
+    const auto className = [this](int classId) {
+        for (const auto& classroom : m_scheduleClasses)
+        {
+            if (classroom.id == classId)
+            {
+                const std::wstring name = asWide(classroom.name);
+                return name.empty()
+                    ? L"Class " + std::to_wstring(classroom.id)
+                    : name;
+            }
+        }
+        return L"Class " + std::to_wstring(classId);
+    };
+    const auto addCell = [](Grid const& row,
+                            std::wstring_view text,
+                            uint32_t column) {
+        auto cell = TextBlock();
+        cell.Text(winrt::hstring(text));
+        cell.Margin(Thickness{4.0, 4.0, 4.0, 4.0});
+        cell.TextWrapping(TextWrapping::Wrap);
+        Grid::SetColumn(cell, static_cast<int32_t>(column));
+        row.Children().Append(cell);
+    };
+    const auto appendRow = [this, &className, &addCell](
+                               classmngr::engine::ClassInfo const& info,
+                               classmngr::engine::ScheduleType type,
+                               classmngr::engine::ClassTime const* time
+                               ) {
+        const std::wstring name = className(info.classId);
+        const std::wstring typeName = scheduleTypeText(type);
+        const std::wstring day = time ? asWide(time->day) : L"-";
+        const std::wstring start = time ? asWide(time->startTime) : L"-";
+        const std::wstring end = time ? asWide(time->endTime) : L"-";
+        const std::wstring keyDay = time ? asWide(time->day) : L"";
+        const std::wstring keyStart = time ? asWide(time->startTime) : L"";
+        const std::wstring keyEnd = time ? asWide(time->endTime) : L"";
+        auto row = Microsoft::UI::Xaml::Controls::Grid();
+        row.ColumnSpacing(8.0);
+        row.MinWidth(680.0);
+        const std::array<double, 5> widths{
+            190.0, 105.0, 125.0, 120.0, 120.0
+        };
+        for (const double width : widths)
+        {
+            auto definition = ColumnDefinition();
+            definition.Width(
+                GridLengthHelper::FromValueAndType(width, GridUnitType::Pixel)
+                );
+            row.ColumnDefinitions().Append(definition);
+        }
+        addCell(row, name, 0);
+        addCell(row, typeName, 1);
+        addCell(row, day, 2);
+        addCell(row, start, 3);
+        addCell(row, end, 4);
+        auto item = Microsoft::UI::Xaml::Controls::ListViewItem();
+        const std::wstring key = scheduleSelectionKey(
+            info.classId,
+            type,
+            keyDay,
+            keyStart,
+            keyEnd
+            );
+        item.Content(row);
+        item.Tag(winrt::box_value(winrt::hstring(key)));
+        item.IsTabStop(false);
+        setAutomationName(item, L"Schedule row " + name + L" " + typeName);
+        m_scheduleList.Items().Append(item);
+    };
+
+    int selectedClassIndex = -1;
+    std::size_t slotCount = 0;
+    for (const auto& info : m_scheduleInfos)
+    {
+        auto classItem = ComboBoxItem();
+        const std::wstring name = className(info.classId);
+        classItem.Content(box_value(hstring(name)));
+        classItem.Tag(box_value(info.classId));
+        setAutomationName(classItem, L"Schedule class " + name);
+        m_scheduleClassSelector.Items().Append(classItem);
+        if (info.classId == previousClassId)
+        {
+            selectedClassIndex = static_cast<int>(
+                m_scheduleClassSelector.Items().Size() - 1
+                );
+        }
+
+        for (const auto& time : info.classTimes)
+        {
+            appendRow(info, classmngr::engine::ScheduleType::Regular, &time);
+            ++slotCount;
+        }
+        for (const auto& time : info.intensiveTimes)
+        {
+            appendRow(info, classmngr::engine::ScheduleType::Intensive, &time);
+            ++slotCount;
+        }
+        if (info.classTimes.empty() && info.intensiveTimes.empty())
+        {
+            appendRow(info, classmngr::engine::ScheduleType::Regular, nullptr);
+        }
+    }
+    if (selectedClassIndex < 0 && m_scheduleClassSelector.Items().Size() > 0)
+    {
+        selectedClassIndex = 0;
+    }
+    m_scheduleClassSelector.SelectedIndex(selectedClassIndex);
+    if (m_scheduleTypeCombo.Items().Size() > 0)
+    {
+        m_scheduleTypeCombo.SelectedIndex(0);
+    }
+    if (m_scheduleDayCombo.Items().Size() > 0)
+    {
+        m_scheduleDayCombo.SelectedIndex(0);
+    }
+    if (m_scheduleValidationText)
+    {
+        m_scheduleValidationText.Text({});
+        m_scheduleValidationText.Visibility(Visibility::Collapsed);
+    }
+    m_scheduleWorkspaceStatusText.Text(
+        m_scheduleInfos.empty()
+            ? L"No classes found for scheduling."
+            : winrt::hstring(
+                L"Loaded " + std::to_wstring(m_scheduleInfos.size())
+                + L" classes and " + std::to_wstring(slotCount)
+                + L" schedule slots."
+                )
+        );
+    m_scheduleLoading = false;
+}
+
+void MainWindow::saveScheduleEntry()
+{
+    using namespace Microsoft::UI::Xaml;
+
+    if (!m_openDatabase || !m_scheduleClassSelector
+        || !m_scheduleStartTextBox || !m_scheduleEndTextBox)
+    {
+        return;
+    }
+
+    const auto selectedClass = m_scheduleClassSelector.SelectedItem().try_as<
+        Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+    const int classId = selectedClass ? boxedInt(selectedClass.Tag()) : -1;
+    const std::wstring day = selectedComboValue(m_scheduleDayCombo);
+    const std::wstring start = m_scheduleStartTextBox.Text().c_str();
+    const std::wstring end = m_scheduleEndTextBox.Text().c_str();
+    const auto type = m_scheduleTypeCombo.SelectedIndex() == 1
+        ? classmngr::engine::ScheduleType::Intensive
+        : classmngr::engine::ScheduleType::Regular;
+    const auto showValidation = [this](std::wstring message) {
+        if (m_scheduleValidationText)
+        {
+            m_scheduleValidationText.Text(winrt::hstring(message));
+            m_scheduleValidationText.Visibility(
+                Microsoft::UI::Xaml::Visibility::Visible
+                );
+        }
+        if (m_scheduleWorkspaceStatusText)
+        {
+            m_scheduleWorkspaceStatusText.Text(L"Schedule could not be saved.");
+        }
+    };
+    if (classId <= 0 || day.empty() || start.empty() || end.empty())
+    {
+        showValidation(L"Choose a class, weekday, start time, and end time.");
+        return;
+    }
+
+    classmngr::engine::ClassInfoService infoService(*m_openDatabase);
+    const auto loaded = infoService.load(classId);
+    if (!loaded)
+    {
+        showValidation(L"Class information could not be loaded: "
+            + asWide(loaded.error().message));
+        return;
+    }
+    classmngr::engine::ClassInfo info = *loaded;
+    auto& times = type == classmngr::engine::ScheduleType::Intensive
+        ? info.intensiveTimes
+        : info.classTimes;
+    if (const auto previous = scheduleSelectionFromKey(m_scheduleEditingKey))
+    {
+        auto& previousTimes = previous->type ==
+                classmngr::engine::ScheduleType::Intensive
+            ? info.intensiveTimes
+            : info.classTimes;
+        previousTimes.erase(
+            std::remove_if(
+                previousTimes.begin(),
+                previousTimes.end(),
+                [&previous](const classmngr::engine::ClassTime& value) {
+                    return value.day == asUtf8(previous->day)
+                        && value.startTime == asUtf8(previous->startTime)
+                        && value.endTime == asUtf8(previous->endTime);
+                }
+                ),
+            previousTimes.end()
+            );
+    }
+    times.push_back({asUtf8(day), asUtf8(start), asUtf8(end)});
+
+    classmngr::engine::ClassScheduleService scheduleService(*m_openDatabase);
+    const auto conflicts = scheduleService.getClassTimeConflicts(
+        classId,
+        times,
+        type
+        );
+    if (!conflicts)
+    {
+        showValidation(L"Schedule conflict checking failed: "
+            + asWide(conflicts.error().message));
+        return;
+    }
+    if (!conflicts->empty())
+    {
+        showValidation(
+            L"The engine rejected an overlapping schedule with "
+            + asWide(conflicts->front().conflictingClassName) + L"."
+            );
+        return;
+    }
+
+    const auto saved = infoService.save(info);
+    if (!saved)
+    {
+        showValidation(L"The engine rejected the schedule: "
+            + asWide(saved.error().message));
+        return;
+    }
+    m_scheduleEditingKey.clear();
+    refreshScheduleWorkspace();
+    if (m_scheduleWorkspaceStatusText)
+    {
+        m_scheduleWorkspaceStatusText.Text(L"Schedule slot saved.");
+    }
+}
+
+void MainWindow::clearScheduleEntry()
+{
+    if (m_scheduleLoading)
+    {
+        return;
+    }
+    m_scheduleEditingKey.clear();
+    if (m_scheduleList)
+    {
+        m_scheduleList.SelectedIndex(-1);
+    }
+    if (m_scheduleStartTextBox)
+    {
+        m_scheduleStartTextBox.Text({});
+    }
+    if (m_scheduleEndTextBox)
+    {
+        m_scheduleEndTextBox.Text({});
+    }
+    if (m_scheduleValidationText)
+    {
+        m_scheduleValidationText.Text({});
+        m_scheduleValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Collapsed
+            );
+    }
+    if (m_scheduleWorkspaceStatusText)
+    {
+        m_scheduleWorkspaceStatusText.Text(
+            L"Choose a day and time to add a schedule slot."
+            );
+    }
 }
 
 void MainWindow::populateCalendarWorkspace(
