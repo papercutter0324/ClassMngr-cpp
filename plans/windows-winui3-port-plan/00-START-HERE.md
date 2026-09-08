@@ -149,9 +149,15 @@ directory slices are also committed and pass their x64 Debug focused tests and
   ranking on the same Classes Pivot, preserving its sliding tab transition.
   Its x64 Debug build has zero warnings/errors, all 11 speaking-related engine
   tests pass, and the Phase 6 speaking plus retained Phase 4 hooks pass. The
-  active implementation gate now continues with the remaining Phase 6
-  migration-order step 6 AI-comment and batch behavior. Earlier x86,
-  paired-visual, table-parity, and aggregate-verifier evidence remains open.
+  active speaking AI-comment slice is committed at `b690203`; it adds
+  privacy-preserving single-student and batch prompt generation, clipboard and
+  ChatGPT handoff, pasted-response parsing, placeholder replacement, comment
+  length enforcement, and persistence through the same Classes Pivot. Its x64
+  Debug build has zero warnings/errors, all 11 speaking-related engine tests
+  pass, and the direct Phase 6 speaking plus retained Phase 4 hooks pass. The
+  remaining migration-order work in step 6 is batch report operations. Earlier
+  x86, paired-visual, table-parity, and aggregate-verifier evidence remains
+  open.
   Each slice is accepted and
   committed independently with its engine, semantic, persistence,
   paired-visual, and x86 evidence. Touch,
@@ -244,9 +250,9 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Continue with the remaining Phase 6 migration-order step 6 work: the
-   AI-comment workflow and batch operations while tracking the earlier x86,
-   paired-visual, and table-parity closure gates.
+1. Complete the remaining Phase 6 migration-order step 6 work: batch report
+   operations while tracking the earlier x86, paired-visual, and table-parity
+   closure gates.
 2. Continue with step 7: substitute-preparation and bundled-document
    workflows in the order recorded in the active phase file.
 3. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
@@ -381,6 +387,19 @@ After meaningful work:
   `--phase4-semantic-test` hooks exited 0. AI comments and batch behavior
   remain for the rest of step 6; x86, paired Qt/WinUI visual, table-parity,
   and aggregate-verifier evidence remain open.
+
+- **2026-09-09 - Phase 6 speaking AI-comment slice implemented.** Revision
+  `b690203` adds a privacy-preserving AI-comments card to the existing Classes
+  Speaking Evaluations Pivot. It supports direct-to-student and third-person
+  voices, formatted private observations, single-student and batch prompts,
+  `STD_NAME`/stable batch-ID placeholders, clipboard plus ChatGPT handoff,
+  pasted-response parsing, review-before-apply behavior, 450-character
+  enforcement, and persistence through the engine-backed evaluation grid. The
+  x64 Debug WinUI build completed with zero warnings/errors, all 11
+  speaking-related engine tests passed, and both direct
+  `--phase6-speaking-evaluation-test` and retained `--phase4-semantic-test`
+  hooks exited 0. Batch report operations remain for step 6; x86, paired
+  Qt/WinUI visual, table-parity, and aggregate-verifier evidence remain open.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
