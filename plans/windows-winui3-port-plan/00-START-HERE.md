@@ -123,9 +123,10 @@ implementation is committed at `f1f9ba7`; its x64 Debug build, focused engine
 tests, and staged lifecycle check pass. The Korean Teacher directory
 implementation is committed at `1baea21`; its x64 Debug build, focused engine
 tests, and staged lifecycle check pass. The active implementation gate now
-continues with the GS Team directory slice while the Personal Details, Korean
-Teacher, and Native English Teacher x86 and paired-visual evidence is closed.
-Each slice is accepted and committed independently with its engine,
+continues with Phase 6 migration-order step 2 (class details, class
+information, and notes) while the Personal Details, Korean Teacher, Native
+English Teacher, and GS Team x86 and paired-visual evidence is closed. Each
+slice is accepted and committed independently with its engine,
 semantic, persistence, paired-visual, and x86 evidence. Touch, high-contrast,
 and accessibility automation remain out of scope for Phase 4.
 
@@ -216,11 +217,11 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Complete Phase 6 migration-order step 1: close Personal Details, Korean
-   Teacher, and Native English Teacher x86/paired-visual evidence, then
-   migrate the GS Team directory.
-2. Complete step 2: class details, class information, and notes; then step 3:
-   calendar viewing/editing and preferences.
+1. Continue Phase 6 migration-order step 2: migrate class details, class
+   information, and notes while tracking the step-1 x86/paired-visual closure
+   gates.
+2. Complete step 3: calendar viewing/editing and preferences; then step 4:
+   rosters, transfers, and templates.
 3. Continue through roster/transfer, schedule/import, speaking-evaluation, and
    substitute-preparation slices in the order recorded in the active phase
    file. Commit every independently accepted slice and step with a
@@ -289,6 +290,15 @@ After meaningful work:
   verifier pass, including `--phase6-native-english-teacher-test`, covering
   empty/create/invalid/update and no-database states. x86 and paired Qt/WinUI
   visual evidence remain open.
+
+- **2026-09-09 - Phase 6 GS Team directory slice implemented.** Revision
+  `3a733a6` adds the engine-backed GS Team route with bilingual names,
+  position/contact/birthday fields, Korean IME-capable name entry,
+  new/edit/delete/discard behavior, dirty selection protection, and MM-dd
+  birthday plus engine validation/error presentation. The x64 Debug WinUI
+  target, focused GsTeam engine test (1/1), and complete staged verifier pass,
+  including `--phase6-gs-team-test`, covering empty/create/invalid/update and
+  no-database states. x86 and paired Qt/WinUI visual evidence remain open.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
