@@ -285,6 +285,20 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
   table-parity, and aggregate-verifier evidence remains open; step 6 is now
   active.
 
+- **2026-09-09 — Phase 6 speaking-evaluation grid slice committed.** Revision
+  `499e367` replaces the Classes speaking prototype with an engine-backed
+  25-row, 11-column evaluation grid covering roster names, six score columns,
+  comments, and private Notes. It adds evaluation-term switching, roster-name
+  import, score-range paste, engine normalization/validation, save/discard,
+  dirty-selection protection, and no-database/error states. The implementation
+  stays in the existing Classes Pivot so the current sliding tab transition
+  remains the reference for this and future tabbed slices. The x64 Debug WinUI
+  build completed with zero warnings/errors, all 11 speaking-related engine
+  tests passed, and both direct `--phase6-speaking-evaluation-test` and the
+  retained `--phase4-semantic-test` hooks exited 0. Analytics, AI comments,
+  and batch behavior remain for the rest of step 6; x86, paired Qt/WinUI
+  visual, table-parity, and aggregate-verifier evidence remain open.
+
 - **2026-09-08 — Phase 6 migration ledger activated.** The dashboard now
   records Phase 6 as **In progress** after the shared table-parity resource
   foundation and Campus selector-plus-five-tabs reconciliation were committed.

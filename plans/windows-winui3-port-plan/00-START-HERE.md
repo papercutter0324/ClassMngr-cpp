@@ -135,12 +135,20 @@ directory slices are also committed and pass their x64 Debug focused tests and
   schedule import/testing-class slice is committed at `37ba09b`; the combined
   x64 Debug build has zero warnings/errors, the focused schedule/testing engine
   tests pass 5/5, the direct `--phase6-schedule-test` hook passes, and the
-  retained `--phase4-semantic-test` hook still passes. The active
-  implementation gate now continues with Phase 6 migration-order step 6
-  (speaking evaluations, notes, analytics, AI comments, and batch behavior).
-  Earlier x86, paired-visual, table-parity, and aggregate-verifier evidence
-  remains open. Each slice is accepted and committed independently with its
-  engine, semantic, persistence, paired-visual, and x86 evidence. Touch,
+  retained `--phase4-semantic-test` hook still passes. The speaking-evaluation
+  grid and private-notes slice is committed at `499e367`; it replaces the
+  Classes speaking prototype with the engine-backed 25-row, 11-column grid,
+  roster-name import, score-range paste, validation, save/discard, and
+  per-evaluation switching while keeping the existing Classes Pivot and its
+  sliding tab transition. The x64 Debug build has zero warnings/errors, all
+  11 speaking-related engine tests pass, and the direct
+  `--phase6-speaking-evaluation-test` plus retained
+  `--phase4-semantic-test` hooks pass. The active implementation gate now
+  continues with the remaining Phase 6 migration-order step 6 analytics,
+  AI-comment, and batch behavior. Earlier x86, paired-visual, table-parity,
+  and aggregate-verifier evidence remains open. Each slice is accepted and
+  committed independently with its engine, semantic, persistence,
+  paired-visual, and x86 evidence. Touch,
 high-contrast, and accessibility automation remain out of scope for Phase 4.
 
 ## Phase 5 Completion Handoff
@@ -230,9 +238,9 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Continue with Phase 6 migration-order step 6: speaking evaluations,
-   notes, analytics, AI-comment workflow, and batch operations while tracking
-   the earlier x86, paired-visual, and table-parity closure gates.
+1. Continue with the remaining Phase 6 migration-order step 6 work: analytics,
+   AI-comment workflow, and batch operations while tracking the earlier x86,
+   paired-visual, and table-parity closure gates.
 2. Continue with step 7: substitute-preparation and bundled-document
    workflows in the order recorded in the active phase file.
 3. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
@@ -339,6 +347,20 @@ After meaningful work:
   `-1073741819`; its isolated semantic hook and all Phase 6 hooks pass. Step-1
   and step-2 x86, paired Qt/WinUI visual, and table-parity evidence remain open;
   step 4 is now active.
+
+- **2026-09-09 - Phase 6 speaking-evaluation grid slice implemented.** Revision
+  `499e367` replaces the Classes speaking prototype with an engine-backed
+  25-row, 11-column evaluation grid covering roster names, six score columns,
+  comments, and private Notes. It adds evaluation-term switching, roster-name
+  import, score-range paste, engine normalization/validation, save/discard,
+  dirty-selection protection, and no-database/error states. The implementation
+  stays in the existing Classes Pivot so the current sliding tab transition
+  remains the reference for this and future tabbed slices. The x64 Debug WinUI
+  build completed with zero warnings/errors, all 11 speaking-related engine
+  tests passed, and both direct `--phase6-speaking-evaluation-test` and the
+  retained `--phase4-semantic-test` hooks exited 0. Analytics, AI comments,
+  and batch behavior remain for the rest of step 6; x86, paired Qt/WinUI
+  visual, table-parity, and aggregate-verifier evidence remain open.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
