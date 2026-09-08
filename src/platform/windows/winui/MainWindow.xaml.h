@@ -11,6 +11,7 @@
 #include "classmngr/engine/classroom.h"
 #include "classmngr/engine/class_schedule.h"
 #include "classmngr/engine/schedule_import.h"
+#include "classmngr/engine/speaking_evaluation.h"
 #include "classmngr/engine/gs_team_member.h"
 #include "classmngr/engine/native_english_teacher.h"
 #include "classmngr/engine/personal_details_service.h"
@@ -126,6 +127,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] uint32_t phase6RosterFailureMask() const noexcept;
     [[nodiscard]] bool runPhase6ScheduleChecks();
     [[nodiscard]] uint32_t phase6ScheduleFailureMask() const noexcept;
+    [[nodiscard]] bool runPhase6SpeakingEvaluationChecks();
+    [[nodiscard]] uint32_t phase6SpeakingEvaluationFailureMask() const noexcept;
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -310,6 +313,17 @@ private:
     void transferClassRosterRow();
     void prepareClassTransfer();
     [[nodiscard]] classmngr::engine::Roster classRosterFromForm() const;
+    void refreshSpeakingEvaluation();
+    void rebuildSpeakingEvaluationGrid();
+    void updateSpeakingEvaluationActions();
+    void markSpeakingEvaluationDirty();
+    void clearSpeakingEvaluationDirty();
+    void saveSpeakingEvaluation();
+    void discardSpeakingEvaluation();
+    void importSpeakingEvaluationNames();
+    void applySpeakingEvaluationPaste();
+    [[nodiscard]] classmngr::engine::SpeakingEvaluationRows
+        speakingEvaluationFromForm() const;
     void populateAboutPage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
@@ -752,6 +766,36 @@ private:
         m_speakingScoreCells;
     Microsoft::UI::Xaml::Controls::TextBox m_speakingPasteTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_speakingStatusText{nullptr};
+
+    Microsoft::UI::Xaml::Controls::ComboBox
+        m_speakingEvaluationSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid
+        m_speakingEvaluationHeaderGrid{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView
+        m_speakingEvaluationList{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox
+        m_speakingEvaluationPasteTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingEvaluationStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingEvaluationValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingEvaluationSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingEvaluationDiscardButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingEvaluationImportNamesButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingEvaluationPasteButton{nullptr};
+    std::vector<std::vector<Microsoft::UI::Xaml::Controls::TextBox>>
+        m_speakingEvaluationCellBoxes;
+    classmngr::engine::SpeakingEvaluationRows m_speakingEvaluationRows;
+    std::vector<classmngr::engine::SpeakingEvaluationCellChange>
+        m_speakingEvaluationDirtyCells;
+    std::string m_speakingEvaluationName;
+    bool m_speakingEvaluationLoading{};
+    bool m_speakingEvaluationDirty{};
+    uint32_t m_phase6SpeakingEvaluationFailureMask{};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_classNameTextBox{nullptr};

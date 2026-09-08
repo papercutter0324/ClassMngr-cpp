@@ -22,6 +22,8 @@
 #include "classmngr/engine/roster_service.h"
 #include "classmngr/engine/roster_validator.h"
 #include "classmngr/engine/schedule_import_service.h"
+#include "classmngr/engine/speaking_evaluation_persistence_service.h"
+#include "classmngr/engine/speaking_evaluation_validator.h"
 #include "classmngr/engine/teacher_service.h"
 #include "classmngr/engine/testing_block_service.h"
 #include "classmngr/engine/testing_class_service.h"
@@ -2449,6 +2451,269 @@ bool MainWindow::runPhase6ScheduleChecks()
 uint32_t MainWindow::phase6ScheduleFailureMask() const noexcept
 {
     return m_phase6ScheduleFailureMask;
+}
+
+bool MainWindow::runPhase6SpeakingEvaluationChecks()
+{
+    m_phase6SpeakingEvaluationFailureMask = 0;
+    const auto fail = [this](uint32_t failureMask) {
+        m_phase6SpeakingEvaluationFailureMask = failureMask;
+        return false;
+    };
+    const auto contains = [](winrt::hstring const& value,
+                             std::wstring_view text) {
+        return std::wstring_view(value.c_str(), value.size()).find(text)
+            != std::wstring_view::npos;
+    };
+
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    m_dirtyState.markClean();
+    m_classLoading = false;
+    m_classDirty = false;
+    m_classDetailsDirty = false;
+    m_classNotesDirty = false;
+    m_classNew = false;
+    m_classRosterLoading = false;
+    m_classRosterDirty = false;
+    m_speakingEvaluationLoading = false;
+    m_speakingEvaluationDirty = false;
+    m_speakingEvaluationDirtyCells.clear();
+
+    navigateTo(classesPageId);
+    refreshClassesPage();
+    const bool noDatabaseReady =
+        m_currentPageId == classesPageId
+        && m_speakingEvaluationStatusText
+        && m_speakingEvaluationStatusText.Text() == L"No database open."
+        && m_speakingEvaluationList
+        && !m_speakingEvaluationList.IsEnabled()
+        && m_speakingEvaluationSaveButton
+        && !m_speakingEvaluationSaveButton.IsEnabled();
+    if (!noDatabaseReady)
+    {
+        return fail(1);
+    }
+
+    auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return fail(2);
+    }
+    m_openDatabase = std::move(*opened);
+
+    classmngr::engine::ClassRepository repository(*m_openDatabase);
+    const auto classId = repository.create("Speaking evaluation class");
+    if (!classId)
+    {
+        return fail(4);
+    }
+
+    const auto& grades = classmngr::engine::ClassInfoConfig::grades();
+    if (grades.empty())
+    {
+        return fail(8);
+    }
+    const auto levels = classmngr::engine::ClassInfoConfig::levelsForGrade(
+        grades.front()
+        );
+    const auto readingBooks = classmngr::engine::ClassInfoConfig::readingBooks(
+        grades.front(),
+        levels.empty() ? std::string_view{} : levels.front()
+        );
+    const auto essayBooks = classmngr::engine::ClassInfoConfig::essayBooks(
+        grades.front(),
+        levels.empty() ? std::string_view{} : levels.front()
+        );
+    if (levels.empty() || readingBooks.empty() || essayBooks.empty())
+    {
+        return fail(8);
+    }
+
+    classmngr::engine::ClassInfo info;
+    info.classId = *classId;
+    info.classGrade = grades.front();
+    info.classLevel = levels.front();
+    info.readingBook = readingBooks.front();
+    info.essayBook = essayBooks.front();
+    info.classColor = "#FFFFFF";
+    info.fontColor = "#000000";
+    classmngr::engine::ClassInfoService infoService(*m_openDatabase);
+    if (!infoService.save(info))
+    {
+        return fail(16);
+    }
+
+    classmngr::engine::Roster roster;
+    for (const std::string_view column : classmngr::engine::RosterBaseColumns)
+    {
+        roster.columns.emplace_back(column);
+    }
+    roster.columnWidths = {140, 140, 100, 140, 100, 100};
+    roster.rows.push_back({
+        "Alice",
+        winrt::to_string(winrt::hstring(L"\uC568\uB9AC\uC2A4")),
+        "",
+        "",
+        "",
+        ""
+        });
+    roster.rows.push_back({
+        "Bob",
+        winrt::to_string(winrt::hstring(L"\uAE40\uBBFC\uC218")),
+        "",
+        "",
+        "",
+        ""
+        });
+    classmngr::engine::RosterService rosterService(*m_openDatabase);
+    if (!rosterService.save(*classId, roster))
+    {
+        return fail(32);
+    }
+
+    refreshClassesPage();
+    const bool controlsReady =
+        m_classSelectedId == *classId
+        && m_speakingEvaluationSelector
+        && m_speakingEvaluationSelector.Items().Size() == 4
+        && m_speakingEvaluationHeaderGrid
+        && m_speakingEvaluationHeaderGrid.Children().Size() == 11
+        && m_speakingEvaluationList
+        && m_speakingEvaluationList.Items().Size() == 25
+        && m_speakingEvaluationCellBoxes.size() == 25
+        && m_speakingEvaluationCellBoxes.front().size() == 11;
+    if (!controlsReady)
+    {
+        return fail(64);
+    }
+
+    importSpeakingEvaluationNames();
+    const bool namesImported =
+        m_speakingEvaluationDirty
+        && m_speakingEvaluationCellBoxes[0][1].Text() == L"Alice"
+        && m_speakingEvaluationCellBoxes[0][2].Text()
+            == winrt::hstring(L"\uC568\uB9AC\uC2A4")
+        && m_speakingEvaluationCellBoxes[1][1].Text() == L"Bob";
+    if (!namesImported)
+    {
+        return fail(128);
+    }
+
+    m_speakingEvaluationList.SelectedIndex(0);
+    m_speakingEvaluationPasteTextBox.Text(L"A+\tA\tB+\tA\tB+\tA");
+    applySpeakingEvaluationPaste();
+    const bool pastedScores =
+        m_speakingEvaluationCellBoxes[0][3].Text() == L"A+"
+        && m_speakingEvaluationCellBoxes[0][8].Text() == L"A"
+        && contains(
+            m_speakingEvaluationStatusText.Text(),
+            L"Applied 6 score cells"
+            );
+    if (!pastedScores)
+    {
+        return fail(256);
+    }
+
+    saveSpeakingEvaluation();
+    classmngr::engine::SpeakingEvaluationPersistenceService evaluationService(
+        *m_openDatabase
+        );
+    const auto winterSaved = evaluationService.load(*classId, "Winter");
+    const bool winterPersistenceReady =
+        winterSaved
+        && !m_speakingEvaluationDirty
+        && winterSaved->size() == static_cast<std::size_t>(
+            classmngr::engine::SpeakingEvaluationRowCount
+            )
+        && !winterSaved->empty()
+        && winterSaved->at(0).size() > 8
+        && winterSaved->at(0).at(1) == "Alice"
+        && winterSaved->at(0).at(3) == "A+"
+        && winterSaved->at(0).at(8) == "A";
+    if (!winterPersistenceReady)
+    {
+        return fail(131072);
+    }
+
+    m_speakingEvaluationCellBoxes[0][3].Text(L"Z");
+    saveSpeakingEvaluation();
+    const auto winterAfterInvalid = evaluationService.load(*classId, "Winter");
+    const bool invalidScoreRejected =
+        m_speakingEvaluationDirty
+        && m_speakingEvaluationValidationText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && winterAfterInvalid
+        && !winterAfterInvalid->empty()
+        && winterAfterInvalid->at(0).size() > 3
+        && winterAfterInvalid->at(0).at(3) == "A+";
+    if (!invalidScoreRejected)
+    {
+        return fail(1024);
+    }
+
+    m_speakingEvaluationCellBoxes[0][3].Text(L"A+");
+    m_speakingEvaluationCellBoxes[0][10].Text(L"private note");
+    saveSpeakingEvaluation();
+    const auto savedWithNote = evaluationService.load(*classId, "Winter");
+    const bool noteSaved =
+        savedWithNote
+        && !m_speakingEvaluationDirty
+        && savedWithNote->at(0).at(10) == "private note";
+    if (!noteSaved)
+    {
+        return fail(2048);
+    }
+
+    m_speakingEvaluationSelector.SelectedIndex(2);
+    const bool summerLoaded =
+        m_speakingEvaluationName == "Summer"
+        && !m_speakingEvaluationDirty
+        && m_speakingEvaluationCellBoxes[0][1].Text().empty();
+    if (!summerLoaded)
+    {
+        return fail(4096);
+    }
+    importSpeakingEvaluationNames();
+    m_speakingEvaluationList.SelectedIndex(0);
+    m_speakingEvaluationPasteTextBox.Text(L"B\tB\tB\tB\tB\tB");
+    applySpeakingEvaluationPaste();
+    saveSpeakingEvaluation();
+    const auto summerSaved = evaluationService.load(*classId, "Summer");
+    if (!summerSaved || m_speakingEvaluationDirty
+        || summerSaved->at(0).at(3) != "B")
+    {
+        return fail(8192);
+    }
+
+    m_speakingEvaluationSelector.SelectedIndex(0);
+    if (m_speakingEvaluationCellBoxes[0][10].Text() != L"private note")
+    {
+        return fail(16384);
+    }
+    m_speakingEvaluationCellBoxes[0][10].Text(L"discard me");
+    discardSpeakingEvaluation();
+    const bool discardReady =
+        !m_speakingEvaluationDirty
+        && m_speakingEvaluationCellBoxes[0][10].Text() == L"private note";
+    if (!discardReady)
+    {
+        return fail(32768);
+    }
+
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    refreshClassesPage();
+    const bool clearedReady =
+        m_speakingEvaluationStatusText.Text() == L"No database open."
+        && !m_speakingEvaluationList.IsEnabled()
+        && !m_speakingEvaluationSaveButton.IsEnabled();
+    return clearedReady ? true : fail(65536);
+}
+
+uint32_t MainWindow::phase6SpeakingEvaluationFailureMask() const noexcept
+{
+    return m_phase6SpeakingEvaluationFailureMask;
 }
 
 uint32_t MainWindow::phase4SemanticFailureMask()
@@ -10254,72 +10519,206 @@ void MainWindow::populateClassesPage(
 
     auto speakingRoot = makeRoot(StackPanel());
     auto speakingCard = ClassMngrWinUISharedUX::buildCard({
-        L"Speaking-evaluation scores and analytics prototype",
-        L"Edit score cells, apply a tab/newline range, and request analytics navigation using standard controls.",
+        L"Speaking evaluations",
+        L"Edit the selected evaluation through the shared 25-row engine grid. Names, scores, comments, and private notes remain available without leaving the Classes tabs.",
         L"Speaking evaluation editor"
         });
-    if (m_speakingPasteTextBox && m_speakingStatusText
-        && m_speakingScoreCells.size() == 9)
+
+    m_speakingEvaluationStatusText = TextBlock();
+    m_speakingEvaluationStatusText.Text(
+        L"Select a class to edit speaking evaluations."
+        );
+    m_speakingEvaluationStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        m_speakingEvaluationStatusText,
+        L"Speaking evaluation status"
+        );
+    speakingCard.content.Children().Append(m_speakingEvaluationStatusText);
+
+    m_speakingEvaluationValidationText = TextBlock();
+    m_speakingEvaluationValidationText.TextWrapping(TextWrapping::Wrap);
+    m_speakingEvaluationValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_speakingEvaluationValidationText,
+        L"Speaking evaluation validation summary"
+        );
+    speakingCard.content.Children().Append(m_speakingEvaluationValidationText);
+
+    m_speakingEvaluationSelector = ComboBox();
+    m_speakingEvaluationSelector.Header(
+        box_value(hstring(L"Evaluation"))
+        );
+    m_speakingEvaluationSelector.MinWidth(320.0);
+    m_speakingEvaluationSelector.IsTabStop(true);
+    m_speakingEvaluationSelector.TabIndex(0);
+    setAutomationName(
+        m_speakingEvaluationSelector,
+        L"Speaking evaluation selector"
+        );
+    m_speakingEvaluationName = "Winter";
+    m_speakingEvaluationLoading = true;
+    for (const std::string_view evaluationName :
+         classmngr::engine::SpeakingEvaluationNames)
     {
-        auto scoreGrid = Grid();
-        for (size_t column = 0; column < 4; ++column)
-        {
-            scoreGrid.ColumnDefinitions().Append(ColumnDefinition());
-        }
-        for (size_t row = 0; row < 4; ++row)
-        {
-            scoreGrid.RowDefinitions().Append(RowDefinition());
-        }
-        const auto addScoreHeader = [&scoreGrid](wchar_t const* text,
-                                                  uint32_t row,
-                                                  uint32_t column) {
-            auto header = TextBlock();
-            header.Text(text);
-            header.Margin(Thickness{4.0, 2.0, 4.0, 2.0});
-            Grid::SetRow(header, row);
-            Grid::SetColumn(header, column);
-            scoreGrid.Children().Append(header);
-        };
-        addScoreHeader(L"Student", 0, 0);
-        addScoreHeader(L"Pronunciation", 0, 1);
-        addScoreHeader(L"Fluency", 0, 2);
-        addScoreHeader(L"Interaction", 0, 3);
-        for (uint32_t row = 0; row < 3; ++row)
-        {
-            auto student = TextBlock();
-            student.Text(row == 0 ? L"Student 1" : row == 1 ? L"Student 2" : L"Student 3");
-            Grid::SetRow(student, row + 1);
-            Grid::SetColumn(student, 0);
-            scoreGrid.Children().Append(student);
-            for (uint32_t column = 0; column < 3; ++column)
+        auto item = ComboBoxItem();
+        const std::wstring display = asWide(evaluationName);
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(hstring(display)));
+        setAutomationName(item, L"Speaking evaluation " + display);
+        m_speakingEvaluationSelector.Items().Append(item);
+    }
+    m_speakingEvaluationSelector.SelectedIndex(0);
+    m_speakingEvaluationSelector.SelectionChanged(
+        [this](Windows::Foundation::IInspectable const& rawSender,
+               SelectionChangedEventArgs const&) {
+            if (m_speakingEvaluationLoading)
             {
-                auto score = m_speakingScoreCells[row * 3 + column];
-                Grid::SetRow(score, row + 1);
-                Grid::SetColumn(score, column + 1);
-                scoreGrid.Children().Append(score);
+                return;
             }
+            const auto sender = rawSender.try_as<ComboBox>();
+            if (!sender)
+            {
+                return;
+            }
+            if (m_speakingEvaluationDirty)
+            {
+                m_speakingEvaluationLoading = true;
+                int restoreIndex = 0;
+                for (int index = 0;
+                     index < static_cast<int>(sender.Items().Size());
+                     ++index)
+                {
+                    const auto item = sender.Items().GetAt(index).try_as<
+                        ComboBoxItem>();
+                    if (item && boxedString(item.Tag())
+                        == asWide(m_speakingEvaluationName))
+                    {
+                        restoreIndex = index;
+                        break;
+                    }
+                }
+                sender.SelectedIndex(restoreIndex);
+                m_speakingEvaluationLoading = false;
+                m_speakingEvaluationStatusText.Text(
+                    L"Save or discard the current speaking evaluation before selecting another."
+                    );
+                return;
+            }
+            const auto item = sender.SelectedItem().try_as<ComboBoxItem>();
+            if (!item)
+            {
+                return;
+            }
+            m_speakingEvaluationName = asUtf8(boxedString(item.Tag()));
+            refreshSpeakingEvaluation();
         }
-        speakingCard.content.Children().Append(scoreGrid);
-        speakingCard.content.Children().Append(m_speakingPasteTextBox);
-        auto speakingPaste = Button();
-        speakingPaste.Content(winrt::box_value(winrt::hstring(L"Apply pasted range")));
-        speakingPaste.Click({this, &MainWindow::SpeakingPasteButton_Click});
-        setAutomationName(speakingPaste, L"Apply speaking pasted score range");
-        speakingCard.content.Children().Append(speakingPaste);
-        auto speakingAnalytics = Button();
-        speakingAnalytics.Content(winrt::box_value(winrt::hstring(L"Open analytics")));
-        speakingAnalytics.Click({this, &MainWindow::SpeakingAnalyticsButton_Click});
-        setAutomationName(speakingAnalytics, L"Open speaking analytics");
-        speakingCard.content.Children().Append(speakingAnalytics);
-        speakingCard.content.Children().Append(m_speakingStatusText);
-    }
-    else
-    {
-        auto placeholder = TextBlock();
-        placeholder.Text(L"Speaking evaluation prototype controls are not initialized yet.");
-        placeholder.TextWrapping(TextWrapping::Wrap);
-        speakingCard.content.Children().Append(placeholder);
-    }
+        );
+    m_speakingEvaluationLoading = false;
+    speakingCard.content.Children().Append(m_speakingEvaluationSelector);
+
+    auto speakingActions = StackPanel();
+    speakingActions.Orientation(Orientation::Horizontal);
+    speakingActions.Spacing(8.0);
+
+    m_speakingEvaluationImportNamesButton = Button();
+    m_speakingEvaluationImportNamesButton.Content(
+        box_value(hstring(L"Import Names"))
+        );
+    m_speakingEvaluationImportNamesButton.IsTabStop(true);
+    m_speakingEvaluationImportNamesButton.TabIndex(1);
+    m_speakingEvaluationImportNamesButton.Click(
+        [this](auto const&, auto const&) {
+            importSpeakingEvaluationNames();
+        }
+        );
+    setAutomationName(
+        m_speakingEvaluationImportNamesButton,
+        L"Import speaking evaluation names"
+        );
+    speakingActions.Children().Append(m_speakingEvaluationImportNamesButton);
+
+    m_speakingEvaluationSaveButton = Button();
+    m_speakingEvaluationSaveButton.Content(
+        box_value(hstring(L"Save Evaluation"))
+        );
+    m_speakingEvaluationSaveButton.IsTabStop(true);
+    m_speakingEvaluationSaveButton.TabIndex(2);
+    m_speakingEvaluationSaveButton.Click(
+        [this](auto const&, auto const&) { saveSpeakingEvaluation(); }
+        );
+    setAutomationName(
+        m_speakingEvaluationSaveButton,
+        L"Save speaking evaluation"
+        );
+    speakingActions.Children().Append(m_speakingEvaluationSaveButton);
+
+    m_speakingEvaluationDiscardButton = Button();
+    m_speakingEvaluationDiscardButton.Content(
+        box_value(hstring(L"Discard Changes"))
+        );
+    m_speakingEvaluationDiscardButton.IsTabStop(true);
+    m_speakingEvaluationDiscardButton.TabIndex(3);
+    m_speakingEvaluationDiscardButton.Click(
+        [this](auto const&, auto const&) { discardSpeakingEvaluation(); }
+        );
+    setAutomationName(
+        m_speakingEvaluationDiscardButton,
+        L"Discard speaking evaluation changes"
+        );
+    speakingActions.Children().Append(m_speakingEvaluationDiscardButton);
+    speakingCard.content.Children().Append(speakingActions);
+
+    m_speakingEvaluationHeaderGrid = Grid();
+    m_speakingEvaluationHeaderGrid.ColumnSpacing(4.0);
+    setAutomationName(
+        m_speakingEvaluationHeaderGrid,
+        L"Speaking evaluation column headers"
+        );
+    speakingCard.content.Children().Append(m_speakingEvaluationHeaderGrid);
+
+    m_speakingEvaluationList = ListView();
+    m_speakingEvaluationList.SelectionMode(ListViewSelectionMode::Single);
+    m_speakingEvaluationList.IsTabStop(true);
+    m_speakingEvaluationList.TabIndex(4);
+    m_speakingEvaluationList.Height(460.0);
+    m_speakingEvaluationList.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    setAutomationName(
+        m_speakingEvaluationList,
+        L"Speaking evaluation grid"
+        );
+    speakingCard.content.Children().Append(m_speakingEvaluationList);
+
+    m_speakingEvaluationPasteTextBox = TextBox();
+    m_speakingEvaluationPasteTextBox.Header(
+        box_value(hstring(L"Paste score range (tab/newline)"))
+        );
+    m_speakingEvaluationPasteTextBox.PlaceholderText(L"A+	A	B+\nA	B+	B");
+    m_speakingEvaluationPasteTextBox.AcceptsReturn(true);
+    m_speakingEvaluationPasteTextBox.Height(72.0);
+    m_speakingEvaluationPasteTextBox.IsTabStop(true);
+    m_speakingEvaluationPasteTextBox.TabIndex(5);
+    setAutomationName(
+        m_speakingEvaluationPasteTextBox,
+        L"Speaking evaluation score range"
+        );
+    speakingCard.content.Children().Append(m_speakingEvaluationPasteTextBox);
+
+    m_speakingEvaluationPasteButton = Button();
+    m_speakingEvaluationPasteButton.Content(
+        box_value(hstring(L"Apply Range to Scores"))
+        );
+    m_speakingEvaluationPasteButton.IsTabStop(true);
+    m_speakingEvaluationPasteButton.TabIndex(6);
+    m_speakingEvaluationPasteButton.Click(
+        [this](auto const&, auto const&) { applySpeakingEvaluationPaste(); }
+        );
+    setAutomationName(
+        m_speakingEvaluationPasteButton,
+        L"Apply speaking evaluation score range"
+        );
+    speakingCard.content.Children().Append(m_speakingEvaluationPasteButton);
     speakingRoot.Children().Append(speakingCard.root);
 
     auto analyticsRoot = makeTextSection(
@@ -10460,7 +10859,8 @@ void MainWindow::updateClassActions()
 
     const bool hasDatabase = static_cast<bool>(m_openDatabase);
     const bool hasClass = m_classSelectedId > 0 || m_classNew;
-    const bool clean = !m_classDirty && !m_classRosterDirty;
+    const bool clean = !m_classDirty && !m_classRosterDirty
+        && !m_speakingEvaluationDirty;
     const bool detailsEnabled = hasDatabase && hasClass;
     const bool notesEnabled = hasDatabase && m_classSelectedId > 0;
 
@@ -10521,7 +10921,7 @@ void MainWindow::clearClassDirty()
     m_classDirty = false;
     m_classDetailsDirty = false;
     m_classNotesDirty = false;
-    if (!m_classRosterDirty)
+    if (!m_classRosterDirty && !m_speakingEvaluationDirty)
     {
         m_dirtyState.markClean();
     }
@@ -10671,6 +11071,7 @@ void MainWindow::refreshClassesPage()
             );
         clearClassDirty();
         refreshClassRoster();
+        refreshSpeakingEvaluation();
         return;
     }
 
@@ -10701,6 +11102,7 @@ void MainWindow::refreshClassesPage()
             );
         clearClassDirty();
         refreshClassRoster();
+        refreshSpeakingEvaluation();
         return;
     }
 
@@ -10760,6 +11162,7 @@ void MainWindow::refreshClassesPage()
     m_classNotesValidationText.Visibility(Visibility::Collapsed);
     clearClassDirty();
     refreshClassRoster();
+    refreshSpeakingEvaluation();
 }
 
 classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
@@ -10807,6 +11210,702 @@ classmngr::engine::Roster MainWindow::classRosterFromForm() const
         roster.rows.push_back(std::move(row));
     }
     return roster;
+}
+
+void MainWindow::refreshSpeakingEvaluation()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_speakingEvaluationStatusText
+        || !m_speakingEvaluationHeaderGrid
+        || !m_speakingEvaluationList)
+    {
+        return;
+    }
+
+    const auto emptyRows = []() {
+        return classmngr::engine::SpeakingEvaluationRows(
+            static_cast<std::size_t>(
+                classmngr::engine::SpeakingEvaluationRowCount
+                ),
+            classmngr::engine::SpeakingEvaluationRow(
+                static_cast<std::size_t>(
+                    classmngr::engine::SpeakingEvaluationColumnCount
+                    )
+                )
+            );
+    };
+    const auto clearControls = [this, &emptyRows]() {
+        m_speakingEvaluationRows = emptyRows();
+        m_speakingEvaluationDirtyCells.clear();
+        m_speakingEvaluationDirty = false;
+        m_speakingEvaluationLoading = true;
+        rebuildSpeakingEvaluationGrid();
+        m_speakingEvaluationLoading = false;
+        m_speakingEvaluationValidationText.Text({});
+        m_speakingEvaluationValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Collapsed
+            );
+    };
+
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        clearControls();
+        m_speakingEvaluationStatusText.Text(
+            !m_openDatabase
+                ? L"No database open."
+                : L"Save the selected class before editing speaking evaluations."
+            );
+        if (!m_classDirty && !m_classRosterDirty)
+        {
+            m_dirtyState.markClean();
+        }
+        updateSpeakingEvaluationActions();
+        return;
+    }
+
+    if (m_speakingEvaluationDirty)
+    {
+        updateSpeakingEvaluationActions();
+        return;
+    }
+
+    m_speakingEvaluationLoading = true;
+    classmngr::engine::SpeakingEvaluationPersistenceService service(
+        *m_openDatabase
+        );
+    const auto loaded = service.load(
+        m_classSelectedId,
+        m_speakingEvaluationName.empty()
+            ? std::string_view{"Winter"}
+            : std::string_view(m_speakingEvaluationName)
+        );
+    if (!loaded)
+    {
+        m_speakingEvaluationRows = emptyRows();
+        rebuildSpeakingEvaluationGrid();
+        m_speakingEvaluationLoading = false;
+        m_speakingEvaluationDirty = false;
+        m_speakingEvaluationDirtyCells.clear();
+        m_speakingEvaluationStatusText.Text(winrt::hstring(
+            L"Speaking evaluation could not be loaded: "
+                + asWide(loaded.error().message)
+            ));
+        m_speakingEvaluationValidationText.Text(winrt::hstring(
+            L"Engine loading error: " + asWide(loaded.error().message)
+            ));
+        m_speakingEvaluationValidationText.Visibility(Visibility::Visible);
+        updateSpeakingEvaluationActions();
+        return;
+    }
+
+    m_speakingEvaluationRows = loaded->empty()
+        ? emptyRows()
+        : classmngr::engine::SpeakingEvaluationValidator::normalized(*loaded);
+    m_speakingEvaluationRows.resize(
+        static_cast<std::size_t>(
+            classmngr::engine::SpeakingEvaluationRowCount
+            )
+        );
+    for (auto& row : m_speakingEvaluationRows)
+    {
+        row.resize(static_cast<std::size_t>(
+            classmngr::engine::SpeakingEvaluationColumnCount
+            ));
+    }
+    m_speakingEvaluationDirtyCells.clear();
+    m_speakingEvaluationDirty = false;
+    if (m_speakingEvaluationName.empty())
+    {
+        m_speakingEvaluationName = "Winter";
+    }
+    for (int index = 0;
+         index < static_cast<int>(m_speakingEvaluationSelector.Items().Size());
+         ++index)
+    {
+        const auto item = m_speakingEvaluationSelector.Items().GetAt(index)
+            .try_as<ComboBoxItem>();
+        if (item && boxedString(item.Tag()) == asWide(m_speakingEvaluationName))
+        {
+            m_speakingEvaluationSelector.SelectedIndex(index);
+            break;
+        }
+    }
+    rebuildSpeakingEvaluationGrid();
+    m_speakingEvaluationLoading = false;
+    m_speakingEvaluationStatusText.Text(
+        loaded->empty()
+            ? L"No saved speaking evaluation; enter scores and save."
+            : L"Speaking evaluation loaded."
+        );
+    m_speakingEvaluationValidationText.Text({});
+    m_speakingEvaluationValidationText.Visibility(Visibility::Collapsed);
+    if (!m_classDirty && !m_classRosterDirty
+        && !m_speakingEvaluationDirty)
+    {
+        m_dirtyState.markClean();
+    }
+    updateSpeakingEvaluationActions();
+}
+
+void MainWindow::rebuildSpeakingEvaluationGrid()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_speakingEvaluationHeaderGrid || !m_speakingEvaluationList)
+    {
+        return;
+    }
+
+    constexpr std::array<double, classmngr::engine::SpeakingEvaluationColumnCount>
+        widths{44.0, 160.0, 160.0, 96.0, 112.0, 96.0, 96.0, 96.0, 124.0,
+               320.0, 240.0};
+    constexpr std::array<wchar_t const*,
+                         classmngr::engine::SpeakingEvaluationColumnCount>
+        headers{L"", L"English Name", L"Korean Name", L"Grammar",
+                L"Pronunciation", L"Fluency", L"Manner", L"Content",
+                L"Overall Effort", L"Comments", L"Notes"};
+
+    const bool wasLoading = m_speakingEvaluationLoading;
+    m_speakingEvaluationLoading = true;
+    m_speakingEvaluationHeaderGrid.ColumnDefinitions().Clear();
+    m_speakingEvaluationHeaderGrid.Children().Clear();
+    m_speakingEvaluationList.Items().Clear();
+    m_speakingEvaluationList.SelectedIndex(-1);
+    m_speakingEvaluationCellBoxes.clear();
+
+    double totalWidth = 0.0;
+    for (int column = 0;
+         column < classmngr::engine::SpeakingEvaluationColumnCount;
+         ++column)
+    {
+        totalWidth += widths[static_cast<std::size_t>(column)];
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            widths[static_cast<std::size_t>(column)],
+            GridUnitType::Pixel
+            ));
+        m_speakingEvaluationHeaderGrid.ColumnDefinitions().Append(definition);
+
+        auto header = TextBlock();
+        header.Text(headers[static_cast<std::size_t>(column)]);
+        header.Margin(Thickness{4.0, 4.0, 4.0, 4.0});
+        header.TextWrapping(TextWrapping::Wrap);
+        Grid::SetColumn(header, column);
+        m_speakingEvaluationHeaderGrid.Children().Append(header);
+    }
+    m_speakingEvaluationHeaderGrid.MinWidth(totalWidth);
+
+    const std::size_t rowCount = std::min(
+        m_speakingEvaluationRows.size(),
+        static_cast<std::size_t>(
+            classmngr::engine::SpeakingEvaluationRowCount
+            )
+        );
+    m_speakingEvaluationCellBoxes.reserve(rowCount);
+    for (std::size_t rowIndex = 0; rowIndex < rowCount; ++rowIndex)
+    {
+        auto rowGrid = Grid();
+        rowGrid.ColumnSpacing(4.0);
+        rowGrid.MinWidth(totalWidth);
+        for (const double width : widths)
+        {
+            auto definition = ColumnDefinition();
+            definition.Width(GridLengthHelper::FromValueAndType(
+                width,
+                GridUnitType::Pixel
+                ));
+            rowGrid.ColumnDefinitions().Append(definition);
+        }
+
+        std::vector<TextBox> rowBoxes;
+        rowBoxes.reserve(
+            static_cast<std::size_t>(
+                classmngr::engine::SpeakingEvaluationColumnCount
+                )
+            );
+        for (int column = 0;
+             column < classmngr::engine::SpeakingEvaluationColumnCount;
+             ++column)
+        {
+            auto cell = TextBox();
+            cell.Width(widths[static_cast<std::size_t>(column)]);
+            cell.Margin(Thickness{0.0, 2.0, 0.0, 2.0});
+            cell.IsTabStop(column != 0);
+            cell.TabIndex(
+                10 + static_cast<int32_t>(
+                    rowIndex * classmngr::engine::SpeakingEvaluationColumnCount
+                        + static_cast<std::size_t>(column)
+                    )
+                );
+            if (column == 0)
+            {
+                cell.Text(std::to_wstring(rowIndex + 1));
+                cell.IsReadOnly(true);
+            }
+            else
+            {
+                const std::size_t rowSize = m_speakingEvaluationRows[rowIndex].size();
+                cell.Text(
+                    column < static_cast<int>(rowSize)
+                        ? asWide(m_speakingEvaluationRows[rowIndex][
+                            static_cast<std::size_t>(column)])
+                        : std::wstring{}
+                    );
+                cell.MaxLength(
+                    column == classmngr::engine::toInt(
+                        classmngr::engine::SpeakingEvaluationColumn::Notes
+                        )
+                        ? static_cast<int32_t>(
+                            classmngr::engine::SpeakingEvaluationMaximumNotesLength
+                            )
+                        : column == classmngr::engine::toInt(
+                            classmngr::engine::SpeakingEvaluationColumn::Comments
+                            )
+                            ? classmngr::engine::SpeakingEvaluationCommentMaxLength
+                            : 128
+                    );
+                if (column >= classmngr::engine::toInt(
+                        classmngr::engine::SpeakingEvaluationColumn::Comments
+                        ))
+                {
+                    cell.AcceptsReturn(true);
+                    cell.TextWrapping(TextWrapping::Wrap);
+                    cell.Height(48.0);
+                }
+                cell.TextChanging(
+                    [this](TextBox const&, TextBoxTextChangingEventArgs const&) {
+                        if (!m_speakingEvaluationLoading)
+                        {
+                            markSpeakingEvaluationDirty();
+                        }
+                    }
+                    );
+            }
+            setAutomationName(
+                cell,
+                L"Speaking evaluation row " + std::to_wstring(rowIndex + 1)
+                    + L" " + headers[static_cast<std::size_t>(column)]
+                );
+            Grid::SetColumn(cell, column);
+            rowGrid.Children().Append(cell);
+            rowBoxes.push_back(cell);
+        }
+        m_speakingEvaluationList.Items().Append(rowGrid);
+        m_speakingEvaluationCellBoxes.push_back(std::move(rowBoxes));
+    }
+    m_speakingEvaluationLoading = wasLoading;
+    updateSpeakingEvaluationActions();
+}
+
+void MainWindow::updateSpeakingEvaluationActions()
+{
+    if (!m_speakingEvaluationStatusText)
+    {
+        return;
+    }
+
+    const bool hasClass = static_cast<bool>(m_openDatabase)
+        && m_classSelectedId > 0
+        && !m_classNew;
+    if (m_speakingEvaluationSelector)
+    {
+        m_speakingEvaluationSelector.IsEnabled(hasClass && !m_speakingEvaluationDirty);
+    }
+    if (m_speakingEvaluationList)
+    {
+        m_speakingEvaluationList.IsEnabled(hasClass);
+    }
+    if (m_speakingEvaluationPasteTextBox)
+    {
+        m_speakingEvaluationPasteTextBox.IsEnabled(hasClass);
+    }
+    if (m_speakingEvaluationImportNamesButton)
+    {
+        m_speakingEvaluationImportNamesButton.IsEnabled(hasClass);
+    }
+    if (m_speakingEvaluationPasteButton)
+    {
+        m_speakingEvaluationPasteButton.IsEnabled(hasClass);
+    }
+    if (m_speakingEvaluationSaveButton)
+    {
+        m_speakingEvaluationSaveButton.IsEnabled(hasClass && m_speakingEvaluationDirty);
+    }
+    if (m_speakingEvaluationDiscardButton)
+    {
+        m_speakingEvaluationDiscardButton.IsEnabled(hasClass && m_speakingEvaluationDirty);
+    }
+}
+
+void MainWindow::markSpeakingEvaluationDirty()
+{
+    if (m_speakingEvaluationLoading || !m_openDatabase
+        || m_classSelectedId <= 0 || m_classNew)
+    {
+        return;
+    }
+
+    m_speakingEvaluationDirty = true;
+    m_dirtyState.markDirty();
+    if (m_speakingEvaluationStatusText)
+    {
+        m_speakingEvaluationStatusText.Text(
+            L"Unsaved speaking evaluation changes."
+            );
+    }
+    updateSpeakingEvaluationActions();
+    updateClassActions();
+}
+
+void MainWindow::clearSpeakingEvaluationDirty()
+{
+    m_speakingEvaluationDirty = false;
+    m_speakingEvaluationDirtyCells.clear();
+    if (!m_classDirty && !m_classRosterDirty
+        && !m_speakingEvaluationDirty)
+    {
+        m_dirtyState.markClean();
+    }
+    updateSpeakingEvaluationActions();
+    updateClassActions();
+}
+
+classmngr::engine::SpeakingEvaluationRows
+MainWindow::speakingEvaluationFromForm() const
+{
+    classmngr::engine::SpeakingEvaluationRows rows =
+        m_speakingEvaluationRows;
+    rows.resize(static_cast<std::size_t>(
+        classmngr::engine::SpeakingEvaluationRowCount
+        ));
+    for (auto& row : rows)
+    {
+        row.resize(static_cast<std::size_t>(
+            classmngr::engine::SpeakingEvaluationColumnCount
+            ));
+    }
+    for (std::size_t rowIndex = 0;
+         rowIndex < rows.size() && rowIndex < m_speakingEvaluationCellBoxes.size();
+         ++rowIndex)
+    {
+        const auto& rowBoxes = m_speakingEvaluationCellBoxes[rowIndex];
+        for (std::size_t column = 1;
+             column < rows[rowIndex].size() && column < rowBoxes.size();
+             ++column)
+        {
+            rows[rowIndex][column] = asUtf8(rowBoxes[column].Text());
+        }
+    }
+    return rows;
+}
+
+void MainWindow::saveSpeakingEvaluation()
+{
+    if (!m_openDatabase)
+    {
+        m_speakingEvaluationStatusText.Text(L"No database open.");
+        return;
+    }
+    if (m_classSelectedId <= 0 || m_classNew)
+    {
+        m_speakingEvaluationStatusText.Text(
+            L"Select and save a class before saving its speaking evaluation."
+            );
+        return;
+    }
+
+    classmngr::engine::SpeakingEvaluationRows normalized =
+        classmngr::engine::SpeakingEvaluationValidator::normalized(
+            speakingEvaluationFromForm()
+            );
+    const auto validation = classmngr::engine::SpeakingEvaluationValidator::validate(
+        m_classSelectedId,
+        m_speakingEvaluationName,
+        normalized
+        );
+    if (validation.hasErrors())
+    {
+        std::wstring summary = L"Engine validation failed:";
+        for (const auto& issue : validation.errors())
+        {
+            summary += L"\n- " + asWide(issue.code);
+            if (issue.row >= 0)
+            {
+                summary += L" (row " + std::to_wstring(issue.row + 1);
+                if (issue.column >= 0)
+                {
+                    summary += L", column " + std::to_wstring(issue.column + 1);
+                }
+                summary += L")";
+            }
+        }
+        m_speakingEvaluationStatusText.Text(
+            L"Speaking evaluation could not be saved."
+            );
+        m_speakingEvaluationValidationText.Text(winrt::hstring(summary));
+        m_speakingEvaluationValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_speakingEvaluationDirty = true;
+        m_dirtyState.markDirty();
+        updateSpeakingEvaluationActions();
+        return;
+    }
+
+    m_speakingEvaluationDirtyCells.clear();
+    for (std::size_t row = 0; row < normalized.size(); ++row)
+    {
+        for (std::size_t column = 0; column < normalized[row].size(); ++column)
+        {
+            const std::string oldValue = row < m_speakingEvaluationRows.size()
+                && column < m_speakingEvaluationRows[row].size()
+                ? m_speakingEvaluationRows[row][column]
+                : std::string{};
+            if (oldValue != normalized[row][column])
+            {
+                m_speakingEvaluationDirtyCells.push_back({
+                    static_cast<int>(row),
+                    static_cast<int>(column)
+                });
+            }
+        }
+    }
+
+    classmngr::engine::SpeakingEvaluationPersistenceService service(
+        *m_openDatabase
+        );
+    const auto saved = service.save(
+        m_classSelectedId,
+        m_speakingEvaluationName,
+        normalized,
+        m_speakingEvaluationDirtyCells
+        );
+    if (!saved)
+    {
+        m_speakingEvaluationStatusText.Text(winrt::hstring(
+            L"Speaking evaluation could not be saved: "
+                + asWide(saved.error().message)
+            ));
+        m_speakingEvaluationValidationText.Text(winrt::hstring(
+            L"Engine persistence error: " + asWide(saved.error().message)
+            ));
+        m_speakingEvaluationValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_speakingEvaluationDirty = true;
+        m_dirtyState.markDirty();
+        updateSpeakingEvaluationActions();
+        return;
+    }
+
+    m_speakingEvaluationRows = std::move(normalized);
+    m_speakingEvaluationLoading = true;
+    rebuildSpeakingEvaluationGrid();
+    m_speakingEvaluationLoading = false;
+    clearSpeakingEvaluationDirty();
+    m_speakingEvaluationStatusText.Text(L"Speaking evaluation saved.");
+    m_speakingEvaluationValidationText.Text({});
+    m_speakingEvaluationValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+}
+
+void MainWindow::discardSpeakingEvaluation()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        return;
+    }
+
+    m_speakingEvaluationDirty = false;
+    refreshSpeakingEvaluation();
+    m_speakingEvaluationStatusText.Text(L"Speaking evaluation changes discarded.");
+}
+
+void MainWindow::importSpeakingEvaluationNames()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        return;
+    }
+
+    classmngr::engine::RosterService service(*m_openDatabase);
+    const auto loaded = service.load(m_classSelectedId);
+    if (!loaded)
+    {
+        m_speakingEvaluationStatusText.Text(winrt::hstring(
+            L"Roster names could not be imported: "
+                + asWide(loaded.error().message)
+            ));
+        return;
+    }
+
+    const auto columnIndex = [](const std::vector<std::string>& columns,
+                                std::string_view expected) {
+        for (std::size_t index = 0; index < columns.size(); ++index)
+        {
+            if (columns[index].size() != expected.size())
+            {
+                continue;
+            }
+            bool matches = true;
+            for (std::size_t character = 0; character < expected.size(); ++character)
+            {
+                const unsigned char actual = static_cast<unsigned char>(
+                    columns[index][character]
+                    );
+                const unsigned char wanted = static_cast<unsigned char>(
+                    expected[character]
+                    );
+                if (std::tolower(actual) != std::tolower(wanted))
+                {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches)
+            {
+                return static_cast<int>(index);
+            }
+        }
+        return -1;
+    };
+    const int englishColumn = columnIndex(loaded->columns, "English");
+    const int koreanColumn = columnIndex(loaded->columns, "Korean");
+    if (englishColumn < 0 || koreanColumn < 0)
+    {
+        m_speakingEvaluationStatusText.Text(
+            L"Roster must contain English and Korean columns before names can be imported."
+            );
+        return;
+    }
+
+    classmngr::engine::SpeakingEvaluationRows importedRows =
+        classmngr::engine::SpeakingEvaluationValidator::normalized(
+            speakingEvaluationFromForm()
+            );
+    bool changed = false;
+    const std::size_t rowCount = std::min(
+        loaded->rows.size(),
+        static_cast<std::size_t>(
+            classmngr::engine::SpeakingEvaluationRowCount
+            )
+        );
+    for (std::size_t row = 0; row < rowCount; ++row)
+    {
+        const auto& source = loaded->rows[row];
+        const std::string english = englishColumn < static_cast<int>(source.size())
+            ? source[static_cast<std::size_t>(englishColumn)]
+            : std::string{};
+        const std::string korean = koreanColumn < static_cast<int>(source.size())
+            ? source[static_cast<std::size_t>(koreanColumn)]
+            : std::string{};
+        if (importedRows[row][1] != english
+            || importedRows[row][2] != korean)
+        {
+            changed = true;
+        }
+        importedRows[row][1] = english;
+        importedRows[row][2] = korean;
+    }
+    if (!changed)
+    {
+        m_speakingEvaluationStatusText.Text(
+            L"Roster names are already up to date."
+            );
+        return;
+    }
+
+    m_speakingEvaluationLoading = true;
+    for (std::size_t row = 0;
+         row < rowCount && row < m_speakingEvaluationCellBoxes.size();
+         ++row)
+    {
+        auto& rowBoxes = m_speakingEvaluationCellBoxes[row];
+        if (rowBoxes.size() > 2)
+        {
+            rowBoxes[1].Text(asWide(importedRows[row][1]));
+            rowBoxes[2].Text(asWide(importedRows[row][2]));
+        }
+    }
+    m_speakingEvaluationLoading = false;
+    markSpeakingEvaluationDirty();
+    m_speakingEvaluationStatusText.Text(
+        L"Roster names imported into the speaking evaluation. Save to persist them."
+        );
+}
+
+void MainWindow::applySpeakingEvaluationPaste()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew
+        || !m_speakingEvaluationPasteTextBox)
+    {
+        return;
+    }
+
+    const auto rows = parsePastedRange(std::wstring_view(
+        m_speakingEvaluationPasteTextBox.Text().c_str(),
+        m_speakingEvaluationPasteTextBox.Text().size()
+        ));
+    if (rows.empty())
+    {
+        m_speakingEvaluationStatusText.Text(
+            L"Paste a tab/newline range of score values first."
+            );
+        return;
+    }
+
+    const int selectedRow = m_speakingEvaluationList
+        ? m_speakingEvaluationList.SelectedIndex()
+        : -1;
+    const std::size_t startRow = selectedRow >= 0
+        ? static_cast<std::size_t>(selectedRow)
+        : 0;
+    constexpr std::size_t firstScoreColumn = static_cast<std::size_t>(
+        classmngr::engine::toInt(
+            classmngr::engine::SpeakingEvaluationColumn::Grammar
+            )
+        );
+    constexpr std::size_t lastScoreColumn = static_cast<std::size_t>(
+        classmngr::engine::toInt(
+            classmngr::engine::SpeakingEvaluationColumn::OverallEffort
+            )
+        );
+    std::size_t applied = 0;
+    m_speakingEvaluationLoading = true;
+    for (std::size_t row = 0;
+         row < rows.size() && startRow + row < m_speakingEvaluationCellBoxes.size();
+         ++row)
+    {
+        for (std::size_t column = 0;
+             column < rows[row].size()
+             && firstScoreColumn + column <= lastScoreColumn;
+             ++column)
+        {
+            const std::size_t targetColumn = firstScoreColumn + column;
+            m_speakingEvaluationCellBoxes[startRow + row][targetColumn].Text(
+                rows[row][column]
+                );
+            ++applied;
+        }
+    }
+    m_speakingEvaluationLoading = false;
+    if (applied == 0)
+    {
+        m_speakingEvaluationStatusText.Text(
+            L"The pasted range did not contain any score cells."
+            );
+        return;
+    }
+    markSpeakingEvaluationDirty();
+    m_speakingEvaluationStatusText.Text(winrt::hstring(
+        L"Applied " + std::to_wstring(applied)
+            + L" score cells starting at row " + std::to_wstring(startRow + 1)
+            + L". Save to persist them."
+        ));
 }
 
 void MainWindow::refreshClassRoster()
@@ -10942,7 +12041,8 @@ void MainWindow::refreshClassRoster()
     rebuildClassRosterGrid();
     m_classRosterLoading = false;
     m_classRosterDirty = false;
-    if (!m_classDirty && !m_classRosterDirty)
+    if (!m_classDirty && !m_classRosterDirty
+        && !m_speakingEvaluationDirty)
     {
         m_dirtyState.markClean();
     }
@@ -11173,7 +12273,8 @@ void MainWindow::markClassRosterDirty()
 void MainWindow::clearClassRosterDirty()
 {
     m_classRosterDirty = false;
-    if (!m_classDirty && !m_classRosterDirty)
+    if (!m_classDirty && !m_classRosterDirty
+        && !m_speakingEvaluationDirty)
     {
         m_dirtyState.markClean();
     }
@@ -11546,15 +12647,17 @@ void MainWindow::ClassSelection_SelectionChanged(
     {
         return;
     }
-    if (m_classDirty || m_classRosterDirty)
+    if (m_classDirty || m_classRosterDirty || m_speakingEvaluationDirty)
     {
         m_classLoading = true;
         m_classSelector.SelectedIndex(m_classSelectedIndex);
         m_classLoading = false;
         m_classStatusText.Text(
-            m_classRosterDirty
-                ? L"Save or discard the current roster before selecting another."
-                : L"Save or discard the current class before selecting another."
+            m_speakingEvaluationDirty
+                ? L"Save or discard the current speaking evaluation before selecting another."
+                : m_classRosterDirty
+                    ? L"Save or discard the current roster before selecting another."
+                    : L"Save or discard the current class before selecting another."
             );
         return;
     }
@@ -11641,14 +12744,18 @@ void MainWindow::ClassNewButton_Click(
 {
     static_cast<void>(sender);
     static_cast<void>(arguments);
-    if (!m_openDatabase || m_classDirty || m_classRosterDirty)
+    if (!m_openDatabase || m_classDirty || m_classRosterDirty
+        || m_speakingEvaluationDirty)
     {
-        if (m_classStatusText && (m_classDirty || m_classRosterDirty))
+        if (m_classStatusText && (m_classDirty || m_classRosterDirty
+            || m_speakingEvaluationDirty))
         {
             m_classStatusText.Text(
-                m_classRosterDirty
-                    ? L"Save or discard the current roster before creating another."
-                    : L"Save or discard the current class before creating another."
+                m_speakingEvaluationDirty
+                    ? L"Save or discard the current speaking evaluation before creating another."
+                    : m_classRosterDirty
+                        ? L"Save or discard the current roster before creating another."
+                        : L"Save or discard the current class before creating another."
                 );
         }
         return;
@@ -11686,7 +12793,7 @@ void MainWindow::ClassDeleteButton_Click(
     static_cast<void>(sender);
     static_cast<void>(arguments);
     if (!m_openDatabase || m_classSelectedId <= 0
-        || m_classDirty || m_classRosterDirty)
+        || m_classDirty || m_classRosterDirty || m_speakingEvaluationDirty)
     {
         return;
     }
