@@ -23,7 +23,9 @@
 #include "classmngr/engine/roster_validator.h"
 #include "classmngr/engine/schedule_import_service.h"
 #include "classmngr/engine/speaking_analytics.h"
+#include "classmngr/engine/speaking_evaluation_ai_prompt.h"
 #include "classmngr/engine/speaking_evaluation_persistence_service.h"
+#include "classmngr/engine/speaking_evaluation_report_model.h"
 #include "classmngr/engine/speaking_evaluation_validator.h"
 #include "classmngr/engine/teacher_service.h"
 #include "classmngr/engine/testing_block_service.h"
@@ -376,6 +378,87 @@ std::wstring asWString(winrt::hstring const& value)
 std::wstring asWide(std::string_view value)
 {
     return asWString(winrt::to_hstring(std::string(value)));
+}
+
+struct SpeakingAiPrivateNotes
+{
+    std::string didWell;
+    std::string needsImprovement;
+};
+
+std::string normalizeSpeakingAiLineEndings(std::string value)
+{
+    for (std::size_t index = 0; index < value.size(); ++index)
+    {
+        if (value[index] != '\r')
+        {
+            continue;
+        }
+        value[index] = '\n';
+        if (index + 1 < value.size() && value[index + 1] == '\n')
+        {
+            value.erase(index + 1, 1);
+        }
+    }
+    return value;
+}
+
+SpeakingAiPrivateNotes splitSpeakingAiPrivateNotes(std::string notes)
+{
+    notes = normalizeSpeakingAiLineEndings(std::move(notes));
+    constexpr std::string_view didWellMarker = "[Did Well]\n";
+    constexpr std::string_view needsImprovementMarker =
+        "\n[Needs Improvement]\n";
+    if (!notes.starts_with(didWellMarker))
+    {
+        return {std::move(notes), {}};
+    }
+
+    const std::size_t separator = notes.find(
+        needsImprovementMarker,
+        didWellMarker.size()
+        );
+    if (separator == std::string::npos)
+    {
+        return {
+            notes.substr(didWellMarker.size()),
+            {}
+        };
+    }
+    return {
+        notes.substr(
+            didWellMarker.size(),
+            separator - didWellMarker.size()
+            ),
+        notes.substr(separator + needsImprovementMarker.size())
+    };
+}
+
+void replaceSpeakingAiPlaceholder(
+    std::wstring& value,
+    std::wstring_view replacement
+    )
+{
+    constexpr std::wstring_view placeholder = L"STD_NAME";
+    std::size_t position = 0;
+    while ((position = value.find(placeholder, position))
+           != std::wstring::npos)
+    {
+        value.replace(position, placeholder.size(), replacement);
+        position += replacement.size();
+    }
+}
+
+std::string speakingAiStudentId(std::size_t row)
+{
+    std::string result = "STUDENT_";
+    const std::size_t number = row + 1;
+    if (number < 10)
+    {
+        result.push_back('0');
+    }
+    result += std::to_string(number);
+    return result;
 }
 
 using JsonArray = winrt::Windows::Data::Json::JsonArray;
@@ -2727,6 +2810,92 @@ bool MainWindow::runPhase6SpeakingEvaluationChecks()
     if (!discardReady)
     {
         return fail(32768);
+    }
+
+    m_speakingEvaluationCellBoxes[0][9].Text({});
+    m_speakingEvaluationCellBoxes[1][9].Text({});
+    m_speakingEvaluationCellBoxes[0][10].Text(
+        L"[Did Well]\nClear pronunciation\n[Needs Improvement]\nUse longer answers"
+        );
+    m_speakingEvaluationCellBoxes[1][10].Text(
+        L"[Did Well]\nStrong vocabulary\n[Needs Improvement]\nAdd supporting details"
+        );
+    m_speakingEvaluationList.SelectedIndex(0);
+    generateSpeakingAiPrompt();
+    const bool aiStudentPromptReady =
+        m_speakingAiPromptTextBox
+        && contains(m_speakingAiPromptTextBox.Text(), L"STD_NAME")
+        && contains(m_speakingAiPromptTextBox.Text(), L"Clear pronunciation")
+        && m_speakingAiApplyStudentButton
+        && !m_speakingAiApplyStudentButton.IsEnabled()
+        && m_speakingAiResponseTextBox.Text().empty();
+    if (!aiStudentPromptReady)
+    {
+        return fail(524288);
+    }
+
+    m_speakingAiResponseTextBox.Text(L"Great work, STD_NAME!");
+    applySpeakingAiStudentComment();
+    const bool aiStudentApplied =
+        m_speakingEvaluationCellBoxes[0][9].Text()
+            == L"Great work, Alice!"
+        && !contains(
+            m_speakingEvaluationCellBoxes[0][9].Text(),
+            L"STD_NAME"
+            );
+    if (!aiStudentApplied)
+    {
+        return fail(1048576);
+    }
+
+    m_speakingEvaluationCellBoxes[0][9].Text({});
+    generateSpeakingAiBatchPrompt();
+    const std::string batchPrompt = asUtf8(m_speakingAiPromptTextBox.Text());
+    const bool aiBatchPromptReady =
+        m_speakingAiBatchRows.size() == 2
+        && batchPrompt.find("STUDENT_01") != std::string::npos
+        && batchPrompt.find("STUDENT_02") != std::string::npos
+        && batchPrompt.find("Alice") == std::string::npos
+        && batchPrompt.find("Bob") == std::string::npos;
+    if (!aiBatchPromptReady)
+    {
+        return fail(2097152);
+    }
+
+    m_speakingAiResponseTextBox.Text(
+        L"<<<STUDENT_01>>>\nAlice spoke clearly and used strong vocabulary.\n"
+        L"<<<END_STUDENT_01>>>\n"
+        L"<<<STUDENT_02>>>\nBob shared thoughtful ideas and can add more detail.\n"
+        L"<<<END_STUDENT_02>>>"
+        );
+    parseSpeakingAiBatchResponse();
+    if (m_speakingAiParsedComments.size() != 2)
+    {
+        return fail(4194304);
+    }
+    applySpeakingAiBatchComments();
+    const bool aiBatchApplied =
+        m_speakingEvaluationCellBoxes[0][9].Text()
+            == L"Alice spoke clearly and used strong vocabulary."
+        && m_speakingEvaluationCellBoxes[1][9].Text()
+            == L"Bob shared thoughtful ideas and can add more detail."
+        && m_speakingEvaluationDirty;
+    if (!aiBatchApplied)
+    {
+        return fail(8388608);
+    }
+    saveSpeakingEvaluation();
+    const auto aiSaved = evaluationService.load(*classId, "Winter");
+    const bool aiPersistenceReady =
+        aiSaved
+        && !m_speakingEvaluationDirty
+        && aiSaved->at(0).at(9)
+            == "Alice spoke clearly and used strong vocabulary."
+        && aiSaved->at(1).at(9)
+            == "Bob shared thoughtful ideas and can add more detail.";
+    if (!aiPersistenceReady)
+    {
+        return fail(16777216);
     }
 
     m_openDatabase.reset();
@@ -10718,6 +10887,11 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationList,
         L"Speaking evaluation grid"
         );
+    m_speakingEvaluationList.SelectionChanged(
+        [this](auto const&, auto const&) {
+            refreshSpeakingAiSelection();
+        }
+        );
     speakingCard.content.Children().Append(m_speakingEvaluationList);
 
     m_speakingEvaluationPasteTextBox = TextBox();
@@ -10749,7 +10923,253 @@ void MainWindow::populateClassesPage(
         L"Apply speaking evaluation score range"
         );
     speakingCard.content.Children().Append(m_speakingEvaluationPasteButton);
+
+    auto aiCard = ClassMngrWinUISharedUX::buildCard({
+        L"AI comments",
+        L"Build privacy-preserving prompts from the selected student's private observations, then paste and review the provider response before applying it.",
+        L"Speaking AI comment workflow"
+        });
+    m_speakingAiStatusText = TextBlock();
+    m_speakingAiStatusText.Text(
+        L"Select a speaking-evaluation row to prepare an AI comment."
+        );
+    m_speakingAiStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_speakingAiStatusText, L"Speaking AI comment status");
+    aiCard.content.Children().Append(m_speakingAiStatusText);
+
+    m_speakingAiVoiceSelector = ComboBox();
+    m_speakingAiVoiceSelector.Header(
+        box_value(hstring(L"Comment voice"))
+        );
+    m_speakingAiVoiceSelector.MinWidth(320.0);
+    m_speakingAiVoiceSelector.IsTabStop(true);
+    m_speakingAiVoiceSelector.TabIndex(7);
+    const auto appendAiVoice = [this](std::wstring_view label, int tag) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(label)));
+        item.Tag(box_value(tag));
+        setAutomationName(item, L"AI voice " + std::wstring(label));
+        m_speakingAiVoiceSelector.Items().Append(item);
+    };
+    appendAiVoice(L"Direct to Student", 0);
+    appendAiVoice(L"Third Person", 1);
+    m_speakingAiVoiceSelector.SelectedIndex(0);
+    setAutomationName(m_speakingAiVoiceSelector, L"Speaking AI comment voice");
+    aiCard.content.Children().Append(m_speakingAiVoiceSelector);
+
+    const auto configureAiEditor = [](
+        TextBox& editor,
+        std::wstring_view header,
+        std::wstring_view placeholder,
+        double height,
+        int tabIndex
+        ) {
+        editor.Header(box_value(hstring(header)));
+        editor.PlaceholderText(hstring(placeholder));
+        editor.AcceptsReturn(true);
+        editor.TextWrapping(TextWrapping::Wrap);
+        editor.Height(height);
+        editor.IsTabStop(true);
+        editor.TabIndex(tabIndex);
+    };
+    m_speakingAiDidWellTextBox = TextBox();
+    configureAiEditor(
+        m_speakingAiDidWellTextBox,
+        L"Did Well observations",
+        L"Clear pronunciation\nUses complete sentences",
+        84.0,
+        8
+        );
+    setAutomationName(
+        m_speakingAiDidWellTextBox,
+        L"Speaking AI Did Well observations"
+        );
+    aiCard.content.Children().Append(m_speakingAiDidWellTextBox);
+
+    m_speakingAiNeedsImprovementTextBox = TextBox();
+    configureAiEditor(
+        m_speakingAiNeedsImprovementTextBox,
+        L"Needs Improvement observations",
+        L"Add supporting details\nPractice fluency",
+        84.0,
+        9
+        );
+    setAutomationName(
+        m_speakingAiNeedsImprovementTextBox,
+        L"Speaking AI Needs Improvement observations"
+        );
+    aiCard.content.Children().Append(m_speakingAiNeedsImprovementTextBox);
+
+    auto aiStudentActions = StackPanel();
+    aiStudentActions.Orientation(Orientation::Horizontal);
+    aiStudentActions.Spacing(8.0);
+
+    m_speakingAiGenerateButton = Button();
+    m_speakingAiGenerateButton.Content(
+        box_value(hstring(L"Generate Student Prompt"))
+        );
+    m_speakingAiGenerateButton.IsTabStop(true);
+    m_speakingAiGenerateButton.TabIndex(10);
+    m_speakingAiGenerateButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingAiGenerateButton.Click(
+        [this](auto const&, auto const&) { generateSpeakingAiPrompt(); }
+        );
+    setAutomationName(
+        m_speakingAiGenerateButton,
+        L"Generate speaking AI student prompt"
+        );
+    aiStudentActions.Children().Append(m_speakingAiGenerateButton);
+
+    m_speakingAiGenerateBatchButton = Button();
+    m_speakingAiGenerateBatchButton.Content(
+        box_value(hstring(L"Generate Batch Prompt"))
+        );
+    m_speakingAiGenerateBatchButton.IsTabStop(true);
+    m_speakingAiGenerateBatchButton.TabIndex(11);
+    m_speakingAiGenerateBatchButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingAiGenerateBatchButton.Click(
+        [this](auto const&, auto const&) {
+            generateSpeakingAiBatchPrompt();
+        }
+        );
+    setAutomationName(
+        m_speakingAiGenerateBatchButton,
+        L"Generate speaking AI batch prompt"
+        );
+    aiStudentActions.Children().Append(m_speakingAiGenerateBatchButton);
+    aiCard.content.Children().Append(aiStudentActions);
+
+    m_speakingAiPromptTextBox = TextBox();
+    configureAiEditor(
+        m_speakingAiPromptTextBox,
+        L"Prompt (copy to the selected AI provider)",
+        L"The generated prompt will appear here.",
+        190.0,
+        12
+        );
+    m_speakingAiPromptTextBox.IsReadOnly(true);
+    setAutomationName(m_speakingAiPromptTextBox, L"Speaking AI prompt");
+    aiCard.content.Children().Append(m_speakingAiPromptTextBox);
+
+    auto aiPromptActions = StackPanel();
+    aiPromptActions.Orientation(Orientation::Horizontal);
+    aiPromptActions.Spacing(8.0);
+
+    m_speakingAiCopyButton = Button();
+    m_speakingAiCopyButton.Content(box_value(hstring(L"Copy Prompt")));
+    m_speakingAiCopyButton.IsTabStop(true);
+    m_speakingAiCopyButton.TabIndex(13);
+    m_speakingAiCopyButton.HorizontalAlignment(HorizontalAlignment::Left);
+    m_speakingAiCopyButton.Click(
+        [this](auto const&, auto const&) { copySpeakingAiPrompt(false); }
+        );
+    setAutomationName(m_speakingAiCopyButton, L"Copy speaking AI prompt");
+    aiPromptActions.Children().Append(m_speakingAiCopyButton);
+
+    m_speakingAiCopyOpenButton = Button();
+    m_speakingAiCopyOpenButton.Content(
+        box_value(hstring(L"Copy and Open ChatGPT"))
+        );
+    m_speakingAiCopyOpenButton.IsTabStop(true);
+    m_speakingAiCopyOpenButton.TabIndex(14);
+    m_speakingAiCopyOpenButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingAiCopyOpenButton.Click(
+        [this](auto const&, auto const&) { copySpeakingAiPrompt(true); }
+        );
+    setAutomationName(
+        m_speakingAiCopyOpenButton,
+        L"Copy speaking AI prompt and open ChatGPT"
+        );
+    aiPromptActions.Children().Append(m_speakingAiCopyOpenButton);
+    aiCard.content.Children().Append(aiPromptActions);
+
+    m_speakingAiResponseTextBox = TextBox();
+    configureAiEditor(
+        m_speakingAiResponseTextBox,
+        L"Provider response (paste here)",
+        L"Paste the completed student comment or marked batch response.",
+        150.0,
+        15
+        );
+    m_speakingAiResponseTextBox.TextChanging(
+        [this](auto const&, auto const&) { updateSpeakingAiActions(); }
+        );
+    setAutomationName(m_speakingAiResponseTextBox, L"Speaking AI response");
+    aiCard.content.Children().Append(m_speakingAiResponseTextBox);
+
+    auto aiResponseActions = StackPanel();
+    aiResponseActions.Orientation(Orientation::Horizontal);
+    aiResponseActions.Spacing(8.0);
+
+    m_speakingAiApplyStudentButton = Button();
+    m_speakingAiApplyStudentButton.Content(
+        box_value(hstring(L"Apply Student Comment"))
+        );
+    m_speakingAiApplyStudentButton.IsTabStop(true);
+    m_speakingAiApplyStudentButton.TabIndex(16);
+    m_speakingAiApplyStudentButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingAiApplyStudentButton.Click(
+        [this](auto const&, auto const&) {
+            applySpeakingAiStudentComment();
+        }
+        );
+    setAutomationName(
+        m_speakingAiApplyStudentButton,
+        L"Apply speaking AI student comment"
+        );
+    aiResponseActions.Children().Append(m_speakingAiApplyStudentButton);
+
+    m_speakingAiParseBatchButton = Button();
+    m_speakingAiParseBatchButton.Content(
+        box_value(hstring(L"Parse Batch Response"))
+        );
+    m_speakingAiParseBatchButton.IsTabStop(true);
+    m_speakingAiParseBatchButton.TabIndex(17);
+    m_speakingAiParseBatchButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingAiParseBatchButton.Click(
+        [this](auto const&, auto const&) {
+            parseSpeakingAiBatchResponse();
+        }
+        );
+    setAutomationName(
+        m_speakingAiParseBatchButton,
+        L"Parse speaking AI batch response"
+        );
+    aiResponseActions.Children().Append(m_speakingAiParseBatchButton);
+
+    m_speakingAiApplyBatchButton = Button();
+    m_speakingAiApplyBatchButton.Content(
+        box_value(hstring(L"Apply Parsed Batch Comments"))
+        );
+    m_speakingAiApplyBatchButton.IsTabStop(true);
+    m_speakingAiApplyBatchButton.TabIndex(18);
+    m_speakingAiApplyBatchButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingAiApplyBatchButton.Click(
+        [this](auto const&, auto const&) {
+            applySpeakingAiBatchComments();
+        }
+        );
+    setAutomationName(
+        m_speakingAiApplyBatchButton,
+        L"Apply speaking AI batch comments"
+        );
+    aiResponseActions.Children().Append(m_speakingAiApplyBatchButton);
+    aiCard.content.Children().Append(aiResponseActions);
+
     speakingRoot.Children().Append(speakingCard.root);
+    speakingRoot.Children().Append(aiCard.root);
 
     auto analyticsRoot = makeRoot(StackPanel());
     auto analyticsTitle = TextBlock();
@@ -11757,6 +12177,25 @@ void MainWindow::refreshSpeakingEvaluation()
         m_speakingEvaluationRows = emptyRows();
         m_speakingEvaluationDirtyCells.clear();
         m_speakingEvaluationDirty = false;
+        m_speakingAiStudentRow = -1;
+        m_speakingAiBatchRows.clear();
+        m_speakingAiParsedComments.clear();
+        if (m_speakingAiDidWellTextBox)
+        {
+            m_speakingAiDidWellTextBox.Text({});
+        }
+        if (m_speakingAiNeedsImprovementTextBox)
+        {
+            m_speakingAiNeedsImprovementTextBox.Text({});
+        }
+        if (m_speakingAiPromptTextBox)
+        {
+            m_speakingAiPromptTextBox.Text({});
+        }
+        if (m_speakingAiResponseTextBox)
+        {
+            m_speakingAiResponseTextBox.Text({});
+        }
         m_speakingEvaluationLoading = true;
         rebuildSpeakingEvaluationGrid();
         m_speakingEvaluationLoading = false;
@@ -11801,6 +12240,25 @@ void MainWindow::refreshSpeakingEvaluation()
     if (!loaded)
     {
         m_speakingEvaluationRows = emptyRows();
+        m_speakingAiStudentRow = -1;
+        m_speakingAiBatchRows.clear();
+        m_speakingAiParsedComments.clear();
+        if (m_speakingAiDidWellTextBox)
+        {
+            m_speakingAiDidWellTextBox.Text({});
+        }
+        if (m_speakingAiNeedsImprovementTextBox)
+        {
+            m_speakingAiNeedsImprovementTextBox.Text({});
+        }
+        if (m_speakingAiPromptTextBox)
+        {
+            m_speakingAiPromptTextBox.Text({});
+        }
+        if (m_speakingAiResponseTextBox)
+        {
+            m_speakingAiResponseTextBox.Text({});
+        }
         rebuildSpeakingEvaluationGrid();
         m_speakingEvaluationLoading = false;
         m_speakingEvaluationDirty = false;
@@ -11833,6 +12291,9 @@ void MainWindow::refreshSpeakingEvaluation()
     }
     m_speakingEvaluationDirtyCells.clear();
     m_speakingEvaluationDirty = false;
+    m_speakingAiStudentRow = -1;
+    m_speakingAiBatchRows.clear();
+    m_speakingAiParsedComments.clear();
     if (m_speakingEvaluationName.empty())
     {
         m_speakingEvaluationName = "Winter";
@@ -11864,6 +12325,7 @@ void MainWindow::refreshSpeakingEvaluation()
         m_dirtyState.markClean();
     }
     updateSpeakingEvaluationActions();
+    refreshSpeakingAiSelection();
 }
 
 void MainWindow::rebuildSpeakingEvaluationGrid()
@@ -12054,6 +12516,642 @@ void MainWindow::updateSpeakingEvaluationActions()
     if (m_speakingEvaluationDiscardButton)
     {
         m_speakingEvaluationDiscardButton.IsEnabled(hasClass && m_speakingEvaluationDirty);
+    }
+    updateSpeakingAiActions();
+}
+
+void MainWindow::refreshSpeakingAiSelection()
+{
+    if (!m_speakingEvaluationList
+        || !m_speakingAiDidWellTextBox
+        || !m_speakingAiNeedsImprovementTextBox
+        || !m_speakingAiPromptTextBox
+        || !m_speakingAiResponseTextBox
+        || !m_speakingAiStatusText)
+    {
+        return;
+    }
+    if (m_speakingEvaluationLoading)
+    {
+        return;
+    }
+
+    const int selectedIndex = m_speakingEvaluationList.SelectedIndex();
+    if (selectedIndex < 0
+        || selectedIndex >= static_cast<int>(m_speakingEvaluationCellBoxes.size())
+        || m_speakingEvaluationCellBoxes[static_cast<std::size_t>(selectedIndex)]
+            .size() <= static_cast<std::size_t>(
+                classmngr::engine::toInt(
+                    classmngr::engine::SpeakingEvaluationColumn::Notes
+                    )
+                ))
+    {
+        m_speakingAiStudentRow = -1;
+        m_speakingAiDidWellTextBox.Text({});
+        m_speakingAiNeedsImprovementTextBox.Text({});
+        m_speakingAiPromptTextBox.Text({});
+        m_speakingAiResponseTextBox.Text({});
+        m_speakingAiBatchRows.clear();
+        m_speakingAiParsedComments.clear();
+        m_speakingAiStatusText.Text(
+            L"Select a speaking-evaluation row to prepare an AI comment."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    const auto& cells = m_speakingEvaluationCellBoxes[
+        static_cast<std::size_t>(selectedIndex)
+        ];
+    const auto notes = splitSpeakingAiPrivateNotes(asUtf8(
+        cells[static_cast<std::size_t>(
+            classmngr::engine::toInt(
+                classmngr::engine::SpeakingEvaluationColumn::Notes
+                )
+            )].Text()
+        ));
+    m_speakingAiStudentRow = selectedIndex;
+    m_speakingAiDidWellTextBox.Text(asWide(notes.didWell));
+    m_speakingAiNeedsImprovementTextBox.Text(asWide(notes.needsImprovement));
+    m_speakingAiPromptTextBox.Text({});
+    m_speakingAiResponseTextBox.Text({});
+    m_speakingAiBatchRows.clear();
+    m_speakingAiParsedComments.clear();
+    m_speakingAiStatusText.Text(
+        L"Private observations loaded for the selected student."
+        );
+    updateSpeakingAiActions();
+}
+
+void MainWindow::generateSpeakingAiPrompt()
+{
+    if (!m_speakingAiStatusText
+        || !m_speakingAiPromptTextBox
+        || !m_speakingAiResponseTextBox
+        || !m_speakingEvaluationList
+        || !m_speakingAiDidWellTextBox
+        || !m_speakingAiNeedsImprovementTextBox)
+    {
+        return;
+    }
+
+    const int selectedIndex = m_speakingEvaluationList.SelectedIndex();
+    if (selectedIndex < 0
+        || selectedIndex >= static_cast<int>(m_speakingEvaluationCellBoxes.size()))
+    {
+        m_speakingAiStatusText.Text(
+            L"Select a named speaking-evaluation row before generating a prompt."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    const auto& cells = m_speakingEvaluationCellBoxes[
+        static_cast<std::size_t>(selectedIndex)
+        ];
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    if (cells.size() <= static_cast<std::size_t>(koreanColumn))
+    {
+        return;
+    }
+    const std::wstring englishName = cells[static_cast<std::size_t>(
+        englishColumn
+        )].Text().c_str();
+    const std::wstring koreanName = cells[static_cast<std::size_t>(
+        koreanColumn
+        )].Text().c_str();
+    if (englishName.empty() && koreanName.empty())
+    {
+        m_speakingAiStatusText.Text(
+            L"The selected speaking-evaluation row does not have a student name."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    classmngr::engine::SpeakingEvaluationAiPromptInput input;
+    input.grade = classmngr::engine::SpeakingEvaluationReportModel::elementaryGrade(
+        m_classInfo.classGrade
+        );
+    input.englishName = asUtf8(englishName);
+    input.koreanName = asUtf8(koreanName);
+    input.didWell = asUtf8(m_speakingAiDidWellTextBox.Text());
+    input.needsImprovement = asUtf8(m_speakingAiNeedsImprovementTextBox.Text());
+    input.voice = m_speakingAiVoiceSelector
+        && m_speakingAiVoiceSelector.SelectedIndex() == 1
+        ? classmngr::engine::SpeakingEvaluationAiVoice::ThirdPerson
+        : classmngr::engine::SpeakingEvaluationAiVoice::DirectToStudent;
+
+    if (!classmngr::engine::SpeakingEvaluationAiPromptService::canBuildPrompt(input))
+    {
+        m_speakingAiPromptTextBox.Text({});
+        m_speakingAiResponseTextBox.Text({});
+        m_speakingAiStatusText.Text(
+            L"AI comments require an E4-E6 class and at least one observation in both sections."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    const std::string prompt =
+        classmngr::engine::SpeakingEvaluationAiPromptService::buildCommentPrompt(
+            input
+            );
+    m_speakingAiStudentRow = selectedIndex;
+    m_speakingAiBatchRows.clear();
+    m_speakingAiParsedComments.clear();
+    m_speakingAiPromptTextBox.Text(asWide(prompt));
+    m_speakingAiResponseTextBox.Text({});
+    m_speakingAiStatusText.Text(
+        L"Student prompt generated with the STD_NAME privacy placeholder."
+        );
+    updateSpeakingAiActions();
+}
+
+void MainWindow::copySpeakingAiPrompt(bool openProvider)
+{
+    if (!m_speakingAiPromptTextBox || !m_speakingAiStatusText)
+    {
+        return;
+    }
+    const std::string prompt = asUtf8(m_speakingAiPromptTextBox.Text());
+    if (prompt.empty())
+    {
+        m_speakingAiStatusText.Text(
+            L"Generate an AI prompt before copying it."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    const auto copied = classmngr::windows::winui::WindowsClipboard::writeText(
+        prompt
+        );
+    if (!copied)
+    {
+        m_speakingAiStatusText.Text(winrt::hstring(
+            L"The AI prompt could not be copied: "
+                + asWide(copied.error().message)
+            ));
+        return;
+    }
+
+    if (!openProvider)
+    {
+        m_speakingAiStatusText.Text(L"AI prompt copied to the clipboard.");
+        return;
+    }
+
+    const auto opened = classmngr::windows::winui::WindowsUrlLauncher::openUrl(
+        "https://chatgpt.com/"
+        );
+    m_speakingAiStatusText.Text(
+        opened
+            ? L"AI prompt copied; ChatGPT was opened for review."
+            : winrt::hstring(
+                L"AI prompt copied, but ChatGPT could not be opened: "
+                    + asWide(opened.error().message)
+                )
+        );
+}
+
+void MainWindow::generateSpeakingAiBatchPrompt()
+{
+    if (!m_speakingAiPromptTextBox
+        || !m_speakingAiResponseTextBox
+        || !m_speakingAiStatusText
+        || !m_speakingEvaluationCellBoxes.size())
+    {
+        return;
+    }
+
+    classmngr::engine::SpeakingEvaluationAiBatchPromptInput input;
+    input.voice = m_speakingAiVoiceSelector
+        && m_speakingAiVoiceSelector.SelectedIndex() == 1
+        ? classmngr::engine::SpeakingEvaluationAiVoice::ThirdPerson
+        : classmngr::engine::SpeakingEvaluationAiVoice::DirectToStudent;
+    const int grade = classmngr::engine::SpeakingEvaluationReportModel::elementaryGrade(
+        m_classInfo.classGrade
+        );
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    const int commentsColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Comments
+        );
+    const int notesColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Notes
+        );
+
+    for (const auto& cells : m_speakingEvaluationCellBoxes)
+    {
+        if (cells.size() <= static_cast<std::size_t>(koreanColumn))
+        {
+            continue;
+        }
+        const std::string englishName = asUtf8(
+            cells[static_cast<std::size_t>(englishColumn)].Text()
+            );
+        const std::string koreanName = asUtf8(
+            cells[static_cast<std::size_t>(koreanColumn)].Text()
+            );
+        if (!englishName.empty())
+        {
+            input.additionalNamesToRedact.push_back(englishName);
+        }
+        if (!koreanName.empty())
+        {
+            input.additionalNamesToRedact.push_back(koreanName);
+        }
+    }
+
+    m_speakingAiBatchRows.clear();
+    for (std::size_t rowIndex = 0;
+         rowIndex < m_speakingEvaluationCellBoxes.size();
+         ++rowIndex)
+    {
+        const auto& cells = m_speakingEvaluationCellBoxes[rowIndex];
+        if (cells.size() <= static_cast<std::size_t>(notesColumn))
+        {
+            continue;
+        }
+        const std::string englishName = asUtf8(
+            cells[static_cast<std::size_t>(englishColumn)].Text()
+            );
+        const std::string koreanName = asUtf8(
+            cells[static_cast<std::size_t>(koreanColumn)].Text()
+            );
+        const std::string existingComment = asUtf8(
+            cells[static_cast<std::size_t>(commentsColumn)].Text()
+            );
+        const auto notes = splitSpeakingAiPrivateNotes(asUtf8(
+            cells[static_cast<std::size_t>(notesColumn)].Text()
+            ));
+        if ((englishName.empty() && koreanName.empty())
+            || !existingComment.empty()
+            || grade < 4
+            || grade > 6
+            || classmngr::engine::SpeakingEvaluationAiPromptService::observationItems(
+                notes.didWell
+                ).empty()
+            || classmngr::engine::SpeakingEvaluationAiPromptService::observationItems(
+                notes.needsImprovement
+                ).empty())
+        {
+            continue;
+        }
+
+        input.students.push_back({
+            speakingAiStudentId(rowIndex),
+            grade,
+            englishName,
+            koreanName,
+            notes.didWell,
+            notes.needsImprovement
+            });
+        m_speakingAiBatchRows.push_back(static_cast<int>(rowIndex));
+    }
+
+    if (input.students.empty())
+    {
+        m_speakingAiPromptTextBox.Text({});
+        m_speakingAiResponseTextBox.Text({});
+        m_speakingAiParsedComments.clear();
+        m_speakingAiStatusText.Text(
+            L"No eligible students. Each batch row needs a name, an E4-E6 class, both private observation sections, and no existing comment."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    const std::string prompt =
+        classmngr::engine::SpeakingEvaluationAiPromptService::buildBatchCommentPrompt(
+            input
+            );
+    if (prompt.empty())
+    {
+        m_speakingAiBatchRows.clear();
+        m_speakingAiStatusText.Text(
+            L"The engine could not build the batch AI prompt from the selected rows."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    m_speakingAiStudentRow = -1;
+    m_speakingAiParsedComments.clear();
+    m_speakingAiPromptTextBox.Text(asWide(prompt));
+    m_speakingAiResponseTextBox.Text({});
+    m_speakingAiStatusText.Text(winrt::hstring(
+        L"Batch prompt generated for "
+            + std::to_wstring(input.students.size())
+            + L" students; names are redacted in the prompt."
+        ));
+    updateSpeakingAiActions();
+}
+
+void MainWindow::parseSpeakingAiBatchResponse()
+{
+    if (!m_speakingAiStatusText || !m_speakingAiResponseTextBox)
+    {
+        return;
+    }
+    if (m_speakingAiBatchRows.empty())
+    {
+        m_speakingAiStatusText.Text(
+            L"Generate a batch prompt before parsing a batch response."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    const std::string response = asUtf8(m_speakingAiResponseTextBox.Text());
+    if (response.empty())
+    {
+        m_speakingAiStatusText.Text(
+            L"Paste the marked batch response before parsing it."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    std::vector<std::string> expectedIds;
+    expectedIds.reserve(m_speakingAiBatchRows.size());
+    for (const int row : m_speakingAiBatchRows)
+    {
+        if (row >= 0)
+        {
+            expectedIds.push_back(speakingAiStudentId(
+                static_cast<std::size_t>(row)
+                ));
+        }
+    }
+    const auto parsed =
+        classmngr::engine::SpeakingEvaluationAiPromptService::parseBatchResponse(
+            response,
+            expectedIds
+            );
+    m_speakingAiParsedComments = parsed.comments;
+
+    std::wstring status = L"Parsed "
+        + std::to_wstring(parsed.comments.size())
+        + L" of " + std::to_wstring(expectedIds.size())
+        + L" batch comments.";
+    if (!parsed.duplicateIds.empty())
+    {
+        status += L" Duplicate blocks: "
+            + std::to_wstring(parsed.duplicateIds.size()) + L".";
+    }
+    if (!parsed.malformedIds.empty())
+    {
+        status += L" Malformed blocks: "
+            + std::to_wstring(parsed.malformedIds.size()) + L".";
+    }
+    if (!parsed.unknownIds.empty())
+    {
+        status += L" Unknown IDs ignored: "
+            + std::to_wstring(parsed.unknownIds.size()) + L".";
+    }
+    m_speakingAiStatusText.Text(hstring(status));
+    updateSpeakingAiActions();
+}
+
+void MainWindow::applySpeakingAiStudentComment()
+{
+    if (!m_speakingAiStatusText || !m_speakingAiResponseTextBox)
+    {
+        return;
+    }
+    if (m_speakingAiStudentRow < 0
+        || m_speakingAiStudentRow >= static_cast<int>(m_speakingEvaluationCellBoxes.size()))
+    {
+        m_speakingAiStatusText.Text(
+            L"Generate a student prompt and keep that row selected before applying a comment."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    std::wstring comment = asWString(m_speakingAiResponseTextBox.Text());
+    if (comment.empty())
+    {
+        m_speakingAiStatusText.Text(
+            L"Paste a completed student comment before applying it."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+    const auto& cells = m_speakingEvaluationCellBoxes[
+        static_cast<std::size_t>(m_speakingAiStudentRow)
+        ];
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    const int commentsColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Comments
+        );
+    if (cells.size() <= static_cast<std::size_t>(commentsColumn))
+    {
+        return;
+    }
+    const std::wstring englishName = cells[static_cast<std::size_t>(
+        englishColumn
+        )].Text().c_str();
+    const std::wstring koreanName = cells[static_cast<std::size_t>(
+        koreanColumn
+        )].Text().c_str();
+    const std::wstring preferredName = englishName.empty()
+        ? koreanName
+        : englishName;
+    replaceSpeakingAiPlaceholder(comment, preferredName);
+    if (comment.size() > static_cast<std::size_t>(
+            classmngr::engine::SpeakingEvaluationCommentMaxLength
+            ))
+    {
+        m_speakingAiStatusText.Text(
+            L"The student comment is longer than the 450-character limit."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+    m_speakingEvaluationCellBoxes[
+        static_cast<std::size_t>(m_speakingAiStudentRow)
+        ][static_cast<std::size_t>(commentsColumn)].Text(hstring(comment));
+    m_speakingAiStatusText.Text(
+        preferredName.empty()
+            ? L"Student comment applied without a name placeholder. Save the evaluation to persist it."
+            : L"Student comment applied. Save the evaluation to persist it."
+        );
+    updateSpeakingAiActions();
+}
+
+void MainWindow::applySpeakingAiBatchComments()
+{
+    if (!m_speakingAiStatusText)
+    {
+        return;
+    }
+    if (m_speakingAiBatchRows.empty() || m_speakingAiParsedComments.empty())
+    {
+        m_speakingAiStatusText.Text(
+            L"Generate and parse a batch response before applying comments."
+            );
+        updateSpeakingAiActions();
+        return;
+    }
+
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    const int commentsColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Comments
+        );
+    std::size_t applied = 0;
+    std::size_t skipped = 0;
+    for (const auto& parsed : m_speakingAiParsedComments)
+    {
+        const auto rowIt = std::find_if(
+            m_speakingAiBatchRows.begin(),
+            m_speakingAiBatchRows.end(),
+            [&parsed](int row) {
+                return speakingAiStudentId(static_cast<std::size_t>(row))
+                    == parsed.id;
+            }
+            );
+        if (rowIt == m_speakingAiBatchRows.end())
+        {
+            ++skipped;
+            continue;
+        }
+        const int row = *rowIt;
+        if (row < 0
+            || row >= static_cast<int>(m_speakingEvaluationCellBoxes.size()))
+        {
+            ++skipped;
+            continue;
+        }
+        const auto& cells = m_speakingEvaluationCellBoxes[
+            static_cast<std::size_t>(row)
+            ];
+        if (cells.size() <= static_cast<std::size_t>(commentsColumn))
+        {
+            ++skipped;
+            continue;
+        }
+        std::wstring comment = asWide(parsed.comment);
+        const std::wstring englishName = cells[static_cast<std::size_t>(
+            englishColumn
+            )].Text().c_str();
+        const std::wstring koreanName = cells[static_cast<std::size_t>(
+            koreanColumn
+            )].Text().c_str();
+        replaceSpeakingAiPlaceholder(
+            comment,
+            englishName.empty() ? koreanName : englishName
+            );
+        if (comment.empty()
+            || comment.size() > static_cast<std::size_t>(
+                classmngr::engine::SpeakingEvaluationCommentMaxLength
+                ))
+        {
+            ++skipped;
+            continue;
+        }
+        cells[static_cast<std::size_t>(commentsColumn)].Text(hstring(comment));
+        ++applied;
+    }
+
+    m_speakingAiStatusText.Text(winrt::hstring(
+        L"Applied " + std::to_wstring(applied)
+            + L" parsed batch comments"
+            + (skipped == 0
+                ? L". Save the evaluation to persist them."
+                : L"; " + std::to_wstring(skipped)
+                    + L" were skipped as invalid. Save the rest to persist them.")
+        ));
+    updateSpeakingAiActions();
+}
+
+void MainWindow::updateSpeakingAiActions()
+{
+    if (!m_speakingAiStatusText)
+    {
+        return;
+    }
+    const bool hasClass = static_cast<bool>(m_openDatabase)
+        && m_classSelectedId > 0
+        && !m_classNew;
+    const bool hasPrompt = m_speakingAiPromptTextBox
+        && !m_speakingAiPromptTextBox.Text().empty();
+    const bool hasResponse = m_speakingAiResponseTextBox
+        && !m_speakingAiResponseTextBox.Text().empty();
+    if (m_speakingAiVoiceSelector)
+    {
+        m_speakingAiVoiceSelector.IsEnabled(hasClass);
+    }
+    if (m_speakingAiDidWellTextBox)
+    {
+        m_speakingAiDidWellTextBox.IsEnabled(hasClass);
+    }
+    if (m_speakingAiNeedsImprovementTextBox)
+    {
+        m_speakingAiNeedsImprovementTextBox.IsEnabled(hasClass);
+    }
+    if (m_speakingAiGenerateButton)
+    {
+        m_speakingAiGenerateButton.IsEnabled(hasClass);
+    }
+    if (m_speakingAiGenerateBatchButton)
+    {
+        m_speakingAiGenerateBatchButton.IsEnabled(hasClass);
+    }
+    if (m_speakingAiPromptTextBox)
+    {
+        m_speakingAiPromptTextBox.IsEnabled(hasClass);
+    }
+    if (m_speakingAiCopyButton)
+    {
+        m_speakingAiCopyButton.IsEnabled(hasClass && hasPrompt);
+    }
+    if (m_speakingAiCopyOpenButton)
+    {
+        m_speakingAiCopyOpenButton.IsEnabled(hasClass && hasPrompt);
+    }
+    if (m_speakingAiResponseTextBox)
+    {
+        m_speakingAiResponseTextBox.IsEnabled(hasClass);
+    }
+    if (m_speakingAiApplyStudentButton)
+    {
+        m_speakingAiApplyStudentButton.IsEnabled(
+            hasClass && m_speakingAiStudentRow >= 0 && hasResponse
+            );
+    }
+    if (m_speakingAiParseBatchButton)
+    {
+        m_speakingAiParseBatchButton.IsEnabled(
+            hasClass && !m_speakingAiBatchRows.empty() && hasResponse
+            );
+    }
+    if (m_speakingAiApplyBatchButton)
+    {
+        m_speakingAiApplyBatchButton.IsEnabled(
+            hasClass && !m_speakingAiParsedComments.empty()
+            );
     }
 }
 

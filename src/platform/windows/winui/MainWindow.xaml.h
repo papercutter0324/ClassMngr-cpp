@@ -12,6 +12,7 @@
 #include "classmngr/engine/class_schedule.h"
 #include "classmngr/engine/schedule_import.h"
 #include "classmngr/engine/speaking_analytics.h"
+#include "classmngr/engine/speaking_evaluation_ai_prompt.h"
 #include "classmngr/engine/speaking_evaluation.h"
 #include "classmngr/engine/gs_team_member.h"
 #include "classmngr/engine/native_english_teacher.h"
@@ -323,6 +324,14 @@ private:
     void discardSpeakingEvaluation();
     void importSpeakingEvaluationNames();
     void applySpeakingEvaluationPaste();
+    void refreshSpeakingAiSelection();
+    void generateSpeakingAiPrompt();
+    void copySpeakingAiPrompt(bool openProvider);
+    void generateSpeakingAiBatchPrompt();
+    void parseSpeakingAiBatchResponse();
+    void applySpeakingAiStudentComment();
+    void applySpeakingAiBatchComments();
+    void updateSpeakingAiActions();
     void refreshSpeakingAnalytics();
     void rebuildSpeakingAnalytics(
         classmngr::engine::SpeakingAnalyticsDashboard const& dashboard
@@ -816,6 +825,37 @@ private:
         m_speakingAnalyticsRankingList{nullptr};
     std::string m_speakingAnalyticsName;
     bool m_speakingAnalyticsLoading{};
+
+    Microsoft::UI::Xaml::Controls::ComboBox
+        m_speakingAiVoiceSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox
+        m_speakingAiDidWellTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox
+        m_speakingAiNeedsImprovementTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox
+        m_speakingAiPromptTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox
+        m_speakingAiResponseTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingAiStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingAiGenerateButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingAiCopyButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingAiCopyOpenButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingAiGenerateBatchButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingAiParseBatchButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingAiApplyStudentButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingAiApplyBatchButton{nullptr};
+    int m_speakingAiStudentRow{-1};
+    std::vector<int> m_speakingAiBatchRows;
+    std::vector<classmngr::engine::SpeakingEvaluationAiBatchComment>
+        m_speakingAiParsedComments;
 
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_classNameTextBox{nullptr};
