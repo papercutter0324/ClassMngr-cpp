@@ -2,6 +2,10 @@
 
 #include "MainWindow.xaml.h"
 #include "classmngr/engine/application_settings_service.h"
+#include "classmngr/engine/calendar_event_rules.h"
+#include "classmngr/engine/calendar_event_service.h"
+#include "classmngr/engine/calendar_event_validator.h"
+#include "classmngr/engine/academic_calendar.h"
 #include "classmngr/engine/campus_record_service.h"
 #include "classmngr/engine/class_info_config.h"
 #include "classmngr/engine/class_info_service.h"
@@ -27,6 +31,7 @@
 #include <winrt/Windows.Storage.Pickers.h>
 #include <winrt/Windows.Storage.Streams.h>
 
+#include <charconv>
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -38,6 +43,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -369,6 +375,283 @@ using CampusHousingView =
     winrt::ClassMngrWinUI::implementation::CampusHousingView;
 using CampusResourceView =
     winrt::ClassMngrWinUI::implementation::CampusResourceView;
+
+using EngineCalendarDate = classmngr::engine::CalendarDate;
+
+constexpr std::wstring_view calendarShowAllCampusesKey =
+    L"calendar/showEventsAtAllCampuses";
+constexpr std::wstring_view calendarFirstDayOfWeekKey =
+    L"calendar/firstDayOfWeek";
+constexpr std::wstring_view calendarHideStartOfTermKey =
+    L"calendar/hideStartOfTermEvents";
+constexpr int calendarFirstTermYear =
+    classmngr::engine::AcademicCalendarSchedule::FirstTermYear;
+
+bool calendarDateLess(
+    EngineCalendarDate const& left,
+    EngineCalendarDate const& right
+    ) noexcept
+{
+    return std::chrono::sys_days{left} < std::chrono::sys_days{right};
+}
+
+bool calendarDateEqual(
+    EngineCalendarDate const& left,
+    EngineCalendarDate const& right
+    ) noexcept
+{
+    return left.ok() && right.ok()
+        && std::chrono::sys_days{left} == std::chrono::sys_days{right};
+}
+
+EngineCalendarDate calendarToday()
+{
+    return EngineCalendarDate{
+        std::chrono::floor<std::chrono::days>(
+            std::chrono::system_clock::now()
+            )
+        };
+}
+
+int calendarDaysInMonth(EngineCalendarDate const& date) noexcept
+{
+    if (!date.ok())
+    {
+        return 0;
+    }
+
+    return static_cast<int>(static_cast<unsigned>(
+        std::chrono::year_month_day_last{
+            date.year(),
+            std::chrono::month_day_last{date.month()}
+        }.day()
+        ));
+}
+
+EngineCalendarDate calendarMonthStart(EngineCalendarDate const& date)
+{
+    return date.ok()
+        ? EngineCalendarDate{date.year(), date.month(), std::chrono::day{1}}
+        : EngineCalendarDate{};
+}
+
+EngineCalendarDate calendarAddDays(
+    EngineCalendarDate const& date,
+    int count
+    )
+{
+    return date.ok()
+        ? EngineCalendarDate{
+            std::chrono::sys_days{date} + std::chrono::days{count}
+        }
+        : EngineCalendarDate{};
+}
+
+EngineCalendarDate calendarAddMonths(
+    EngineCalendarDate const& date,
+    int count
+    )
+{
+    if (!date.ok())
+    {
+        return {};
+    }
+
+    const std::chrono::year_month month = date.year() / date.month()
+        + std::chrono::months{count};
+    const auto lastDay = std::chrono::year_month_day_last{
+        month.year(),
+        std::chrono::month_day_last{month.month()}
+    }.day();
+    const std::chrono::day day{
+        std::min(
+            static_cast<unsigned>(date.day()),
+            static_cast<unsigned>(lastDay)
+            )
+    };
+    return EngineCalendarDate{month.year(), month.month(), day};
+}
+
+std::wstring calendarDateText(EngineCalendarDate const& date)
+{
+    if (!date.ok())
+    {
+        return {};
+    }
+
+    const int year = static_cast<int>(date.year());
+    const unsigned month = static_cast<unsigned>(date.month());
+    const unsigned day = static_cast<unsigned>(date.day());
+    std::wstring result = std::to_wstring(year);
+    while (result.size() < 4)
+    {
+        result.insert(result.begin(), L'0');
+    }
+    result += L'-';
+    result += month < 10 ? L"0" : L"";
+    result += std::to_wstring(month);
+    result += L'-';
+    result += day < 10 ? L"0" : L"";
+    result += std::to_wstring(day);
+    return result;
+}
+
+bool calendarDateFromText(
+    std::wstring_view value,
+    EngineCalendarDate& result
+    ) noexcept
+{
+    if (value.size() != 10 || value[4] != L'-' || value[7] != L'-')
+    {
+        return false;
+    }
+
+    const auto digits = [](std::wstring_view text) noexcept {
+        return std::all_of(
+            text.begin(),
+            text.end(),
+            [](wchar_t value) { return value >= L'0' && value <= L'9'; }
+            );
+    };
+    if (!digits(value.substr(0, 4))
+        || !digits(value.substr(5, 2))
+        || !digits(value.substr(8, 2)))
+    {
+        return false;
+    }
+
+    const int year = std::stoi(std::wstring(value.substr(0, 4)));
+    const unsigned month = static_cast<unsigned>(std::stoi(
+        std::wstring(value.substr(5, 2))
+        ));
+    const unsigned day = static_cast<unsigned>(std::stoi(
+        std::wstring(value.substr(8, 2))
+        ));
+    const EngineCalendarDate parsed{
+        std::chrono::year{year},
+        std::chrono::month{month},
+        std::chrono::day{day}
+    };
+    if (!parsed.ok())
+    {
+        return false;
+    }
+    result = parsed;
+    return true;
+}
+
+std::wstring calendarMonthTitle(EngineCalendarDate const& date)
+{
+    if (!date.ok())
+    {
+        return L"Calendar";
+    }
+
+    constexpr std::array<std::wstring_view, 12> names{
+        L"January", L"February", L"March", L"April", L"May", L"June",
+        L"July", L"August", L"September", L"October", L"November",
+        L"December"
+    };
+    const unsigned month = static_cast<unsigned>(date.month());
+    return std::wstring(names[month - 1]) + L" "
+        + std::to_wstring(static_cast<int>(date.year()));
+}
+
+std::optional<std::chrono::minutes> calendarTimeFromText(
+    std::wstring_view value
+    ) noexcept
+{
+    if (value.size() != 5 || value[2] != L':'
+        || value[0] < L'0' || value[0] > L'9'
+        || value[1] < L'0' || value[1] > L'9'
+        || value[3] < L'0' || value[3] > L'9'
+        || value[4] < L'0' || value[4] > L'9')
+    {
+        return std::nullopt;
+    }
+
+    const int hours = (value[0] - L'0') * 10 + value[1] - L'0';
+    const int minutes = (value[3] - L'0') * 10 + value[4] - L'0';
+    if (hours > 23 || minutes > 59)
+    {
+        return std::nullopt;
+    }
+    return std::chrono::minutes{hours * 60 + minutes};
+}
+
+std::wstring calendarTimeText(
+    std::optional<std::chrono::minutes> value
+    )
+{
+    if (!value)
+    {
+        return {};
+    }
+    const auto count = value->count();
+    const int hours = static_cast<int>(count / 60);
+    const int minutes = static_cast<int>(count % 60);
+    return (hours < 10 ? L"0" : L"") + std::to_wstring(hours)
+        + L":" + (minutes < 10 ? L"0" : L"")
+        + std::to_wstring(minutes);
+}
+
+bool settingBool(
+    classmngr::engine::SettingValue const& value,
+    bool fallback
+    ) noexcept
+{
+    if (const auto* integer = std::get_if<std::int64_t>(&value))
+    {
+        return *integer != 0;
+    }
+    if (const auto* text = std::get_if<std::string>(&value))
+    {
+        return *text == "1" || *text == "true" || *text == "TRUE";
+    }
+    return fallback;
+}
+
+std::int64_t settingInteger(
+    classmngr::engine::SettingValue const& value,
+    std::int64_t fallback
+    ) noexcept
+{
+    if (const auto* integer = std::get_if<std::int64_t>(&value))
+    {
+        return *integer;
+    }
+    if (const auto* text = std::get_if<std::string>(&value))
+    {
+        std::int64_t parsed{};
+        const auto result = std::from_chars(
+            text->data(),
+            text->data() + text->size(),
+            parsed
+            );
+        if (result.ec == std::errc{}
+            && result.ptr == text->data() + text->size())
+        {
+            return parsed;
+        }
+    }
+    return fallback;
+}
+
+std::string calendarScheduleKey(
+    int termYear,
+    int school,
+    int term,
+    bool winterStart
+    )
+{
+    std::string key = "calendar/academic/" + std::to_string(termYear)
+        + (school == 0 ? "/elementary/" : "/middle/");
+    if (winterStart)
+    {
+        return key + "winterStart";
+    }
+    return key + "weeks/" + std::to_string(term);
+}
 
 winrt::hstring jsonString(
     JsonObject const& object,
@@ -2317,6 +2600,168 @@ uint32_t MainWindow::phase6ClassInformationFailureMask() const noexcept
     return m_phase6ClassInformationFailureMask;
 }
 
+bool MainWindow::runPhase6CalendarChecks()
+{
+    m_phase6CalendarFailureMask = 0;
+    const auto fail = [this](uint32_t failureMask) {
+        m_phase6CalendarFailureMask = failureMask;
+        return false;
+    };
+
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    m_dirtyState.markClean();
+    navigateTo(homePageId);
+    refreshCalendarPage();
+    const bool noDatabaseReady =
+        m_calendarTabs
+        && m_calendarTabs.Items().Size() == 2
+        && m_calendarGrid
+        && m_calendarGrid.Children().Size() == 49
+        && m_calendarStatusText.Text() == L"No database open."
+        && !m_calendarAddEventButton.IsEnabled()
+        && !m_calendarSavePreferencesButton.IsEnabled();
+    if (!noDatabaseReady)
+    {
+        return fail(1);
+    }
+
+    auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return fail(2);
+    }
+    m_openDatabase = std::move(*opened);
+    m_calendarDisplayedMonth = EngineCalendarDate{
+        std::chrono::year{calendarFirstTermYear},
+        std::chrono::month{1},
+        std::chrono::day{1}
+    };
+    m_calendarSelectedDate = EngineCalendarDate{
+        std::chrono::year{calendarFirstTermYear},
+        std::chrono::month{1},
+        std::chrono::day{15}
+    };
+    refreshCalendarPage();
+    const bool emptyReady =
+        m_calendarStatusText.Text() == L"Calendar loaded: 0 event(s)."
+        && m_calendarAddEventButton.IsEnabled()
+        && m_calendarShowAllCampusesCheck.IsEnabled();
+    if (!emptyReady)
+    {
+        return fail(3);
+    }
+
+    classmngr::engine::CalendarEvent event;
+    event.title = "Calendar smoke event";
+    event.eventType = "Meeting";
+    event.startDate = m_calendarSelectedDate;
+    event.endDate = m_calendarSelectedDate;
+    event.startTime = std::chrono::minutes{9 * 60};
+    event.endTime = std::chrono::minutes{10 * 60};
+    classmngr::engine::CalendarEventService service(*m_openDatabase);
+    const auto created = service.save(event);
+    if (!created)
+    {
+        return fail(4);
+    }
+    refreshCalendarPage();
+    const bool eventReady =
+        m_calendarEvents.size() == 1
+        && m_calendarEventsPanel.Children().Size() == 1
+        && m_calendarStatusText.Text() == L"Calendar loaded: 1 event(s).";
+    if (!eventReady)
+    {
+        return fail(5);
+    }
+
+    classmngr::engine::CalendarEvent invalid = event;
+    invalid.endTime = invalid.startTime;
+    const bool validationReady =
+        !classmngr::engine::CalendarEventValidator::validate(invalid).isValid();
+    if (!validationReady)
+    {
+        return fail(6);
+    }
+
+    m_calendarShowAllCampusesCheck.IsChecked(true);
+    m_calendarHideStartOfTermCheck.IsChecked(true);
+    m_calendarFirstDayCombo.SelectedIndex(1);
+    saveCalendarPreferences();
+    classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+    const auto firstDay = settings.load("calendar/firstDayOfWeek");
+    const auto showAll = settings.load("calendar/showEventsAtAllCampuses");
+    const auto hideStart = settings.load("calendar/hideStartOfTermEvents");
+    const bool preferencesReady =
+        firstDay && showAll && hideStart
+        && settingInteger(*firstDay, -1) == 1
+        && settingInteger(*showAll, -1) == 1
+        && settingInteger(*hideStart, -1) == 1
+        && m_calendarFirstDayOfWeek == 1;
+    if (!preferencesReady)
+    {
+        uint32_t preferenceFailureMask = 7;
+        if (!firstDay || settingInteger(*firstDay, -1) != 1)
+        {
+            preferenceFailureMask |= 0x100;
+        }
+        if (!showAll || settingInteger(*showAll, -1) != 1)
+        {
+            preferenceFailureMask |= 0x200;
+        }
+        if (!hideStart || settingInteger(*hideStart, -1) != 1)
+        {
+            preferenceFailureMask |= 0x400;
+        }
+        if (m_calendarFirstDayOfWeek != 1)
+        {
+            preferenceFailureMask |= 0x800;
+        }
+        if (m_calendarPreferencesStatusText.Text()
+            == L"Calendar preferences were not saved.")
+        {
+            preferenceFailureMask |= 0x1000;
+        }
+        return fail(preferenceFailureMask);
+    }
+
+    const auto beforeNext = m_calendarMonthTitle.Text();
+    CalendarNextButton_Click(
+        m_calendarNextButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    const bool navigationReady = beforeNext != m_calendarMonthTitle.Text()
+        && m_calendarDisplayedMonth.month() == std::chrono::month{2};
+    CalendarPreviousButton_Click(
+        m_calendarPreviousButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    if (!navigationReady || m_calendarDisplayedMonth.month() != std::chrono::month{1})
+    {
+        return fail(8);
+    }
+
+    const auto deleted = service.removeAll();
+    if (!deleted)
+    {
+        return fail(9);
+    }
+    refreshCalendarPage();
+    const bool resetReady = m_calendarEvents.empty()
+        && m_calendarStatusText.Text() == L"Calendar loaded: 0 event(s).";
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    refreshCalendarPage();
+    const bool clearReady = m_calendarStatusText.Text() == L"No database open."
+        && !m_calendarAddEventButton.IsEnabled();
+    return resetReady && clearReady;
+}
+
+uint32_t MainWindow::phase6CalendarFailureMask() const noexcept
+{
+    return m_phase6CalendarFailureMask;
+}
+
 void MainWindow::preparePhase5CampusScenario(std::wstring_view scenario)
 {
     static_cast<void>(preparePhase5CampusFixture(scenario));
@@ -2840,6 +3285,7 @@ void MainWindow::CloseDatabaseMenuItem_Click(
     refreshCampusInformationPage();
     refreshPersonalDetailsPage();
     refreshClassesPage();
+    refreshCalendarPage();
     updateFileCommandState();
     saveShellState();
 }
@@ -3232,6 +3678,7 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
         refreshCampusInformationPage();
         refreshPersonalDetailsPage();
         refreshClassesPage();
+        refreshCalendarPage();
         updateFileCommandState();
         saveShellState();
         return true;
@@ -3276,6 +3723,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
     refreshCampusInformationPage();
     refreshPersonalDetailsPage();
     refreshClassesPage();
+    refreshCalendarPage();
 
     if (pathExists(candidate))
     {
@@ -3326,6 +3774,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
         refreshCampusInformationPage();
         refreshPersonalDetailsPage();
         refreshClassesPage();
+        refreshCalendarPage();
         updateFileCommandState();
         saveShellState();
         return true;
@@ -4096,6 +4545,10 @@ void MainWindow::populatePage(
         {
             populateHomePage(page);
         }
+        else if (pageId == homePageId)
+        {
+            refreshCalendarPage();
+        }
         return;
     }
 
@@ -4449,18 +4902,7 @@ void MainWindow::populateHomePage(
     calendarRoot.Spacing(16.0);
     calendarRoot.MaxWidth(900.0);
     calendarRoot.HorizontalAlignment(HorizontalAlignment::Center);
-    auto calendarTitle = TextBlock();
-    calendarTitle.Text(L"Calendar");
-    calendarTitle.FontSize(24.0);
-    auto calendarDescription = TextBlock();
-    calendarDescription.Text(
-        L"Calendar will load when the calendar feature slice is migrated."
-        );
-    calendarDescription.TextWrapping(TextWrapping::Wrap);
-    setAutomationName(calendarTitle, L"Calendar");
-    setAutomationName(calendarDescription, L"Calendar migration status");
-    calendarRoot.Children().Append(calendarTitle);
-    calendarRoot.Children().Append(calendarDescription);
+    populateCalendarWorkspace(calendarRoot);
 
     const auto scrollTab = [](StackPanel const& content) {
         auto scroll = ScrollViewer();
@@ -4500,6 +4942,1420 @@ void MainWindow::populateHomePage(
         L"Calendar workspace tab"
         ));
     page.Content(tabs);
+}
+
+void MainWindow::populateCalendarWorkspace(
+    Microsoft::UI::Xaml::Controls::StackPanel const& calendarRoot
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (m_calendarTabs)
+    {
+        calendarRoot.Children().Append(m_calendarTabs);
+        refreshCalendarPage();
+        return;
+    }
+
+    const EngineCalendarDate today = calendarToday();
+    m_calendarDisplayedMonth = calendarMonthStart(today);
+    if (static_cast<int>(m_calendarDisplayedMonth.year())
+        < calendarFirstTermYear)
+    {
+        m_calendarDisplayedMonth = EngineCalendarDate{
+            std::chrono::year{calendarFirstTermYear},
+            std::chrono::month{1},
+            std::chrono::day{1}
+        };
+    }
+    m_calendarSelectedDate = today.ok() && !calendarDateLess(
+        today,
+        classmngr::engine::AcademicCalendarSchedule::initialWinterStart()
+        )
+        ? today
+        : m_calendarDisplayedMonth;
+
+    auto makeText = [](std::wstring_view text, double fontSize = 0.0) {
+        auto value = TextBlock();
+        value.Text(winrt::hstring(text));
+        value.TextWrapping(TextWrapping::Wrap);
+        if (fontSize > 0.0)
+        {
+            value.FontSize(fontSize);
+        }
+        return value;
+    };
+
+    auto monthContent = StackPanel();
+    monthContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
+    monthContent.Spacing(12.0);
+    monthContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+
+    m_calendarMonthTitle = makeText(L"Calendar", 24.0);
+    setAutomationName(m_calendarMonthTitle, L"Calendar month title");
+    monthContent.Children().Append(m_calendarMonthTitle);
+
+    auto monthToolbar = StackPanel();
+    monthToolbar.Orientation(Orientation::Horizontal);
+    monthToolbar.Spacing(8.0);
+
+    m_calendarPreviousButton = Button();
+    m_calendarPreviousButton.Content(box_value(hstring(L"Previous month")));
+    m_calendarPreviousButton.Click({this, &MainWindow::CalendarPreviousButton_Click});
+    setAutomationName(m_calendarPreviousButton, L"Calendar previous month");
+    monthToolbar.Children().Append(m_calendarPreviousButton);
+
+    m_calendarTodayButton = Button();
+    m_calendarTodayButton.Content(box_value(hstring(L"Today")));
+    m_calendarTodayButton.Click({this, &MainWindow::CalendarTodayButton_Click});
+    setAutomationName(m_calendarTodayButton, L"Calendar today");
+    monthToolbar.Children().Append(m_calendarTodayButton);
+
+    m_calendarNextButton = Button();
+    m_calendarNextButton.Content(box_value(hstring(L"Next month")));
+    m_calendarNextButton.Click({this, &MainWindow::CalendarNextButton_Click});
+    setAutomationName(m_calendarNextButton, L"Calendar next month");
+    monthToolbar.Children().Append(m_calendarNextButton);
+
+    m_calendarAddEventButton = Button();
+    m_calendarAddEventButton.Content(box_value(hstring(L"Add event")));
+    m_calendarAddEventButton.Click(
+        [this](auto const&, auto const&) { openCalendarEventEditor(-1); }
+        );
+    setAutomationName(m_calendarAddEventButton, L"Calendar add event");
+    monthToolbar.Children().Append(m_calendarAddEventButton);
+    monthContent.Children().Append(monthToolbar);
+
+    m_calendarGrid = Grid();
+    m_calendarGrid.ColumnSpacing(4.0);
+    m_calendarGrid.RowSpacing(4.0);
+    m_calendarGrid.MinHeight(360.0);
+    setAutomationName(m_calendarGrid, L"Calendar month grid");
+    for (int column = 0; column < 7; ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(
+            GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+            );
+        m_calendarGrid.ColumnDefinitions().Append(definition);
+    }
+    for (int row = 0; row < 7; ++row)
+    {
+        m_calendarGrid.RowDefinitions().Append(RowDefinition());
+    }
+    monthContent.Children().Append(m_calendarGrid);
+
+    m_calendarSelectedDateText = makeText(L"Selected date", 18.0);
+    setAutomationName(m_calendarSelectedDateText, L"Calendar selected date");
+    monthContent.Children().Append(m_calendarSelectedDateText);
+
+    m_calendarEventsPanel = StackPanel();
+    m_calendarEventsPanel.Spacing(6.0);
+    setAutomationName(m_calendarEventsPanel, L"Calendar selected day events");
+    monthContent.Children().Append(m_calendarEventsPanel);
+
+    m_calendarStatusText = makeText(L"Calendar is ready.");
+    setAutomationName(m_calendarStatusText, L"Calendar status");
+    monthContent.Children().Append(m_calendarStatusText);
+
+    m_calendarValidationText = makeText(L"");
+    m_calendarValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(m_calendarValidationText, L"Calendar validation");
+    monthContent.Children().Append(m_calendarValidationText);
+
+    auto preferencesContent = StackPanel();
+    preferencesContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
+    preferencesContent.Spacing(12.0);
+
+    auto preferencesHeading = makeText(L"Calendar preferences", 24.0);
+    setAutomationName(preferencesHeading, L"Calendar preferences heading");
+    preferencesContent.Children().Append(preferencesHeading);
+
+    m_calendarShowAllCampusesCheck = CheckBox();
+    m_calendarShowAllCampusesCheck.Content(
+        box_value(hstring(L"Show Events at All Campuses"))
+        );
+    setAutomationName(
+        m_calendarShowAllCampusesCheck,
+        L"Calendar show events at all campuses"
+        );
+    preferencesContent.Children().Append(m_calendarShowAllCampusesCheck);
+
+    m_calendarHideStartOfTermCheck = CheckBox();
+    m_calendarHideStartOfTermCheck.Content(
+        box_value(hstring(L"Hide Start of Term Events"))
+        );
+    setAutomationName(
+        m_calendarHideStartOfTermCheck,
+        L"Calendar hide start of term events"
+        );
+    preferencesContent.Children().Append(m_calendarHideStartOfTermCheck);
+
+    auto firstDayLabel = makeText(L"First day of calendar week");
+    preferencesContent.Children().Append(firstDayLabel);
+    m_calendarFirstDayCombo = ComboBox();
+    auto sunday = ComboBoxItem();
+    sunday.Content(box_value(hstring(L"Sunday")));
+    sunday.Tag(box_value(hstring(L"0")));
+    m_calendarFirstDayCombo.Items().Append(sunday);
+    auto monday = ComboBoxItem();
+    monday.Content(box_value(hstring(L"Monday")));
+    monday.Tag(box_value(hstring(L"1")));
+    m_calendarFirstDayCombo.Items().Append(monday);
+    setAutomationName(m_calendarFirstDayCombo, L"Calendar first day of week");
+    preferencesContent.Children().Append(m_calendarFirstDayCombo);
+
+    auto termYearLabel = makeText(L"Academic term year");
+    preferencesContent.Children().Append(termYearLabel);
+    m_calendarTermYearTextBox = TextBox();
+    m_calendarTermYearTextBox.PlaceholderText(L"2026");
+    setAutomationName(m_calendarTermYearTextBox, L"Calendar academic term year");
+    preferencesContent.Children().Append(m_calendarTermYearTextBox);
+
+    auto scheduleHeading = makeText(
+        L"Term schedules (use Monday dates and 1-53 week durations)",
+        18.0
+        );
+    preferencesContent.Children().Append(scheduleHeading);
+
+    auto scheduleGrid = Grid();
+    scheduleGrid.ColumnSpacing(8.0);
+    scheduleGrid.RowSpacing(6.0);
+    for (int column = 0; column < 6; ++column)
+    {
+        auto definition = ColumnDefinition();
+        if (column == 0)
+        {
+            definition.Width(
+                GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+                );
+        }
+        else
+        {
+            definition.Width(
+                GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+                );
+        }
+        scheduleGrid.ColumnDefinitions().Append(definition);
+    }
+    for (int row = 0; row < 3; ++row)
+    {
+        scheduleGrid.RowDefinitions().Append(RowDefinition());
+    }
+    const std::array<std::wstring_view, 6> scheduleHeaders{
+        L"School", L"Winter start", L"Winter weeks", L"Spring weeks",
+        L"Summer weeks", L"Fall weeks"
+    };
+    for (int column = 0; column < 6; ++column)
+    {
+        auto header = makeText(scheduleHeaders[static_cast<std::size_t>(column)]);
+        Grid::SetRow(header, 0);
+        Grid::SetColumn(header, column);
+        scheduleGrid.Children().Append(header);
+    }
+    const std::array<std::wstring_view, 2> schoolNames{
+        L"Elementary", L"Middle"
+    };
+    for (int school = 0; school < 2; ++school)
+    {
+        auto schoolText = makeText(schoolNames[static_cast<std::size_t>(school)]);
+        Grid::SetRow(schoolText, school + 1);
+        Grid::SetColumn(schoolText, 0);
+        scheduleGrid.Children().Append(schoolText);
+
+        m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)] =
+            TextBox();
+        m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)].
+            PlaceholderText(L"yyyy-MM-dd");
+        setAutomationName(
+            m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)],
+            std::wstring(L"Calendar ") + std::wstring(schoolNames[static_cast<std::size_t>(school)])
+                + L" winter start"
+            );
+        Grid::SetRow(
+            m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)],
+            school + 1
+            );
+        Grid::SetColumn(
+            m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)],
+            1
+            );
+        scheduleGrid.Children().Append(
+            m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)]
+            );
+
+        for (int term = 0; term < classmngr::engine::AcademicTermCount; ++term)
+        {
+            auto field = TextBox();
+            field.PlaceholderText(L"weeks");
+            setAutomationName(
+                field,
+                std::wstring(L"Calendar ")
+                    + std::wstring(schoolNames[static_cast<std::size_t>(school)])
+                    + L" " + std::to_wstring(term + 1) + L" term weeks"
+                );
+            m_calendarTermWeekTextBoxes[static_cast<std::size_t>(school)]
+                [static_cast<std::size_t>(term)] = field;
+            Grid::SetRow(field, school + 1);
+            Grid::SetColumn(field, term + 2);
+            scheduleGrid.Children().Append(field);
+        }
+    }
+    preferencesContent.Children().Append(scheduleGrid);
+
+    auto preferencesActions = StackPanel();
+    preferencesActions.Orientation(Orientation::Horizontal);
+    preferencesActions.Spacing(8.0);
+    m_calendarSavePreferencesButton = Button();
+    m_calendarSavePreferencesButton.Content(box_value(hstring(L"Save preferences")));
+    m_calendarSavePreferencesButton.Click(
+        {this, &MainWindow::CalendarSavePreferencesButton_Click}
+        );
+    setAutomationName(
+        m_calendarSavePreferencesButton,
+        L"Calendar save preferences"
+        );
+    preferencesActions.Children().Append(m_calendarSavePreferencesButton);
+    m_calendarRestoreDefaultsButton = Button();
+    m_calendarRestoreDefaultsButton.Content(
+        box_value(hstring(L"Restore term defaults"))
+        );
+    m_calendarRestoreDefaultsButton.Click(
+        {this, &MainWindow::CalendarRestoreDefaultsButton_Click}
+        );
+    setAutomationName(
+        m_calendarRestoreDefaultsButton,
+        L"Calendar restore term defaults"
+        );
+    preferencesActions.Children().Append(m_calendarRestoreDefaultsButton);
+    m_calendarResetEventsButton = Button();
+    m_calendarResetEventsButton.Content(
+        box_value(hstring(L"Reset calendar events"))
+        );
+    m_calendarResetEventsButton.Click(
+        {this, &MainWindow::CalendarResetEventsButton_Click}
+        );
+    setAutomationName(m_calendarResetEventsButton, L"Calendar reset events");
+    preferencesActions.Children().Append(m_calendarResetEventsButton);
+    preferencesContent.Children().Append(preferencesActions);
+
+    m_calendarPreferencesStatusText = makeText(L"Preferences are ready.");
+    setAutomationName(
+        m_calendarPreferencesStatusText,
+        L"Calendar preferences status"
+        );
+    preferencesContent.Children().Append(m_calendarPreferencesStatusText);
+    m_calendarPreferencesValidationText = makeText(L"");
+    m_calendarPreferencesValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_calendarPreferencesValidationText,
+        L"Calendar preferences validation"
+        );
+    preferencesContent.Children().Append(m_calendarPreferencesValidationText);
+
+    auto wrap = [](StackPanel const& content) {
+        auto scroll = ScrollViewer();
+        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.Content(content);
+        return scroll;
+    };
+    auto calendarItem = PivotItem();
+    calendarItem.Header(box_value(hstring(L"Calendar")));
+    calendarItem.Content(wrap(monthContent));
+    setAutomationName(calendarItem, L"Calendar month tab");
+    auto preferencesItem = PivotItem();
+    preferencesItem.Header(box_value(hstring(L"Preferences")));
+    preferencesItem.Content(wrap(preferencesContent));
+    setAutomationName(preferencesItem, L"Calendar preferences tab");
+
+    m_calendarTabs = Pivot();
+    m_calendarTabs.IsTabStop(true);
+    m_calendarTabs.TabIndex(0);
+    m_calendarTabs.Items().Append(calendarItem);
+    m_calendarTabs.Items().Append(preferencesItem);
+    setAutomationName(m_calendarTabs, L"Calendar tabs");
+    calendarRoot.Children().Append(m_calendarTabs);
+    refreshCalendarPage();
+}
+
+void MainWindow::refreshCalendarPage()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_calendarTabs || !m_calendarGrid || !m_calendarStatusText)
+    {
+        return;
+    }
+
+    const bool hasDatabase = static_cast<bool>(m_openDatabase);
+    const auto setEnabled = [hasDatabase](auto const& control) {
+        if (control)
+        {
+            control.IsEnabled(hasDatabase);
+        }
+    };
+    setEnabled(m_calendarPreviousButton);
+    setEnabled(m_calendarNextButton);
+    setEnabled(m_calendarTodayButton);
+    setEnabled(m_calendarAddEventButton);
+    setEnabled(m_calendarShowAllCampusesCheck);
+    setEnabled(m_calendarHideStartOfTermCheck);
+    setEnabled(m_calendarFirstDayCombo);
+    setEnabled(m_calendarTermYearTextBox);
+    setEnabled(m_calendarSavePreferencesButton);
+    setEnabled(m_calendarRestoreDefaultsButton);
+    setEnabled(m_calendarResetEventsButton);
+    for (auto const& field : m_calendarWinterStartTextBoxes)
+    {
+        setEnabled(field);
+    }
+    for (auto const& school : m_calendarTermWeekTextBoxes)
+    {
+        for (auto const& field : school)
+        {
+            setEnabled(field);
+        }
+    }
+
+    if (!m_calendarDisplayedMonth.ok())
+    {
+        m_calendarDisplayedMonth = calendarMonthStart(calendarToday());
+    }
+    if (!m_calendarSelectedDate.ok())
+    {
+        m_calendarSelectedDate = m_calendarDisplayedMonth;
+    }
+
+    m_calendarLoading = true;
+    m_calendarPreferencesDirty = false;
+    m_calendarEvents.clear();
+    m_calendarFirstDayOfWeek = 0;
+    int termYear = std::max(
+        calendarFirstTermYear,
+        static_cast<int>(calendarToday().year())
+        );
+
+    if (!hasDatabase)
+    {
+        m_calendarStatusText.Text(L"No database open.");
+        m_calendarSelectedDateText.Text(L"Selected date: ");
+        m_calendarEventsPanel.Children().Clear();
+        auto empty = TextBlock();
+        empty.Text(L"Open a database to view and edit calendar events.");
+        empty.TextWrapping(TextWrapping::Wrap);
+        m_calendarEventsPanel.Children().Append(empty);
+        m_calendarValidationText.Text({});
+        m_calendarValidationText.Visibility(Visibility::Collapsed);
+        m_calendarPreferencesStatusText.Text(L"No database open.");
+        m_calendarPreferencesValidationText.Text({});
+        m_calendarPreferencesValidationText.Visibility(Visibility::Collapsed);
+        m_calendarLoading = false;
+    }
+    else
+    {
+        classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+        const auto loadSetting = [&settings](std::string_view key) {
+            return settings.load(key);
+        };
+        if (const auto value = loadSetting("calendar/firstDayOfWeek"); value)
+        {
+            m_calendarFirstDayOfWeek = static_cast<int>(settingInteger(*value, 0));
+        }
+        m_calendarFirstDayOfWeek = m_calendarFirstDayOfWeek == 1 ? 1 : 0;
+        if (const auto value = loadSetting("calendar/academic/termYear"); value)
+        {
+            termYear = static_cast<int>(settingInteger(*value, termYear));
+        }
+        termYear = std::max(calendarFirstTermYear, termYear);
+        bool showAll = false;
+        if (const auto value = loadSetting("calendar/showEventsAtAllCampuses"); value)
+        {
+            showAll = settingBool(*value, false);
+        }
+        bool hideStart = false;
+        if (const auto value = loadSetting("calendar/hideStartOfTermEvents"); value)
+        {
+            hideStart = settingBool(*value, false);
+        }
+        m_calendarShowAllCampusesCheck.IsChecked(showAll);
+        m_calendarHideStartOfTermCheck.IsChecked(hideStart);
+        m_calendarFirstDayCombo.SelectedIndex(m_calendarFirstDayOfWeek);
+        m_calendarTermYearTextBox.Text(std::to_wstring(termYear));
+
+        m_calendarSchedule.clear();
+        classmngr::engine::AcademicCalendarSchedule::ScheduleMap elementary;
+        classmngr::engine::AcademicCalendarSchedule::ScheduleMap middle;
+        for (int school = 0; school < 2; ++school)
+        {
+            const auto level = school == 0
+                ? classmngr::engine::SchoolLevel::Elementary
+                : classmngr::engine::SchoolLevel::Middle;
+            auto schedule = m_calendarSchedule.defaultYearSchedule(level, termYear);
+            bool hasCustom = false;
+            const auto winter = loadSetting(calendarScheduleKey(
+                termYear,
+                school,
+                0,
+                true
+                ));
+            if (winter && std::holds_alternative<std::string>(*winter))
+            {
+                EngineCalendarDate parsed;
+                if (calendarDateFromText(
+                        asWString(winrt::to_hstring(
+                            std::get<std::string>(*winter)
+                            )),
+                        parsed
+                        ))
+                {
+                    schedule.winterStart = parsed;
+                    hasCustom = true;
+                }
+            }
+            for (int term = 0;
+                 term < classmngr::engine::AcademicTermCount;
+                 ++term)
+            {
+                const auto weeks = loadSetting(calendarScheduleKey(
+                    termYear,
+                    school,
+                    term,
+                    false
+                    ));
+                if (weeks)
+                {
+                    const auto value = settingInteger(*weeks, -1);
+                    if (value >= 1 && value <= 53)
+                    {
+                        schedule.weeks[static_cast<std::size_t>(term)] =
+                            static_cast<int>(value);
+                        hasCustom = true;
+                    }
+                }
+            }
+            if (hasCustom && schedule.isValid())
+            {
+                (school == 0 ? elementary : middle).insert({termYear, schedule});
+            }
+        }
+        static_cast<void>(m_calendarSchedule.replaceSchedules(elementary, middle));
+
+        for (int school = 0; school < 2; ++school)
+        {
+            const auto level = school == 0
+                ? classmngr::engine::SchoolLevel::Elementary
+                : classmngr::engine::SchoolLevel::Middle;
+            const auto schedule = m_calendarSchedule.yearSchedule(level, termYear);
+            m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)].Text(
+                calendarDateText(schedule.winterStart)
+                );
+            for (int term = 0;
+                 term < classmngr::engine::AcademicTermCount;
+                 ++term)
+            {
+                m_calendarTermWeekTextBoxes[static_cast<std::size_t>(school)]
+                    [static_cast<std::size_t>(term)].Text(
+                        std::to_wstring(schedule.weeks[static_cast<std::size_t>(term)])
+                        );
+            }
+        }
+
+        classmngr::engine::CalendarEventService service(*m_openDatabase);
+        const auto loaded = service.loadInRange(
+            calendarMonthStart(m_calendarDisplayedMonth),
+            calendarAddDays(
+                calendarMonthStart(m_calendarDisplayedMonth),
+                calendarDaysInMonth(m_calendarDisplayedMonth) - 1
+                )
+            );
+        if (loaded)
+        {
+            m_calendarEvents = *loaded;
+            m_calendarStatusText.Text(winrt::hstring(
+                L"Calendar loaded: " + std::to_wstring(m_calendarEvents.size())
+                    + L" event(s)."
+                ));
+            m_calendarValidationText.Text({});
+            m_calendarValidationText.Visibility(Visibility::Collapsed);
+        }
+        else
+        {
+            m_calendarStatusText.Text(winrt::hstring(
+                L"Calendar could not be loaded: "
+                    + asWide(loaded.error().message)
+                ));
+            m_calendarValidationText.Text(winrt::hstring(
+                L"Engine loading error: " + asWide(loaded.error().message)
+                ));
+            m_calendarValidationText.Visibility(Visibility::Visible);
+        }
+        m_calendarPreferencesStatusText.Text(L"Calendar preferences loaded.");
+        m_calendarPreferencesValidationText.Text({});
+        m_calendarPreferencesValidationText.Visibility(Visibility::Collapsed);
+        m_calendarLoading = false;
+    }
+
+    const auto visibleOnDate = [this](
+                                  classmngr::engine::CalendarEvent const& event,
+                                  EngineCalendarDate const& date) {
+        if (!event.startDate.ok() || !event.endDate.ok()
+            || calendarDateLess(date, event.startDate)
+            || calendarDateLess(event.endDate, date))
+        {
+            return false;
+        }
+        const auto checked = m_calendarHideStartOfTermCheck.IsChecked();
+        const bool hideStart = checked && checked.Value();
+        return !hideStart || !classmngr::engine::CalendarEventRules::isStartOfTerm(
+            event.title,
+            event.eventType
+            );
+    };
+    const auto eventSummary = [](classmngr::engine::CalendarEvent const& event) {
+        std::wstring result = asWide(event.title);
+        if (result.empty())
+        {
+            result = L"(untitled event)";
+        }
+        result += L" — " + asWide(event.eventType);
+        if (event.allDay)
+        {
+            result += L" · All day";
+        }
+        else if (event.startTime)
+        {
+            result += L" · " + calendarTimeText(event.startTime);
+            if (event.endTime)
+            {
+                result += L"-" + calendarTimeText(event.endTime);
+            }
+        }
+        return result;
+    };
+
+    m_calendarMonthTitle.Text(calendarMonthTitle(m_calendarDisplayedMonth));
+    const auto monthStart = calendarMonthStart(m_calendarDisplayedMonth);
+    const int firstWeekday = static_cast<int>(
+        std::chrono::weekday{std::chrono::sys_days{monthStart}}.c_encoding()
+        );
+    const int offset = (firstWeekday - m_calendarFirstDayOfWeek + 7) % 7;
+    const auto gridStart = calendarAddDays(monthStart, -offset);
+    const std::array<std::wstring_view, 7> weekdayNames{
+        L"Sun", L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat"
+    };
+    m_calendarGrid.Children().Clear();
+    for (int column = 0; column < 7; ++column)
+    {
+        auto header = TextBlock();
+        header.Text(winrt::hstring(weekdayNames[static_cast<std::size_t>(
+            (m_calendarFirstDayOfWeek + column) % 7
+            )]));
+        header.HorizontalAlignment(HorizontalAlignment::Center);
+        setAutomationName(header, L"Calendar weekday header");
+        Grid::SetRow(header, 0);
+        Grid::SetColumn(header, column);
+        m_calendarGrid.Children().Append(header);
+    }
+    for (int index = 0; index < 42; ++index)
+    {
+        const auto date = calendarAddDays(gridStart, index);
+        int eventCount = 0;
+        for (auto const& event : m_calendarEvents)
+        {
+            if (visibleOnDate(event, date))
+            {
+                ++eventCount;
+            }
+        }
+        std::wstring content = std::to_wstring(
+            static_cast<unsigned>(date.day())
+            );
+        if (eventCount > 0)
+        {
+            content += L"\n• " + std::to_wstring(eventCount);
+        }
+        auto day = Button();
+        day.Content(box_value(hstring(content)));
+        day.MinHeight(48.0);
+        day.IsEnabled(hasDatabase);
+        day.Opacity(
+            date.month() == m_calendarDisplayedMonth.month()
+                ? 1.0
+                : 0.55
+            );
+        setAutomationName(day, L"Calendar day " + calendarDateText(date));
+        day.Click([this, date](auto const&, auto const&) {
+            if (!m_calendarLoading)
+            {
+                m_calendarSelectedDate = date;
+                refreshCalendarPage();
+            }
+        });
+        Grid::SetRow(day, index / 7 + 1);
+        Grid::SetColumn(day, index % 7);
+        m_calendarGrid.Children().Append(day);
+    }
+
+    m_calendarSelectedDateText.Text(winrt::hstring(
+        L"Selected date: " + calendarDateText(m_calendarSelectedDate)
+        ));
+    m_calendarEventsPanel.Children().Clear();
+    int selectedEventCount = 0;
+    for (auto const& event : m_calendarEvents)
+    {
+        if (!visibleOnDate(event, m_calendarSelectedDate))
+        {
+            continue;
+        }
+        ++selectedEventCount;
+        auto eventButton = Button();
+        eventButton.HorizontalAlignment(HorizontalAlignment::Stretch);
+        eventButton.HorizontalContentAlignment(HorizontalAlignment::Left);
+        eventButton.Content(box_value(hstring(eventSummary(event))));
+        setAutomationName(
+            eventButton,
+            L"Calendar event " + std::to_wstring(event.id)
+            );
+        const int eventId = event.id;
+        eventButton.Click(
+            [this, eventId](auto const&, auto const&) {
+                openCalendarEventEditor(eventId);
+            }
+            );
+        m_calendarEventsPanel.Children().Append(eventButton);
+    }
+    if (selectedEventCount == 0)
+    {
+        auto empty = TextBlock();
+        empty.Text(L"No events for the selected date.");
+        empty.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(empty, L"Calendar no selected day events");
+        m_calendarEventsPanel.Children().Append(empty);
+    }
+
+    const auto firstTermStart = classmngr::engine::AcademicCalendarSchedule::initialWinterStart();
+    m_calendarPreviousButton.IsEnabled(
+        hasDatabase && calendarDateLess(firstTermStart, monthStart)
+        );
+    m_calendarNextButton.IsEnabled(hasDatabase);
+    m_calendarTodayButton.IsEnabled(hasDatabase);
+}
+
+void MainWindow::CalendarPreviousButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        return;
+    }
+    const auto previous = calendarAddMonths(m_calendarDisplayedMonth, -1);
+    if (previous.ok()
+        && !calendarDateLess(
+            previous,
+            calendarMonthStart(classmngr::engine::AcademicCalendarSchedule::initialWinterStart())
+            ))
+    {
+        m_calendarDisplayedMonth = previous;
+        m_calendarSelectedDate = previous;
+        refreshCalendarPage();
+    }
+}
+
+void MainWindow::CalendarNextButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        return;
+    }
+    m_calendarDisplayedMonth = calendarAddMonths(m_calendarDisplayedMonth, 1);
+    m_calendarSelectedDate = m_calendarDisplayedMonth;
+    refreshCalendarPage();
+}
+
+void MainWindow::CalendarTodayButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        return;
+    }
+    const auto today = calendarToday();
+    m_calendarDisplayedMonth = calendarMonthStart(today);
+    if (calendarDateLess(
+            today,
+            classmngr::engine::AcademicCalendarSchedule::initialWinterStart()
+            ))
+    {
+        m_calendarDisplayedMonth = calendarMonthStart(
+            classmngr::engine::AcademicCalendarSchedule::initialWinterStart()
+            );
+    }
+    m_calendarSelectedDate = today;
+    refreshCalendarPage();
+}
+
+void MainWindow::saveCalendarPreferences()
+{
+    if (!m_openDatabase)
+    {
+        m_calendarPreferencesStatusText.Text(L"No database open.");
+        return;
+    }
+
+    auto showValidation = [this](std::wstring_view message) {
+        m_calendarPreferencesValidationText.Text(winrt::hstring(message));
+        m_calendarPreferencesValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_calendarPreferencesStatusText.Text(L"Calendar preferences were not saved.");
+    };
+    int termYear = 0;
+    try
+    {
+        termYear = std::stoi(asWString(m_calendarTermYearTextBox.Text()));
+    }
+    catch (...)
+    {
+        showValidation(L"Academic term year must be a number.");
+        return;
+    }
+    if (termYear < calendarFirstTermYear || termYear > 2200)
+    {
+        showValidation(L"Academic term year must be between 2026 and 2200.");
+        return;
+    }
+
+    std::array<classmngr::engine::AcademicYearSchedule, 2> schedules;
+    for (int school = 0; school < 2; ++school)
+    {
+        auto& schedule = schedules[static_cast<std::size_t>(school)];
+        schedule.termYear = termYear;
+        if (!calendarDateFromText(
+                asWString(m_calendarWinterStartTextBoxes[
+                    static_cast<std::size_t>(school)
+                    ].Text()),
+                schedule.winterStart
+                ))
+        {
+            showValidation(L"Each winter start must be a valid yyyy-MM-dd date.");
+            return;
+        }
+        for (int term = 0;
+             term < classmngr::engine::AcademicTermCount;
+             ++term)
+        {
+            try
+            {
+                schedule.weeks[static_cast<std::size_t>(term)] = std::stoi(
+                    asWString(m_calendarTermWeekTextBoxes[
+                        static_cast<std::size_t>(school)
+                        ][static_cast<std::size_t>(term)].Text())
+                    );
+            }
+            catch (...)
+            {
+                showValidation(L"Each term duration must be a number from 1 to 53.");
+                return;
+            }
+        }
+        if (!schedule.isValid())
+        {
+            showValidation(
+                L"Every term must start on a Monday and last from 1 to 53 weeks."
+                );
+            return;
+        }
+    }
+
+    classmngr::engine::ApplicationSettings settingsValues;
+    const auto checked = [](auto const& check) {
+        const auto value = check.IsChecked();
+        return value && value.Value();
+    };
+    settingsValues.emplace_back(
+        "calendar/showEventsAtAllCampuses",
+        classmngr::engine::SettingValue{
+            std::int64_t{checked(m_calendarShowAllCampusesCheck) ? 1 : 0}
+        }
+        );
+    settingsValues.emplace_back(
+        "calendar/firstDayOfWeek",
+        classmngr::engine::SettingValue{
+            std::int64_t{m_calendarFirstDayCombo.SelectedIndex() == 1 ? 1 : 0}
+        }
+        );
+    settingsValues.emplace_back(
+        "calendar/hideStartOfTermEvents",
+        classmngr::engine::SettingValue{
+            std::int64_t{checked(m_calendarHideStartOfTermCheck) ? 1 : 0}
+        }
+        );
+    settingsValues.emplace_back(
+        "calendar/academic/termYear",
+        classmngr::engine::SettingValue{std::int64_t{termYear}}
+        );
+    for (int school = 0; school < 2; ++school)
+    {
+        settingsValues.emplace_back(
+            calendarScheduleKey(termYear, school, 0, true),
+            classmngr::engine::SettingValue{
+                asUtf8(calendarDateText(schedules[static_cast<std::size_t>(school)].winterStart))
+            }
+            );
+        for (int term = 0;
+             term < classmngr::engine::AcademicTermCount;
+             ++term)
+        {
+            settingsValues.emplace_back(
+                calendarScheduleKey(termYear, school, term, false),
+                classmngr::engine::SettingValue{
+                    std::int64_t{
+                        schedules[static_cast<std::size_t>(school)]
+                            .weeks[static_cast<std::size_t>(term)]
+                    }
+                }
+                );
+        }
+    }
+
+    classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+    const auto saved = settings.saveBatch(settingsValues);
+    if (!saved)
+    {
+        showValidation(
+            std::wstring(L"Engine rejected the calendar preferences: ")
+                + asWide(saved.error().message)
+            );
+        return;
+    }
+
+    classmngr::engine::AcademicCalendarSchedule::ScheduleMap elementary;
+    classmngr::engine::AcademicCalendarSchedule::ScheduleMap middle;
+    elementary.insert({termYear, schedules[0]});
+    middle.insert({termYear, schedules[1]});
+    m_calendarSchedule.clear();
+    static_cast<void>(m_calendarSchedule.replaceSchedules(elementary, middle));
+    m_calendarFirstDayOfWeek = m_calendarFirstDayCombo.SelectedIndex() == 1 ? 1 : 0;
+    m_calendarPreferencesDirty = false;
+    m_dirtyState.markClean();
+    m_calendarPreferencesValidationText.Text({});
+    m_calendarPreferencesValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    m_calendarPreferencesStatusText.Text(L"Calendar preferences saved.");
+    updateFileCommandState();
+    refreshCalendarPage();
+}
+
+void MainWindow::restoreCalendarDefaults()
+{
+    if (!m_openDatabase)
+    {
+        m_calendarPreferencesStatusText.Text(L"No database open.");
+        return;
+    }
+
+    int termYear = calendarFirstTermYear;
+    try
+    {
+        termYear = std::max(
+            calendarFirstTermYear,
+            std::stoi(asWString(m_calendarTermYearTextBox.Text()))
+            );
+    }
+    catch (...)
+    {
+        m_calendarTermYearTextBox.Text(std::to_wstring(termYear));
+    }
+    for (int school = 0; school < 2; ++school)
+    {
+        const auto level = school == 0
+            ? classmngr::engine::SchoolLevel::Elementary
+            : classmngr::engine::SchoolLevel::Middle;
+        const auto schedule = m_calendarSchedule.defaultYearSchedule(level, termYear);
+        m_calendarWinterStartTextBoxes[static_cast<std::size_t>(school)].Text(
+            calendarDateText(schedule.winterStart)
+            );
+        for (int term = 0;
+             term < classmngr::engine::AcademicTermCount;
+             ++term)
+        {
+            m_calendarTermWeekTextBoxes[static_cast<std::size_t>(school)]
+                [static_cast<std::size_t>(term)].Text(
+                    std::to_wstring(schedule.weeks[static_cast<std::size_t>(term)])
+                    );
+        }
+    }
+    m_calendarPreferencesDirty = true;
+    m_calendarPreferencesStatusText.Text(
+        L"Default term schedules loaded. Save preferences to persist them."
+        );
+}
+
+void MainWindow::resetCalendarEvents()
+{
+    if (!m_openDatabase)
+    {
+        m_calendarPreferencesStatusText.Text(L"No database open.");
+        return;
+    }
+
+    auto weak = get_weak();
+    showDialog(
+        L"Reset Calendar",
+        L"Delete all calendar events? This cannot be undone.",
+        L"Reset",
+        {},
+        L"Cancel",
+        [weak](ClassMngrWinUIDialogs::DialogOutcome outcome) {
+            if (outcome != ClassMngrWinUIDialogs::DialogOutcome::Primary)
+            {
+                return;
+            }
+            if (auto self = weak.get())
+            {
+                if (!self->m_openDatabase)
+                {
+                    return;
+                }
+                classmngr::engine::CalendarEventService service(
+                    *self->m_openDatabase
+                    );
+                const auto deleted = service.removeAll();
+                if (!deleted)
+                {
+                    self->m_calendarPreferencesStatusText.Text(winrt::hstring(
+                        L"Calendar events could not be reset: "
+                            + asWide(deleted.error().message)
+                        ));
+                    return;
+                }
+                self->m_dirtyState.markClean();
+                self->m_calendarPreferencesStatusText.Text(
+                    L"Calendar events reset to defaults."
+                    );
+                self->refreshCalendarPage();
+                self->updateFileCommandState();
+            }
+        }
+        );
+}
+
+void MainWindow::CalendarSavePreferencesButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    saveCalendarPreferences();
+}
+
+void MainWindow::CalendarRestoreDefaultsButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    restoreCalendarDefaults();
+}
+
+void MainWindow::CalendarResetEventsButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    resetCalendarEvents();
+}
+
+winrt::fire_and_forget MainWindow::openCalendarEventEditor(int eventId)
+{
+    auto lifetime = get_strong();
+    if (m_ownedDialog || !m_openDatabase || !RootGrid().XamlRoot())
+    {
+        co_return;
+    }
+
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    classmngr::engine::CalendarEvent event;
+    if (eventId > 0)
+    {
+        classmngr::engine::CalendarEventService service(*m_openDatabase);
+        const auto loaded = service.get(eventId);
+        if (!loaded)
+        {
+            m_calendarStatusText.Text(winrt::hstring(
+                L"Calendar event could not be loaded: "
+                    + asWide(loaded.error().message)
+                ));
+            co_return;
+        }
+        event = *loaded;
+    }
+    else
+    {
+        event.startDate = m_calendarSelectedDate.ok()
+            ? m_calendarSelectedDate
+            : calendarToday();
+        if (calendarDateLess(
+                event.startDate,
+                classmngr::engine::AcademicCalendarSchedule::initialWinterStart()
+                ))
+        {
+            event.startDate = classmngr::engine::AcademicCalendarSchedule::initialWinterStart();
+        }
+        event.endDate = event.startDate;
+        event.startTime = std::chrono::minutes{9 * 60};
+        event.endTime = std::chrono::minutes{10 * 60};
+    }
+
+    auto form = StackPanel();
+    form.Spacing(8.0);
+    form.MaxWidth(520.0);
+    const auto makeField = [&form](
+                                std::wstring_view header,
+                                std::wstring value,
+                                std::wstring_view automationName) {
+        auto field = TextBox();
+        field.Header(box_value(hstring(header)));
+        field.Text(hstring(value));
+        field.IsTabStop(true);
+        setAutomationName(field, automationName);
+        form.Children().Append(field);
+        return field;
+    };
+    auto title = makeField(L"Title", asWide(event.title), L"Calendar event title");
+    auto startDate = makeField(
+        L"Start date (yyyy-MM-dd)",
+        calendarDateText(event.startDate),
+        L"Calendar event start date"
+        );
+    auto endDate = makeField(
+        L"End date (yyyy-MM-dd)",
+        calendarDateText(event.endDate),
+        L"Calendar event end date"
+        );
+    auto startTime = makeField(
+        L"Start time (HH:mm)",
+        calendarTimeText(event.startTime),
+        L"Calendar event start time"
+        );
+    auto endTime = makeField(
+        L"End time (HH:mm)",
+        calendarTimeText(event.endTime),
+        L"Calendar event end time"
+        );
+
+    auto allDay = CheckBox();
+    allDay.Content(box_value(hstring(L"All day")));
+    allDay.IsChecked(event.allDay);
+    setAutomationName(allDay, L"Calendar event all day");
+    form.Children().Append(allDay);
+
+    const auto addChoice = [](ComboBox combo,
+                              std::wstring_view display,
+                              std::wstring_view value) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(hstring(value)));
+        combo.Items().Append(item);
+    };
+    const auto selectChoice = [](ComboBox combo, std::wstring_view value) {
+        for (int index = 0; index < static_cast<int>(combo.Items().Size()); ++index)
+        {
+            const auto item = combo.Items().GetAt(index).try_as<ComboBoxItem>();
+            if (item && boxedString(item.Tag()) == value)
+            {
+                combo.SelectedIndex(index);
+                return;
+            }
+        }
+        combo.SelectedIndex(0);
+    };
+
+    auto eventType = ComboBox();
+    eventType.Header(box_value(hstring(L"Event type")));
+    for (const auto value : classmngr::engine::CalendarEventRules::eventTypes())
+    {
+        addChoice(eventType, asWide(value), asWide(value));
+    }
+    selectChoice(eventType, asWide(event.eventType));
+    setAutomationName(eventType, L"Calendar event type");
+    form.Children().Append(eventType);
+
+    auto timeStatus = ComboBox();
+    timeStatus.Header(box_value(hstring(L"Time status")));
+    for (const auto value : classmngr::engine::CalendarEventRules::timeStatuses())
+    {
+        addChoice(timeStatus, asWide(value), asWide(value));
+    }
+    selectChoice(timeStatus, asWide(event.timeStatus));
+    setAutomationName(timeStatus, L"Calendar event time status");
+    form.Children().Append(timeStatus);
+
+    auto repeat = ComboBox();
+    repeat.Header(box_value(hstring(L"Repeat")));
+    addChoice(repeat, L"Does not repeat", L"none");
+    addChoice(repeat, L"Daily", L"daily");
+    addChoice(repeat, L"Weekly", L"weekly");
+    addChoice(repeat, L"Monthly", L"monthly");
+    selectChoice(repeat, L"none");
+    setAutomationName(repeat, L"Calendar event repeat frequency");
+    form.Children().Append(repeat);
+    auto repeatUntil = makeField(
+        L"Repeat until (yyyy-MM-dd; required for repeats)",
+        {},
+        L"Calendar event repeat until"
+        );
+
+    auto validation = TextBlock();
+    validation.TextWrapping(TextWrapping::Wrap);
+    validation.Visibility(Visibility::Collapsed);
+    setAutomationName(validation, L"Calendar event validation");
+    form.Children().Append(validation);
+
+    auto dialog = ContentDialog();
+    dialog.XamlRoot(RootGrid().XamlRoot());
+    dialog.Title(box_value(hstring(
+        eventId > 0 ? L"Edit calendar event" : L"Add calendar event"
+        )));
+    dialog.Content(form);
+    dialog.PrimaryButtonText(L"Save");
+    if (eventId > 0)
+    {
+        dialog.SecondaryButtonText(L"Delete");
+    }
+    dialog.CloseButtonText(L"Cancel");
+    dialog.DefaultButton(ContentDialogButton::Primary);
+    m_ownedDialog = dialog;
+
+    for (;;)
+    {
+        ContentDialogResult result = ContentDialogResult::None;
+        try
+        {
+            result = co_await dialog.ShowAsync();
+        }
+        catch (...)
+        {
+            break;
+        }
+        if (result == ContentDialogResult::None
+            || result == ContentDialogResult::Secondary)
+        {
+            if (result == ContentDialogResult::Secondary && eventId > 0)
+            {
+                classmngr::engine::CalendarEventService service(*m_openDatabase);
+                const auto deleted = service.remove(eventId);
+                if (!deleted)
+                {
+                    m_calendarStatusText.Text(winrt::hstring(
+                        L"Calendar event could not be deleted: "
+                            + asWide(deleted.error().message)
+                        ));
+                }
+                else
+                {
+                    m_calendarStatusText.Text(L"Calendar event deleted.");
+                    m_dirtyState.markClean();
+                    refreshCalendarPage();
+                    updateFileCommandState();
+                }
+            }
+            break;
+        }
+
+        classmngr::engine::CalendarEvent draft = event;
+        draft.title = asUtf8(asWString(title.Text()));
+        if (!calendarDateFromText(asWString(startDate.Text()), draft.startDate)
+            || !calendarDateFromText(asWString(endDate.Text()), draft.endDate))
+        {
+            validation.Text(L"Start and end dates must use yyyy-MM-dd.");
+            validation.Visibility(Visibility::Visible);
+            continue;
+        }
+        const auto startTimeText = asWString(startTime.Text());
+        const auto endTimeText = asWString(endTime.Text());
+        const auto parsedStartTime = startTimeText.empty()
+            ? std::optional<std::chrono::minutes>{}
+            : calendarTimeFromText(startTimeText);
+        const auto parsedEndTime = endTimeText.empty()
+            ? std::optional<std::chrono::minutes>{}
+            : calendarTimeFromText(endTimeText);
+        if ((!startTimeText.empty() && !parsedStartTime)
+            || (!endTimeText.empty() && !parsedEndTime))
+        {
+            validation.Text(L"Times must use HH:mm.");
+            validation.Visibility(Visibility::Visible);
+            continue;
+        }
+        draft.startTime = parsedStartTime;
+        draft.endTime = parsedEndTime;
+        const auto allDayValue = allDay.IsChecked();
+        draft.allDay = allDayValue && allDayValue.Value();
+        draft.eventType = asUtf8(selectedComboValue(eventType));
+        draft.timeStatus = asUtf8(selectedComboValue(timeStatus));
+        if (draft.allDay)
+        {
+            draft.timeStatus = "Timed";
+            draft.startTime.reset();
+            draft.endTime.reset();
+        }
+        const std::wstring repeatValue = selectedComboValue(repeat);
+        const bool repeating = repeatValue != L"none";
+        if (!repeating)
+        {
+            draft.repeatSeriesId.clear();
+        }
+        EngineCalendarDate repeatEnd;
+        if (repeating)
+        {
+            if (!calendarDateFromText(asWString(repeatUntil.Text()), repeatEnd))
+            {
+                validation.Text(L"Repeat until must use yyyy-MM-dd.");
+                validation.Visibility(Visibility::Visible);
+                continue;
+            }
+        }
+
+        const auto eventValidation =
+            classmngr::engine::CalendarEventValidator::validate(draft);
+        if (!eventValidation.isValid())
+        {
+            std::wstring message = L"Calendar event validation: ";
+            for (const auto& issue : eventValidation.issues())
+            {
+                if (!issue.isError())
+                {
+                    continue;
+                }
+                if (message.back() != L' ')
+                {
+                    message += L"; ";
+                }
+                message += asWide(issue.code);
+                if (!issue.field.empty())
+                {
+                    message += L" (" + asWide(issue.field) + L")";
+                }
+            }
+            validation.Text(winrt::hstring(message));
+            validation.Visibility(Visibility::Visible);
+            continue;
+        }
+        classmngr::engine::CalendarEventService service(*m_openDatabase);
+        bool persisted = false;
+        std::string errorMessage;
+        if (repeating)
+        {
+            classmngr::engine::CalendarEventRepeatFrequency frequency =
+                classmngr::engine::CalendarEventRepeatFrequency::Daily;
+            if (repeatValue == L"weekly")
+            {
+                frequency = classmngr::engine::CalendarEventRepeatFrequency::Weekly;
+            }
+            else if (repeatValue == L"monthly")
+            {
+                frequency = classmngr::engine::CalendarEventRepeatFrequency::Monthly;
+            }
+            const auto recurrenceValidation =
+                classmngr::engine::CalendarEventValidator::validateRecurrence(
+                    draft,
+                    frequency,
+                    repeatEnd
+                    );
+            if (!recurrenceValidation.isValid())
+            {
+                validation.Text(L"Repeat range is invalid or too long.");
+                validation.Visibility(Visibility::Visible);
+                continue;
+            }
+            if (eventId > 0 && !event.repeatSeriesId.empty())
+            {
+                const auto updated = service.updateRepeatSeriesFromDate(
+                    event,
+                    draft
+                    );
+                persisted = static_cast<bool>(updated);
+                if (!persisted)
+                {
+                    errorMessage = updated.error().message;
+                }
+            }
+            else if (eventId <= 0)
+            {
+                const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+                draft.repeatSeriesId = "winui-" + std::to_string(stamp);
+                const auto created = service.createRepeatSeries(
+                    draft,
+                    frequency,
+                    repeatEnd
+                    );
+                persisted = static_cast<bool>(created);
+                if (!persisted)
+                {
+                    errorMessage = created.error().message;
+                }
+            }
+            else
+            {
+                const auto saved = service.save(draft);
+                persisted = static_cast<bool>(saved);
+                if (!persisted)
+                {
+                    errorMessage = saved.error().message;
+                }
+            }
+        }
+        else
+        {
+            const auto saved = service.save(draft);
+            persisted = static_cast<bool>(saved);
+            if (!persisted)
+            {
+                errorMessage = saved.error().message;
+            }
+        }
+        if (!persisted)
+        {
+            validation.Text(winrt::hstring(
+                L"Calendar event could not be saved: " + asWide(errorMessage)
+                ));
+            validation.Visibility(Visibility::Visible);
+            continue;
+        }
+        m_dirtyState.markClean();
+        m_calendarStatusText.Text(L"Calendar event saved.");
+        refreshCalendarPage();
+        updateFileCommandState();
+        break;
+    }
+
+    if (m_ownedDialog == dialog)
+    {
+        m_ownedDialog = nullptr;
+    }
 }
 
 void MainWindow::populatePersonalDetailsPage(

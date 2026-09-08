@@ -4,6 +4,8 @@
 #include "MainWindow.g.h"
 
 #include "classmngr/engine/semantic_version.h"
+#include "classmngr/engine/academic_calendar.h"
+#include "classmngr/engine/calendar_event.h"
 #include "classmngr/engine/campus_record.h"
 #include "classmngr/engine/class_info.h"
 #include "classmngr/engine/classroom.h"
@@ -23,6 +25,7 @@
 #include <string_view>
 #include <chrono>
 #include <cstdint>
+#include <array>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -112,6 +115,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase6GsTeamChecks();
     [[nodiscard]] bool runPhase6ClassInformationChecks();
     [[nodiscard]] uint32_t phase6ClassInformationFailureMask() const noexcept;
+    [[nodiscard]] bool runPhase6CalendarChecks();
+    [[nodiscard]] uint32_t phase6CalendarFailureMask() const noexcept;
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -229,6 +234,38 @@ private:
     void populateHomePage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
+    void populateCalendarWorkspace(
+        Microsoft::UI::Xaml::Controls::StackPanel const& calendarRoot
+        );
+    void refreshCalendarPage();
+    void CalendarPreviousButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void CalendarNextButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void CalendarTodayButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void CalendarSavePreferencesButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void CalendarRestoreDefaultsButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void CalendarResetEventsButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void saveCalendarPreferences();
+    void restoreCalendarDefaults();
+    void resetCalendarEvents();
+    winrt::fire_and_forget openCalendarEventEditor(int eventId);
     void populateClassesPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId
@@ -661,6 +698,39 @@ private:
     bool m_classNotesDirty{};
     bool m_classNew{};
     uint32_t m_phase6ClassInformationFailureMask{};
+
+    Microsoft::UI::Xaml::Controls::Pivot m_calendarTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_calendarMonthTitle{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_calendarStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_calendarValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_calendarSelectedDateText{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_calendarGrid{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel m_calendarEventsPanel{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_calendarPreviousButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_calendarNextButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_calendarTodayButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_calendarAddEventButton{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox m_calendarShowAllCampusesCheck{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox m_calendarHideStartOfTermCheck{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_calendarFirstDayCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_calendarTermYearTextBox{nullptr};
+    std::array<Microsoft::UI::Xaml::Controls::TextBox, 2>
+        m_calendarWinterStartTextBoxes{};
+    std::array<std::array<Microsoft::UI::Xaml::Controls::TextBox, 4>, 2>
+        m_calendarTermWeekTextBoxes{};
+    Microsoft::UI::Xaml::Controls::TextBlock m_calendarPreferencesStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_calendarPreferencesValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_calendarSavePreferencesButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_calendarRestoreDefaultsButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_calendarResetEventsButton{nullptr};
+    std::vector<classmngr::engine::CalendarEvent> m_calendarEvents;
+    classmngr::engine::AcademicCalendarSchedule m_calendarSchedule;
+    classmngr::engine::CalendarDate m_calendarDisplayedMonth{};
+    classmngr::engine::CalendarDate m_calendarSelectedDate{};
+    int m_calendarFirstDayOfWeek{};
+    bool m_calendarLoading{};
+    bool m_calendarPreferencesDirty{};
+    uint32_t m_phase6CalendarFailureMask{};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_campusSelector{nullptr};
     Microsoft::UI::Xaml::Controls::Pivot m_campusTabs{nullptr};
