@@ -62,6 +62,10 @@ the corresponding Qt visual-parity row.
 - Use engine use cases and shared validators for both manual entry and imports.
 - Preserve Korean IME composition, keyboard selection/editing, clipboard,
   focus restoration, and unsaved-change rules.
+- Keep localization within the existing catalog set: regional English
+  (`en-US`, `en-GB`, `en-CA`, and `en-AU`) plus Korean (`ko-KR`). No additional
+  language catalogs or resource qualifiers are in scope; unsupported system
+  locales continue to use the existing English fallback policy.
 - Use virtualized controls for large row/cell collections.
 - Match the retained Qt table layout, density, column/header geometry,
   typography, colors, borders, selection/focus/validation/dirty states, and
