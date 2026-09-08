@@ -380,6 +380,10 @@ void App::OnLaunched(
             activation,
             L"--phase6-speaking-evaluation-test"
             );
+    const bool phase6SubPrepTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase6-sub-prep-test"
+        );
     const bool phase5CampusEmpty = ClassMngrWinUILifecycle::hasArgument(
         activation,
         L"--phase5-campus-empty"
@@ -403,9 +407,9 @@ void App::OnLaunched(
         || phase6NativeEnglishTeacherTest || phase6GsTeamTest
         || phase6ClassInformationTest || phase6CalendarTest
         || phase6RosterTest || phase6ScheduleTest
-        || phase6SpeakingEvaluationTest)
+        || phase6SpeakingEvaluationTest || phase6SubPrepTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest, phase6NativeEnglishTeacherTest, phase6GsTeamTest, phase6ClassInformationTest, phase6CalendarTest, phase6RosterTest, phase6ScheduleTest, phase6SpeakingEvaluationTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest, phase6NativeEnglishTeacherTest, phase6GsTeamTest, phase6ClassInformationTest, phase6CalendarTest, phase6RosterTest, phase6ScheduleTest, phase6SpeakingEvaluationTest, phase6SubPrepTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -543,6 +547,17 @@ void App::OnLaunched(
                 passed = mainWindow->runPhase6SpeakingEvaluationChecks();
                 const auto failureMask =
                     mainWindow->phase6SpeakingEvaluationFailureMask();
+                scheduleTestExit(
+                    m_window,
+                    passed,
+                    ERROR_INVALID_DATA + failureMask
+                    );
+                return;
+            }
+            else if (phase6SubPrepTest)
+            {
+                passed = mainWindow->runPhase6SubPrepChecks();
+                const auto failureMask = mainWindow->phase6SubPrepFailureMask();
                 scheduleTestExit(
                     m_window,
                     passed,

@@ -19,6 +19,9 @@
 #include "classmngr/engine/native_english_teacher.h"
 #include "classmngr/engine/personal_details_service.h"
 #include "classmngr/engine/roster.h"
+#include "classmngr/engine/schedule_report.h"
+#include "classmngr/engine/sub_prep_class_information.h"
+#include "classmngr/engine/sub_prep_document.h"
 #include "classmngr/engine/teacher.h"
 #include "classmngr/engine/testing_block.h"
 #include "classmngr/engine/testing_class.h"
@@ -132,6 +135,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] uint32_t phase6ScheduleFailureMask() const noexcept;
     [[nodiscard]] bool runPhase6SpeakingEvaluationChecks();
     [[nodiscard]] uint32_t phase6SpeakingEvaluationFailureMask() const noexcept;
+    [[nodiscard]] bool runPhase6SubPrepChecks();
+    [[nodiscard]] uint32_t phase6SubPrepFailureMask() const noexcept;
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -591,6 +596,15 @@ private:
         std::string_view message
         );
     void updateFileCommandState();
+    void populateSubPrepPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        bool refresh
+        );
+    void refreshSubPrepPage();
+    void saveSubPrepPage();
+    void discardSubPrepPage();
+    void updateSubPrepActions();
+    void markSubPrepDirty();
 
     [[nodiscard]] std::wstring selectedPageId() const;
     [[nodiscard]] bool ensureHomePage();
@@ -601,6 +615,7 @@ private:
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceInformationNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceScheduleNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceCalendarNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_subPrepNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_classesNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_classDetailsNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_classRosterNavigationItem{nullptr};
@@ -1005,6 +1020,34 @@ private:
     bool m_personalDetailsLoading{};
     bool m_personalDetailsLoaded{};
     bool m_personalDetailsDirty{};
+
+    Microsoft::UI::Xaml::Controls::Pivot m_subPrepTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepCampusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepOfficeText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepWifiText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepWifiPasswordText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepPhotocopierText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepZoomLoginText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepZoomPasswordText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_subPrepClassMaterialsTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_subPrepGradingTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_subPrepSpecialInstructionsTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_subPrepNotesTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepScheduleSummaryText{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_subPrepScheduleList{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_subPrepClassInformationList{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepDocumentSummaryText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_subPrepSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_subPrepDiscardButton{nullptr};
+    classmngr::engine::SubPrepDocument m_subPrepDocument;
+    std::vector<classmngr::engine::Classroom> m_subPrepClasses;
+    std::vector<classmngr::engine::SubPrepSourceClass> m_subPrepSourceClasses;
+    std::vector<classmngr::engine::SubPrepTeacherGroup> m_subPrepClassInformation;
+    bool m_subPrepLoading{};
+    bool m_subPrepDirty{};
+    uint32_t m_phase6SubPrepFailureMask{};
 };
 
 } // namespace winrt::ClassMngrWinUI::implementation

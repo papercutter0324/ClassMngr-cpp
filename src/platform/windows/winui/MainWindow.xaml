@@ -326,8 +326,8 @@
                             x:Name="SubPrepNavigationItem"
                             Content="Sub Prep"
                             Tag="sub_prep"
-                            IsEnabled="False"
-                            AutomationProperties.Name="Sub Prep navigation item unavailable in prototype shell" />
+                            IsEnabled="True"
+                            AutomationProperties.Name="Sub Prep navigation item" />
                         <NavigationViewItem
                             x:Name="CoTeachersNavigationItem"
                             Content="Co-Teachers"
