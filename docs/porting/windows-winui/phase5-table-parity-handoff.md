@@ -2,10 +2,11 @@
 
 Date: 2026-09-08 (Asia/Seoul)
 
-Status: **Handoff prepared; Phase 6 implementation and parity acceptance have
-not started.** This record captures the retained Qt geometry and visual rules
-that Phase 6 must use. It does not treat the existing WinUI prototypes or
-their captures as table-family acceptance evidence.
+Status: **Handoff reviewed and accepted as Phase 6 input; Phase 6
+implementation and parity acceptance have not started.** The owner approved
+this handoff on 2026-09-08. It captures the retained Qt geometry and visual
+rules that Phase 6 must use; it does not treat the existing WinUI prototypes
+or their captures as table-family acceptance evidence.
 
 The parity target is the Qt content area: information hierarchy, geometry,
 density, typography, colors, borders, shading, focus/selection/error states,
@@ -124,7 +125,8 @@ resources and feature-scoped templates:
    light/dark themes, English/Korean text, populated/empty/error states, and
    representative selection, focus, dirty, and validation states.
 
-The Phase 5 review of the existing Campus list/detail surface is therefore a
-required handoff input, not a completed table-parity row. The [Phase 6 plan](../../../plans/windows-winui3-port-plan/phase-6-data-entry-feature-migration.md)
-must begin with this reconciliation before roster, schedule, evaluation, or
-other table-heavy work is accepted.
+The owner-approved Phase 5 review of the existing Campus list/detail surface is
+now a completed handoff input, not a completed table-parity row. The [Phase 6
+plan](../../../plans/windows-winui3-port-plan/phase-6-data-entry-feature-migration.md)
+must begin with this reconciliation before the Campus surface or any roster,
+schedule, evaluation, or other table-heavy work is accepted.

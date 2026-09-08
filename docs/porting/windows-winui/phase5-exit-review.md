@@ -1,8 +1,8 @@
-# Phase 5 interim exit review
+# Phase 5 exit review
 
 Date: 2026-09-08 (Asia/Seoul)
 
-Status: **In progress — the Phase 5 exit gate is not accepted.** The shell,
+Status: **Complete — the Phase 5 exit gate is accepted.** The shell,
 native database/output boundary, and engine-backed Campus Information slice are
 implemented. Host-level x64/x86 Debug/Release builds, staged verifiers,
 interactive WinUI captures, and x64 runtime measurements are recorded. The
@@ -11,8 +11,8 @@ and fails generation early if its required fallback keys are removed. The
 owner decisions recorded on 2026-09-08 approve the five captured WinUI
 scenarios, approve the interactive desktop review, and approve an explicit
 Phase 5 exception for the missing Qt empty/populated/error fixtures. The
-remaining gate work is the Phase 5-to-6 table-parity handoff; neither approval
-waives the requirement for
+The owner-approved table-parity handoff closes the remaining Phase 5 gate. The
+handoff is accepted as Phase 6 input; it does not waive the requirement for
 Qt-derived visual parity in Phase 6.
 
 ## Implementation and evidence matrix
@@ -21,7 +21,7 @@ Qt-derived visual parity in Phase 6.
 | --- | --- | --- |
 | Shell, startup, menu/sidebar, navigation history, theme, language, and dirty/error state | Implemented and staged-verified | Existing Phase 3/4 semantic and staged evidence remains the baseline. The latest Phase 5 source is included in the four fresh x64/x86 Debug/Release staged verifier passes. |
 | Database create/open/recent and native picker policy | Implemented; interactive review approved | `FileOpenPicker`, `FileSavePicker`, and `FolderPicker` are wired through engine/file-system boundaries. Latest WinUI translation units pass strict direct MSVC compilation. The owner-approved picker and unsaved-change review is recorded below. |
-| Campus Information read-only feature | Implemented and captured; owner review approved | Uses `CampusRecordService`, retains list/detail state, renders all record fields, loads optional staged map images through `WindowsResourceProvider`, and localizes the feature catalogs. The shared `.ts` to `.resw` bridge requires the `CampusInformationPage` fallback keys so a catalog refresh cannot silently remove the feature resources. Focused engine tests, staged Phase 5 checks, and five WinUI scenario sidecars pass. The capture review is approved as Phase 5 evidence; the current list/detail geometry is still subject to the Qt-derived handoff in [phase5-table-parity-handoff.md](phase5-table-parity-handoff.md). |
+| Campus Information read-only feature | Implemented and captured; owner review approved | Uses `CampusRecordService`, retains list/detail state, renders all record fields, loads optional staged map images through `WindowsResourceProvider`, and localizes the feature catalogs. The shared `.ts` to `.resw` bridge requires the `CampusInformationPage` fallback keys so a catalog refresh cannot silently remove the feature resources. Focused engine tests, staged Phase 5 checks, and five WinUI scenario sidecars pass. The capture review and the Qt-derived handoff are approved as Phase 5 evidence; the current list/detail geometry remains a Phase 6 reconciliation input. |
 | Paired Qt/WinUI scenarios | WinUI captured; approved Qt-evidence exception | The [paired-scenario manifest](../../../artifacts/phase5/paired-20260908-x64-debug-clean2/phase5-paired-scenarios.json) covers startup, no-database, empty, populated, and error. All five WinUI sidecars validate; startup and no-database link to matching Qt evidence. The owner-approved exception in this review accepts the missing matching Qt fixtures for empty, populated, and error for the Phase 5 gate only. It does not waive Phase 6 table/list-detail parity or require treating a missing Qt artifact as a visual match. |
 | Cold/warm startup and first paint | Captured for x64 Debug/Release | The [Debug report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-debug.json) and [Release report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-release.json) contain three successful iterations each. Visible-window timing is explicitly a first-paint proxy; it is not the Phase 0 window-constructed or ready checkpoint. |
 | First navigation | Measured; provisional guardrails passed | The [x64 Release first-navigation report](../../../artifacts/phase5/measurements-20260908-x64/phase5-first-navigation-x64-release.json) contains 20 independent fresh-process samples, 20/20 valid, and 0 failures. The 19th sorted sample is p95 `52.881 ms`; minimum is `38.2 ms`, median `44 ms`, and maximum `63.1 ms`. Every raw sample reaches the populated Campus page with the selected detail panel and expected record count, then exits cleanly. The provisional p95 `<= 500 ms` and maximum `<= 750 ms` guardrails pass. The final Phase 0 cap remains the same-definition Qt p95 plus 20% once a Qt baseline exists. |
@@ -130,13 +130,16 @@ The required handoff is recorded in
 the Qt Campus selector/tab/form geometry and the retained Qt table-family
 contracts for roster, speaking evaluation, schedule, staff directory, and
 analytics ranking. It also records the current WinUI Campus list/detail values
-as prototype-only values. Review and reconcile that handoff before Phase 6
-begins; the current Campus surface is not a parity-accepted table/list-detail
-row.
+as prototype-only values. The owner reviewed and accepted this handoff on
+2026-09-08 as the Phase 6 starting contract. The current Campus surface is not
+yet a parity-accepted table/list-detail row; Phase 6 begins with its
+reconciliation.
 
 ## Exit decision
 
-Do not mark Phase 5 complete or begin Phase 6 yet. Criteria 1–3 are approved,
-and the first-navigation measurement now passes the provisional guardrails.
-The Qt-derived table-parity handoff must still be reviewed and reconciled with
-the existing Campus list/detail prototype before Phase 6 can start.
+Phase 5 exit is accepted. Criteria 1–3 are approved, the first-navigation
+measurement passes the provisional guardrails, and the Qt-derived table-parity
+handoff has been reviewed and accepted as Phase 6 input. Phase 6 may now begin
+with reconciliation of the existing Campus list/detail prototype against the
+retained Qt contract; current Campus parity is not implied by this handoff
+approval.

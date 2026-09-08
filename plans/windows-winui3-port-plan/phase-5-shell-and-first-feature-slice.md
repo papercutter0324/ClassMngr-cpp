@@ -30,9 +30,10 @@ through the shared engine.
 ## Revisit before Phase 5 handoff
 
 The completed Phase 5 read-only list/detail slice and the Phase 4 control
-gallery predate the full cross-feature Qt table parity review. Before Phase 6
-starts, record the table-parity handoff and revisit any table-like list or
-detail surface already implemented, including its density, selection, focus,
+gallery predate the full cross-feature Qt table parity review. The owner-
+approved table-parity handoff records the retained Qt contract and closes this
+Phase 5 gate. Phase 6 must still revisit any table-like list or detail surface
+already implemented, including its density, selection, focus,
 empty/error states, localization, and DPI behavior. Use the shared
 [WinUI table layout and style parity plan](../../docs/porting/windows-winui/table-parity-plan.md);
 the Phase 5 handoff is recorded in
@@ -40,7 +41,9 @@ the Phase 5 handoff is recorded in
 Do not treat the existing prototype captures as acceptance evidence for the
 production table families, and do not call the current Campus list/detail
 geometry parity-accepted until it has been reconciled with the retained Qt
-selector-plus-tabbed-form design or has a separate approved exception.
+selector-plus-tabbed-form design or has a separate approved exception. This
+remaining reconciliation is Phase 6 work, not a blocker on the accepted Phase
+5 handoff.
 
 ## File-dialog decision
 

@@ -95,7 +95,7 @@ concatenated or slug-style subjects such as `Phase2-document-catalog-service`.
 Phase 4 is complete. Its shared UX layer, first-party virtualization decision,
 three editor prototypes, input and Korean IME protocols, large-data gate,
 chart strategy, and staged semantic control check passed the accepted exit
-review on 2026-09-07. Phase 5 is now in progress; its shell geometry slice,
+review on 2026-09-07. Phase 5 is complete; its shell geometry slice,
 Qt-ordered menu/sidebar shell, engine-backed existing-database Open/recent
 startup flow, native file-dialog policy, and native New/create flow are
 committed. The engine-backed Campus Information read-only baseline is also
@@ -114,18 +114,19 @@ for startup/no-database; the owner-approved Phase 5 exception covers the
 missing empty/populated/error Qt fixtures. Owner review of all five WinUI
 scenarios and interactive picker/unsaved-change, keyboard/Korean IME, focus,
 DPI, and accessibility review are approved. The Terra first-navigation
-recommendation and measurement are complete and pass the provisional
-guardrails; only the Qt-derived table-parity handoff remains before the phase
-can advance. Touch, high-contrast, and
+recommendation and measurement pass the provisional guardrails, and the
+Qt-derived table-parity handoff was reviewed and accepted as Phase 6 input on
+2026-09-08. Phase 5 is complete; Phase 6 begins with Qt reconciliation. Touch,
+high-contrast, and
 accessibility automation remain out of
 scope for Phase 4.
 
-## Phase 5 Resume Handoff
+## Phase 5 Completion Handoff
 
-Resume from commit `8d11eec` (`Phase 5 - Guard required WinUI resources`).
-Host-level x64/x86 Debug/Release builds and staged verification are complete;
-the remaining work is reconciliation of the Qt-derived table-parity handoff
-with the Phase 5 Campus surface.
+Phase 5 is complete through the recorded implementation/evidence commits and
+the owner-approved table-parity handoff. Host-level x64/x86 Debug/Release
+builds and staged verification are complete. Phase 6 begins by reconciling the
+Qt-derived table-parity contract with the Phase 5 Campus surface.
 
 Finished Phase 5 work:
 
@@ -207,12 +208,12 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Review the [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md)
-   against the retained Qt table families and reconcile the current Campus
-   selector/tab/form design before starting any Phase 6 table-heavy slice.
-2. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
-   gate and table-parity handoff are accepted. The first-navigation report has
-   passed the provisional guardrails and is linked from the Phase 5 exit review.
+1. Begin [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md)
+   with the accepted [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md)
+   as the Qt visual contract.
+2. Reconcile the current Campus selector/list-detail prototype with the Qt
+   selector-plus-five-tabs/form design before accepting table-heavy Phase 6
+   surfaces.
 
 For the all-phase dashboard, completed-phase evidence, and historical progress
 log, see [progress-log.md](progress-log.md).
