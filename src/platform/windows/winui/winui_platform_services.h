@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 // Windows-only implementations used by the unpackaged WinUI shell.  The
 // public boundary deliberately remains UTF-8 and engine::Result based.
@@ -87,6 +88,8 @@ public:
     [[nodiscard]] engine::Result<engine::ResourceMetadata> metadata(
         std::string_view logicalPath
         ) const override;
+    [[nodiscard]] engine::Result<std::vector<std::string>> listCampusJsonFiles()
+        const;
 
 private:
     [[nodiscard]] engine::Result<std::wstring> resolvePath(

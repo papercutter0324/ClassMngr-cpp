@@ -883,6 +883,68 @@ engine::Result<engine::ResourceMetadata> WindowsResourceProvider::metadata(
     };
 }
 
+engine::Result<std::vector<std::string>>
+WindowsResourceProvider::listCampusJsonFiles() const
+{
+    if (m_campusRoot.empty())
+    {
+        return std::unexpected(failure(
+            ErrorCode::Io,
+            "The packaged campus resource root is unavailable."
+            ));
+    }
+
+    std::error_code error;
+    const fs::path root = fs::weakly_canonical(
+        fs::path(m_campusRoot),
+        error
+        );
+    if (error)
+    {
+        return std::unexpected(failure(
+            ErrorCode::Io,
+            "The packaged campus resource root could not be resolved.",
+            error.value()
+            ));
+    }
+
+    std::vector<std::string> result;
+    for (fs::directory_iterator iterator(root, error);
+         !error && iterator != fs::directory_iterator();
+         iterator.increment(error))
+    {
+        const fs::directory_entry& entry = *iterator;
+        std::error_code entryError;
+        if (!entry.is_regular_file(entryError) || entryError
+            || entry.path().extension() != L".json")
+        {
+            continue;
+        }
+
+        const auto fileName = toUtf8(
+            entry.path().filename().wstring(),
+            "The campus resource file name"
+            );
+        if (!fileName)
+        {
+            return std::unexpected(fileName.error());
+        }
+        result.emplace_back("assets/campuses/" + *fileName);
+    }
+
+    if (error)
+    {
+        return std::unexpected(failure(
+            ErrorCode::Io,
+            "Unable to enumerate packaged campus resources.",
+            error.value()
+            ));
+    }
+
+    std::sort(result.begin(), result.end());
+    return result;
+}
+
 engine::Result<std::string> WindowsClipboard::readText() noexcept
 {
     try

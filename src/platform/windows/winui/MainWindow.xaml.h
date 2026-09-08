@@ -28,6 +28,62 @@ class SqliteDatabase;
 namespace winrt::ClassMngrWinUI::implementation
 {
 
+struct CampusAddressView
+{
+    std::wstring buildingName;
+    std::wstring province;
+    std::wstring city;
+    std::wstring cityDistrict;
+    std::wstring district;
+    std::wstring line1;
+    std::wstring line2;
+    std::wstring postalCode;
+    std::wstring addressSystem;
+};
+
+struct CampusHousingView
+{
+    std::wstring name;
+    CampusAddressView englishAddress;
+    CampusAddressView koreanAddress;
+    std::wstring addressNote;
+    std::vector<std::string> imagePaths;
+    std::wstring naverMapUrl;
+    std::wstring kakaoMapUrl;
+};
+
+// This is the read-only Windows presentation model for the same resource
+// catalog used by the Qt Campus Directory.  Database-backed phase checks are
+// converted into this shape at the UI boundary so the production page does
+// not accidentally substitute the .tps campuses table for the catalog.
+struct CampusResourceView
+{
+    std::wstring id;
+    std::wstring campusName;
+    std::wstring campusCode;
+    std::wstring buildingName;
+    std::wstring buildingNameKr;
+    std::wstring address;
+    std::wstring phoneNumber;
+    std::wstring officeNumber;
+    CampusAddressView englishAddress;
+    CampusAddressView koreanAddress;
+    std::wstring directionsNote;
+    std::vector<std::wstring> transitSteps;
+    std::wstring arrivalInfo;
+    std::vector<std::string> mapImagePaths;
+    std::wstring naverMapUrl;
+    std::wstring kakaoMapUrl;
+    std::wstring officeWifi;
+    std::wstring officeWifiPassword;
+    std::wstring printerName;
+    std::wstring printerSteps;
+    std::wstring printerDriverUrl;
+    bool printerDriverUrlUnavailable = true;
+    std::wstring photocopierCode;
+    std::vector<CampusHousingView> housingLocations;
+};
+
 struct MainWindow : MainWindowT<MainWindow>
 {
     MainWindow();
@@ -159,11 +215,16 @@ private:
     void populateHomePage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
+    void populateClassesPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        std::wstring_view pageId
+        );
     void populateAboutPage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
-    void populateCampusInformationPage(
+    void populateCampusPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
+        std::wstring_view pageId,
         bool refresh
         );
     void refreshCampusInformationPage();
@@ -171,10 +232,11 @@ private:
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
         );
-    void presentSelectedCampus();
+    void presentSelectedCampus(std::wstring_view pageId);
     winrt::fire_and_forget loadCampusImage(
         std::string logicalPath,
-        std::uint64_t requestId
+        std::uint64_t requestId,
+        Microsoft::UI::Xaml::Controls::Image target
         );
     void NameTextBox_TextChanged(
         Microsoft::UI::Xaml::Controls::TextBox const& sender,
@@ -232,8 +294,21 @@ private:
     Microsoft::UI::Xaml::Controls::Grid m_appTitleBar{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationView m_navigationView{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_homeNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceInformationNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceScheduleNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceCalendarNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classesNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classDetailsNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classRosterNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classSpeakingEvaluationsNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classAnalyticsNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classNotesNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_aboutNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusInformationNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusDirectionsNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusAddressNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusHousingNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusMapNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::Frame m_contentFrame{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
@@ -269,7 +344,10 @@ private:
     Microsoft::UI::Xaml::Controls::ListView m_campusList{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel m_campusDetailsPanel{nullptr};
     Microsoft::UI::Xaml::Controls::Image m_campusImage{nullptr};
+    std::vector<Microsoft::UI::Xaml::Controls::Image> m_campusImages;
     std::vector<classmngr::engine::CampusRecord> m_campusRecords;
+    std::vector<CampusResourceView> m_campusResourceRecords;
+    int32_t m_selectedCampusIndex{};
     std::wstring m_campusInformationState;
     std::wstring m_phase5CampusScenario;
     std::uint64_t m_campusImageRequest{};

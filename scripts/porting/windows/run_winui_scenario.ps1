@@ -178,6 +178,13 @@ namespace ClassMngrWinUIScenario
             );
 
         [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool PrintWindow(
+            IntPtr window,
+            IntPtr deviceContext,
+            uint flags
+            );
+
+        [DllImport("user32.dll", SetLastError = true)]
         public static extern bool PostMessage(
             IntPtr window,
             uint message,
@@ -366,6 +373,11 @@ function Get-WindowCapture
         [string]$Path
     )
 
+    if (-not [ClassMngrWinUIScenario.NativeMethods]::IsWindow($Window))
+    {
+        throw "WinUI window handle is no longer valid for capture: $Window."
+    }
+
     $rectangle = [ClassMngrWinUIScenario.NativeMethods+Rect]::new()
     if (-not [ClassMngrWinUIScenario.NativeMethods]::GetWindowRect(
             $Window,
@@ -386,14 +398,26 @@ function Get-WindowCapture
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
     try
     {
-        $graphics.CopyFromScreen(
-            $rectangle.Left,
-            $rectangle.Top,
-            0,
-            0,
-            $bitmap.Size,
-            [System.Drawing.CopyPixelOperation]::SourceCopy
-            )
+        # CopyFromScreen acquires a desktop DC, which is invalid in some
+        # non-interactive PowerShell hosts even when the target window is valid.
+        # PrintWindow instead renders directly into this bitmap's DC.
+        $deviceContext = $graphics.GetHdc()
+        try
+        {
+            if (-not [ClassMngrWinUIScenario.NativeMethods]::PrintWindow(
+                    $Window,
+                    $deviceContext,
+                    0x00000002
+                    ))
+            {
+                $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+                throw "Could not capture WinUI window $Window with PrintWindow (Win32 error $errorCode)."
+            }
+        }
+        finally
+        {
+            $graphics.ReleaseHdc($deviceContext)
+        }
         $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
     }
     finally
@@ -407,7 +431,7 @@ function Get-WindowCapture
         width = $width
         height = $height
         sha256 = ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash).ToLowerInvariant()
-        method = 'CopyFromScreen'
+        method = 'PrintWindow'
     }
 }
 

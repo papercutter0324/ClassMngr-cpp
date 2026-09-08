@@ -14,6 +14,7 @@
 
 #include <winrt/Microsoft.UI.Xaml.Automation.h>
 #include <winrt/Microsoft.UI.Xaml.Media.Imaging.h>
+#include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Storage.Pickers.h>
 #include <winrt/Windows.Storage.Streams.h>
 
@@ -38,8 +39,18 @@ namespace
 {
 
 constexpr std::wstring_view homePageId = L"home";
+constexpr std::wstring_view classesPageId = L"classes";
+constexpr std::wstring_view classDetailsPageId = L"classes_details";
+constexpr std::wstring_view classRosterPageId = L"classes_roster";
+constexpr std::wstring_view classSpeakingEvaluationsPageId = L"classes_speaking_evaluations";
+constexpr std::wstring_view classAnalyticsPageId = L"classes_analytics";
+constexpr std::wstring_view classNotesPageId = L"classes_notes";
 constexpr std::wstring_view aboutPageId = L"about";
 constexpr std::wstring_view campusInformationPageId = L"campus_information";
+constexpr std::wstring_view campusDirectionsPageId = L"campus_directions";
+constexpr std::wstring_view campusAddressPageId = L"campus_address";
+constexpr std::wstring_view campusHousingPageId = L"campus_housing";
+constexpr std::wstring_view campusMapPageId = L"campus_map";
 constexpr int32_t minimumShellWidth = 800;
 constexpr int32_t minimumShellHeight = 600;
 constexpr int32_t defaultShellWidth = 1270;
@@ -183,8 +194,37 @@ std::string uniqueCampusResourceFileName(
 bool isKnownPageId(std::wstring_view pageId) noexcept
 {
     return pageId == homePageId
+        || pageId == classesPageId
+        || pageId == classDetailsPageId
+        || pageId == classRosterPageId
+        || pageId == classSpeakingEvaluationsPageId
+        || pageId == classAnalyticsPageId
+        || pageId == classNotesPageId
         || pageId == aboutPageId
-        || pageId == campusInformationPageId;
+        || pageId == campusInformationPageId
+        || pageId == campusDirectionsPageId
+        || pageId == campusAddressPageId
+        || pageId == campusHousingPageId
+        || pageId == campusMapPageId;
+}
+
+bool isClassesPageId(std::wstring_view pageId) noexcept
+{
+    return pageId == classesPageId
+        || pageId == classDetailsPageId
+        || pageId == classRosterPageId
+        || pageId == classSpeakingEvaluationsPageId
+        || pageId == classAnalyticsPageId
+        || pageId == classNotesPageId;
+}
+
+bool isCampusPageId(std::wstring_view pageId) noexcept
+{
+    return pageId == campusInformationPageId
+        || pageId == campusDirectionsPageId
+        || pageId == campusAddressPageId
+        || pageId == campusHousingPageId
+        || pageId == campusMapPageId;
 }
 
 std::string asUtf8(std::wstring_view value)
@@ -294,6 +334,423 @@ std::vector<std::wstring> pruneRecentDatabasePaths(
 std::wstring asWString(winrt::hstring const& value)
 {
     return std::wstring(value.c_str(), value.size());
+}
+
+using JsonArray = winrt::Windows::Data::Json::JsonArray;
+using JsonObject = winrt::Windows::Data::Json::JsonObject;
+using JsonValueType = winrt::Windows::Data::Json::JsonValueType;
+using CampusAddressView =
+    winrt::ClassMngrWinUI::implementation::CampusAddressView;
+using CampusHousingView =
+    winrt::ClassMngrWinUI::implementation::CampusHousingView;
+using CampusResourceView =
+    winrt::ClassMngrWinUI::implementation::CampusResourceView;
+
+winrt::hstring jsonString(
+    JsonObject const& object,
+    std::wstring_view key
+    )
+{
+    if (!object)
+    {
+        return {};
+    }
+
+    try
+    {
+        const auto value = object.TryLookup(winrt::hstring(key));
+        return value && value.ValueType() == JsonValueType::String
+            ? value.GetString()
+            : winrt::hstring{};
+    }
+    catch (...)
+    {
+        return {};
+    }
+}
+
+JsonObject jsonObject(
+    JsonObject const& object,
+    std::wstring_view key
+    )
+{
+    if (!object)
+    {
+        return nullptr;
+    }
+
+    try
+    {
+        const auto value = object.TryLookup(winrt::hstring(key));
+        return value && value.ValueType() == JsonValueType::Object
+            ? value.GetObject()
+            : JsonObject{nullptr};
+    }
+    catch (...)
+    {
+        return nullptr;
+    }
+}
+
+JsonArray jsonArray(
+    JsonObject const& object,
+    std::wstring_view key
+    )
+{
+    if (!object)
+    {
+        return nullptr;
+    }
+
+    try
+    {
+        const auto value = object.TryLookup(winrt::hstring(key));
+        return value && value.ValueType() == JsonValueType::Array
+            ? value.GetArray()
+            : JsonArray{nullptr};
+    }
+    catch (...)
+    {
+        return nullptr;
+    }
+}
+
+std::wstring jsonWideString(
+    JsonObject const& object,
+    std::wstring_view key
+    )
+{
+    return asWString(jsonString(object, key));
+}
+
+std::vector<std::wstring> jsonWideStringArray(JsonArray const& values)
+{
+    std::vector<std::wstring> result;
+    if (!values)
+    {
+        return result;
+    }
+
+    for (uint32_t index = 0; index < values.Size(); ++index)
+    {
+        try
+        {
+            const auto value = values.GetAt(index);
+            if (value && value.ValueType() == JsonValueType::String)
+            {
+                result.emplace_back(asWString(value.GetString()));
+            }
+        }
+        catch (...)
+        {
+            // Match the Qt catalog loader's tolerant handling of an invalid
+            // optional array entry while preserving the rest of the record.
+        }
+    }
+    return result;
+}
+
+std::vector<std::string> jsonResourceStringArray(JsonArray const& values)
+{
+    std::vector<std::string> result;
+    if (!values)
+    {
+        return result;
+    }
+
+    for (uint32_t index = 0; index < values.Size(); ++index)
+    {
+        try
+        {
+            const auto value = values.GetAt(index);
+            if (value && value.ValueType() == JsonValueType::String)
+            {
+                result.emplace_back(winrt::to_string(value.GetString()));
+            }
+        }
+        catch (...)
+        {
+        }
+    }
+    return result;
+}
+
+CampusAddressView parseCampusAddress(JsonObject const& object)
+{
+    CampusAddressView result;
+    result.buildingName = jsonWideString(object, L"building_name");
+    result.province = jsonWideString(object, L"province");
+    result.city = jsonWideString(object, L"city");
+    result.cityDistrict = jsonWideString(object, L"city_district");
+    result.district = jsonWideString(object, L"district");
+    result.line1 = jsonWideString(object, L"line1");
+    result.line2 = jsonWideString(object, L"line2");
+    result.postalCode = jsonWideString(object, L"postal_code");
+    result.addressSystem = jsonWideString(object, L"address_system");
+    return result;
+}
+
+CampusHousingView parseCampusHousing(JsonObject const& object)
+{
+    CampusHousingView result;
+    result.name = jsonWideString(object, L"name");
+    result.addressNote = jsonWideString(object, L"addr_note");
+    result.englishAddress = parseCampusAddress(jsonObject(object, L"en"));
+    result.koreanAddress = parseCampusAddress(jsonObject(object, L"kr"));
+
+    const JsonObject map = jsonObject(object, L"map");
+    result.imagePaths = jsonResourceStringArray(jsonArray(map, L"images"));
+    result.naverMapUrl = jsonWideString(jsonObject(map, L"links"), L"naver");
+    result.kakaoMapUrl = jsonWideString(jsonObject(map, L"links"), L"kakao");
+    return result;
+}
+
+CampusResourceView parseCampusResource(JsonObject const& object)
+{
+    CampusResourceView result;
+    result.id = jsonWideString(object, L"id");
+    result.campusName = jsonWideString(object, L"campus_name");
+    result.campusCode = jsonWideString(object, L"campus_code");
+    result.buildingName = jsonWideString(object, L"building_name");
+    result.address = jsonWideString(object, L"address");
+    result.phoneNumber = jsonWideString(object, L"phone_number");
+    result.officeNumber = jsonWideString(object, L"office_number");
+    result.transitSteps = jsonWideStringArray(
+        jsonArray(object, L"transit_steps")
+        );
+    result.arrivalInfo = jsonWideString(object, L"arrival_info");
+    result.officeWifi = jsonWideString(object, L"office_wifi");
+    result.officeWifiPassword = jsonWideString(
+        object,
+        L"office_wifi_password"
+        );
+    result.printerName = jsonWideString(object, L"printer_name");
+    result.printerSteps = jsonWideString(object, L"printer_steps");
+    result.printerDriverUrl = jsonWideString(
+        object,
+        L"printer_driver_url"
+        );
+    result.photocopierCode = jsonWideString(
+        object,
+        L"photocopier_code"
+        );
+    result.buildingNameKr = jsonWideString(
+        jsonObject(jsonObject(object, L"directions"), L"kr"),
+        L"building_name"
+        );
+
+    const JsonObject directions = jsonObject(object, L"directions");
+    result.englishAddress = parseCampusAddress(
+        jsonObject(directions, L"en")
+        );
+    result.koreanAddress = parseCampusAddress(
+        jsonObject(directions, L"kr")
+        );
+    result.directionsNote = jsonWideString(directions, L"addr_note");
+
+    const JsonObject map = jsonObject(object, L"map");
+    result.mapImagePaths = jsonResourceStringArray(
+        jsonArray(map, L"images")
+        );
+    const std::string imageMain = winrt::to_string(
+        jsonString(object, L"image_main")
+        );
+    if (result.mapImagePaths.empty() && !imageMain.empty())
+    {
+        result.mapImagePaths.emplace_back(imageMain);
+    }
+    result.naverMapUrl = jsonWideString(jsonObject(map, L"links"), L"naver");
+    result.kakaoMapUrl = jsonWideString(jsonObject(map, L"links"), L"kakao");
+
+    result.printerDriverUrlUnavailable = result.printerDriverUrl.empty();
+
+    const JsonArray housing = jsonArray(object, L"housing_locations");
+    if (housing)
+    {
+        for (uint32_t index = 0; index < housing.Size(); ++index)
+        {
+            try
+            {
+                const auto value = housing.GetAt(index);
+                if (value && value.ValueType() == JsonValueType::Object)
+                {
+                    result.housingLocations.emplace_back(
+                        parseCampusHousing(value.GetObject())
+                        );
+                }
+            }
+            catch (...)
+            {
+            }
+        }
+    }
+
+    return result;
+}
+
+bool equalsIgnoreCase(std::wstring_view lhs, std::wstring_view rhs) noexcept
+{
+    if (lhs.size() != rhs.size())
+    {
+        return false;
+    }
+    for (std::size_t index = 0; index < lhs.size(); ++index)
+    {
+        if (std::towlower(lhs[index]) != std::towlower(rhs[index]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+classmngr::engine::Result<std::vector<CampusResourceView>>
+loadPackagedCampusResources()
+{
+    classmngr::windows::winui::WindowsResourceProvider provider;
+    const auto files = provider.listCampusJsonFiles();
+    if (!files)
+    {
+        return std::unexpected(files.error());
+    }
+
+    std::vector<CampusResourceView> result;
+    result.reserve(files->size());
+    for (const std::string& file : *files)
+    {
+        const auto bytes = provider.readBytes(file);
+        if (!bytes)
+        {
+            continue;
+        }
+
+        try
+        {
+            const std::string json(
+                reinterpret_cast<char const*>(bytes->data()),
+                bytes->size()
+                );
+            CampusResourceView campus = parseCampusResource(
+                JsonObject::Parse(winrt::to_hstring(json))
+                );
+            if (campus.campusName.empty()
+                || equalsIgnoreCase(campus.id, L"default")
+                || equalsIgnoreCase(campus.campusName, L"default"))
+            {
+                continue;
+            }
+            result.emplace_back(std::move(campus));
+        }
+        catch (...)
+        {
+            // Qt skips malformed optional campus files and keeps the other
+            // catalog entries available.
+        }
+    }
+
+    std::sort(
+        result.begin(),
+        result.end(),
+        [](CampusResourceView const& lhs, CampusResourceView const& rhs) {
+            std::wstring left = lhs.campusName;
+            std::wstring right = rhs.campusName;
+            std::transform(
+                left.begin(),
+                left.end(),
+                left.begin(),
+                [](wchar_t value) { return std::towlower(value); }
+                );
+            std::transform(
+                right.begin(),
+                right.end(),
+                right.begin(),
+                [](wchar_t value) { return std::towlower(value); }
+                );
+            return left < right;
+        }
+        );
+    return result;
+}
+
+CampusResourceView campusResourceFromEngine(
+    classmngr::engine::CampusRecord const& source
+    )
+{
+    CampusResourceView result;
+    result.id = std::to_wstring(source.id);
+    result.campusName = asWString(winrt::to_hstring(source.name));
+    result.buildingName = asWString(winrt::to_hstring(source.buildingName));
+    result.address = asWString(winrt::to_hstring(source.address));
+    result.phoneNumber = asWString(winrt::to_hstring(source.phoneNumber));
+    result.officeNumber = asWString(winrt::to_hstring(source.officeNumber));
+    result.arrivalInfo = asWString(winrt::to_hstring(source.arrivalInfo));
+    result.officeWifi = asWString(winrt::to_hstring(source.officeWifi));
+    result.officeWifiPassword = asWString(
+        winrt::to_hstring(source.officeWifiPassword)
+        );
+    result.printerName = asWString(winrt::to_hstring(source.printerName));
+    result.printerSteps = asWString(winrt::to_hstring(source.printerSteps));
+    result.photocopierCode = asWString(
+        winrt::to_hstring(source.photocopierCode)
+        );
+    result.directionsNote = {};
+    if (!source.transitSteps.empty())
+    {
+        result.transitSteps.emplace_back(
+            asWString(winrt::to_hstring(source.transitSteps))
+            );
+    }
+    if (!source.imagePath.empty())
+    {
+        result.mapImagePaths.emplace_back(source.imagePath);
+    }
+    result.englishAddress.line1 = result.address;
+    result.englishAddress.buildingName = result.buildingName;
+    return result;
+}
+
+classmngr::engine::CampusRecord campusRecordFromResource(
+    CampusResourceView const& source
+    )
+{
+    classmngr::engine::CampusRecord result;
+    try
+    {
+        result.id = std::stoi(source.id);
+    }
+    catch (...)
+    {
+        result.id = -1;
+    }
+    result.name = winrt::to_string(winrt::hstring(source.campusName));
+    result.buildingName = winrt::to_string(winrt::hstring(source.buildingName));
+    result.address = winrt::to_string(winrt::hstring(source.address));
+    result.phoneNumber = winrt::to_string(winrt::hstring(source.phoneNumber));
+    result.officeNumber = winrt::to_string(winrt::hstring(source.officeNumber));
+    for (std::size_t index = 0; index < source.transitSteps.size(); ++index)
+    {
+        if (index != 0)
+        {
+            result.transitSteps += "\n";
+        }
+        result.transitSteps += winrt::to_string(
+            winrt::hstring(source.transitSteps[index])
+            );
+    }
+    result.arrivalInfo = winrt::to_string(winrt::hstring(source.arrivalInfo));
+    result.imagePath = source.mapImagePaths.empty()
+        ? std::string{}
+        : source.mapImagePaths.front();
+    result.officeWifi = winrt::to_string(winrt::hstring(source.officeWifi));
+    result.officeWifiPassword = winrt::to_string(
+        winrt::hstring(source.officeWifiPassword)
+        );
+    result.printerName = winrt::to_string(winrt::hstring(source.printerName));
+    result.printerSteps = winrt::to_string(winrt::hstring(source.printerSteps));
+    result.photocopierCode = winrt::to_string(
+        winrt::hstring(source.photocopierCode)
+        );
+    return result;
 }
 
 std::wstring boxedString(
@@ -642,10 +1099,48 @@ MainWindow::MainWindow()
         Microsoft::UI::Xaml::Controls::NavigationView>();
     m_homeNavigationItem = RootGrid().FindName(L"HomeNavigationItem").as<
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_workspaceInformationNavigationItem = RootGrid().FindName(
+        L"WorkspaceInformationNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_workspaceScheduleNavigationItem = RootGrid().FindName(
+        L"WorkspaceScheduleNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_workspaceCalendarNavigationItem = RootGrid().FindName(
+        L"WorkspaceCalendarNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_classesNavigationItem = RootGrid().FindName(L"ClassesNavigationItem").as<
+        Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_classDetailsNavigationItem = RootGrid().FindName(
+        L"ClassDetailsNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_classRosterNavigationItem = RootGrid().FindName(
+        L"ClassRosterNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_classSpeakingEvaluationsNavigationItem = RootGrid().FindName(
+        L"ClassSpeakingEvaluationsNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_classAnalyticsNavigationItem = RootGrid().FindName(
+        L"ClassAnalyticsNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_classNotesNavigationItem = RootGrid().FindName(
+        L"ClassNotesNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_aboutNavigationItem = RootGrid().FindName(L"AboutNavigationItem").as<
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_campusInformationNavigationItem = RootGrid().FindName(
         L"CampusInformationNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_campusDirectionsNavigationItem = RootGrid().FindName(
+        L"CampusDirectionsNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_campusAddressNavigationItem = RootGrid().FindName(
+        L"CampusAddressNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_campusHousingNavigationItem = RootGrid().FindName(
+        L"CampusHousingNavigationItem"
+        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
+    m_campusMapNavigationItem = RootGrid().FindName(
+        L"CampusMapNavigationItem"
         ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_contentFrame = RootGrid().FindName(L"ContentFrame").as<
         Microsoft::UI::Xaml::Controls::Frame>();
@@ -1002,8 +1497,20 @@ bool MainWindow::runPhase4SemanticChecks()
 
 uint32_t MainWindow::phase4SemanticFailureMask()
 {
-    if (!ensureHomePage() || !m_scheduleSlotTextBox || !m_scheduleStatusText
-        || !m_rosterSourceList || !m_rosterTransferredList || !m_rosterStatusText
+    if (!ensureHomePage() || !m_scheduleSlotTextBox || !m_scheduleStatusText)
+    {
+        return 1;
+    }
+
+    // Roster and speaking prototypes live on the Classes presentation now,
+    // but the phase hook still exercises their controls directly.
+    if (!m_rosterSourceList || !m_rosterTransferredList || !m_rosterStatusText
+        || !m_speakingPasteTextBox || !m_speakingStatusText
+        || m_speakingScoreCells.size() != 9)
+    {
+        navigateTo(classesPageId);
+    }
+    if (!m_rosterSourceList || !m_rosterTransferredList || !m_rosterStatusText
         || !m_speakingPasteTextBox || !m_speakingStatusText
         || m_speakingScoreCells.size() != 9)
     {
@@ -1061,7 +1568,7 @@ bool MainWindow::runPhase5CampusChecks()
     // Phase activation tests are shell-only, so this in-memory owner cannot
     // replace or observe a user database. Start by checking the explicit
     // no-database state, then seed the same service used by the page.
-    m_phase5CampusScenario.clear();
+    m_phase5CampusScenario = L"no-database";
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
     navigateTo(campusInformationPageId);
@@ -1087,6 +1594,7 @@ bool MainWindow::runPhase5CampusChecks()
     // Reproduce the user flow that previously left a cached no-database page
     // visible: leave Campus Information, open the database, then navigate
     // back to the cached page.
+    m_phase5CampusScenario = L"empty";
     navigateTo(homePageId);
     m_openDatabase = std::move(*opened);
     navigateTo(campusInformationPageId);
@@ -1124,6 +1632,7 @@ bool MainWindow::runPhase5CampusChecks()
         return false;
     }
 
+    m_phase5CampusScenario = L"populated";
     refreshCampusInformationPage();
     if (!m_campusList || m_campusInformationState != L"populated"
         || m_campusList.Items().Size() != 1)
@@ -1134,7 +1643,7 @@ bool MainWindow::runPhase5CampusChecks()
     }
 
     m_campusList.SelectedIndex(0);
-    presentSelectedCampus();
+    presentSelectedCampus(m_currentPageId);
     const bool imageControlReady = static_cast<bool>(m_campusImage);
     bool koreanTextReady = false;
     for (uint32_t index = 0; index < m_campusDetailsPanel.Children().Size(); ++index)
@@ -1173,9 +1682,11 @@ bool MainWindow::runPhase5CampusChecks()
 
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
+    m_phase5CampusScenario = L"no-database";
     refreshCampusInformationPage();
     const bool resetReady = m_campusInformationState == L"no_database"
         && !m_campusList;
+    m_phase5CampusScenario.clear();
     return noDatabaseReady && emptyReady && koreanTextReady
         && imageControlReady && localizationReady && resourceReady
         && resetReady;
@@ -2097,12 +2608,12 @@ bool MainWindow::exportDatabasePath(std::wstring_view path)
 
 bool MainWindow::saveCurrentPagePath(std::wstring_view path)
 {
-    if (m_currentPageId != campusInformationPageId)
+    if (!isCampusPageId(m_currentPageId))
     {
         reportOutputError(
             L"Save current page",
             path,
-            "Only the Campus Information page is available for export."
+            "Only Campus Directory pages are available for export."
             );
         return false;
     }
@@ -2195,12 +2706,12 @@ std::string MainWindow::currentPageExportJson() const
 
 bool MainWindow::exportCampusResourcesPath(std::wstring_view path)
 {
-    if (m_currentPageId != campusInformationPageId)
+    if (!isCampusPageId(m_currentPageId))
     {
         reportOutputError(
             L"Export campus resources",
             path,
-            "Only the Campus Information page is available for resource export."
+            "Only Campus Directory pages are available for resource export."
             );
         return false;
     }
@@ -2525,7 +3036,58 @@ void MainWindow::NavigationView_SelectionChanged(
         return;
     }
 
-    navigateTo(boxedString(selectedItem.Tag()));
+    std::wstring pageId = boxedString(selectedItem.Tag());
+    if (selectedItem == m_workspaceInformationNavigationItem
+        || selectedItem == m_workspaceScheduleNavigationItem
+        || selectedItem == m_workspaceCalendarNavigationItem)
+    {
+        navigateTo(homePageId);
+        const auto homePage = m_contentFrame.Content().try_as<
+            Microsoft::UI::Xaml::Controls::Page>();
+        const auto homeTabs = homePage
+            ? homePage.Content().try_as<Microsoft::UI::Xaml::Controls::Pivot>()
+            : nullptr;
+        if (homeTabs)
+        {
+            homeTabs.SelectedIndex(
+                selectedItem == m_workspaceScheduleNavigationItem
+                    ? 1
+                    : selectedItem == m_workspaceCalendarNavigationItem
+                        ? 2
+                        : 0
+                );
+        }
+        return;
+    }
+    if (isClassesPageId(pageId))
+    {
+        navigateTo(classesPageId);
+        const auto classesPage = m_contentFrame.Content().try_as<
+            Microsoft::UI::Xaml::Controls::Page>();
+        const auto classesTabs = classesPage
+            ? classesPage.Content().try_as<Microsoft::UI::Xaml::Controls::Pivot>()
+            : nullptr;
+        if (classesTabs)
+        {
+            classesTabs.SelectedIndex(
+                selectedItem == m_classRosterNavigationItem
+                    ? 1
+                    : selectedItem == m_classSpeakingEvaluationsNavigationItem
+                        ? 2
+                        : selectedItem == m_classAnalyticsNavigationItem
+                            ? 3
+                            : selectedItem == m_classNotesNavigationItem
+                                ? 4
+                                : 0
+                );
+        }
+        return;
+    }
+    if (pageId == L"campus_info")
+    {
+        pageId = std::wstring(campusInformationPageId);
+    }
+    navigateTo(pageId);
 }
 
 void MainWindow::NavigationView_BackRequested(
@@ -2557,6 +3119,14 @@ void MainWindow::ContentFrame_Navigated(
     }
 
     std::wstring pageId = boxedString(arguments.Parameter());
+    if (isClassesPageId(pageId))
+    {
+        pageId = std::wstring(classesPageId);
+    }
+    if (pageId == L"campus_info")
+    {
+        pageId = std::wstring(campusInformationPageId);
+    }
     if (!isKnownPageId(pageId))
     {
         pageId = std::wstring(homePageId);
@@ -2568,9 +3138,19 @@ void MainWindow::ContentFrame_Navigated(
     m_navigationView.SelectedItem(
         pageId == homePageId
             ? m_homeNavigationItem
-            : pageId == aboutPageId
+            : pageId == classesPageId
+                ? m_classesNavigationItem
+                : pageId == aboutPageId
                 ? m_aboutNavigationItem
-                : m_campusInformationNavigationItem
+                : pageId == campusInformationPageId
+                    ? m_campusInformationNavigationItem
+                    : pageId == campusDirectionsPageId
+                        ? m_campusDirectionsNavigationItem
+                        : pageId == campusAddressPageId
+                            ? m_campusAddressNavigationItem
+                            : pageId == campusHousingPageId
+                                ? m_campusHousingNavigationItem
+                                : m_campusMapNavigationItem
         );
     m_selectionChanging = false;
     updateNavigationState();
@@ -2607,6 +3187,10 @@ void MainWindow::Window_Closed(
 
 void MainWindow::navigateTo(std::wstring_view pageId)
 {
+    if (isClassesPageId(pageId))
+    {
+        pageId = classesPageId;
+    }
     if (!isKnownPageId(pageId))
     {
         return;
@@ -2635,9 +3219,9 @@ void MainWindow::populatePage(
         // may have been constructed before File > Open completed, so it must
         // be rehydrated whenever navigation returns to it instead of
         // retaining the previous no-database/empty state.
-        if (pageId == campusInformationPageId)
+        if (isCampusPageId(pageId))
         {
-            populateCampusInformationPage(page, true);
+            populateCampusPage(page, pageId, true);
         }
         else if (pageId == homePageId && !m_engineVersionText)
         {
@@ -2650,9 +3234,13 @@ void MainWindow::populatePage(
     {
         populateHomePage(page);
     }
-    else if (pageId == campusInformationPageId)
+    else if (isClassesPageId(pageId))
     {
-        populateCampusInformationPage(page, false);
+        populateClassesPage(page, pageId);
+    }
+    else if (isCampusPageId(pageId))
+    {
+        populateCampusPage(page, pageId, false);
     }
     else
     {
@@ -2963,10 +3551,256 @@ void MainWindow::populateHomePage(
     root.Children().Append(m_statusText);
     root.Children().Append(m_validationSummaryText);
     root.Children().Append(m_unsavedChangesButton);
-    root.Children().Append(scheduleCard.root);
-    root.Children().Append(rosterCard.root);
-    root.Children().Append(speakingCard.root);
-    page.Content(root);
+
+    auto scheduleRoot = StackPanel();
+    scheduleRoot.Padding(Thickness{32.0, 16.0, 32.0, 32.0});
+    scheduleRoot.Spacing(16.0);
+    scheduleRoot.MaxWidth(900.0);
+    scheduleRoot.HorizontalAlignment(HorizontalAlignment::Center);
+    scheduleRoot.Children().Append(scheduleCard.root);
+
+    auto calendarRoot = StackPanel();
+    calendarRoot.Padding(Thickness{32.0, 16.0, 32.0, 32.0});
+    calendarRoot.Spacing(16.0);
+    calendarRoot.MaxWidth(900.0);
+    calendarRoot.HorizontalAlignment(HorizontalAlignment::Center);
+    auto calendarTitle = TextBlock();
+    calendarTitle.Text(L"Calendar");
+    calendarTitle.FontSize(24.0);
+    auto calendarDescription = TextBlock();
+    calendarDescription.Text(
+        L"Calendar will load when the calendar feature slice is migrated."
+        );
+    calendarDescription.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(calendarTitle, L"Calendar");
+    setAutomationName(calendarDescription, L"Calendar migration status");
+    calendarRoot.Children().Append(calendarTitle);
+    calendarRoot.Children().Append(calendarDescription);
+
+    const auto scrollTab = [](StackPanel const& content) {
+        auto scroll = ScrollViewer();
+        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.Content(content);
+        return scroll;
+    };
+    const auto makePivotItem = [&scrollTab](
+                                    wchar_t const* header,
+                                    StackPanel const& content,
+                                    wchar_t const* automationName) {
+        auto item = PivotItem();
+        item.Header(winrt::box_value(winrt::hstring(header)));
+        item.Content(scrollTab(content));
+        setAutomationName(item, automationName);
+        return item;
+    };
+
+    auto tabs = Pivot();
+    tabs.IsTabStop(true);
+    tabs.TabIndex(0);
+    setAutomationName(tabs, L"My Workspace tabs");
+    tabs.Items().Append(makePivotItem(
+        L"My Information",
+        root,
+        L"My Information workspace tab"
+        ));
+    tabs.Items().Append(makePivotItem(
+        L"Schedule",
+        scheduleRoot,
+        L"Schedule workspace tab"
+        ));
+    tabs.Items().Append(makePivotItem(
+        L"Calendar",
+        calendarRoot,
+        L"Calendar workspace tab"
+        ));
+    page.Content(tabs);
+}
+
+void MainWindow::populateClassesPage(
+    Microsoft::UI::Xaml::Controls::Page const& page,
+    std::wstring_view pageId
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    // Class child routes share one presentation page so the prototype
+    // controls keep a single owner while the sidebar exposes the complete
+    // class hierarchy.
+    static_cast<void>(pageId);
+    auto makeRoot = [](StackPanel const& content) {
+        content.Padding(Thickness{32.0, 16.0, 32.0, 32.0});
+        content.Spacing(16.0);
+        content.MaxWidth(900.0);
+        content.HorizontalAlignment(HorizontalAlignment::Center);
+        return content;
+    };
+    auto makeTextSection = [&makeRoot](wchar_t const* titleText,
+                                       wchar_t const* descriptionText,
+                                       wchar_t const* automationName) {
+        auto root = makeRoot(StackPanel());
+        auto title = TextBlock();
+        title.Text(titleText);
+        title.FontSize(24.0);
+        setAutomationName(title, automationName);
+        auto description = TextBlock();
+        description.Text(descriptionText);
+        description.TextWrapping(TextWrapping::Wrap);
+        root.Children().Append(title);
+        root.Children().Append(description);
+        return root;
+    };
+
+    auto detailsRoot = makeTextSection(
+        L"Details",
+        L"Class details will load when the class feature slice is migrated.",
+        L"Class details prototype"
+        );
+
+    auto rosterRoot = makeRoot(StackPanel());
+    auto rosterCard = ClassMngrWinUISharedUX::buildCard({
+        L"Roster selection, transfer, and keyboard editing prototype",
+        L"Select a student, edit the name with the keyboard, and simulate a transfer between lists.",
+        L"Roster editor"
+        });
+    if (m_rosterSourceList && m_rosterTransferredList && m_rosterStatusText)
+    {
+        auto rosterLists = StackPanel();
+        rosterLists.Orientation(Orientation::Horizontal);
+        rosterLists.Spacing(8.0);
+        rosterLists.Children().Append(m_rosterSourceList);
+        rosterLists.Children().Append(m_rosterTransferredList);
+        auto rosterTransfer = Button();
+        rosterTransfer.Content(winrt::box_value(winrt::hstring(L"Transfer selected")));
+        rosterTransfer.IsTabStop(true);
+        rosterTransfer.HorizontalAlignment(HorizontalAlignment::Left);
+        rosterTransfer.Click({this, &MainWindow::RosterTransferButton_Click});
+        setAutomationName(rosterTransfer, L"Roster transfer selected student");
+        rosterCard.content.Children().Append(rosterLists);
+        rosterCard.content.Children().Append(rosterTransfer);
+        rosterCard.content.Children().Append(m_rosterStatusText);
+    }
+    else
+    {
+        auto placeholder = TextBlock();
+        placeholder.Text(L"Roster prototype controls are not initialized yet.");
+        placeholder.TextWrapping(TextWrapping::Wrap);
+        rosterCard.content.Children().Append(placeholder);
+    }
+    rosterRoot.Children().Append(rosterCard.root);
+
+    auto speakingRoot = makeRoot(StackPanel());
+    auto speakingCard = ClassMngrWinUISharedUX::buildCard({
+        L"Speaking-evaluation scores and analytics prototype",
+        L"Edit score cells, apply a tab/newline range, and request analytics navigation using standard controls.",
+        L"Speaking evaluation editor"
+        });
+    if (m_speakingPasteTextBox && m_speakingStatusText
+        && m_speakingScoreCells.size() == 9)
+    {
+        auto scoreGrid = Grid();
+        for (size_t column = 0; column < 4; ++column)
+        {
+            scoreGrid.ColumnDefinitions().Append(ColumnDefinition());
+        }
+        for (size_t row = 0; row < 4; ++row)
+        {
+            scoreGrid.RowDefinitions().Append(RowDefinition());
+        }
+        const auto addScoreHeader = [&scoreGrid](wchar_t const* text,
+                                                  uint32_t row,
+                                                  uint32_t column) {
+            auto header = TextBlock();
+            header.Text(text);
+            header.Margin(Thickness{4.0, 2.0, 4.0, 2.0});
+            Grid::SetRow(header, row);
+            Grid::SetColumn(header, column);
+            scoreGrid.Children().Append(header);
+        };
+        addScoreHeader(L"Student", 0, 0);
+        addScoreHeader(L"Pronunciation", 0, 1);
+        addScoreHeader(L"Fluency", 0, 2);
+        addScoreHeader(L"Interaction", 0, 3);
+        for (uint32_t row = 0; row < 3; ++row)
+        {
+            auto student = TextBlock();
+            student.Text(row == 0 ? L"Student 1" : row == 1 ? L"Student 2" : L"Student 3");
+            Grid::SetRow(student, row + 1);
+            Grid::SetColumn(student, 0);
+            scoreGrid.Children().Append(student);
+            for (uint32_t column = 0; column < 3; ++column)
+            {
+                auto score = m_speakingScoreCells[row * 3 + column];
+                Grid::SetRow(score, row + 1);
+                Grid::SetColumn(score, column + 1);
+                scoreGrid.Children().Append(score);
+            }
+        }
+        speakingCard.content.Children().Append(scoreGrid);
+        speakingCard.content.Children().Append(m_speakingPasteTextBox);
+        auto speakingPaste = Button();
+        speakingPaste.Content(winrt::box_value(winrt::hstring(L"Apply pasted range")));
+        speakingPaste.Click({this, &MainWindow::SpeakingPasteButton_Click});
+        setAutomationName(speakingPaste, L"Apply speaking pasted score range");
+        speakingCard.content.Children().Append(speakingPaste);
+        auto speakingAnalytics = Button();
+        speakingAnalytics.Content(winrt::box_value(winrt::hstring(L"Open analytics")));
+        speakingAnalytics.Click({this, &MainWindow::SpeakingAnalyticsButton_Click});
+        setAutomationName(speakingAnalytics, L"Open speaking analytics");
+        speakingCard.content.Children().Append(speakingAnalytics);
+        speakingCard.content.Children().Append(m_speakingStatusText);
+    }
+    else
+    {
+        auto placeholder = TextBlock();
+        placeholder.Text(L"Speaking evaluation prototype controls are not initialized yet.");
+        placeholder.TextWrapping(TextWrapping::Wrap);
+        speakingCard.content.Children().Append(placeholder);
+    }
+    speakingRoot.Children().Append(speakingCard.root);
+
+    auto analyticsRoot = makeTextSection(
+        L"Analytics",
+        L"Class analytics will load when the analytics feature slice is migrated.",
+        L"Class analytics prototype"
+        );
+    auto notesRoot = makeTextSection(
+        L"Notes",
+        L"Class notes will load when the notes feature slice is migrated.",
+        L"Class notes prototype"
+        );
+
+    const auto scrollTab = [](StackPanel const& content) {
+        auto scroll = ScrollViewer();
+        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.Content(content);
+        return scroll;
+    };
+    const auto makePivotItem = [&scrollTab](wchar_t const* header,
+                                            StackPanel const& content,
+                                            wchar_t const* automationName) {
+        auto item = PivotItem();
+        item.Header(winrt::box_value(winrt::hstring(header)));
+        item.Content(scrollTab(content));
+        setAutomationName(item, automationName);
+        return item;
+    };
+
+    auto tabs = Pivot();
+    tabs.IsTabStop(true);
+    setAutomationName(tabs, L"Classes tabs");
+    tabs.Items().Append(makePivotItem(L"Details", detailsRoot, L"Class Details tab"));
+    tabs.Items().Append(makePivotItem(L"Roster", rosterRoot, L"Class Roster tab"));
+    tabs.Items().Append(makePivotItem(
+        L"Speaking Evaluations",
+        speakingRoot,
+        L"Class Speaking Evaluations tab"
+        ));
+    tabs.Items().Append(makePivotItem(L"Analytics", analyticsRoot, L"Class Analytics tab"));
+    tabs.Items().Append(makePivotItem(L"Notes", notesRoot, L"Class Notes tab"));
+    page.Content(tabs);
 }
 
 void MainWindow::NameTextBox_TextChanged(
@@ -3016,8 +3850,9 @@ void MainWindow::populateAboutPage(
     page.Content(root);
 }
 
-void MainWindow::populateCampusInformationPage(
+void MainWindow::populateCampusPage(
     Microsoft::UI::Xaml::Controls::Page const& page,
+    std::wstring_view pageId,
     bool refresh
     )
 {
@@ -3033,11 +3868,33 @@ void MainWindow::populateCampusInformationPage(
     }
 
     m_campusRecords.clear();
+    m_campusResourceRecords.clear();
     m_campusList = nullptr;
     m_campusDetailsPanel = nullptr;
     m_campusImage = nullptr;
+    m_campusImages.clear();
     ++m_campusImageRequest;
     m_campusInformationState.clear();
+
+    auto pageTitle = [&]() -> std::wstring {
+        if (pageId == campusDirectionsPageId)
+        {
+            return localize(L"Directions");
+        }
+        if (pageId == campusAddressPageId)
+        {
+            return localize(L"Address");
+        }
+        if (pageId == campusHousingPageId)
+        {
+            return localize(L"Housing");
+        }
+        if (pageId == campusMapPageId)
+        {
+            return localize(L"Maps");
+        }
+        return localize(L"Campus Information");
+    };
 
     auto root = StackPanel();
     root.Padding(Thickness{32.0, 32.0, 32.0, 32.0});
@@ -3047,130 +3904,184 @@ void MainWindow::populateCampusInformationPage(
     root.VerticalAlignment(VerticalAlignment::Top);
 
     auto title = TextBlock();
-    title.Text(winrt::hstring(localize(L"Campus Information")));
+    title.Text(winrt::hstring(pageTitle()));
     title.FontSize(28.0);
-    setAutomationName(title, L"Campus Information");
+    setAutomationName(title, pageTitle());
     root.Children().Append(title);
+
+    const auto appendState = [this, &root, &localize](
+                                 winrt::hstring const& titleText,
+                                 winrt::hstring const& messageText,
+                                 std::wstring_view automationName,
+                                 bool errorState) {
+        m_campusInformationState = errorState
+            ? L"engine_error"
+            : titleText == winrt::hstring(localize(L"No database open"))
+                ? L"no_database"
+                : L"empty";
+        const auto state = errorState
+            ? ClassMngrWinUISharedUX::buildErrorState({
+                  titleText,
+                  messageText,
+                  winrt::hstring(automationName),
+                  {}
+                  })
+            : ClassMngrWinUISharedUX::buildEmptyState({
+                  titleText,
+                  messageText,
+                  winrt::hstring(automationName),
+                  {}
+                  });
+        root.Children().Append(state.root);
+    };
 
     if (m_phase5CampusScenario == L"error")
     {
-        m_campusInformationState = L"engine_error";
-        const auto state = ClassMngrWinUISharedUX::buildErrorState({
+        appendState(
             winrt::hstring(localize(L"Campus information unavailable")),
             winrt::hstring(localize(
                 L"The engine returned an unexpected campus loading failure."
                 )),
             L"Campus information engine error state",
-            {}
-            });
-        root.Children().Append(state.root);
+            true
+            );
         auto pageScroll = ScrollViewer();
+        pageScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
         pageScroll.Content(root);
         page.Content(pageScroll);
         return;
     }
 
-    if (!m_openDatabase)
+    // The phase verifier intentionally uses database scenarios to exercise
+    // the engine contract.  The production directory follows Qt and reads
+    // the packaged campus JSON catalog, which is independent of the .tps
+    // profile database.
+    if (!m_phase5CampusScenario.empty())
     {
-        m_campusInformationState = L"no_database";
-        const auto state = ClassMngrWinUISharedUX::buildEmptyState({
-            winrt::hstring(localize(L"No database open")),
-            winrt::hstring(localize(
-                L"Open or create a database to view campus information."
-                )),
-            L"Campus information no database state",
-            {}
-            });
-        root.Children().Append(state.root);
-        auto pageScroll = ScrollViewer();
-        pageScroll.Content(root);
-        page.Content(pageScroll);
-        return;
-    }
-
-    try
-    {
-        classmngr::engine::CampusRecordService service(*m_openDatabase);
-        const auto result = service.list();
-        if (!result)
+        if (!m_openDatabase)
         {
-            m_campusInformationState = L"engine_error";
+            appendState(
+                winrt::hstring(localize(L"No database open")),
+                winrt::hstring(localize(
+                    L"Open or create a database to view campus information."
+                    )),
+                L"Campus information no database state",
+                false
+                );
+            auto pageScroll = ScrollViewer();
+            pageScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+            pageScroll.Content(root);
+            page.Content(pageScroll);
+            return;
+        }
+
+        try
+        {
+            classmngr::engine::CampusRecordService service(*m_openDatabase);
+            const auto result = service.list();
+            if (!result)
+            {
+                std::wstring errorMessage = localize(
+                    L"The engine could not load campus records:"
+                    );
+                errorMessage += L" ";
+                const auto errorText = winrt::to_hstring(
+                    std::string(result.error().message)
+                    );
+                errorMessage.append(errorText.c_str(), errorText.size());
+                appendState(
+                    winrt::hstring(localize(
+                        L"Campus information unavailable"
+                        )),
+                    winrt::hstring(errorMessage),
+                    L"Campus information engine error state",
+                    true
+                    );
+            }
+            else
+            {
+                m_campusRecords = *result;
+                for (const auto& campus : m_campusRecords)
+                {
+                    m_campusResourceRecords.emplace_back(
+                        campusResourceFromEngine(campus)
+                        );
+                }
+            }
+        }
+        catch (std::exception const& error)
+        {
             std::wstring errorMessage = localize(
                 L"The engine could not load campus records:"
+                );
+            errorMessage += L" ";
+            const auto errorText = winrt::to_hstring(std::string(error.what()));
+            errorMessage.append(errorText.c_str(), errorText.size());
+            appendState(
+                winrt::hstring(localize(L"Campus information unavailable")),
+                winrt::hstring(errorMessage),
+                L"Campus information engine error state",
+                true
+                );
+        }
+        catch (...)
+        {
+            appendState(
+                winrt::hstring(localize(L"Campus information unavailable")),
+                winrt::hstring(localize(
+                    L"The engine returned an unexpected campus loading failure."
+                    )),
+                L"Campus information engine error state",
+                true
+                );
+        }
+    }
+    else
+    {
+        const auto result = loadPackagedCampusResources();
+        if (!result)
+        {
+            std::wstring errorMessage = localize(
+                L"The campus resource catalog could not be loaded:"
                 );
             errorMessage += L" ";
             const auto errorText = winrt::to_hstring(
                 std::string(result.error().message)
                 );
             errorMessage.append(errorText.c_str(), errorText.size());
-            const auto state = ClassMngrWinUISharedUX::buildErrorState({
+            appendState(
                 winrt::hstring(localize(L"Campus information unavailable")),
                 winrt::hstring(errorMessage),
-                L"Campus information engine error state",
-                {}
-                });
-            root.Children().Append(state.root);
-            auto pageScroll = ScrollViewer();
-            pageScroll.Content(root);
-            page.Content(pageScroll);
-            return;
+                L"Campus resource catalog error state",
+                true
+                );
         }
-        m_campusRecords = *result;
-    }
-    catch (std::exception const& error)
-    {
-        m_campusInformationState = L"engine_error";
-        std::wstring errorMessage = localize(
-            L"The engine could not load campus records:"
-            );
-        errorMessage += L" ";
-        const auto errorText = winrt::to_hstring(
-            std::string(error.what())
-            );
-        errorMessage.append(errorText.c_str(), errorText.size());
-        const auto state = ClassMngrWinUISharedUX::buildErrorState({
-            winrt::hstring(localize(L"Campus information unavailable")),
-            winrt::hstring(errorMessage),
-            L"Campus information engine error state",
-            {}
-            });
-        root.Children().Append(state.root);
-        auto pageScroll = ScrollViewer();
-        pageScroll.Content(root);
-        page.Content(pageScroll);
-        return;
-    }
-    catch (...)
-    {
-        m_campusInformationState = L"engine_error";
-        const auto state = ClassMngrWinUISharedUX::buildErrorState({
-            winrt::hstring(localize(L"Campus information unavailable")),
-            winrt::hstring(localize(
-                L"The engine returned an unexpected campus loading failure."
-                )),
-            L"Campus information engine error state",
-            {}
-            });
-        root.Children().Append(state.root);
-        auto pageScroll = ScrollViewer();
-        pageScroll.Content(root);
-        page.Content(pageScroll);
-        return;
+        else
+        {
+            m_campusResourceRecords = *result;
+            for (const auto& campus : m_campusResourceRecords)
+            {
+                m_campusRecords.emplace_back(campusRecordFromResource(campus));
+            }
+        }
     }
 
-    if (m_campusRecords.empty())
+    if (m_campusResourceRecords.empty())
     {
-        m_campusInformationState = L"empty";
-        const auto state = ClassMngrWinUISharedUX::buildEmptyState({
-            winrt::hstring(localize(L"No campuses found")),
-            winrt::hstring(localize(
-                L"This database does not contain any campus records."
-                )),
-            L"Campus information empty state",
-            {}
-            });
-        root.Children().Append(state.root);
+        if (m_campusInformationState.empty())
+        {
+            m_campusInformationState = L"empty";
+            appendState(
+                winrt::hstring(localize(L"No campuses found")),
+                winrt::hstring(localize(
+                    L"This catalog does not contain any campus records."
+                    )),
+                L"Campus information empty state",
+                false
+                );
+        }
         auto pageScroll = ScrollViewer();
+        pageScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
         pageScroll.Content(root);
         page.Content(pageScroll);
         return;
@@ -3192,7 +4103,7 @@ void MainWindow::populateCampusInformationPage(
         winrt::hstring(localize(
             L"Select a campus to view its read-only information."
             )),
-        L"Campus information list"
+        L"Campus directory list"
         });
     m_campusList = ListView();
     m_campusList.SelectionMode(ListViewSelectionMode::Single);
@@ -3200,16 +4111,20 @@ void MainWindow::populateCampusInformationPage(
     m_campusList.TabIndex(0);
     m_campusList.Height(480.0);
     m_campusList.SelectionChanged({this, &MainWindow::CampusList_SelectionChanged});
-    setAutomationName(m_campusList, L"Campus information list");
-    for (classmngr::engine::CampusRecord const& campus : m_campusRecords)
+    setAutomationName(m_campusList, L"Campus directory list");
+    for (const CampusResourceView& campus : m_campusResourceRecords)
     {
         auto item = TextBlock();
-        item.Text(winrt::to_hstring(campus.name));
+        std::wstring displayName = campus.campusName;
+        if (!campus.campusCode.empty())
+        {
+            displayName += L" (";
+            displayName += campus.campusCode;
+            displayName += L")";
+        }
+        item.Text(winrt::hstring(displayName));
         item.TextWrapping(TextWrapping::Wrap);
-        const winrt::hstring campusName = winrt::to_hstring(campus.name);
-        std::wstring itemAutomationName = L"Campus name ";
-        itemAutomationName.append(campusName.c_str(), campusName.size());
-        setAutomationName(item, itemAutomationName);
+        setAutomationName(item, L"Campus name " + displayName);
         m_campusList.Items().Append(item);
     }
     listCard.content.Children().Append(m_campusList);
@@ -3219,7 +4134,7 @@ void MainWindow::populateCampusInformationPage(
     auto detailsCard = ClassMngrWinUISharedUX::buildCard({
         winrt::hstring(localize(L"Campus details")),
         winrt::hstring(localize(
-            L"Read-only information provided by the campus record service."
+            L"Read-only information provided by the campus resource catalog."
             )),
         L"Selected campus details"
         });
@@ -3232,16 +4147,25 @@ void MainWindow::populateCampusInformationPage(
 
     root.Children().Append(layout);
     auto pageScroll = ScrollViewer();
+    pageScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+    pageScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
     pageScroll.Content(root);
     page.Content(pageScroll);
-    m_campusList.SelectedIndex(0);
-    presentSelectedCampus();
+
+    if (m_selectedCampusIndex < 0
+        || static_cast<std::size_t>(m_selectedCampusIndex)
+            >= m_campusResourceRecords.size())
+    {
+        m_selectedCampusIndex = 0;
+    }
+    m_campusList.SelectedIndex(m_selectedCampusIndex);
+    presentSelectedCampus(pageId);
     updateFileCommandState();
 }
 
 void MainWindow::refreshCampusInformationPage()
 {
-    if (m_currentPageId != campusInformationPageId || !m_contentFrame)
+    if (!isCampusPageId(m_currentPageId) || !m_contentFrame)
     {
         return;
     }
@@ -3250,7 +4174,7 @@ void MainWindow::refreshCampusInformationPage()
         Microsoft::UI::Xaml::Controls::Page>();
     if (page)
     {
-        populateCampusInformationPage(page, true);
+        populateCampusPage(page, m_currentPageId, true);
     }
     updateFileCommandState();
 }
@@ -3262,10 +4186,14 @@ void MainWindow::CampusList_SelectionChanged(
 {
     static_cast<void>(sender);
     static_cast<void>(arguments);
-    presentSelectedCampus();
+    if (m_campusList)
+    {
+        m_selectedCampusIndex = m_campusList.SelectedIndex();
+    }
+    presentSelectedCampus(m_currentPageId);
 }
 
-void MainWindow::presentSelectedCampus()
+void MainWindow::presentSelectedCampus(std::wstring_view pageId)
 {
     if (!m_campusList || !m_campusDetailsPanel)
     {
@@ -3274,10 +4202,12 @@ void MainWindow::presentSelectedCampus()
 
     const std::uint64_t requestId = ++m_campusImageRequest;
     m_campusImage = nullptr;
+    m_campusImages.clear();
     m_campusDetailsPanel.Children().Clear();
     const int32_t selectedIndex = m_campusList.SelectedIndex();
     if (selectedIndex < 0
-        || static_cast<std::size_t>(selectedIndex) >= m_campusRecords.size())
+        || static_cast<std::size_t>(selectedIndex)
+            >= m_campusResourceRecords.size())
     {
         auto status = Microsoft::UI::Xaml::Controls::TextBlock();
         status.Text(winrt::hstring(m_localizer.getString(
@@ -3290,59 +4220,203 @@ void MainWindow::presentSelectedCampus()
         return;
     }
 
-    const classmngr::engine::CampusRecord& campus =
-        m_campusRecords[static_cast<std::size_t>(selectedIndex)];
-
-    if (!campus.imagePath.empty())
-    {
-        m_campusImage = Microsoft::UI::Xaml::Controls::Image();
-        m_campusImage.MaxWidth(720.0);
-        m_campusImage.MaxHeight(360.0);
-        m_campusImage.Stretch(Microsoft::UI::Xaml::Media::Stretch::Uniform);
-        m_campusImage.HorizontalAlignment(
-            Microsoft::UI::Xaml::HorizontalAlignment::Center
-            );
-        m_campusImage.Visibility(Microsoft::UI::Xaml::Visibility::Collapsed);
-        setAutomationName(m_campusImage, L"Campus image preview");
-        m_campusDetailsPanel.Children().Append(m_campusImage);
-        loadCampusImage(campus.imagePath, requestId);
-    }
-
-    const auto appendField = [this](std::wstring_view label, std::string const& value) {
+    const CampusResourceView& campus =
+        m_campusResourceRecords[static_cast<std::size_t>(selectedIndex)];
+    const auto localize = [this](std::wstring_view source) {
+        return m_localizer.getString(L"CampusInformationPage", source);
+    };
+    const auto appendText = [this](
+                                std::wstring_view text,
+                                std::wstring_view automationName,
+                                double fontSize = 0.0) {
         auto field = Microsoft::UI::Xaml::Controls::TextBlock();
-        std::wstring text = m_localizer.getString(
-            L"CampusInformationPage",
-            label
-            );
-        text += L": ";
-        const winrt::hstring valueText = winrt::to_hstring(value);
-        text.append(valueText.c_str(), valueText.size());
         field.Text(winrt::hstring(text));
         field.TextWrapping(Microsoft::UI::Xaml::TextWrapping::Wrap);
-        setAutomationName(field, label);
+        if (fontSize > 0.0)
+        {
+            field.FontSize(fontSize);
+        }
+        setAutomationName(field, automationName);
         m_campusDetailsPanel.Children().Append(field);
     };
+    const auto appendHeading = [&appendText](std::wstring_view text) {
+        appendText(text, text, 18.0);
+    };
+    const auto appendField = [&localize, &appendText](
+                                 std::wstring_view label,
+                                 std::wstring_view value) {
+        std::wstring text = localize(label);
+        text += L": ";
+        text += value;
+        appendText(text, label);
+    };
+    const auto appendImage = [this, requestId](std::string const& path) {
+        if (path.empty())
+        {
+            return;
+        }
+        auto image = Microsoft::UI::Xaml::Controls::Image();
+        image.MaxWidth(720.0);
+        image.MaxHeight(360.0);
+        image.Stretch(Microsoft::UI::Xaml::Media::Stretch::Uniform);
+        image.HorizontalAlignment(
+            Microsoft::UI::Xaml::HorizontalAlignment::Center
+            );
+        image.Visibility(Microsoft::UI::Xaml::Visibility::Collapsed);
+        setAutomationName(image, L"Campus image preview");
+        if (!m_campusImage)
+        {
+            m_campusImage = image;
+        }
+        m_campusImages.emplace_back(image);
+        m_campusDetailsPanel.Children().Append(image);
+        loadCampusImage(path, requestId, image);
+    };
+    const auto appendAddress = [
+                                  &appendField,
+                                  &appendHeading
+                              ](
+                                  std::wstring_view heading,
+                                  CampusAddressView const& address
+                              ) {
+        appendHeading(heading);
+        appendField(L"Building Name", address.buildingName);
+        appendField(L"Province", address.province);
+        appendField(L"City", address.city);
+        appendField(L"City District", address.cityDistrict);
+        appendField(L"District", address.district);
+        appendField(L"Address Line 1", address.line1);
+        appendField(L"Address Line 2", address.line2);
+        appendField(L"Postal Code", address.postalCode);
+        appendField(L"Address System", address.addressSystem);
+    };
 
-    appendField(L"Campus ID", std::to_string(campus.id));
-    appendField(L"Name", campus.name);
-    appendField(L"Building", campus.buildingName);
-    appendField(L"Address", campus.address);
-    appendField(L"Phone", campus.phoneNumber);
-    appendField(L"Office", campus.officeNumber);
-    appendField(L"Transit steps", campus.transitSteps);
-    appendField(L"Arrival information", campus.arrivalInfo);
-    appendField(L"Image path", campus.imagePath);
-    appendField(L"Office Wi-Fi", campus.officeWifi);
-    appendField(L"Office Wi-Fi password", campus.officeWifiPassword);
-    appendField(L"Printer", campus.printerName);
-    appendField(L"Printer steps", campus.printerSteps);
-    appendField(L"Photocopier code", campus.photocopierCode);
-    appendField(L"Housing locations", campus.housingLocations);
+    appendHeading(campus.campusName);
+    if (!campus.campusCode.empty())
+    {
+        appendField(L"Campus Code", campus.campusCode);
+    }
+
+    if (pageId == campusInformationPageId)
+    {
+        if (!campus.mapImagePaths.empty())
+        {
+            appendImage(campus.mapImagePaths.front());
+        }
+        appendField(L"Campus ID", campus.id);
+        appendField(L"Name", campus.campusName);
+        appendField(L"Building", campus.buildingName);
+        appendField(L"Address", campus.address);
+        appendField(L"Phone", campus.phoneNumber);
+        appendField(L"Office", campus.officeNumber);
+        appendField(L"Office Wi-Fi", campus.officeWifi);
+        appendField(L"Office Wi-Fi password", campus.officeWifiPassword);
+        appendField(L"Printer", campus.printerName);
+        appendField(L"Printer steps", campus.printerSteps);
+        appendField(
+            L"Printer driver URL",
+            campus.printerDriverUrlUnavailable
+                ? L"N/A"
+                : campus.printerDriverUrl
+            );
+        appendField(L"Photocopier code", campus.photocopierCode);
+        return;
+    }
+
+    if (pageId == campusDirectionsPageId)
+    {
+        appendField(L"Building", campus.buildingName);
+        appendField(L"Phone", campus.phoneNumber);
+        appendField(
+            L"Transit Steps",
+            [&campus]() {
+                std::wstring result;
+                for (std::size_t index = 0; index < campus.transitSteps.size(); ++index)
+                {
+                    if (index != 0)
+                    {
+                        result += L"\n";
+                    }
+                    result += campus.transitSteps[index];
+                }
+                return result;
+            }()
+            );
+        appendField(L"Upon Arriving", campus.arrivalInfo);
+        appendField(L"Note", campus.directionsNote);
+        return;
+    }
+
+    if (pageId == campusAddressPageId)
+    {
+        appendField(L"Campus", campus.campusName);
+        appendField(L"Phone", campus.phoneNumber);
+        appendField(L"Complete Address", campus.address);
+        appendAddress(L"English", campus.englishAddress);
+        appendAddress(L"Korean", campus.koreanAddress);
+        return;
+    }
+
+    if (pageId == campusHousingPageId)
+    {
+        if (campus.housingLocations.empty())
+        {
+            appendText(
+                localize(L"No housing information available"),
+                L"Campus housing empty state"
+                );
+            return;
+        }
+
+        for (std::size_t index = 0;
+             index < campus.housingLocations.size();
+             ++index)
+        {
+            const CampusHousingView& housing = campus.housingLocations[index];
+            appendHeading(
+                L"Housing " + std::to_wstring(index + 1)
+                + (housing.name.empty() ? L"" : L": " + housing.name)
+                );
+            appendAddress(L"English", housing.englishAddress);
+            appendAddress(L"Korean", housing.koreanAddress);
+            appendField(L"Note", housing.addressNote);
+            for (const std::string& imagePath : housing.imagePaths)
+            {
+                appendImage(imagePath);
+            }
+        }
+        return;
+    }
+
+    if (pageId == campusMapPageId)
+    {
+        if (campus.mapImagePaths.empty())
+        {
+            appendText(
+                localize(L"No map images available"),
+                L"Campus maps empty state"
+                );
+        }
+        else
+        {
+            for (const std::string& imagePath : campus.mapImagePaths)
+            {
+                appendImage(imagePath);
+                appendText(
+                    asWString(winrt::to_hstring(imagePath)),
+                    L"Campus map resource path"
+                    );
+            }
+        }
+        appendField(L"Naver Maps", campus.naverMapUrl);
+        appendField(L"Kakao Maps", campus.kakaoMapUrl);
+    }
 }
 
 winrt::fire_and_forget MainWindow::loadCampusImage(
     std::string logicalPath,
-    std::uint64_t requestId
+    std::uint64_t requestId,
+    Microsoft::UI::Xaml::Controls::Image target
     )
 {
     auto lifetime = get_strong();
@@ -3372,7 +4446,7 @@ winrt::fire_and_forget MainWindow::loadCampusImage(
             dispatcher,
             Microsoft::UI::Dispatching::DispatcherQueuePriority::Normal
             };
-        if (requestId != m_campusImageRequest || !m_campusImage)
+        if (requestId != m_campusImageRequest || !target)
         {
             co_return;
         }
@@ -3390,12 +4464,12 @@ winrt::fire_and_forget MainWindow::loadCampusImage(
 
         auto bitmap = winrt::Microsoft::UI::Xaml::Media::Imaging::BitmapImage();
         co_await bitmap.SetSourceAsync(stream);
-        if (requestId != m_campusImageRequest || !m_campusImage)
+        if (requestId != m_campusImageRequest || !target)
         {
             co_return;
         }
-        m_campusImage.Source(bitmap);
-        m_campusImage.Visibility(Microsoft::UI::Xaml::Visibility::Visible);
+        target.Source(bitmap);
+        target.Visibility(Microsoft::UI::Xaml::Visibility::Visible);
     }
     catch (...)
     {
@@ -3562,7 +4636,7 @@ void MainWindow::updateFileCommandState()
         m_closeFileMenu.IsEnabled(hasDatabase);
     }
 
-    const bool pageCanBeSaved = m_currentPageId == campusInformationPageId
+    const bool pageCanBeSaved = isCampusPageId(m_currentPageId)
         && (m_campusInformationState == L"no_database"
             || m_campusInformationState == L"empty"
             || m_campusInformationState == L"populated");
@@ -3908,6 +4982,10 @@ std::wstring MainWindow::selectedPageId() const
         if (selectedItem)
         {
             const std::wstring pageId = boxedString(selectedItem.Tag());
+            if (isClassesPageId(pageId))
+            {
+                return std::wstring(classesPageId);
+            }
             if (isKnownPageId(pageId))
             {
                 return pageId;

@@ -10,7 +10,7 @@
     <!-- Phase 5 shell geometry mirrors the Qt main-window contract. -->
     <x:Double x:Key="Phase5ShellMinimumWidth">800</x:Double>
     <x:Double x:Key="Phase5ShellMinimumHeight">600</x:Double>
-    <x:Double x:Key="Phase5SidebarMinimumWidth">150</x:Double>
+    <x:Double x:Key="Phase5SidebarMinimumWidth">240</x:Double>
     <x:Double x:Key="Phase5SidebarMaximumWidth">400</x:Double>
     <x:Double x:Key="Phase5ContentMinimumWidth">600</x:Double>
     <x:Double x:Key="Phase5MenuBarHeight">28</x:Double>

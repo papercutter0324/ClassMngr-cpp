@@ -268,13 +268,60 @@
                             x:Name="HomeNavigationItem"
                             Content="My Workspace"
                             Tag="home"
-                            AutomationProperties.Name="My Workspace navigation item (Home)" />
+                            IsExpanded="True"
+                            AutomationProperties.Name="My Workspace navigation root">
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    x:Name="WorkspaceInformationNavigationItem"
+                                    Content="My Information"
+                                    Tag="home"
+                                    AutomationProperties.Name="My Information workspace navigation item" />
+                                <NavigationViewItem
+                                    x:Name="WorkspaceScheduleNavigationItem"
+                                    Content="Schedule"
+                                    Tag="home"
+                                    AutomationProperties.Name="Schedule workspace navigation item" />
+                                <NavigationViewItem
+                                    x:Name="WorkspaceCalendarNavigationItem"
+                                    Content="Calendar"
+                                    Tag="home"
+                                    AutomationProperties.Name="Calendar workspace navigation item" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
                         <NavigationViewItem
                             x:Name="ClassesNavigationItem"
                             Content="Classes"
                             Tag="classes"
-                            IsEnabled="False"
-                            AutomationProperties.Name="Classes navigation item unavailable in prototype shell" />
+                            IsExpanded="True"
+                            AutomationProperties.Name="Classes navigation root">
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    x:Name="ClassDetailsNavigationItem"
+                                    Content="Details"
+                                    Tag="classes_details"
+                                    AutomationProperties.Name="Class Details navigation item" />
+                                <NavigationViewItem
+                                    x:Name="ClassRosterNavigationItem"
+                                    Content="Roster"
+                                    Tag="classes_roster"
+                                    AutomationProperties.Name="Class Roster navigation item" />
+                                <NavigationViewItem
+                                    x:Name="ClassSpeakingEvaluationsNavigationItem"
+                                    Content="Speaking Evaluations"
+                                    Tag="classes_speaking_evaluations"
+                                    AutomationProperties.Name="Class Speaking Evaluations navigation item" />
+                                <NavigationViewItem
+                                    x:Name="ClassAnalyticsNavigationItem"
+                                    Content="Analytics"
+                                    Tag="classes_analytics"
+                                    AutomationProperties.Name="Class Analytics navigation item" />
+                                <NavigationViewItem
+                                    x:Name="ClassNotesNavigationItem"
+                                    Content="Notes"
+                                    Tag="classes_notes"
+                                    AutomationProperties.Name="Class Notes navigation item" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
                         <NavigationViewItem
                             x:Name="SubPrepNavigationItem"
                             Content="Sub Prep"
@@ -341,10 +388,10 @@
                             AutomationProperties.Name="Campus Directory navigation root">
                             <NavigationViewItem.MenuItems>
                                 <NavigationViewItem x:Name="CampusInformationNavigationItem" Content="Information" Tag="campus_information" AutomationProperties.Name="Campus Information navigation item" />
-                                <NavigationViewItem Content="Directions" Tag="campus_directions" IsEnabled="False" AutomationProperties.Name="Campus Directions navigation item unavailable in prototype shell" />
-                                <NavigationViewItem Content="Address" Tag="campus_address" IsEnabled="False" AutomationProperties.Name="Campus Address navigation item unavailable in prototype shell" />
-                                <NavigationViewItem Content="Housing" Tag="campus_housing" IsEnabled="False" AutomationProperties.Name="Campus Housing navigation item unavailable in prototype shell" />
-                                <NavigationViewItem Content="Maps" Tag="campus_map" IsEnabled="False" AutomationProperties.Name="Campus Maps navigation item unavailable in prototype shell" />
+                                <NavigationViewItem x:Name="CampusDirectionsNavigationItem" Content="Directions" Tag="campus_directions" AutomationProperties.Name="Campus Directions navigation item" />
+                                <NavigationViewItem x:Name="CampusAddressNavigationItem" Content="Address" Tag="campus_address" AutomationProperties.Name="Campus Address navigation item" />
+                                <NavigationViewItem x:Name="CampusHousingNavigationItem" Content="Housing" Tag="campus_housing" AutomationProperties.Name="Campus Housing navigation item" />
+                                <NavigationViewItem x:Name="CampusMapNavigationItem" Content="Maps" Tag="campus_map" AutomationProperties.Name="Campus Maps navigation item" />
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
                         <NavigationViewItem
