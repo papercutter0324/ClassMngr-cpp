@@ -22,6 +22,7 @@
 #include "classmngr/engine/roster_service.h"
 #include "classmngr/engine/roster_validator.h"
 #include "classmngr/engine/schedule_import_service.h"
+#include "classmngr/engine/speaking_analytics.h"
 #include "classmngr/engine/speaking_evaluation_persistence_service.h"
 #include "classmngr/engine/speaking_evaluation_validator.h"
 #include "classmngr/engine/teacher_service.h"
@@ -50,6 +51,7 @@
 #include <coroutine>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <set>
 #include <string>
 #include <string_view>
@@ -2479,6 +2481,8 @@ bool MainWindow::runPhase6SpeakingEvaluationChecks()
     m_speakingEvaluationLoading = false;
     m_speakingEvaluationDirty = false;
     m_speakingEvaluationDirtyCells.clear();
+    m_speakingAnalyticsLoading = false;
+    m_speakingAnalyticsName = "All";
 
     navigateTo(classesPageId);
     refreshClassesPage();
@@ -2636,6 +2640,30 @@ bool MainWindow::runPhase6SpeakingEvaluationChecks()
         return fail(131072);
     }
 
+    refreshSpeakingAnalytics();
+    const bool analyticsReady =
+        m_speakingAnalyticsStatusText
+        && contains(
+            m_speakingAnalyticsStatusText.Text(),
+            L"Analytics loaded for All"
+            )
+        && m_speakingAnalyticsCriteriaPanel
+        && m_speakingAnalyticsCriteriaPanel.Children().Size() == 6
+        && m_speakingAnalyticsRankingList
+        && m_speakingAnalyticsRankingList.Items().Size() == 1
+        && contains(
+            m_speakingAnalyticsSummaryText.Text(),
+            L"Class average"
+            )
+        && contains(
+            m_speakingAnalyticsShapeText.Text(),
+            L"Winter"
+            );
+    if (!analyticsReady)
+    {
+        return fail(262144);
+    }
+
     m_speakingEvaluationCellBoxes[0][3].Text(L"Z");
     saveSpeakingEvaluation();
     const auto winterAfterInvalid = evaluationService.load(*classId, "Winter");
@@ -2707,7 +2735,9 @@ bool MainWindow::runPhase6SpeakingEvaluationChecks()
     const bool clearedReady =
         m_speakingEvaluationStatusText.Text() == L"No database open."
         && !m_speakingEvaluationList.IsEnabled()
-        && !m_speakingEvaluationSaveButton.IsEnabled();
+        && !m_speakingEvaluationSaveButton.IsEnabled()
+        && m_speakingAnalyticsStatusText.Text() == L"No database open."
+        && m_speakingAnalyticsRankingList.Items().Size() == 0;
     return clearedReady ? true : fail(65536);
 }
 
@@ -10721,11 +10751,151 @@ void MainWindow::populateClassesPage(
     speakingCard.content.Children().Append(m_speakingEvaluationPasteButton);
     speakingRoot.Children().Append(speakingCard.root);
 
-    auto analyticsRoot = makeTextSection(
-        L"Analytics",
-        L"Class analytics will load when the analytics feature slice is migrated.",
-        L"Class analytics prototype"
+    auto analyticsRoot = makeRoot(StackPanel());
+    auto analyticsTitle = TextBlock();
+    analyticsTitle.Text(L"Class Analytics");
+    analyticsTitle.FontSize(24.0);
+    setAutomationName(analyticsTitle, L"Class Analytics");
+    analyticsRoot.Children().Append(analyticsTitle);
+
+    auto analyticsDescription = TextBlock();
+    analyticsDescription.Text(
+        L"Review engine-backed speaking scores, criterion distributions, class shape, and student ranking for the selected evaluation."
         );
+    analyticsDescription.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        analyticsDescription,
+        L"Class analytics description"
+        );
+    analyticsRoot.Children().Append(analyticsDescription);
+
+    m_speakingAnalyticsStatusText = TextBlock();
+    m_speakingAnalyticsStatusText.Text(
+        L"Select a class to view speaking analytics."
+        );
+    m_speakingAnalyticsStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        m_speakingAnalyticsStatusText,
+        L"Speaking analytics status"
+        );
+    analyticsRoot.Children().Append(m_speakingAnalyticsStatusText);
+
+    m_speakingAnalyticsLoading = true;
+    m_speakingAnalyticsName = "All";
+    m_speakingAnalyticsSelector = ComboBox();
+    m_speakingAnalyticsSelector.Header(
+        box_value(hstring(L"Evaluation scope"))
+        );
+    m_speakingAnalyticsSelector.MinWidth(320.0);
+    m_speakingAnalyticsSelector.IsTabStop(true);
+    m_speakingAnalyticsSelector.TabIndex(0);
+    setAutomationName(
+        m_speakingAnalyticsSelector,
+        L"Speaking analytics evaluation selector"
+        );
+    for (const std::string_view evaluationName : {
+             std::string_view{"All"},
+             classmngr::engine::SpeakingEvaluationNames[0],
+             classmngr::engine::SpeakingEvaluationNames[1],
+             classmngr::engine::SpeakingEvaluationNames[2],
+             classmngr::engine::SpeakingEvaluationNames[3]
+         })
+    {
+        auto item = ComboBoxItem();
+        const std::wstring display = asWide(evaluationName);
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(hstring(display)));
+        setAutomationName(item, L"Analytics scope " + display);
+        m_speakingAnalyticsSelector.Items().Append(item);
+    }
+    m_speakingAnalyticsSelector.SelectedIndex(0);
+    m_speakingAnalyticsSelector.SelectionChanged(
+        [this](auto const&, auto const&) {
+            if (m_speakingAnalyticsLoading)
+            {
+                return;
+            }
+            const auto item = m_speakingAnalyticsSelector.SelectedItem()
+                .try_as<ComboBoxItem>();
+            if (!item)
+            {
+                return;
+            }
+            m_speakingAnalyticsName = asUtf8(
+                boxedString(item.Tag())
+                );
+            refreshSpeakingAnalytics();
+        }
+        );
+    m_speakingAnalyticsLoading = false;
+    analyticsRoot.Children().Append(m_speakingAnalyticsSelector);
+
+    auto analyticsSummaryCard = ClassMngrWinUISharedUX::buildCard({
+        L"Summary",
+        L"Average, fully scored students, strongest areas, and focus areas.",
+        L"Speaking analytics summary"
+        });
+    m_speakingAnalyticsSummaryText = TextBlock();
+    m_speakingAnalyticsSummaryText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        m_speakingAnalyticsSummaryText,
+        L"Speaking analytics summary values"
+        );
+    analyticsSummaryCard.content.Children().Append(
+        m_speakingAnalyticsSummaryText
+        );
+    analyticsRoot.Children().Append(analyticsSummaryCard.root);
+
+    auto analyticsCriteriaCard = ClassMngrWinUISharedUX::buildCard({
+        L"By Criterion",
+        L"Average score and observed grade distribution for each speaking criterion.",
+        L"Speaking analytics criteria"
+        });
+    m_speakingAnalyticsCriteriaPanel = StackPanel();
+    m_speakingAnalyticsCriteriaPanel.Spacing(4.0);
+    setAutomationName(
+        m_speakingAnalyticsCriteriaPanel,
+        L"Speaking analytics criterion metrics"
+        );
+    analyticsCriteriaCard.content.Children().Append(
+        m_speakingAnalyticsCriteriaPanel
+        );
+    analyticsRoot.Children().Append(analyticsCriteriaCard.root);
+
+    auto analyticsShapeCard = ClassMngrWinUISharedUX::buildCard({
+        L"Class Shape",
+        L"The selected class-shape evaluation and year-to-date fully scored results.",
+        L"Speaking analytics class shape"
+        });
+    m_speakingAnalyticsShapeText = TextBlock();
+    m_speakingAnalyticsShapeText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        m_speakingAnalyticsShapeText,
+        L"Speaking analytics class shape values"
+        );
+    analyticsShapeCard.content.Children().Append(m_speakingAnalyticsShapeText);
+    analyticsRoot.Children().Append(analyticsShapeCard.root);
+
+    auto analyticsRankingCard = ClassMngrWinUISharedUX::buildCard({
+        L"Student Ranking",
+        L"Read-only ranking derived from the same engine analytics snapshot.",
+        L"Speaking analytics student ranking"
+        });
+    m_speakingAnalyticsRankingList = ListView();
+    m_speakingAnalyticsRankingList.SelectionMode(
+        ListViewSelectionMode::Single
+        );
+    m_speakingAnalyticsRankingList.IsTabStop(true);
+    m_speakingAnalyticsRankingList.TabIndex(1);
+    m_speakingAnalyticsRankingList.Height(360.0);
+    setAutomationName(
+        m_speakingAnalyticsRankingList,
+        L"Speaking analytics student ranking list"
+        );
+    analyticsRankingCard.content.Children().Append(
+        m_speakingAnalyticsRankingList
+        );
+    analyticsRoot.Children().Append(analyticsRankingCard.root);
     const auto scrollTab = [](StackPanel const& content) {
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
@@ -11072,6 +11242,7 @@ void MainWindow::refreshClassesPage()
         clearClassDirty();
         refreshClassRoster();
         refreshSpeakingEvaluation();
+        refreshSpeakingAnalytics();
         return;
     }
 
@@ -11103,6 +11274,7 @@ void MainWindow::refreshClassesPage()
         clearClassDirty();
         refreshClassRoster();
         refreshSpeakingEvaluation();
+        refreshSpeakingAnalytics();
         return;
     }
 
@@ -11163,6 +11335,7 @@ void MainWindow::refreshClassesPage()
     clearClassDirty();
     refreshClassRoster();
     refreshSpeakingEvaluation();
+    refreshSpeakingAnalytics();
 }
 
 classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
@@ -11210,6 +11383,350 @@ classmngr::engine::Roster MainWindow::classRosterFromForm() const
         roster.rows.push_back(std::move(row));
     }
     return roster;
+}
+
+void MainWindow::refreshSpeakingAnalytics()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_speakingAnalyticsStatusText
+        || !m_speakingAnalyticsCriteriaPanel
+        || !m_speakingAnalyticsShapeText
+        || !m_speakingAnalyticsRankingList)
+    {
+        return;
+    }
+
+    m_speakingAnalyticsCriteriaPanel.Children().Clear();
+    m_speakingAnalyticsRankingList.Items().Clear();
+    m_speakingAnalyticsSummaryText.Text({});
+    m_speakingAnalyticsShapeText.Text({});
+
+    if (!m_openDatabase)
+    {
+        m_speakingAnalyticsStatusText.Text(L"No database open.");
+        m_speakingAnalyticsSummaryText.Text(
+            L"Open a database to calculate speaking analytics."
+            );
+        return;
+    }
+    if (m_classSelectedId <= 0 || m_classNew)
+    {
+        m_speakingAnalyticsStatusText.Text(
+            L"Save the selected class before viewing speaking analytics."
+            );
+        m_speakingAnalyticsSummaryText.Text(
+            L"No class is available for analytics."
+            );
+        return;
+    }
+
+    classmngr::engine::RosterService rosterService(*m_openDatabase);
+    const auto roster = rosterService.load(m_classSelectedId);
+    if (!roster)
+    {
+        m_speakingAnalyticsStatusText.Text(winrt::hstring(
+            L"Speaking analytics could not load the roster: "
+                + asWide(roster.error().message)
+            ));
+        m_speakingAnalyticsSummaryText.Text(
+            L"The analytics roster is unavailable."
+            );
+        return;
+    }
+
+    classmngr::engine::SpeakingEvaluationPersistenceService evaluationService(
+        *m_openDatabase
+        );
+    classmngr::engine::SpeakingAnalyticsDashboardInput input;
+    input.selection = m_speakingAnalyticsName.empty()
+        ? "All"
+        : m_speakingAnalyticsName;
+    input.roster = *roster;
+    input.evaluations.reserve(
+        classmngr::engine::SpeakingEvaluationNames.size()
+        );
+    for (const std::string_view evaluationName :
+         classmngr::engine::SpeakingEvaluationNames)
+    {
+        const auto loaded = evaluationService.load(
+            m_classSelectedId,
+            evaluationName
+            );
+        if (!loaded)
+        {
+            m_speakingAnalyticsStatusText.Text(winrt::hstring(
+                L"Speaking analytics could not load an evaluation: "
+                    + asWide(loaded.error().message)
+                ));
+            m_speakingAnalyticsSummaryText.Text(
+                L"The analytics evaluations are unavailable."
+                );
+            return;
+        }
+
+        input.evaluations.push_back({
+            std::string(evaluationName),
+            loaded->empty()
+                ? classmngr::engine::SpeakingAnalyticsRows{}
+                : classmngr::engine::SpeakingEvaluationValidator::normalized(
+                    *loaded
+                    )
+            });
+    }
+
+    rebuildSpeakingAnalytics(
+        classmngr::engine::SpeakingAnalyticsService::buildDashboard(input)
+        );
+}
+
+void MainWindow::rebuildSpeakingAnalytics(
+    classmngr::engine::SpeakingAnalyticsDashboard const& dashboard
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_speakingAnalyticsStatusText
+        || !m_speakingAnalyticsSummaryText
+        || !m_speakingAnalyticsCriteriaPanel
+        || !m_speakingAnalyticsShapeText
+        || !m_speakingAnalyticsRankingList)
+    {
+        return;
+    }
+
+    m_speakingAnalyticsCriteriaPanel.Children().Clear();
+    m_speakingAnalyticsRankingList.Items().Clear();
+
+    const auto join = [](std::vector<std::string> const& values,
+                         std::wstring_view separator) {
+        std::wstring result;
+        for (const std::string& value : values)
+        {
+            if (!result.empty())
+            {
+                result += separator;
+            }
+            result += asWide(value);
+        }
+        return result;
+    };
+    const auto displayOrDash = [](std::wstring value) {
+        return value.empty() ? std::wstring(L"—") : value;
+    };
+
+    const auto& snapshot = dashboard.selectedSnapshot.hasData
+        ? dashboard.selectedSnapshot
+        : dashboard.classShapeSnapshot;
+    const bool hasData = dashboard.selectedSnapshot.hasData
+        || dashboard.classShapeSnapshot.hasData
+        || !dashboard.yearToDatePoints.empty();
+    if (!hasData)
+    {
+        m_speakingAnalyticsStatusText.Text(
+            L"No scored speaking evaluations have been recorded for this class."
+            );
+        m_speakingAnalyticsSummaryText.Text(
+            L"Enter and save scores in Speaking Evaluations to populate analytics."
+            );
+        m_speakingAnalyticsShapeText.Text(
+            L"Class shape: No fully scored evaluation is available."
+            );
+        return;
+    }
+
+    const std::wstring scope = m_speakingAnalyticsName.empty()
+        ? L"All"
+        : asWide(m_speakingAnalyticsName);
+    m_speakingAnalyticsStatusText.Text(
+        hstring(L"Analytics loaded for " + scope + L".")
+        );
+
+    std::wstring summary = L"Class average: ";
+    if (dashboard.selectedSnapshot.hasData)
+    {
+        summary += asWide(snapshot.classAverageLetter)
+            + L" · " + asWide(
+                classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                    snapshot.classAverage3
+                    )
+                );
+        summary += L"\nStudents fully scored: "
+            + std::to_wstring(snapshot.fullyScoredCount);
+        if (snapshot.rosterStudentCount > 0)
+        {
+            summary += L" / " + std::to_wstring(snapshot.rosterStudentCount);
+        }
+        summary += L"\nStrongest areas: "
+            + displayOrDash(join(snapshot.strongestLabels, L", "));
+        summary += L"\nFocus areas: "
+            + displayOrDash(join(snapshot.focusLabels, L", "));
+    }
+    else
+    {
+        summary += L"—\nNo aggregate score is available for the selected scope.";
+    }
+    m_speakingAnalyticsSummaryText.Text(hstring(summary));
+
+    for (const auto& criterion : snapshot.criteria)
+    {
+        auto value = TextBlock();
+        std::wstring text = asWide(criterion.name) + L": ";
+        if (!criterion.hasData)
+        {
+            text += L"No scores";
+        }
+        else
+        {
+            text += asWide(
+                classmngr::engine::SpeakingAnalyticsService::numberToGrade(
+                    classmngr::engine::SpeakingAnalyticsService::roundAverageToGrade(
+                        criterion.average3
+                        )
+                    )
+                );
+            text += L" · average " + asWide(
+                classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                    criterion.average3
+                    )
+                );
+            text += L" · distribution: ";
+            bool hasDistribution = false;
+            for (const std::string_view grade :
+                 classmngr::engine::SpeakingEvaluationScoreValues)
+            {
+                const auto found = criterion.distribution.find(
+                    std::string(grade)
+                    );
+                if (found == criterion.distribution.end())
+                {
+                    continue;
+                }
+                if (hasDistribution)
+                {
+                    text += L", ";
+                }
+                text += asWide(grade) + L" " + std::to_wstring(found->second);
+                hasDistribution = true;
+            }
+        }
+        value.Text(hstring(text));
+        value.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(
+            value,
+            L"Speaking analytics " + asWide(criterion.name)
+            );
+        m_speakingAnalyticsCriteriaPanel.Children().Append(value);
+    }
+
+    std::map<std::string, int> shapeDistribution;
+    for (const std::string& letter : snapshot.overallLetters)
+    {
+        if (!letter.empty())
+        {
+            ++shapeDistribution[letter];
+        }
+    }
+    std::wstring shape = L"Class-shape evaluation: ";
+    shape += dashboard.classShapeEvaluationName.empty()
+        ? L"—"
+        : asWide(dashboard.classShapeEvaluationName);
+    shape += L"\nOverall grades: ";
+    bool hasShape = false;
+    for (const std::string_view grade :
+         classmngr::engine::SpeakingEvaluationScoreValues)
+    {
+        const auto found = shapeDistribution.find(std::string(grade));
+        if (found == shapeDistribution.end())
+        {
+            continue;
+        }
+        if (hasShape)
+        {
+            shape += L", ";
+        }
+        shape += asWide(grade) + L" " + std::to_wstring(found->second);
+        hasShape = true;
+    }
+    if (!hasShape)
+    {
+        shape += L"—";
+    }
+    shape += L"\nYear to date: ";
+    if (dashboard.yearToDatePoints.empty())
+    {
+        shape += L"No fully scored evaluations";
+    }
+    else
+    {
+        bool first = true;
+        for (const auto& point : dashboard.yearToDatePoints)
+        {
+            if (!first)
+            {
+                shape += L", ";
+            }
+            shape += asWide(point.evaluationName) + L" "
+                + asWide(point.classAverageLetter) + L" ("
+                + asWide(
+                    classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                        point.classAverage3
+                        )
+                    )
+                + L")";
+            first = false;
+        }
+    }
+    m_speakingAnalyticsShapeText.Text(hstring(shape));
+
+    for (std::size_t index = 0;
+         index < snapshot.rankings.size();
+         ++index)
+    {
+        const auto& rank = snapshot.rankings[index];
+        auto row = Grid();
+        row.ColumnSpacing(8.0);
+        row.MinWidth(760.0);
+        const std::array<double, 5> widths{
+            44.0, 160.0, 160.0, 96.0, 280.0
+        };
+        for (const double width : widths)
+        {
+            auto definition = ColumnDefinition();
+            definition.Width(GridLengthHelper::FromValueAndType(
+                width,
+                GridUnitType::Pixel
+                ));
+            row.ColumnDefinitions().Append(definition);
+        }
+        const std::array<std::wstring, 5> values{
+            std::to_wstring(index + 1),
+            asWide(rank.englishName),
+            asWide(rank.koreanName),
+            asWide(
+                classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                    rank.overall3
+                    )
+                ) + L" (" + asWide(rank.overallLetter) + L")",
+            join(rank.criterionLetters, L" · ")
+        };
+        for (int column = 0; column < static_cast<int>(values.size()); ++column)
+        {
+            auto cell = TextBlock();
+            cell.Text(hstring(values[static_cast<std::size_t>(column)]));
+            cell.TextWrapping(TextWrapping::Wrap);
+            cell.Margin(Thickness{4.0, 4.0, 4.0, 4.0});
+            Grid::SetColumn(cell, column);
+            row.Children().Append(cell);
+        }
+        setAutomationName(
+            row,
+            L"Speaking analytics ranking row " + std::to_wstring(index + 1)
+            );
+        m_speakingAnalyticsRankingList.Items().Append(row);
+    }
 }
 
 void MainWindow::refreshSpeakingEvaluation()
@@ -11711,6 +12228,7 @@ void MainWindow::saveSpeakingEvaluation()
     m_speakingEvaluationValidationText.Visibility(
         Microsoft::UI::Xaml::Visibility::Collapsed
         );
+    refreshSpeakingAnalytics();
 }
 
 void MainWindow::discardSpeakingEvaluation()

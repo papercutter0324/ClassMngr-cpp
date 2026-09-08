@@ -11,6 +11,7 @@
 #include "classmngr/engine/classroom.h"
 #include "classmngr/engine/class_schedule.h"
 #include "classmngr/engine/schedule_import.h"
+#include "classmngr/engine/speaking_analytics.h"
 #include "classmngr/engine/speaking_evaluation.h"
 #include "classmngr/engine/gs_team_member.h"
 #include "classmngr/engine/native_english_teacher.h"
@@ -322,6 +323,10 @@ private:
     void discardSpeakingEvaluation();
     void importSpeakingEvaluationNames();
     void applySpeakingEvaluationPaste();
+    void refreshSpeakingAnalytics();
+    void rebuildSpeakingAnalytics(
+        classmngr::engine::SpeakingAnalyticsDashboard const& dashboard
+        );
     [[nodiscard]] classmngr::engine::SpeakingEvaluationRows
         speakingEvaluationFromForm() const;
     void populateAboutPage(
@@ -796,6 +801,21 @@ private:
     bool m_speakingEvaluationLoading{};
     bool m_speakingEvaluationDirty{};
     uint32_t m_phase6SpeakingEvaluationFailureMask{};
+
+    Microsoft::UI::Xaml::Controls::ComboBox
+        m_speakingAnalyticsSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingAnalyticsStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingAnalyticsSummaryText{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_speakingAnalyticsCriteriaPanel{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingAnalyticsShapeText{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView
+        m_speakingAnalyticsRankingList{nullptr};
+    std::string m_speakingAnalyticsName;
+    bool m_speakingAnalyticsLoading{};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_classNameTextBox{nullptr};
