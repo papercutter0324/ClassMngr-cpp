@@ -5,6 +5,7 @@
 
 #include "classmngr/engine/semantic_version.h"
 #include "classmngr/engine/campus_record.h"
+#include "classmngr/engine/gs_team_member.h"
 #include "classmngr/engine/native_english_teacher.h"
 #include "classmngr/engine/personal_details_service.h"
 #include "classmngr/engine/teacher.h"
@@ -106,6 +107,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase6PersonalDetailsChecks();
     [[nodiscard]] bool runPhase6KoreanTeacherChecks();
     [[nodiscard]] bool runPhase6NativeEnglishTeacherChecks();
+    [[nodiscard]] bool runPhase6GsTeamChecks();
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -251,6 +253,14 @@ private:
     void presentNativeEnglishTeacher(int index);
     [[nodiscard]] classmngr::engine::NativeEnglishTeacher
         nativeEnglishTeacherFromForm() const;
+    void populateGsTeamPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        bool refresh
+        );
+    void refreshGsTeamPage();
+    void presentGsTeamMember(int index);
+    [[nodiscard]] classmngr::engine::GsTeamMember
+        gsTeamMemberFromForm() const;
     void populateCampusPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId,
@@ -364,6 +374,30 @@ private:
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
+    void GsTeamSelection_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void GsTeamField_TextChanging(
+        Microsoft::UI::Xaml::Controls::TextBox const& sender,
+        Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+        );
+    void GsTeamNewButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void GsTeamDeleteButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void GsTeamSaveButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void GsTeamDiscardButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
     winrt::fire_and_forget openDatabasePicker();
     winrt::fire_and_forget openNewDatabasePicker();
     winrt::fire_and_forget openSaveDatabasePicker(bool exportOnly);
@@ -433,6 +467,7 @@ private:
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusMapNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_koreanTeachersNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_nativeEnglishTeachersNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_gsTeamNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::Frame m_contentFrame{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
@@ -507,6 +542,25 @@ private:
     bool m_nativeEnglishTeacherLoading{};
     bool m_nativeEnglishTeacherDirty{};
     bool m_nativeEnglishTeacherNew{};
+
+    Microsoft::UI::Xaml::Controls::ComboBox m_gsTeamSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_gsTeamNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_gsTeamKoreanNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_gsTeamPositionTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_gsTeamPhoneTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_gsTeamBirthdayTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_gsTeamStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_gsTeamValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_gsTeamNewButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_gsTeamDeleteButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_gsTeamSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_gsTeamDiscardButton{nullptr};
+    std::vector<classmngr::engine::GsTeamMember> m_gsTeamMembers;
+    int m_gsTeamSelectedIndex{-1};
+    int m_gsTeamSelectedId{-1};
+    bool m_gsTeamLoading{};
+    bool m_gsTeamDirty{};
+    bool m_gsTeamNew{};
 
     Microsoft::UI::Xaml::Controls::TextBlock m_engineVersionText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_nameTextBox{nullptr};

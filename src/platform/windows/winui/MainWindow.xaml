@@ -359,8 +359,8 @@
                                     x:Name="GsTeamNavigationItem"
                                     Content="GS Team"
                                     Tag="gs_team"
-                                    IsEnabled="False"
-                                    AutomationProperties.Name="GS Team navigation item unavailable in prototype shell" />
+                                    IsEnabled="True"
+                                    AutomationProperties.Name="GS Team navigation item" />
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
                         <NavigationViewItem
