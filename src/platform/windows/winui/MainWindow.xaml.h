@@ -239,7 +239,7 @@ private:
     [[nodiscard]] bool writePhase5FirstNavigationResult(
         std::string_view failure
         ) const;
-    void CampusList_SelectionChanged(
+    void CampusSelector_SelectionChanged(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
         );
@@ -352,7 +352,8 @@ private:
     Microsoft::UI::Xaml::Controls::TextBox m_speakingPasteTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_speakingStatusText{nullptr};
 
-    Microsoft::UI::Xaml::Controls::ListView m_campusList{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_campusSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::Pivot m_campusTabs{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel m_campusDetailsPanel{nullptr};
     Microsoft::UI::Xaml::Controls::Image m_campusImage{nullptr};
     std::vector<Microsoft::UI::Xaml::Controls::Image> m_campusImages;

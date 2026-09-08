@@ -13,6 +13,7 @@
                 <ResourceDictionary Source="ms-appx:///Resources/ThemeSpacing.xaml" />
                 <ResourceDictionary Source="ms-appx:///Resources/ThemeIcons.xaml" />
                 <ResourceDictionary Source="ms-appx:///Resources/ControlStyles.xaml" />
+                <ResourceDictionary Source="ms-appx:///Resources/TableStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

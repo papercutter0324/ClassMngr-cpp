@@ -116,10 +116,12 @@ scenarios and interactive picker/unsaved-change, keyboard/Korean IME, focus,
 DPI, and accessibility review are approved. The Terra first-navigation
 recommendation and measurement pass the provisional guardrails, and the
 Qt-derived table-parity handoff was reviewed and accepted as Phase 6 input on
-2026-09-08. Phase 5 is complete; Phase 6 begins with Qt reconciliation. Touch,
-high-contrast, and
-accessibility automation remain out of
-scope for Phase 4.
+2026-09-08. Phase 6 is in progress: its shared Qt-derived table-parity
+resource foundation and Campus Directory selector-plus-five-tabs
+reconciliation are complete as the opening slice. Next are the personal
+details and teacher-directory data-entry slices, followed by paired visual,
+semantic, persistence, and x86 evidence. Touch, high-contrast, and
+accessibility automation remain out of scope for Phase 4.
 
 ## Phase 5 Completion Handoff
 
@@ -237,6 +239,17 @@ After meaningful work:
    long logs.
 
 ## Current Phase Progress
+
+- **2026-09-08 - Phase 6 opening data-entry migration slice implemented.** The
+  shared `TableStyles.xaml` resource dictionary now carries the Qt-derived
+  table tokens, metrics, state styles, and compact schedule variants. The
+  Campus Directory surface now uses a selector plus Information, Directions,
+  Address, Housing, and Maps tabs while preserving the engine-backed records,
+  localized content, async image guards, and existing Phase 5 checks. The
+  x64 Debug WinUI target, focused Campus/ResourcePack engine tests (2/2), and
+  complete staged verifier pass. Personal details, teacher directories,
+  paired visual evidence, persistence checks, and x86 Debug/Release evidence
+  remain pending.
 
 - **2026-09-08 - Phase 5 Campus database hydration regression fixed.** The
   cached Campus Information page now re-queries `CampusRecordService` when

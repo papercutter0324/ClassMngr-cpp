@@ -173,6 +173,7 @@
     <Page Include="Resources\ThemeSpacing.xaml" />
     <Page Include="Resources\ThemeIcons.xaml" />
     <Page Include="Resources\ControlStyles.xaml" />
+    <Page Include="Resources\TableStyles.xaml" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(ClassMngrWinUIResourceDirectory)'!=''">
