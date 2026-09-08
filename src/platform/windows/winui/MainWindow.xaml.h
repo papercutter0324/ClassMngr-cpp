@@ -12,6 +12,7 @@
 #include "classmngr/engine/class_schedule.h"
 #include "classmngr/engine/schedule_import.h"
 #include "classmngr/engine/speaking_analytics.h"
+#include "classmngr/engine/speaking_evaluation_batch_report_policy.h"
 #include "classmngr/engine/speaking_evaluation_ai_prompt.h"
 #include "classmngr/engine/speaking_evaluation.h"
 #include "classmngr/engine/gs_team_member.h"
@@ -332,6 +333,8 @@ private:
     void applySpeakingAiStudentComment();
     void applySpeakingAiBatchComments();
     void updateSpeakingAiActions();
+    void planSpeakingBatchReports();
+    void updateSpeakingBatchReportActions();
     void refreshSpeakingAnalytics();
     void rebuildSpeakingAnalytics(
         classmngr::engine::SpeakingAnalyticsDashboard const& dashboard
@@ -856,6 +859,23 @@ private:
     std::vector<int> m_speakingAiBatchRows;
     std::vector<classmngr::engine::SpeakingEvaluationAiBatchComment>
         m_speakingAiParsedComments;
+
+    Microsoft::UI::Xaml::Controls::ComboBox
+        m_speakingBatchRendererSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox
+        m_speakingBatchTemplateSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox
+        m_speakingBatchSavePdfCheck{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox
+        m_speakingBatchPrintCheck{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox
+        m_speakingBatchKeepIndividualPdfsCheck{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox
+        m_speakingBatchOutputDirectoryTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingBatchStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingBatchPlanButton{nullptr};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_classNameTextBox{nullptr};

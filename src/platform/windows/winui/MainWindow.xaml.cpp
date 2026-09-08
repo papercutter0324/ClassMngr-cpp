@@ -2898,6 +2898,66 @@ bool MainWindow::runPhase6SpeakingEvaluationChecks()
         return fail(16777216);
     }
 
+    m_speakingBatchRendererSelector.SelectedIndex(0);
+    m_speakingBatchTemplateSelector.SelectedIndex(0);
+    m_speakingBatchSavePdfCheck.IsChecked(true);
+    m_speakingBatchPrintCheck.IsChecked(false);
+    m_speakingBatchKeepIndividualPdfsCheck.IsChecked(false);
+    m_speakingBatchOutputDirectoryTextBox.Text(
+        L"C:\\Temp\\ClassMngr-speaking-reports"
+        );
+    planSpeakingBatchReports();
+    const bool batchArchivePlanReady =
+        m_speakingBatchStatusText
+        && contains(m_speakingBatchStatusText.Text(), L"Planned 2")
+        && contains(m_speakingBatchStatusText.Text(), L"Internal")
+        && contains(m_speakingBatchStatusText.Text(), L"one ZIP archive")
+        && m_speakingBatchPlanButton.IsEnabled();
+    if (!batchArchivePlanReady)
+    {
+        return fail(33554432);
+    }
+
+    m_speakingBatchKeepIndividualPdfsCheck.IsChecked(true);
+    planSpeakingBatchReports();
+    const bool individualPdfPlanReady =
+        contains(
+            m_speakingBatchStatusText.Text(),
+            L"retain individual PDFs"
+            );
+    if (!individualPdfPlanReady)
+    {
+        return fail(67108864);
+    }
+
+    m_speakingBatchRendererSelector.SelectedIndex(1);
+    m_speakingBatchTemplateSelector.SelectedIndex(1);
+    planSpeakingBatchReports();
+    const bool powerPointPlanReady =
+        contains(m_speakingBatchStatusText.Text(), L"PowerPoint")
+        && contains(
+            m_speakingBatchStatusText.Text(),
+            L"Renderer-neutral plan accepted"
+            );
+    if (!powerPointPlanReady)
+    {
+        return fail(134217728);
+    }
+
+    m_speakingBatchSavePdfCheck.IsChecked(false);
+    m_speakingBatchPrintCheck.IsChecked(false);
+    planSpeakingBatchReports();
+    const bool outputModeRejected =
+        contains(
+            m_speakingBatchStatusText.Text(),
+            L"output-mode-required"
+            )
+        && !m_speakingBatchPlanButton.IsEnabled();
+    if (!outputModeRejected)
+    {
+        return fail(268435456);
+    }
+
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
     refreshClassesPage();
@@ -11171,6 +11231,199 @@ void MainWindow::populateClassesPage(
     speakingRoot.Children().Append(speakingCard.root);
     speakingRoot.Children().Append(aiCard.root);
 
+    auto batchReportCard = ClassMngrWinUISharedUX::buildCard({
+        L"Batch report operations",
+        L"Plan a renderer-neutral batch of speaking reports. PDF rendering, printing, and PowerPoint automation are completed by the output services in the next phase.",
+        L"Speaking evaluation batch report operations"
+        });
+    m_speakingBatchStatusText = TextBlock();
+    m_speakingBatchStatusText.Text(
+        L"Choose an output mode and plan the named students in this evaluation."
+        );
+    m_speakingBatchStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        m_speakingBatchStatusText,
+        L"Speaking batch report status"
+        );
+    batchReportCard.content.Children().Append(m_speakingBatchStatusText);
+
+    const auto appendBatchOption = [](
+        ComboBox& selector,
+        std::wstring_view label,
+        int tag
+        ) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(label)));
+        item.Tag(box_value(tag));
+        selector.Items().Append(item);
+    };
+    m_speakingBatchRendererSelector = ComboBox();
+    m_speakingBatchRendererSelector.Header(
+        box_value(hstring(L"Renderer"))
+        );
+    m_speakingBatchRendererSelector.MinWidth(320.0);
+    m_speakingBatchRendererSelector.IsTabStop(true);
+    m_speakingBatchRendererSelector.TabIndex(19);
+    appendBatchOption(
+        m_speakingBatchRendererSelector,
+        L"Internal renderer",
+        0
+        );
+    appendBatchOption(
+        m_speakingBatchRendererSelector,
+        L"PowerPoint renderer",
+        1
+        );
+    m_speakingBatchRendererSelector.SelectedIndex(0);
+    m_speakingBatchRendererSelector.SelectionChanged(
+        [this](auto const&, auto const&) {
+            updateSpeakingBatchReportActions();
+        }
+        );
+    setAutomationName(
+        m_speakingBatchRendererSelector,
+        L"Speaking batch report renderer"
+        );
+    batchReportCard.content.Children().Append(
+        m_speakingBatchRendererSelector
+        );
+
+    m_speakingBatchTemplateSelector = ComboBox();
+    m_speakingBatchTemplateSelector.Header(
+        box_value(hstring(L"Report template"))
+        );
+    m_speakingBatchTemplateSelector.MinWidth(320.0);
+    m_speakingBatchTemplateSelector.IsTabStop(true);
+    m_speakingBatchTemplateSelector.TabIndex(20);
+    appendBatchOption(
+        m_speakingBatchTemplateSelector,
+        L"Standard",
+        0
+        );
+    appendBatchOption(
+        m_speakingBatchTemplateSelector,
+        L"Advanced",
+        1
+        );
+    m_speakingBatchTemplateSelector.SelectedIndex(0);
+    m_speakingBatchTemplateSelector.SelectionChanged(
+        [this](auto const&, auto const&) {
+            updateSpeakingBatchReportActions();
+        }
+        );
+    setAutomationName(
+        m_speakingBatchTemplateSelector,
+        L"Speaking batch report template"
+        );
+    batchReportCard.content.Children().Append(
+        m_speakingBatchTemplateSelector
+        );
+
+    m_speakingBatchSavePdfCheck = CheckBox();
+    m_speakingBatchSavePdfCheck.Content(
+        box_value(hstring(L"Save PDF output"))
+        );
+    m_speakingBatchSavePdfCheck.IsChecked(true);
+    m_speakingBatchSavePdfCheck.IsTabStop(true);
+    m_speakingBatchSavePdfCheck.TabIndex(21);
+    m_speakingBatchSavePdfCheck.Checked(
+        [this](auto const&, auto const&) {
+            updateSpeakingBatchReportActions();
+        }
+        );
+    m_speakingBatchSavePdfCheck.Unchecked(
+        [this](auto const&, auto const&) {
+            updateSpeakingBatchReportActions();
+        }
+        );
+    setAutomationName(
+        m_speakingBatchSavePdfCheck,
+        L"Save speaking report PDF output"
+        );
+    batchReportCard.content.Children().Append(m_speakingBatchSavePdfCheck);
+
+    m_speakingBatchPrintCheck = CheckBox();
+    m_speakingBatchPrintCheck.Content(
+        box_value(hstring(L"Print reports"))
+        );
+    m_speakingBatchPrintCheck.IsChecked(false);
+    m_speakingBatchPrintCheck.IsTabStop(true);
+    m_speakingBatchPrintCheck.TabIndex(22);
+    m_speakingBatchPrintCheck.Checked(
+        [this](auto const&, auto const&) {
+            updateSpeakingBatchReportActions();
+        }
+        );
+    m_speakingBatchPrintCheck.Unchecked(
+        [this](auto const&, auto const&) {
+            updateSpeakingBatchReportActions();
+        }
+        );
+    setAutomationName(
+        m_speakingBatchPrintCheck,
+        L"Print speaking reports"
+        );
+    batchReportCard.content.Children().Append(m_speakingBatchPrintCheck);
+
+    m_speakingBatchKeepIndividualPdfsCheck = CheckBox();
+    m_speakingBatchKeepIndividualPdfsCheck.Content(
+        box_value(hstring(L"Keep individual PDFs when creating a ZIP archive"))
+        );
+    m_speakingBatchKeepIndividualPdfsCheck.IsChecked(false);
+    m_speakingBatchKeepIndividualPdfsCheck.IsTabStop(true);
+    m_speakingBatchKeepIndividualPdfsCheck.TabIndex(23);
+    setAutomationName(
+        m_speakingBatchKeepIndividualPdfsCheck,
+        L"Keep individual speaking report PDFs"
+        );
+    batchReportCard.content.Children().Append(
+        m_speakingBatchKeepIndividualPdfsCheck
+        );
+
+    m_speakingBatchOutputDirectoryTextBox = TextBox();
+    m_speakingBatchOutputDirectoryTextBox.Header(
+        box_value(hstring(L"Output folder (required for PDF output)"))
+        );
+    m_speakingBatchOutputDirectoryTextBox.PlaceholderText(
+        L"Type or choose the output folder in the output phase"
+        );
+    m_speakingBatchOutputDirectoryTextBox.MinWidth(420.0);
+    m_speakingBatchOutputDirectoryTextBox.IsTabStop(true);
+    m_speakingBatchOutputDirectoryTextBox.TabIndex(24);
+    m_speakingBatchOutputDirectoryTextBox.TextChanging(
+        [this](auto const&, auto const&) {
+            updateSpeakingBatchReportActions();
+        }
+        );
+    setAutomationName(
+        m_speakingBatchOutputDirectoryTextBox,
+        L"Speaking batch report output folder"
+        );
+    batchReportCard.content.Children().Append(
+        m_speakingBatchOutputDirectoryTextBox
+        );
+
+    m_speakingBatchPlanButton = Button();
+    m_speakingBatchPlanButton.Content(
+        box_value(hstring(L"Plan Batch Reports"))
+        );
+    m_speakingBatchPlanButton.IsTabStop(true);
+    m_speakingBatchPlanButton.TabIndex(25);
+    m_speakingBatchPlanButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingBatchPlanButton.Click(
+        [this](auto const&, auto const&) {
+            planSpeakingBatchReports();
+        }
+        );
+    setAutomationName(
+        m_speakingBatchPlanButton,
+        L"Plan speaking batch reports"
+        );
+    batchReportCard.content.Children().Append(m_speakingBatchPlanButton);
+    speakingRoot.Children().Append(batchReportCard.root);
+
     auto analyticsRoot = makeRoot(StackPanel());
     auto analyticsTitle = TextBlock();
     analyticsTitle.Text(L"Class Analytics");
@@ -12196,6 +12449,12 @@ void MainWindow::refreshSpeakingEvaluation()
         {
             m_speakingAiResponseTextBox.Text({});
         }
+        if (m_speakingBatchStatusText)
+        {
+            m_speakingBatchStatusText.Text(
+                L"Open or select a saved class before planning batch reports."
+                );
+        }
         m_speakingEvaluationLoading = true;
         rebuildSpeakingEvaluationGrid();
         m_speakingEvaluationLoading = false;
@@ -12258,6 +12517,12 @@ void MainWindow::refreshSpeakingEvaluation()
         if (m_speakingAiResponseTextBox)
         {
             m_speakingAiResponseTextBox.Text({});
+        }
+        if (m_speakingBatchStatusText)
+        {
+            m_speakingBatchStatusText.Text(
+                L"The batch report plan is unavailable until this evaluation loads."
+                );
         }
         rebuildSpeakingEvaluationGrid();
         m_speakingEvaluationLoading = false;
@@ -12326,6 +12591,13 @@ void MainWindow::refreshSpeakingEvaluation()
     }
     updateSpeakingEvaluationActions();
     refreshSpeakingAiSelection();
+    if (m_speakingBatchStatusText)
+    {
+        m_speakingBatchStatusText.Text(
+            L"Choose an output mode and plan the named students in this evaluation."
+            );
+    }
+    updateSpeakingBatchReportActions();
 }
 
 void MainWindow::rebuildSpeakingEvaluationGrid()
@@ -12518,6 +12790,7 @@ void MainWindow::updateSpeakingEvaluationActions()
         m_speakingEvaluationDiscardButton.IsEnabled(hasClass && m_speakingEvaluationDirty);
     }
     updateSpeakingAiActions();
+    updateSpeakingBatchReportActions();
 }
 
 void MainWindow::refreshSpeakingAiSelection()
@@ -12581,6 +12854,13 @@ void MainWindow::refreshSpeakingAiSelection()
         L"Private observations loaded for the selected student."
         );
     updateSpeakingAiActions();
+    if (m_speakingBatchStatusText)
+    {
+        m_speakingBatchStatusText.Text(
+            L"Choose an output mode and plan the named students in this evaluation."
+            );
+    }
+    updateSpeakingBatchReportActions();
 }
 
 void MainWindow::generateSpeakingAiPrompt()
@@ -13153,6 +13433,184 @@ void MainWindow::updateSpeakingAiActions()
             hasClass && !m_speakingAiParsedComments.empty()
             );
     }
+}
+
+void MainWindow::planSpeakingBatchReports()
+{
+    if (!m_speakingBatchStatusText
+        || !m_speakingBatchRendererSelector
+        || !m_speakingBatchTemplateSelector
+        || !m_speakingBatchSavePdfCheck
+        || !m_speakingBatchPrintCheck
+        || !m_speakingBatchKeepIndividualPdfsCheck
+        || !m_speakingBatchOutputDirectoryTextBox)
+    {
+        return;
+    }
+
+    const bool hasClass = static_cast<bool>(m_openDatabase)
+        && m_classSelectedId > 0
+        && !m_classNew;
+    if (!hasClass)
+    {
+        m_speakingBatchStatusText.Text(
+            L"Open or select a saved class before planning batch reports."
+            );
+        updateSpeakingBatchReportActions();
+        return;
+    }
+
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    std::size_t reportCount = 0;
+    for (const auto& cells : m_speakingEvaluationCellBoxes)
+    {
+        if (cells.size() <= static_cast<std::size_t>(koreanColumn))
+        {
+            continue;
+        }
+        if (!cells[static_cast<std::size_t>(englishColumn)].Text().empty()
+            || !cells[static_cast<std::size_t>(koreanColumn)].Text().empty())
+        {
+            ++reportCount;
+        }
+    }
+
+    if (reportCount == 0)
+    {
+        m_speakingBatchStatusText.Text(
+            L"Import or enter at least one student name before planning reports."
+            );
+        updateSpeakingBatchReportActions();
+        return;
+    }
+
+    const auto checked = [](Microsoft::UI::Xaml::Controls::CheckBox const& box) {
+        const auto value = box.IsChecked();
+        return value && value.Value();
+    };
+    classmngr::engine::SpeakingEvaluationBatchReportRequest request;
+    request.reportCount = reportCount;
+    request.renderer = m_speakingBatchRendererSelector.SelectedIndex() == 1
+        ? classmngr::engine::SpeakingEvaluationReportRenderer::PowerPoint
+        : classmngr::engine::SpeakingEvaluationReportRenderer::Internal;
+    request.savePdf = checked(m_speakingBatchSavePdfCheck);
+    request.printReports = checked(m_speakingBatchPrintCheck);
+    request.keepIndividualPdfFiles =
+        checked(m_speakingBatchKeepIndividualPdfsCheck);
+    request.hasOutputDirectory =
+        !asUtf8(m_speakingBatchOutputDirectoryTextBox.Text()).empty();
+    request.hasExactOutputFilePath = false;
+    const auto reportTemplate = m_speakingBatchTemplateSelector.SelectedIndex() == 1
+        ? classmngr::engine::SpeakingEvaluationReportTemplate::Advanced
+        : classmngr::engine::SpeakingEvaluationReportTemplate::Standard;
+    request.reportTemplates.assign(reportCount, reportTemplate);
+
+    const auto planned =
+        classmngr::engine::SpeakingEvaluationBatchReportPolicy::plan(request);
+    if (!planned)
+    {
+        m_speakingBatchStatusText.Text(winrt::hstring(
+            L"Batch report plan rejected: "
+                + asWide(planned.error().message)
+            ));
+        updateSpeakingBatchReportActions();
+        return;
+    }
+
+    const std::wstring renderer = request.renderer
+        == classmngr::engine::SpeakingEvaluationReportRenderer::PowerPoint
+        ? L"PowerPoint"
+        : L"Internal";
+    std::wstring status = L"Planned "
+        + std::to_wstring(reportCount)
+        + L" speaking report(s) using the "
+        + renderer
+        + L" renderer. ";
+    if (planned->createsBatchArchive)
+    {
+        status += L"The output phase will create one ZIP archive";
+        if (planned->savesIndividualPdfFiles)
+        {
+            status += L" and retain individual PDFs";
+        }
+        status += L".";
+    }
+    else if (planned->savesIndividualPdfFiles)
+    {
+        status += L"The output phase will save individual PDF files.";
+    }
+    else
+    {
+        status += L"No PDF files are required.";
+    }
+    if (request.printReports)
+    {
+        status += L" Printing is also requested.";
+    }
+    status += L" Renderer-neutral plan accepted; output execution remains in Phase 7.";
+    m_speakingBatchStatusText.Text(winrt::hstring(status));
+    updateSpeakingBatchReportActions();
+}
+
+void MainWindow::updateSpeakingBatchReportActions()
+{
+    if (!m_speakingBatchStatusText
+        || !m_speakingBatchRendererSelector
+        || !m_speakingBatchTemplateSelector
+        || !m_speakingBatchSavePdfCheck
+        || !m_speakingBatchPrintCheck
+        || !m_speakingBatchKeepIndividualPdfsCheck
+        || !m_speakingBatchOutputDirectoryTextBox
+        || !m_speakingBatchPlanButton)
+    {
+        return;
+    }
+
+    const bool hasClass = static_cast<bool>(m_openDatabase)
+        && m_classSelectedId > 0
+        && !m_classNew;
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    std::size_t reportCount = 0;
+    for (const auto& cells : m_speakingEvaluationCellBoxes)
+    {
+        if (cells.size() <= static_cast<std::size_t>(koreanColumn))
+        {
+            continue;
+        }
+        if (!cells[static_cast<std::size_t>(englishColumn)].Text().empty()
+            || !cells[static_cast<std::size_t>(koreanColumn)].Text().empty())
+        {
+            ++reportCount;
+        }
+    }
+
+    const auto checked = [](Microsoft::UI::Xaml::Controls::CheckBox const& box) {
+        const auto value = box.IsChecked();
+        return value && value.Value();
+    };
+    const bool savePdf = checked(m_speakingBatchSavePdfCheck);
+    const bool printReports = checked(m_speakingBatchPrintCheck);
+    m_speakingBatchRendererSelector.IsEnabled(hasClass);
+    m_speakingBatchTemplateSelector.IsEnabled(hasClass);
+    m_speakingBatchSavePdfCheck.IsEnabled(hasClass);
+    m_speakingBatchPrintCheck.IsEnabled(hasClass);
+    m_speakingBatchKeepIndividualPdfsCheck.IsEnabled(
+        hasClass && savePdf && reportCount > 1
+        );
+    m_speakingBatchOutputDirectoryTextBox.IsEnabled(hasClass && savePdf);
+    m_speakingBatchPlanButton.IsEnabled(
+        hasClass && reportCount > 0 && (savePdf || printReports)
+        );
 }
 
 void MainWindow::markSpeakingEvaluationDirty()
