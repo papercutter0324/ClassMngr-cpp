@@ -21,7 +21,10 @@
 #include "classmngr/engine/roster_report_template.h"
 #include "classmngr/engine/roster_service.h"
 #include "classmngr/engine/roster_validator.h"
+#include "classmngr/engine/schedule_import_service.h"
 #include "classmngr/engine/teacher_service.h"
+#include "classmngr/engine/testing_block_service.h"
+#include "classmngr/engine/testing_class_service.h"
 #include "winui_build_info.h"
 #include "winui_identity.h"
 #include "winui_platform_services.h"
@@ -1207,6 +1210,40 @@ std::wstring scheduleTypeText(classmngr::engine::ScheduleType type)
         : L"Regular";
 }
 
+std::vector<std::wstring> scheduleImportDays(std::wstring_view value)
+{
+    std::vector<std::wstring> days;
+    std::size_t start = 0;
+    while (start <= value.size())
+    {
+        const std::size_t separator = value.find(L',', start);
+        const std::size_t end = separator == std::wstring_view::npos
+            ? value.size()
+            : separator;
+        std::wstring day(value.substr(start, end - start));
+        const auto first = day.find_first_not_of(L" \t");
+        const auto last = day.find_last_not_of(L" \t");
+        if (first == std::wstring::npos)
+        {
+            day.clear();
+        }
+        else
+        {
+            day = day.substr(first, last - first + 1);
+        }
+        if (!day.empty())
+        {
+            days.push_back(std::move(day));
+        }
+        if (separator == std::wstring_view::npos)
+        {
+            break;
+        }
+        start = separator + 1;
+    }
+    return days;
+}
+
 classmngr::engine::Roster defaultRoster()
 {
     classmngr::engine::Roster roster;
@@ -2181,12 +2218,231 @@ bool MainWindow::runPhase6ScheduleChecks()
         return fail(512);
     }
 
+    const bool importControlsReady =
+        m_scheduleImportKindCombo
+        && m_scheduleImportUserTextBox
+        && m_scheduleImportTeacherTextBox
+        && m_scheduleImportGradeTextBox
+        && m_scheduleImportLevelTextBox
+        && m_scheduleImportRoomTextBox
+        && m_scheduleImportDaysTextBox
+        && m_scheduleImportStartTextBox
+        && m_scheduleImportEndTextBox
+        && m_scheduleImportTeacherActionCombo
+        && m_scheduleImportClassActionCombo
+        && m_scheduleImportStatusText
+        && m_scheduleImportValidationText
+        && m_scheduleImportPreviewButton
+        && m_scheduleImportApplyButton;
+    if (!importControlsReady)
+    {
+        return fail(2048);
+    }
+
+    m_scheduleImportKindCombo.SelectedIndex(0);
+    m_scheduleImportUserTextBox.Text(L"WinUI Import User");
+    m_scheduleImportTeacherTextBox.Text(L"\uD64D\uAE38\uB3D9");
+    m_scheduleImportGradeTextBox.Text(L"E5");
+    m_scheduleImportLevelTextBox.Text(L"Zeus");
+    m_scheduleImportRoomTextBox.Text(L"413");
+    m_scheduleImportDaysTextBox.Text(L"Monday, Wednesday");
+    m_scheduleImportStartTextBox.Text(L"4:00 PM");
+    m_scheduleImportEndTextBox.Text(L"4:55 PM");
+    m_scheduleImportTeacherActionCombo.SelectedIndex(1);
+    m_scheduleImportClassActionCombo.SelectedIndex(1);
+    previewScheduleImport();
+    const auto importStatus = m_scheduleImportStatusText.Text();
+    const bool importPreviewReady =
+        m_scheduleImportPreviewReady
+        && m_scheduleImportPreview
+        && m_scheduleImportPreview->user.classes.size() == 1
+        && m_scheduleImportPreview->classes.size() == 1
+        && m_scheduleImportPreview->teachers.size() == 1
+        && m_scheduleImportApplyButton.IsEnabled()
+        && std::wstring_view(importStatus.c_str(), importStatus.size()).find(
+            L"Preview ready"
+            ) != std::wstring_view::npos;
+    if (!importPreviewReady)
+    {
+        return fail(2048);
+    }
+
+    applyScheduleImport();
+    const auto importedClassrooms = repository.list();
+    classmngr::engine::ClassScheduleService scheduleService(*m_openDatabase);
+    const auto importedInfos = scheduleService.loadScheduleClassInfos();
+    classmngr::engine::TeacherService teacherService(*m_openDatabase);
+    const auto importedTeachers = teacherService.list();
+    int importedClassId = -1;
+    bool importedTimesReady = false;
+    if (importedInfos)
+    {
+        for (const auto& info : *importedInfos)
+        {
+            if (info.classGrade == "E5" && info.classLevel == "Zeus"
+                && info.classTimes.size() == 2
+                && info.classTimes[0].day == "Monday"
+                && info.classTimes[1].day == "Wednesday")
+            {
+                importedClassId = info.classId;
+                importedTimesReady = true;
+                break;
+            }
+        }
+    }
+    const auto appliedStatus = m_scheduleImportStatusText.Text();
+    const bool importApplied =
+        m_scheduleImportPreviewReady == false
+        && !m_scheduleImportApplyButton.IsEnabled()
+        && importedClassrooms && importedClassrooms->size() == 3
+        && importedTeachers && importedTeachers->size() == 1
+        && importedTimesReady && importedClassId > 0
+        && std::wstring_view(appliedStatus.c_str(), appliedStatus.size()).find(
+            L"Import applied atomically"
+            ) != std::wstring_view::npos;
+    if (!importApplied)
+    {
+        return fail(4096);
+    }
+
+    const bool testingControlsReady =
+        m_testingClassSelector
+        && m_testingClassNameTextBox
+        && m_testingClassGradeTextBox
+        && m_testingClassLevelTextBox
+        && m_testingClassRoomTextBox
+        && m_testingDayCombo
+        && m_testingStartTextBox
+        && m_testingReplaceExistingCheck
+        && m_testingAssignmentList
+        && m_testingStatusText
+        && m_testingValidationText
+        && m_testingCreateButton
+        && m_testingAssignButton
+        && m_testingDeleteAssignmentButton;
+    if (!testingControlsReady)
+    {
+        return fail(8192);
+    }
+
+    const auto selectedTestingClassId = [this]() {
+        if (!m_testingClassSelector)
+        {
+            return -1;
+        }
+        const auto item = m_testingClassSelector.SelectedItem().try_as<
+            Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+        return item ? boxedInt(item.Tag()) : -1;
+    };
+    const auto selectTestingClass = [this](int classId) {
+        if (!m_testingClassSelector)
+        {
+            return false;
+        }
+        for (int index = 0;
+             index < static_cast<int>(m_testingClassSelector.Items().Size());
+             ++index)
+        {
+            const auto item = m_testingClassSelector.Items().GetAt(index)
+                .try_as<Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+            if (item && boxedInt(item.Tag()) == classId)
+            {
+                m_testingClassSelector.SelectedIndex(index);
+                return true;
+            }
+        }
+        return false;
+    };
+
+    m_testingClassNameTextBox.Text(L"WinUI Testing Group");
+    m_testingClassGradeTextBox.Text(L"M1");
+    m_testingClassLevelTextBox.Text(L"Mixed (All)");
+    m_testingClassRoomTextBox.Text(L"Testing room 1");
+    createTestingClass();
+    const int firstTestingClassId = selectedTestingClassId();
+    const bool firstTestingClassReady = firstTestingClassId > 0
+        && m_testingClasses.size() == 1
+        && m_testingClassSelector.Items().Size() == 1;
+    if (!firstTestingClassReady)
+    {
+        return fail(8192);
+    }
+
+    m_testingClassNameTextBox.Text(L"WinUI Testing Group 2");
+    m_testingClassRoomTextBox.Text(L"Testing room 2");
+    createTestingClass();
+    const int secondTestingClassId = selectedTestingClassId();
+    if (secondTestingClassId <= 0 || secondTestingClassId == firstTestingClassId
+        || m_testingClasses.size() != 2
+        || m_testingClassSelector.Items().Size() != 2)
+    {
+        return fail(16384);
+    }
+
+    if (!selectTestingClass(firstTestingClassId))
+    {
+        return fail(32768);
+    }
+    m_testingDayCombo.SelectedIndex(0);
+    m_testingStartTextBox.Text(L"09:00");
+    m_testingReplaceExistingCheck.IsChecked(false);
+    assignTestingClass();
+    const bool assignmentCreated = m_testingAssignments.size() == 1
+        && m_testingAssignments.front().classId == firstTestingClassId
+        && m_testingAssignments.front().day == "Monday"
+        && m_testingAssignments.front().startTime == "09:00";
+    if (!assignmentCreated)
+    {
+        return fail(32768);
+    }
+
+    if (!selectTestingClass(secondTestingClassId))
+    {
+        return fail(65536);
+    }
+    m_testingReplaceExistingCheck.IsChecked(false);
+    assignTestingClass();
+    const bool replacementRejected =
+        m_testingValidationText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && m_testingAssignments.size() == 1
+        && m_testingAssignments.front().classId == firstTestingClassId;
+    if (!replacementRejected)
+    {
+        return fail(65536);
+    }
+
+    m_testingReplaceExistingCheck.IsChecked(true);
+    assignTestingClass();
+    const bool assignmentReplaced = m_testingAssignments.size() == 1
+        && m_testingAssignments.front().classId == secondTestingClassId
+        && m_testingValidationText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed;
+    if (!assignmentReplaced)
+    {
+        return fail(131072);
+    }
+
+    m_testingAssignmentList.SelectedIndex(0);
+    const bool deleteSelectionReady = m_testingDeleteAssignmentButton.IsEnabled();
+    deleteTestingAssignment();
+    const bool assignmentDeleted = deleteSelectionReady
+        && m_testingAssignments.empty()
+        && m_testingAssignmentList.Items().Size() == 0;
+    if (!assignmentDeleted)
+    {
+        return fail(262144);
+    }
+
     m_openDatabase.reset();
     refreshScheduleWorkspace();
+    refreshTestingWorkspace();
     const bool clearedReady =
         m_scheduleWorkspaceStatusText.Text() == L"No database open."
         && !m_scheduleList.IsEnabled()
-        && !m_scheduleClassSelector.IsEnabled();
+        && !m_scheduleClassSelector.IsEnabled()
+        && m_testingStatusText.Text() == L"No database open."
+        && !m_testingCreateButton.IsEnabled();
     return clearedReady ? true : fail(1024);
 }
 
@@ -5102,6 +5358,7 @@ void MainWindow::populatePage(
         else if (pageId == homePageId)
         {
             refreshScheduleWorkspace();
+            refreshTestingWorkspace();
             refreshCalendarPage();
         }
         return;
@@ -5779,13 +6036,405 @@ void MainWindow::populateScheduleWorkspace(
     scheduleItem.Content(scrollTab(editorContent));
     setAutomationName(scheduleItem, L"Schedule editor tab");
 
+    auto importContent = StackPanel();
+    importContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
+    importContent.Spacing(12.0);
+    importContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+    auto importHeading = makeText(L"Schedule import", 24.0);
+    setAutomationName(importHeading, L"Schedule import heading");
+    importContent.Children().Append(importHeading);
+    auto importDescription = makeText(
+        L"Review one structured user block before applying it. Preview uses "
+        L"the shared match and weekday rules; Apply validates the complete "
+        L"plan and commits it atomically."
+        );
+    setAutomationName(importDescription, L"Schedule import description");
+    importContent.Children().Append(importDescription);
+
+    auto importCard = ClassMngrWinUISharedUX::buildCard({
+        L"Import review",
+        L"The form represents the normalized data produced by a workbook "
+        L"adapter. It keeps the review/apply boundary visible on Windows.",
+        L"Schedule import review"
+        });
+    const auto makeImportBox = [](std::wstring_view label,
+                                  std::wstring_view placeholder,
+                                  std::wstring_view automationName) {
+        auto box = TextBox();
+        box.Header(box_value(hstring(label)));
+        box.PlaceholderText(hstring(placeholder));
+        box.MinWidth(300.0);
+        box.IsTabStop(true);
+        setAutomationName(box, automationName);
+        return box;
+    };
+    m_scheduleImportKindCombo = ComboBox();
+    m_scheduleImportKindCombo.Header(box_value(hstring(L"Schedule kind")));
+    m_scheduleImportKindCombo.MinWidth(240.0);
+    m_scheduleImportKindCombo.IsTabStop(true);
+    m_scheduleImportKindCombo.TabIndex(30);
+    for (const auto& choice : {
+             std::pair{L"Normal", 0},
+             std::pair{L"Intensive", 1}})
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(choice.first)));
+        item.Tag(box_value(choice.second));
+        setAutomationName(item, choice.first);
+        m_scheduleImportKindCombo.Items().Append(item);
+    }
+    m_scheduleImportKindCombo.SelectedIndex(0);
+    setAutomationName(m_scheduleImportKindCombo, L"Schedule import kind");
+    importCard.content.Children().Append(m_scheduleImportKindCombo);
+
+    m_scheduleImportUserTextBox = makeImportBox(
+        L"User/profile name",
+        L"e.g. Alice",
+        L"Schedule import user name"
+        );
+    m_scheduleImportUserTextBox.Text(L"WinUI User");
+    importCard.content.Children().Append(m_scheduleImportUserTextBox);
+    m_scheduleImportTeacherTextBox = makeImportBox(
+        L"Korean teacher",
+        L"Hangul-only teacher key",
+        L"Schedule import Korean teacher"
+        );
+    m_scheduleImportTeacherTextBox.Text(L"\uD64D\uAE38\uB3D9");
+    importCard.content.Children().Append(m_scheduleImportTeacherTextBox);
+    m_scheduleImportGradeTextBox = makeImportBox(
+        L"Class grade",
+        L"e.g. E5",
+        L"Schedule import class grade"
+        );
+    m_scheduleImportGradeTextBox.Text(L"E5");
+    importCard.content.Children().Append(m_scheduleImportGradeTextBox);
+    m_scheduleImportLevelTextBox = makeImportBox(
+        L"Class level",
+        L"e.g. Zeus",
+        L"Schedule import class level"
+        );
+    m_scheduleImportLevelTextBox.Text(L"Zeus");
+    importCard.content.Children().Append(m_scheduleImportLevelTextBox);
+    m_scheduleImportRoomTextBox = makeImportBox(
+        L"Room",
+        L"e.g. 413",
+        L"Schedule import room"
+        );
+    m_scheduleImportRoomTextBox.Text(L"413");
+    importCard.content.Children().Append(m_scheduleImportRoomTextBox);
+    m_scheduleImportDaysTextBox = makeImportBox(
+        L"Meeting days",
+        L"Comma-separated, e.g. Monday, Wednesday",
+        L"Schedule import meeting days"
+        );
+    m_scheduleImportDaysTextBox.Text(L"Monday, Wednesday");
+    importCard.content.Children().Append(m_scheduleImportDaysTextBox);
+    m_scheduleImportStartTextBox = makeImportBox(
+        L"Start time",
+        L"e.g. 4:00 PM",
+        L"Schedule import start time"
+        );
+    m_scheduleImportStartTextBox.Text(L"4:00 PM");
+    importCard.content.Children().Append(m_scheduleImportStartTextBox);
+    m_scheduleImportEndTextBox = makeImportBox(
+        L"End time",
+        L"e.g. 4:55 PM",
+        L"Schedule import end time"
+        );
+    m_scheduleImportEndTextBox.Text(L"4:55 PM");
+    importCard.content.Children().Append(m_scheduleImportEndTextBox);
+
+    m_scheduleImportTeacherActionCombo = ComboBox();
+    m_scheduleImportTeacherActionCombo.Header(
+        box_value(hstring(L"Teacher resolution"))
+        );
+    m_scheduleImportTeacherActionCombo.MinWidth(280.0);
+    m_scheduleImportTeacherActionCombo.IsTabStop(true);
+    m_scheduleImportTeacherActionCombo.TabIndex(31);
+    for (const auto& choice : {
+             std::pair{L"Reuse matching teacher", 0},
+             std::pair{L"Create new teacher", 2}})
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(choice.first)));
+        item.Tag(box_value(choice.second));
+        setAutomationName(item, choice.first);
+        m_scheduleImportTeacherActionCombo.Items().Append(item);
+    }
+    m_scheduleImportTeacherActionCombo.SelectedIndex(0);
+    setAutomationName(
+        m_scheduleImportTeacherActionCombo,
+        L"Schedule import teacher resolution"
+        );
+    importCard.content.Children().Append(m_scheduleImportTeacherActionCombo);
+
+    m_scheduleImportClassActionCombo = ComboBox();
+    m_scheduleImportClassActionCombo.Header(
+        box_value(hstring(L"Class resolution"))
+        );
+    m_scheduleImportClassActionCombo.MinWidth(280.0);
+    m_scheduleImportClassActionCombo.IsTabStop(true);
+    m_scheduleImportClassActionCombo.TabIndex(32);
+    for (const auto& choice : {
+             std::pair{L"Update suggested class", 0},
+             std::pair{L"Create new class", 1},
+             std::pair{L"Skip class", 2}})
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(choice.first)));
+        item.Tag(box_value(choice.second));
+        setAutomationName(item, choice.first);
+        m_scheduleImportClassActionCombo.Items().Append(item);
+    }
+    m_scheduleImportClassActionCombo.SelectedIndex(1);
+    setAutomationName(
+        m_scheduleImportClassActionCombo,
+        L"Schedule import class resolution"
+        );
+    importCard.content.Children().Append(m_scheduleImportClassActionCombo);
+
+    auto importActions = StackPanel();
+    importActions.Orientation(Orientation::Horizontal);
+    importActions.Spacing(8.0);
+    m_scheduleImportPreviewButton = Button();
+    m_scheduleImportPreviewButton.Content(
+        box_value(hstring(L"Preview import"))
+        );
+    m_scheduleImportPreviewButton.IsTabStop(true);
+    m_scheduleImportPreviewButton.TabIndex(33);
+    m_scheduleImportPreviewButton.Click(
+        [this](auto const&, auto const&) { previewScheduleImport(); }
+        );
+    setAutomationName(m_scheduleImportPreviewButton, L"Preview schedule import");
+    importActions.Children().Append(m_scheduleImportPreviewButton);
+    m_scheduleImportApplyButton = Button();
+    m_scheduleImportApplyButton.Content(box_value(hstring(L"Apply import")));
+    m_scheduleImportApplyButton.IsTabStop(true);
+    m_scheduleImportApplyButton.TabIndex(34);
+    m_scheduleImportApplyButton.IsEnabled(false);
+    m_scheduleImportApplyButton.Click(
+        [this](auto const&, auto const&) { applyScheduleImport(); }
+        );
+    setAutomationName(m_scheduleImportApplyButton, L"Apply schedule import");
+    importActions.Children().Append(m_scheduleImportApplyButton);
+    importCard.content.Children().Append(importActions);
+    m_scheduleImportStatusText = makeText(L"Preview an import block to begin.");
+    setAutomationName(m_scheduleImportStatusText, L"Schedule import status");
+    importCard.content.Children().Append(m_scheduleImportStatusText);
+    m_scheduleImportValidationText = makeText(L"");
+    m_scheduleImportValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(m_scheduleImportValidationText, L"Schedule import validation");
+    importCard.content.Children().Append(m_scheduleImportValidationText);
+    importContent.Children().Append(importCard.root);
+
+    auto importItem = PivotItem();
+    importItem.Header(box_value(hstring(L"Import")));
+    importItem.Content(scrollTab(importContent));
+    setAutomationName(importItem, L"Schedule import tab");
+
+    auto testingContent = StackPanel();
+    testingContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
+    testingContent.Spacing(12.0);
+    testingContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+    auto testingHeading = makeText(L"Testing classes", 24.0);
+    setAutomationName(testingHeading, L"Testing classes heading");
+    testingContent.Children().Append(testingHeading);
+    auto testingDescription = makeText(
+        L"Create the special testing-class profile, then assign it to a "
+        L"strict weekday/time slot. Existing assignments stay visible so a "
+        L"replacement can be an explicit user choice."
+        );
+    setAutomationName(testingDescription, L"Testing classes description");
+    testingContent.Children().Append(testingDescription);
+
+    auto testingCard = ClassMngrWinUISharedUX::buildCard({
+        L"Testing-class profile",
+        L"Required profile fields are validated by TestingClassService before "
+        L"the optional assignment is written.",
+        L"Testing-class profile editor"
+        });
+    m_testingClassSelector = ComboBox();
+    m_testingClassSelector.Header(box_value(hstring(L"Existing testing class")));
+    m_testingClassSelector.PlaceholderText(L"Select a testing class");
+    m_testingClassSelector.MinWidth(320.0);
+    m_testingClassSelector.IsTabStop(true);
+    m_testingClassSelector.TabIndex(40);
+    m_testingClassSelector.SelectionChanged(
+        [this](auto const&, auto const&) {
+            if (m_testingLoading || !m_testingClassSelector)
+            {
+                return;
+            }
+            const auto item = m_testingClassSelector.SelectedItem().try_as<
+                ComboBoxItem>();
+            const int classId = item ? boxedInt(item.Tag()) : -1;
+            for (const auto& testingClass : m_testingClasses)
+            {
+                if (testingClass.classId != classId)
+                {
+                    continue;
+                }
+                m_testingClassNameTextBox.Text(asWide(testingClass.name));
+                m_testingClassGradeTextBox.Text(asWide(testingClass.grade));
+                m_testingClassLevelTextBox.Text(asWide(testingClass.level));
+                m_testingClassRoomTextBox.Text(asWide(testingClass.room));
+                break;
+            }
+        }
+        );
+    setAutomationName(m_testingClassSelector, L"Testing class selector");
+    testingCard.content.Children().Append(m_testingClassSelector);
+    m_testingClassNameTextBox = makeImportBox(
+        L"Name",
+        L"e.g. Testing group A",
+        L"Testing class name"
+        );
+    m_testingClassNameTextBox.Text(L"WinUI Testing Group");
+    testingCard.content.Children().Append(m_testingClassNameTextBox);
+    m_testingClassGradeTextBox = makeImportBox(
+        L"Grade",
+        L"e.g. M1",
+        L"Testing class grade"
+        );
+    m_testingClassGradeTextBox.Text(L"M1");
+    testingCard.content.Children().Append(m_testingClassGradeTextBox);
+    m_testingClassLevelTextBox = makeImportBox(
+        L"Level",
+        L"e.g. Mixed (All)",
+        L"Testing class level"
+        );
+    m_testingClassLevelTextBox.Text(L"Mixed (All)");
+    testingCard.content.Children().Append(m_testingClassLevelTextBox);
+    m_testingClassRoomTextBox = makeImportBox(
+        L"Room",
+        L"e.g. Testing room",
+        L"Testing class room"
+        );
+    m_testingClassRoomTextBox.Text(L"Testing room");
+    testingCard.content.Children().Append(m_testingClassRoomTextBox);
+
+    auto testingActions = StackPanel();
+    testingActions.Orientation(Orientation::Horizontal);
+    testingActions.Spacing(8.0);
+    m_testingCreateButton = Button();
+    m_testingCreateButton.Content(box_value(hstring(L"Create testing class")));
+    m_testingCreateButton.IsTabStop(true);
+    m_testingCreateButton.TabIndex(41);
+    m_testingCreateButton.Click(
+        [this](auto const&, auto const&) { createTestingClass(); }
+        );
+    setAutomationName(m_testingCreateButton, L"Create testing class");
+    testingActions.Children().Append(m_testingCreateButton);
+    testingCard.content.Children().Append(testingActions);
+    testingContent.Children().Append(testingCard.root);
+
+    auto assignmentCard = ClassMngrWinUISharedUX::buildCard({
+        L"Testing assignment",
+        L"Assignment keys use the shared strict HH:mm contract. Enable replace "
+        L"only when the existing slot has been reviewed.",
+        L"Testing assignment editor"
+        });
+    m_testingDayCombo = ComboBox();
+    m_testingDayCombo.Header(box_value(hstring(L"Weekday")));
+    m_testingDayCombo.MinWidth(220.0);
+    m_testingDayCombo.IsTabStop(true);
+    m_testingDayCombo.TabIndex(42);
+    for (const std::string& day : classmngr::engine::ClassInfoConfig::days())
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(asWide(day))));
+        item.Tag(box_value(hstring(asWide(day))));
+        setAutomationName(item, asWide(day));
+        m_testingDayCombo.Items().Append(item);
+    }
+    m_testingDayCombo.SelectedIndex(0);
+    setAutomationName(m_testingDayCombo, L"Testing assignment weekday");
+    assignmentCard.content.Children().Append(m_testingDayCombo);
+    m_testingStartTextBox = makeImportBox(
+        L"Start time (HH:mm)",
+        L"e.g. 09:00",
+        L"Testing assignment start time"
+        );
+    m_testingStartTextBox.Text(L"09:00");
+    assignmentCard.content.Children().Append(m_testingStartTextBox);
+    m_testingReplaceExistingCheck = CheckBox();
+    m_testingReplaceExistingCheck.Content(
+        box_value(hstring(L"Replace an existing assignment"))
+        );
+    m_testingReplaceExistingCheck.IsTabStop(true);
+    m_testingReplaceExistingCheck.TabIndex(43);
+    setAutomationName(
+        m_testingReplaceExistingCheck,
+        L"Replace existing testing assignment"
+        );
+    assignmentCard.content.Children().Append(m_testingReplaceExistingCheck);
+    m_testingAssignButton = Button();
+    m_testingAssignButton.Content(box_value(hstring(L"Assign selected class")));
+    m_testingAssignButton.IsTabStop(true);
+    m_testingAssignButton.TabIndex(44);
+    m_testingAssignButton.Click(
+        [this](auto const&, auto const&) { assignTestingClass(); }
+        );
+    setAutomationName(m_testingAssignButton, L"Assign testing class");
+    assignmentCard.content.Children().Append(m_testingAssignButton);
+    m_testingAssignmentList = ListView();
+    m_testingAssignmentList.Header(
+        box_value(hstring(L"Current testing assignments"))
+        );
+    m_testingAssignmentList.SelectionMode(ListViewSelectionMode::Single);
+    m_testingAssignmentList.IsTabStop(true);
+    m_testingAssignmentList.TabIndex(45);
+    m_testingAssignmentList.Height(180.0);
+    m_testingAssignmentList.SelectionChanged(
+        [this](auto const&, auto const&) {
+            if (!m_testingLoading && m_testingDeleteAssignmentButton)
+            {
+                m_testingDeleteAssignmentButton.IsEnabled(
+                    m_testingAssignmentList.SelectedIndex() >= 0
+                    );
+            }
+        }
+        );
+    setAutomationName(m_testingAssignmentList, L"Testing assignment list");
+    assignmentCard.content.Children().Append(m_testingAssignmentList);
+    m_testingDeleteAssignmentButton = Button();
+    m_testingDeleteAssignmentButton.Content(
+        box_value(hstring(L"Delete selected assignment"))
+        );
+    m_testingDeleteAssignmentButton.IsTabStop(true);
+    m_testingDeleteAssignmentButton.TabIndex(46);
+    m_testingDeleteAssignmentButton.Click(
+        [this](auto const&, auto const&) { deleteTestingAssignment(); }
+        );
+    setAutomationName(
+        m_testingDeleteAssignmentButton,
+        L"Delete selected testing assignment"
+        );
+    assignmentCard.content.Children().Append(m_testingDeleteAssignmentButton);
+    m_testingStatusText = makeText(L"Testing-class editor is ready.");
+    setAutomationName(m_testingStatusText, L"Testing classes status");
+    assignmentCard.content.Children().Append(m_testingStatusText);
+    m_testingValidationText = makeText(L"");
+    m_testingValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(m_testingValidationText, L"Testing classes validation");
+    assignmentCard.content.Children().Append(m_testingValidationText);
+    testingContent.Children().Append(assignmentCard.root);
+
+    auto testingItem = PivotItem();
+    testingItem.Header(box_value(hstring(L"Testing classes")));
+    testingItem.Content(scrollTab(testingContent));
+    setAutomationName(testingItem, L"Testing classes tab");
+
     m_scheduleTabs = Pivot();
     m_scheduleTabs.IsTabStop(true);
     m_scheduleTabs.TabIndex(0);
     m_scheduleTabs.Items().Append(scheduleItem);
+    m_scheduleTabs.Items().Append(importItem);
+    m_scheduleTabs.Items().Append(testingItem);
     setAutomationName(m_scheduleTabs, L"Schedule workspace tabs");
     scheduleRoot.Children().Append(m_scheduleTabs);
     refreshScheduleWorkspace();
+    refreshTestingWorkspace();
 }
 
 void MainWindow::refreshScheduleWorkspace()
@@ -6137,6 +6786,503 @@ void MainWindow::clearScheduleEntry()
             L"Choose a day and time to add a schedule slot."
             );
     }
+}
+
+void MainWindow::previewScheduleImport()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_openDatabase || !m_scheduleImportStatusText)
+    {
+        return;
+    }
+
+    const auto showValidation = [this](std::wstring message) {
+        if (m_scheduleImportValidationText)
+        {
+            m_scheduleImportValidationText.Text(winrt::hstring(message));
+            m_scheduleImportValidationText.Visibility(Visibility::Visible);
+        }
+        if (m_scheduleImportApplyButton)
+        {
+            m_scheduleImportApplyButton.IsEnabled(false);
+        }
+        m_scheduleImportPreview.reset();
+        m_scheduleImportPreviewReady = false;
+        if (m_scheduleImportStatusText)
+        {
+            m_scheduleImportStatusText.Text(L"Import preview failed.");
+        }
+    };
+
+    const std::wstring userName = m_scheduleImportUserTextBox.Text().c_str();
+    const std::wstring teacher = m_scheduleImportTeacherTextBox.Text().c_str();
+    const std::wstring grade = m_scheduleImportGradeTextBox.Text().c_str();
+    const std::wstring level = m_scheduleImportLevelTextBox.Text().c_str();
+    const std::wstring room = m_scheduleImportRoomTextBox.Text().c_str();
+    const std::wstring start = m_scheduleImportStartTextBox.Text().c_str();
+    const std::wstring end = m_scheduleImportEndTextBox.Text().c_str();
+    const std::vector<std::wstring> days = scheduleImportDays(
+        m_scheduleImportDaysTextBox.Text().c_str()
+        );
+    if (userName.empty() || teacher.empty() || grade.empty() || level.empty()
+        || room.empty() || start.empty() || end.empty() || days.empty())
+    {
+        showValidation(
+            L"Enter a profile, Korean teacher, grade, level, room, meeting "
+            L"days, start time, and end time before previewing."
+            );
+        return;
+    }
+
+    classmngr::engine::ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = asUtf8(teacher);
+    candidate.teacherKr = candidate.teacherKey;
+    candidate.rooms.push_back(asUtf8(room));
+    candidate.classGrade = asUtf8(grade);
+    candidate.classLevel = asUtf8(level);
+    candidate.sourceCells.push_back("WinUI schedule import");
+    for (const std::wstring& day : days)
+    {
+        candidate.times.push_back({
+            asUtf8(day),
+            asUtf8(start),
+            asUtf8(end)
+        });
+    }
+
+    m_scheduleImportUser = {};
+    m_scheduleImportUser.name = asUtf8(userName);
+    m_scheduleImportUser.headerCell = "WinUI";
+    m_scheduleImportUser.classes.push_back(std::move(candidate));
+    const auto kind = m_scheduleImportKindCombo.SelectedIndex() == 1
+        ? classmngr::engine::ScheduleImportKind::Intensive
+        : classmngr::engine::ScheduleImportKind::Normal;
+    classmngr::engine::ScheduleImportService service(*m_openDatabase);
+    const auto preview = service.previewImport(m_scheduleImportUser, kind);
+    if (!preview)
+    {
+        showValidation(L"The engine rejected the preview: "
+            + asWide(preview.error().message));
+        return;
+    }
+    if (preview->classes.empty() || preview->teachers.empty())
+    {
+        showValidation(L"The preview did not produce a class and teacher candidate.");
+        return;
+    }
+
+    m_scheduleImportPreview = *preview;
+    m_scheduleImportPreviewReady = true;
+    const bool hasMatchingTeacher = !preview->teachers.front().matchingTeacherIds.empty();
+    m_scheduleImportTeacherActionCombo.SelectedIndex(hasMatchingTeacher ? 0 : 1);
+    const bool hasSuggestedClass = preview->classes.front().suggestedClassId > 0;
+    m_scheduleImportClassActionCombo.SelectedIndex(hasSuggestedClass ? 0 : 1);
+    if (m_scheduleImportValidationText)
+    {
+        m_scheduleImportValidationText.Text({});
+        m_scheduleImportValidationText.Visibility(Visibility::Collapsed);
+    }
+    m_scheduleImportApplyButton.IsEnabled(true);
+    m_scheduleImportStatusText.Text(winrt::hstring(
+        L"Preview ready: "
+        + std::to_wstring(preview->user.classes.size())
+        + L" imported class, "
+        + std::to_wstring(preview->inventory.classCount)
+        + L" existing classes, "
+        + (hasMatchingTeacher ? L"matching teacher found" : L"new teacher required")
+        + L", "
+        + (hasSuggestedClass ? L"suggested existing class" : L"new class suggested")
+        + L"."
+        ));
+}
+
+void MainWindow::applyScheduleImport()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_openDatabase || !m_scheduleImportPreviewReady
+        || !m_scheduleImportPreview || !m_scheduleImportStatusText)
+    {
+        return;
+    }
+    if (m_scheduleImportPreview->user.classes.empty()
+        || m_scheduleImportPreview->teachers.empty()
+        || m_scheduleImportPreview->classes.empty())
+    {
+        return;
+    }
+
+    const auto showValidation = [this](std::wstring message) {
+        if (m_scheduleImportValidationText)
+        {
+            m_scheduleImportValidationText.Text(winrt::hstring(message));
+            m_scheduleImportValidationText.Visibility(Visibility::Visible);
+        }
+        if (m_scheduleImportStatusText)
+        {
+            m_scheduleImportStatusText.Text(L"Import could not be applied.");
+        }
+    };
+    const auto teacherItem = m_scheduleImportTeacherActionCombo.SelectedItem()
+        .try_as<ComboBoxItem>();
+    const auto classItem = m_scheduleImportClassActionCombo.SelectedItem()
+        .try_as<ComboBoxItem>();
+    const auto teacherAction = teacherItem
+        ? static_cast<classmngr::engine::ScheduleImportTeacherAction>(
+            boxedInt(teacherItem.Tag())
+            )
+        : classmngr::engine::ScheduleImportTeacherAction::Create;
+    const auto classAction = classItem
+        ? static_cast<classmngr::engine::ScheduleImportClassAction>(
+            boxedInt(classItem.Tag())
+            )
+        : classmngr::engine::ScheduleImportClassAction::CreateNew;
+    const auto& teacherPreview = m_scheduleImportPreview->teachers.front();
+    const auto& classPreview = m_scheduleImportPreview->classes.front();
+    if (teacherAction == classmngr::engine::ScheduleImportTeacherAction::Reuse
+        && teacherPreview.matchingTeacherIds.empty())
+    {
+        showValidation(L"Reuse is unavailable because no matching teacher was found.");
+        return;
+    }
+    if (classAction == classmngr::engine::ScheduleImportClassAction::UpdateExisting
+        && classPreview.suggestedClassId <= 0)
+    {
+        showValidation(L"Update existing is unavailable because the preview found no target.");
+        return;
+    }
+
+    classmngr::engine::ScheduleImportPlan plan;
+    plan.kind = m_scheduleImportPreview->kind;
+    plan.selectedUserName = m_scheduleImportPreview->user.name;
+    plan.saveProfileNameIfBlank = true;
+    plan.unknownCellsAcknowledged = true;
+    plan.candidates = m_scheduleImportPreview->user.classes;
+    plan.teachers.push_back({
+        plan.candidates.front().teacherKey,
+        teacherAction,
+        teacherAction == classmngr::engine::ScheduleImportTeacherAction::Reuse
+            ? teacherPreview.matchingTeacherIds.front()
+            : -1,
+        plan.candidates.front().rooms.empty()
+            ? std::string{}
+            : plan.candidates.front().rooms.front()
+    });
+    plan.classes.push_back({
+        0,
+        classAction,
+        classAction == classmngr::engine::ScheduleImportClassAction::UpdateExisting
+            ? classPreview.suggestedClassId
+            : -1,
+        "#FFFFFF",
+        "#000000"
+    });
+
+    classmngr::engine::ScheduleImportService service(*m_openDatabase);
+    const auto valid = service.validateImport(plan);
+    if (!valid)
+    {
+        showValidation(L"Import validation failed: "
+            + asWide(valid.error().message));
+        return;
+    }
+    const auto imported = service.importSchedule(plan);
+    if (!imported)
+    {
+        showValidation(L"Import failed and was rolled back: "
+            + asWide(imported.error().message));
+        return;
+    }
+
+    m_scheduleImportPreviewReady = false;
+    m_scheduleImportPreview.reset();
+    m_scheduleImportApplyButton.IsEnabled(false);
+    if (m_scheduleImportValidationText)
+    {
+        m_scheduleImportValidationText.Text({});
+        m_scheduleImportValidationText.Visibility(Visibility::Collapsed);
+    }
+    m_scheduleImportStatusText.Text(winrt::hstring(
+        L"Import applied atomically: "
+        + std::to_wstring(imported->classesCreated)
+        + L" classes created, "
+        + std::to_wstring(imported->classesUpdated)
+        + L" updated, "
+        + std::to_wstring(imported->teachersCreated)
+        + L" teachers created."
+        ));
+    refreshScheduleWorkspace();
+}
+
+void MainWindow::refreshTestingWorkspace()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_testingClassSelector || !m_testingAssignmentList
+        || !m_testingStatusText)
+    {
+        return;
+    }
+
+    const auto checked = [](auto const& check) {
+        const auto value = check.IsChecked();
+        return value && value.Value();
+    };
+    const bool hasDatabase = static_cast<bool>(m_openDatabase);
+    const auto setEnabled = [hasDatabase](auto const& control) {
+        if (control)
+        {
+            control.IsEnabled(hasDatabase);
+        }
+    };
+    setEnabled(m_testingClassSelector);
+    setEnabled(m_testingClassNameTextBox);
+    setEnabled(m_testingClassGradeTextBox);
+    setEnabled(m_testingClassLevelTextBox);
+    setEnabled(m_testingClassRoomTextBox);
+    setEnabled(m_testingDayCombo);
+    setEnabled(m_testingStartTextBox);
+    setEnabled(m_testingReplaceExistingCheck);
+    setEnabled(m_testingCreateButton);
+    setEnabled(m_testingAssignButton);
+    setEnabled(m_testingAssignmentList);
+    setEnabled(m_testingDeleteAssignmentButton);
+
+    int previousClassId = -1;
+    if (const auto item = m_testingClassSelector.SelectedItem().try_as<
+            ComboBoxItem>())
+    {
+        previousClassId = boxedInt(item.Tag());
+    }
+    m_testingLoading = true;
+    m_testingClasses.clear();
+    m_testingAssignments.clear();
+    m_testingClassSelector.Items().Clear();
+    m_testingAssignmentList.Items().Clear();
+    if (m_testingValidationText)
+    {
+        m_testingValidationText.Text({});
+        m_testingValidationText.Visibility(Visibility::Collapsed);
+    }
+
+    if (!hasDatabase)
+    {
+        m_testingStatusText.Text(L"No database open.");
+        m_testingLoading = false;
+        return;
+    }
+
+    classmngr::engine::TestingClassService classService(*m_openDatabase);
+    classmngr::engine::TestingBlockService blockService(*m_openDatabase);
+    const auto classes = classService.list();
+    const auto assignments = blockService.listAssignments();
+    if (!classes || !assignments)
+    {
+        const std::string message = !classes
+            ? classes.error().message
+            : assignments.error().message;
+        m_testingStatusText.Text(winrt::hstring(
+            L"Testing classes could not be loaded: " + asWide(message)
+            ));
+        if (m_testingValidationText)
+        {
+            m_testingValidationText.Text(winrt::hstring(
+                L"Engine loading error: " + asWide(message)
+                ));
+            m_testingValidationText.Visibility(Visibility::Visible);
+        }
+        m_testingLoading = false;
+        return;
+    }
+
+    m_testingClasses = *classes;
+    m_testingAssignments = *assignments;
+    int selectedClassIndex = -1;
+    for (const auto& testingClass : m_testingClasses)
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(asWide(testingClass.name))));
+        item.Tag(box_value(testingClass.classId));
+        setAutomationName(item, L"Testing class " + asWide(testingClass.name));
+        m_testingClassSelector.Items().Append(item);
+        if (testingClass.classId == previousClassId)
+        {
+            selectedClassIndex = static_cast<int>(
+                m_testingClassSelector.Items().Size() - 1
+                );
+        }
+    }
+    if (selectedClassIndex < 0 && m_testingClassSelector.Items().Size() > 0)
+    {
+        selectedClassIndex = 0;
+    }
+    m_testingClassSelector.SelectedIndex(selectedClassIndex);
+
+    const auto className = [this](int classId) {
+        for (const auto& testingClass : m_testingClasses)
+        {
+            if (testingClass.classId == classId)
+            {
+                return asWide(testingClass.name);
+            }
+        }
+        return std::wstring(L"Plain testing block");
+    };
+    for (const auto& assignment : m_testingAssignments)
+    {
+        auto item = ListViewItem();
+        const std::wstring display = asWide(assignment.day) + L" "
+            + asWide(assignment.startTime) + L" - "
+            + className(assignment.classId)
+            + (assignment.room.empty() ? L"" : L" (" + asWide(assignment.room) + L")");
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(hstring(
+            asWide(assignment.day) + L"|" + asWide(assignment.startTime)
+            )));
+        item.IsTabStop(false);
+        setAutomationName(item, L"Testing assignment " + display);
+        m_testingAssignmentList.Items().Append(item);
+    }
+    m_testingLoading = false;
+    const bool hasSelectedClass = m_testingClassSelector.SelectedIndex() >= 0;
+    m_testingAssignButton.IsEnabled(hasDatabase && hasSelectedClass);
+    m_testingDeleteAssignmentButton.IsEnabled(false);
+    m_testingStatusText.Text(winrt::hstring(
+        L"Loaded " + std::to_wstring(m_testingClasses.size())
+        + L" testing classes and "
+        + std::to_wstring(m_testingAssignments.size())
+        + L" assignments."
+        ));
+}
+
+void MainWindow::createTestingClass()
+{
+    using namespace Microsoft::UI::Xaml;
+
+    if (!m_openDatabase)
+    {
+        return;
+    }
+    classmngr::engine::TestingClass testingClass;
+    testingClass.name = asUtf8(m_testingClassNameTextBox.Text());
+    testingClass.grade = asUtf8(m_testingClassGradeTextBox.Text());
+    testingClass.level = asUtf8(m_testingClassLevelTextBox.Text());
+    testingClass.room = asUtf8(m_testingClassRoomTextBox.Text());
+    testingClass.classColor = "#FFFFFF";
+    testingClass.fontColor = "#000000";
+    classmngr::engine::TestingClassService service(*m_openDatabase);
+    const auto created = service.create(testingClass);
+    if (!created)
+    {
+        m_testingStatusText.Text(L"Testing class could not be created.");
+        m_testingValidationText.Text(winrt::hstring(
+            L"Engine validation error: " + asWide(created.error().message)
+            ));
+        m_testingValidationText.Visibility(Visibility::Visible);
+        return;
+    }
+    refreshTestingWorkspace();
+    for (int index = 0;
+         index < static_cast<int>(m_testingClassSelector.Items().Size());
+         ++index)
+    {
+        const auto item = m_testingClassSelector.Items().GetAt(index)
+            .try_as<Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+        if (item && boxedInt(item.Tag()) == *created)
+        {
+            m_testingClassSelector.SelectedIndex(index);
+            break;
+        }
+    }
+    m_testingStatusText.Text(L"Testing class created.");
+}
+
+void MainWindow::assignTestingClass()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_openDatabase || !m_testingClassSelector || !m_testingDayCombo
+        || !m_testingStartTextBox)
+    {
+        return;
+    }
+    const auto classItem = m_testingClassSelector.SelectedItem().try_as<
+        ComboBoxItem>();
+    const int classId = classItem ? boxedInt(classItem.Tag()) : -1;
+    const std::wstring day = selectedComboValue(m_testingDayCombo);
+    const std::wstring start = m_testingStartTextBox.Text().c_str();
+    if (classId <= 0 || day.empty() || start.empty())
+    {
+        m_testingStatusText.Text(L"Testing assignment could not be saved.");
+        m_testingValidationText.Text(
+            L"Choose a testing class, weekday, and strict HH:mm start time."
+            );
+        m_testingValidationText.Visibility(Visibility::Visible);
+        return;
+    }
+    const auto checked = m_testingReplaceExistingCheck.IsChecked();
+    const bool replaceExisting = checked && checked.Value();
+    classmngr::engine::TestingBlockService service(*m_openDatabase);
+    const auto saved = service.assignClass(
+        asUtf8(day),
+        asUtf8(start),
+        classId,
+        replaceExisting
+        );
+    if (!saved)
+    {
+        m_testingStatusText.Text(L"Testing assignment could not be saved.");
+        m_testingValidationText.Text(winrt::hstring(
+            L"Assignment validation error: " + asWide(saved.error().message)
+            ));
+        m_testingValidationText.Visibility(Visibility::Visible);
+        return;
+    }
+    refreshTestingWorkspace();
+    m_testingStatusText.Text(L"Testing assignment saved.");
+}
+
+void MainWindow::deleteTestingAssignment()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_openDatabase || !m_testingAssignmentList)
+    {
+        return;
+    }
+    const auto item = m_testingAssignmentList.SelectedItem().try_as<
+        ListViewItem>();
+    if (!item)
+    {
+        return;
+    }
+    const auto parts = splitScheduleKey(boxedString(item.Tag()));
+    if (parts.size() != 2 || parts[0].empty() || parts[1].empty())
+    {
+        return;
+    }
+    classmngr::engine::TestingBlockService service(*m_openDatabase);
+    const auto deleted = service.deleteAssignment(
+        asUtf8(parts[0]),
+        asUtf8(parts[1])
+        );
+    if (!deleted)
+    {
+        m_testingStatusText.Text(L"Testing assignment could not be deleted.");
+        m_testingValidationText.Text(winrt::hstring(
+            L"Assignment deletion failed: " + asWide(deleted.error().message)
+            ));
+        m_testingValidationText.Visibility(Visibility::Visible);
+        return;
+    }
+    refreshTestingWorkspace();
+    m_testingStatusText.Text(L"Testing assignment deleted.");
 }
 
 void MainWindow::populateCalendarWorkspace(

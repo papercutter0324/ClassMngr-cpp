@@ -249,6 +249,12 @@ private:
     void refreshScheduleWorkspace();
     void saveScheduleEntry();
     void clearScheduleEntry();
+    void previewScheduleImport();
+    void applyScheduleImport();
+    void refreshTestingWorkspace();
+    void createTestingClass();
+    void assignTestingClass();
+    void deleteTestingAssignment();
     void populateCalendarWorkspace(
         Microsoft::UI::Xaml::Controls::StackPanel const& calendarRoot
         );
@@ -696,6 +702,42 @@ private:
     Microsoft::UI::Xaml::Controls::TextBlock m_scheduleValidationText{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleClearButton{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportKindCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportUserTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportTeacherTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportGradeTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportLevelTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportRoomTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportDaysTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportStartTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportEndTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportTeacherActionCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportClassActionCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_scheduleImportStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_scheduleImportValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleImportPreviewButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleImportApplyButton{nullptr};
+    classmngr::engine::ScheduleImportUserBlock m_scheduleImportUser;
+    std::optional<classmngr::engine::ScheduleImportPreview>
+        m_scheduleImportPreview;
+    bool m_scheduleImportPreviewReady{};
+    Microsoft::UI::Xaml::Controls::ComboBox m_testingClassSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_testingClassNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_testingClassGradeTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_testingClassLevelTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_testingClassRoomTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_testingDayCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_testingStartTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox m_testingReplaceExistingCheck{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_testingAssignmentList{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_testingStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_testingValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingCreateButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingAssignButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingDeleteAssignmentButton{nullptr};
+    std::vector<classmngr::engine::TestingClass> m_testingClasses;
+    std::vector<classmngr::engine::TestingAssignment> m_testingAssignments;
+    bool m_testingLoading{};
     std::vector<classmngr::engine::Classroom> m_scheduleClasses;
     std::vector<classmngr::engine::ClassInfo> m_scheduleInfos;
     std::wstring m_scheduleEditingKey;
