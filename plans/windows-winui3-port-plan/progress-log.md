@@ -25,7 +25,7 @@ Last updated: 2026-09-09 (Asia/Seoul)
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Complete** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. The owner approved the five-scenario review, interactive review, the Phase 5 exception for missing Qt empty/populated/error fixtures, and the Qt-derived table-parity handoff. The x64 Release first-navigation gate passes with 20/20 valid samples. Phase 6 begins with Qt parity reconciliation. |
-| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details implementation `f1f9ba7` passes x64 Debug build, focused engine tests, and staged lifecycle verification; x86/paired evidence and the teacher-directory slices remain in the active step-1 gate. |
+| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7` and Korean Teacher `1baea21` pass x64 Debug build, focused engine tests, and staged lifecycle verification; x86/paired evidence and the Native English/GS directory slices remain in the active step-1 gate. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
 
@@ -212,6 +212,16 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
   and the complete staged verifier passed with the new
   `--phase6-personal-details-test`. x86 and paired Qt/WinUI visual evidence
   remain open for the slice gate.
+
+- **2026-09-09 — Phase 6 Korean Teacher directory implementation committed.**
+  Revision `1baea21` adds the engine-backed Korean Teachers route with retained
+  teacher fields, Korean IME-capable input, preferred-name choices,
+  connectivity/notes editing, new/edit/delete/discard behavior, dirty
+  selection protection, and engine validation/error presentation. The x64
+  Debug WinUI build passed, focused Teacher/TeacherImport engine tests passed
+  2/2, and the complete staged verifier passed with
+  `--phase6-korean-teacher-test` covering empty/create/invalid/update and
+  no-database states. x86 and paired Qt/WinUI visual evidence remain open.
 
 - **2026-09-08 — Phase 6 migration ledger activated.** The dashboard now
   records Phase 6 as **In progress** after the shared table-parity resource

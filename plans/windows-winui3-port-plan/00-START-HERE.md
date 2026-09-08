@@ -120,9 +120,11 @@ Qt-derived table-parity handoff was reviewed and accepted as Phase 6 input on
 resource foundation and Campus Directory selector-plus-five-tabs
 reconciliation are complete as the opening slice. The Personal Details
 implementation is committed at `f1f9ba7`; its x64 Debug build, focused engine
+tests, and staged lifecycle check pass. The Korean Teacher directory
+implementation is committed at `1baea21`; its x64 Debug build, focused engine
 tests, and staged lifecycle check pass. The active implementation gate now
-continues with the Korean Teacher, Native English Teacher, and GS Team
-directory slices while the Personal Details x86 and paired-visual evidence is
+continues with the Native English Teacher and GS Team directory slices while
+the Personal Details and Korean Teacher x86 and paired-visual evidence is
 closed. Each slice is accepted and committed independently with its engine,
 semantic, persistence, paired-visual, and x86 evidence. Touch, high-contrast,
 and accessibility automation remain out of scope for Phase 4.
@@ -214,9 +216,9 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Complete Phase 6 migration-order step 1: close Personal Details x86 and
-   paired-visual evidence, then migrate the Korean Teacher, Native English
-   Teacher, and GS Team directories.
+1. Complete Phase 6 migration-order step 1: close Personal Details and Korean
+   Teacher x86/paired-visual evidence, then migrate the Native English Teacher
+   and GS Team directories.
 2. Complete step 2: class details, class information, and notes; then step 3:
    calendar viewing/editing and preferences.
 3. Continue through roster/transfer, schedule/import, speaking-evaluation, and
@@ -267,6 +269,16 @@ After meaningful work:
   complete staged verifier pass, including `--phase6-personal-details-test`.
   Image selection, x86 evidence, and paired Qt/WinUI visual evidence remain
   for the closing gate.
+
+- **2026-09-09 - Phase 6 Korean Teacher directory slice implemented.** Revision
+  `1baea21` adds the engine-backed Korean Teachers route with the retained Qt
+  teacher fields, Korean IME-capable name entry, preferred-name choices,
+  connectivity and notes controls, new/edit/delete/discard behavior, dirty
+  selection protection, and engine validation/error presentation. The x64
+  Debug WinUI target, focused Teacher/TeacherImport engine tests (2/2), and
+  complete staged verifier pass, including
+  `--phase6-korean-teacher-test`, which covers empty/create/invalid/update and
+  no-database states. x86 and paired Qt/WinUI visual evidence remain open.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
