@@ -118,12 +118,14 @@ recommendation and measurement pass the provisional guardrails, and the
 Qt-derived table-parity handoff was reviewed and accepted as Phase 6 input on
 2026-09-08. Phase 6 is in progress: its shared Qt-derived table-parity
 resource foundation and Campus Directory selector-plus-five-tabs
-reconciliation are complete as the opening slice. The active gate is migration
-order step 1: Personal Details, followed by the Korean Teacher, Native English
-Teacher, and GS Team directory slices. Each slice is accepted and committed
-independently with its engine, semantic, persistence, paired-visual, and x86
-evidence. Touch, high-contrast, and accessibility automation remain out of
-scope for Phase 4.
+reconciliation are complete as the opening slice. The Personal Details
+implementation is committed at `f1f9ba7`; its x64 Debug build, focused engine
+tests, and staged lifecycle check pass. The active implementation gate now
+continues with the Korean Teacher, Native English Teacher, and GS Team
+directory slices while the Personal Details x86 and paired-visual evidence is
+closed. Each slice is accepted and committed independently with its engine,
+semantic, persistence, paired-visual, and x86 evidence. Touch, high-contrast,
+and accessibility automation remain out of scope for Phase 4.
 
 ## Phase 5 Completion Handoff
 
@@ -212,8 +214,9 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Complete Phase 6 migration-order step 1: Personal Details, Korean Teacher,
-   Native English Teacher, and GS Team directories.
+1. Complete Phase 6 migration-order step 1: close Personal Details x86 and
+   paired-visual evidence, then migrate the Korean Teacher, Native English
+   Teacher, and GS Team directories.
 2. Complete step 2: class details, class information, and notes; then step 3:
    calendar viewing/editing and preferences.
 3. Continue through roster/transfer, schedule/import, speaking-evaluation, and
@@ -254,6 +257,16 @@ After meaningful work:
   complete staged verifier pass. Personal details, teacher directories,
   paired visual evidence, persistence checks, and x86 Debug/Release evidence
   remain pending.
+
+- **2026-09-09 - Phase 6 Personal Details slice implemented.** Revision
+  `f1f9ba7` adds the WinUI Personal Details page to the My Information route,
+  backed by `PersonalDetailsService`, with load/save/discard, dirty-state,
+  validation, no-database/error states, Korean text entry, Zoom N/A handling,
+  typed-signature controls, and retained-image messaging. The x64 Debug WinUI
+  target, focused ApplicationSettings/PersonalDetails engine tests (2/2), and
+  complete staged verifier pass, including `--phase6-personal-details-test`.
+  Image selection, x86 evidence, and paired Qt/WinUI visual evidence remain
+  for the closing gate.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
