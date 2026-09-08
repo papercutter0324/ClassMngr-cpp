@@ -155,9 +155,15 @@ directory slices are also committed and pass their x64 Debug focused tests and
   length enforcement, and persistence through the same Classes Pivot. Its x64
   Debug build has zero warnings/errors, all 11 speaking-related engine tests
   pass, and the direct Phase 6 speaking plus retained Phase 4 hooks pass. The
-  remaining migration-order work in step 6 is batch report operations. Earlier
-  x86, paired-visual, table-parity, and aggregate-verifier evidence remains
-  open.
+  speaking batch-report operations slice is committed at `45403aa`; it adds an
+  engine-backed renderer-neutral plan surface for Internal and PowerPoint
+  renderers, Standard and Advanced templates, PDF/print selection, output
+  folder requirements, and archive-versus-individual-PDF policy. Actual PDF,
+  print, and Office execution remains a Phase 7 adapter responsibility. Its
+  x64 Debug build has zero warnings/errors, all 11 speaking-related engine
+  tests pass, and the direct Phase 6 speaking plus retained Phase 4 hooks pass.
+  Step 6 implementation slices are complete; earlier x86, paired-visual,
+  table-parity, and aggregate-verifier evidence remains open.
   Each slice is accepted and
   committed independently with its engine, semantic, persistence,
   paired-visual, and x86 evidence. Touch,
@@ -250,12 +256,9 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Complete the remaining Phase 6 migration-order step 6 work: batch report
-   operations while tracking the earlier x86, paired-visual, and table-parity
-   closure gates.
-2. Continue with step 7: substitute-preparation and bundled-document
+1. Continue with Phase 6 migration-order step 7: substitute-preparation and bundled-document
    workflows in the order recorded in the active phase file.
-3. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
+2. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
    verifier evidence, then complete the Phase 6 exit review. Commit every
    independently accepted slice and step with a `Phase 6 - ...` subject.
 
