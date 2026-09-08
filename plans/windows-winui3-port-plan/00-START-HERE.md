@@ -129,11 +129,18 @@ directory slices are also committed and pass their x64 Debug focused tests and
   tests (2/2), and staged lifecycle check pass. The calendar viewing/editing
   and preferences slice is committed at `33f33e6`; its x64 Debug build,
   focused calendar/settings engine tests (5/5), and direct Phase 6 hooks pass.
-  The active implementation gate now continues with Phase 6 migration-order
-  step 4 (rosters, transfers, and templates). Step-1 and step-2 x86,
-  paired-visual, and table-parity evidence remains open. Each slice is accepted
-  and committed independently with its engine, semantic, persistence,
-  paired-visual, and x86 evidence. Touch,
+  The roster, transfer, and template slice is committed at `3ed19f9` with
+  evidence in `af4ff5d`; its focused roster engine tests and direct Phase 6
+  hook pass. The schedule editor slice is committed at `a5f4593`, and the
+  schedule import/testing-class slice is committed at `37ba09b`; the combined
+  x64 Debug build has zero warnings/errors, the focused schedule/testing engine
+  tests pass 5/5, the direct `--phase6-schedule-test` hook passes, and the
+  retained `--phase4-semantic-test` hook still passes. The active
+  implementation gate now continues with Phase 6 migration-order step 6
+  (speaking evaluations, notes, analytics, AI comments, and batch behavior).
+  Earlier x86, paired-visual, table-parity, and aggregate-verifier evidence
+  remains open. Each slice is accepted and committed independently with its
+  engine, semantic, persistence, paired-visual, and x86 evidence. Touch,
 high-contrast, and accessibility automation remain out of scope for Phase 4.
 
 ## Phase 5 Completion Handoff
@@ -223,15 +230,14 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Continue with Phase 6 migration-order step 4: rosters, transfers, and
-   templates while tracking the earlier x86, paired-visual, and table-parity
-   closure gates.
-2. Continue with step 5: schedules, imports, testing classes, and assignment
-   dialogs; then step 6: speaking evaluations and notes/analytics/AI/batch
-   behavior.
-3. Continue through substitute-preparation and bundled-document slices in
-   the order recorded in the active phase file. Commit every independently
-   accepted slice and step with a `Phase 6 - ...` subject.
+1. Continue with Phase 6 migration-order step 6: speaking evaluations,
+   notes, analytics, AI-comment workflow, and batch operations while tracking
+   the earlier x86, paired-visual, and table-parity closure gates.
+2. Continue with step 7: substitute-preparation and bundled-document
+   workflows in the order recorded in the active phase file.
+3. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
+   verifier evidence, then complete the Phase 6 exit review. Commit every
+   independently accepted slice and step with a `Phase 6 - ...` subject.
 
 For the all-phase dashboard, completed-phase evidence, and historical progress
 log, see [progress-log.md](progress-log.md).

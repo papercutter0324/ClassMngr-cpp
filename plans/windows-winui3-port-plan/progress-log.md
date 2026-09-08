@@ -25,7 +25,7 @@ Last updated: 2026-09-09 (Asia/Seoul)
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Complete** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. The owner approved the five-scenario review, interactive review, the Phase 5 exception for missing Qt empty/populated/error fixtures, and the Qt-derived table-parity handoff. The x64 Release first-navigation gate passes with 20/20 valid samples. Phase 6 begins with Qt parity reconciliation. |
-| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7`, Korean Teacher `1baea21`, Native English Teacher `856ccf1`, GS Team `3a733a6`, class information `951f272`, and calendar `33f33e6` pass x64 Debug build, focused engine tests, and direct Phase 6 lifecycle hooks; step 4 (rosters, transfers, and templates) is active while step-1/step-2 x86, paired-visual, table-parity, and aggregate-verifier closure evidence remains open. |
+| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7`, Korean Teacher `1baea21`, Native English Teacher `856ccf1`, GS Team `3a733a6`, class information `951f272`, calendar `33f33e6`, roster `3ed19f9`, schedule editor `a5f4593`, and schedule import/testing classes `37ba09b` pass their x64 Debug implementation checks; step 6 (speaking evaluations, notes, analytics, AI comments, and batch operations) is active while x86, paired-visual, table-parity, and aggregate-verifier closure evidence remains open. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
 
@@ -270,6 +270,20 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
   crash code `-1073741819`; its isolated semantic hook passed, so the
   aggregate issue is not counted as calendar evidence. Step 4 is now active;
   earlier x86, paired Qt/WinUI visual, and table-parity evidence remains open.
+
+- **2026-09-09 — Phase 6 schedule/import/testing-class slices committed.**
+  Revisions `a5f4593` and `37ba09b` add the engine-backed Schedule tab with
+  regular/intensive editing and conflict rejection, plus Import review/apply
+  and Testing classes assignment surfaces. The schedule workspace keeps one
+  nested WinUI `Pivot` for Schedule, Import, and Testing classes, preserving
+  the sliding tab transition recorded in the Phase 6 plan. The x64 Debug WinUI
+  target built with zero warnings/errors; focused ClassSchedule, schedule
+  builder/import, and testing-class/block engine tests passed 5/5; the direct
+  `--phase6-schedule-test` hook passed its no-database, persistence, conflict,
+  import, replacement, deletion, and cleanup checks; and the retained
+  `--phase4-semantic-test` hook passed. Earlier x86, paired Qt/WinUI visual,
+  table-parity, and aggregate-verifier evidence remains open; step 6 is now
+  active.
 
 - **2026-09-08 — Phase 6 migration ledger activated.** The dashboard now
   records Phase 6 as **In progress** after the shared table-parity resource
