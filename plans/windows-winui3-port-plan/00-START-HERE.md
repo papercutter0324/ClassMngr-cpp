@@ -143,10 +143,16 @@ directory slices are also committed and pass their x64 Debug focused tests and
   sliding tab transition. The x64 Debug build has zero warnings/errors, all
   11 speaking-related engine tests pass, and the direct
   `--phase6-speaking-evaluation-test` plus retained
-  `--phase4-semantic-test` hooks pass. The active implementation gate now
-  continues with the remaining Phase 6 migration-order step 6 analytics,
-  AI-comment, and batch behavior. Earlier x86, paired-visual, table-parity,
-  and aggregate-verifier evidence remains open. Each slice is accepted and
+  `--phase4-semantic-test` hooks pass. The speaking analytics slice is
+  committed at `dc8a790`; it adds evaluation-scope selection, engine-backed
+  summary/criterion metrics, class shape and year-to-date results, and student
+  ranking on the same Classes Pivot, preserving its sliding tab transition.
+  Its x64 Debug build has zero warnings/errors, all 11 speaking-related engine
+  tests pass, and the Phase 6 speaking plus retained Phase 4 hooks pass. The
+  active implementation gate now continues with the remaining Phase 6
+  migration-order step 6 AI-comment and batch behavior. Earlier x86,
+  paired-visual, table-parity, and aggregate-verifier evidence remains open.
+  Each slice is accepted and
   committed independently with its engine, semantic, persistence,
   paired-visual, and x86 evidence. Touch,
 high-contrast, and accessibility automation remain out of scope for Phase 4.
@@ -238,8 +244,8 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Continue with the remaining Phase 6 migration-order step 6 work: analytics,
-   AI-comment workflow, and batch operations while tracking the earlier x86,
+1. Continue with the remaining Phase 6 migration-order step 6 work: the
+   AI-comment workflow and batch operations while tracking the earlier x86,
    paired-visual, and table-parity closure gates.
 2. Continue with step 7: substitute-preparation and bundled-document
    workflows in the order recorded in the active phase file.
@@ -361,6 +367,20 @@ After meaningful work:
   retained `--phase4-semantic-test` hooks exited 0. Analytics, AI comments,
   and batch behavior remain for the rest of step 6; x86, paired Qt/WinUI
   visual, table-parity, and aggregate-verifier evidence remain open.
+
+- **2026-09-09 - Phase 6 speaking analytics slice implemented.** Revision
+  `dc8a790` adds evaluation-scope selection, engine-backed summary and
+  criterion metrics, class-shape and year-to-date results, and a read-only
+  student ranking to the existing Classes Analytics tab. Refreshes follow
+  class/evaluation changes and saved speaking data, with explicit
+  no-database, empty, and engine-error states. The slice remains inside the
+  existing Classes Pivot so its sliding tab transition remains the reference
+  for future tabbed slices. The x64 Debug WinUI build completed with zero
+  warnings/errors, all 11 speaking-related engine tests passed, and both
+  direct `--phase6-speaking-evaluation-test` and retained
+  `--phase4-semantic-test` hooks exited 0. AI comments and batch behavior
+  remain for the rest of step 6; x86, paired Qt/WinUI visual, table-parity,
+  and aggregate-verifier evidence remain open.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
