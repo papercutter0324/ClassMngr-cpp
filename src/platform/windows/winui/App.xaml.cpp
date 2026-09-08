@@ -349,6 +349,11 @@ void App::OnLaunched(
         activation,
         L"--phase6-korean-teacher-test"
         );
+    const bool phase6NativeEnglishTeacherTest =
+        ClassMngrWinUILifecycle::hasArgument(
+            activation,
+            L"--phase6-native-english-teacher-test"
+            );
     const bool phase5CampusEmpty = ClassMngrWinUILifecycle::hasArgument(
         activation,
         L"--phase5-campus-empty"
@@ -368,9 +373,10 @@ void App::OnLaunched(
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
         || viewModelTest || localizationTest || dialogTest || threadingTest
         || semanticTest || phase4SemanticTest || phase5CampusTest
-        || phase6PersonalDetailsTest || phase6KoreanTeacherTest)
+        || phase6PersonalDetailsTest || phase6KoreanTeacherTest
+        || phase6NativeEnglishTeacherTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest, phase6NativeEnglishTeacherTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -449,6 +455,10 @@ void App::OnLaunched(
             else if (phase6KoreanTeacherTest)
             {
                 passed = mainWindow->runPhase6KoreanTeacherChecks();
+            }
+            else if (phase6NativeEnglishTeacherTest)
+            {
+                passed = mainWindow->runPhase6NativeEnglishTeacherChecks();
             }
             scheduleTestExit(m_window, passed);
         };

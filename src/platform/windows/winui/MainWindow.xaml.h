@@ -5,6 +5,7 @@
 
 #include "classmngr/engine/semantic_version.h"
 #include "classmngr/engine/campus_record.h"
+#include "classmngr/engine/native_english_teacher.h"
 #include "classmngr/engine/personal_details_service.h"
 #include "classmngr/engine/teacher.h"
 #include "classmngr/engine/validation_result.h"
@@ -104,6 +105,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase5CampusChecks();
     [[nodiscard]] bool runPhase6PersonalDetailsChecks();
     [[nodiscard]] bool runPhase6KoreanTeacherChecks();
+    [[nodiscard]] bool runPhase6NativeEnglishTeacherChecks();
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -241,6 +243,14 @@ private:
     void presentKoreanTeacher(int index);
     void refreshKoreanTeacherPreferredNames();
     [[nodiscard]] classmngr::engine::Teacher koreanTeacherFromForm() const;
+    void populateNativeEnglishTeachersPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        bool refresh
+        );
+    void refreshNativeEnglishTeachersPage();
+    void presentNativeEnglishTeacher(int index);
+    [[nodiscard]] classmngr::engine::NativeEnglishTeacher
+        nativeEnglishTeacherFromForm() const;
     void populateCampusPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId,
@@ -326,6 +336,34 @@ private:
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
+    void NativeEnglishTeacherSelection_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void NativeEnglishTeacherField_TextChanging(
+        Microsoft::UI::Xaml::Controls::TextBox const& sender,
+        Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+        );
+    void NativeEnglishTeacherPosition_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void NativeEnglishTeacherNewButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void NativeEnglishTeacherDeleteButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void NativeEnglishTeacherSaveButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void NativeEnglishTeacherDiscardButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
     winrt::fire_and_forget openDatabasePicker();
     winrt::fire_and_forget openNewDatabasePicker();
     winrt::fire_and_forget openSaveDatabasePicker(bool exportOnly);
@@ -394,6 +432,7 @@ private:
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusHousingNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusMapNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_koreanTeachersNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_nativeEnglishTeachersNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::Frame m_contentFrame{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
@@ -447,6 +486,27 @@ private:
     bool m_koreanTeacherLoading{};
     bool m_koreanTeacherDirty{};
     bool m_koreanTeacherNew{};
+
+    Microsoft::UI::Xaml::Controls::ComboBox m_nativeEnglishTeacherSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_nativeEnglishTeacherNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_nativeEnglishTeacherPositionCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_nativeEnglishTeacherPhoneTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_nativeEnglishTeacherEmailTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_nativeEnglishTeacherBirthdayTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_nativeEnglishTeacherNationalityTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_nativeEnglishTeacherStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_nativeEnglishTeacherValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_nativeEnglishTeacherNewButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_nativeEnglishTeacherDeleteButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_nativeEnglishTeacherSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_nativeEnglishTeacherDiscardButton{nullptr};
+    std::vector<classmngr::engine::NativeEnglishTeacher>
+        m_nativeEnglishTeachers;
+    int m_nativeEnglishTeacherSelectedIndex{-1};
+    int m_nativeEnglishTeacherSelectedId{-1};
+    bool m_nativeEnglishTeacherLoading{};
+    bool m_nativeEnglishTeacherDirty{};
+    bool m_nativeEnglishTeacherNew{};
 
     Microsoft::UI::Xaml::Controls::TextBlock m_engineVersionText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_nameTextBox{nullptr};

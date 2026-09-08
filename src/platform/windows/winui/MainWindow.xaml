@@ -353,8 +353,8 @@
                                     x:Name="NativeEnglishTeachersNavigationItem"
                                     Content="Native English Teachers"
                                     Tag="native_english_teachers"
-                                    IsEnabled="False"
-                                    AutomationProperties.Name="Native English Teachers navigation item unavailable in prototype shell" />
+                                    IsEnabled="True"
+                                    AutomationProperties.Name="Native English Teachers navigation item" />
                                 <NavigationViewItem
                                     x:Name="GsTeamNavigationItem"
                                     Content="GS Team"
