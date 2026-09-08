@@ -6,6 +6,7 @@
 #include "classmngr/engine/semantic_version.h"
 #include "classmngr/engine/campus_record.h"
 #include "classmngr/engine/personal_details_service.h"
+#include "classmngr/engine/teacher.h"
 #include "classmngr/engine/validation_result.h"
 #include "winui_dialogs.h"
 #include "winui_localization.h"
@@ -102,6 +103,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
     [[nodiscard]] bool runPhase5CampusChecks();
     [[nodiscard]] bool runPhase6PersonalDetailsChecks();
+    [[nodiscard]] bool runPhase6KoreanTeacherChecks();
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -231,6 +233,14 @@ private:
         bool refresh
         );
     void refreshPersonalDetailsPage();
+    void populateKoreanTeachersPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        bool refresh
+        );
+    void refreshKoreanTeachersPage();
+    void presentKoreanTeacher(int index);
+    void refreshKoreanTeacherPreferredNames();
+    [[nodiscard]] classmngr::engine::Teacher koreanTeacherFromForm() const;
     void populateCampusPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId,
@@ -283,6 +293,38 @@ private:
     void PersonalDetailsField_TextChanging(
         Microsoft::UI::Xaml::Controls::TextBox const& sender,
         Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+        );
+    void KoreanTeacherSelection_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void KoreanTeacherField_TextChanging(
+        Microsoft::UI::Xaml::Controls::TextBox const& sender,
+        Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+        );
+    void KoreanTeacherPassword_Changed(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void KoreanTeacherCombo_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void KoreanTeacherNewButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void KoreanTeacherDeleteButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void KoreanTeacherSaveButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void KoreanTeacherDiscardButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     winrt::fire_and_forget openDatabasePicker();
     winrt::fire_and_forget openNewDatabasePicker();
@@ -351,6 +393,7 @@ private:
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusAddressNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusHousingNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusMapNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_koreanTeachersNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::Frame m_contentFrame{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
@@ -376,6 +419,34 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_personalSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_personalDiscardButton{nullptr};
     classmngr::engine::PersonalDetails m_personalDetails;
+
+    Microsoft::UI::Xaml::Controls::ComboBox m_koreanTeacherSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherKrTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherEnTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherRomanizationTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_koreanTeacherPreferredNameCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherRoomTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherBirthdayTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherPhoneTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherWifiNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::PasswordBox m_koreanTeacherWifiPasswordBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_koreanTeacherInternetTypeCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherZoomIdTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::PasswordBox m_koreanTeacherZoomPasswordBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_koreanTeacherProjectionTypeCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_koreanTeacherNotesTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_koreanTeacherStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_koreanTeacherValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_koreanTeacherNewButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_koreanTeacherDeleteButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_koreanTeacherSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_koreanTeacherDiscardButton{nullptr};
+    std::vector<classmngr::engine::Teacher> m_koreanTeachers;
+    int m_koreanTeacherSelectedIndex{-1};
+    int m_koreanTeacherSelectedId{-1};
+    bool m_koreanTeacherLoading{};
+    bool m_koreanTeacherDirty{};
+    bool m_koreanTeacherNew{};
 
     Microsoft::UI::Xaml::Controls::TextBlock m_engineVersionText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_nameTextBox{nullptr};

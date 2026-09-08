@@ -339,16 +339,16 @@
                             x:Name="CampusStaffNavigationItem"
                             Content="Campus Staff"
                             Tag="campus_staff"
-                            IsEnabled="False"
+                            IsEnabled="True"
                             IsExpanded="True"
-                            AutomationProperties.Name="Campus Staff navigation root unavailable in prototype shell">
+                            AutomationProperties.Name="Campus Staff navigation root">
                             <NavigationViewItem.MenuItems>
                                 <NavigationViewItem
                                     x:Name="KoreanTeachersNavigationItem"
                                     Content="Korean Teachers"
                                     Tag="teachers_all_korean"
-                                    IsEnabled="False"
-                                    AutomationProperties.Name="Korean Teachers navigation root unavailable in prototype shell" />
+                                    IsEnabled="True"
+                                    AutomationProperties.Name="Korean Teachers navigation item" />
                                 <NavigationViewItem
                                     x:Name="NativeEnglishTeachersNavigationItem"
                                     Content="Native English Teachers"
