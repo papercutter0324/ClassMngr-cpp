@@ -5,6 +5,8 @@
 
 #include "classmngr/engine/semantic_version.h"
 #include "classmngr/engine/campus_record.h"
+#include "classmngr/engine/class_info.h"
+#include "classmngr/engine/classroom.h"
 #include "classmngr/engine/gs_team_member.h"
 #include "classmngr/engine/native_english_teacher.h"
 #include "classmngr/engine/personal_details_service.h"
@@ -108,6 +110,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase6KoreanTeacherChecks();
     [[nodiscard]] bool runPhase6NativeEnglishTeacherChecks();
     [[nodiscard]] bool runPhase6GsTeamChecks();
+    [[nodiscard]] bool runPhase6ClassInformationChecks();
+    [[nodiscard]] uint32_t phase6ClassInformationFailureMask() const noexcept;
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -229,6 +233,13 @@ private:
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId
         );
+    void refreshClassesPage();
+    void presentClass(int index);
+    void refreshClassInformationOptions();
+    void updateClassActions();
+    void markClassDirty();
+    void clearClassDirty();
+    [[nodiscard]] classmngr::engine::ClassInfo classInfoFromForm() const;
     void populateAboutPage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
@@ -395,6 +406,42 @@ private:
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void GsTeamDiscardButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassSelection_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void ClassField_TextChanging(
+        Microsoft::UI::Xaml::Controls::TextBox const& sender,
+        Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+        );
+    void ClassField_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void ClassNewButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassDeleteButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassSaveButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassDiscardButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassNotesSaveButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassNotesDiscardButton_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
@@ -582,6 +629,38 @@ private:
         m_speakingScoreCells;
     Microsoft::UI::Xaml::Controls::TextBox m_speakingPasteTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_speakingStatusText{nullptr};
+
+    Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classGradeCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classLevelCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classReadingBookCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classEssayBookCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classColorTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classFontColorTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classTeacherText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classNewButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classDeleteButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classDiscardButton{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classNotesTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classTimeFillerActivitiesTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classNotesStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classNotesValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classNotesSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classNotesDiscardButton{nullptr};
+    std::vector<classmngr::engine::Classroom> m_classes;
+    classmngr::engine::ClassInfo m_classInfo;
+    int m_classSelectedIndex{-1};
+    int m_classSelectedId{-1};
+    bool m_classLoading{};
+    bool m_classDirty{};
+    bool m_classDetailsDirty{};
+    bool m_classNotesDirty{};
+    bool m_classNew{};
+    uint32_t m_phase6ClassInformationFailureMask{};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_campusSelector{nullptr};
     Microsoft::UI::Xaml::Controls::Pivot m_campusTabs{nullptr};

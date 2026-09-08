@@ -3,6 +3,10 @@
 #include "MainWindow.xaml.h"
 #include "classmngr/engine/application_settings_service.h"
 #include "classmngr/engine/campus_record_service.h"
+#include "classmngr/engine/class_info_config.h"
+#include "classmngr/engine/class_info_service.h"
+#include "classmngr/engine/class_info_validator.h"
+#include "classmngr/engine/class_repository.h"
 #include "classmngr/engine/database_file_format.h"
 #include "classmngr/engine/gs_team_service.h"
 #include "classmngr/engine/native_english_teacher_service.h"
@@ -790,6 +794,17 @@ std::wstring boxedString(
     {
         return {};
     }
+}
+
+std::wstring selectedComboValue(
+    winrt::Microsoft::UI::Xaml::Controls::ComboBox const& combo
+    )
+{
+    const auto item = combo.SelectedItem().try_as<
+        winrt::Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+    return item
+        ? boxedString(item.Tag())
+        : boxedString(combo.SelectedItem());
 }
 
 int boxedInt(
@@ -2126,6 +2141,182 @@ bool MainWindow::runPhase6GsTeamChecks()
     return updatedReady && clearReady;
 }
 
+bool MainWindow::runPhase6ClassInformationChecks()
+{
+    m_phase6ClassInformationFailureMask = 0;
+    const auto fail = [this](uint32_t failureMask) {
+        m_phase6ClassInformationFailureMask = failureMask;
+        return false;
+    };
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    m_dirtyState.markClean();
+    m_classLoading = false;
+    m_classDirty = false;
+    m_classDetailsDirty = false;
+    m_classNotesDirty = false;
+    m_classNew = false;
+
+    navigateTo(classesPageId);
+    refreshClassesPage();
+    const bool noDatabaseReady =
+        m_currentPageId == classesPageId
+        && m_classStatusText
+        && m_classStatusText.Text() == L"No database open."
+        && m_classNewButton
+        && !m_classNewButton.IsEnabled()
+        && m_classNotesStatusText.Text() == L"No database open.";
+    if (!noDatabaseReady)
+    {
+        return fail(1);
+    }
+
+    auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+    if (!opened || *opened == nullptr)
+    {
+        return fail(2);
+    }
+    m_openDatabase = std::move(*opened);
+    refreshClassesPage();
+    const bool emptyReady =
+        m_classSelector.Items().Size() == 0
+        && m_classStatusText.Text()
+            == L"No classes found. Choose New Class to add one."
+        && m_classNewButton.IsEnabled();
+    if (!emptyReady)
+    {
+        return fail(3);
+    }
+
+    ClassNewButton_Click(
+        m_classNewButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    m_classNameTextBox.Text(L"Portable Class");
+    m_classGradeCombo.SelectedIndex(1);
+    m_classLevelCombo.SelectedIndex(1);
+    m_classReadingBookCombo.SelectedIndex(2);
+    m_classEssayBookCombo.SelectedIndex(2);
+    m_classColorTextBox.Text(L"#AABBCC");
+    m_classFontColorTextBox.Text(L"#102030");
+    ClassSaveButton_Click(
+        m_classSaveButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    const bool createdReady =
+        m_classSelector.Items().Size() == 1
+        && m_classSelectedId > 0
+        && !m_classDirty
+        && m_classStatusText.Text() == L"Class information saved.";
+    if (!createdReady)
+    {
+        return fail(4);
+    }
+
+    m_classNameTextBox.Text(L"Portable Class Updated");
+    ClassSaveButton_Click(
+        m_classSaveButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    classmngr::engine::ClassRepository repository(*m_openDatabase);
+    const auto listed = repository.list();
+    const bool updatedReady = listed
+        && listed->size() == 1
+        && listed->front().name == "Portable Class Updated"
+        && !m_classDirty;
+    if (!updatedReady)
+    {
+        return fail(5);
+    }
+
+    m_classColorTextBox.Text(L"#not-a-color");
+    ClassSaveButton_Click(
+        m_classSaveButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    const bool invalidReady =
+        m_classDirty
+        && m_classValidationText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible;
+    ClassDiscardButton_Click(
+        m_classDiscardButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    if (!invalidReady || m_classDirty)
+    {
+        return fail(6);
+    }
+
+    m_classNotesTextBox.Text(L"Notes from WinUI / \uD55C\uAE00");
+    m_classTimeFillerActivitiesTextBox.Text(L"Vocabulary review");
+    ClassNotesSaveButton_Click(
+        m_classNotesSaveButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    classmngr::engine::ClassInfoService classInfo(*m_openDatabase);
+    const auto withNotes = classInfo.load(m_classSelectedId);
+    if (!withNotes)
+    {
+        return fail(7);
+    }
+    if (withNotes->notes != "Notes from WinUI / \xED\x95\x9C\xEA\xB8\x80")
+    {
+        return fail(12);
+    }
+    if (withNotes->timeFillerActivities != "Vocabulary review")
+    {
+        return fail(13);
+    }
+    if (m_classDirty)
+    {
+        return fail(14);
+    }
+
+    const auto secondId = repository.create("Second Class");
+    if (!secondId)
+    {
+        return fail(8);
+    }
+    refreshClassesPage();
+    if (m_classSelector.Items().Size() != 2)
+    {
+        return fail(9);
+    }
+    m_classNameTextBox.Text(L"Unsaved Class Name");
+    const int selectedBefore = m_classSelectedId;
+    const int otherIndex = m_classSelectedIndex == 0 ? 1 : 0;
+    m_classSelector.SelectedIndex(otherIndex);
+    const bool dirtySelectionProtected =
+        m_classSelectedId == selectedBefore
+        && m_classSelector.SelectedIndex() == m_classSelectedIndex
+        && m_classDirty;
+    ClassDiscardButton_Click(
+        m_classDiscardButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    if (!dirtySelectionProtected)
+    {
+        return fail(10);
+    }
+
+    m_openDatabase.reset();
+    refreshClassesPage();
+    const bool clearReady = m_classStatusText.Text() == L"No database open."
+        && !m_classNameTextBox.IsEnabled()
+        && !m_classSaveButton.IsEnabled()
+        && !m_classNotesSaveButton.IsEnabled();
+    if (!clearReady)
+    {
+        return fail(11);
+    }
+    return true;
+}
+
+uint32_t MainWindow::phase6ClassInformationFailureMask() const noexcept
+{
+    return m_phase6ClassInformationFailureMask;
+}
+
 void MainWindow::preparePhase5CampusScenario(std::wstring_view scenario)
 {
     static_cast<void>(preparePhase5CampusFixture(scenario));
@@ -2648,6 +2839,7 @@ void MainWindow::CloseDatabaseMenuItem_Click(
     }
     refreshCampusInformationPage();
     refreshPersonalDetailsPage();
+    refreshClassesPage();
     updateFileCommandState();
     saveShellState();
 }
@@ -3039,6 +3231,7 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
         }
         refreshCampusInformationPage();
         refreshPersonalDetailsPage();
+        refreshClassesPage();
         updateFileCommandState();
         saveShellState();
         return true;
@@ -3082,6 +3275,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
     m_currentDatabasePath.clear();
     refreshCampusInformationPage();
     refreshPersonalDetailsPage();
+    refreshClassesPage();
 
     if (pathExists(candidate))
     {
@@ -3131,6 +3325,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
         }
         refreshCampusInformationPage();
         refreshPersonalDetailsPage();
+        refreshClassesPage();
         updateFileCommandState();
         saveShellState();
         return true;
@@ -3892,6 +4087,10 @@ void MainWindow::populatePage(
         else if (pageId == gsTeamPageId)
         {
             populateGsTeamPage(page, true);
+        }
+        else if (pageId == classesPageId)
+        {
+            refreshClassesPage();
         }
         else if (pageId == homePageId && !m_engineVersionText)
         {
@@ -5363,11 +5562,294 @@ void MainWindow::populateClassesPage(
         return root;
     };
 
-    auto detailsRoot = makeTextSection(
-        L"Details",
-        L"Class details will load when the class feature slice is migrated.",
-        L"Class details prototype"
+    auto detailsRoot = makeRoot(StackPanel());
+    auto detailsTitle = TextBlock();
+    detailsTitle.Text(L"Class Details");
+    detailsTitle.FontSize(24.0);
+    setAutomationName(detailsTitle, L"Class Details");
+    detailsRoot.Children().Append(detailsTitle);
+
+    auto detailsDescription = TextBlock();
+    detailsDescription.Text(
+        L"Edit class information shared by schedules, rosters, and reports."
         );
+    detailsDescription.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        detailsDescription,
+        L"Class details and information description"
+        );
+    detailsRoot.Children().Append(detailsDescription);
+
+    m_classStatusText = TextBlock();
+    m_classStatusText.Text(L"Loading classes...");
+    m_classStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_classStatusText, L"Class information status");
+    detailsRoot.Children().Append(m_classStatusText);
+
+    m_classValidationText = TextBlock();
+    m_classValidationText.TextWrapping(TextWrapping::Wrap);
+    m_classValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    setAutomationName(
+        m_classValidationText,
+        L"Class information validation summary"
+        );
+    detailsRoot.Children().Append(m_classValidationText);
+
+    auto classSelectorCard = ClassMngrWinUISharedUX::buildCard({
+        L"Class directory",
+        L"Select a class or create a new class information record.",
+        L"Class directory selector"
+        });
+    m_classSelector = ComboBox();
+    m_classSelector.Header(box_value(hstring(L"Class")));
+    m_classSelector.PlaceholderText(L"Select a class");
+    m_classSelector.MinWidth(420.0);
+    m_classSelector.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_classSelector.IsTabStop(true);
+    m_classSelector.TabIndex(0);
+    m_classSelector.SelectionChanged({
+        this,
+        &MainWindow::ClassSelection_SelectionChanged
+        });
+    setAutomationName(m_classSelector, L"Class selector");
+    classSelectorCard.content.Children().Append(m_classSelector);
+    detailsRoot.Children().Append(classSelectorCard.root);
+
+    const auto makeClassTextBox = [this](
+        wchar_t const* header,
+        wchar_t const* automationName,
+        wchar_t const* placeholder
+        ) {
+        auto box = TextBox();
+        box.Header(box_value(hstring(header)));
+        box.PlaceholderText(placeholder);
+        box.MinWidth(320.0);
+        box.HorizontalAlignment(HorizontalAlignment::Stretch);
+        box.IsTabStop(true);
+        box.TextChanging({this, &MainWindow::ClassField_TextChanging});
+        setAutomationName(box, automationName);
+        return box;
+    };
+
+    auto detailsCard = ClassMngrWinUISharedUX::buildCard({
+        L"Class information",
+        L"Grade, level, books, colors, and the assigned teacher are stored through the shared engine.",
+        L"Class information form"
+        });
+
+    m_classNameTextBox = makeClassTextBox(
+        L"Class name",
+        L"Class name",
+        L"Enter a class name"
+        );
+    auto classNameInputScope = Input::InputScope();
+    classNameInputScope.Names().Append(
+        Input::InputScopeName(Input::InputScopeNameValue::Text)
+        );
+    m_classNameTextBox.InputScope(classNameInputScope);
+    m_classNameTextBox.TabIndex(1);
+
+    const auto appendChoice = [](ComboBox combo,
+                                 std::wstring_view display,
+                                 std::wstring_view value) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(hstring(value)));
+        combo.Items().Append(item);
+    };
+    const auto configureClassCombo = [this](
+        ComboBox combo,
+        wchar_t const* header,
+        wchar_t const* automationName,
+        int tabIndex
+        ) {
+        combo.Header(box_value(hstring(header)));
+        combo.MinWidth(320.0);
+        combo.HorizontalAlignment(HorizontalAlignment::Stretch);
+        combo.IsTabStop(true);
+        combo.TabIndex(tabIndex);
+        combo.SelectionChanged({this, &MainWindow::ClassField_SelectionChanged});
+        setAutomationName(combo, automationName);
+    };
+
+    m_classGradeCombo = ComboBox();
+    configureClassCombo(
+        m_classGradeCombo,
+        L"Grade",
+        L"Class grade",
+        2
+        );
+    appendChoice(m_classGradeCombo, L"Not set", L"");
+    for (const std::string& value :
+         classmngr::engine::ClassInfoConfig::grades())
+    {
+        const std::wstring wideValue = asWide(value);
+        appendChoice(m_classGradeCombo, wideValue, wideValue);
+    }
+
+    m_classLevelCombo = ComboBox();
+    configureClassCombo(
+        m_classLevelCombo,
+        L"Level",
+        L"Class level",
+        3
+        );
+
+    m_classReadingBookCombo = ComboBox();
+    configureClassCombo(
+        m_classReadingBookCombo,
+        L"Reading Book",
+        L"Class reading book",
+        4
+        );
+
+    m_classEssayBookCombo = ComboBox();
+    configureClassCombo(
+        m_classEssayBookCombo,
+        L"Essay Book",
+        L"Class essay book",
+        5
+        );
+
+    m_classColorTextBox = makeClassTextBox(
+        L"Class color (hex)",
+        L"Class color hex",
+        L"e.g. #FFFFFF"
+        );
+    m_classColorTextBox.TabIndex(6);
+    m_classFontColorTextBox = makeClassTextBox(
+        L"Font color (hex)",
+        L"Class font color hex",
+        L"e.g. #000000"
+        );
+    m_classFontColorTextBox.TabIndex(7);
+
+    m_classTeacherText = TextBlock();
+    m_classTeacherText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_classTeacherText, L"Assigned class teacher");
+
+    detailsCard.content.Children().Append(m_classNameTextBox);
+    detailsCard.content.Children().Append(m_classGradeCombo);
+    detailsCard.content.Children().Append(m_classLevelCombo);
+    detailsCard.content.Children().Append(m_classReadingBookCombo);
+    detailsCard.content.Children().Append(m_classEssayBookCombo);
+    detailsCard.content.Children().Append(m_classColorTextBox);
+    detailsCard.content.Children().Append(m_classFontColorTextBox);
+    detailsCard.content.Children().Append(m_classTeacherText);
+    detailsRoot.Children().Append(detailsCard.root);
+
+    auto detailsActions = StackPanel();
+    detailsActions.Orientation(Orientation::Horizontal);
+    detailsActions.Spacing(8.0);
+    m_classNewButton = Button();
+    m_classNewButton.Content(box_value(hstring(L"New Class")));
+    m_classNewButton.IsTabStop(true);
+    m_classNewButton.TabIndex(8);
+    m_classNewButton.Click({this, &MainWindow::ClassNewButton_Click});
+    setAutomationName(m_classNewButton, L"New class");
+    m_classDeleteButton = Button();
+    m_classDeleteButton.Content(box_value(hstring(L"Delete Class")));
+    m_classDeleteButton.IsTabStop(true);
+    m_classDeleteButton.TabIndex(9);
+    m_classDeleteButton.Click({this, &MainWindow::ClassDeleteButton_Click});
+    setAutomationName(m_classDeleteButton, L"Delete class");
+    m_classSaveButton = Button();
+    m_classSaveButton.Content(box_value(hstring(L"Save Changes")));
+    m_classSaveButton.IsTabStop(true);
+    m_classSaveButton.TabIndex(10);
+    m_classSaveButton.Click({this, &MainWindow::ClassSaveButton_Click});
+    setAutomationName(m_classSaveButton, L"Save class information");
+    m_classDiscardButton = Button();
+    m_classDiscardButton.Content(box_value(hstring(L"Discard Changes")));
+    m_classDiscardButton.IsTabStop(true);
+    m_classDiscardButton.TabIndex(11);
+    m_classDiscardButton.Click({this, &MainWindow::ClassDiscardButton_Click});
+    setAutomationName(m_classDiscardButton, L"Discard class information changes");
+    detailsActions.Children().Append(m_classNewButton);
+    detailsActions.Children().Append(m_classDeleteButton);
+    detailsActions.Children().Append(m_classSaveButton);
+    detailsActions.Children().Append(m_classDiscardButton);
+    detailsRoot.Children().Append(detailsActions);
+
+    auto notesRoot = makeRoot(StackPanel());
+    auto notesTitle = TextBlock();
+    notesTitle.Text(L"Class Notes");
+    notesTitle.FontSize(24.0);
+    setAutomationName(notesTitle, L"Class Notes");
+    notesRoot.Children().Append(notesTitle);
+
+    auto notesDescription = TextBlock();
+    notesDescription.Text(
+        L"Keep class notes and time-filler activities with the selected class."
+        );
+    notesDescription.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(notesDescription, L"Class notes description");
+    notesRoot.Children().Append(notesDescription);
+
+    m_classNotesStatusText = TextBlock();
+    m_classNotesStatusText.Text(L"Select a class to edit notes.");
+    m_classNotesStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_classNotesStatusText, L"Class notes status");
+    notesRoot.Children().Append(m_classNotesStatusText);
+
+    m_classNotesValidationText = TextBlock();
+    m_classNotesValidationText.TextWrapping(TextWrapping::Wrap);
+    m_classNotesValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_classNotesValidationText,
+        L"Class notes validation summary"
+        );
+    notesRoot.Children().Append(m_classNotesValidationText);
+
+    auto notesCard = ClassMngrWinUISharedUX::buildCard({
+        L"Notes",
+        L"Notes are trimmed and validated by the shared class-information engine.",
+        L"Class notes form"
+        });
+    m_classNotesTextBox = makeClassTextBox(
+        L"Notes",
+        L"Class notes editor",
+        L"Enter notes for this class"
+        );
+    m_classNotesTextBox.AcceptsReturn(true);
+    m_classNotesTextBox.TextWrapping(TextWrapping::Wrap);
+    m_classNotesTextBox.Height(160.0);
+    m_classNotesTextBox.MaxLength(10000);
+    m_classNotesTextBox.TabIndex(0);
+    m_classTimeFillerActivitiesTextBox = makeClassTextBox(
+        L"Time Filler Activities",
+        L"Class time filler activities editor",
+        L"Enter time-filler activities"
+        );
+    m_classTimeFillerActivitiesTextBox.AcceptsReturn(true);
+    m_classTimeFillerActivitiesTextBox.TextWrapping(TextWrapping::Wrap);
+    m_classTimeFillerActivitiesTextBox.Height(160.0);
+    m_classTimeFillerActivitiesTextBox.MaxLength(10000);
+    m_classTimeFillerActivitiesTextBox.TabIndex(1);
+    notesCard.content.Children().Append(m_classNotesTextBox);
+    notesCard.content.Children().Append(m_classTimeFillerActivitiesTextBox);
+    notesRoot.Children().Append(notesCard.root);
+
+    auto notesActions = StackPanel();
+    notesActions.Orientation(Orientation::Horizontal);
+    notesActions.Spacing(8.0);
+    m_classNotesSaveButton = Button();
+    m_classNotesSaveButton.Content(box_value(hstring(L"Save Notes")));
+    m_classNotesSaveButton.IsTabStop(true);
+    m_classNotesSaveButton.TabIndex(2);
+    m_classNotesSaveButton.Click({this, &MainWindow::ClassNotesSaveButton_Click});
+    setAutomationName(m_classNotesSaveButton, L"Save class notes");
+    m_classNotesDiscardButton = Button();
+    m_classNotesDiscardButton.Content(box_value(hstring(L"Discard Notes")));
+    m_classNotesDiscardButton.IsTabStop(true);
+    m_classNotesDiscardButton.TabIndex(3);
+    m_classNotesDiscardButton.Click({this, &MainWindow::ClassNotesDiscardButton_Click});
+    setAutomationName(m_classNotesDiscardButton, L"Discard class notes changes");
+    notesActions.Children().Append(m_classNotesSaveButton);
+    notesActions.Children().Append(m_classNotesDiscardButton);
+    notesRoot.Children().Append(notesActions);
 
     auto rosterRoot = makeRoot(StackPanel());
     auto rosterCard = ClassMngrWinUISharedUX::buildCard({
@@ -5476,12 +5958,6 @@ void MainWindow::populateClassesPage(
         L"Class analytics will load when the analytics feature slice is migrated.",
         L"Class analytics prototype"
         );
-    auto notesRoot = makeTextSection(
-        L"Notes",
-        L"Class notes will load when the notes feature slice is migrated.",
-        L"Class notes prototype"
-        );
-
     const auto scrollTab = [](StackPanel const& content) {
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
@@ -5512,6 +5988,863 @@ void MainWindow::populateClassesPage(
     tabs.Items().Append(makePivotItem(L"Analytics", analyticsRoot, L"Class Analytics tab"));
     tabs.Items().Append(makePivotItem(L"Notes", notesRoot, L"Class Notes tab"));
     page.Content(tabs);
+    refreshClassesPage();
+}
+
+void MainWindow::refreshClassInformationOptions()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classGradeCombo || !m_classLevelCombo
+        || !m_classReadingBookCombo || !m_classEssayBookCombo)
+    {
+        return;
+    }
+
+    const std::wstring currentLevel = selectedComboValue(m_classLevelCombo);
+    const std::wstring currentReadingBook =
+        selectedComboValue(m_classReadingBookCombo);
+    const std::wstring currentEssayBook =
+        selectedComboValue(m_classEssayBookCombo);
+    const std::wstring grade = selectedComboValue(m_classGradeCombo);
+
+    const auto appendChoice = [](ComboBox combo,
+                                 std::wstring_view display,
+                                 std::wstring_view value) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(hstring(value)));
+        combo.Items().Append(item);
+    };
+    const auto selectChoice = [](ComboBox combo, std::wstring_view value) {
+        for (int index = 0;
+             index < static_cast<int>(combo.Items().Size());
+             ++index)
+        {
+            const auto item = combo.Items().GetAt(index).try_as<ComboBoxItem>();
+            if (item && boxedString(item.Tag()) == value)
+            {
+                combo.SelectedIndex(index);
+                return;
+            }
+        }
+        combo.SelectedIndex(-1);
+    };
+
+    m_classLoading = true;
+    m_classLevelCombo.Items().Clear();
+    appendChoice(m_classLevelCombo, L"Not set", L"");
+    for (const std::string& value :
+         classmngr::engine::ClassInfoConfig::levelsForGrade(
+             asUtf8(std::wstring_view(grade))
+             ))
+    {
+        const std::wstring wideValue = asWide(value);
+        appendChoice(m_classLevelCombo, wideValue, wideValue);
+    }
+    selectChoice(m_classLevelCombo, currentLevel);
+
+    m_classReadingBookCombo.Items().Clear();
+    appendChoice(m_classReadingBookCombo, L"Not set", L"");
+    for (const std::string& value :
+         classmngr::engine::ClassInfoConfig::readingBooks(
+             asUtf8(std::wstring_view(grade)),
+             asUtf8(std::wstring_view(selectedComboValue(m_classLevelCombo)))
+             ))
+    {
+        const std::wstring wideValue = asWide(value);
+        appendChoice(
+            m_classReadingBookCombo,
+            wideValue.empty() ? L"Not set" : wideValue,
+            wideValue
+            );
+    }
+    selectChoice(m_classReadingBookCombo, currentReadingBook);
+
+    m_classEssayBookCombo.Items().Clear();
+    appendChoice(m_classEssayBookCombo, L"Not set", L"");
+    for (const std::string& value :
+         classmngr::engine::ClassInfoConfig::essayBooks(
+             asUtf8(std::wstring_view(grade)),
+             asUtf8(std::wstring_view(selectedComboValue(m_classLevelCombo)))
+             ))
+    {
+        const std::wstring wideValue = asWide(value);
+        appendChoice(
+            m_classEssayBookCombo,
+            wideValue.empty() ? L"Not set" : wideValue,
+            wideValue
+            );
+    }
+    selectChoice(m_classEssayBookCombo, currentEssayBook);
+    m_classLoading = false;
+}
+
+void MainWindow::updateClassActions()
+{
+    if (!m_classSelector || !m_classNameTextBox || !m_classSaveButton
+        || !m_classNotesSaveButton)
+    {
+        return;
+    }
+
+    const bool hasDatabase = static_cast<bool>(m_openDatabase);
+    const bool hasClass = m_classSelectedId > 0 || m_classNew;
+    const bool clean = !m_classDirty;
+    const bool detailsEnabled = hasDatabase && hasClass;
+    const bool notesEnabled = hasDatabase && m_classSelectedId > 0;
+
+    m_classSelector.IsEnabled(hasDatabase && clean && !m_classNew);
+    m_classNameTextBox.IsEnabled(detailsEnabled);
+    m_classGradeCombo.IsEnabled(detailsEnabled);
+    m_classLevelCombo.IsEnabled(detailsEnabled);
+    m_classReadingBookCombo.IsEnabled(detailsEnabled);
+    m_classEssayBookCombo.IsEnabled(detailsEnabled);
+    m_classColorTextBox.IsEnabled(detailsEnabled);
+    m_classFontColorTextBox.IsEnabled(detailsEnabled);
+    m_classNotesTextBox.IsEnabled(notesEnabled || (hasDatabase && m_classNew));
+    m_classTimeFillerActivitiesTextBox.IsEnabled(
+        notesEnabled || (hasDatabase && m_classNew)
+        );
+
+    m_classNewButton.IsEnabled(hasDatabase && clean && !m_classNew);
+    m_classDeleteButton.IsEnabled(
+        hasDatabase && clean && !m_classNew && m_classSelectedId > 0
+        );
+    m_classSaveButton.IsEnabled(
+        hasDatabase && hasClass && m_classDetailsDirty
+        );
+    m_classDiscardButton.IsEnabled(
+        hasDatabase && hasClass && m_classDirty
+        );
+    m_classNotesSaveButton.IsEnabled(
+        hasDatabase && m_classSelectedId > 0 && m_classNotesDirty
+        );
+    m_classNotesDiscardButton.IsEnabled(
+        hasDatabase && m_classSelectedId > 0 && m_classNotesDirty
+        );
+}
+
+void MainWindow::markClassDirty()
+{
+    if (m_classLoading || !m_openDatabase)
+    {
+        return;
+    }
+
+    m_classDirty = true;
+    m_dirtyState.markDirty();
+    if (m_classStatusText)
+    {
+        m_classStatusText.Text(L"Unsaved class information changes.");
+    }
+    if (m_classNotesStatusText)
+    {
+        m_classNotesStatusText.Text(L"Unsaved class notes changes.");
+    }
+    updateClassActions();
+}
+
+void MainWindow::clearClassDirty()
+{
+    m_classDirty = false;
+    m_classDetailsDirty = false;
+    m_classNotesDirty = false;
+    m_dirtyState.markClean();
+    updateClassActions();
+}
+
+void MainWindow::presentClass(int index)
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classSelector || !m_classNameTextBox)
+    {
+        return;
+    }
+
+    m_classLoading = true;
+    classmngr::engine::Classroom classroom;
+    if (index >= 0 && index < static_cast<int>(m_classes.size()))
+    {
+        classroom = m_classes[static_cast<std::size_t>(index)];
+        m_classSelectedIndex = index;
+        m_classSelectedId = classroom.id;
+    }
+    else
+    {
+        m_classSelectedIndex = -1;
+        m_classSelectedId = -1;
+    }
+
+    classmngr::engine::ClassInfo info;
+    bool loaded = false;
+    if (classroom.id > 0 && m_openDatabase)
+    {
+        classmngr::engine::ClassInfoService service(*m_openDatabase);
+        const auto result = service.load(classroom.id);
+        if (result)
+        {
+            info = *result;
+            loaded = true;
+        }
+        else if (m_classValidationText)
+        {
+            m_classValidationText.Text(winrt::hstring(
+                L"Class information could not be loaded: "
+                + asWide(result.error().message)
+                ));
+            m_classValidationText.Visibility(
+                Microsoft::UI::Xaml::Visibility::Visible
+                );
+        }
+    }
+    info.classId = classroom.id;
+    m_classInfo = info;
+
+    m_classNameTextBox.Text(asWide(classroom.name));
+    m_classGradeCombo.SelectedIndex(0);
+    refreshClassInformationOptions();
+
+    const auto selectChoice = [](ComboBox combo, std::wstring_view value) {
+        for (int optionIndex = 0;
+             optionIndex < static_cast<int>(combo.Items().Size());
+             ++optionIndex)
+        {
+            const auto item = combo.Items().GetAt(optionIndex).try_as<ComboBoxItem>();
+            if (item && boxedString(item.Tag()) == value)
+            {
+                combo.SelectedIndex(optionIndex);
+                return;
+            }
+        }
+        combo.SelectedIndex(-1);
+    };
+    selectChoice(m_classGradeCombo, asWide(info.classGrade));
+    refreshClassInformationOptions();
+    selectChoice(m_classLevelCombo, asWide(info.classLevel));
+    refreshClassInformationOptions();
+    selectChoice(m_classReadingBookCombo, asWide(info.readingBook));
+    selectChoice(m_classEssayBookCombo, asWide(info.essayBook));
+    m_classColorTextBox.Text(
+        asWide(info.classColor.empty() ? "#FFFFFF" : info.classColor)
+        );
+    m_classFontColorTextBox.Text(
+        asWide(info.fontColor.empty() ? "#000000" : info.fontColor)
+        );
+
+    std::wstring teacher = asWide(info.teacherPreferredName);
+    if (teacher.empty())
+    {
+        teacher = asWide(info.teacherEn);
+    }
+    if (teacher.empty())
+    {
+        teacher = asWide(info.teacherKr);
+    }
+    m_classTeacherText.Text(
+        winrt::hstring(
+            teacher.empty()
+                ? L"Assigned teacher: Unassigned"
+                : L"Assigned teacher: " + teacher
+            )
+        );
+
+    m_classNotesTextBox.Text(asWide(info.notes));
+    m_classTimeFillerActivitiesTextBox.Text(
+        asWide(info.timeFillerActivities)
+        );
+    m_classLoading = false;
+
+    if (m_classValidationText && loaded)
+    {
+        m_classValidationText.Text({});
+        m_classValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Collapsed
+            );
+    }
+    updateClassActions();
+}
+
+void MainWindow::refreshClassesPage()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classSelector || !m_classStatusText)
+    {
+        return;
+    }
+
+    if (!m_openDatabase)
+    {
+        m_classLoading = true;
+        m_classes.clear();
+        m_classSelectedIndex = -1;
+        m_classSelectedId = -1;
+        m_classNew = false;
+        m_classSelector.Items().Clear();
+        presentClass(-1);
+        m_classLoading = false;
+        m_classStatusText.Text(L"No database open.");
+        m_classNotesStatusText.Text(L"No database open.");
+        m_classValidationText.Text({});
+        m_classValidationText.Visibility(Visibility::Collapsed);
+        m_classNotesValidationText.Text({});
+        m_classNotesValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Collapsed
+            );
+        clearClassDirty();
+        return;
+    }
+
+    classmngr::engine::ClassRepository repository(*m_openDatabase);
+    const auto loaded = repository.list();
+    if (!loaded)
+    {
+        m_classLoading = true;
+        m_classes.clear();
+        m_classSelector.Items().Clear();
+        presentClass(-1);
+        m_classLoading = false;
+        m_classStatusText.Text(winrt::hstring(
+            L"Classes could not be loaded: " + asWide(loaded.error().message)
+            ));
+        m_classNotesStatusText.Text(L"Class notes are unavailable.");
+        m_classValidationText.Text(winrt::hstring(
+            L"Engine loading error: " + asWide(loaded.error().message)
+            ));
+        m_classValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_classNotesValidationText.Text(winrt::hstring(
+            L"Engine loading error: " + asWide(loaded.error().message)
+            ));
+        m_classNotesValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        clearClassDirty();
+        return;
+    }
+
+    const int previousId = m_classSelectedId;
+    m_classes = *loaded;
+    m_classLoading = true;
+    m_classSelector.Items().Clear();
+    int selectedIndex = -1;
+    for (int index = 0; index < static_cast<int>(m_classes.size()); ++index)
+    {
+        const auto& classroom = m_classes[static_cast<std::size_t>(index)];
+        std::wstring display = asWide(classroom.name);
+        if (display.empty())
+        {
+            display = L"Class " + std::to_wstring(classroom.id);
+        }
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(classroom.id));
+        setAutomationName(item, L"Class " + display);
+        m_classSelector.Items().Append(item);
+        if (classroom.id == previousId)
+        {
+            selectedIndex = index;
+        }
+    }
+    if (selectedIndex < 0 && !m_classes.empty())
+    {
+        selectedIndex = 0;
+    }
+    m_classSelectedIndex = selectedIndex;
+    m_classSelectedId = selectedIndex >= 0
+        ? m_classes[static_cast<std::size_t>(selectedIndex)].id
+        : -1;
+    m_classSelector.SelectedIndex(selectedIndex);
+    m_classLoading = false;
+
+    if (selectedIndex >= 0)
+    {
+        presentClass(selectedIndex);
+        m_classStatusText.Text(L"Class directory loaded.");
+        m_classNotesStatusText.Text(L"Select a class tab to edit notes.");
+    }
+    else
+    {
+        presentClass(-1);
+        m_classStatusText.Text(
+            L"No classes found. Choose New Class to add one."
+            );
+        m_classNotesStatusText.Text(L"No class selected.");
+    }
+    m_classValidationText.Text({});
+    m_classValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    m_classNotesValidationText.Text({});
+    m_classNotesValidationText.Visibility(Visibility::Collapsed);
+    clearClassDirty();
+}
+
+classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
+{
+    classmngr::engine::ClassInfo info = m_classInfo;
+    info.classId = m_classSelectedId;
+    info.classGrade = asUtf8(
+        std::wstring_view(selectedComboValue(m_classGradeCombo))
+        );
+    info.classLevel = asUtf8(
+        std::wstring_view(selectedComboValue(m_classLevelCombo))
+        );
+    info.readingBook = asUtf8(
+        std::wstring_view(selectedComboValue(m_classReadingBookCombo))
+        );
+    info.essayBook = asUtf8(
+        std::wstring_view(selectedComboValue(m_classEssayBookCombo))
+        );
+    info.classColor = asUtf8(m_classColorTextBox.Text());
+    info.fontColor = asUtf8(m_classFontColorTextBox.Text());
+    info.notes = asUtf8(m_classNotesTextBox.Text());
+    info.timeFillerActivities = asUtf8(
+        m_classTimeFillerActivitiesTextBox.Text()
+        );
+    return info;
+}
+
+void MainWindow::ClassSelection_SelectionChanged(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+    )
+{
+    static_cast<void>(arguments);
+    if (m_classLoading || !m_openDatabase)
+    {
+        return;
+    }
+    if (m_classDirty)
+    {
+        m_classLoading = true;
+        m_classSelector.SelectedIndex(m_classSelectedIndex);
+        m_classLoading = false;
+        m_classStatusText.Text(
+            L"Save or discard the current class before selecting another."
+            );
+        return;
+    }
+
+    const auto selected = sender.try_as<
+        Microsoft::UI::Xaml::Controls::ComboBox>();
+    if (!selected)
+    {
+        return;
+    }
+    const auto item = selected.SelectedItem().try_as<
+        Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+    const int selectedId = item ? boxedInt(item.Tag()) : -1;
+    int resolvedIndex = -1;
+    for (int index = 0; index < static_cast<int>(m_classes.size()); ++index)
+    {
+        if (m_classes[static_cast<std::size_t>(index)].id == selectedId)
+        {
+            resolvedIndex = index;
+            break;
+        }
+    }
+    presentClass(resolvedIndex);
+    clearClassDirty();
+    m_classStatusText.Text(
+        resolvedIndex >= 0
+            ? L"Class information loaded."
+            : L"No class selected."
+        );
+    m_classNotesStatusText.Text(
+        resolvedIndex >= 0
+            ? L"Select a class tab to edit notes."
+            : L"No class selected."
+        );
+}
+
+void MainWindow::ClassField_TextChanging(
+    Microsoft::UI::Xaml::Controls::TextBox const& sender,
+    Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+    )
+{
+    static_cast<void>(arguments);
+    if (m_classLoading || !m_openDatabase)
+    {
+        return;
+    }
+    if (sender == m_classNotesTextBox
+        || sender == m_classTimeFillerActivitiesTextBox)
+    {
+        m_classNotesDirty = true;
+    }
+    else
+    {
+        m_classDetailsDirty = true;
+    }
+    markClassDirty();
+}
+
+void MainWindow::ClassField_SelectionChanged(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+    )
+{
+    static_cast<void>(arguments);
+    if (m_classLoading || !m_openDatabase)
+    {
+        return;
+    }
+    const auto combo = sender.try_as<
+        Microsoft::UI::Xaml::Controls::ComboBox>();
+    if (combo == m_classGradeCombo || combo == m_classLevelCombo)
+    {
+        refreshClassInformationOptions();
+    }
+    m_classDetailsDirty = true;
+    markClassDirty();
+}
+
+void MainWindow::ClassNewButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase || m_classDirty)
+    {
+        if (m_classStatusText && m_classDirty)
+        {
+            m_classStatusText.Text(
+                L"Save or discard the current class before creating another."
+                );
+        }
+        return;
+    }
+
+    m_classNew = true;
+    m_classSelectedIndex = -1;
+    m_classSelectedId = -1;
+    m_classInfo = {};
+    m_classLoading = true;
+    m_classSelector.SelectedIndex(-1);
+    m_classLoading = false;
+    presentClass(-1);
+    m_classDetailsDirty = true;
+    m_classNotesDirty = false;
+    m_classDirty = true;
+    m_dirtyState.markDirty();
+    m_classStatusText.Text(
+        L"New class. Enter a name and class information, then save."
+        );
+    m_classNotesStatusText.Text(L"Save the new class before editing notes.");
+    m_classValidationText.Text({});
+    m_classValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    updateClassActions();
+}
+
+void MainWindow::ClassDeleteButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classDirty)
+    {
+        return;
+    }
+
+    const int classId = m_classSelectedId;
+    auto weak = get_weak();
+    showDialog(
+        L"Delete class",
+        L"Delete the selected class and its saved information?",
+        L"Delete",
+        {},
+        L"Cancel",
+        [weak, classId](ClassMngrWinUIDialogs::DialogOutcome outcome) {
+            if (outcome != ClassMngrWinUIDialogs::DialogOutcome::Primary)
+            {
+                return;
+            }
+            if (auto self = weak.get())
+            {
+                if (!self->m_openDatabase)
+                {
+                    return;
+                }
+                classmngr::engine::ClassRepository repository(
+                    *self->m_openDatabase
+                    );
+                const auto removed = repository.remove(classId);
+                if (!removed)
+                {
+                    self->m_classStatusText.Text(winrt::hstring(
+                        L"Class could not be deleted: "
+                        + asWide(removed.error().message)
+                        ));
+                    return;
+                }
+                self->m_classSelectedId = -1;
+                self->m_classSelectedIndex = -1;
+                self->m_classNew = false;
+                self->clearClassDirty();
+                self->refreshClassesPage();
+                self->m_classStatusText.Text(L"Class deleted.");
+            }
+        }
+        );
+}
+
+void MainWindow::ClassSaveButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        m_classStatusText.Text(L"No database open.");
+        return;
+    }
+
+    const std::wstring className = asWString(m_classNameTextBox.Text());
+    if (className.find_first_not_of(L" \t\r\n") == std::wstring::npos)
+    {
+        m_classStatusText.Text(L"Class could not be saved.");
+        m_classValidationText.Text(L"A class name is required.");
+        m_classValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_classDetailsDirty = true;
+        markClassDirty();
+        return;
+    }
+
+    classmngr::engine::ClassInfo info = classInfoFromForm();
+    info.classId = m_classNew ? 1 : m_classSelectedId;
+    const auto normalized = classmngr::engine::ClassInfoValidator::normalized(info);
+    const auto validation = classmngr::engine::ClassInfoValidator::validate(
+        normalized
+        );
+    if (validation.hasErrors())
+    {
+        std::wstring summary = L"Engine validation failed:";
+        for (const auto& issue : validation.errors())
+        {
+            summary += L"\n- ";
+            summary += asWide(issue.code);
+            if (!issue.field.empty())
+            {
+                summary += L" (" + asWide(issue.field) + L")";
+            }
+        }
+        m_classStatusText.Text(L"Class could not be saved.");
+        m_classValidationText.Text(winrt::hstring(summary));
+        m_classValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_classDetailsDirty = true;
+        markClassDirty();
+        return;
+    }
+
+    classmngr::engine::ClassRepository repository(*m_openDatabase);
+    int classId = m_classSelectedId;
+    bool created = false;
+    if (m_classNew)
+    {
+        const auto newId = repository.create(
+            asUtf8(std::wstring_view(className))
+            );
+        if (!newId)
+        {
+            m_classStatusText.Text(winrt::hstring(
+                L"Class could not be created: " + asWide(newId.error().message)
+                ));
+            return;
+        }
+        classId = *newId;
+        created = true;
+    }
+    info.classId = classId;
+
+    classmngr::engine::ClassInfoService service(*m_openDatabase);
+    const auto saved = service.save(info);
+    if (!saved)
+    {
+        if (created)
+        {
+            static_cast<void>(repository.remove(classId));
+        }
+        m_classStatusText.Text(winrt::hstring(
+            L"Class could not be saved: " + asWide(saved.error().message)
+            ));
+        m_classValidationText.Text(winrt::hstring(
+            L"Engine validation or persistence error: "
+            + asWide(saved.error().message)
+            ));
+        m_classValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_classDetailsDirty = true;
+        markClassDirty();
+        return;
+    }
+
+    if (!created
+        && classId > 0
+        && m_classSelectedIndex >= 0
+        && m_classSelectedIndex < static_cast<int>(m_classes.size())
+        && m_classes[static_cast<std::size_t>(m_classSelectedIndex)].name
+            != asUtf8(std::wstring_view(className)))
+    {
+        const auto renamed = repository.rename(
+            classId,
+            asUtf8(std::wstring_view(className))
+            );
+        if (!renamed)
+        {
+            m_classStatusText.Text(winrt::hstring(
+                L"Class name could not be saved: "
+                + asWide(renamed.error().message)
+                ));
+            m_classDetailsDirty = true;
+            markClassDirty();
+            return;
+        }
+    }
+
+    m_classSelectedId = classId;
+    m_classNew = false;
+    clearClassDirty();
+    refreshClassesPage();
+    m_classStatusText.Text(L"Class information saved.");
+    m_classNotesStatusText.Text(L"Class notes are ready to edit.");
+    m_classValidationText.Text({});
+    m_classValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+}
+
+void MainWindow::ClassDiscardButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        return;
+    }
+    m_classNew = false;
+    clearClassDirty();
+    refreshClassesPage();
+}
+
+void MainWindow::ClassNotesSaveButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        m_classNotesStatusText.Text(L"No database open.");
+        return;
+    }
+    if (m_classSelectedId <= 0)
+    {
+        m_classNotesStatusText.Text(L"Select a class before saving notes.");
+        return;
+    }
+    if (m_classDetailsDirty || m_classNew)
+    {
+        m_classNotesStatusText.Text(
+            L"Save class information before saving notes."
+            );
+        return;
+    }
+
+    classmngr::engine::ClassInfoService service(*m_openDatabase);
+    const auto saved = service.saveNotes(
+        m_classSelectedId,
+        asUtf8(m_classNotesTextBox.Text()),
+        asUtf8(m_classTimeFillerActivitiesTextBox.Text())
+        );
+    if (!saved)
+    {
+        m_classNotesStatusText.Text(winrt::hstring(
+            L"Class notes could not be saved: "
+            + asWide(saved.error().message)
+            ));
+        m_classNotesValidationText.Text(winrt::hstring(
+            L"Engine validation or persistence error: "
+            + asWide(saved.error().message)
+            ));
+        m_classNotesValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_classNotesDirty = true;
+        markClassDirty();
+        return;
+    }
+
+    m_classInfo.notes = asUtf8(m_classNotesTextBox.Text());
+    m_classInfo.timeFillerActivities = asUtf8(
+        m_classTimeFillerActivitiesTextBox.Text()
+        );
+    m_classNotesDirty = false;
+    m_classDirty = m_classDetailsDirty;
+    if (!m_classDirty)
+    {
+        m_dirtyState.markClean();
+    }
+    m_classNotesStatusText.Text(L"Class notes saved.");
+    m_classNotesValidationText.Text({});
+    m_classNotesValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    updateClassActions();
+}
+
+void MainWindow::ClassNotesDiscardButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase || m_classSelectedId <= 0)
+    {
+        return;
+    }
+    m_classLoading = true;
+    m_classNotesTextBox.Text(asWide(m_classInfo.notes));
+    m_classTimeFillerActivitiesTextBox.Text(
+        asWide(m_classInfo.timeFillerActivities)
+        );
+    m_classLoading = false;
+    m_classNotesDirty = false;
+    m_classDirty = m_classDetailsDirty;
+    if (!m_classDirty)
+    {
+        m_dirtyState.markClean();
+    }
+    m_classNotesStatusText.Text(L"Class note changes discarded.");
+    m_classNotesValidationText.Text({});
+    m_classNotesValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    updateClassActions();
 }
 
 void MainWindow::NameTextBox_TextChanged(

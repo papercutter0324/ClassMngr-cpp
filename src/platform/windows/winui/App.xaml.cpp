@@ -358,6 +358,11 @@ void App::OnLaunched(
         activation,
         L"--phase6-gs-team-test"
         );
+    const bool phase6ClassInformationTest =
+        ClassMngrWinUILifecycle::hasArgument(
+            activation,
+            L"--phase6-class-information-test"
+            );
     const bool phase5CampusEmpty = ClassMngrWinUILifecycle::hasArgument(
         activation,
         L"--phase5-campus-empty"
@@ -378,9 +383,10 @@ void App::OnLaunched(
         || viewModelTest || localizationTest || dialogTest || threadingTest
         || semanticTest || phase4SemanticTest || phase5CampusTest
         || phase6PersonalDetailsTest || phase6KoreanTeacherTest
-        || phase6NativeEnglishTeacherTest || phase6GsTeamTest)
+        || phase6NativeEnglishTeacherTest || phase6GsTeamTest
+        || phase6ClassInformationTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest, phase6NativeEnglishTeacherTest, phase6GsTeamTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest, phase6NativeEnglishTeacherTest, phase6GsTeamTest, phase6ClassInformationTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -467,6 +473,18 @@ void App::OnLaunched(
             else if (phase6GsTeamTest)
             {
                 passed = mainWindow->runPhase6GsTeamChecks();
+            }
+            else if (phase6ClassInformationTest)
+            {
+                passed = mainWindow->runPhase6ClassInformationChecks();
+                const auto failureMask =
+                    mainWindow->phase6ClassInformationFailureMask();
+                scheduleTestExit(
+                    m_window,
+                    passed,
+                    ERROR_INVALID_DATA + failureMask
+                    );
+                return;
             }
             scheduleTestExit(m_window, passed);
         };
