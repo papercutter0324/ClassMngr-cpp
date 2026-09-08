@@ -124,13 +124,16 @@ tests, and staged lifecycle check pass. The Korean Teacher directory
 implementation is committed at `1baea21`; its x64 Debug build, focused engine
 tests, and staged lifecycle check pass. The Native English Teacher and GS Team
 directory slices are also committed and pass their x64 Debug focused tests and
-staged checks. The class details, class information, and notes slice is
-committed at `951f272`; its x64 Debug build, focused ClassInfo/ClassRepository
-tests (2/2), and staged lifecycle check pass. The active implementation gate
-now continues with Phase 6 migration-order step 3 (calendar viewing/editing
-and preferences). Step-1 and step-2 x86, paired-visual, and table-parity
-evidence remains open. Each slice is accepted and committed independently with
-its engine, semantic, persistence, paired-visual, and x86 evidence. Touch,
+  staged checks. The class details, class information, and notes slice is
+  committed at `951f272`; its x64 Debug build, focused ClassInfo/ClassRepository
+  tests (2/2), and staged lifecycle check pass. The calendar viewing/editing
+  and preferences slice is committed at `33f33e6`; its x64 Debug build,
+  focused calendar/settings engine tests (5/5), and direct Phase 6 hooks pass.
+  The active implementation gate now continues with Phase 6 migration-order
+  step 4 (rosters, transfers, and templates). Step-1 and step-2 x86,
+  paired-visual, and table-parity evidence remains open. Each slice is accepted
+  and committed independently with its engine, semantic, persistence,
+  paired-visual, and x86 evidence. Touch,
 high-contrast, and accessibility automation remain out of scope for Phase 4.
 
 ## Phase 5 Completion Handoff
@@ -220,12 +223,13 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Complete Phase 6 migration-order step 3: calendar viewing/editing and
-   preferences while tracking the step-1/step-2 x86, paired-visual, and
-   table-parity closure gates.
-2. Continue with step 4: rosters, transfers, and templates; then step 5:
-   schedules, imports, testing classes, and assignment dialogs.
-3. Continue through speaking-evaluation and substitute-preparation slices in
+1. Continue with Phase 6 migration-order step 4: rosters, transfers, and
+   templates while tracking the earlier x86, paired-visual, and table-parity
+   closure gates.
+2. Continue with step 5: schedules, imports, testing classes, and assignment
+   dialogs; then step 6: speaking evaluations and notes/analytics/AI/batch
+   behavior.
+3. Continue through substitute-preparation and bundled-document slices in
    the order recorded in the active phase file. Commit every independently
    accepted slice and step with a `Phase 6 - ...` subject.
 
@@ -313,7 +317,22 @@ After meaningful work:
   WinUI target, focused ClassInfo/ClassRepository engine tests (2/2), and
   complete staged verifier passed with
   `--phase6-class-information-test`. Step-1 and step-2 x86, paired Qt/WinUI
-  visual, and table-parity evidence remain open; step 3 is now active.
+  visual, and table-parity evidence remain open.
+
+- **2026-09-09 - Phase 6 calendar slice implemented.** Revision `33f33e6`
+  adds the engine-backed Calendar and Preferences tabs with month navigation,
+  selected-day event viewing, add/edit/delete and recurrence validation,
+  academic schedule and display-preference persistence, reset behavior, and
+  explicit no-database/empty/populated states. The nested Calendar Pivot keeps
+  the Phase 6 tabbed-page motion contract, including the sliding transition
+  reference for future tabbed slices. The x64 Debug WinUI target built with
+  zero warnings/errors, the focused calendar/settings engine tests passed 5/5,
+  and all direct Phase 6 hooks passed, including
+  `--phase6-calendar-test`. The aggregate staged verifier was attempted twice
+  but stopped at the existing Phase 3 semantic sequence with crash code
+  `-1073741819`; its isolated semantic hook and all Phase 6 hooks pass. Step-1
+  and step-2 x86, paired Qt/WinUI visual, and table-parity evidence remain open;
+  step 4 is now active.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
