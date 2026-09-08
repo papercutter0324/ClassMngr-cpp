@@ -386,6 +386,94 @@ $makePriPath = Resolve-ExistingPath `
         "Microsoft.Windows.SDK.BuildTools.$BuildToolsVersion\bin\10.0.26100.0\$makePriArchitecture\makepri.exe") `
     -Description 'MakePri executable'
 
+function ConvertTo-StartProcessArgument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
+        [string] $Argument
+    )
+
+    if ($Argument.IndexOfAny([char[]] @(' ', "`t")) -lt 0) {
+        return $Argument
+    }
+
+    # The MakePri arguments are flags, a locale, and file paths. Windows file
+    # paths cannot contain embedded quotes, so quoting is sufficient here and
+    # keeps paths with spaces safe for Start-Process.
+    return '"{0}"' -f $Argument
+}
+
+function Invoke-MakePri {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Operation,
+
+        [Parameter(Mandatory = $true)]
+        [string[]] $Arguments
+    )
+
+    $makePriOutputDirectory = Join-Path $intermediatePath 'makepri-output'
+    Ensure-Directory -Path $makePriOutputDirectory
+    $stdoutPath = Join-Path $makePriOutputDirectory "$Operation.stdout"
+    $stderrPath = Join-Path $makePriOutputDirectory "$Operation.stderr"
+    Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+
+    $processArguments = @(
+        foreach ($argument in $Arguments) {
+            ConvertTo-StartProcessArgument -Argument $argument
+        }
+    )
+    $process = Start-Process `
+        -FilePath $makePriPath `
+        -ArgumentList $processArguments `
+        -RedirectStandardOutput $stdoutPath `
+        -RedirectStandardError $stderrPath `
+        -NoNewWindow `
+        -PassThru `
+        -Wait `
+        -ErrorAction Stop
+
+    try {
+        # MakePri writes BOM-less UTF-16LE when stdout/stderr is redirected.
+        # Reading it explicitly prevents PowerShell from treating each UTF-16
+        # code unit as a separate native-console character.
+        $stdout = [System.IO.File]::ReadAllText(
+            $stdoutPath,
+            [System.Text.Encoding]::Unicode
+        )
+        $stderr = [System.IO.File]::ReadAllText(
+            $stderrPath,
+            [System.Text.Encoding]::Unicode
+        )
+
+        return [pscustomobject]@{
+            ExitCode = $process.ExitCode
+            StandardOutput = $stdout
+            StandardError = $stderr
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Write-MakePriOutput {
+    param(
+        [Parameter(Mandatory = $false)]
+        [AllowEmptyString()]
+        [string] $Text
+    )
+
+    if ([string]::IsNullOrEmpty($Text)) {
+        return
+    }
+
+    $trimmedText = $Text -replace '(\r?\n)+$', ''
+    foreach ($line in ($trimmedText -split '\r?\n')) {
+        Write-Host $line
+    }
+}
+
 $outputProperty = "$outputPath\"
 $intermediateProperty = "$intermediatePath\"
 $generatedFilesProperty = "$generatedFilesPath\"
@@ -453,14 +541,18 @@ if (-not (Test-Path -LiteralPath $executablePath)) {
 $priConfigPath = Join-Path $intermediatePath 'winui-priconfig.xml'
 $applicationPriPath = Join-Path $outputPath 'ClassMngrWinUI.pri'
 Write-Host "Generating WinUI resource index: $applicationPriPath"
-& $makePriPath @(
-    'createconfig',
-    '/cf', $priConfigPath,
-    '/dq', 'en-US',
-    '/o'
-)
-if ($LASTEXITCODE -ne 0) {
-    throw "MakePri configuration generation failed with exit code $LASTEXITCODE."
+$createConfigResult = Invoke-MakePri `
+    -Operation 'createconfig' `
+    -Arguments @(
+        'createconfig',
+        '/cf', $priConfigPath,
+        '/dq', 'en-US',
+        '/o'
+    )
+Write-MakePriOutput -Text $createConfigResult.StandardOutput
+Write-MakePriOutput -Text $createConfigResult.StandardError
+if ($createConfigResult.ExitCode -ne 0) {
+    throw "MakePri configuration generation failed with exit code $($createConfigResult.ExitCode)."
 }
 $null = $priConfig = [xml] (Get-Content `
     -LiteralPath $priConfigPath `
@@ -488,15 +580,19 @@ foreach ($frameworkPriFile in $frameworkPriFiles) {
         -Destination (Join-Path $winUiResourceDirectory $frameworkPriFile.Name) `
         -Force
 }
-& $makePriPath @(
-    'new',
-    '/pr', $winUiResourceDirectory,
-    '/cf', $priConfigPath,
-    '/of', $applicationPriPath,
-    '/o'
-)
-if ($LASTEXITCODE -ne 0) {
-    throw "MakePri resource indexing failed with exit code $LASTEXITCODE."
+$indexResult = Invoke-MakePri `
+    -Operation 'new' `
+    -Arguments @(
+        'new',
+        '/pr', $winUiResourceDirectory,
+        '/cf', $priConfigPath,
+        '/of', $applicationPriPath,
+        '/o'
+    )
+Write-MakePriOutput -Text $indexResult.StandardOutput
+Write-MakePriOutput -Text $indexResult.StandardError
+if ($indexResult.ExitCode -ne 0) {
+    throw "MakePri resource indexing failed with exit code $($indexResult.ExitCode)."
 }
 if (-not (Test-Path -LiteralPath $applicationPriPath -PathType Leaf)) {
     throw "MakePri completed without producing the application resource index: $applicationPriPath"
