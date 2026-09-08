@@ -11,11 +11,15 @@
 #include "classmngr/engine/class_info_service.h"
 #include "classmngr/engine/class_info_validator.h"
 #include "classmngr/engine/class_repository.h"
+#include "classmngr/engine/class_transfer_service.h"
 #include "classmngr/engine/database_file_format.h"
 #include "classmngr/engine/gs_team_service.h"
 #include "classmngr/engine/native_english_teacher_service.h"
 #include "classmngr/engine/open_database.h"
 #include "classmngr/engine/personal_details_service.h"
+#include "classmngr/engine/roster_report_template.h"
+#include "classmngr/engine/roster_service.h"
+#include "classmngr/engine/roster_validator.h"
 #include "classmngr/engine/teacher_service.h"
 #include "winui_build_info.h"
 #include "winui_identity.h"
@@ -1107,6 +1111,18 @@ int boxedInt(
     {
         return -1;
     }
+}
+
+classmngr::engine::Roster defaultRoster()
+{
+    classmngr::engine::Roster roster;
+    roster.columns.reserve(classmngr::engine::RosterBaseColumns.size());
+    for (const std::string_view column : classmngr::engine::RosterBaseColumns)
+    {
+        roster.columns.emplace_back(column);
+    }
+    roster.columnWidths = {140, 140, 100, 140, 100, 100};
+    return roster;
 }
 
 bool validMonthDay(std::wstring_view value) noexcept
@@ -7709,34 +7725,206 @@ void MainWindow::populateClassesPage(
 
     auto rosterRoot = makeRoot(StackPanel());
     auto rosterCard = ClassMngrWinUISharedUX::buildCard({
-        L"Roster selection, transfer, and keyboard editing prototype",
-        L"Select a student, edit the name with the keyboard, and simulate a transfer between lists.",
+        L"Roster editor",
+        L"Edit the engine-backed roster for the selected class. The grid remains virtualized and validates student names before persistence.",
         L"Roster editor"
         });
-    if (m_rosterSourceList && m_rosterTransferredList && m_rosterStatusText)
+
+    m_classRosterStatusText = TextBlock();
+    m_classRosterStatusText.Text(L"Select a class to edit its roster.");
+    m_classRosterStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_classRosterStatusText, L"Class roster status");
+    rosterCard.content.Children().Append(m_classRosterStatusText);
+
+    m_classRosterValidationText = TextBlock();
+    m_classRosterValidationText.TextWrapping(TextWrapping::Wrap);
+    m_classRosterValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_classRosterValidationText,
+        L"Class roster validation summary"
+        );
+    rosterCard.content.Children().Append(m_classRosterValidationText);
+
+    auto rosterActions = StackPanel();
+    rosterActions.Orientation(Orientation::Horizontal);
+    rosterActions.Spacing(8.0);
+
+    m_classRosterAddButton = Button();
+    m_classRosterAddButton.Content(box_value(hstring(L"Add student")));
+    m_classRosterAddButton.IsTabStop(true);
+    m_classRosterAddButton.TabIndex(12);
+    m_classRosterAddButton.Click(
+        [this](auto const&, auto const&) { addClassRosterRow(); }
+        );
+    setAutomationName(m_classRosterAddButton, L"Add roster student");
+    rosterActions.Children().Append(m_classRosterAddButton);
+
+    m_classRosterRemoveButton = Button();
+    m_classRosterRemoveButton.Content(box_value(hstring(L"Remove selected")));
+    m_classRosterRemoveButton.IsTabStop(true);
+    m_classRosterRemoveButton.TabIndex(13);
+    m_classRosterRemoveButton.Click(
+        [this](auto const&, auto const&) { removeClassRosterRow(); }
+        );
+    setAutomationName(m_classRosterRemoveButton, L"Remove selected roster student");
+    rosterActions.Children().Append(m_classRosterRemoveButton);
+
+    m_classRosterSaveButton = Button();
+    m_classRosterSaveButton.Content(box_value(hstring(L"Save roster")));
+    m_classRosterSaveButton.IsTabStop(true);
+    m_classRosterSaveButton.TabIndex(14);
+    m_classRosterSaveButton.Click(
+        [this](auto const&, auto const&) { saveClassRoster(); }
+        );
+    setAutomationName(m_classRosterSaveButton, L"Save class roster");
+    rosterActions.Children().Append(m_classRosterSaveButton);
+
+    m_classRosterDiscardButton = Button();
+    m_classRosterDiscardButton.Content(box_value(hstring(L"Discard roster")));
+    m_classRosterDiscardButton.IsTabStop(true);
+    m_classRosterDiscardButton.TabIndex(15);
+    m_classRosterDiscardButton.Click(
+        [this](auto const&, auto const&) { discardClassRoster(); }
+        );
+    setAutomationName(m_classRosterDiscardButton, L"Discard class roster changes");
+    rosterActions.Children().Append(m_classRosterDiscardButton);
+    rosterCard.content.Children().Append(rosterActions);
+
+    m_classRosterHeaderGrid = Grid();
+    m_classRosterHeaderGrid.ColumnSpacing(4.0);
+    setAutomationName(m_classRosterHeaderGrid, L"Class roster column headers");
+    rosterCard.content.Children().Append(m_classRosterHeaderGrid);
+
+    m_classRosterList = ListView();
+    m_classRosterList.SelectionMode(ListViewSelectionMode::Single);
+    m_classRosterList.IsTabStop(true);
+    m_classRosterList.TabIndex(16);
+    m_classRosterList.Height(320.0);
+    m_classRosterList.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_classRosterList.SelectionChanged(
+        [this](auto const&, auto const&) { updateClassRosterActions(); }
+        );
+    setAutomationName(m_classRosterList, L"Class roster student grid");
+    rosterCard.content.Children().Append(m_classRosterList);
+
+    auto transferCard = ClassMngrWinUISharedUX::buildCard({
+        L"Student transfer",
+        L"Move the selected roster row to another class of the same grade. Both rosters are validated and saved atomically.",
+        L"Roster student transfer"
+        });
+    m_classRosterTransferTargetCombo = ComboBox();
+    m_classRosterTransferTargetCombo.Header(box_value(hstring(L"Target class")));
+    m_classRosterTransferTargetCombo.PlaceholderText(L"Select a same-grade class");
+    m_classRosterTransferTargetCombo.MinWidth(320.0);
+    m_classRosterTransferTargetCombo.IsTabStop(true);
+    m_classRosterTransferTargetCombo.TabIndex(17);
+    m_classRosterTransferTargetCombo.SelectionChanged(
+        [this](auto const&, auto const&) { updateClassRosterActions(); }
+        );
+    setAutomationName(
+        m_classRosterTransferTargetCombo,
+        L"Roster transfer target class"
+        );
+    transferCard.content.Children().Append(m_classRosterTransferTargetCombo);
+
+    m_classRosterTransferButton = Button();
+    m_classRosterTransferButton.Content(
+        box_value(hstring(L"Transfer selected student"))
+        );
+    m_classRosterTransferButton.IsTabStop(true);
+    m_classRosterTransferButton.TabIndex(18);
+    m_classRosterTransferButton.Click(
+        [this](auto const&, auto const&) { transferClassRosterRow(); }
+        );
+    setAutomationName(
+        m_classRosterTransferButton,
+        L"Transfer selected roster student"
+        );
+    transferCard.content.Children().Append(m_classRosterTransferButton);
+
+    m_classRosterPrepareTransferButton = Button();
+    m_classRosterPrepareTransferButton.Content(
+        box_value(hstring(L"Prepare class transfer package"))
+        );
+    m_classRosterPrepareTransferButton.IsTabStop(true);
+    m_classRosterPrepareTransferButton.TabIndex(19);
+    m_classRosterPrepareTransferButton.Click(
+        [this](auto const&, auto const&) { prepareClassTransfer(); }
+        );
+    setAutomationName(
+        m_classRosterPrepareTransferButton,
+        L"Prepare class transfer package"
+        );
+    transferCard.content.Children().Append(m_classRosterPrepareTransferButton);
+    rosterCard.content.Children().Append(transferCard.root);
+
+    auto templateCard = ClassMngrWinUISharedUX::buildCard({
+        L"Roster report template",
+        L"Choose a renderer-neutral template and preview its current-class report scope.",
+        L"Roster report template"
+        });
+    m_classRosterTemplateCombo = ComboBox();
+    m_classRosterTemplateCombo.Header(box_value(hstring(L"Template")));
+    m_classRosterTemplateCombo.MinWidth(320.0);
+    m_classRosterTemplateCombo.IsTabStop(true);
+    m_classRosterTemplateCombo.TabIndex(20);
+    setAutomationName(m_classRosterTemplateCombo, L"Roster report template selector");
+    for (const auto reportTemplate :
+         classmngr::engine::RosterReportTemplateService::availableTemplates())
     {
-        auto rosterLists = StackPanel();
-        rosterLists.Orientation(Orientation::Horizontal);
-        rosterLists.Spacing(8.0);
-        rosterLists.Children().Append(m_rosterSourceList);
-        rosterLists.Children().Append(m_rosterTransferredList);
-        auto rosterTransfer = Button();
-        rosterTransfer.Content(winrt::box_value(winrt::hstring(L"Transfer selected")));
-        rosterTransfer.IsTabStop(true);
-        rosterTransfer.HorizontalAlignment(HorizontalAlignment::Left);
-        rosterTransfer.Click({this, &MainWindow::RosterTransferButton_Click});
-        setAutomationName(rosterTransfer, L"Roster transfer selected student");
-        rosterCard.content.Children().Append(rosterLists);
-        rosterCard.content.Children().Append(rosterTransfer);
-        rosterCard.content.Children().Append(m_rosterStatusText);
+        auto item = ComboBoxItem();
+        const auto templateValue = static_cast<int>(reportTemplate);
+        const wchar_t* label = reportTemplate ==
+                classmngr::engine::RosterReportTemplate::ByDay
+            ? L"By Day"
+            : reportTemplate == classmngr::engine::RosterReportTemplate::Daily
+                ? L"Daily"
+                : L"Per Class with Extra Info";
+        item.Content(box_value(hstring(label)));
+        item.Tag(box_value(templateValue));
+        m_classRosterTemplateCombo.Items().Append(item);
     }
-    else
-    {
-        auto placeholder = TextBlock();
-        placeholder.Text(L"Roster prototype controls are not initialized yet.");
-        placeholder.TextWrapping(TextWrapping::Wrap);
-        rosterCard.content.Children().Append(placeholder);
-    }
+    m_classRosterTemplateCombo.SelectionChanged(
+        [this](auto const&, auto const&) {
+            if (m_classRosterLoading || !m_classRosterTemplateStatusText)
+            {
+                return;
+            }
+            const auto item = m_classRosterTemplateCombo.SelectedItem().try_as<
+                ComboBoxItem>();
+            const auto reportTemplate = item
+                ? static_cast<classmngr::engine::RosterReportTemplate>(
+                    boxedInt(item.Tag()))
+                : classmngr::engine::RosterReportTemplate::ByDay;
+            const bool landscape =
+                classmngr::engine::RosterReportTemplateService::orientation(
+                    reportTemplate
+                    ) == classmngr::engine::RosterReportOrientation::Landscape;
+            const wchar_t* label = reportTemplate ==
+                    classmngr::engine::RosterReportTemplate::ByDay
+                ? L"By Day"
+                : reportTemplate == classmngr::engine::RosterReportTemplate::Daily
+                    ? L"Daily"
+                    : L"Per Class with Extra Info";
+            m_classRosterTemplateStatusText.Text(
+                winrt::hstring(
+                    std::wstring(label)
+                    + (landscape
+                        ? L" · landscape · current class scope."
+                        : L" · portrait · current class scope.")
+                    )
+                );
+        }
+        );
+    templateCard.content.Children().Append(m_classRosterTemplateCombo);
+    m_classRosterTemplateStatusText = TextBlock();
+    m_classRosterTemplateStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        m_classRosterTemplateStatusText,
+        L"Roster report template status"
+        );
+    templateCard.content.Children().Append(m_classRosterTemplateStatusText);
+    rosterCard.content.Children().Append(templateCard.root);
     rosterRoot.Children().Append(rosterCard.root);
 
     auto speakingRoot = makeRoot(StackPanel());
@@ -7947,7 +8135,7 @@ void MainWindow::updateClassActions()
 
     const bool hasDatabase = static_cast<bool>(m_openDatabase);
     const bool hasClass = m_classSelectedId > 0 || m_classNew;
-    const bool clean = !m_classDirty;
+    const bool clean = !m_classDirty && !m_classRosterDirty;
     const bool detailsEnabled = hasDatabase && hasClass;
     const bool notesEnabled = hasDatabase && m_classSelectedId > 0;
 
@@ -7980,6 +8168,7 @@ void MainWindow::updateClassActions()
     m_classNotesDiscardButton.IsEnabled(
         hasDatabase && m_classSelectedId > 0 && m_classNotesDirty
         );
+    updateClassRosterActions();
 }
 
 void MainWindow::markClassDirty()
@@ -8007,7 +8196,10 @@ void MainWindow::clearClassDirty()
     m_classDirty = false;
     m_classDetailsDirty = false;
     m_classNotesDirty = false;
-    m_dirtyState.markClean();
+    if (!m_classRosterDirty)
+    {
+        m_dirtyState.markClean();
+    }
     updateClassActions();
 }
 
@@ -8153,6 +8345,7 @@ void MainWindow::refreshClassesPage()
             Microsoft::UI::Xaml::Visibility::Collapsed
             );
         clearClassDirty();
+        refreshClassRoster();
         return;
     }
 
@@ -8182,6 +8375,7 @@ void MainWindow::refreshClassesPage()
             Microsoft::UI::Xaml::Visibility::Visible
             );
         clearClassDirty();
+        refreshClassRoster();
         return;
     }
 
@@ -8240,6 +8434,7 @@ void MainWindow::refreshClassesPage()
     m_classNotesValidationText.Text({});
     m_classNotesValidationText.Visibility(Visibility::Collapsed);
     clearClassDirty();
+    refreshClassRoster();
 }
 
 classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
@@ -8267,6 +8462,755 @@ classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
     return info;
 }
 
+classmngr::engine::Roster MainWindow::classRosterFromForm() const
+{
+    classmngr::engine::Roster roster = m_classRoster;
+    roster.rows.clear();
+    roster.rows.reserve(m_classRosterCellBoxes.size());
+    for (const auto& rowBoxes : m_classRosterCellBoxes)
+    {
+        std::vector<std::string> row;
+        row.reserve(roster.columns.size());
+        for (std::size_t column = 0; column < roster.columns.size(); ++column)
+        {
+            row.push_back(
+                column < rowBoxes.size()
+                    ? asUtf8(rowBoxes[column].Text())
+                    : std::string{}
+                );
+        }
+        roster.rows.push_back(std::move(row));
+    }
+    return roster;
+}
+
+void MainWindow::refreshClassRoster()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classRosterStatusText || !m_classRosterHeaderGrid
+        || !m_classRosterList)
+    {
+        return;
+    }
+
+    const auto clearRosterControls = [this]() {
+        m_classRoster = {};
+        m_classRosterCellBoxes.clear();
+        m_classRosterHeaderGrid.ColumnDefinitions().Clear();
+        m_classRosterHeaderGrid.Children().Clear();
+        m_classRosterList.Items().Clear();
+        m_classRosterList.SelectedIndex(-1);
+        if (m_classRosterTransferTargetCombo)
+        {
+            m_classRosterTransferTargetCombo.Items().Clear();
+            m_classRosterTransferTargetCombo.SelectedIndex(-1);
+        }
+    };
+
+    m_classRosterLoading = true;
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        clearRosterControls();
+        m_classRosterDirty = false;
+        m_classRosterLoading = false;
+        m_classRosterStatusText.Text(
+            !m_openDatabase
+                ? L"No database open."
+                : L"Save the selected class before editing its roster."
+            );
+        m_classRosterValidationText.Text({});
+        m_classRosterValidationText.Visibility(Visibility::Collapsed);
+        if (!m_classDirty)
+        {
+            m_dirtyState.markClean();
+        }
+        updateClassRosterActions();
+        return;
+    }
+
+    classmngr::engine::RosterService service(*m_openDatabase);
+    const auto loaded = service.load(m_classSelectedId);
+    if (!loaded)
+    {
+        clearRosterControls();
+        m_classRosterDirty = false;
+        m_classRosterLoading = false;
+        m_classRosterStatusText.Text(winrt::hstring(
+            L"Roster could not be loaded: " + asWide(loaded.error().message)
+            ));
+        m_classRosterValidationText.Text(winrt::hstring(
+            L"Engine loading error: " + asWide(loaded.error().message)
+            ));
+        m_classRosterValidationText.Visibility(Visibility::Visible);
+        if (!m_classDirty)
+        {
+            m_dirtyState.markClean();
+        }
+        updateClassRosterActions();
+        return;
+    }
+
+    m_classRoster = *loaded;
+    if (m_classRoster.columns.empty())
+    {
+        m_classRoster = defaultRoster();
+    }
+    if (m_classRoster.columnWidths.size() > m_classRoster.columns.size())
+    {
+        m_classRoster.columnWidths.resize(m_classRoster.columns.size());
+    }
+    m_classRoster.columnWidths.resize(
+        m_classRoster.columns.size(),
+        100
+        );
+    for (auto& row : m_classRoster.rows)
+    {
+        row.resize(m_classRoster.columns.size());
+    }
+
+    if (m_classRosterTransferTargetCombo)
+    {
+        m_classRosterTransferTargetCombo.Items().Clear();
+        const std::string currentGrade = m_classInfo.classGrade;
+        classmngr::engine::ClassInfoService infoService(*m_openDatabase);
+        for (const auto& classroom : m_classes)
+        {
+            if (classroom.id == m_classSelectedId)
+            {
+                continue;
+            }
+
+            bool sameGrade = currentGrade.empty();
+            if (!sameGrade)
+            {
+                const auto targetInfo = infoService.load(classroom.id);
+                sameGrade = targetInfo && targetInfo->classGrade == currentGrade;
+            }
+            if (!sameGrade)
+            {
+                continue;
+            }
+
+            auto item = ComboBoxItem();
+            std::wstring display = asWide(classroom.name);
+            if (display.empty())
+            {
+                display = L"Class " + std::to_wstring(classroom.id);
+            }
+            item.Content(box_value(hstring(display)));
+            item.Tag(box_value(classroom.id));
+            setAutomationName(item, L"Roster target " + display);
+            m_classRosterTransferTargetCombo.Items().Append(item);
+        }
+        m_classRosterTransferTargetCombo.SelectedIndex(
+            m_classRosterTransferTargetCombo.Items().Size() > 0 ? 0 : -1
+            );
+    }
+
+    if (m_classRosterTemplateCombo && m_classRosterTemplateCombo.Items().Size() > 0)
+    {
+        m_classRosterTemplateCombo.SelectedIndex(0);
+    }
+
+    rebuildClassRosterGrid();
+    m_classRosterLoading = false;
+    m_classRosterDirty = false;
+    if (!m_classDirty && !m_classRosterDirty)
+    {
+        m_dirtyState.markClean();
+    }
+    m_classRosterStatusText.Text(
+        winrt::hstring(
+            L"Roster loaded. "
+            + std::to_wstring(
+                classmngr::engine::rosterStudentCount(m_classRoster)
+                )
+            + L" students."
+            )
+        );
+    m_classRosterValidationText.Text({});
+    m_classRosterValidationText.Visibility(Visibility::Collapsed);
+
+    if (m_classRosterTemplateStatusText && m_classRosterTemplateCombo
+        && m_classRosterTemplateCombo.SelectedItem())
+    {
+        const auto item = m_classRosterTemplateCombo.SelectedItem().try_as<
+            ComboBoxItem>();
+        const auto reportTemplate = item
+            ? static_cast<classmngr::engine::RosterReportTemplate>(
+                boxedInt(item.Tag()))
+            : classmngr::engine::RosterReportTemplate::ByDay;
+        const bool landscape =
+            classmngr::engine::RosterReportTemplateService::orientation(
+                reportTemplate
+                ) == classmngr::engine::RosterReportOrientation::Landscape;
+        const wchar_t* label = reportTemplate ==
+                classmngr::engine::RosterReportTemplate::ByDay
+            ? L"By Day"
+            : reportTemplate == classmngr::engine::RosterReportTemplate::Daily
+                ? L"Daily"
+                : L"Per Class with Extra Info";
+        m_classRosterTemplateStatusText.Text(
+            winrt::hstring(
+                std::wstring(label)
+                + (landscape
+                    ? L" · landscape · current class scope."
+                    : L" · portrait · current class scope.")
+                )
+            );
+    }
+    updateClassRosterActions();
+}
+
+void MainWindow::rebuildClassRosterGrid()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classRosterHeaderGrid || !m_classRosterList)
+    {
+        return;
+    }
+
+    const bool wasLoading = m_classRosterLoading;
+    m_classRosterLoading = true;
+    m_classRosterCellBoxes.clear();
+    m_classRosterHeaderGrid.ColumnDefinitions().Clear();
+    m_classRosterHeaderGrid.Children().Clear();
+    m_classRosterList.Items().Clear();
+    m_classRosterList.SelectedIndex(-1);
+
+    std::vector<double> widths;
+    widths.reserve(m_classRoster.columns.size());
+    double totalWidth = 0.0;
+    for (std::size_t column = 0; column < m_classRoster.columns.size(); ++column)
+    {
+        const int configuredWidth = column < m_classRoster.columnWidths.size()
+            ? m_classRoster.columnWidths[column]
+            : 100;
+        const double width = std::clamp(
+            static_cast<double>(configuredWidth),
+            88.0,
+            280.0
+            );
+        widths.push_back(width);
+        totalWidth += width;
+
+        auto definition = ColumnDefinition();
+        definition.Width(
+            GridLengthHelper::FromValueAndType(width, GridUnitType::Pixel)
+            );
+        m_classRosterHeaderGrid.ColumnDefinitions().Append(definition);
+
+        auto header = TextBlock();
+        header.Text(asWide(m_classRoster.columns[column]));
+        header.Margin(Thickness{4.0, 4.0, 4.0, 4.0});
+        header.TextWrapping(TextWrapping::Wrap);
+        Grid::SetColumn(header, static_cast<int32_t>(column));
+        m_classRosterHeaderGrid.Children().Append(header);
+    }
+    m_classRosterHeaderGrid.MinWidth(totalWidth);
+
+    for (std::size_t rowIndex = 0; rowIndex < m_classRoster.rows.size(); ++rowIndex)
+    {
+        auto rowGrid = Grid();
+        rowGrid.ColumnSpacing(4.0);
+        rowGrid.MinWidth(totalWidth);
+        for (const double width : widths)
+        {
+            auto definition = ColumnDefinition();
+            definition.Width(
+                GridLengthHelper::FromValueAndType(width, GridUnitType::Pixel)
+                );
+            rowGrid.ColumnDefinitions().Append(definition);
+        }
+
+        std::vector<TextBox> rowBoxes;
+        rowBoxes.reserve(m_classRoster.columns.size());
+        for (std::size_t column = 0; column < m_classRoster.columns.size(); ++column)
+        {
+            auto cell = TextBox();
+            cell.Text(
+                column < m_classRoster.rows[rowIndex].size()
+                    ? asWide(m_classRoster.rows[rowIndex][column])
+                    : std::wstring{}
+                );
+            cell.MinWidth(widths[column]);
+            cell.MaxLength(
+                static_cast<int32_t>(
+                    classmngr::engine::RosterValidator::MaximumCellLength
+                    )
+                );
+            cell.Margin(Thickness{0.0, 2.0, 0.0, 2.0});
+            cell.IsTabStop(true);
+            cell.TextChanging(
+                [this](TextBox const&, TextBoxTextChangingEventArgs const&) {
+                    if (!m_classRosterLoading)
+                    {
+                        markClassRosterDirty();
+                    }
+                }
+                );
+            setAutomationName(
+                cell,
+                L"Roster row " + std::to_wstring(rowIndex + 1) + L" "
+                    + asWide(m_classRoster.columns[column])
+                );
+            Grid::SetColumn(cell, static_cast<int32_t>(column));
+            rowGrid.Children().Append(cell);
+            rowBoxes.push_back(cell);
+        }
+        m_classRosterList.Items().Append(rowGrid);
+        m_classRosterCellBoxes.push_back(std::move(rowBoxes));
+    }
+
+    m_classRosterLoading = wasLoading;
+    updateClassRosterActions();
+}
+
+void MainWindow::updateClassRosterActions()
+{
+    if (!m_classRosterStatusText)
+    {
+        return;
+    }
+
+    const bool hasDatabase = static_cast<bool>(m_openDatabase);
+    const bool hasClass = hasDatabase && m_classSelectedId > 0 && !m_classNew;
+    const bool hasSelectedRow = m_classRosterList
+        && m_classRosterList.SelectedIndex() >= 0
+        && m_classRosterList.SelectedIndex()
+            < static_cast<int32_t>(m_classRoster.rows.size());
+    const bool hasTarget = m_classRosterTransferTargetCombo
+        && m_classRosterTransferTargetCombo.SelectedItem();
+
+    if (m_classRosterList)
+    {
+        m_classRosterList.IsEnabled(hasClass);
+    }
+    if (m_classRosterTransferTargetCombo)
+    {
+        m_classRosterTransferTargetCombo.IsEnabled(hasClass && hasTarget);
+    }
+    if (m_classRosterAddButton)
+    {
+        m_classRosterAddButton.IsEnabled(
+            hasClass
+            && m_classRoster.rows.size()
+                < classmngr::engine::RosterValidator::MaximumRows
+            );
+    }
+    if (m_classRosterRemoveButton)
+    {
+        m_classRosterRemoveButton.IsEnabled(hasClass && hasSelectedRow);
+    }
+    if (m_classRosterSaveButton)
+    {
+        m_classRosterSaveButton.IsEnabled(hasClass && m_classRosterDirty);
+    }
+    if (m_classRosterDiscardButton)
+    {
+        m_classRosterDiscardButton.IsEnabled(hasClass && m_classRosterDirty);
+    }
+    if (m_classRosterTransferButton)
+    {
+        m_classRosterTransferButton.IsEnabled(
+            hasClass && hasSelectedRow && hasTarget
+            );
+    }
+    if (m_classRosterPrepareTransferButton)
+    {
+        m_classRosterPrepareTransferButton.IsEnabled(
+            hasClass && !m_classRosterDirty
+            );
+    }
+}
+
+void MainWindow::markClassRosterDirty()
+{
+    if (m_classRosterLoading || !m_openDatabase || m_classSelectedId <= 0)
+    {
+        return;
+    }
+
+    m_classRosterDirty = true;
+    m_dirtyState.markDirty();
+    if (m_classRosterStatusText)
+    {
+        m_classRosterStatusText.Text(L"Unsaved roster changes.");
+    }
+    updateClassRosterActions();
+    updateClassActions();
+}
+
+void MainWindow::clearClassRosterDirty()
+{
+    m_classRosterDirty = false;
+    if (!m_classDirty && !m_classRosterDirty)
+    {
+        m_dirtyState.markClean();
+    }
+    updateClassRosterActions();
+}
+
+void MainWindow::saveClassRoster()
+{
+    if (!m_openDatabase)
+    {
+        m_classRosterStatusText.Text(L"No database open.");
+        return;
+    }
+    if (m_classSelectedId <= 0 || m_classNew)
+    {
+        m_classRosterStatusText.Text(L"Select and save a class before saving its roster.");
+        return;
+    }
+
+    classmngr::engine::Roster normalized =
+        classmngr::engine::RosterValidator::normalized(classRosterFromForm());
+    const auto validation = classmngr::engine::RosterValidator::validate(
+        normalized
+        );
+    if (validation.hasErrors())
+    {
+        std::wstring summary = L"Engine validation failed:";
+        for (const auto& issue : validation.errors())
+        {
+            summary += L"\n- " + asWide(issue.code);
+            if (!issue.field.empty())
+            {
+                summary += L" (" + asWide(issue.field) + L")";
+            }
+        }
+        m_classRosterStatusText.Text(L"Roster could not be saved.");
+        m_classRosterValidationText.Text(winrt::hstring(summary));
+        m_classRosterValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_classRosterDirty = true;
+        m_dirtyState.markDirty();
+        updateClassRosterActions();
+        return;
+    }
+
+    classmngr::engine::RosterService service(*m_openDatabase);
+    const auto saved = service.save(m_classSelectedId, normalized);
+    if (!saved)
+    {
+        m_classRosterStatusText.Text(winrt::hstring(
+            L"Roster could not be saved: " + asWide(saved.error().message)
+            ));
+        m_classRosterValidationText.Text(winrt::hstring(
+            L"Engine persistence error: " + asWide(saved.error().message)
+            ));
+        m_classRosterValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_classRosterDirty = true;
+        m_dirtyState.markDirty();
+        updateClassRosterActions();
+        return;
+    }
+
+    m_classRosterLoading = true;
+    m_classRoster = std::move(normalized);
+    rebuildClassRosterGrid();
+    m_classRosterLoading = false;
+    clearClassRosterDirty();
+    m_classRosterStatusText.Text(
+        winrt::hstring(
+            L"Roster saved. "
+            + std::to_wstring(
+                classmngr::engine::rosterStudentCount(m_classRoster)
+                )
+            + L" students."
+            )
+        );
+    m_classRosterValidationText.Text({});
+    m_classRosterValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    updateClassActions();
+}
+
+void MainWindow::discardClassRoster()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0)
+    {
+        return;
+    }
+    refreshClassRoster();
+    m_classRosterStatusText.Text(L"Roster changes discarded.");
+}
+
+void MainWindow::addClassRosterRow()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        return;
+    }
+    if (m_classRoster.rows.size()
+        >= classmngr::engine::RosterValidator::MaximumRows)
+    {
+        m_classRosterStatusText.Text(L"The roster already has the maximum of 25 rows.");
+        return;
+    }
+    if (m_classRoster.columns.empty())
+    {
+        m_classRoster = defaultRoster();
+    }
+    m_classRoster.rows.emplace_back(m_classRoster.columns.size());
+    rebuildClassRosterGrid();
+    m_classRosterList.SelectedIndex(
+        static_cast<int32_t>(m_classRoster.rows.size()) - 1
+        );
+    markClassRosterDirty();
+    m_classRosterStatusText.Text(L"Blank roster row added.");
+}
+
+void MainWindow::removeClassRosterRow()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew
+        || !m_classRosterList)
+    {
+        return;
+    }
+    const int32_t selectedIndex = m_classRosterList.SelectedIndex();
+    if (selectedIndex < 0
+        || selectedIndex >= static_cast<int32_t>(m_classRoster.rows.size()))
+    {
+        m_classRosterStatusText.Text(L"Select a roster row to remove.");
+        return;
+    }
+
+    m_classRoster.rows.erase(
+        m_classRoster.rows.begin() + selectedIndex
+        );
+    rebuildClassRosterGrid();
+    if (!m_classRoster.rows.empty())
+    {
+        m_classRosterList.SelectedIndex(
+            std::min(
+                selectedIndex,
+                static_cast<int32_t>(m_classRoster.rows.size()) - 1
+                )
+            );
+    }
+    markClassRosterDirty();
+    m_classRosterStatusText.Text(L"Selected roster row removed.");
+}
+
+void MainWindow::transferClassRosterRow()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew
+        || !m_classRosterList || !m_classRosterTransferTargetCombo)
+    {
+        return;
+    }
+    const int32_t selectedIndex = m_classRosterList.SelectedIndex();
+    const auto targetItem = m_classRosterTransferTargetCombo.SelectedItem().try_as<
+        Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+    const int targetId = targetItem ? boxedInt(targetItem.Tag()) : -1;
+    if (selectedIndex < 0 || targetId <= 0)
+    {
+        m_classRosterStatusText.Text(
+            L"Select a student and a target class before transferring."
+            );
+        return;
+    }
+
+    classmngr::engine::Roster source = classRosterFromForm();
+    if (selectedIndex >= static_cast<int32_t>(source.rows.size()))
+    {
+        m_classRosterStatusText.Text(L"The selected roster row is unavailable.");
+        return;
+    }
+    if (!classmngr::engine::isRosterStudentRow(
+            source,
+            source.rows[static_cast<std::size_t>(selectedIndex)]
+            ))
+    {
+        m_classRosterStatusText.Text(
+            L"Only a populated student row can be transferred."
+            );
+        return;
+    }
+
+    source = classmngr::engine::RosterValidator::normalized(source);
+    for (auto& row : source.rows)
+    {
+        row.resize(source.columns.size());
+    }
+
+    if (!m_classInfo.classGrade.empty())
+    {
+        classmngr::engine::ClassInfoService infoService(*m_openDatabase);
+        const auto targetInfo = infoService.load(targetId);
+        if (!targetInfo || targetInfo->classGrade != m_classInfo.classGrade)
+        {
+            m_classRosterStatusText.Text(
+                L"Students can only be transferred between same-grade classes."
+                );
+            return;
+        }
+    }
+
+    classmngr::engine::RosterService service(*m_openDatabase);
+    const auto loadedTarget = service.load(targetId);
+    if (!loadedTarget)
+    {
+        m_classRosterStatusText.Text(winrt::hstring(
+            L"Target roster could not be loaded: "
+            + asWide(loadedTarget.error().message)
+            ));
+        return;
+    }
+    classmngr::engine::Roster target = *loadedTarget;
+    if (target.columns.empty())
+    {
+        target = defaultRoster();
+    }
+    target = classmngr::engine::RosterValidator::normalized(target);
+    if (target.columnWidths.size() > target.columns.size())
+    {
+        target.columnWidths.resize(target.columns.size());
+    }
+    target.columnWidths.resize(target.columns.size(), 100);
+    for (auto& row : target.rows)
+    {
+        row.resize(target.columns.size());
+    }
+    if (target.rows.size()
+        >= classmngr::engine::RosterValidator::MaximumRows)
+    {
+        m_classRosterStatusText.Text(
+            L"The target roster already has the maximum of 25 rows."
+            );
+        return;
+    }
+
+    const auto& sourceRow = source.rows[static_cast<std::size_t>(selectedIndex)];
+    std::vector<std::string> targetRow(target.columns.size());
+    for (std::size_t targetColumn = 0;
+         targetColumn < target.columns.size();
+         ++targetColumn)
+    {
+        const auto sourceColumn = std::find(
+            source.columns.begin(),
+            source.columns.end(),
+            target.columns[targetColumn]
+            );
+        if (sourceColumn != source.columns.end())
+        {
+            const std::size_t sourceIndex = static_cast<std::size_t>(
+                std::distance(source.columns.begin(), sourceColumn)
+                );
+            if (sourceIndex < sourceRow.size())
+            {
+                targetRow[targetColumn] = sourceRow[sourceIndex];
+            }
+        }
+    }
+    target.rows.push_back(std::move(targetRow));
+    source.rows.erase(source.rows.begin() + selectedIndex);
+
+    source = classmngr::engine::RosterValidator::normalized(source);
+    target = classmngr::engine::RosterValidator::normalized(target);
+    const auto sourceValidation = classmngr::engine::RosterValidator::validate(
+        source
+        );
+    const auto targetValidation = classmngr::engine::RosterValidator::validate(
+        target
+        );
+    if (sourceValidation.hasErrors() || targetValidation.hasErrors())
+    {
+        m_classRosterStatusText.Text(
+            L"Transfer rejected because one or both rosters failed validation."
+            );
+        m_classRosterValidationText.Text(
+            L"Fix roster validation errors before transferring a student."
+            );
+        m_classRosterValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        return;
+    }
+
+    const auto saved = service.saveBatch({
+        {m_classSelectedId, source},
+        {targetId, target}
+        });
+    if (!saved)
+    {
+        m_classRosterStatusText.Text(winrt::hstring(
+            L"Student transfer could not be saved: "
+            + asWide(saved.error().message)
+            ));
+        return;
+    }
+
+    m_classRosterLoading = true;
+    m_classRoster = std::move(source);
+    rebuildClassRosterGrid();
+    m_classRosterLoading = false;
+    clearClassRosterDirty();
+    m_classRosterStatusText.Text(
+        winrt::hstring(
+            L"Student transferred to "
+            + boxedString(targetItem.Content())
+            + L"."
+            )
+        );
+    m_classRosterValidationText.Text({});
+    m_classRosterValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+}
+
+void MainWindow::prepareClassTransfer()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        return;
+    }
+    if (m_classRosterDirty)
+    {
+        m_classRosterStatusText.Text(
+            L"Save or discard roster changes before preparing a class package."
+            );
+        return;
+    }
+
+    classmngr::engine::ClassTransferService service(*m_openDatabase);
+    const auto package = service.buildPackage({m_classSelectedId});
+    if (!package)
+    {
+        m_classRosterStatusText.Text(winrt::hstring(
+            L"Class transfer package could not be prepared: "
+            + asWide(package.error().message)
+            ));
+        return;
+    }
+    const auto preview = service.previewImport(*package);
+    if (!preview)
+    {
+        m_classRosterStatusText.Text(winrt::hstring(
+            L"Class transfer preview could not be prepared: "
+            + asWide(preview.error().message)
+            ));
+        return;
+    }
+    m_classRosterStatusText.Text(
+        winrt::hstring(
+            L"Class transfer package ready for "
+            + std::to_wstring(package->classes.size())
+            + L" class."
+            )
+        );
+}
+
 void MainWindow::ClassSelection_SelectionChanged(
     Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
@@ -8277,13 +9221,15 @@ void MainWindow::ClassSelection_SelectionChanged(
     {
         return;
     }
-    if (m_classDirty)
+    if (m_classDirty || m_classRosterDirty)
     {
         m_classLoading = true;
         m_classSelector.SelectedIndex(m_classSelectedIndex);
         m_classLoading = false;
         m_classStatusText.Text(
-            L"Save or discard the current class before selecting another."
+            m_classRosterDirty
+                ? L"Save or discard the current roster before selecting another."
+                : L"Save or discard the current class before selecting another."
             );
         return;
     }
@@ -8318,6 +9264,7 @@ void MainWindow::ClassSelection_SelectionChanged(
             ? L"Select a class tab to edit notes."
             : L"No class selected."
         );
+    refreshClassRoster();
 }
 
 void MainWindow::ClassField_TextChanging(
@@ -8369,12 +9316,14 @@ void MainWindow::ClassNewButton_Click(
 {
     static_cast<void>(sender);
     static_cast<void>(arguments);
-    if (!m_openDatabase || m_classDirty)
+    if (!m_openDatabase || m_classDirty || m_classRosterDirty)
     {
-        if (m_classStatusText && m_classDirty)
+        if (m_classStatusText && (m_classDirty || m_classRosterDirty))
         {
             m_classStatusText.Text(
-                L"Save or discard the current class before creating another."
+                m_classRosterDirty
+                    ? L"Save or discard the current roster before creating another."
+                    : L"Save or discard the current class before creating another."
                 );
         }
         return;
@@ -8400,6 +9349,7 @@ void MainWindow::ClassNewButton_Click(
     m_classValidationText.Visibility(
         Microsoft::UI::Xaml::Visibility::Collapsed
         );
+    refreshClassRoster();
     updateClassActions();
 }
 
@@ -8410,7 +9360,8 @@ void MainWindow::ClassDeleteButton_Click(
 {
     static_cast<void>(sender);
     static_cast<void>(arguments);
-    if (!m_openDatabase || m_classSelectedId <= 0 || m_classDirty)
+    if (!m_openDatabase || m_classSelectedId <= 0
+        || m_classDirty || m_classRosterDirty)
     {
         return;
     }
@@ -8660,7 +9611,7 @@ void MainWindow::ClassNotesSaveButton_Click(
         );
     m_classNotesDirty = false;
     m_classDirty = m_classDetailsDirty;
-    if (!m_classDirty)
+    if (!m_classDirty && !m_classRosterDirty)
     {
         m_dirtyState.markClean();
     }
@@ -8691,7 +9642,7 @@ void MainWindow::ClassNotesDiscardButton_Click(
     m_classLoading = false;
     m_classNotesDirty = false;
     m_classDirty = m_classDetailsDirty;
-    if (!m_classDirty)
+    if (!m_classDirty && !m_classRosterDirty)
     {
         m_dirtyState.markClean();
     }

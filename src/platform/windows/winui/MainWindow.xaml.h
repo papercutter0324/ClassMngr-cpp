@@ -12,6 +12,7 @@
 #include "classmngr/engine/gs_team_member.h"
 #include "classmngr/engine/native_english_teacher.h"
 #include "classmngr/engine/personal_details_service.h"
+#include "classmngr/engine/roster.h"
 #include "classmngr/engine/teacher.h"
 #include "classmngr/engine/validation_result.h"
 #include "winui_dialogs.h"
@@ -117,6 +118,8 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] uint32_t phase6ClassInformationFailureMask() const noexcept;
     [[nodiscard]] bool runPhase6CalendarChecks();
     [[nodiscard]] uint32_t phase6CalendarFailureMask() const noexcept;
+    [[nodiscard]] bool runPhase6RosterChecks();
+    [[nodiscard]] uint32_t phase6RosterFailureMask() const noexcept;
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -277,6 +280,18 @@ private:
     void markClassDirty();
     void clearClassDirty();
     [[nodiscard]] classmngr::engine::ClassInfo classInfoFromForm() const;
+    void refreshClassRoster();
+    void rebuildClassRosterGrid();
+    void updateClassRosterActions();
+    void markClassRosterDirty();
+    void clearClassRosterDirty();
+    void saveClassRoster();
+    void discardClassRoster();
+    void addClassRosterRow();
+    void removeClassRosterRow();
+    void transferClassRosterRow();
+    void prepareClassTransfer();
+    [[nodiscard]] classmngr::engine::Roster classRosterFromForm() const;
     void populateAboutPage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
@@ -698,6 +713,26 @@ private:
     bool m_classNotesDirty{};
     bool m_classNew{};
     uint32_t m_phase6ClassInformationFailureMask{};
+
+    Microsoft::UI::Xaml::Controls::Grid m_classRosterHeaderGrid{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_classRosterList{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classRosterTransferTargetCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classRosterTemplateCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classRosterStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classRosterValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classRosterTemplateStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterAddButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterRemoveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterTransferButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterDiscardButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterPrepareTransferButton{nullptr};
+    classmngr::engine::Roster m_classRoster;
+    std::vector<std::vector<Microsoft::UI::Xaml::Controls::TextBox>>
+        m_classRosterCellBoxes;
+    bool m_classRosterLoading{};
+    bool m_classRosterDirty{};
+    uint32_t m_phase6RosterFailureMask{};
 
     Microsoft::UI::Xaml::Controls::Pivot m_calendarTabs{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_calendarMonthTitle{nullptr};
