@@ -118,10 +118,12 @@ recommendation and measurement pass the provisional guardrails, and the
 Qt-derived table-parity handoff was reviewed and accepted as Phase 6 input on
 2026-09-08. Phase 6 is in progress: its shared Qt-derived table-parity
 resource foundation and Campus Directory selector-plus-five-tabs
-reconciliation are complete as the opening slice. Next are the personal
-details and teacher-directory data-entry slices, followed by paired visual,
-semantic, persistence, and x86 evidence. Touch, high-contrast, and
-accessibility automation remain out of scope for Phase 4.
+reconciliation are complete as the opening slice. The active gate is migration
+order step 1: Personal Details, followed by the Korean Teacher, Native English
+Teacher, and GS Team directory slices. Each slice is accepted and committed
+independently with its engine, semantic, persistence, paired-visual, and x86
+evidence. Touch, high-contrast, and accessibility automation remain out of
+scope for Phase 4.
 
 ## Phase 5 Completion Handoff
 
@@ -210,12 +212,14 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Begin [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md)
-   with the accepted [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md)
-   as the Qt visual contract.
-2. Reconcile the current Campus selector/list-detail prototype with the Qt
-   selector-plus-five-tabs/form design before accepting table-heavy Phase 6
-   surfaces.
+1. Complete Phase 6 migration-order step 1: Personal Details, Korean Teacher,
+   Native English Teacher, and GS Team directories.
+2. Complete step 2: class details, class information, and notes; then step 3:
+   calendar viewing/editing and preferences.
+3. Continue through roster/transfer, schedule/import, speaking-evaluation, and
+   substitute-preparation slices in the order recorded in the active phase
+   file. Commit every independently accepted slice and step with a
+   `Phase 6 - ...` subject.
 
 For the all-phase dashboard, completed-phase evidence, and historical progress
 log, see [progress-log.md](progress-log.md).
@@ -250,6 +254,13 @@ After meaningful work:
   complete staged verifier pass. Personal details, teacher directories,
   paired visual evidence, persistence checks, and x86 Debug/Release evidence
   remain pending.
+
+- **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
+  now reports Phase 6 as **In progress**. The active gate is migration-order
+  step 1, beginning with Personal Details and then the three teacher-directory
+  families. Each feature slice and migration step will have its own reviewed
+  implementation commit and evidence entry; no later step is accepted merely
+  because an earlier prototype exists.
 
 - **2026-09-08 - Phase 5 Campus database hydration regression fixed.** The
   cached Campus Information page now re-queries `CampusRecordService` when

@@ -25,7 +25,7 @@ Last updated: 2026-09-08 (Asia/Seoul)
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Complete** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. The owner approved the five-scenario review, interactive review, the Phase 5 exception for missing Qt empty/populated/error fixtures, and the Qt-derived table-parity handoff. The x64 Release first-navigation gate passes with 20/20 valid samples. Phase 6 begins with Qt parity reconciliation. |
-| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
+| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Active gate: migration-order step 1, Personal Details and teacher-directory slices, with per-slice evidence and commits. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
 
@@ -202,6 +202,15 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
 [`docs/porting/windows-winui`](../../docs/porting/windows-winui/README.md).
 
 ## Historical Progress Log
+
+- **2026-09-08 — Phase 6 migration ledger activated.** The dashboard now
+  records Phase 6 as **In progress** after the shared table-parity resource
+  foundation and Campus selector-plus-five-tabs reconciliation were committed.
+  The active migration-order gate is step 1: Personal Details, Korean Teacher,
+  Native English Teacher, and GS Team directories. Each independently accepted
+  slice and migration step receives a separate `Phase 6 - ...` commit plus
+  engine, semantic, persistence, paired-visual, and x86 evidence where the
+  phase gate requires it.
 
 - **2026-09-08 — Phase 5 first-navigation gate measured.** The dedicated
   x64 Release protocol ran 20 independent fresh processes with no discarded
