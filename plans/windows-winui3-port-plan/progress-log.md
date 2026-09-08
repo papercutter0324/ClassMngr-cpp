@@ -25,7 +25,7 @@ Last updated: 2026-09-09 (Asia/Seoul)
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Complete** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. The owner approved the five-scenario review, interactive review, the Phase 5 exception for missing Qt empty/populated/error fixtures, and the Qt-derived table-parity handoff. The x64 Release first-navigation gate passes with 20/20 valid samples. Phase 6 begins with Qt parity reconciliation. |
-| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7`, Korean Teacher `1baea21`, Native English Teacher `856ccf1`, GS Team `3a733a6`, class information `951f272`, calendar `33f33e6`, roster `3ed19f9`, schedule editor `a5f4593`, schedule import/testing classes `37ba09b`, speaking analytics `dc8a790`, speaking AI comments `b690203`, speaking batch operations `45403aa`, substitute preparation `2d52d9d`, and bundled-document planning `c8b8234` pass their x64 Debug implementation checks. Migration-order implementation steps 1-7 are complete; x86, paired-visual, table-parity, and aggregate-verifier closure evidence remains open before the Phase 6 exit review. |
+| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7`, Korean Teacher `1baea21`, Native English Teacher `856ccf1`, GS Team `3a733a6`, class information `951f272`, calendar `33f33e6`, roster `3ed19f9`, schedule editor `a5f4593`, schedule import/testing classes `37ba09b`, speaking analytics `dc8a790`, speaking AI comments `b690203`, speaking batch operations `45403aa`, substitute preparation `2d52d9d`, and bundled-document planning `c8b8234` pass their implementation checks. Closure revision `b99ed8f` removes the WinUI SDK macro collision; x64/x86 Debug/Release WinUI builds are warning-free, focused Phase 6 engine tests pass 23/23 in all four lanes, and the Sub Prep hook passes in all four lanes. x86 stage smoke passes; x64 semantic-stage and three resource-manifest lanes remain open, along with paired-visual, table-parity, and aggregate-verifier evidence. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
 
@@ -359,6 +359,19 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
   hooks exited 0. Migration-order implementation steps 1-7 are complete;
   x86, paired Qt/WinUI visual, table-parity, and aggregate-verifier closure
   evidence remains open before the Phase 6 exit review.
+
+- **2026-09-09 — Phase 6 closure audit and WinUI SDK warning correction.**
+  Revision `b99ed8f` undefines the Windows SDK `GetCurrentTime` macro after
+  `windows.h` so it cannot collide with the C++/WinRT ABI method in generated
+  headers. The x64/x86 Debug/Release WinUI targets build with zero
+  warnings/errors; the focused Phase 6 engine suites pass 23/23 in every lane;
+  and `--phase6-sub-prep-test` exits 0 in every lane. The x86 stage smoke gate
+  passes in Debug and Release. x64 stage verification remains blocked by the
+  existing Phase 3 semantic-test access violation (`-1073741819`), while the
+  resource-manifest check passes in x64 Debug and still reports the known
+  `ClassMngr_en_AU.ts` size mismatch in x64 Release and both x86 lanes.
+  Paired Qt/WinUI visual, table-parity, and aggregate-verifier closure work
+  remains open before the Phase 6 exit review.
 
 - **2026-09-08 — Phase 6 migration ledger activated.** The dashboard now
   records Phase 6 as **In progress** after the shared table-parity resource

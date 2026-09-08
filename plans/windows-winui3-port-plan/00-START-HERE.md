@@ -170,14 +170,20 @@ directory slices are also committed and pass their x64 Debug focused tests and
   class selection, roster-template selection, deterministic package-path
   planning, and a renderer-neutral plan preview without performing output.
   Both step-7 slices preserve the sliding tab transition recorded in the Phase
-  6 plan. The x64 Debug WinUI build has zero warnings/errors, the Sub Prep hook
-  and retained `--phase4-semantic-test` hook pass, and the focused Sub Prep
-  engine tests pass 4/4. Actual PDF, print, ZIP, and Office execution remains
-  a Phase 7 adapter responsibility. Phase 6 migration-order implementation
-  slices for steps 1-7 are complete; x86, paired-visual, table-parity, and
-  aggregate-verifier closure evidence remains open. Each implementation slice
-  is accepted and committed independently with its x64 engine and semantic
-  checks; the remaining evidence is tracked as phase-level closure work.
+  6 plan. The WinUI SDK macro correction is committed at `b99ed8f`; the x64
+  and x86 Debug/Release WinUI targets now build with zero warnings/errors, the
+  focused Phase 6 engine suites pass 23/23 in all four lanes, and the direct
+  Sub Prep hook exits 0 in all four lanes. The x86 stage smoke gate passes in
+  both configurations; x64 stage verification still stops at the existing
+  Phase 3 semantic hook with access-violation code `-1073741819`. Resource
+  manifest verification passes in x64 Debug and still reports the known
+  `ClassMngr_en_AU.ts` size mismatch in x64 Release and both x86 lanes. Actual
+  PDF, print, ZIP, and Office execution remains a Phase 7 adapter
+  responsibility. Phase 6 migration-order implementation slices for steps 1-7
+  are complete; paired-visual, table-parity, resource/semantic, and aggregate-
+  verifier closure evidence remains open. Each implementation slice is accepted
+  and committed independently; the remaining evidence is tracked as
+  phase-level closure work.
   Touch,
 high-contrast, and accessibility automation remain out of scope for Phase 4.
 
@@ -268,8 +274,9 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
-   verifier evidence, then complete the Phase 6 exit review.
+1. Close the remaining Phase 6 x64 semantic/resource, x86 resource,
+   paired-visual, table-parity, and aggregate-verifier evidence, then complete
+   the Phase 6 exit review.
 2. Commit every independently accepted closure slice or evidence step with a
    `Phase 6 - ...` subject; keep the tabbed-page motion note as the reference
    for any future in-page tab work.
@@ -437,6 +444,19 @@ After meaningful work:
   hooks exited 0. Migration-order implementation steps 1-7 are now complete;
   x86, paired Qt/WinUI visual, table-parity, and aggregate-verifier closure
   evidence remains open.
+
+- **2026-09-09 - Phase 6 closure audit and WinUI SDK warning correction.**
+  Revision `b99ed8f` undefines the Windows SDK `GetCurrentTime` macro after
+  `windows.h` so it cannot collide with the C++/WinRT ABI method in generated
+  headers. The x64/x86 Debug/Release WinUI targets build with zero
+  warnings/errors; the focused Phase 6 engine suites pass 23/23 in every lane;
+  and `--phase6-sub-prep-test` exits 0 in every lane. The x86 stage smoke gate
+  passes in Debug and Release. x64 stage verification remains blocked by the
+  existing Phase 3 semantic-test access violation (`-1073741819`), while the
+  resource-manifest check passes in x64 Debug and still reports the known
+  `ClassMngr_en_AU.ts` size mismatch in x64 Release and both x86 lanes.
+  Paired Qt/WinUI visual, table-parity, and aggregate-verifier closure work
+  remains open.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
