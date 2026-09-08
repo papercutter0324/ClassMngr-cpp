@@ -122,13 +122,16 @@ reconciliation are complete as the opening slice. The Personal Details
 implementation is committed at `f1f9ba7`; its x64 Debug build, focused engine
 tests, and staged lifecycle check pass. The Korean Teacher directory
 implementation is committed at `1baea21`; its x64 Debug build, focused engine
-tests, and staged lifecycle check pass. The active implementation gate now
-continues with Phase 6 migration-order step 2 (class details, class
-information, and notes) while the Personal Details, Korean Teacher, Native
-English Teacher, and GS Team x86 and paired-visual evidence is closed. Each
-slice is accepted and committed independently with its engine,
-semantic, persistence, paired-visual, and x86 evidence. Touch, high-contrast,
-and accessibility automation remain out of scope for Phase 4.
+tests, and staged lifecycle check pass. The Native English Teacher and GS Team
+directory slices are also committed and pass their x64 Debug focused tests and
+staged checks. The class details, class information, and notes slice is
+committed at `951f272`; its x64 Debug build, focused ClassInfo/ClassRepository
+tests (2/2), and staged lifecycle check pass. The active implementation gate
+now continues with Phase 6 migration-order step 3 (calendar viewing/editing
+and preferences). Step-1 and step-2 x86, paired-visual, and table-parity
+evidence remains open. Each slice is accepted and committed independently with
+its engine, semantic, persistence, paired-visual, and x86 evidence. Touch,
+high-contrast, and accessibility automation remain out of scope for Phase 4.
 
 ## Phase 5 Completion Handoff
 
@@ -217,15 +220,14 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Continue Phase 6 migration-order step 2: migrate class details, class
-   information, and notes while tracking the step-1 x86/paired-visual closure
-   gates.
-2. Complete step 3: calendar viewing/editing and preferences; then step 4:
-   rosters, transfers, and templates.
-3. Continue through roster/transfer, schedule/import, speaking-evaluation, and
-   substitute-preparation slices in the order recorded in the active phase
-   file. Commit every independently accepted slice and step with a
-   `Phase 6 - ...` subject.
+1. Complete Phase 6 migration-order step 3: calendar viewing/editing and
+   preferences while tracking the step-1/step-2 x86, paired-visual, and
+   table-parity closure gates.
+2. Continue with step 4: rosters, transfers, and templates; then step 5:
+   schedules, imports, testing classes, and assignment dialogs.
+3. Continue through speaking-evaluation and substitute-preparation slices in
+   the order recorded in the active phase file. Commit every independently
+   accepted slice and step with a `Phase 6 - ...` subject.
 
 For the all-phase dashboard, completed-phase evidence, and historical progress
 log, see [progress-log.md](progress-log.md).
@@ -257,9 +259,9 @@ After meaningful work:
   Address, Housing, and Maps tabs while preserving the engine-backed records,
   localized content, async image guards, and existing Phase 5 checks. The
   x64 Debug WinUI target, focused Campus/ResourcePack engine tests (2/2), and
-  complete staged verifier pass. Personal details, teacher directories,
-  paired visual evidence, persistence checks, and x86 Debug/Release evidence
-  remain pending.
+  complete staged verifier pass. The step-1 and step-2 feature slices have
+  x64 implementation baselines; paired visual evidence, persistence checks,
+  and x86 Debug/Release evidence remain pending for their closure gates.
 
 - **2026-09-09 - Phase 6 Personal Details slice implemented.** Revision
   `f1f9ba7` adds the WinUI Personal Details page to the My Information route,
@@ -299,6 +301,19 @@ After meaningful work:
   target, focused GsTeam engine test (1/1), and complete staged verifier pass,
   including `--phase6-gs-team-test`, covering empty/create/invalid/update and
   no-database states. x86 and paired Qt/WinUI visual evidence remain open.
+
+- **2026-09-09 - Phase 6 class information slice implemented.** Revision
+  `951f272` adds the engine-backed Classes Details and Notes tabs with class
+  directory selection, class information create/edit/delete/discard, shared
+  `ClassInfoConfig` options and validation, teacher display, notes and
+  time-filler persistence, dirty-selection protection, and explicit
+  no-database/empty/error states. The existing Classes Pivot remains the owner
+  of Details, Roster, Speaking Evaluations, Analytics, and Notes, preserving
+  the tabbed-page motion contract recorded in the Phase 6 plan. The x64 Debug
+  WinUI target, focused ClassInfo/ClassRepository engine tests (2/2), and
+  complete staged verifier passed with
+  `--phase6-class-information-test`. Step-1 and step-2 x86, paired Qt/WinUI
+  visual, and table-parity evidence remain open; step 3 is now active.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
