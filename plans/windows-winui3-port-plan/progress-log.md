@@ -25,7 +25,7 @@ Last updated: 2026-09-09 (Asia/Seoul)
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Complete** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. The owner approved the five-scenario review, interactive review, the Phase 5 exception for missing Qt empty/populated/error fixtures, and the Qt-derived table-parity handoff. The x64 Release first-navigation gate passes with 20/20 valid samples. Phase 6 begins with Qt parity reconciliation. |
-| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7`, Korean Teacher `1baea21`, Native English Teacher `856ccf1`, GS Team `3a733a6`, class information `951f272`, calendar `33f33e6`, roster `3ed19f9`, schedule editor `a5f4593`, schedule import/testing classes `37ba09b`, speaking analytics `dc8a790`, speaking AI comments `b690203`, and speaking batch operations `45403aa` pass their x64 Debug implementation checks; step 7 substitute-prep/document workflows are next while x86, paired-visual, table-parity, and aggregate-verifier closure evidence remains open. |
+| [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7`, Korean Teacher `1baea21`, Native English Teacher `856ccf1`, GS Team `3a733a6`, class information `951f272`, calendar `33f33e6`, roster `3ed19f9`, schedule editor `a5f4593`, schedule import/testing classes `37ba09b`, speaking analytics `dc8a790`, speaking AI comments `b690203`, speaking batch operations `45403aa`, substitute preparation `2d52d9d`, and bundled-document planning `c8b8234` pass their x64 Debug implementation checks. Migration-order implementation steps 1-7 are complete; x86, paired-visual, table-parity, and aggregate-verifier closure evidence remains open before the Phase 6 exit review. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
 
@@ -338,6 +338,27 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
   `--phase4-semantic-test` hooks exited 0. Step 7 substitute-prep/document
   workflows are next; x86, paired Qt/WinUI visual, table-parity, and
   aggregate-verifier evidence remain open.
+
+- **2026-09-09 — Phase 6 substitute-preparation slice committed.** Revision
+  `2d52d9d` adds the engine-backed WinUI Sub Prep route with Important
+  Information, Schedule, and Class Information Pivot tabs, document-preview
+  data, editable settings, save/discard behavior, and a direct
+  `--phase6-sub-prep-test` hook. The tabs preserve the current sliding
+  transition and the Phase 6 tabbed-page motion note remains the reference for
+  future slices. The x64 Debug WinUI build passed with zero warnings/errors;
+  focused Sub Prep, Schedule, ClassInfo, and Roster engine tests passed 12/12;
+  and the Sub Prep plus retained Phase 4 hooks exited 0.
+
+- **2026-09-09 — Phase 6 bundled substitute-document planning committed.**
+  Revision `c8b8234` adds date and class selection, roster-template choice,
+  deterministic relative package-path planning, and a renderer-neutral planned
+  file list to the Sub Prep Schedule tab. The slice only plans output; PDF, ZIP,
+  printing, and Office execution remain Phase 7 adapter responsibilities. The
+  x64 Debug WinUI build passed with zero warnings/errors, focused Sub Prep
+  engine tests passed 4/4, and both the direct Sub Prep and retained Phase 4
+  hooks exited 0. Migration-order implementation steps 1-7 are complete;
+  x86, paired Qt/WinUI visual, table-parity, and aggregate-verifier closure
+  evidence remains open before the Phase 6 exit review.
 
 - **2026-09-08 — Phase 6 migration ledger activated.** The dashboard now
   records Phase 6 as **In progress** after the shared table-parity resource

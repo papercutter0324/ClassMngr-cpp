@@ -162,11 +162,23 @@ directory slices are also committed and pass their x64 Debug focused tests and
   print, and Office execution remains a Phase 7 adapter responsibility. Its
   x64 Debug build has zero warnings/errors, all 11 speaking-related engine
   tests pass, and the direct Phase 6 speaking plus retained Phase 4 hooks pass.
-  Step 6 implementation slices are complete; earlier x86, paired-visual,
-  table-parity, and aggregate-verifier evidence remains open.
-  Each slice is accepted and
-  committed independently with its engine, semantic, persistence,
-  paired-visual, and x86 evidence. Touch,
+  The substitute-preparation slice is committed at `2d52d9d`; it adds the
+  WinUI Sub Prep route with Important Information, Schedule, and Class
+  Information Pivot tabs, engine-backed document preview, editable settings,
+  save/discard behavior, and a direct `--phase6-sub-prep-test` hook. The
+  bundled-document planning slice is committed at `c8b8234`; it adds date and
+  class selection, roster-template selection, deterministic package-path
+  planning, and a renderer-neutral plan preview without performing output.
+  Both step-7 slices preserve the sliding tab transition recorded in the Phase
+  6 plan. The x64 Debug WinUI build has zero warnings/errors, the Sub Prep hook
+  and retained `--phase4-semantic-test` hook pass, and the focused Sub Prep
+  engine tests pass 4/4. Actual PDF, print, ZIP, and Office execution remains
+  a Phase 7 adapter responsibility. Phase 6 migration-order implementation
+  slices for steps 1-7 are complete; x86, paired-visual, table-parity, and
+  aggregate-verifier closure evidence remains open. Each implementation slice
+  is accepted and committed independently with its x64 engine and semantic
+  checks; the remaining evidence is tracked as phase-level closure work.
+  Touch,
 high-contrast, and accessibility automation remain out of scope for Phase 4.
 
 ## Phase 5 Completion Handoff
@@ -256,11 +268,11 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Continue with Phase 6 migration-order step 7: substitute-preparation and bundled-document
-   workflows in the order recorded in the active phase file.
-2. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
-   verifier evidence, then complete the Phase 6 exit review. Commit every
-   independently accepted slice and step with a `Phase 6 - ...` subject.
+1. Close the remaining Phase 6 x86, paired-visual, table-parity, and aggregate
+   verifier evidence, then complete the Phase 6 exit review.
+2. Commit every independently accepted closure slice or evidence step with a
+   `Phase 6 - ...` subject; keep the tabbed-page motion note as the reference
+   for any future in-page tab work.
 
 For the all-phase dashboard, completed-phase evidence, and historical progress
 log, see [progress-log.md](progress-log.md).
@@ -403,6 +415,28 @@ After meaningful work:
   `--phase6-speaking-evaluation-test` and retained `--phase4-semantic-test`
   hooks exited 0. Batch report operations remain for step 6; x86, paired
   Qt/WinUI visual, table-parity, and aggregate-verifier evidence remain open.
+
+- **2026-09-09 - Phase 6 substitute-preparation slice implemented.** Revision
+  `2d52d9d` adds the engine-backed WinUI Sub Prep route with Important
+  Information, Schedule, and Class Information Pivot tabs, document-preview
+  data, editable substitute settings, save/discard behavior, and a direct
+  `--phase6-sub-prep-test` hook. The three tabs preserve the sliding transition
+  recorded in the Phase 6 plan as the reference for future tabbed slices. The
+  x64 Debug WinUI target built with zero warnings/errors; the focused Sub Prep,
+  Schedule, ClassInfo, and Roster engine tests passed 12/12; and the Sub Prep
+  plus retained Phase 4 hooks exited 0. Bundled output remains deferred to the
+  following planning slice and, for actual PDF/print/Office execution, Phase 7.
+
+- **2026-09-09 - Phase 6 bundled substitute-document planning committed.**
+  Revision `c8b8234` adds date and class selection, roster-template choice,
+  deterministic relative package-path planning, and a renderer-neutral planned
+  file list to the Sub Prep Schedule tab. It does not create PDFs, ZIP files,
+  printed output, or Office documents; those remain Phase 7 adapter work. The
+  x64 Debug WinUI target built with zero warnings/errors, the focused Sub Prep
+  engine tests passed 4/4, and both the direct Sub Prep and retained Phase 4
+  hooks exited 0. Migration-order implementation steps 1-7 are now complete;
+  x86, paired Qt/WinUI visual, table-parity, and aggregate-verifier closure
+  evidence remains open.
 
 - **2026-09-08 - Phase 6 migration ledger activated.** The progress dashboard
   now reports Phase 6 as **In progress**. The active gate is migration-order
