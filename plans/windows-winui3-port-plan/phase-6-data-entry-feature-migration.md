@@ -58,6 +58,17 @@ prototype or feature step was already marked complete. A completed prototype
 may be reused as an interaction or performance baseline, but it does not close
 the corresponding Qt visual-parity row.
 
+## Tabbed-page motion
+
+Keep the current WinUI 3 sliding transition when users switch between tabs.
+For every future slice with an in-page tab set, use the standard WinUI tab
+control and its directional selection motion where practical; do not replace
+the interaction with static visibility toggles or abrupt content swaps. The
+transition must remain compatible with keyboard tab navigation, focus
+restoration, reduced-motion/platform accessibility settings, and retained page
+state. Record any product-approved exception in the slice evidence and keep
+the tab order aligned with the retained Qt information hierarchy.
+
 ## Per-Slice Requirements
 
 - Load, create, edit, validate, save/autosave, cancel, undo/redo where present,
