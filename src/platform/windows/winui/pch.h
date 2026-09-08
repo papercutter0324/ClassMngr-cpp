@@ -7,6 +7,11 @@
 #include <windows.h>
 #include <unknwn.h>
 
+// WinBase.h's zero-argument macro collides with the C++/WinRT ABI method.
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 #include <winrt/base.h>
 #include <winrt/Microsoft.UI.Dispatching.h>
 #include <winrt/Microsoft.UI.Xaml.h>
