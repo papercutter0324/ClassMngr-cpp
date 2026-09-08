@@ -1084,8 +1084,12 @@ bool MainWindow::runPhase5CampusChecks()
         return false;
     }
 
+    // Reproduce the user flow that previously left a cached no-database page
+    // visible: leave Campus Information, open the database, then navigate
+    // back to the cached page.
+    navigateTo(homePageId);
     m_openDatabase = std::move(*opened);
-    refreshCampusInformationPage();
+    navigateTo(campusInformationPageId);
     const bool emptyReady = m_campusInformationState == L"empty"
         && !m_campusList
         && static_cast<bool>(m_contentFrame.Content());
@@ -1190,7 +1194,7 @@ void MainWindow::preparePhase5CampusScenario(std::wstring_view scenario)
     m_currentDatabasePath.clear();
     m_dirtyState.markClean();
 
-    if (m_phase5CampusScenario != L"error")
+    if (!noDatabase && m_phase5CampusScenario != L"error")
     {
         auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
         if (!opened || *opened == nullptr)
@@ -2627,7 +2631,15 @@ void MainWindow::populatePage(
 {
     if (page.Content())
     {
-        if (pageId == homePageId && !m_engineVersionText)
+        // Campus Information depends on the active database.  A cached page
+        // may have been constructed before File > Open completed, so it must
+        // be rehydrated whenever navigation returns to it instead of
+        // retaining the previous no-database/empty state.
+        if (pageId == campusInformationPageId)
+        {
+            populateCampusInformationPage(page, true);
+        }
+        else if (pageId == homePageId && !m_engineVersionText)
         {
             populateHomePage(page);
         }

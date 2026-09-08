@@ -1,0 +1,103 @@
+{
+    "format":  "classmngr-phase5-paired-scenarios-v1",
+    "generatedAtUtc":  "2026-09-08T02:44:26.1914841Z",
+    "executable":  "C:\\Git\\ClassMngr-cpp\\dist\\ClassMngr-windows-winui-x64\\Debug\\ClassMngrWinUI.exe",
+    "qtArtifactRoot":  null,
+    "scenarios":  [
+                      {
+                          "pairedScenarioId":  "shell-startup",
+                          "ledgerId":  "page.personal-details",
+                          "state":  "empty",
+                          "fixtureId":  "no-database",
+                          "pairStatus":  "winui-captured-qt-evidence-missing",
+                          "qt":  {
+                                     "scenarioId":  "page.personal-details",
+                                     "artifact":  null
+                                 },
+                          "winui":  {
+                                        "scenarioName":  "phase5-shell-startup",
+                                        "argument":  null,
+                                        "metadata":  "phase5-shell-startup\\phase5-shell-startup.json",
+                                        "capture":  "phase5-shell-startup\\phase5-shell-startup.png",
+                                        "passed":  true,
+                                        "exitCode":  0
+                                    }
+                      },
+                      {
+                          "pairedScenarioId":  "feature.campus-information.no-database",
+                          "ledgerId":  "page.campus-dashboard",
+                          "state":  "no-database",
+                          "fixtureId":  "no-database",
+                          "pairStatus":  "winui-captured-qt-evidence-missing",
+                          "qt":  {
+                                     "scenarioId":  "page.campus-dashboard",
+                                     "artifact":  null
+                                 },
+                          "winui":  {
+                                        "scenarioName":  "campus-information-no-database",
+                                        "argument":  "--phase5-campus-no-database",
+                                        "metadata":  "campus-information-no-database\\campus-information-no-database.json",
+                                        "capture":  "campus-information-no-database\\campus-information-no-database.png",
+                                        "passed":  true,
+                                        "exitCode":  0
+                                    }
+                      },
+                      {
+                          "pairedScenarioId":  "feature.campus-information.empty",
+                          "ledgerId":  "page.campus-dashboard",
+                          "state":  "empty",
+                          "fixtureId":  "empty",
+                          "pairStatus":  "winui-captured-qt-evidence-missing",
+                          "qt":  {
+                                     "scenarioId":  "page.campus-dashboard",
+                                     "artifact":  null
+                                 },
+                          "winui":  {
+                                        "scenarioName":  "campus-information-empty",
+                                        "argument":  "--phase5-campus-empty",
+                                        "metadata":  "campus-information-empty\\campus-information-empty.json",
+                                        "capture":  "campus-information-empty\\campus-information-empty.png",
+                                        "passed":  true,
+                                        "exitCode":  0
+                                    }
+                      },
+                      {
+                          "pairedScenarioId":  "feature.campus-information.populated",
+                          "ledgerId":  "page.campus-dashboard",
+                          "state":  "populated",
+                          "fixtureId":  "phase5-campus-memory",
+                          "pairStatus":  "winui-captured-qt-evidence-missing",
+                          "qt":  {
+                                     "scenarioId":  "page.campus-dashboard",
+                                     "artifact":  null
+                                 },
+                          "winui":  {
+                                        "scenarioName":  "campus-information-populated",
+                                        "argument":  "--phase5-campus-populated",
+                                        "metadata":  "campus-information-populated\\campus-information-populated.json",
+                                        "capture":  "campus-information-populated\\campus-information-populated.png",
+                                        "passed":  true,
+                                        "exitCode":  0
+                                    }
+                      },
+                      {
+                          "pairedScenarioId":  "feature.campus-information.error",
+                          "ledgerId":  "page.campus-dashboard",
+                          "state":  "error",
+                          "fixtureId":  "phase5-campus-error",
+                          "pairStatus":  "winui-captured-qt-evidence-missing",
+                          "qt":  {
+                                     "scenarioId":  "page.campus-dashboard",
+                                     "artifact":  null
+                                 },
+                          "winui":  {
+                                        "scenarioName":  "campus-information-error",
+                                        "argument":  "--phase5-campus-error",
+                                        "metadata":  "campus-information-error\\campus-information-error.json",
+                                        "capture":  "campus-information-error\\campus-information-error.png",
+                                        "passed":  true,
+                                        "exitCode":  0
+                                    }
+                      }
+                  ]
+}

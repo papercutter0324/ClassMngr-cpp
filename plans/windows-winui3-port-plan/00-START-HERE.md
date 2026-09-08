@@ -233,6 +233,16 @@ After meaningful work:
 
 ## Current Phase Progress
 
+- **2026-09-08 - Phase 5 Campus database hydration regression fixed.** The
+  cached Campus Information page now re-queries `CampusRecordService` when
+  navigation returns after a database is opened, so a prior no-database or
+  empty page cannot mask records from the active `.tps` file. The no-database
+  scenario hook also no longer creates an unintended empty in-memory database.
+  The x64 Debug WinUI target rebuilt successfully; `--phase5-campus-test`
+  exited 0; fresh five-state captures validate; and an end-to-end launch with
+  `tests/fixtures/database-port/typical.tps` displayed its `Fixture Campus`
+  record on the Campus page.
+
 - **2026-09-08 - Phase 5 catalog fallback regression repaired and guarded.**
   Revision `27cf1d0` restores the WinUI-only `CampusInformationPage` context
   that was absent after the shared catalog refresh, preserving English fallback
