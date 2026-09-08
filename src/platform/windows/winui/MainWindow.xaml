@@ -274,8 +274,8 @@
                                 <NavigationViewItem
                                     x:Name="WorkspaceInformationNavigationItem"
                                     Content="My Information"
-                                    Tag="home"
-                                    AutomationProperties.Name="My Information workspace navigation item" />
+                                    Tag="personal_details"
+                                    AutomationProperties.Name="My Information personal details navigation item" />
                                 <NavigationViewItem
                                     x:Name="WorkspaceScheduleNavigationItem"
                                     Content="Schedule"

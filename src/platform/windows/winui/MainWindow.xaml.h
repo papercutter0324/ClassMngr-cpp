@@ -5,6 +5,7 @@
 
 #include "classmngr/engine/semantic_version.h"
 #include "classmngr/engine/campus_record.h"
+#include "classmngr/engine/personal_details_service.h"
 #include "classmngr/engine/validation_result.h"
 #include "winui_dialogs.h"
 #include "winui_localization.h"
@@ -100,6 +101,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase4SemanticChecks();
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
     [[nodiscard]] bool runPhase5CampusChecks();
+    [[nodiscard]] bool runPhase6PersonalDetailsChecks();
     void preparePhase5CampusScenario(std::wstring_view scenario);
     void startPhase5FirstNavigationMeasurement(std::function<void(bool)> completion);
     [[nodiscard]] bool openDatabasePath(std::wstring_view path);
@@ -224,6 +226,11 @@ private:
     void populateAboutPage(
         Microsoft::UI::Xaml::Controls::Page const& page
         );
+    void populatePersonalDetailsPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        bool refresh
+        );
+    void refreshPersonalDetailsPage();
     void populateCampusPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId,
@@ -243,6 +250,26 @@ private:
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
         );
+    void PersonalDetailsSaveButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void PersonalDetailsDiscardButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void PersonalDetailsZoomAvailability_Changed(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void PersonalDetailsPassword_Changed(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void PersonalDetailsSignatureMode_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
     void presentSelectedCampus(std::wstring_view pageId);
     winrt::fire_and_forget loadCampusImage(
         std::string logicalPath,
@@ -250,6 +277,10 @@ private:
         Microsoft::UI::Xaml::Controls::Image target
         );
     void NameTextBox_TextChanged(
+        Microsoft::UI::Xaml::Controls::TextBox const& sender,
+        Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+        );
+    void PersonalDetailsField_TextChanging(
         Microsoft::UI::Xaml::Controls::TextBox const& sender,
         Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
         );
@@ -331,6 +362,21 @@ private:
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveCurrentPageMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportCampusResourcesMenu{nullptr};
 
+    Microsoft::UI::Xaml::Controls::TextBox m_personalNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_personalCampusTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_personalZoomLoginIdTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::PasswordBox m_personalZoomPasswordBox{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox m_personalZoomNotAvailableCheck{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_personalSignatureModeCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_personalSignatureFontCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_personalTypedSignatureTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_personalStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_personalValidationText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_personalImageStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_personalSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_personalDiscardButton{nullptr};
+    classmngr::engine::PersonalDetails m_personalDetails;
+
     Microsoft::UI::Xaml::Controls::TextBlock m_engineVersionText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_nameTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_continueButton{nullptr};
@@ -392,6 +438,9 @@ private:
     bool m_phase5FirstNavigationAwaitingHome{};
     bool m_phase5FirstNavigationStarted{};
     bool m_phase5FirstNavigationCompleted{};
+    bool m_personalDetailsLoading{};
+    bool m_personalDetailsLoaded{};
+    bool m_personalDetailsDirty{};
 };
 
 } // namespace winrt::ClassMngrWinUI::implementation

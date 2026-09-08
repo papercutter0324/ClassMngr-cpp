@@ -1,9 +1,11 @@
 #include "pch.h"
 
 #include "MainWindow.xaml.h"
+#include "classmngr/engine/application_settings_service.h"
 #include "classmngr/engine/campus_record_service.h"
 #include "classmngr/engine/database_file_format.h"
 #include "classmngr/engine/open_database.h"
+#include "classmngr/engine/personal_details_service.h"
 #include "winui_build_info.h"
 #include "winui_identity.h"
 #include "winui_platform_services.h"
@@ -40,6 +42,7 @@ namespace
 {
 
 constexpr std::wstring_view homePageId = L"home";
+constexpr std::wstring_view personalDetailsPageId = L"personal_details";
 constexpr std::wstring_view classesPageId = L"classes";
 constexpr std::wstring_view classDetailsPageId = L"classes_details";
 constexpr std::wstring_view classRosterPageId = L"classes_roster";
@@ -195,6 +198,7 @@ std::string uniqueCampusResourceFileName(
 bool isKnownPageId(std::wstring_view pageId) noexcept
 {
     return pageId == homePageId
+        || pageId == personalDetailsPageId
         || pageId == classesPageId
         || pageId == classDetailsPageId
         || pageId == classRosterPageId
@@ -335,6 +339,11 @@ std::vector<std::wstring> pruneRecentDatabasePaths(
 std::wstring asWString(winrt::hstring const& value)
 {
     return std::wstring(value.c_str(), value.size());
+}
+
+std::wstring asWide(std::string_view value)
+{
+    return asWString(winrt::to_hstring(std::string(value)));
 }
 
 using JsonArray = winrt::Windows::Data::Json::JsonArray;
@@ -1693,6 +1702,73 @@ bool MainWindow::runPhase5CampusChecks()
         && resetReady;
 }
 
+bool MainWindow::runPhase6PersonalDetailsChecks()
+{
+    m_openDatabase.reset();
+    m_currentDatabasePath.clear();
+    m_dirtyState.markClean();
+    m_personalDetailsDirty = false;
+
+    navigateTo(personalDetailsPageId);
+    const bool noDatabaseReady =
+        m_currentPageId == personalDetailsPageId
+        && m_personalStatusText
+        && m_personalStatusText.Text() == L"No database open."
+        && m_personalSaveButton
+        && !m_personalSaveButton.IsEnabled();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
+    if (!noDatabaseReady || !opened || *opened == nullptr)
+    {
+        return false;
+    }
+
+    m_openDatabase = std::move(*opened);
+    refreshPersonalDetailsPage();
+    if (!m_personalDetailsLoaded || !m_personalNameTextBox)
+    {
+        return false;
+    }
+
+    m_personalNameTextBox.Text(L"홍길동");
+    m_personalCampusTextBox.Text(L"서울 캠퍼스");
+    m_personalZoomNotAvailableCheck.IsChecked(false);
+    m_personalZoomLoginIdTextBox.Text(L"teacher@example.test");
+    m_personalZoomPasswordBox.Password(L"비밀번호");
+    m_personalSignatureModeCombo.SelectedIndex(1);
+    m_personalTypedSignatureTextBox.Text(L"홍길동 서명");
+    m_personalSignatureFontCombo.SelectedIndex(2);
+    PersonalDetailsSaveButton_Click(
+        m_personalSaveButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+    if (m_personalDetailsDirty
+        || m_personalStatusText.Text() != L"Personal details saved.")
+    {
+        return false;
+    }
+
+    refreshPersonalDetailsPage();
+    const bool roundTripReady =
+        asWString(m_personalNameTextBox.Text()) == L"홍길동"
+        && asWString(m_personalCampusTextBox.Text()) == L"서울 캠퍼스"
+        && asWString(m_personalZoomLoginIdTextBox.Text())
+            == L"teacher@example.test"
+        && asWString(m_personalZoomPasswordBox.Password()) == L"비밀번호"
+        && m_personalSignatureModeCombo.SelectedIndex() == 1
+        && asWString(m_personalTypedSignatureTextBox.Text())
+            == L"홍길동 서명"
+        && m_personalSignatureFontCombo.SelectedIndex() == 2;
+
+    m_openDatabase.reset();
+    refreshPersonalDetailsPage();
+    const bool clearReady =
+        m_personalStatusText.Text() == L"No database open."
+        && !m_personalNameTextBox.IsEnabled()
+        && !m_personalSaveButton.IsEnabled();
+    return roundTripReady && clearReady;
+}
+
 void MainWindow::preparePhase5CampusScenario(std::wstring_view scenario)
 {
     static_cast<void>(preparePhase5CampusFixture(scenario));
@@ -2214,6 +2290,7 @@ void MainWindow::CloseDatabaseMenuItem_Click(
         m_statusText.Text(L"Database closed.");
     }
     refreshCampusInformationPage();
+    refreshPersonalDetailsPage();
     updateFileCommandState();
     saveShellState();
 }
@@ -2604,6 +2681,7 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
             m_statusText.Text(L"Database opened.");
         }
         refreshCampusInformationPage();
+        refreshPersonalDetailsPage();
         updateFileCommandState();
         saveShellState();
         return true;
@@ -2646,6 +2724,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
     refreshCampusInformationPage();
+    refreshPersonalDetailsPage();
 
     if (pathExists(candidate))
     {
@@ -2694,6 +2773,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
             m_statusText.Text(L"New database created.");
         }
         refreshCampusInformationPage();
+        refreshPersonalDetailsPage();
         updateFileCommandState();
         saveShellState();
         return true;
@@ -3242,8 +3322,12 @@ void MainWindow::NavigationView_SelectionChanged(
     }
 
     std::wstring pageId = boxedString(selectedItem.Tag());
-    if (selectedItem == m_workspaceInformationNavigationItem
-        || selectedItem == m_workspaceScheduleNavigationItem
+    if (selectedItem == m_workspaceInformationNavigationItem)
+    {
+        navigateTo(personalDetailsPageId);
+        return;
+    }
+    if (selectedItem == m_workspaceScheduleNavigationItem
         || selectedItem == m_workspaceCalendarNavigationItem)
     {
         navigateTo(homePageId);
@@ -3343,6 +3427,8 @@ void MainWindow::ContentFrame_Navigated(
     m_navigationView.SelectedItem(
         pageId == homePageId
             ? m_homeNavigationItem
+            : pageId == personalDetailsPageId
+                ? m_workspaceInformationNavigationItem
             : pageId == classesPageId
                 ? m_classesNavigationItem
                 : pageId == aboutPageId
@@ -3428,6 +3514,10 @@ void MainWindow::populatePage(
         {
             populateCampusPage(page, pageId, true);
         }
+        else if (pageId == personalDetailsPageId)
+        {
+            populatePersonalDetailsPage(page, true);
+        }
         else if (pageId == homePageId && !m_engineVersionText)
         {
             populateHomePage(page);
@@ -3438,6 +3528,10 @@ void MainWindow::populatePage(
     if (pageId == homePageId)
     {
         populateHomePage(page);
+    }
+    else if (pageId == personalDetailsPageId)
+    {
+        populatePersonalDetailsPage(page, false);
     }
     else if (isClassesPageId(pageId))
     {
@@ -3822,6 +3916,395 @@ void MainWindow::populateHomePage(
     page.Content(tabs);
 }
 
+void MainWindow::populatePersonalDetailsPage(
+    Microsoft::UI::Xaml::Controls::Page const& page,
+    bool refresh
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_personalNameTextBox)
+    {
+        auto scroll = ScrollViewer();
+        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+
+        auto root = StackPanel();
+        root.Padding(Thickness{32.0, 24.0, 32.0, 32.0});
+        root.Spacing(16.0);
+        root.MaxWidth(780.0);
+        root.HorizontalAlignment(HorizontalAlignment::Center);
+
+        auto title = TextBlock();
+        title.Text(L"My Details");
+        title.FontSize(24.0);
+        setAutomationName(title, L"My Details");
+        root.Children().Append(title);
+
+        auto description = TextBlock();
+        description.Text(
+            L"Manage your personal information, Zoom details, and signature."
+            );
+        description.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(description, L"Personal details description");
+        root.Children().Append(description);
+
+        m_personalStatusText = TextBlock();
+        m_personalStatusText.Text(L"Loading personal details...");
+        m_personalStatusText.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(m_personalStatusText, L"Personal details status");
+        root.Children().Append(m_personalStatusText);
+
+        m_personalValidationText = TextBlock();
+        m_personalValidationText.TextWrapping(TextWrapping::Wrap);
+        m_personalValidationText.Visibility(Visibility::Collapsed);
+        setAutomationName(
+            m_personalValidationText,
+            L"Personal details validation summary"
+            );
+        root.Children().Append(m_personalValidationText);
+
+        const auto makeTextBox = [this](
+            wchar_t const* header,
+            wchar_t const* automationName,
+            wchar_t const* placeholder
+            ) {
+            auto box = TextBox();
+            box.Header(box_value(hstring(header)));
+            box.PlaceholderText(placeholder);
+            box.MinWidth(320.0);
+            box.HorizontalAlignment(HorizontalAlignment::Stretch);
+            box.IsTabStop(true);
+            box.TextChanging({this, &MainWindow::PersonalDetailsField_TextChanging});
+            setAutomationName(box, automationName);
+            return box;
+        };
+
+        auto detailsCard = ClassMngrWinUISharedUX::buildCard({
+            L"My Information",
+            L"These values are stored in the active ClassMngr database.",
+            L"Personal details form"
+            });
+        m_personalNameTextBox = makeTextBox(
+            L"My Name",
+            L"Personal name",
+            L"Enter your name"
+            );
+        m_personalNameTextBox.TabIndex(0);
+        m_personalCampusTextBox = makeTextBox(
+            L"My Campus",
+            L"Personal campus",
+            L"Enter your campus"
+            );
+        m_personalCampusTextBox.TabIndex(1);
+        detailsCard.content.Children().Append(m_personalNameTextBox);
+        detailsCard.content.Children().Append(m_personalCampusTextBox);
+        root.Children().Append(detailsCard.root);
+
+        auto zoomCard = ClassMngrWinUISharedUX::buildCard({
+            L"Zoom",
+            L"Keep your Zoom sign-in details available to the desktop features.",
+            L"Personal Zoom details"
+            });
+        m_personalZoomLoginIdTextBox = makeTextBox(
+            L"Zoom Login ID",
+            L"Zoom login ID",
+            L"Enter your Zoom login ID"
+            );
+        m_personalZoomLoginIdTextBox.TabIndex(2);
+        m_personalZoomPasswordBox = PasswordBox();
+        m_personalZoomPasswordBox.Header(
+            box_value(hstring(L"Zoom Password"))
+            );
+        m_personalZoomPasswordBox.MinWidth(320.0);
+        m_personalZoomPasswordBox.HorizontalAlignment(
+            HorizontalAlignment::Stretch
+            );
+        m_personalZoomPasswordBox.IsTabStop(true);
+        m_personalZoomPasswordBox.TabIndex(3);
+        m_personalZoomPasswordBox.PasswordChanged(
+            {this, &MainWindow::PersonalDetailsPassword_Changed}
+            );
+        setAutomationName(m_personalZoomPasswordBox, L"Zoom password");
+
+        m_personalZoomNotAvailableCheck = CheckBox();
+        m_personalZoomNotAvailableCheck.Content(
+            box_value(hstring(L"Zoom is not available (N/A)"))
+            );
+        m_personalZoomNotAvailableCheck.IsTabStop(true);
+        m_personalZoomNotAvailableCheck.TabIndex(4);
+        m_personalZoomNotAvailableCheck.Checked(
+            {this, &MainWindow::PersonalDetailsZoomAvailability_Changed}
+            );
+        m_personalZoomNotAvailableCheck.Unchecked(
+            {this, &MainWindow::PersonalDetailsZoomAvailability_Changed}
+            );
+        setAutomationName(
+            m_personalZoomNotAvailableCheck,
+            L"Zoom not available"
+            );
+        zoomCard.content.Children().Append(m_personalZoomLoginIdTextBox);
+        zoomCard.content.Children().Append(m_personalZoomPasswordBox);
+        zoomCard.content.Children().Append(m_personalZoomNotAvailableCheck);
+        root.Children().Append(zoomCard.root);
+
+        auto signatureCard = ClassMngrWinUISharedUX::buildCard({
+            L"Signature",
+            L"Choose the stored signature mode. Typed signatures are editable in this slice.",
+            L"Personal signature form"
+            });
+        m_personalSignatureModeCombo = ComboBox();
+        m_personalSignatureModeCombo.Header(
+            box_value(hstring(L"Signature mode"))
+            );
+        m_personalSignatureModeCombo.MinWidth(320.0);
+        m_personalSignatureModeCombo.IsTabStop(true);
+        m_personalSignatureModeCombo.TabIndex(5);
+        auto imageMode = ComboBoxItem();
+        imageMode.Content(box_value(hstring(L"Image (existing image retained)")));
+        setAutomationName(imageMode, L"Image signature mode");
+        auto typedMode = ComboBoxItem();
+        typedMode.Content(box_value(hstring(L"Type")));
+        setAutomationName(typedMode, L"Typed signature mode");
+        m_personalSignatureModeCombo.Items().Append(imageMode);
+        m_personalSignatureModeCombo.Items().Append(typedMode);
+        m_personalSignatureModeCombo.SelectionChanged(
+            {this, &MainWindow::PersonalDetailsSignatureMode_SelectionChanged}
+            );
+        setAutomationName(
+            m_personalSignatureModeCombo,
+            L"Signature mode"
+            );
+
+        m_personalTypedSignatureTextBox = makeTextBox(
+            L"Type your signature",
+            L"Typed signature text",
+            L"Type your name"
+            );
+        m_personalTypedSignatureTextBox.TabIndex(6);
+        m_personalSignatureFontCombo = ComboBox();
+        m_personalSignatureFontCombo.Header(
+            box_value(hstring(L"Signature style"))
+            );
+        m_personalSignatureFontCombo.MinWidth(320.0);
+        m_personalSignatureFontCombo.IsTabStop(true);
+        m_personalSignatureFontCombo.TabIndex(7);
+        for (auto const& font : {
+                 std::pair{0, L"Just Another Hand"},
+                 std::pair{1, L"Caveat"},
+                 std::pair{2, L"Dancing Script"},
+                 std::pair{3, L"Pacifico"}
+             })
+        {
+            auto item = ComboBoxItem();
+            item.Content(box_value(hstring(font.second)));
+            item.Tag(box_value(font.first));
+            setAutomationName(item, font.second);
+            m_personalSignatureFontCombo.Items().Append(item);
+        }
+        m_personalSignatureFontCombo.SelectionChanged(
+            {this, &MainWindow::PersonalDetailsSignatureMode_SelectionChanged}
+            );
+        setAutomationName(
+            m_personalSignatureFontCombo,
+            L"Typed signature style"
+            );
+
+        m_personalImageStatusText = TextBlock();
+        m_personalImageStatusText.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(
+            m_personalImageStatusText,
+            L"Signature image status"
+            );
+        signatureCard.content.Children().Append(m_personalSignatureModeCombo);
+        signatureCard.content.Children().Append(m_personalTypedSignatureTextBox);
+        signatureCard.content.Children().Append(m_personalSignatureFontCombo);
+        signatureCard.content.Children().Append(m_personalImageStatusText);
+        root.Children().Append(signatureCard.root);
+
+        auto actions = StackPanel();
+        actions.Orientation(Orientation::Horizontal);
+        actions.Spacing(8.0);
+        m_personalSaveButton = Button();
+        m_personalSaveButton.Content(box_value(hstring(L"Save Changes")));
+        m_personalSaveButton.IsTabStop(true);
+        m_personalSaveButton.TabIndex(8);
+        m_personalSaveButton.Click(
+            {this, &MainWindow::PersonalDetailsSaveButton_Click}
+            );
+        setAutomationName(m_personalSaveButton, L"Save personal details");
+        m_personalDiscardButton = Button();
+        m_personalDiscardButton.Content(box_value(hstring(L"Discard Changes")));
+        m_personalDiscardButton.IsTabStop(true);
+        m_personalDiscardButton.TabIndex(9);
+        m_personalDiscardButton.Click(
+            {this, &MainWindow::PersonalDetailsDiscardButton_Click}
+            );
+        setAutomationName(
+            m_personalDiscardButton,
+            L"Discard personal detail changes"
+            );
+        actions.Children().Append(m_personalSaveButton);
+        actions.Children().Append(m_personalDiscardButton);
+        root.Children().Append(actions);
+
+        scroll.Content(root);
+        page.Content(scroll);
+    }
+
+    const auto setEditable = [this](bool enabled) {
+        const auto checkedValue = m_personalZoomNotAvailableCheck.IsChecked();
+        const bool zoomNotAvailable = checkedValue && checkedValue.Value();
+        if (m_personalNameTextBox)
+        {
+            m_personalNameTextBox.IsEnabled(enabled);
+        }
+        if (m_personalCampusTextBox)
+        {
+            m_personalCampusTextBox.IsEnabled(enabled);
+        }
+        if (m_personalZoomLoginIdTextBox)
+        {
+            m_personalZoomLoginIdTextBox.IsEnabled(
+                enabled && !zoomNotAvailable
+                );
+        }
+        if (m_personalZoomPasswordBox)
+        {
+            m_personalZoomPasswordBox.IsEnabled(
+                enabled && !zoomNotAvailable
+                );
+        }
+        if (m_personalZoomNotAvailableCheck)
+        {
+            m_personalZoomNotAvailableCheck.IsEnabled(enabled);
+        }
+        if (m_personalSignatureModeCombo)
+        {
+            m_personalSignatureModeCombo.IsEnabled(enabled);
+        }
+        if (m_personalTypedSignatureTextBox)
+        {
+            m_personalTypedSignatureTextBox.IsEnabled(
+                enabled && m_personalSignatureModeCombo.SelectedIndex() == 1
+                );
+        }
+        if (m_personalSignatureFontCombo)
+        {
+            m_personalSignatureFontCombo.IsEnabled(
+                enabled && m_personalSignatureModeCombo.SelectedIndex() == 1
+                );
+        }
+        if (m_personalSaveButton)
+        {
+            m_personalSaveButton.IsEnabled(enabled && m_personalDetailsDirty);
+        }
+        if (m_personalDiscardButton)
+        {
+            m_personalDiscardButton.IsEnabled(enabled && m_personalDetailsDirty);
+        }
+    };
+
+    if (!m_openDatabase)
+    {
+        m_personalDetailsLoading = true;
+        m_personalDetailsLoaded = false;
+        m_personalDetailsDirty = false;
+        m_personalNameTextBox.Text({});
+        m_personalCampusTextBox.Text({});
+        m_personalZoomLoginIdTextBox.Text({});
+        m_personalZoomPasswordBox.Password({});
+        m_personalZoomNotAvailableCheck.IsChecked(false);
+        m_personalSignatureModeCombo.SelectedIndex(0);
+        m_personalSignatureFontCombo.SelectedIndex(0);
+        m_personalTypedSignatureTextBox.Text({});
+        m_personalImageStatusText.Text(
+            L"No database is open. Open a .tps or .db file to edit personal details."
+            );
+        m_personalStatusText.Text(L"No database open.");
+        m_personalValidationText.Text({});
+        m_personalValidationText.Visibility(Visibility::Collapsed);
+        m_personalDetailsLoading = false;
+        setEditable(false);
+        return;
+    }
+
+    if (refresh && m_personalDetailsDirty)
+    {
+        m_personalStatusText.Text(L"Unsaved personal detail changes are retained.");
+        return;
+    }
+
+    m_personalDetailsLoading = true;
+    classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+    classmngr::engine::PersonalDetailsService service(settings);
+    const auto loaded = service.load();
+    if (!loaded)
+    {
+        m_personalDetailsLoaded = false;
+        m_personalDetailsDirty = false;
+        m_personalStatusText.Text(winrt::hstring(
+            L"Personal details could not be loaded: "
+            + asWide(loaded.error().message)
+            ));
+        m_personalValidationText.Text(L"The engine rejected the personal-details read.");
+        m_personalValidationText.Visibility(Visibility::Visible);
+        m_personalDetailsLoading = false;
+        setEditable(false);
+        return;
+    }
+
+    m_personalDetails = *loaded;
+    m_personalNameTextBox.Text(asWide(m_personalDetails.name));
+    m_personalCampusTextBox.Text(asWide(m_personalDetails.campus));
+    m_personalZoomLoginIdTextBox.Text(asWide(m_personalDetails.zoomLoginId));
+    m_personalZoomPasswordBox.Password(asWide(m_personalDetails.zoomPassword));
+    m_personalZoomNotAvailableCheck.IsChecked(m_personalDetails.zoomNotAvailable);
+    m_personalSignatureModeCombo.SelectedIndex(
+        m_personalDetails.signatureMode
+                == classmngr::engine::SignatureMode::Type
+            ? 1
+            : 0
+        );
+    m_personalTypedSignatureTextBox.Text(
+        asWide(m_personalDetails.typedSignatureText)
+        );
+    m_personalSignatureFontCombo.SelectedIndex(
+        m_personalDetails.typedSignatureFont >= 0
+            && m_personalDetails.typedSignatureFont < 4
+            ? m_personalDetails.typedSignatureFont
+            : 0
+        );
+    m_personalDetailsLoaded = true;
+    m_personalDetailsDirty = false;
+    m_personalStatusText.Text(L"Personal details loaded.");
+    m_personalValidationText.Text({});
+    m_personalValidationText.Visibility(Visibility::Collapsed);
+    m_personalImageStatusText.Text(
+        m_personalDetails.signatureImageBase64.empty()
+            ? L"Signature image selection will be added in a later slice."
+            : L"An existing signature image is retained by the engine; image selection is not available in this slice."
+        );
+    m_personalDetailsLoading = false;
+    setEditable(true);
+}
+
+void MainWindow::refreshPersonalDetailsPage()
+{
+    if (!m_contentFrame || m_currentPageId != personalDetailsPageId)
+    {
+        return;
+    }
+
+    const auto page = m_contentFrame.Content().try_as<
+        Microsoft::UI::Xaml::Controls::Page>();
+    if (page)
+    {
+        populatePersonalDetailsPage(page, true);
+    }
+}
+
 void MainWindow::populateClassesPage(
     Microsoft::UI::Xaml::Controls::Page const& page,
     std::wstring_view pageId
@@ -4016,6 +4499,229 @@ void MainWindow::NameTextBox_TextChanged(
     static_cast<void>(sender);
     static_cast<void>(arguments);
     m_dirtyState.markDirty();
+}
+
+void MainWindow::PersonalDetailsField_TextChanging(
+    Microsoft::UI::Xaml::Controls::TextBox const& sender,
+    Microsoft::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (m_personalDetailsLoading || !m_openDatabase)
+    {
+        return;
+    }
+
+    m_personalDetailsDirty = true;
+    m_dirtyState.markDirty();
+    if (m_personalStatusText)
+    {
+        m_personalStatusText.Text(L"Unsaved personal detail changes.");
+    }
+    if (m_personalSaveButton)
+    {
+        m_personalSaveButton.IsEnabled(true);
+    }
+    if (m_personalDiscardButton)
+    {
+        m_personalDiscardButton.IsEnabled(true);
+    }
+}
+
+void MainWindow::PersonalDetailsPassword_Changed(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (m_personalDetailsLoading || !m_openDatabase)
+    {
+        return;
+    }
+
+    m_personalDetailsDirty = true;
+    m_dirtyState.markDirty();
+    if (m_personalStatusText)
+    {
+        m_personalStatusText.Text(L"Unsaved personal detail changes.");
+    }
+    if (m_personalSaveButton)
+    {
+        m_personalSaveButton.IsEnabled(true);
+    }
+    if (m_personalDiscardButton)
+    {
+        m_personalDiscardButton.IsEnabled(true);
+    }
+}
+
+void MainWindow::PersonalDetailsZoomAvailability_Changed(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_personalZoomNotAvailableCheck)
+    {
+        return;
+    }
+
+    const auto checkedValue = m_personalZoomNotAvailableCheck.IsChecked();
+    const bool checked = checkedValue && checkedValue.Value();
+    if (!m_personalDetailsLoading)
+    {
+        if (checked)
+        {
+            m_personalZoomLoginIdTextBox.Text(L"N/A");
+            m_personalZoomPasswordBox.Password(L"N/A");
+        }
+        else
+        {
+            if (m_personalZoomLoginIdTextBox.Text() == L"N/A")
+            {
+                m_personalZoomLoginIdTextBox.Text({});
+            }
+            if (m_personalZoomPasswordBox.Password() == L"N/A")
+            {
+                m_personalZoomPasswordBox.Password({});
+            }
+        }
+    }
+
+    m_personalZoomLoginIdTextBox.IsEnabled(!checked && m_openDatabase);
+    m_personalZoomPasswordBox.IsEnabled(!checked && m_openDatabase);
+    if (!m_personalDetailsLoading && m_openDatabase)
+    {
+        m_personalDetailsDirty = true;
+        m_dirtyState.markDirty();
+        m_personalStatusText.Text(L"Unsaved personal detail changes.");
+        m_personalSaveButton.IsEnabled(true);
+        m_personalDiscardButton.IsEnabled(true);
+    }
+}
+
+void MainWindow::PersonalDetailsSignatureMode_SelectionChanged(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+    )
+{
+    static_cast<void>(arguments);
+    if (m_personalDetailsLoading || !m_openDatabase)
+    {
+        return;
+    }
+
+    if (sender == m_personalSignatureModeCombo)
+    {
+        const bool typed = m_personalSignatureModeCombo.SelectedIndex() == 1;
+        m_personalTypedSignatureTextBox.IsEnabled(typed);
+        m_personalSignatureFontCombo.IsEnabled(typed);
+        m_personalImageStatusText.Text(
+            typed
+                ? L"Typed signature values are stored with the personal details."
+                : L"Existing image data is retained; image selection is not available in this slice."
+            );
+    }
+
+    m_personalDetailsDirty = true;
+    m_dirtyState.markDirty();
+    m_personalStatusText.Text(L"Unsaved personal detail changes.");
+    m_personalSaveButton.IsEnabled(true);
+    m_personalDiscardButton.IsEnabled(true);
+}
+
+void MainWindow::PersonalDetailsSaveButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        m_personalStatusText.Text(L"No database open; personal details were not saved.");
+        return;
+    }
+
+    const auto name = asWString(m_personalNameTextBox.Text());
+    if (name.find_first_not_of(L" \t\r\n") == std::wstring::npos)
+    {
+        m_personalValidationText.Text(L"Your name is required.");
+        m_personalValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        m_personalNameTextBox.Focus(
+            Microsoft::UI::Xaml::FocusState::Programmatic
+            );
+        return;
+    }
+
+    classmngr::engine::PersonalDetails draft = m_personalDetails;
+    draft.name = asUtf8(name);
+    draft.campus = asUtf8(asWString(m_personalCampusTextBox.Text()));
+    draft.zoomLoginId = asUtf8(asWString(m_personalZoomLoginIdTextBox.Text()));
+    draft.zoomPassword = asUtf8(
+        asWString(m_personalZoomPasswordBox.Password())
+        );
+    const auto checkedValue = m_personalZoomNotAvailableCheck.IsChecked();
+    draft.zoomNotAvailable = checkedValue && checkedValue.Value();
+    draft.signatureMode =
+        m_personalSignatureModeCombo.SelectedIndex() == 1
+            ? classmngr::engine::SignatureMode::Type
+            : classmngr::engine::SignatureMode::Image;
+    draft.typedSignatureText = asUtf8(
+        asWString(m_personalTypedSignatureTextBox.Text())
+        );
+    draft.typedSignatureFont = m_personalSignatureFontCombo.SelectedIndex();
+
+    classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+    classmngr::engine::PersonalDetailsService service(settings);
+    const auto saved = service.save(draft);
+    if (!saved)
+    {
+        m_personalStatusText.Text(winrt::hstring(
+            L"Personal details could not be saved: "
+            + asWide(saved.error().message)
+            ));
+        m_personalValidationText.Text(L"The engine rejected the personal-details write.");
+        m_personalValidationText.Visibility(
+            Microsoft::UI::Xaml::Visibility::Visible
+            );
+        return;
+    }
+
+    m_personalDetails = std::move(draft);
+    m_personalDetailsLoaded = true;
+    m_personalDetailsDirty = false;
+    m_dirtyState.markClean();
+    m_personalStatusText.Text(L"Personal details saved.");
+    m_personalValidationText.Text({});
+    m_personalValidationText.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    m_personalSaveButton.IsEnabled(false);
+    m_personalDiscardButton.IsEnabled(false);
+    updateFileCommandState();
+}
+
+void MainWindow::PersonalDetailsDiscardButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (!m_openDatabase)
+    {
+        return;
+    }
+
+    m_personalDetailsDirty = false;
+    m_dirtyState.markClean();
+    refreshPersonalDetailsPage();
 }
 
 void MainWindow::populateAboutPage(

@@ -341,6 +341,10 @@ void App::OnLaunched(
         activation,
         L"--phase5-campus-test"
         );
+    const bool phase6PersonalDetailsTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase6-personal-details-test"
+        );
     const bool phase5CampusEmpty = ClassMngrWinUILifecycle::hasArgument(
         activation,
         L"--phase5-campus-empty"
@@ -359,9 +363,10 @@ void App::OnLaunched(
         );
     if (smokeTest || inputTest || themeTest || dpiTest || navigationTest
         || viewModelTest || localizationTest || dialogTest || threadingTest
-        || semanticTest || phase4SemanticTest || phase5CampusTest)
+        || semanticTest || phase4SemanticTest || phase5CampusTest
+        || phase6PersonalDetailsTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -432,6 +437,10 @@ void App::OnLaunched(
             else if (phase5CampusTest)
             {
                 passed = mainWindow->runPhase5CampusChecks();
+            }
+            else if (phase6PersonalDetailsTest)
+            {
+                passed = mainWindow->runPhase6PersonalDetailsChecks();
             }
             scheduleTestExit(m_window, passed);
         };
