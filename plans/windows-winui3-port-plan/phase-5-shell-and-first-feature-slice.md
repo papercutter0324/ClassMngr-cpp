@@ -35,8 +35,12 @@ starts, record the table-parity handoff and revisit any table-like list or
 detail surface already implemented, including its density, selection, focus,
 empty/error states, localization, and DPI behavior. Use the shared
 [WinUI table layout and style parity plan](../../docs/porting/windows-winui/table-parity-plan.md);
-do not treat the existing prototype captures as acceptance evidence for the
-production table families.
+the Phase 5 handoff is recorded in
+[phase5-table-parity-handoff.md](../../docs/porting/windows-winui/phase5-table-parity-handoff.md).
+Do not treat the existing prototype captures as acceptance evidence for the
+production table families, and do not call the current Campus list/detail
+geometry parity-accepted until it has been reconciled with the retained Qt
+selector-plus-tabbed-form design or has a separate approved exception.
 
 ## File-dialog decision
 
@@ -47,8 +51,8 @@ save, import, export, and directory-selection slices must use the matching
 native picker instead of porting the Qt-only `QFileDialog` customization and
 icon/sidebar styling. The current Phase 5 slice implements the create,
 save/export, close, and folder-export paths through those native boundaries;
-their interactive picker and unsaved-change review remains part of the exit
-gate.
+the owner-approved interactive picker and unsaved-change review is recorded in
+the [Phase 5 exit review](../../docs/porting/windows-winui/phase5-exit-review.md).
 
 ## Validation
 
@@ -57,8 +61,10 @@ gate.
 - Keyboard, Korean IME preservation, focus restoration, DPI, text scaling,
   and screen-reader semantics are tested where applicable.
 - The selected page uses engine use cases and cannot issue ad hoc SQL.
-- Paired evidence confirms equivalent content and workflow without requiring
-  pixel-identical Qt styling.
+- Paired evidence confirms retained Qt content-area hierarchy, geometry,
+  density, styling, and workflow. Native WinUI chrome differences are
+  documented separately; the current list/detail prototype is not a waiver of
+  Qt-derived visual parity.
 
 ## Exit Gate
 

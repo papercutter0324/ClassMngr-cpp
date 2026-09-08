@@ -37,6 +37,10 @@ geometry pass first:
 1. Reopen the completed Phase 4 table prototypes and the Phase 5 read-only
    slice. Establish the retained-Qt inventory, baseline captures, parity
    matrix, shared WinUI table resources, and row/header/cell template pattern.
+   Start from the [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md):
+   its measured Qt widths, headers, borders, shading, density, and the
+   selector-plus-tabbed-form review are the baseline. The current Campus
+   list/detail prototype is not accepted until that review is reconciled.
 2. Apply the shared pattern to roster tables, including grouped headers,
    validation, selection, clipboard, transfer, row movement, and editing.
 3. Apply it to schedule tables, including time/day geometry, slot states,

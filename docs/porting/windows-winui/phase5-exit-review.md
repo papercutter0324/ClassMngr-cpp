@@ -8,20 +8,23 @@ implemented. Host-level x64/x86 Debug/Release builds, staged verifiers,
 interactive WinUI captures, and x64 runtime measurements are recorded. The
 shared catalog bridge now preserves the WinUI-only Campus Information context
 and fails generation early if its required fallback keys are removed. The
-remaining acceptance work is complete paired Qt coverage or an approved
-exception, owner review, and the final picker/unsaved-change, keyboard/Korean
-IME, focus, DPI, and accessibility review.
+The owner decisions recorded on 2026-09-08 approve the five captured WinUI
+scenarios, approve the interactive desktop review, and approve an explicit
+Phase 5 exception for the missing Qt empty/populated/error fixtures. The
+remaining gate work is the agreed first-navigation measurement and the
+Phase 5-to-6 table-parity handoff; neither approval waives the requirement for
+Qt-derived visual parity in Phase 6.
 
 ## Implementation and evidence matrix
 
 | Gate | Current result | Evidence or remaining action |
 | --- | --- | --- |
 | Shell, startup, menu/sidebar, navigation history, theme, language, and dirty/error state | Implemented and staged-verified | Existing Phase 3/4 semantic and staged evidence remains the baseline. The latest Phase 5 source is included in the four fresh x64/x86 Debug/Release staged verifier passes. |
-| Database create/open/recent and native picker policy | Implemented | `FileOpenPicker`, `FileSavePicker`, and `FolderPicker` are wired through engine/file-system boundaries. Latest WinUI translation units pass strict direct MSVC compilation. Interactive picker/unsaved-change review remains part of the final desktop pass. |
-| Campus Information read-only feature | Implemented and captured | Uses `CampusRecordService`, retains list/detail state, renders all record fields, loads optional staged map images through `WindowsResourceProvider`, and localizes the feature catalogs. The shared `.ts` to `.resw` bridge requires the `CampusInformationPage` fallback keys so a catalog refresh cannot silently remove the feature resources. Focused engine tests, staged Phase 5 checks, and five WinUI scenario sidecars pass. Owner visual review remains. |
-| Paired Qt/WinUI scenarios | WinUI captured; Qt coverage partial | The [paired-scenario manifest](../../../artifacts/phase5/paired-20260908-x64-debug-clean2/phase5-paired-scenarios.json) covers startup, no-database, empty, populated, and error. All five WinUI sidecars validate; the startup and no-database records link to matching Qt evidence. The empty, populated, and error records explicitly report missing matching Qt fixtures. Obtain owner review and either add those Qt fixtures or record an approved exception. |
+| Database create/open/recent and native picker policy | Implemented; interactive review approved | `FileOpenPicker`, `FileSavePicker`, and `FolderPicker` are wired through engine/file-system boundaries. Latest WinUI translation units pass strict direct MSVC compilation. The owner-approved picker and unsaved-change review is recorded below. |
+| Campus Information read-only feature | Implemented and captured; owner review approved | Uses `CampusRecordService`, retains list/detail state, renders all record fields, loads optional staged map images through `WindowsResourceProvider`, and localizes the feature catalogs. The shared `.ts` to `.resw` bridge requires the `CampusInformationPage` fallback keys so a catalog refresh cannot silently remove the feature resources. Focused engine tests, staged Phase 5 checks, and five WinUI scenario sidecars pass. The capture review is approved as Phase 5 evidence; the current list/detail geometry is still subject to the Qt-derived handoff in [phase5-table-parity-handoff.md](phase5-table-parity-handoff.md). |
+| Paired Qt/WinUI scenarios | WinUI captured; approved Qt-evidence exception | The [paired-scenario manifest](../../../artifacts/phase5/paired-20260908-x64-debug-clean2/phase5-paired-scenarios.json) covers startup, no-database, empty, populated, and error. All five WinUI sidecars validate; startup and no-database link to matching Qt evidence. The owner-approved exception in this review accepts the missing matching Qt fixtures for empty, populated, and error for the Phase 5 gate only. It does not waive Phase 6 table/list-detail parity or require treating a missing Qt artifact as a visual match. |
 | Cold/warm startup and first paint | Captured for x64 Debug/Release | The [Debug report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-debug.json) and [Release report](../../../artifacts/phase5/measurements-20260908-x64/phase5-measurement-x64-release.json) contain three successful iterations each. Visible-window timing is explicitly a first-paint proxy; it is not the Phase 0 window-constructed or ready checkpoint. |
-| First navigation | Tooling-ready proxy | The requested Campus launch argument records a scenario-ready proxy. Phase 0 leaves the first-navigation cap to be agreed after representative capture, so no pass/fail claim is made. |
+| First navigation | Terra High recommendation recorded; measurement pending | Recommended x64 Release gate: 20 independent fresh-process runs from rendered Home with a populated in-memory Campus fixture and no Campus page in the Frame cache; start immediately before `Frame.Navigate`, end at the first rendered frame with the populated list, selected detail panel, and expected record count. Use p95 as the 19th sorted sample; do not discard outliers. Provisional guardrails are p95 `<= 500 ms` and maximum `<= 750 ms`; optional map-image completion is asynchronous and excluded. The final Phase 0 cap remains the same-definition Qt p95 plus 20% once a Qt baseline exists. |
 | Resize, memory, and handles | Captured for x64 Debug/Release | Debug: cold visible 207 ms, warm visible 184-190 ms, working set 126.8-127.8 MiB, private bytes 109.2-110.6 MiB, and resize latency 0.1-11.9 ms. Release: cold visible 207 ms, warm visible 184-192 ms, working set 124.4-125.2 MiB, private bytes 107.1-108.6 MiB, and resize latency 0.1-6.2 ms. All iterations closed cleanly; the evaluated 200 MiB steady-state working-set target passes. |
 | x64 WinUI stage | Passed on host-level build | Host-level x64 Debug and Release targets build successfully, stage campus resources correctly, and pass the complete Phase 1-5 staged verifier. The restricted local sandbox still reproduces the documented MIDL/FileTracker `E_ACCESSDENIED` failure. |
 | x86 engine lanes | Passed | Focused `ClassMngrEngineCampusRecordServiceTests` passed in x86 Debug and Release. |
@@ -70,10 +73,61 @@ static `Microsoft.Build.Utilities.FileTracker` initialization; the workaround
 and required host permissions are recorded in
 [`00-START-HERE.md`](../../../plans/windows-winui3-port-plan/00-START-HERE.md).
 
+## Owner decisions recorded 2026-09-08
+
+The owner-approved decisions for the remaining Phase 5 criteria are:
+
+1. The current paired-evidence state is approved through an explicit exception:
+   the missing Qt empty, populated, and error fixtures are accepted for the
+   Phase 5 gate. Startup and no-database still retain their matching Qt links.
+2. The five captured WinUI scenarios in the paired manifest are approved for
+   the recorded Phase 5 evidence review.
+3. Interactive review is approved for native pickers, unsaved-change behavior,
+   keyboard and Korean IME behavior, focus restoration, DPI, and accessibility.
+
+These are owner decisions, not claims that the missing Qt files exist or that
+the current Campus list/detail prototype already matches the retained Qt
+layout.
+
+## First-navigation recommendation
+
+The Terra High recommendation is to use the following repeatable checkpoint:
+
+- Gate configuration: x64 Release only; Debug and x86 are diagnostic lanes.
+- Start from a rendered Home page in a fresh process with a deterministic,
+  populated in-memory Campus fixture already prepared and no Campus page in
+  the `Frame` cache.
+- Start the timer immediately before `Frame.Navigate` to Campus Information.
+- Stop at the first `CompositionTarget::Rendering` callback after navigation
+  has set the current page, synchronously populated the Campus list and
+  selected detail panel, and exposed the expected record count.
+- Run 20 independent samples. Sort them and use sample 19 as p95. Any timeout,
+  navigation failure, semantic-readiness mismatch, failed close, or short
+  sample set fails the measurement; retain raw samples and failures.
+- Use p95 `<= 500 ms` and maximum `<= 750 ms` as the provisional Phase 5
+  guardrails. The optional map image is deferred work and is not part of the
+  readiness checkpoint.
+
+The current `scenarioReadyProxyMs` values are visible-window observations and
+must not be substituted for this navigation-ready measurement. The final cap
+still needs a directly comparable Qt first-navigation capture and the Phase 0
+`Qt p95 + 20%` rule.
+
+## Table-parity handoff
+
+The required handoff is recorded in
+[phase5-table-parity-handoff.md](phase5-table-parity-handoff.md). It documents
+the Qt Campus selector/tab/form geometry and the retained Qt table-family
+contracts for roster, speaking evaluation, schedule, staff directory, and
+analytics ranking. It also records the current WinUI Campus list/detail values
+as prototype-only values. Review and reconcile that handoff before Phase 6
+begins; the current Campus surface is not a parity-accepted table/list-detail
+row.
+
 ## Exit decision
 
-Do not mark Phase 5 complete or begin Phase 6. The implementation and runtime
-work are sufficiently recorded for owner review, but the exit gate still needs
-the missing paired Qt fixtures (or an explicit approved exception), review of
-the five captured WinUI scenarios, and interactive verification of picker and
-unsaved-change behavior, keyboard/Korean IME, focus, DPI, and accessibility.
+Do not mark Phase 5 complete or begin Phase 6 yet. Criteria 1–3 are now
+approved and recorded above. The first-navigation recommendation still needs
+to be measured, and the Qt-derived table-parity handoff must be reviewed and
+reconciled with the existing Campus list/detail prototype before Phase 6 can
+start.

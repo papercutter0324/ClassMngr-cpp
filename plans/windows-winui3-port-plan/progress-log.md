@@ -24,7 +24,7 @@ Last updated: 2026-09-08 (Asia/Seoul)
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Complete** | Portable engine extraction, retained adapter cleanup, seven-lane fixture evidence, and the complete `PASS` aggregate are accepted. The `ApplicationServices::dataService()` facade is retired; focused Windows Qt lifecycle and migrated UI targets pass. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Complete** | Phase 3 exit gate passed on Windows x64: all ten sequence items have dedicated commits, correction commit `db50929` stabilizes unpackaged resources and lifecycle timing, the full staged verifier passes, and passed semantic/visual evidence is recorded under `artifacts/phase3/windows-x64-winui-debug-clean/`. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Complete** | Exit gate accepted 2026-09-07: implementation, semantic/input evidence, owner-confirmed Korean IME and DPI, and the three-repetition x64 Release large-data gate pass. The full Qt table layout/style parity review is a required Phase 6 follow-up. See the [Phase 4 exit review](../../docs/porting/windows-winui/phase4-exit-review.md). |
-| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. Matching Qt fixtures for empty/populated/error, owner review, and final interaction review remain. |
+| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **In progress** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. The owner approved the five-scenario review, interactive review, and a Phase 5 exception for missing Qt empty/populated/error fixtures. First-navigation measurement and the Qt-derived table-parity handoff remain. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
@@ -202,6 +202,18 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
 [`docs/porting/windows-winui`](../../docs/porting/windows-winui/README.md).
 
 ## Historical Progress Log
+
+- **2026-09-08 — Phase 5 owner decisions and table handoff recorded.** The
+  owner approved the five captured WinUI scenarios, the interactive picker,
+  unsaved-change, keyboard/Korean IME, focus, DPI, and accessibility review,
+  and an explicit Phase 5 exception for missing Qt empty/populated/error
+  fixtures. Terra High recommended a 20-sample x64 Release first-navigation
+  checkpoint with provisional p95/max guardrails of 500/750 ms. The
+  [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md)
+  records the retained Qt Campus selector/tab/form geometry and table-family
+  widths, headers, borders, shading, density, and state behavior. Phase 5
+  remains in progress until the navigation measurement and handoff
+  reconciliation are accepted.
 
 - **2026-09-07 — Phase 4 exit review accepted.** The shared UX and high-risk
   control implementation sequence was reviewed through `62f247f`, with the

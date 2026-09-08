@@ -16,6 +16,10 @@ WinUI window chrome and unavoidable platform-control differences may remain
 when they are documented and do not change the user's workflow or information
 hierarchy.
 
+The Phase 5 handoff that applies these rules to the existing Campus
+surface—and records the retained Qt widths, headers, borders, shading, and
+state contracts—is [phase5-table-parity-handoff.md](phase5-table-parity-handoff.md).
+
 ## Qt baseline inventory
 
 Before implementing a table family, record its retained-Qt baseline and link

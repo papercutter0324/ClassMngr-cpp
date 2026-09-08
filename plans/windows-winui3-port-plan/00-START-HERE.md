@@ -110,10 +110,12 @@ paired-scenario hooks cover startup, no-database, empty, populated, and error
 states. The
 paired-scenario manifest, WinUI captures, x64 runtime measurements, and
 x64/x86 Debug/Release host builds are recorded. Qt evidence is complete only
-for startup/no-database; empty/populated/error need matching Qt fixtures or an
-approved exception. Owner review and interactive picker/unsaved-change,
-keyboard/Korean IME, focus, DPI, and accessibility review remain. Touch,
-high-contrast, and
+for startup/no-database; the owner-approved Phase 5 exception covers the
+missing empty/populated/error Qt fixtures. Owner review of all five WinUI
+scenarios and interactive picker/unsaved-change, keyboard/Korean IME, focus,
+DPI, and accessibility review are approved. The Terra first-navigation
+recommendation, its measurement, and the Qt-derived table-parity handoff
+remain before the phase can advance. Touch, high-contrast, and
 accessibility automation remain out of
 scope for Phase 4.
 
@@ -121,8 +123,8 @@ scope for Phase 4.
 
 Resume from commit `8d11eec` (`Phase 5 - Guard required WinUI resources`).
 Host-level x64/x86 Debug/Release builds and staged verification are complete;
-the remaining work is owner acceptance of the recorded evidence and the
-unresolved paired-Qt and interaction-review gates.
+the remaining work is the first-navigation measurement and reconciliation of
+the Qt-derived table-parity handoff with the Phase 5 Campus surface.
 
 Finished Phase 5 work:
 
@@ -197,18 +199,14 @@ collecting runtime evidence.
 
 Next work, in order:
 
-1. Obtain owner review of the five recorded WinUI scenarios and their paired
-   manifest. Add matching Qt empty/populated/error fixtures, or record an
-   explicitly approved exception for the missing Qt evidence.
-2. Complete interactive review of native picker and unsaved-change behavior,
-   keyboard/Korean IME, focus, DPI, and accessibility; also decide the
-   first-navigation cap that Phase 0 left open.
-3. Record the [table layout and style parity plan](../../docs/porting/windows-winui/table-parity-plan.md)
-   as the first Phase 6 shared work item; revisit the completed Phase 4
-   prototypes and Phase 5 read-only list/detail surface before accepting any
-   table-heavy feature slice.
-4. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
-   gate and paired evidence are accepted.
+1. Run the [Terra first-navigation recommendation](../../docs/porting/windows-winui/phase5-exit-review.md#first-navigation-recommendation)
+   in x64 Release: 20 independent runs, p95 as sample 19, provisional
+   p95 `<= 500 ms`, maximum `<= 750 ms`, and no discarded failures.
+2. Review the [Phase 5 table-parity handoff](../../docs/porting/windows-winui/phase5-table-parity-handoff.md)
+   against the retained Qt table families and reconcile the current Campus
+   selector/tab/form design before starting any Phase 6 table-heavy slice.
+3. Do not mark Phase 5 complete or begin Phase 6 until the phase-file exit
+   gate, first-navigation evidence, and table-parity handoff are accepted.
 
 For the all-phase dashboard, completed-phase evidence, and historical progress
 log, see [progress-log.md](progress-log.md).
