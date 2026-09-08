@@ -367,6 +367,10 @@ void App::OnLaunched(
         activation,
         L"--phase6-calendar-test"
         );
+    const bool phase6RosterTest = ClassMngrWinUILifecycle::hasArgument(
+        activation,
+        L"--phase6-roster-test"
+        );
     const bool phase5CampusEmpty = ClassMngrWinUILifecycle::hasArgument(
         activation,
         L"--phase5-campus-empty"
@@ -388,9 +392,10 @@ void App::OnLaunched(
         || semanticTest || phase4SemanticTest || phase5CampusTest
         || phase6PersonalDetailsTest || phase6KoreanTeacherTest
         || phase6NativeEnglishTeacherTest || phase6GsTeamTest
-        || phase6ClassInformationTest || phase6CalendarTest)
+        || phase6ClassInformationTest || phase6CalendarTest
+        || phase6RosterTest)
     {
-        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest, phase6NativeEnglishTeacherTest, phase6GsTeamTest, phase6ClassInformationTest, phase6CalendarTest]() {
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest, navigationTest, viewModelTest, localizationTest, dialogTest, threadingTest, semanticTest, phase4SemanticTest, phase5CampusTest, phase6PersonalDetailsTest, phase6KoreanTeacherTest, phase6NativeEnglishTeacherTest, phase6GsTeamTest, phase6ClassInformationTest, phase6CalendarTest, phase6RosterTest]() {
             auto* mainWindow = winrt::get_self<MainWindow>(
                 m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
                 );
@@ -494,6 +499,17 @@ void App::OnLaunched(
             {
                 passed = mainWindow->runPhase6CalendarChecks();
                 const auto failureMask = mainWindow->phase6CalendarFailureMask();
+                scheduleTestExit(
+                    m_window,
+                    passed,
+                    ERROR_INVALID_DATA + failureMask
+                    );
+                return;
+            }
+            else if (phase6RosterTest)
+            {
+                passed = mainWindow->runPhase6RosterChecks();
+                const auto failureMask = mainWindow->phase6RosterFailureMask();
                 scheduleTestExit(
                     m_window,
                     passed,
