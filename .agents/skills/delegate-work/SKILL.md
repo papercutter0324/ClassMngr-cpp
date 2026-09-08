@@ -32,7 +32,7 @@ Spark is optional. If it is unavailable, unsupported, rate-limited, or fails to 
 
 Default for normal bounded implementation.
 
-Use when the task requires meaningful coding judgement but Sol has already defined the architecture, scope and behaviour.
+Use Luna Max when the task requires meaningful coding judgement but Sol has already defined the architecture, scope and behaviour.
 
 ### terra-worker
 
