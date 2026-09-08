@@ -22,6 +22,7 @@
 #include "classmngr/engine/schedule_report.h"
 #include "classmngr/engine/sub_prep_class_information.h"
 #include "classmngr/engine/sub_prep_document.h"
+#include "classmngr/engine/sub_prep_package.h"
 #include "classmngr/engine/teacher.h"
 #include "classmngr/engine/testing_block.h"
 #include "classmngr/engine/testing_class.h"
@@ -605,6 +606,7 @@ private:
     void discardSubPrepPage();
     void updateSubPrepActions();
     void markSubPrepDirty();
+    void planSubPrepPackage();
 
     [[nodiscard]] std::wstring selectedPageId() const;
     [[nodiscard]] bool ensureHomePage();
@@ -1039,12 +1041,21 @@ private:
     Microsoft::UI::Xaml::Controls::ListView m_subPrepScheduleList{nullptr};
     Microsoft::UI::Xaml::Controls::ListView m_subPrepClassInformationList{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_subPrepDocumentSummaryText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_subPrepPackageUserNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_subPrepPackageDatesTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_subPrepPackageRosterTemplateCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_subPrepPackageClassesList{nullptr};
+    std::vector<Microsoft::UI::Xaml::Controls::CheckBox> m_subPrepPackageClassChecks;
+    Microsoft::UI::Xaml::Controls::Button m_subPrepPackagePlanButton{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_subPrepPackageStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView m_subPrepPackagePathsList{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_subPrepSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_subPrepDiscardButton{nullptr};
     classmngr::engine::SubPrepDocument m_subPrepDocument;
     std::vector<classmngr::engine::Classroom> m_subPrepClasses;
     std::vector<classmngr::engine::SubPrepSourceClass> m_subPrepSourceClasses;
     std::vector<classmngr::engine::SubPrepTeacherGroup> m_subPrepClassInformation;
+    classmngr::engine::SubPrepPackagePlan m_subPrepPackagePlan;
     bool m_subPrepLoading{};
     bool m_subPrepDirty{};
     uint32_t m_phase6SubPrepFailureMask{};

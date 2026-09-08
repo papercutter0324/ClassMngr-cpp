@@ -31,6 +31,7 @@
 #include "classmngr/engine/speaking_evaluation_validator.h"
 #include "classmngr/engine/sub_prep_class_information.h"
 #include "classmngr/engine/sub_prep_document.h"
+#include "classmngr/engine/sub_prep_package.h"
 #include "classmngr/engine/teacher_service.h"
 #include "classmngr/engine/testing_block_service.h"
 #include "classmngr/engine/testing_class_service.h"
@@ -2345,6 +2346,46 @@ bool MainWindow::runPhase6SubPrepChecks()
         return fail(16384);
     }
 
+    if (!m_subPrepPackageUserNameTextBox
+        || !m_subPrepPackageDatesTextBox
+        || !m_subPrepPackageRosterTemplateCombo
+        || !m_subPrepPackagePlanButton
+        || m_subPrepPackageClassChecks.size() != 1)
+    {
+        return fail(32768);
+    }
+    m_subPrepPackageUserNameTextBox.Text(L"Sub Prep Teacher");
+    m_subPrepPackageDatesTextBox.Text(L"2026-09-14");
+    m_subPrepPackageClassChecks.front().IsChecked(true);
+    m_subPrepPackageRosterTemplateCombo.SelectedIndex(0);
+    planSubPrepPackage();
+    const bool packageReady =
+        m_subPrepPackagePlan.classes.size() == 1
+        && m_subPrepPackagePlan.relativeDocumentPaths.size() == 2
+        && m_subPrepPackagePathsList.Items().Size() == 2
+        && m_subPrepPackageStatusText
+        && std::wstring_view(
+               m_subPrepPackageStatusText.Text().c_str(),
+               m_subPrepPackageStatusText.Text().size()
+               ).find(L"Package plan ready") != std::wstring_view::npos;
+    if (!packageReady)
+    {
+        return fail(65536);
+    }
+
+    m_subPrepPackageRosterTemplateCombo.SelectedIndex(2);
+    planSubPrepPackage();
+    const bool perClassPackageReady =
+        m_subPrepPackagePlan.classes.size() == 1
+        && m_subPrepPackagePlan.relativeDocumentPaths.size() == 2
+        && std::wstring_view(
+               asWide(m_subPrepPackagePlan.relativeDocumentPaths.back())
+               ).find(L"/Roster.pdf") != std::wstring_view::npos;
+    if (!perClassPackageReady)
+    {
+        return fail(131072);
+    }
+
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
     m_dirtyState.markClean();
@@ -2353,8 +2394,10 @@ bool MainWindow::runPhase6SubPrepChecks()
         m_subPrepStatusText.Text() == L"No database open."
         && !m_subPrepClassMaterialsTextBox.IsEnabled()
         && !m_subPrepSaveButton.IsEnabled()
+        && !m_subPrepPackagePlanButton.IsEnabled()
         && m_subPrepScheduleList.Items().Size() == 0
-        && m_subPrepClassInformationList.Items().Size() == 0;
+        && m_subPrepClassInformationList.Items().Size() == 0
+        && m_subPrepPackagePathsList.Items().Size() == 0;
     if (!clearReady)
     {
         return fail(32768);
@@ -9748,10 +9791,136 @@ void MainWindow::populateSubPrepPage(
         m_subPrepDocumentSummaryText = TextBlock();
         m_subPrepDocumentSummaryText.TextWrapping(TextWrapping::Wrap);
         setAutomationName(
-            m_subPrepDocumentSummaryText,
+        m_subPrepDocumentSummaryText,
             L"Sub Prep document model summary"
             );
         scheduleRoot.Children().Append(m_subPrepDocumentSummaryText);
+
+        auto packageCard = ClassMngrWinUISharedUX::buildCard({
+            L"Bundled Sub Prep Package",
+            L"Choose dates and classes to preview the deterministic document paths that the Phase 7 output adapters will produce.",
+            L"Sub Prep bundled package planner"
+            });
+        m_subPrepPackageUserNameTextBox = TextBox();
+        m_subPrepPackageUserNameTextBox.Header(
+            box_value(hstring(L"Substitute teacher name"))
+            );
+        m_subPrepPackageUserNameTextBox.PlaceholderText(
+            L"Name used in the package folder"
+            );
+        m_subPrepPackageUserNameTextBox.MinWidth(320.0);
+        m_subPrepPackageUserNameTextBox.IsTabStop(true);
+        setAutomationName(
+            m_subPrepPackageUserNameTextBox,
+            L"Sub Prep package substitute teacher name"
+            );
+
+        m_subPrepPackageDatesTextBox = TextBox();
+        m_subPrepPackageDatesTextBox.Header(
+            box_value(hstring(L"Selected dates"))
+            );
+        m_subPrepPackageDatesTextBox.PlaceholderText(
+            L"yyyy-MM-dd, yyyy-MM-dd"
+            );
+        m_subPrepPackageDatesTextBox.MinWidth(320.0);
+        m_subPrepPackageDatesTextBox.IsTabStop(true);
+        setAutomationName(
+            m_subPrepPackageDatesTextBox,
+            L"Sub Prep package selected dates"
+            );
+
+        m_subPrepPackageRosterTemplateCombo = ComboBox();
+        m_subPrepPackageRosterTemplateCombo.Header(
+            box_value(hstring(L"Roster document"))
+            );
+        m_subPrepPackageRosterTemplateCombo.IsTabStop(true);
+        m_subPrepPackageRosterTemplateCombo.MinWidth(320.0);
+        for (const wchar_t* label : {
+                 L"By day",
+                 L"Daily",
+                 L"One roster per class with extra information"
+             })
+        {
+            auto item = ComboBoxItem();
+            item.Content(box_value(hstring(label)));
+            m_subPrepPackageRosterTemplateCombo.Items().Append(item);
+        }
+        m_subPrepPackageRosterTemplateCombo.SelectedIndex(0);
+        setAutomationName(
+            m_subPrepPackageRosterTemplateCombo,
+            L"Sub Prep package roster template"
+            );
+
+        auto classesLabel = TextBlock();
+        classesLabel.Text(L"Classes included in the package");
+        classesLabel.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(classesLabel, L"Sub Prep package classes label");
+
+        m_subPrepPackageClassesList = ListView();
+        m_subPrepPackageClassesList.Height(200.0);
+        m_subPrepPackageClassesList.IsTabStop(true);
+        m_subPrepPackageClassesList.SelectionMode(
+            ListViewSelectionMode::None
+            );
+        setAutomationName(
+            m_subPrepPackageClassesList,
+            L"Sub Prep package class selection"
+            );
+
+        m_subPrepPackagePlanButton = Button();
+        m_subPrepPackagePlanButton.Content(
+            box_value(hstring(L"Plan Bundled Package"))
+            );
+        m_subPrepPackagePlanButton.IsTabStop(true);
+        m_subPrepPackagePlanButton.Click(
+            [this](
+                Windows::Foundation::IInspectable const& sender,
+                RoutedEventArgs const& arguments
+                ) {
+                static_cast<void>(sender);
+                static_cast<void>(arguments);
+                planSubPrepPackage();
+            }
+            );
+        setAutomationName(
+            m_subPrepPackagePlanButton,
+            L"Plan Sub Prep bundled package"
+            );
+
+        m_subPrepPackageStatusText = TextBlock();
+        m_subPrepPackageStatusText.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(
+            m_subPrepPackageStatusText,
+            L"Sub Prep bundled package status"
+            );
+
+        auto packagePathsLabel = TextBlock();
+        packagePathsLabel.Text(L"Planned relative document paths");
+        packagePathsLabel.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(
+            packagePathsLabel,
+            L"Sub Prep package paths label"
+            );
+
+        m_subPrepPackagePathsList = ListView();
+        m_subPrepPackagePathsList.Height(140.0);
+        m_subPrepPackagePathsList.IsTabStop(true);
+        m_subPrepPackagePathsList.SelectionMode(ListViewSelectionMode::None);
+        setAutomationName(
+            m_subPrepPackagePathsList,
+            L"Sub Prep bundled package paths"
+            );
+
+        packageCard.content.Children().Append(m_subPrepPackageUserNameTextBox);
+        packageCard.content.Children().Append(m_subPrepPackageDatesTextBox);
+        packageCard.content.Children().Append(m_subPrepPackageRosterTemplateCombo);
+        packageCard.content.Children().Append(classesLabel);
+        packageCard.content.Children().Append(m_subPrepPackageClassesList);
+        packageCard.content.Children().Append(m_subPrepPackagePlanButton);
+        packageCard.content.Children().Append(m_subPrepPackageStatusText);
+        packageCard.content.Children().Append(packagePathsLabel);
+        packageCard.content.Children().Append(m_subPrepPackagePathsList);
+        scheduleRoot.Children().Append(packageCard.root);
 
         auto classInformationRoot = StackPanel();
         classInformationRoot.Spacing(12.0);
@@ -9839,6 +10008,13 @@ void MainWindow::refreshSubPrepPage()
         m_subPrepDocumentSummaryText.Text({});
         m_subPrepScheduleList.Items().Clear();
         m_subPrepClassInformationList.Items().Clear();
+        m_subPrepPackagePlan = {};
+        m_subPrepPackageUserNameTextBox.Text({});
+        m_subPrepPackageDatesTextBox.Text({});
+        m_subPrepPackageClassesList.Items().Clear();
+        m_subPrepPackageClassChecks.clear();
+        m_subPrepPackageStatusText.Text({});
+        m_subPrepPackagePathsList.Items().Clear();
     };
     const auto showFailure = [this](
         std::wstring status,
@@ -10076,6 +10252,43 @@ void MainWindow::refreshSubPrepPage()
         classInfos.push_back(*info);
         m_subPrepSourceClasses.push_back(std::move(source));
     }
+
+    m_subPrepPackagePlan = {};
+    m_subPrepPackageClassesList.Items().Clear();
+    m_subPrepPackageClassChecks.clear();
+    if (m_subPrepPackageUserNameTextBox.Text().empty())
+    {
+        m_subPrepPackageUserNameTextBox.Text(asWide(personal->name));
+    }
+    if (m_subPrepPackageDatesTextBox.Text().empty())
+    {
+        m_subPrepPackageDatesTextBox.Text(
+            calendarDateText(calendarToday())
+            );
+    }
+    for (const auto& source : m_subPrepSourceClasses)
+    {
+        std::wstring className = asWide(source.classroom.name);
+        if (className.empty())
+        {
+            className = L"Class " + std::to_wstring(source.classroom.id);
+        }
+        auto check = CheckBox();
+        check.Content(box_value(hstring(className)));
+        check.Tag(box_value(source.classroom.id));
+        check.IsChecked(true);
+        check.IsTabStop(true);
+        setAutomationName(
+            check,
+            L"Include " + className + L" in Sub Prep package"
+            );
+        m_subPrepPackageClassesList.Items().Append(check);
+        m_subPrepPackageClassChecks.push_back(check);
+    }
+    m_subPrepPackageStatusText.Text(
+        L"Select a date and classes, then plan the bundled package."
+        );
+    m_subPrepPackagePathsList.Items().Clear();
 
     const auto visibleDays = classmngr::engine::ScheduleReportService::visibleDays(
         false
@@ -10359,6 +10572,32 @@ void MainWindow::updateSubPrepActions()
     m_subPrepNotesTextBox.IsEnabled(enabled);
     m_subPrepSaveButton.IsEnabled(enabled && m_subPrepDirty);
     m_subPrepDiscardButton.IsEnabled(enabled && m_subPrepDirty);
+    if (m_subPrepPackageUserNameTextBox)
+    {
+        m_subPrepPackageUserNameTextBox.IsEnabled(enabled);
+    }
+    if (m_subPrepPackageDatesTextBox)
+    {
+        m_subPrepPackageDatesTextBox.IsEnabled(enabled);
+    }
+    if (m_subPrepPackageRosterTemplateCombo)
+    {
+        m_subPrepPackageRosterTemplateCombo.IsEnabled(enabled);
+    }
+    if (m_subPrepPackagePlanButton)
+    {
+        m_subPrepPackagePlanButton.IsEnabled(
+            enabled && !m_subPrepPackageClassChecks.empty()
+            );
+    }
+    if (m_subPrepPackageClassesList)
+    {
+        m_subPrepPackageClassesList.IsEnabled(enabled);
+    }
+    if (m_subPrepPackagePathsList)
+    {
+        m_subPrepPackagePathsList.IsEnabled(enabled);
+    }
     if (m_subPrepScheduleList)
     {
         m_subPrepScheduleList.IsEnabled(enabled);
@@ -10382,6 +10621,176 @@ void MainWindow::markSubPrepDirty()
     {
         m_subPrepStatusText.Text(L"Unsaved Sub Prep changes.");
     }
+    updateSubPrepActions();
+}
+
+void MainWindow::planSubPrepPackage()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_openDatabase || !m_subPrepPackageDatesTextBox
+        || !m_subPrepPackagePlanButton)
+    {
+        return;
+    }
+
+    m_subPrepPackagePlan = {};
+    m_subPrepPackagePathsList.Items().Clear();
+
+    const std::wstring rawDates = asWString(
+        m_subPrepPackageDatesTextBox.Text()
+        );
+    std::vector<EngineCalendarDate> selectedDates;
+    std::size_t start = 0;
+    while (start <= rawDates.size())
+    {
+        const std::size_t separator = rawDates.find_first_of(
+            L",;\r\n",
+            start
+            );
+        const std::size_t end = separator == std::wstring::npos
+            ? rawDates.size()
+            : separator;
+        std::size_t first = start;
+        while (first < end && std::iswspace(rawDates[first]) != 0)
+        {
+            ++first;
+        }
+        std::size_t last = end;
+        while (last > first && std::iswspace(rawDates[last - 1]) != 0)
+        {
+            --last;
+        }
+        if (first < last)
+        {
+            EngineCalendarDate date;
+            if (!calendarDateFromText(
+                    std::wstring_view(rawDates).substr(first, last - first),
+                    date
+                    ))
+            {
+                m_subPrepPackageStatusText.Text(
+                    L"Package plan could not be created."
+                    );
+                m_subPrepValidationText.Text(
+                    L"Selected dates must use yyyy-MM-dd, separated by commas."
+                    );
+                m_subPrepValidationText.Visibility(Visibility::Visible);
+                return;
+            }
+            selectedDates.push_back(date);
+        }
+        if (separator == std::wstring::npos)
+        {
+            break;
+        }
+        start = separator + 1;
+    }
+    if (selectedDates.empty())
+    {
+        m_subPrepPackageStatusText.Text(L"Package plan could not be created.");
+        m_subPrepValidationText.Text(
+            L"Select at least one date before planning the package."
+            );
+        m_subPrepValidationText.Visibility(Visibility::Visible);
+        return;
+    }
+
+    std::vector<int> classIds;
+    for (const auto& check : m_subPrepPackageClassChecks)
+    {
+        const auto checked = check.IsChecked();
+        if (!checked || !checked.Value())
+        {
+            continue;
+        }
+        const int classId = boxedInt(check.Tag());
+        if (classId > 0)
+        {
+            classIds.push_back(classId);
+        }
+    }
+    if (classIds.empty())
+    {
+        m_subPrepPackageStatusText.Text(L"Package plan could not be created.");
+        m_subPrepValidationText.Text(
+            L"Select at least one class before planning the package."
+            );
+        m_subPrepValidationText.Visibility(Visibility::Visible);
+        return;
+    }
+
+    std::vector<classmngr::engine::SubPrepPackageSourceClass> sourceClasses;
+    sourceClasses.reserve(m_subPrepSourceClasses.size());
+    for (const auto& source : m_subPrepSourceClasses)
+    {
+        sourceClasses.push_back({
+            source.classroom,
+            source.info,
+            source.teacher
+        });
+    }
+
+    classmngr::engine::SubPrepPackageBuildOptions options;
+    options.userName = asUtf8(asWString(
+        m_subPrepPackageUserNameTextBox.Text()
+        ));
+    options.selectedDates = std::move(selectedDates);
+    options.classIds = std::move(classIds);
+    const int templateIndex = m_subPrepPackageRosterTemplateCombo
+        ? m_subPrepPackageRosterTemplateCombo.SelectedIndex()
+        : 0;
+    if (templateIndex == 1)
+    {
+        options.rosterTemplate =
+            classmngr::engine::SubPrepRosterTemplate::Daily;
+    }
+    else if (templateIndex == 2)
+    {
+        options.rosterTemplate =
+            classmngr::engine::SubPrepRosterTemplate::PerClassWithExtraInfo;
+    }
+
+    const auto planned = classmngr::engine::SubPrepPackageService::build(
+        sourceClasses,
+        options
+        );
+    if (!planned)
+    {
+        m_subPrepPackageStatusText.Text(L"Package plan could not be created.");
+        m_subPrepValidationText.Text(winrt::hstring(
+            L"Package planning error: " + asWide(planned.error().message)
+            ));
+        m_subPrepValidationText.Visibility(Visibility::Visible);
+        return;
+    }
+
+    m_subPrepPackagePlan = *planned;
+    for (const std::string& path : m_subPrepPackagePlan.relativeDocumentPaths)
+    {
+        auto row = TextBlock();
+        row.Text(asWide(path));
+        row.TextWrapping(TextWrapping::Wrap);
+        auto item = ListViewItem();
+        item.Content(row);
+        item.IsTabStop(false);
+        setAutomationName(item, L"Sub Prep package path " + asWide(path));
+        m_subPrepPackagePathsList.Items().Append(item);
+    }
+
+    std::wstring status = L"Package plan ready: ";
+    status += std::to_wstring(m_subPrepPackagePlan.classes.size());
+    status += L" classes, ";
+    status += std::to_wstring(
+        m_subPrepPackagePlan.relativeDocumentPaths.size()
+        );
+    status += L" document paths in folder \"";
+    status += asWide(m_subPrepPackagePlan.folderName);
+    status += L"\".";
+    m_subPrepPackageStatusText.Text(winrt::hstring(status));
+    m_subPrepValidationText.Text({});
+    m_subPrepValidationText.Visibility(Visibility::Collapsed);
     updateSubPrepActions();
 }
 
