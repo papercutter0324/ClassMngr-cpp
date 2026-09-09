@@ -4241,7 +4241,7 @@ bool MainWindow::runPhase6ClassInformationChecks()
         && m_classPageRoot
         && m_classPageRoot.RowDefinitions().Size() == 3
         && m_classSectionSelectorBar
-        && m_classSectionSelectorBar.Items().Size() == 5
+        && m_classSectionSelectorBar.Items().Size() == 6
         && m_classSectionContentHost
         && m_classSectionContentHost.Content().try_as<
             Microsoft::UI::Xaml::Controls::ScrollViewer>()
@@ -4379,11 +4379,11 @@ bool MainWindow::runPhase6ClassInformationChecks()
         return fail(9);
     }
 
-    m_classSectionSelectorBar.SelectedItem(m_classSectionSelectorItems[4]);
+    m_classSectionSelectorBar.SelectedItem(m_classSectionSelectorItems[5]);
     const bool sectionSelectionReady =
-        m_classSectionIndex == 4
+        m_classSectionIndex == 5
         && m_classSectionSelectorBar.SelectedItem()
-            == m_classSectionSelectorItems[4]
+            == m_classSectionSelectorItems[5]
         && m_classSectionContentHost.Content().try_as<
             Microsoft::UI::Xaml::Controls::ScrollViewer>();
     if (!sectionSelectionReady)
@@ -4448,7 +4448,7 @@ bool MainWindow::runPhase6ClassInformationChecks()
         && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Auto
         && m_classSelectedId == firstClassId
-        && m_classSectionIndex == 4
+        && m_classSectionIndex == 5
         && !m_classNavigationAll
         && std::find(
             m_classNavigationSelectedDays.begin(),
@@ -4467,7 +4467,7 @@ bool MainWindow::runPhase6ClassInformationChecks()
         dirtyBeforeLocationToggle
         && m_classDirty
         && m_classSelectedId == firstClassId
-        && m_classSectionIndex == 4
+        && m_classSectionIndex == 5
         && !m_classNavigationAll
         && std::find(
             m_classNavigationSelectedDays.begin(),
@@ -4488,7 +4488,7 @@ bool MainWindow::runPhase6ClassInformationChecks()
     const bool refreshPreservedNavigation =
         classNavigationLocation() == ClassNavigationLocation::Bottom
         && m_classSelectedId == firstClassId
-        && m_classSectionIndex == 4
+        && m_classSectionIndex == 5
         && !m_classNavigationAll
         && std::find(
             m_classNavigationSelectedDays.begin(),
@@ -14687,6 +14687,170 @@ void MainWindow::populateClassesPage(
         );
     analyticsRoot.Children().Append(analyticsRankingCard.root);
 
+    auto coTeacherRoot = makeRoot(StackPanel());
+    auto coTeacherTitle = TextBlock();
+    coTeacherTitle.Text(L"Co-Teacher");
+    applyResourceStyle(coTeacherTitle, L"Phase3PageTitleTextBlockStyle");
+    setAutomationName(coTeacherTitle, L"Co-Teacher");
+    coTeacherRoot.Children().Append(coTeacherTitle);
+
+    auto coTeacherCard = ClassMngrWinUISharedUX::buildCard({
+        L"Korean Teacher",
+        L"",
+        L"Class co-teacher information"
+        });
+    coTeacherCard.root.Padding(Thickness{24.0, 24.0, 24.0, 24.0});
+    coTeacherCard.content.Spacing(16.0);
+
+    auto coTeacherGrid = Grid();
+    coTeacherGrid.ColumnSpacing(20.0);
+    coTeacherGrid.RowSpacing(16.0);
+    for (int column = 0; column < 3; ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            240.0,
+            GridUnitType::Pixel
+            ));
+        coTeacherGrid.ColumnDefinitions().Append(definition);
+    }
+    for (int row = 0; row < 3; ++row)
+    {
+        coTeacherGrid.RowDefinitions().Append(RowDefinition());
+    }
+
+    const auto configureCoTeacherCombo = [this](
+        ComboBox combo,
+        wchar_t const* header,
+        wchar_t const* automationName
+        ) {
+        combo.Header(box_value(hstring(header)));
+        combo.MinWidth(240.0);
+        combo.Width(240.0);
+        combo.IsTabStop(true);
+        combo.SelectionChanged({
+            this,
+            &MainWindow::ClassCoTeacherSelection_SelectionChanged
+            });
+        setAutomationName(combo, automationName);
+    };
+    const auto configureCoTeacherReadOnly = [](
+        TextBox box,
+        wchar_t const* header,
+        wchar_t const* automationName
+        ) {
+        box.Header(box_value(hstring(header)));
+        box.MinWidth(240.0);
+        box.Width(240.0);
+        box.IsReadOnly(true);
+        box.IsTabStop(false);
+        setAutomationName(box, automationName);
+        return box;
+    };
+
+    m_classCoTeacherKrCombo = ComboBox();
+    configureCoTeacherCombo(
+        m_classCoTeacherKrCombo,
+        L"Korean",
+        L"Co-teacher Korean name"
+        );
+    m_classCoTeacherEnCombo = ComboBox();
+    configureCoTeacherCombo(
+        m_classCoTeacherEnCombo,
+        L"English",
+        L"Co-teacher English name"
+        );
+    m_classCoTeacherRoomTextBox = configureCoTeacherReadOnly(
+        TextBox(),
+        L"Room",
+        L"Co-teacher room"
+        );
+    m_classCoTeacherInternetTypeTextBox = configureCoTeacherReadOnly(
+        TextBox(),
+        L"Internet Type",
+        L"Co-teacher internet type"
+        );
+    m_classCoTeacherWifiNameTextBox = configureCoTeacherReadOnly(
+        TextBox(),
+        L"WiFi Name",
+        L"Co-teacher WiFi name"
+        );
+    m_classCoTeacherWifiPasswordTextBox = configureCoTeacherReadOnly(
+        TextBox(),
+        L"WiFi Password",
+        L"Co-teacher WiFi password"
+        );
+    m_classCoTeacherProjectionTypeTextBox = configureCoTeacherReadOnly(
+        TextBox(),
+        L"Projection Type",
+        L"Co-teacher projection type"
+        );
+    m_classCoTeacherZoomIdTextBox = configureCoTeacherReadOnly(
+        TextBox(),
+        L"Zoom ID",
+        L"Co-teacher Zoom ID"
+        );
+    m_classCoTeacherZoomPasswordTextBox = configureCoTeacherReadOnly(
+        TextBox(),
+        L"Zoom Password",
+        L"Co-teacher Zoom password"
+        );
+
+    const std::array<FrameworkElement, 9> coTeacherFields{
+        m_classCoTeacherKrCombo,
+        m_classCoTeacherEnCombo,
+        m_classCoTeacherRoomTextBox,
+        m_classCoTeacherInternetTypeTextBox,
+        m_classCoTeacherWifiNameTextBox,
+        m_classCoTeacherWifiPasswordTextBox,
+        m_classCoTeacherProjectionTypeTextBox,
+        m_classCoTeacherZoomIdTextBox,
+        m_classCoTeacherZoomPasswordTextBox
+    };
+    for (int index = 0; index < static_cast<int>(coTeacherFields.size()); ++index)
+    {
+        const int row = index / 3;
+        const int column = index % 3;
+        Grid::SetRow(coTeacherFields[static_cast<std::size_t>(index)], row);
+        Grid::SetColumn(
+            coTeacherFields[static_cast<std::size_t>(index)],
+            column
+            );
+        coTeacherGrid.Children().Append(
+            coTeacherFields[static_cast<std::size_t>(index)]
+            );
+    }
+    coTeacherCard.content.Children().Append(coTeacherGrid);
+    coTeacherRoot.Children().Append(coTeacherCard.root);
+
+    auto coTeacherActions = StackPanel();
+    coTeacherActions.Orientation(Orientation::Horizontal);
+    coTeacherActions.Spacing(8.0);
+    m_classCoTeacherSaveButton = Button();
+    m_classCoTeacherSaveButton.Content(box_value(hstring(L"Save Changes")));
+    m_classCoTeacherSaveButton.IsTabStop(true);
+    m_classCoTeacherSaveButton.Click({
+        this,
+        &MainWindow::ClassCoTeacherSaveButton_Click
+        });
+    setAutomationName(m_classCoTeacherSaveButton, L"Save co-teacher changes");
+    m_classCoTeacherDiscardButton = Button();
+    m_classCoTeacherDiscardButton.Content(
+        box_value(hstring(L"Discard Changes"))
+        );
+    m_classCoTeacherDiscardButton.IsTabStop(true);
+    m_classCoTeacherDiscardButton.Click({
+        this,
+        &MainWindow::ClassCoTeacherDiscardButton_Click
+        });
+    setAutomationName(
+        m_classCoTeacherDiscardButton,
+        L"Discard co-teacher changes"
+        );
+    coTeacherActions.Children().Append(m_classCoTeacherSaveButton);
+    coTeacherActions.Children().Append(m_classCoTeacherDiscardButton);
+    coTeacherRoot.Children().Append(coTeacherActions);
+
     const auto navigationCard = ClassMngrWinUISharedUX::buildCard({
         L"",
         L"",
@@ -14759,8 +14923,9 @@ void MainWindow::populateClassesPage(
     m_classSectionScrollViews = {
         scrollTab(detailsRoot),
         scrollTab(rosterRoot),
-        scrollTab(speakingRoot),
         scrollTab(analyticsRoot),
+        scrollTab(speakingRoot),
+        scrollTab(coTeacherRoot),
         scrollTab(notesRoot)
     };
 
@@ -14771,13 +14936,14 @@ void MainWindow::populateClassesPage(
         m_classSectionSelectorBar,
         L"Classes section selector"
         );
-    const std::array<std::pair<wchar_t const*, wchar_t const*>, 5>
+    const std::array<std::pair<wchar_t const*, wchar_t const*>, 6>
         sectionDefinitions{
             {
                 {L"Details", L"Class Details section"},
                 {L"Roster", L"Class Roster section"},
-                {L"Speaking Evaluations", L"Class Speaking Evaluations section"},
                 {L"Analytics", L"Class Analytics section"},
+                {L"Evaluations", L"Class Evaluations section"},
+                {L"Co-Teacher", L"Class Co-Teacher section"},
                 {L"Notes", L"Class Notes section"}
             }
         };
@@ -14938,10 +15104,132 @@ void MainWindow::refreshClassInformationOptions()
     m_classLoading = false;
 }
 
+void MainWindow::refreshClassCoTeacher()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classCoTeacherKrCombo || !m_classCoTeacherEnCombo)
+    {
+        return;
+    }
+
+    m_classCoTeacherLoading = true;
+    const auto clearTeacher = [this]() {
+        m_classCoTeacherKrCombo.Items().Clear();
+        m_classCoTeacherEnCombo.Items().Clear();
+        m_classCoTeacherKrCombo.SelectedIndex(-1);
+        m_classCoTeacherEnCombo.SelectedIndex(-1);
+        m_classCoTeacherRoomTextBox.Text({});
+        m_classCoTeacherInternetTypeTextBox.Text({});
+        m_classCoTeacherWifiNameTextBox.Text({});
+        m_classCoTeacherWifiPasswordTextBox.Text({});
+        m_classCoTeacherProjectionTypeTextBox.Text({});
+        m_classCoTeacherZoomIdTextBox.Text({});
+        m_classCoTeacherZoomPasswordTextBox.Text({});
+        m_classCoTeacherSelectedId = -1;
+    };
+
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        clearTeacher();
+        m_classCoTeacherLoading = false;
+        return;
+    }
+
+    classmngr::engine::TeacherService service(*m_openDatabase);
+    const auto loaded = service.list();
+    if (!loaded)
+    {
+        clearTeacher();
+        m_classCoTeacherLoading = false;
+        if (m_classStatusText)
+        {
+            m_classStatusText.Text(winrt::hstring(
+                L"Co-teacher directory could not be loaded: "
+                + asWide(loaded.error().message)
+                ));
+        }
+        return;
+    }
+
+    auto teachers = *loaded;
+    std::sort(
+        teachers.begin(),
+        teachers.end(),
+        [](const auto& left, const auto& right) {
+            return classmngr::engine::teacherDisplayLessThan(left, right);
+        }
+        );
+
+    const auto appendTeacher = [](ComboBox combo,
+                                  std::wstring_view display,
+                                  int id) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(display)));
+        item.Tag(box_value(id));
+        combo.Items().Append(item);
+    };
+    appendTeacher(m_classCoTeacherKrCombo, L"Unassigned", -1);
+    appendTeacher(m_classCoTeacherEnCombo, L"Unassigned", -1);
+    for (const auto& teacher : teachers)
+    {
+        std::wstring korean = asWide(teacher.teacherKr);
+        std::wstring english = asWide(teacher.teacherEn);
+        if (korean.empty())
+        {
+            korean = asWide(teacher.preferredDisplayName());
+        }
+        if (english.empty())
+        {
+            english = asWide(teacher.preferredDisplayName());
+        }
+        appendTeacher(m_classCoTeacherKrCombo, korean, teacher.id);
+        appendTeacher(m_classCoTeacherEnCombo, english, teacher.id);
+    }
+
+    const auto selectTeacher = [](ComboBox combo, int teacherId) {
+        for (int index = 0;
+             index < static_cast<int>(combo.Items().Size());
+             ++index)
+        {
+            const auto item = combo.Items().GetAt(index).try_as<ComboBoxItem>();
+            if (item && boxedInt(item.Tag()) == teacherId)
+            {
+                combo.SelectedIndex(index);
+                return;
+            }
+        }
+        combo.SelectedIndex(0);
+    };
+    m_classCoTeacherSelectedId = m_classInfo.teacherId;
+    selectTeacher(m_classCoTeacherKrCombo, m_classCoTeacherSelectedId);
+    selectTeacher(m_classCoTeacherEnCombo, m_classCoTeacherSelectedId);
+
+    m_classCoTeacherRoomTextBox.Text(asWide(m_classInfo.roomNumber));
+    m_classCoTeacherInternetTypeTextBox.Text(
+        asWide(m_classInfo.internetType)
+        );
+    m_classCoTeacherWifiNameTextBox.Text(asWide(m_classInfo.wifiName));
+    m_classCoTeacherWifiPasswordTextBox.Text(
+        asWide(m_classInfo.wifiPassword)
+        );
+    m_classCoTeacherProjectionTypeTextBox.Text(
+        asWide(m_classInfo.projectionType)
+        );
+    m_classCoTeacherZoomIdTextBox.Text(asWide(m_classInfo.zoomId));
+    m_classCoTeacherZoomPasswordTextBox.Text(
+        asWide(m_classInfo.zoomPassword)
+        );
+    m_classCoTeacherLoading = false;
+}
+
 void MainWindow::updateClassActions()
 {
     if (!m_classSelector || !m_classNameTextBox || !m_classSaveButton
-        || !m_classNotesSaveButton)
+        || !m_classNotesSaveButton
+        || !m_classCoTeacherKrCombo
+        || !m_classCoTeacherSaveButton)
     {
         return;
     }
@@ -14965,6 +15253,15 @@ void MainWindow::updateClassActions()
     m_classTimeFillerActivitiesTextBox.IsEnabled(
         notesEnabled || (hasDatabase && m_classNew)
         );
+    m_classCoTeacherKrCombo.IsEnabled(detailsEnabled);
+    m_classCoTeacherEnCombo.IsEnabled(detailsEnabled);
+    m_classCoTeacherRoomTextBox.IsEnabled(detailsEnabled);
+    m_classCoTeacherInternetTypeTextBox.IsEnabled(detailsEnabled);
+    m_classCoTeacherWifiNameTextBox.IsEnabled(detailsEnabled);
+    m_classCoTeacherWifiPasswordTextBox.IsEnabled(detailsEnabled);
+    m_classCoTeacherProjectionTypeTextBox.IsEnabled(detailsEnabled);
+    m_classCoTeacherZoomIdTextBox.IsEnabled(detailsEnabled);
+    m_classCoTeacherZoomPasswordTextBox.IsEnabled(detailsEnabled);
 
     m_classNewButton.IsEnabled(hasDatabase && clean && !m_classNew);
     m_classDeleteButton.IsEnabled(
@@ -14981,6 +15278,12 @@ void MainWindow::updateClassActions()
         );
     m_classNotesDiscardButton.IsEnabled(
         hasDatabase && m_classSelectedId > 0 && m_classNotesDirty
+        );
+    m_classCoTeacherSaveButton.IsEnabled(
+        hasDatabase && m_classSelectedId > 0 && m_classDetailsDirty
+        );
+    m_classCoTeacherDiscardButton.IsEnabled(
+        hasDatabase && m_classSelectedId > 0 && m_classDetailsDirty
         );
     updateClassRosterActions();
 }
@@ -15065,6 +15368,7 @@ void MainWindow::presentClass(int index)
     }
     info.classId = classroom.id;
     m_classInfo = info;
+    refreshClassCoTeacher();
 
     m_classNameTextBox.Text(asWide(classroom.name));
     m_classGradeCombo.SelectedIndex(0);
@@ -15780,6 +16084,7 @@ classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
         );
     info.classColor = asUtf8(m_classColorTextBox.Text());
     info.fontColor = asUtf8(m_classFontColorTextBox.Text());
+    info.teacherId = m_classCoTeacherSelectedId;
     info.notes = asUtf8(m_classNotesTextBox.Text());
     info.timeFillerActivities = asUtf8(
         m_classTimeFillerActivitiesTextBox.Text()
@@ -18911,6 +19216,95 @@ void MainWindow::ClassNotesDiscardButton_Click(
         Microsoft::UI::Xaml::Visibility::Collapsed
         );
     updateClassActions();
+}
+
+void MainWindow::ClassCoTeacherSelection_SelectionChanged(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+    )
+{
+    static_cast<void>(arguments);
+    if (m_classLoading || m_classCoTeacherLoading || !m_openDatabase)
+    {
+        return;
+    }
+
+    using namespace Microsoft::UI::Xaml::Controls;
+    const auto combo = sender.try_as<ComboBox>();
+    if (!combo
+        || (combo != m_classCoTeacherKrCombo
+            && combo != m_classCoTeacherEnCombo))
+    {
+        return;
+    }
+
+    const auto item = combo.SelectedItem().try_as<ComboBoxItem>();
+    const int teacherId = item ? boxedInt(item.Tag()) : -1;
+    m_classCoTeacherSelectedId = teacherId;
+    m_classCoTeacherLoading = true;
+
+    const auto selectTeacher = [](ComboBox target, int id) {
+        for (int index = 0;
+             index < static_cast<int>(target.Items().Size());
+             ++index)
+        {
+            const auto candidate = target.Items().GetAt(index)
+                .try_as<ComboBoxItem>();
+            if (candidate && boxedInt(candidate.Tag()) == id)
+            {
+                target.SelectedIndex(index);
+                return;
+            }
+        }
+        target.SelectedIndex(0);
+    };
+    selectTeacher(m_classCoTeacherKrCombo, teacherId);
+    selectTeacher(m_classCoTeacherEnCombo, teacherId);
+
+    classmngr::engine::Teacher teacher;
+    if (teacherId > 0)
+    {
+        classmngr::engine::TeacherService service(*m_openDatabase);
+        const auto loaded = service.get(teacherId);
+        if (loaded)
+        {
+            teacher = *loaded;
+        }
+    }
+    m_classCoTeacherRoomTextBox.Text(asWide(teacher.roomNumber));
+    m_classCoTeacherInternetTypeTextBox.Text(
+        asWide(teacher.internetType)
+        );
+    m_classCoTeacherWifiNameTextBox.Text(asWide(teacher.wifiName));
+    m_classCoTeacherWifiPasswordTextBox.Text(
+        asWide(teacher.wifiPassword)
+        );
+    m_classCoTeacherProjectionTypeTextBox.Text(
+        asWide(teacher.projectionType)
+        );
+    m_classCoTeacherZoomIdTextBox.Text(asWide(teacher.zoomId));
+    m_classCoTeacherZoomPasswordTextBox.Text(
+        asWide(teacher.zoomPassword)
+        );
+    m_classCoTeacherLoading = false;
+    m_classDetailsDirty = true;
+    markClassDirty();
+}
+
+void MainWindow::ClassCoTeacherSaveButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    ClassSaveButton_Click(sender, arguments);
+}
+
+void MainWindow::ClassCoTeacherDiscardButton_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    ClassDiscardButton_Click(sender, arguments);
 }
 
 void MainWindow::NameTextBox_TextChanged(

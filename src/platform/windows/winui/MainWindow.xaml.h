@@ -337,6 +337,7 @@ private:
     void toggleClassNavigationDay(std::string day);
     void presentClass(int index);
     void refreshClassInformationOptions();
+    void refreshClassCoTeacher();
     void updateClassActions();
     void markClassDirty();
     void clearClassDirty();
@@ -590,6 +591,18 @@ private:
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void ClassNotesDiscardButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassCoTeacherSelection_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
+    void ClassCoTeacherSaveButton_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void ClassCoTeacherDiscardButton_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
@@ -944,10 +957,10 @@ private:
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
     Microsoft::UI::Xaml::Controls::Grid m_classPageRoot{nullptr};
     Microsoft::UI::Xaml::Controls::SelectorBar m_classSectionSelectorBar{nullptr};
-    std::array<Microsoft::UI::Xaml::Controls::SelectorBarItem, 5>
+    std::array<Microsoft::UI::Xaml::Controls::SelectorBarItem, 6>
         m_classSectionSelectorItems{};
     Microsoft::UI::Xaml::Controls::ContentControl m_classSectionContentHost{nullptr};
-    std::array<Microsoft::UI::Xaml::Controls::ScrollViewer, 5>
+    std::array<Microsoft::UI::Xaml::Controls::ScrollViewer, 6>
         m_classSectionScrollViews{};
     Microsoft::UI::Xaml::Controls::Border m_classNavigationCard{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel m_classNavigationRoot{nullptr};
@@ -977,6 +990,17 @@ private:
     Microsoft::UI::Xaml::Controls::TextBlock m_classNotesValidationText{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classNotesSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classNotesDiscardButton{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classCoTeacherKrCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_classCoTeacherEnCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherRoomTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherInternetTypeTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherWifiNameTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherWifiPasswordTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherProjectionTypeTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherZoomIdTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherZoomPasswordTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classCoTeacherSaveButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classCoTeacherDiscardButton{nullptr};
     std::vector<classmngr::engine::Classroom> m_classes;
     classmngr::engine::ClassInfo m_classInfo;
     int m_classSelectedIndex{-1};
@@ -993,6 +1017,8 @@ private:
     bool m_classDirty{};
     bool m_classDetailsDirty{};
     bool m_classNotesDirty{};
+    bool m_classCoTeacherLoading{};
+    int m_classCoTeacherSelectedId{-1};
     bool m_classNew{};
     uint32_t m_phase6ClassInformationFailureMask{};
 
