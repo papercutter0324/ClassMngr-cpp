@@ -381,4 +381,36 @@ namespace ClassMngrWinUISharedUX
             text
             );
     }
+
+    ColorPickerDialog buildColorPickerDialog(
+        winrt::Microsoft::UI::Xaml::XamlRoot const& xamlRoot,
+        hstring const& title,
+        winrt::Windows::UI::Color initialColor,
+        hstring const& automationName
+        )
+    {
+        ColorPickerDialog result;
+        result.picker = ColorPicker();
+        result.picker.IsAlphaEnabled(false);
+        result.picker.IsHexInputVisible(true);
+        result.picker.Color(initialColor);
+        result.picker.MinHeight(260.0);
+        setAutomation(
+            result.picker,
+            automationName.empty() ? title + L" picker" : automationName
+            );
+
+        result.dialog = ContentDialog();
+        result.dialog.XamlRoot(xamlRoot);
+        result.dialog.Title(box_value(title));
+        result.dialog.Content(result.picker);
+        result.dialog.PrimaryButtonText(L"Select");
+        result.dialog.CloseButtonText(L"Cancel");
+        result.dialog.DefaultButton(ContentDialogButton::Primary);
+        setAutomation(
+            result.dialog,
+            automationName.empty() ? title : automationName + L" dialog"
+            );
+        return result;
+    }
 } // namespace ClassMngrWinUISharedUX

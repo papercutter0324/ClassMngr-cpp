@@ -1023,16 +1023,24 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_classIntensiveScheduleAddButton{nullptr};
     std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
         m_classRegularDayCombos;
-    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
-        m_classRegularStartBoxes;
-    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
-        m_classRegularEndBoxes;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classRegularStartHourCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classRegularStartMinuteCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classRegularStartPeriodCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classRegularEndCombos;
     std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
         m_classIntensiveDayCombos;
-    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
-        m_classIntensiveStartBoxes;
-    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
-        m_classIntensiveEndBoxes;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classIntensiveStartHourCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classIntensiveStartMinuteCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classIntensiveStartPeriodCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classIntensiveEndCombos;
     std::vector<classmngr::engine::Classroom> m_classes;
     classmngr::engine::ClassInfo m_classInfo;
     int m_classSelectedIndex{-1};

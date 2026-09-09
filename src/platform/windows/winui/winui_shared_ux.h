@@ -4,6 +4,7 @@
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.UI.h>
 
 #include <vector>
 
@@ -110,6 +111,15 @@ namespace ClassMngrWinUISharedUX
         winrt::Microsoft::UI::Xaml::Controls::TextBlock state{nullptr};
     };
 
+    // A reusable, accept-only color selection surface.  Callers own showing the
+    // dialog so a screen that is already in a ContentDialog can hide and resume
+    // its parent dialog before presenting this one.
+    struct ColorPickerDialog
+    {
+        winrt::Microsoft::UI::Xaml::Controls::ContentDialog dialog{nullptr};
+        winrt::Microsoft::UI::Xaml::Controls::ColorPicker picker{nullptr};
+    };
+
     FormField buildFormField(FormFieldOptions const& options);
     void setFormFieldValidation(
         FormField const& field,
@@ -135,5 +145,12 @@ namespace ClassMngrWinUISharedUX
         AutosaveSurface const& surface,
         AutosaveState state,
         winrt::hstring const& detail = {}
+        );
+
+    ColorPickerDialog buildColorPickerDialog(
+        winrt::Microsoft::UI::Xaml::XamlRoot const& xamlRoot,
+        winrt::hstring const& title,
+        winrt::Windows::UI::Color initialColor,
+        winrt::hstring const& automationName = {}
         );
 } // namespace ClassMngrWinUISharedUX
