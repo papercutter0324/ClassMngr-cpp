@@ -268,59 +268,13 @@
                             x:Name="HomeNavigationItem"
                             Content="My Workspace"
                             Tag="home"
-                            IsExpanded="True"
                             AutomationProperties.Name="My Workspace navigation root">
-                            <NavigationViewItem.MenuItems>
-                                <NavigationViewItem
-                                    x:Name="WorkspaceInformationNavigationItem"
-                                    Content="My Information"
-                                    Tag="personal_details"
-                                    AutomationProperties.Name="My Information personal details navigation item" />
-                                <NavigationViewItem
-                                    x:Name="WorkspaceScheduleNavigationItem"
-                                    Content="Schedule"
-                                    Tag="home"
-                                    AutomationProperties.Name="Schedule workspace navigation item" />
-                                <NavigationViewItem
-                                    x:Name="WorkspaceCalendarNavigationItem"
-                                    Content="Calendar"
-                                    Tag="home"
-                                    AutomationProperties.Name="Calendar workspace navigation item" />
-                            </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
                         <NavigationViewItem
                             x:Name="ClassesNavigationItem"
                             Content="Classes"
                             Tag="classes"
-                            IsExpanded="True"
                             AutomationProperties.Name="Classes navigation root">
-                            <NavigationViewItem.MenuItems>
-                                <NavigationViewItem
-                                    x:Name="ClassDetailsNavigationItem"
-                                    Content="Details"
-                                    Tag="classes_details"
-                                    AutomationProperties.Name="Class Details navigation item" />
-                                <NavigationViewItem
-                                    x:Name="ClassRosterNavigationItem"
-                                    Content="Roster"
-                                    Tag="classes_roster"
-                                    AutomationProperties.Name="Class Roster navigation item" />
-                                <NavigationViewItem
-                                    x:Name="ClassSpeakingEvaluationsNavigationItem"
-                                    Content="Speaking Evaluations"
-                                    Tag="classes_speaking_evaluations"
-                                    AutomationProperties.Name="Class Speaking Evaluations navigation item" />
-                                <NavigationViewItem
-                                    x:Name="ClassAnalyticsNavigationItem"
-                                    Content="Analytics"
-                                    Tag="classes_analytics"
-                                    AutomationProperties.Name="Class Analytics navigation item" />
-                                <NavigationViewItem
-                                    x:Name="ClassNotesNavigationItem"
-                                    Content="Notes"
-                                    Tag="classes_notes"
-                                    AutomationProperties.Name="Class Notes navigation item" />
-                            </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
                         <NavigationViewItem
                             x:Name="SubPrepNavigationItem"

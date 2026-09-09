@@ -96,21 +96,17 @@ bool verifyEmbeddedManifest()
 }
 
 void scheduleTestExit(
-    winrt::Microsoft::UI::Xaml::Window const& window,
+    winrt::Microsoft::UI::Xaml::Window window,
     bool passed,
     DWORD failureExitCode = ERROR_INVALID_DATA
     )
 {
-    window.DispatcherQueue().TryEnqueue(
-        [window, passed, failureExitCode]() {
-            window.Close();
-            ExitProcess(passed ? ERROR_SUCCESS : failureExitCode);
-        }
-        );
+    static_cast<void>(window);
+    ExitProcess(passed ? ERROR_SUCCESS : failureExitCode);
 }
 
 winrt::fire_and_forget completeViewModelTest(
-    winrt::Microsoft::UI::Xaml::Window const& window,
+    winrt::Microsoft::UI::Xaml::Window window,
     winrt::Windows::Foundation::IAsyncOperation<bool> check
     )
 {

@@ -354,6 +354,10 @@ private:
         Microsoft::UI::Xaml::Controls::Page const& page,
         bool refresh
         );
+    void populatePersonalDetailsPage(
+        Microsoft::UI::Xaml::Controls::ContentControl const& host,
+        bool refresh
+        );
     void refreshPersonalDetailsPage();
     void populateKoreanTeachersPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
@@ -620,16 +624,8 @@ private:
     Microsoft::UI::Xaml::Controls::Grid m_appTitleBar{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationView m_navigationView{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_homeNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceInformationNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceScheduleNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_workspaceCalendarNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_subPrepNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_classesNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classDetailsNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classRosterNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classSpeakingEvaluationsNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classAnalyticsNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_classNotesNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_aboutNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusInformationNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusDirectionsNavigationItem{nullptr};

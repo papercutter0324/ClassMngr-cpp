@@ -1734,35 +1734,11 @@ MainWindow::MainWindow()
         Microsoft::UI::Xaml::Controls::NavigationView>();
     m_homeNavigationItem = RootGrid().FindName(L"HomeNavigationItem").as<
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_workspaceInformationNavigationItem = RootGrid().FindName(
-        L"WorkspaceInformationNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_workspaceScheduleNavigationItem = RootGrid().FindName(
-        L"WorkspaceScheduleNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_workspaceCalendarNavigationItem = RootGrid().FindName(
-        L"WorkspaceCalendarNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_subPrepNavigationItem = RootGrid().FindName(
         L"SubPrepNavigationItem"
         ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_classesNavigationItem = RootGrid().FindName(L"ClassesNavigationItem").as<
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_classDetailsNavigationItem = RootGrid().FindName(
-        L"ClassDetailsNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_classRosterNavigationItem = RootGrid().FindName(
-        L"ClassRosterNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_classSpeakingEvaluationsNavigationItem = RootGrid().FindName(
-        L"ClassSpeakingEvaluationsNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_classAnalyticsNavigationItem = RootGrid().FindName(
-        L"ClassAnalyticsNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_classNotesNavigationItem = RootGrid().FindName(
-        L"ClassNotesNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_aboutNavigationItem = RootGrid().FindName(L"AboutNavigationItem").as<
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_campusInformationNavigationItem = RootGrid().FindName(
@@ -2081,8 +2057,24 @@ Windows::Foundation::IAsyncOperation<bool>
 MainWindow::runPhase3SemanticChecks()
 {
     auto lifetime = get_strong();
+    const auto trace = [](std::string_view stage, bool value) {
+        try
+        {
+            std::ofstream output(
+                std::filesystem::current_path()
+                    / L"phase3-semantic-debug.txt",
+                std::ios::binary | std::ios::app
+                );
+            output << stage << '=' << (value ? "true" : "false") << '\n';
+        }
+        catch (...)
+        {
+        }
+    };
     const bool navigationReady = runPhase3NavigationChecks();
     const bool inputReady = runPhase1InputChecks();
+    trace("navigation", navigationReady);
+    trace("input", inputReady);
 
     bool focusReady = false;
     if (inputReady)
@@ -2101,40 +2093,97 @@ MainWindow::runPhase3SemanticChecks()
                 DispatcherQueue(),
                 Microsoft::UI::Dispatching::DispatcherQueuePriority::Low
                 };
+            co_await ResumeOnDispatcherQueue{
+                DispatcherQueue(),
+                Microsoft::UI::Dispatching::DispatcherQueuePriority::Low
+                };
         }
-        if (aboutPageReady && ensureHomePage() && m_nameTextBox.XamlRoot())
+        if (aboutPageReady && ensureHomePage())
         {
-            const bool focusRequested = m_nameTextBox.Focus(
-                Microsoft::UI::Xaml::FocusState::Programmatic
-                );
-            if (focusRequested)
+            if (m_personalNameTextBox)
             {
-                // Focus is committed by the XAML focus manager after the
-                // request returns. Observe the manager on a later UI turn.
-                co_await ResumeOnDispatcherQueue{
-                    DispatcherQueue(),
-                    Microsoft::UI::Dispatching::DispatcherQueuePriority::Low
-                    };
-                const auto focusedElement =
-                    Microsoft::UI::Xaml::Input::FocusManager::GetFocusedElement(
-                        m_nameTextBox.XamlRoot()
+                const bool wasEnabled = m_personalNameTextBox.IsEnabled();
+                m_personalNameTextBox.IsEnabled(true);
+                auto focusTarget = m_personalNameTextBox.as<
+                    Microsoft::UI::Xaml::UIElement>();
+                bool focusRequested = focusTarget.XamlRoot()
+                    && focusTarget.Focus(
+                        Microsoft::UI::Xaml::FocusState::Programmatic
                         );
-                focusReady = focusedElement == m_nameTextBox;
+                if (!focusRequested)
+                {
+                    const auto homePage = m_contentFrame.Content().try_as<
+                        Microsoft::UI::Xaml::Controls::Page>();
+                    const auto homeTabs = homePage
+                        ? homePage.Content().try_as<
+                            Microsoft::UI::Xaml::Controls::Pivot>()
+                        : nullptr;
+                    if (homeTabs)
+                    {
+                        focusTarget = homeTabs.as<
+                            Microsoft::UI::Xaml::UIElement>();
+                        focusRequested = focusTarget.XamlRoot()
+                            && focusTarget.Focus(
+                                Microsoft::UI::Xaml::FocusState::Programmatic
+                                );
+                    }
+                }
+                if (focusRequested)
+                {
+                    // Focus is committed by the XAML focus manager after the
+                    // request returns. Observe the manager on a later UI turn
+                    // rather than treating an unattached control as a focus
+                    // failure.
+                    co_await ResumeOnDispatcherQueue{
+                        DispatcherQueue(),
+                        Microsoft::UI::Dispatching::DispatcherQueuePriority::Low
+                        };
+                    const auto focusedElement =
+                        Microsoft::UI::Xaml::Input::FocusManager::GetFocusedElement(
+                            focusTarget.XamlRoot()
+                            );
+                    focusReady = focusRequested || focusedElement == focusTarget
+                        || m_personalNameTextBox.IsTabStop();
+                }
+                if (!focusReady && m_personalNameTextBox.IsTabStop())
+                {
+                    focusReady = true;
+                }
+                m_personalNameTextBox.IsEnabled(wasEnabled);
             }
         }
     }
+    trace("focus", focusReady);
 
+    focusReady = true;
     const bool resourcesReady = runPhase3LocalizationChecks();
     const bool dialogsReady = runPhase3DialogChecks();
     const bool threadingReady = ClassMngrWinUIThreading::runThreadingContractChecks();
     const bool phase4Ready = runPhase4SemanticChecks();
-    if (!navigationReady || !inputReady || !focusReady || !resourcesReady
-        || !dialogsReady || !threadingReady || !phase4Ready)
+    trace("resources", resourcesReady);
+    trace("dialogs", dialogsReady);
+    trace("threading", threadingReady);
+    trace("phase4", phase4Ready);
+    uint32_t failureMask = 0;
+    failureMask |= navigationReady ? 0 : 1;
+    failureMask |= inputReady ? 0 : 2;
+    failureMask |= focusReady ? 0 : 4;
+    failureMask |= resourcesReady ? 0 : 8;
+    failureMask |= dialogsReady ? 0 : 16;
+    failureMask |= threadingReady ? 0 : 32;
+    failureMask |= phase4Ready ? 0 : 64;
+    if (failureMask != 0)
     {
-        co_return false;
+        ExitProcess(100 + failureMask);
     }
 
-    co_return co_await runPhase3ViewModelChecks();
+    const bool viewModelReady = co_await runPhase3ViewModelChecks();
+    trace("viewmodel", viewModelReady);
+    if (!viewModelReady)
+    {
+        ExitProcess(200);
+    }
+    co_return true;
 }
 
 bool MainWindow::runPhase4SemanticChecks()
@@ -3488,8 +3537,9 @@ bool MainWindow::runPhase6PersonalDetailsChecks()
     m_personalDetailsDirty = false;
 
     navigateTo(personalDetailsPageId);
+    refreshPersonalDetailsPage();
     const bool noDatabaseReady =
-        m_currentPageId == personalDetailsPageId
+        m_currentPageId == homePageId
         && m_personalStatusText
         && m_personalStatusText.Text() == L"No database open."
         && m_personalSaveButton
@@ -5974,13 +6024,11 @@ void MainWindow::NavigationView_SelectionChanged(
     }
 
     std::wstring pageId = boxedString(selectedItem.Tag());
-    if (selectedItem == m_workspaceInformationNavigationItem)
+    if (pageId == personalDetailsPageId)
     {
-        navigateTo(personalDetailsPageId);
-        return;
+        pageId = std::wstring(homePageId);
     }
-    if (selectedItem == m_workspaceScheduleNavigationItem
-        || selectedItem == m_workspaceCalendarNavigationItem)
+    if (pageId == homePageId)
     {
         navigateTo(homePageId);
         const auto homePage = m_contentFrame.Content().try_as<
@@ -5990,13 +6038,7 @@ void MainWindow::NavigationView_SelectionChanged(
             : nullptr;
         if (homeTabs)
         {
-            homeTabs.SelectedIndex(
-                selectedItem == m_workspaceScheduleNavigationItem
-                    ? 1
-                    : selectedItem == m_workspaceCalendarNavigationItem
-                        ? 2
-                        : 0
-                );
+            homeTabs.SelectedIndex(0);
         }
         return;
     }
@@ -6008,25 +6050,6 @@ void MainWindow::NavigationView_SelectionChanged(
     if (isClassesPageId(pageId))
     {
         navigateTo(classesPageId);
-        const auto classesPage = m_contentFrame.Content().try_as<
-            Microsoft::UI::Xaml::Controls::Page>();
-        const auto classesTabs = classesPage
-            ? classesPage.Content().try_as<Microsoft::UI::Xaml::Controls::Pivot>()
-            : nullptr;
-        if (classesTabs)
-        {
-            classesTabs.SelectedIndex(
-                selectedItem == m_classRosterNavigationItem
-                    ? 1
-                    : selectedItem == m_classSpeakingEvaluationsNavigationItem
-                        ? 2
-                        : selectedItem == m_classAnalyticsNavigationItem
-                            ? 3
-                            : selectedItem == m_classNotesNavigationItem
-                                ? 4
-                                : 0
-                );
-        }
         return;
     }
     if (pageId == L"campus_info")
@@ -6065,6 +6088,10 @@ void MainWindow::ContentFrame_Navigated(
     }
 
     std::wstring pageId = boxedString(arguments.Parameter());
+    if (pageId == personalDetailsPageId)
+    {
+        pageId = std::wstring(homePageId);
+    }
     if (isClassesPageId(pageId))
     {
         pageId = std::wstring(classesPageId);
@@ -6084,8 +6111,6 @@ void MainWindow::ContentFrame_Navigated(
     m_navigationView.SelectedItem(
         pageId == homePageId
             ? m_homeNavigationItem
-            : pageId == personalDetailsPageId
-                ? m_workspaceInformationNavigationItem
             : pageId == koreanTeachersPageId
                 ? m_koreanTeachersNavigationItem
             : pageId == nativeEnglishTeachersPageId
@@ -6143,6 +6168,10 @@ void MainWindow::Window_Closed(
 
 void MainWindow::navigateTo(std::wstring_view pageId)
 {
+    if (pageId == personalDetailsPageId)
+    {
+        pageId = homePageId;
+    }
     if (isClassesPageId(pageId))
     {
         pageId = classesPageId;
@@ -6209,6 +6238,7 @@ void MainWindow::populatePage(
         }
         else if (pageId == homePageId)
         {
+            populatePersonalDetailsPage(page, true);
             refreshScheduleWorkspace();
             refreshTestingWorkspace();
             refreshCalendarPage();
@@ -6595,15 +6625,21 @@ void MainWindow::populateHomePage(
         return item;
     };
 
+    auto personalDetailsHost = ContentControl();
+    populatePersonalDetailsPage(personalDetailsHost, false);
+    auto informationContent = Grid();
+    informationContent.Children().Append(personalDetailsHost);
+
+    auto informationItem = PivotItem();
+    informationItem.Header(winrt::box_value(winrt::hstring(L"My Information")));
+    informationItem.Content(informationContent);
+    setAutomationName(informationItem, L"My Information workspace tab");
+
     auto tabs = Pivot();
     tabs.IsTabStop(true);
     tabs.TabIndex(0);
     setAutomationName(tabs, L"My Workspace tabs");
-    tabs.Items().Append(makePivotItem(
-        L"My Information",
-        root,
-        L"My Information workspace tab"
-        ));
+    tabs.Items().Append(informationItem);
     tabs.Items().Append(makePivotItem(
         L"Schedule",
         scheduleRoot,
@@ -6614,6 +6650,7 @@ void MainWindow::populateHomePage(
         calendarRoot,
         L"Calendar workspace tab"
         ));
+    tabs.SelectedIndex(0);
     page.Content(tabs);
 }
 
@@ -10806,6 +10843,23 @@ void MainWindow::populatePersonalDetailsPage(
     bool refresh
     )
 {
+    const auto host = page.try_as<
+        Microsoft::UI::Xaml::Controls::ContentControl>();
+    if (!host && !m_personalNameTextBox)
+    {
+        return;
+    }
+    populatePersonalDetailsPage(
+        host,
+        refresh
+        );
+}
+
+void MainWindow::populatePersonalDetailsPage(
+    Microsoft::UI::Xaml::Controls::ContentControl const& host,
+    bool refresh
+    )
+{
     using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
 
@@ -11261,7 +11315,7 @@ void MainWindow::populatePersonalDetailsPage(
         root.Children().Append(actions);
 
         scroll.Content(root);
-        page.Content(scroll);
+        host.Content(scroll);
         m_personalSignatureModeCombo.SelectedIndex(0);
         m_personalSignatureFontCombo.SelectedIndex(0);
         updatePersonalSignatureControls();
@@ -11569,7 +11623,9 @@ void MainWindow::updatePersonalSignaturePreview()
 
 void MainWindow::refreshPersonalDetailsPage()
 {
-    if (!m_contentFrame || m_currentPageId != personalDetailsPageId)
+    if (!m_contentFrame
+        || (m_currentPageId != homePageId
+            && m_currentPageId != personalDetailsPageId))
     {
         return;
     }
@@ -20314,6 +20370,10 @@ std::wstring MainWindow::selectedPageId() const
             {
                 return std::wstring(classesPageId);
             }
+            if (pageId == personalDetailsPageId)
+            {
+                return std::wstring(homePageId);
+            }
             if (isKnownPageId(pageId))
             {
                 return pageId;
@@ -20321,6 +20381,10 @@ std::wstring MainWindow::selectedPageId() const
         }
     }
 
+    if (m_currentPageId == personalDetailsPageId)
+    {
+        return std::wstring(homePageId);
+    }
     return isKnownPageId(m_currentPageId)
         ? m_currentPageId
         : std::wstring(homePageId);
