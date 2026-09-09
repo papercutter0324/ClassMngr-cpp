@@ -14138,15 +14138,35 @@ void MainWindow::populateClassesPage(
     rosterRoot.Children().Append(rosterCard.root);
 
     auto speakingRoot = makeRoot(StackPanel());
+    auto speakingTopBar = Grid();
+    speakingTopBar.ColumnSpacing(16.0);
+    auto speakingTitleColumn = ColumnDefinition();
+    speakingTitleColumn.Width(GridLengthHelper::FromValueAndType(
+        1.0,
+        GridUnitType::Star
+        ));
+    speakingTopBar.ColumnDefinitions().Append(speakingTitleColumn);
+    speakingTopBar.ColumnDefinitions().Append(ColumnDefinition());
+
+    auto speakingTitle = TextBlock();
+    speakingTitle.Text(L"Evaluations");
+    applyResourceStyle(speakingTitle, L"Phase3PageTitleTextBlockStyle");
+    speakingTitle.VerticalAlignment(VerticalAlignment::Center);
+    setAutomationName(speakingTitle, L"Evaluations");
+    Grid::SetColumn(speakingTitle, 0);
+    speakingTopBar.Children().Append(speakingTitle);
+
     auto speakingCard = ClassMngrWinUISharedUX::buildCard({
-        L"Speaking evaluations",
-        L"Edit the selected evaluation through the shared 25-row engine grid. Names, scores, comments, and private notes remain available without leaving the Classes tabs.",
-        L"Speaking evaluation editor"
+        {},
+        {},
+        L"Evaluations editor"
         });
+    speakingCard.root.Padding(Thickness{12.0, 12.0, 12.0, 12.0});
+    speakingCard.content.Spacing(10.0);
 
     m_speakingEvaluationStatusText = TextBlock();
     m_speakingEvaluationStatusText.Text(
-        L"Select a class to edit speaking evaluations."
+        L"Select a class to edit evaluations."
         );
     m_speakingEvaluationStatusText.TextWrapping(TextWrapping::Wrap);
     setAutomationName(
@@ -14168,7 +14188,9 @@ void MainWindow::populateClassesPage(
     m_speakingEvaluationSelector.Header(
         box_value(hstring(L"Evaluation"))
         );
-    m_speakingEvaluationSelector.MinWidth(320.0);
+    m_speakingEvaluationSelector.MinWidth(200.0);
+    m_speakingEvaluationSelector.Width(220.0);
+    m_speakingEvaluationSelector.HorizontalAlignment(HorizontalAlignment::Right);
     m_speakingEvaluationSelector.IsTabStop(true);
     m_speakingEvaluationSelector.TabIndex(0);
     setAutomationName(
@@ -14234,7 +14256,9 @@ void MainWindow::populateClassesPage(
         }
         );
     m_speakingEvaluationLoading = false;
-    speakingCard.content.Children().Append(m_speakingEvaluationSelector);
+    Grid::SetColumn(m_speakingEvaluationSelector, 1);
+    speakingTopBar.Children().Append(m_speakingEvaluationSelector);
+    speakingRoot.Children().Append(speakingTopBar);
 
     auto speakingActions = StackPanel();
     speakingActions.Orientation(Orientation::Horizontal);
@@ -14286,10 +14310,10 @@ void MainWindow::populateClassesPage(
         L"Discard speaking evaluation changes"
         );
     speakingActions.Children().Append(m_speakingEvaluationDiscardButton);
-    speakingCard.content.Children().Append(speakingActions);
 
     m_speakingEvaluationHeaderGrid = Grid();
     m_speakingEvaluationHeaderGrid.ColumnSpacing(4.0);
+    m_speakingEvaluationHeaderGrid.MinHeight(42.0);
     setAutomationName(
         m_speakingEvaluationHeaderGrid,
         L"Speaking evaluation column headers"
@@ -14300,7 +14324,7 @@ void MainWindow::populateClassesPage(
     m_speakingEvaluationList.SelectionMode(ListViewSelectionMode::Single);
     m_speakingEvaluationList.IsTabStop(true);
     m_speakingEvaluationList.TabIndex(4);
-    m_speakingEvaluationList.Height(460.0);
+    m_speakingEvaluationList.Height(620.0);
     m_speakingEvaluationList.HorizontalAlignment(
         HorizontalAlignment::Stretch
         );
@@ -14344,6 +14368,18 @@ void MainWindow::populateClassesPage(
         L"Apply speaking evaluation score range"
         );
     speakingCard.content.Children().Append(m_speakingEvaluationPasteButton);
+
+    auto speakingActionBar = Border();
+    speakingActionBar.Padding(Thickness{8.0, 8.0, 8.0, 8.0});
+    speakingActionBar.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
+        Windows::UI::Color{255, 245, 247, 250}
+        ));
+    speakingActionBar.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush(
+        Windows::UI::Color{255, 190, 198, 210}
+        ));
+    speakingActionBar.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+    speakingActionBar.Child(speakingActions);
+    speakingCard.content.Children().Append(speakingActionBar);
 
     auto aiCard = ClassMngrWinUISharedUX::buildCard({
         L"AI comments",
@@ -17525,13 +17561,48 @@ void MainWindow::rebuildSpeakingEvaluationGrid()
     }
 
     constexpr std::array<double, classmngr::engine::SpeakingEvaluationColumnCount>
-        widths{44.0, 160.0, 160.0, 96.0, 112.0, 96.0, 96.0, 96.0, 124.0,
-               320.0, 240.0};
+        widths{40.0, 180.0, 180.0, 150.0, 150.0, 150.0, 150.0, 150.0,
+               150.0, 500.0, 300.0};
     constexpr std::array<wchar_t const*,
                          classmngr::engine::SpeakingEvaluationColumnCount>
-        headers{L"", L"English Name", L"Korean Name", L"Grammar",
+        headers{L"#", L"English Name", L"Korean Name", L"Grammar",
                 L"Pronunciation", L"Fluency", L"Manner", L"Content",
                 L"Overall Effort", L"Comments", L"Notes"};
+    const auto columnColor = [](int column, bool header) {
+        const auto color = [header](std::uint8_t red,
+                                    std::uint8_t green,
+                                    std::uint8_t blue) {
+            return Windows::UI::Color{
+                255,
+                static_cast<std::uint8_t>(header ? red * 0.9 : red),
+                static_cast<std::uint8_t>(header ? green * 0.9 : green),
+                static_cast<std::uint8_t>(header ? blue * 0.9 : blue)
+            };
+        };
+        switch (column)
+        {
+        case 0:
+            return color(217, 217, 217);
+        case 3:
+            return color(217, 210, 233);
+        case 4:
+        case 8:
+            return color(207, 226, 243);
+        case 5:
+            return color(244, 204, 204);
+        case 6:
+            return color(252, 229, 205);
+        case 7:
+            return color(217, 234, 211);
+        case 9:
+            return color(238, 238, 238);
+        case 10:
+            return color(230, 224, 201);
+        default:
+            return color(255, 255, 255);
+        }
+    };
+    const auto borderColor = Windows::UI::Color{255, 190, 198, 210};
 
     const bool wasLoading = m_speakingEvaluationLoading;
     m_speakingEvaluationLoading = true;
@@ -17554,10 +17625,32 @@ void MainWindow::rebuildSpeakingEvaluationGrid()
             ));
         m_speakingEvaluationHeaderGrid.ColumnDefinitions().Append(definition);
 
-        auto header = TextBlock();
-        header.Text(headers[static_cast<std::size_t>(column)]);
-        header.Margin(Thickness{4.0, 4.0, 4.0, 4.0});
-        header.TextWrapping(TextWrapping::Wrap);
+        auto header = Border();
+        header.MinHeight(42.0);
+        header.Padding(Thickness{6.0, 4.0, 6.0, 4.0});
+        header.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
+            columnColor(column, true)
+            ));
+        header.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush(
+            borderColor
+            ));
+        header.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+        auto label = TextBlock();
+        label.Text(headers[static_cast<std::size_t>(column)]);
+        label.TextAlignment(TextAlignment::Center);
+        label.VerticalAlignment(VerticalAlignment::Center);
+        label.TextWrapping(TextWrapping::Wrap);
+        label.FontSize(14.0);
+        label.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        label.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 31, 41, 55}
+            ));
+        header.Child(label);
+        setAutomationName(
+            header,
+            L"Speaking evaluation header "
+                + std::wstring(headers[static_cast<std::size_t>(column)])
+            );
         Grid::SetColumn(header, column);
         m_speakingEvaluationHeaderGrid.Children().Append(header);
     }
@@ -17575,6 +17668,7 @@ void MainWindow::rebuildSpeakingEvaluationGrid()
         auto rowGrid = Grid();
         rowGrid.ColumnSpacing(4.0);
         rowGrid.MinWidth(totalWidth);
+        rowGrid.MinHeight(52.0);
         for (const double width : widths)
         {
             auto definition = ColumnDefinition();
@@ -17597,6 +17691,16 @@ void MainWindow::rebuildSpeakingEvaluationGrid()
         {
             auto cell = TextBox();
             cell.Width(widths[static_cast<std::size_t>(column)]);
+            cell.MinHeight(48.0);
+            cell.VerticalContentAlignment(VerticalAlignment::Center);
+            cell.TextAlignment(TextAlignment::Center);
+            cell.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                columnColor(column, false)
+                ));
+            cell.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                borderColor
+                ));
+            cell.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
             cell.Margin(Thickness{0.0, 2.0, 0.0, 2.0});
             cell.IsTabStop(column != 0);
             cell.TabIndex(
@@ -17638,7 +17742,7 @@ void MainWindow::rebuildSpeakingEvaluationGrid()
                 {
                     cell.AcceptsReturn(true);
                     cell.TextWrapping(TextWrapping::Wrap);
-                    cell.Height(48.0);
+                    cell.TextAlignment(TextAlignment::Left);
                 }
                 cell.TextChanging(
                     [this](TextBox const&, TextBoxTextChangingEventArgs const&) {
