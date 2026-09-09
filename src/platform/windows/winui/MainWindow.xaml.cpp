@@ -14786,22 +14786,23 @@ void MainWindow::populateClassesPage(
     speakingRoot.Children().Append(batchReportCard.root);
 
     auto analyticsRoot = makeRoot(StackPanel());
+    auto analyticsTopBar = Grid();
+    analyticsTopBar.ColumnSpacing(16.0);
+    auto analyticsTitleColumn = ColumnDefinition();
+    analyticsTitleColumn.Width(GridLengthHelper::FromValueAndType(
+        1.0,
+        GridUnitType::Star
+        ));
+    analyticsTopBar.ColumnDefinitions().Append(analyticsTitleColumn);
+    analyticsTopBar.ColumnDefinitions().Append(ColumnDefinition());
+
     auto analyticsTitle = TextBlock();
     analyticsTitle.Text(L"Class Analytics");
-    analyticsTitle.FontSize(24.0);
+    applyResourceStyle(analyticsTitle, L"Phase3PageTitleTextBlockStyle");
     setAutomationName(analyticsTitle, L"Class Analytics");
-    analyticsRoot.Children().Append(analyticsTitle);
-
-    auto analyticsDescription = TextBlock();
-    analyticsDescription.Text(
-        L"Review engine-backed speaking scores, criterion distributions, class shape, and student ranking for the selected evaluation."
-        );
-    analyticsDescription.TextWrapping(TextWrapping::Wrap);
-    setAutomationName(
-        analyticsDescription,
-        L"Class analytics description"
-        );
-    analyticsRoot.Children().Append(analyticsDescription);
+    analyticsTitle.VerticalAlignment(VerticalAlignment::Center);
+    Grid::SetColumn(analyticsTitle, 0);
+    analyticsTopBar.Children().Append(analyticsTitle);
 
     m_speakingAnalyticsStatusText = TextBlock();
     m_speakingAnalyticsStatusText.Text(
@@ -14812,15 +14813,10 @@ void MainWindow::populateClassesPage(
         m_speakingAnalyticsStatusText,
         L"Speaking analytics status"
         );
-    analyticsRoot.Children().Append(m_speakingAnalyticsStatusText);
-
     m_speakingAnalyticsLoading = true;
     m_speakingAnalyticsName = "All";
     m_speakingAnalyticsSelector = ComboBox();
-    m_speakingAnalyticsSelector.Header(
-        box_value(hstring(L"Evaluation scope"))
-        );
-    m_speakingAnalyticsSelector.MinWidth(320.0);
+    m_speakingAnalyticsSelector.MinWidth(220.0);
     m_speakingAnalyticsSelector.IsTabStop(true);
     m_speakingAnalyticsSelector.TabIndex(0);
     setAutomationName(
@@ -14862,31 +14858,97 @@ void MainWindow::populateClassesPage(
         }
         );
     m_speakingAnalyticsLoading = false;
-    analyticsRoot.Children().Append(m_speakingAnalyticsSelector);
+    auto evaluationControls = StackPanel();
+    evaluationControls.Orientation(Orientation::Horizontal);
+    evaluationControls.Spacing(8.0);
+    evaluationControls.VerticalAlignment(VerticalAlignment::Center);
+    auto evaluationLabel = TextBlock();
+    evaluationLabel.Text(L"Evaluation");
+    evaluationLabel.VerticalAlignment(VerticalAlignment::Center);
+    applyResourceStyle(evaluationLabel, L"Phase3BodyTextBlockStyle");
+    evaluationControls.Children().Append(evaluationLabel);
+    evaluationControls.Children().Append(m_speakingAnalyticsSelector);
+    Grid::SetColumn(evaluationControls, 1);
+    analyticsTopBar.Children().Append(evaluationControls);
+    analyticsRoot.Children().Append(analyticsTopBar);
+    analyticsRoot.Children().Append(m_speakingAnalyticsStatusText);
 
-    auto analyticsSummaryCard = ClassMngrWinUISharedUX::buildCard({
-        L"Summary",
-        L"Average, fully scored students, strongest areas, and focus areas.",
-        L"Speaking analytics summary"
-        });
+    auto analyticsSummaryGrid = Grid();
+    analyticsSummaryGrid.ColumnSpacing(12.0);
+    const std::array<wchar_t const*, 4> summaryTitles{
+        L"Class Average", L"Students Fully Scored", L"Strongest Area", L"Focus Area"
+    };
+    for (int column = 0; column < static_cast<int>(summaryTitles.size()); ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            1.0,
+            GridUnitType::Star
+            ));
+        analyticsSummaryGrid.ColumnDefinitions().Append(definition);
+        auto card = ClassMngrWinUISharedUX::buildCard({
+            summaryTitles[static_cast<std::size_t>(column)],
+            L"",
+            hstring(L"Speaking analytics ")
+                + hstring(summaryTitles[static_cast<std::size_t>(column)])
+            });
+        auto value = TextBlock();
+        value.Text(L"—");
+        value.FontSize(20.0);
+        value.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        value.TextWrapping(TextWrapping::Wrap);
+        m_speakingAnalyticsSummaryValues[static_cast<std::size_t>(column)] = value;
+        card.content.Children().Append(value);
+        Grid::SetColumn(card.root, column);
+        analyticsSummaryGrid.Children().Append(card.root);
+    }
+    analyticsRoot.Children().Append(analyticsSummaryGrid);
+
     m_speakingAnalyticsSummaryText = TextBlock();
     m_speakingAnalyticsSummaryText.TextWrapping(TextWrapping::Wrap);
+    m_speakingAnalyticsSummaryText.Visibility(Visibility::Collapsed);
     setAutomationName(
         m_speakingAnalyticsSummaryText,
         L"Speaking analytics summary values"
         );
-    analyticsSummaryCard.content.Children().Append(
-        m_speakingAnalyticsSummaryText
-        );
-    analyticsRoot.Children().Append(analyticsSummaryCard.root);
+    analyticsRoot.Children().Append(m_speakingAnalyticsSummaryText);
+
+    auto analyticsChartsGrid = Grid();
+    analyticsChartsGrid.ColumnSpacing(12.0);
+    for (int column = 0; column < 2; ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            1.0,
+            GridUnitType::Star
+            ));
+        analyticsChartsGrid.ColumnDefinitions().Append(definition);
+    }
 
     auto analyticsCriteriaCard = ClassMngrWinUISharedUX::buildCard({
         L"By Criterion",
-        L"Average score and observed grade distribution for each speaking criterion.",
+        L"Average score and grade distribution across each criterion.",
         L"Speaking analytics criteria"
         });
+    auto analyticsLegend = StackPanel();
+    analyticsLegend.Orientation(Orientation::Horizontal);
+    analyticsLegend.Spacing(12.0);
+    for (const std::wstring_view grade : {L"A+", L"A", L"B+", L"B", L"C"})
+    {
+        auto item = TextBlock();
+        item.Text(hstring(L"● ") + hstring(grade));
+        item.FontSize(12.0);
+        const auto gradeColor = grade == L"A+" ? Windows::UI::Color{255, 21, 148, 71}
+            : grade == L"A" ? Windows::UI::Color{255, 63, 126, 203}
+            : grade == L"B+" ? Windows::UI::Color{255, 215, 163, 22}
+            : grade == L"B" ? Windows::UI::Color{255, 239, 90, 19}
+            : Windows::UI::Color{255, 189, 24, 33};
+        item.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(gradeColor));
+        analyticsLegend.Children().Append(item);
+    }
+    analyticsCriteriaCard.content.Children().Append(analyticsLegend);
     m_speakingAnalyticsCriteriaPanel = StackPanel();
-    m_speakingAnalyticsCriteriaPanel.Spacing(4.0);
+    m_speakingAnalyticsCriteriaPanel.Spacing(10.0);
     setAutomationName(
         m_speakingAnalyticsCriteriaPanel,
         L"Speaking analytics criterion metrics"
@@ -14894,34 +14956,43 @@ void MainWindow::populateClassesPage(
     analyticsCriteriaCard.content.Children().Append(
         m_speakingAnalyticsCriteriaPanel
         );
-    analyticsRoot.Children().Append(analyticsCriteriaCard.root);
+    Grid::SetColumn(analyticsCriteriaCard.root, 0);
+    analyticsChartsGrid.Children().Append(analyticsCriteriaCard.root);
 
     auto analyticsShapeCard = ClassMngrWinUISharedUX::buildCard({
         L"Class Shape",
-        L"The selected class-shape evaluation and year-to-date fully scored results.",
+        L"Grade histogram for the selected evaluation and year-to-date trend.",
         L"Speaking analytics class shape"
         });
     m_speakingAnalyticsShapeText = TextBlock();
     m_speakingAnalyticsShapeText.TextWrapping(TextWrapping::Wrap);
+    m_speakingAnalyticsShapeText.Visibility(Visibility::Collapsed);
     setAutomationName(
         m_speakingAnalyticsShapeText,
         L"Speaking analytics class shape values"
         );
     analyticsShapeCard.content.Children().Append(m_speakingAnalyticsShapeText);
-    analyticsRoot.Children().Append(analyticsShapeCard.root);
+    m_speakingAnalyticsShapePanel = StackPanel();
+    m_speakingAnalyticsShapePanel.Spacing(10.0);
+    analyticsShapeCard.content.Children().Append(m_speakingAnalyticsShapePanel);
+    Grid::SetColumn(analyticsShapeCard.root, 1);
+    analyticsChartsGrid.Children().Append(analyticsShapeCard.root);
+    analyticsRoot.Children().Append(analyticsChartsGrid);
 
     auto analyticsRankingCard = ClassMngrWinUISharedUX::buildCard({
         L"Student Ranking",
-        L"Read-only ranking derived from the same engine analytics snapshot.",
+        L"Read-only ranking, including every scored speaking criterion.",
         L"Speaking analytics student ranking"
         });
     m_speakingAnalyticsRankingList = ListView();
-    m_speakingAnalyticsRankingList.SelectionMode(
-        ListViewSelectionMode::Single
-        );
+    m_speakingAnalyticsRankingList.SelectionMode(ListViewSelectionMode::None);
     m_speakingAnalyticsRankingList.IsTabStop(true);
     m_speakingAnalyticsRankingList.TabIndex(1);
-    m_speakingAnalyticsRankingList.Height(360.0);
+    m_speakingAnalyticsRankingList.MinHeight(360.0);
+    ScrollViewer::SetHorizontalScrollBarVisibility(
+        m_speakingAnalyticsRankingList,
+        ScrollBarVisibility::Auto
+        );
     setAutomationName(
         m_speakingAnalyticsRankingList,
         L"Speaking analytics student ranking list"
@@ -16622,6 +16693,7 @@ void MainWindow::refreshSpeakingAnalytics()
     if (!m_speakingAnalyticsStatusText
         || !m_speakingAnalyticsCriteriaPanel
         || !m_speakingAnalyticsShapeText
+        || !m_speakingAnalyticsShapePanel
         || !m_speakingAnalyticsRankingList)
     {
         return;
@@ -16631,6 +16703,20 @@ void MainWindow::refreshSpeakingAnalytics()
     m_speakingAnalyticsRankingList.Items().Clear();
     m_speakingAnalyticsSummaryText.Text({});
     m_speakingAnalyticsShapeText.Text({});
+    m_speakingAnalyticsShapePanel.Children().Clear();
+    for (auto const& value : m_speakingAnalyticsSummaryValues)
+    {
+        if (value)
+        {
+            value.Text(L"-");
+        }
+    }
+    const auto showAnalyticsPlaceholder = [this](std::wstring_view message) {
+        auto placeholder = TextBlock();
+        placeholder.Text(hstring(message));
+        placeholder.TextWrapping(TextWrapping::Wrap);
+        m_speakingAnalyticsShapePanel.Children().Append(placeholder);
+    };
 
     if (!m_openDatabase)
     {
@@ -16638,6 +16724,7 @@ void MainWindow::refreshSpeakingAnalytics()
         m_speakingAnalyticsSummaryText.Text(
             L"Open a database to calculate speaking analytics."
             );
+        showAnalyticsPlaceholder(L"Open a database to view class shape and trend data.");
         return;
     }
     if (m_classSelectedId <= 0 || m_classNew)
@@ -16648,6 +16735,7 @@ void MainWindow::refreshSpeakingAnalytics()
         m_speakingAnalyticsSummaryText.Text(
             L"No class is available for analytics."
             );
+        showAnalyticsPlaceholder(L"Save the selected class to view analytics.");
         return;
     }
 
@@ -16662,6 +16750,7 @@ void MainWindow::refreshSpeakingAnalytics()
         m_speakingAnalyticsSummaryText.Text(
             L"The analytics roster is unavailable."
             );
+        showAnalyticsPlaceholder(L"The analytics roster is unavailable.");
         return;
     }
 
@@ -16692,6 +16781,7 @@ void MainWindow::refreshSpeakingAnalytics()
             m_speakingAnalyticsSummaryText.Text(
                 L"The analytics evaluations are unavailable."
                 );
+            showAnalyticsPlaceholder(L"The analytics evaluations are unavailable.");
             return;
         }
 
@@ -16721,12 +16811,14 @@ void MainWindow::rebuildSpeakingAnalytics(
         || !m_speakingAnalyticsSummaryText
         || !m_speakingAnalyticsCriteriaPanel
         || !m_speakingAnalyticsShapeText
+        || !m_speakingAnalyticsShapePanel
         || !m_speakingAnalyticsRankingList)
     {
         return;
     }
 
     m_speakingAnalyticsCriteriaPanel.Children().Clear();
+    m_speakingAnalyticsShapePanel.Children().Clear();
     m_speakingAnalyticsRankingList.Items().Clear();
 
     const auto join = [](std::vector<std::string> const& values,
@@ -16746,6 +16838,36 @@ void MainWindow::rebuildSpeakingAnalytics(
         return value.empty() ? std::wstring(L"—") : value;
     };
 
+    const auto gradeColor = [](std::wstring_view grade) {
+        if (grade == L"A+") return Windows::UI::Color{255, 21, 148, 71};
+        if (grade == L"A") return Windows::UI::Color{255, 63, 126, 203};
+        if (grade == L"B+") return Windows::UI::Color{255, 215, 163, 22};
+        if (grade == L"B") return Windows::UI::Color{255, 239, 90, 19};
+        return Windows::UI::Color{255, 189, 24, 33};
+    };
+    const auto gradeBadge = [&gradeColor](std::wstring_view grade) {
+        auto badge = Border();
+        badge.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(gradeColor(grade)));
+        badge.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+        badge.Padding(Thickness{6.0, 2.0, 6.0, 2.0});
+        auto label = TextBlock();
+        label.Text(hstring(grade));
+        label.FontSize(12.0);
+        label.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        label.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 255, 255, 255}));
+        badge.Child(label);
+        return badge;
+    };
+    const auto setSummaryValue = [this](std::size_t index,
+                                        std::wstring_view value) {
+        if (index < m_speakingAnalyticsSummaryValues.size()
+            && m_speakingAnalyticsSummaryValues[index])
+        {
+            m_speakingAnalyticsSummaryValues[index].Text(hstring(value));
+        }
+    };
+
     const auto& snapshot = dashboard.selectedSnapshot.hasData
         ? dashboard.selectedSnapshot
         : dashboard.classShapeSnapshot;
@@ -16763,6 +16885,14 @@ void MainWindow::rebuildSpeakingAnalytics(
         m_speakingAnalyticsShapeText.Text(
             L"Class shape: No fully scored evaluation is available."
             );
+        setSummaryValue(0, L"-");
+        setSummaryValue(1, L"0 students");
+        setSummaryValue(2, L"-");
+        setSummaryValue(3, L"-");
+        auto emptyShape = TextBlock();
+        emptyShape.Text(L"No fully scored evaluation is available yet.");
+        emptyShape.TextWrapping(TextWrapping::Wrap);
+        m_speakingAnalyticsShapePanel.Children().Append(emptyShape);
         return;
     }
 
@@ -16776,6 +16906,22 @@ void MainWindow::rebuildSpeakingAnalytics(
     std::wstring summary = L"Class average: ";
     if (dashboard.selectedSnapshot.hasData)
     {
+        const std::wstring average = asWide(
+            classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                snapshot.classAverage3
+                ));
+        setSummaryValue(
+            0,
+            asWide(snapshot.classAverageLetter) + L" · " + average
+            );
+        std::wstring assessed = std::to_wstring(snapshot.fullyScoredCount);
+        if (snapshot.rosterStudentCount > 0)
+        {
+            assessed += L" / " + std::to_wstring(snapshot.rosterStudentCount);
+        }
+        setSummaryValue(1, assessed + L" students");
+        setSummaryValue(2, displayOrDash(join(snapshot.strongestLabels, L", ")));
+        setSummaryValue(3, displayOrDash(join(snapshot.focusLabels, L", ")));
         summary += asWide(snapshot.classAverageLetter)
             + L" · " + asWide(
                 classmngr::engine::SpeakingAnalyticsService::formatAverage(
@@ -16797,10 +16943,19 @@ void MainWindow::rebuildSpeakingAnalytics(
     {
         summary += L"—\nNo aggregate score is available for the selected scope.";
     }
+    if (!dashboard.selectedSnapshot.hasData)
+    {
+        setSummaryValue(0, L"-");
+        setSummaryValue(1, L"No scores");
+        setSummaryValue(2, L"-");
+        setSummaryValue(3, L"-");
+    }
     m_speakingAnalyticsSummaryText.Text(hstring(summary));
 
     for (const auto& criterion : snapshot.criteria)
     {
+        auto criterionRoot = StackPanel();
+        criterionRoot.Spacing(4.0);
         auto value = TextBlock();
         std::wstring text = asWide(criterion.name) + L": ";
         if (!criterion.hasData)
@@ -16843,11 +16998,52 @@ void MainWindow::rebuildSpeakingAnalytics(
         }
         value.Text(hstring(text));
         value.TextWrapping(TextWrapping::Wrap);
+        value.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        criterionRoot.Children().Append(value);
+        if (criterion.hasData)
+        {
+            int largestCount = 1;
+            for (const auto& [grade, count] : criterion.distribution)
+            {
+                static_cast<void>(grade);
+                largestCount = std::max(largestCount, count);
+            }
+            auto distribution = StackPanel();
+            distribution.Orientation(Orientation::Horizontal);
+            distribution.Spacing(4.0);
+            for (const std::string_view grade :
+                 classmngr::engine::SpeakingEvaluationScoreValues)
+            {
+                const auto found = criterion.distribution.find(std::string(grade));
+                if (found == criterion.distribution.end())
+                {
+                    continue;
+                }
+                auto segment = Border();
+                segment.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                    gradeColor(asWide(grade))));
+                segment.CornerRadius(CornerRadius{3.0, 3.0, 3.0, 3.0});
+                segment.Padding(Thickness{6.0, 3.0, 6.0, 3.0});
+                segment.Width(std::max(
+                    34.0,
+                    190.0 * static_cast<double>(found->second)
+                        / static_cast<double>(largestCount)));
+                auto segmentLabel = TextBlock();
+                segmentLabel.Text(hstring(asWide(grade) + L" "
+                    + std::to_wstring(found->second)));
+                segmentLabel.FontSize(11.0);
+                segmentLabel.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                    Windows::UI::Color{255, 255, 255, 255}));
+                segment.Child(segmentLabel);
+                distribution.Children().Append(segment);
+            }
+            criterionRoot.Children().Append(distribution);
+        }
         setAutomationName(
-            value,
+            criterionRoot,
             L"Speaking analytics " + asWide(criterion.name)
             );
-        m_speakingAnalyticsCriteriaPanel.Children().Append(value);
+        m_speakingAnalyticsCriteriaPanel.Children().Append(criterionRoot);
     }
 
     std::map<std::string, int> shapeDistribution;
@@ -16910,6 +17106,124 @@ void MainWindow::rebuildSpeakingAnalytics(
     }
     m_speakingAnalyticsShapeText.Text(hstring(shape));
 
+    auto evaluationCaption = TextBlock();
+    evaluationCaption.Text(hstring(L"Evaluation: "
+        + (dashboard.classShapeEvaluationName.empty()
+            ? std::wstring(L"-")
+            : asWide(dashboard.classShapeEvaluationName))));
+    evaluationCaption.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+    m_speakingAnalyticsShapePanel.Children().Append(evaluationCaption);
+
+    auto histogram = Grid();
+    histogram.Height(150.0);
+    histogram.ColumnSpacing(8.0);
+    int histogramMaximum = 1;
+    for (const auto& [grade, count] : shapeDistribution)
+    {
+        static_cast<void>(grade);
+        histogramMaximum = std::max(histogramMaximum, count);
+    }
+    for (int column = 0;
+         column < static_cast<int>(classmngr::engine::SpeakingEvaluationScoreValues.size());
+         ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star));
+        histogram.ColumnDefinitions().Append(definition);
+        const std::string_view grade = classmngr::engine::SpeakingEvaluationScoreValues[
+            static_cast<std::size_t>(column)];
+        const auto found = shapeDistribution.find(std::string(grade));
+        const int count = found == shapeDistribution.end() ? 0 : found->second;
+        auto barColumn = StackPanel();
+        barColumn.VerticalAlignment(VerticalAlignment::Bottom);
+        barColumn.HorizontalAlignment(HorizontalAlignment::Stretch);
+        barColumn.Spacing(3.0);
+        auto countLabel = TextBlock();
+        countLabel.Text(std::to_wstring(count));
+        countLabel.HorizontalAlignment(HorizontalAlignment::Center);
+        barColumn.Children().Append(countLabel);
+        auto bar = Border();
+        bar.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(gradeColor(asWide(grade))));
+        bar.CornerRadius(CornerRadius{4.0, 4.0, 0.0, 0.0});
+        bar.Height(count == 0 ? 5.0 : 92.0 * static_cast<double>(count)
+            / static_cast<double>(histogramMaximum));
+        barColumn.Children().Append(bar);
+        auto gradeLabel = TextBlock();
+        gradeLabel.Text(hstring(asWide(grade)));
+        gradeLabel.HorizontalAlignment(HorizontalAlignment::Center);
+        gradeLabel.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        barColumn.Children().Append(gradeLabel);
+        Grid::SetColumn(barColumn, column);
+        histogram.Children().Append(barColumn);
+    }
+    m_speakingAnalyticsShapePanel.Children().Append(histogram);
+
+    auto trendHeading = TextBlock();
+    trendHeading.Text(L"Year to Date");
+    trendHeading.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+    m_speakingAnalyticsShapePanel.Children().Append(trendHeading);
+    auto trend = StackPanel();
+    trend.Orientation(Orientation::Horizontal);
+    trend.Spacing(8.0);
+    if (dashboard.yearToDatePoints.empty())
+    {
+        auto emptyTrend = TextBlock();
+        emptyTrend.Text(L"No fully scored evaluations");
+        trend.Children().Append(emptyTrend);
+    }
+    else
+    {
+        for (const auto& point : dashboard.yearToDatePoints)
+        {
+            auto pointCard = Border();
+            pointCard.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{255, 49, 55, 65}));
+            pointCard.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+            pointCard.Padding(Thickness{8.0, 5.0, 8.0, 5.0});
+            auto pointContent = StackPanel();
+            auto pointName = TextBlock();
+            pointName.Text(hstring(asWide(point.evaluationName)));
+            pointName.FontSize(11.0);
+            pointContent.Children().Append(pointName);
+            auto pointValue = StackPanel();
+            pointValue.Orientation(Orientation::Horizontal);
+            pointValue.Spacing(5.0);
+            pointValue.Children().Append(gradeBadge(asWide(point.classAverageLetter)));
+            auto average = TextBlock();
+            average.Text(hstring(asWide(
+                classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                    point.classAverage3))));
+            average.VerticalAlignment(VerticalAlignment::Center);
+            pointValue.Children().Append(average);
+            pointContent.Children().Append(pointValue);
+            pointCard.Child(pointContent);
+            trend.Children().Append(pointCard);
+        }
+    }
+    m_speakingAnalyticsShapePanel.Children().Append(trend);
+
+    auto rankingHeader = Grid();
+    rankingHeader.ColumnSpacing(8.0);
+    rankingHeader.MinWidth(900.0);
+    const std::array<double, 5> rankingWidths{44.0, 160.0, 140.0, 100.0, 420.0};
+    const std::array<wchar_t const*, 5> rankingHeaders{
+        L"#", L"English Name", L"Korean Name", L"Average", L"Criteria"
+    };
+    for (int column = 0; column < static_cast<int>(rankingWidths.size()); ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            rankingWidths[static_cast<std::size_t>(column)], GridUnitType::Pixel));
+        rankingHeader.ColumnDefinitions().Append(definition);
+        auto label = TextBlock();
+        label.Text(rankingHeaders[static_cast<std::size_t>(column)]);
+        label.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        label.Margin(Thickness{4.0, 2.0, 4.0, 6.0});
+        Grid::SetColumn(label, column);
+        rankingHeader.Children().Append(label);
+    }
+    m_speakingAnalyticsRankingList.Header(rankingHeader);
+
     for (std::size_t index = 0;
          index < snapshot.rankings.size();
          ++index)
@@ -16917,9 +17231,9 @@ void MainWindow::rebuildSpeakingAnalytics(
         const auto& rank = snapshot.rankings[index];
         auto row = Grid();
         row.ColumnSpacing(8.0);
-        row.MinWidth(760.0);
+        row.MinWidth(900.0);
         const std::array<double, 5> widths{
-            44.0, 160.0, 160.0, 96.0, 280.0
+            44.0, 160.0, 140.0, 100.0, 420.0
         };
         for (const double width : widths)
         {
@@ -16943,6 +17257,50 @@ void MainWindow::rebuildSpeakingAnalytics(
         };
         for (int column = 0; column < static_cast<int>(values.size()); ++column)
         {
+            if (column == 4)
+            {
+                auto criteria = StackPanel();
+                criteria.Orientation(Orientation::Horizontal);
+                criteria.Spacing(6.0);
+                const std::size_t count = std::min(
+                    snapshot.criteria.size(), rank.criterionLetters.size());
+                for (std::size_t criterionIndex = 0;
+                     criterionIndex < count;
+                     ++criterionIndex)
+                {
+                    auto criterion = StackPanel();
+                    criterion.Spacing(2.0);
+                    auto criterionName = TextBlock();
+                    criterionName.Text(hstring(asWide(
+                        snapshot.criteria[criterionIndex].name)));
+                    criterionName.FontSize(10.0);
+                    criterionName.MaxWidth(64.0);
+                    criterionName.TextTrimming(TextTrimming::CharacterEllipsis);
+                    criterion.Children().Append(criterionName);
+                    criterion.Children().Append(gradeBadge(asWide(
+                        rank.criterionLetters[criterionIndex])));
+                    criteria.Children().Append(criterion);
+                }
+                Grid::SetColumn(criteria, column);
+                row.Children().Append(criteria);
+                continue;
+            }
+            if (column == 3)
+            {
+                auto average = StackPanel();
+                average.Orientation(Orientation::Horizontal);
+                average.Spacing(6.0);
+                auto score = TextBlock();
+                score.Text(hstring(asWide(
+                    classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                        rank.overall3))));
+                score.VerticalAlignment(VerticalAlignment::Center);
+                average.Children().Append(score);
+                average.Children().Append(gradeBadge(asWide(rank.overallLetter)));
+                Grid::SetColumn(average, column);
+                row.Children().Append(average);
+                continue;
+            }
             auto cell = TextBlock();
             cell.Text(hstring(values[static_cast<std::size_t>(column)]));
             cell.TextWrapping(TextWrapping::Wrap);

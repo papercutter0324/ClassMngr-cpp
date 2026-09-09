@@ -906,10 +906,14 @@ private:
         m_speakingAnalyticsStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock
         m_speakingAnalyticsSummaryText{nullptr};
+    std::array<Microsoft::UI::Xaml::Controls::TextBlock, 4>
+        m_speakingAnalyticsSummaryValues{};
     Microsoft::UI::Xaml::Controls::StackPanel
         m_speakingAnalyticsCriteriaPanel{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock
         m_speakingAnalyticsShapeText{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_speakingAnalyticsShapePanel{nullptr};
     Microsoft::UI::Xaml::Controls::ListView
         m_speakingAnalyticsRankingList{nullptr};
     std::string m_speakingAnalyticsName;
