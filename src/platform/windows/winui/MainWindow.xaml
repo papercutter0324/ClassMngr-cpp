@@ -29,11 +29,24 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock
-                x:Name="AppTitleBarText"
-                Style="{StaticResource Phase3TitleBarTextBlockStyle}"
-                Text="ClassMngr"
-                AutomationProperties.Name="Application title" />
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="{StaticResource Phase3Spacing8}"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False">
+                <Image
+                    Width="24"
+                    Height="24"
+                    VerticalAlignment="Center"
+                    Source="ms-appx:///Assets/ClassMngrIcon.png"
+                    Stretch="Uniform"
+                    AutomationProperties.Name="ClassMngr icon" />
+                <TextBlock
+                    x:Name="AppTitleBarText"
+                    Style="{StaticResource Phase3TitleBarTextBlockStyle}"
+                    Text="ClassMngr"
+                    AutomationProperties.Name="Application title" />
+            </StackPanel>
             <TextBlock
                 x:Name="ShellDatabaseStatusText"
                 Grid.Column="1"

@@ -177,6 +177,14 @@
     <Page Include="Resources\TableStyles.xaml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\..\..\resources\assets\icons\icon_256x256.png">
+      <Link>Assets\ClassMngrIcon.png</Link>
+      <TargetPath>Assets\ClassMngrIcon.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup Condition="'$(ClassMngrWinUIResourceDirectory)'!=''">
     <PRIResource Include="$(ClassMngrWinUIResourceDirectory)\Strings\en-AU\Resources.resw"
                  Condition="Exists('$(ClassMngrWinUIResourceDirectory)\Strings\en-AU\Resources.resw')" />

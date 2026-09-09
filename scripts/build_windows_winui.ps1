@@ -538,6 +538,15 @@ if (-not (Test-Path -LiteralPath $executablePath)) {
     throw "MSBuild completed but the staged executable was not found: $executablePath"
 }
 
+$titleBarIconSourcePath = Resolve-ExistingPath `
+    -Path (Join-Path $projectRootPath 'resources\assets\icons\icon_256x256.png') `
+    -Description 'WinUI title-bar icon'
+$titleBarIconOutputPath = Join-Path $outputPath 'Assets\ClassMngrIcon.png'
+Ensure-Directory -Path (Split-Path -Parent $titleBarIconOutputPath)
+Copy-Item -LiteralPath $titleBarIconSourcePath `
+    -Destination $titleBarIconOutputPath `
+    -Force
+
 $priConfigPath = Join-Path $intermediatePath 'winui-priconfig.xml'
 $applicationPriPath = Join-Path $outputPath 'ClassMngrWinUI.pri'
 Write-Host "Generating WinUI resource index: $applicationPriPath"
@@ -580,6 +589,11 @@ foreach ($frameworkPriFile in $frameworkPriFiles) {
         -Destination (Join-Path $winUiResourceDirectory $frameworkPriFile.Name) `
         -Force
 }
+$titleBarIconResourcePath = Join-Path $winUiResourceDirectory 'Assets\ClassMngrIcon.png'
+Ensure-Directory -Path (Split-Path -Parent $titleBarIconResourcePath)
+Copy-Item -LiteralPath $titleBarIconSourcePath `
+    -Destination $titleBarIconResourcePath `
+    -Force
 $indexResult = Invoke-MakePri `
     -Operation 'new' `
     -Arguments @(
