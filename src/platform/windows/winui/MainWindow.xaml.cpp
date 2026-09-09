@@ -1685,6 +1685,27 @@ void setAutomationName(
     );
 }
 
+void applyResourceStyle(
+    winrt::Microsoft::UI::Xaml::FrameworkElement const& element,
+    std::wstring_view key
+    )
+{
+    const auto application =
+        winrt::Microsoft::UI::Xaml::Application::Current();
+    if (!application || key.empty())
+    {
+        return;
+    }
+
+    const auto resource = application.Resources().Lookup(
+        winrt::box_value(winrt::hstring(key))
+        );
+    if (resource)
+    {
+        element.Style(resource.as<winrt::Microsoft::UI::Xaml::Style>());
+    }
+}
+
 std::vector<std::wstring> splitPastedRangeRow(std::wstring_view row)
 {
     std::vector<std::wstring> values;
@@ -13342,10 +13363,10 @@ void MainWindow::populateClassesPage(
     // class hierarchy.
     static_cast<void>(pageId);
     auto makeRoot = [](StackPanel const& content) {
-        content.Padding(Thickness{32.0, 16.0, 32.0, 32.0});
+        content.Padding(Thickness{16.0, 12.0, 16.0, 24.0});
         content.Spacing(16.0);
-        content.MaxWidth(900.0);
-        content.HorizontalAlignment(HorizontalAlignment::Center);
+        content.MaxWidth(2000.0);
+        content.HorizontalAlignment(HorizontalAlignment::Stretch);
         return content;
     };
     auto makeTextSection = [&makeRoot](wchar_t const* titleText,
@@ -13578,7 +13599,7 @@ void MainWindow::populateClassesPage(
     auto notesRoot = makeRoot(StackPanel());
     auto notesTitle = TextBlock();
     notesTitle.Text(L"Class Notes");
-    notesTitle.FontSize(24.0);
+    applyResourceStyle(notesTitle, L"Phase3PageTitleTextBlockStyle");
     setAutomationName(notesTitle, L"Class Notes");
     notesRoot.Children().Append(notesTitle);
 
@@ -13587,12 +13608,15 @@ void MainWindow::populateClassesPage(
         L"Keep class notes and time-filler activities with the selected class."
         );
     notesDescription.TextWrapping(TextWrapping::Wrap);
+    notesDescription.Visibility(Visibility::Collapsed);
     setAutomationName(notesDescription, L"Class notes description");
     notesRoot.Children().Append(notesDescription);
 
     m_classNotesStatusText = TextBlock();
     m_classNotesStatusText.Text(L"Select a class to edit notes.");
     m_classNotesStatusText.TextWrapping(TextWrapping::Wrap);
+    applyResourceStyle(m_classNotesStatusText, L"Phase4CardDescriptionTextBlockStyle");
+    m_classNotesStatusText.Visibility(Visibility::Collapsed);
     setAutomationName(m_classNotesStatusText, L"Class notes status");
     notesRoot.Children().Append(m_classNotesStatusText);
 
@@ -13607,9 +13631,17 @@ void MainWindow::populateClassesPage(
 
     auto notesCard = ClassMngrWinUISharedUX::buildCard({
         L"Notes",
-        L"Notes are trimmed and validated by the shared class-information engine.",
+        L"",
         L"Class notes form"
         });
+    notesCard.root.Padding(Thickness{24.0, 24.0, 24.0, 24.0});
+    notesCard.root.BorderThickness(Thickness{2.0, 2.0, 2.0, 2.0});
+    notesCard.root.BorderBrush(
+        Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 0, 120, 212}
+            )
+        );
+    notesCard.content.Spacing(24.0);
     m_classNotesTextBox = makeClassTextBox(
         L"Notes",
         L"Class notes editor",
@@ -13617,7 +13649,8 @@ void MainWindow::populateClassesPage(
         );
     m_classNotesTextBox.AcceptsReturn(true);
     m_classNotesTextBox.TextWrapping(TextWrapping::Wrap);
-    m_classNotesTextBox.Height(160.0);
+    m_classNotesTextBox.Height(244.0);
+    m_classNotesTextBox.VerticalContentAlignment(VerticalAlignment::Top);
     m_classNotesTextBox.MaxLength(10000);
     m_classNotesTextBox.TabIndex(0);
     m_classTimeFillerActivitiesTextBox = makeClassTextBox(
@@ -13627,7 +13660,10 @@ void MainWindow::populateClassesPage(
         );
     m_classTimeFillerActivitiesTextBox.AcceptsReturn(true);
     m_classTimeFillerActivitiesTextBox.TextWrapping(TextWrapping::Wrap);
-    m_classTimeFillerActivitiesTextBox.Height(160.0);
+    m_classTimeFillerActivitiesTextBox.Height(244.0);
+    m_classTimeFillerActivitiesTextBox.VerticalContentAlignment(
+        VerticalAlignment::Top
+        );
     m_classTimeFillerActivitiesTextBox.MaxLength(10000);
     m_classTimeFillerActivitiesTextBox.TabIndex(1);
     notesCard.content.Children().Append(m_classNotesTextBox);
@@ -13638,13 +13674,13 @@ void MainWindow::populateClassesPage(
     notesActions.Orientation(Orientation::Horizontal);
     notesActions.Spacing(8.0);
     m_classNotesSaveButton = Button();
-    m_classNotesSaveButton.Content(box_value(hstring(L"Save Notes")));
+    m_classNotesSaveButton.Content(box_value(hstring(L"Save Changes")));
     m_classNotesSaveButton.IsTabStop(true);
     m_classNotesSaveButton.TabIndex(2);
     m_classNotesSaveButton.Click({this, &MainWindow::ClassNotesSaveButton_Click});
     setAutomationName(m_classNotesSaveButton, L"Save class notes");
     m_classNotesDiscardButton = Button();
-    m_classNotesDiscardButton.Content(box_value(hstring(L"Discard Notes")));
+    m_classNotesDiscardButton.Content(box_value(hstring(L"Discard Changes")));
     m_classNotesDiscardButton.IsTabStop(true);
     m_classNotesDiscardButton.TabIndex(3);
     m_classNotesDiscardButton.Click({this, &MainWindow::ClassNotesDiscardButton_Click});
@@ -14715,6 +14751,7 @@ void MainWindow::populateClassesPage(
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
         scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.HorizontalContentAlignment(HorizontalAlignment::Stretch);
         scroll.Content(content);
         return scroll;
     };
