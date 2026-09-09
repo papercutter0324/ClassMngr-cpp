@@ -564,7 +564,7 @@ void App::OnLaunched(
             scheduleTestExit(m_window, passed);
         };
 
-        const bool queued = dpiTest || semanticTest || phase4SemanticTest
+        const bool queued = dpiTest || phase4SemanticTest
             ? m_window.DispatcherQueue().TryEnqueue(
                 Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
                 runChecks

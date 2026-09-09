@@ -2057,24 +2057,8 @@ Windows::Foundation::IAsyncOperation<bool>
 MainWindow::runPhase3SemanticChecks()
 {
     auto lifetime = get_strong();
-    const auto trace = [](std::string_view stage, bool value) {
-        try
-        {
-            std::ofstream output(
-                std::filesystem::current_path()
-                    / L"phase3-semantic-debug.txt",
-                std::ios::binary | std::ios::app
-                );
-            output << stage << '=' << (value ? "true" : "false") << '\n';
-        }
-        catch (...)
-        {
-        }
-    };
     const bool navigationReady = runPhase3NavigationChecks();
     const bool inputReady = runPhase1InputChecks();
-    trace("navigation", navigationReady);
-    trace("input", inputReady);
 
     bool focusReady = false;
     if (inputReady)
@@ -2153,37 +2137,18 @@ MainWindow::runPhase3SemanticChecks()
             }
         }
     }
-    trace("focus", focusReady);
 
-    focusReady = true;
     const bool resourcesReady = runPhase3LocalizationChecks();
     const bool dialogsReady = runPhase3DialogChecks();
     const bool threadingReady = ClassMngrWinUIThreading::runThreadingContractChecks();
     const bool phase4Ready = runPhase4SemanticChecks();
-    trace("resources", resourcesReady);
-    trace("dialogs", dialogsReady);
-    trace("threading", threadingReady);
-    trace("phase4", phase4Ready);
-    uint32_t failureMask = 0;
-    failureMask |= navigationReady ? 0 : 1;
-    failureMask |= inputReady ? 0 : 2;
-    failureMask |= focusReady ? 0 : 4;
-    failureMask |= resourcesReady ? 0 : 8;
-    failureMask |= dialogsReady ? 0 : 16;
-    failureMask |= threadingReady ? 0 : 32;
-    failureMask |= phase4Ready ? 0 : 64;
-    if (failureMask != 0)
+    if (!navigationReady || !inputReady || !focusReady || !resourcesReady
+        || !dialogsReady || !threadingReady || !phase4Ready)
     {
-        ExitProcess(100 + failureMask);
+        co_return false;
     }
 
-    const bool viewModelReady = co_await runPhase3ViewModelChecks();
-    trace("viewmodel", viewModelReady);
-    if (!viewModelReady)
-    {
-        ExitProcess(200);
-    }
-    co_return true;
+    co_return co_await runPhase3ViewModelChecks();
 }
 
 bool MainWindow::runPhase4SemanticChecks()
@@ -4737,6 +4702,7 @@ Windows::Foundation::IAsyncOperation<bool>
 MainWindow::runPhase3ViewModelChecks()
 {
     auto lifetime = get_strong();
+    const auto dispatcher = DispatcherQueue();
     auto viewModel = winrt::make_self<ObservableViewModel>();
     std::vector<std::wstring> changedProperties;
     const auto observable = viewModel.as<
@@ -4836,6 +4802,10 @@ MainWindow::runPhase3ViewModelChecks()
     const bool initiallyEnabled = commandInterface.CanExecute(nullptr);
     commandInterface.Execute(nullptr);
     co_await winrt::resume_on_signal(commandState->workStarted.get());
+    co_await ResumeOnDispatcherQueue{
+        dispatcher,
+        Microsoft::UI::Dispatching::DispatcherQueuePriority::Normal
+        };
     const bool runningAfterExecute = command->IsRunning()
         && !commandInterface.CanExecute(nullptr)
         && commandState->workInvoked.load(std::memory_order_relaxed);
