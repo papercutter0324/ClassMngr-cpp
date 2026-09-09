@@ -65,6 +65,7 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <numeric>
 #include <set>
 #include <string>
 #include <string_view>
@@ -1704,6 +1705,49 @@ void applyResourceStyle(
     {
         element.Style(resource.as<winrt::Microsoft::UI::Xaml::Style>());
     }
+}
+
+winrt::Windows::UI::Color uiColorFromHex(std::string_view value) noexcept
+{
+    if (value.size() != 7 || value.front() != '#')
+    {
+        return winrt::Windows::UI::Color{255, 128, 128, 128};
+    }
+
+    const auto hexDigit = [](char character) noexcept -> int {
+        if (character >= '0' && character <= '9')
+        {
+            return character - '0';
+        }
+        if (character >= 'a' && character <= 'f')
+        {
+            return character - 'a' + 10;
+        }
+        if (character >= 'A' && character <= 'F')
+        {
+            return character - 'A' + 10;
+        }
+        return -1;
+    };
+    const auto component = [&hexDigit](char high, char low) noexcept -> std::uint8_t {
+        const int highValue = hexDigit(high);
+        const int lowValue = hexDigit(low);
+        return highValue < 0 || lowValue < 0
+            ? static_cast<std::uint8_t>(128)
+            : static_cast<std::uint8_t>(highValue * 16 + lowValue);
+    };
+    if (hexDigit(value[1]) < 0 || hexDigit(value[2]) < 0
+        || hexDigit(value[3]) < 0 || hexDigit(value[4]) < 0
+        || hexDigit(value[5]) < 0 || hexDigit(value[6]) < 0)
+    {
+        return winrt::Windows::UI::Color{255, 128, 128, 128};
+    }
+    return winrt::Windows::UI::Color{
+        255,
+        component(value[1], value[2]),
+        component(value[3], value[4]),
+        component(value[5], value[6])
+    };
 }
 
 std::vector<std::wstring> splitPastedRangeRow(std::wstring_view row)
@@ -13388,7 +13432,7 @@ void MainWindow::populateClassesPage(
     auto detailsRoot = makeRoot(StackPanel());
     auto detailsTitle = TextBlock();
     detailsTitle.Text(L"Class Details");
-    detailsTitle.FontSize(24.0);
+    applyResourceStyle(detailsTitle, L"Phase3PageTitleTextBlockStyle");
     setAutomationName(detailsTitle, L"Class Details");
     detailsRoot.Children().Append(detailsTitle);
 
@@ -13397,6 +13441,7 @@ void MainWindow::populateClassesPage(
         L"Edit class information shared by schedules, rosters, and reports."
         );
     detailsDescription.TextWrapping(TextWrapping::Wrap);
+    detailsDescription.Visibility(Visibility::Collapsed);
     setAutomationName(
         detailsDescription,
         L"Class details and information description"
@@ -13458,9 +13503,11 @@ void MainWindow::populateClassesPage(
 
     auto detailsCard = ClassMngrWinUISharedUX::buildCard({
         L"Class information",
-        L"Grade, level, books, colors, and the assigned teacher are stored through the shared engine.",
+        L"",
         L"Class information form"
         });
+    detailsCard.root.Padding(Thickness{24.0, 24.0, 24.0, 24.0});
+    detailsCard.content.Spacing(16.0);
 
     m_classNameTextBox = makeClassTextBox(
         L"Class name",
@@ -13473,6 +13520,7 @@ void MainWindow::populateClassesPage(
         );
     m_classNameTextBox.InputScope(classNameInputScope);
     m_classNameTextBox.TabIndex(1);
+    classSelectorCard.content.Children().Append(m_classNameTextBox);
 
     const auto appendChoice = [](ComboBox combo,
                                  std::wstring_view display,
@@ -13537,30 +13585,124 @@ void MainWindow::populateClassesPage(
         );
 
     m_classColorTextBox = makeClassTextBox(
-        L"Class color (hex)",
+        L"Hex",
         L"Class color hex",
         L"e.g. #FFFFFF"
         );
+    m_classColorTextBox.MinWidth(108.0);
+    m_classColorTextBox.Width(108.0);
     m_classColorTextBox.TabIndex(6);
+    m_classColorPreview = Border();
+    m_classColorPreview.Width(48.0);
+    m_classColorPreview.Height(32.0);
+    m_classColorPreview.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+    m_classColorPreview.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+    m_classColorPreview.BorderBrush(
+        Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 128, 128, 128}
+            )
+        );
+    setAutomationName(m_classColorPreview, L"Class color preview");
+    m_classColorChooseButton = Button();
+    m_classColorChooseButton.Content(box_value(hstring(L"Choose Color")));
+    m_classColorChooseButton.IsTabStop(true);
+    m_classColorChooseButton.TabIndex(7);
+    m_classColorChooseButton.Click(
+        [this](auto const&, auto const&) {
+            if (m_classColorTextBox)
+            {
+                m_classColorTextBox.Focus(FocusState::Programmatic);
+            }
+        }
+        );
+    setAutomationName(m_classColorChooseButton, L"Choose class color");
     m_classFontColorTextBox = makeClassTextBox(
         L"Font color (hex)",
         L"Class font color hex",
         L"e.g. #000000"
         );
-    m_classFontColorTextBox.TabIndex(7);
+    m_classFontColorTextBox.TabIndex(8);
+    m_classFontColorTextBox.MinWidth(140.0);
+    m_classFontColorTextBox.Width(140.0);
+
+    m_classStudentCountTextBox = TextBox();
+    m_classStudentCountTextBox.Header(box_value(hstring(L"# of Students")));
+    m_classStudentCountTextBox.MinWidth(100.0);
+    m_classStudentCountTextBox.Width(100.0);
+    m_classStudentCountTextBox.IsReadOnly(true);
+    m_classStudentCountTextBox.IsTabStop(false);
+    setAutomationName(m_classStudentCountTextBox, L"Class student count");
 
     m_classTeacherText = TextBlock();
     m_classTeacherText.TextWrapping(TextWrapping::Wrap);
     setAutomationName(m_classTeacherText, L"Assigned class teacher");
 
-    detailsCard.content.Children().Append(m_classNameTextBox);
-    detailsCard.content.Children().Append(m_classGradeCombo);
-    detailsCard.content.Children().Append(m_classLevelCombo);
-    detailsCard.content.Children().Append(m_classReadingBookCombo);
-    detailsCard.content.Children().Append(m_classEssayBookCombo);
-    detailsCard.content.Children().Append(m_classColorTextBox);
-    detailsCard.content.Children().Append(m_classFontColorTextBox);
-    detailsCard.content.Children().Append(m_classTeacherText);
+    auto colorField = StackPanel();
+    colorField.Spacing(4.0);
+    auto colorLabel = TextBlock();
+    colorLabel.Text(L"Color");
+    applyResourceStyle(colorLabel, L"Phase3BodyTextBlockStyle");
+    auto colorControls = StackPanel();
+    colorControls.Orientation(Orientation::Horizontal);
+    colorControls.Spacing(8.0);
+    colorControls.Children().Append(m_classColorPreview);
+    colorControls.Children().Append(m_classColorChooseButton);
+    colorControls.Children().Append(m_classColorTextBox);
+    colorField.Children().Append(colorLabel);
+    colorField.Children().Append(colorControls);
+
+    auto teacherField = StackPanel();
+    teacherField.Spacing(4.0);
+    auto teacherLabel = TextBlock();
+    teacherLabel.Text(L"Assigned Teacher");
+    applyResourceStyle(teacherLabel, L"Phase3BodyTextBlockStyle");
+    teacherField.Children().Append(teacherLabel);
+    teacherField.Children().Append(m_classTeacherText);
+
+    auto detailsGrid = Grid();
+    detailsGrid.ColumnSpacing(20.0);
+    detailsGrid.RowSpacing(16.0);
+    const std::array<double, 6> detailWidths{
+        300.0, 140.0, 240.0, 120.0, 260.0, 180.0
+    };
+    for (const double width : detailWidths)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            width,
+            GridUnitType::Pixel
+            ));
+        detailsGrid.ColumnDefinitions().Append(definition);
+    }
+    for (int row = 0; row < 3; ++row)
+    {
+        detailsGrid.RowDefinitions().Append(RowDefinition());
+    }
+    Grid::SetRow(colorField, 0);
+    Grid::SetColumn(colorField, 0);
+    Grid::SetRow(m_classGradeCombo, 0);
+    Grid::SetColumn(m_classGradeCombo, 1);
+    Grid::SetRow(m_classLevelCombo, 0);
+    Grid::SetColumn(m_classLevelCombo, 2);
+    Grid::SetRow(m_classStudentCountTextBox, 0);
+    Grid::SetColumn(m_classStudentCountTextBox, 3);
+    Grid::SetRow(m_classReadingBookCombo, 1);
+    Grid::SetColumn(m_classReadingBookCombo, 0);
+    Grid::SetRow(m_classEssayBookCombo, 1);
+    Grid::SetColumn(m_classEssayBookCombo, 1);
+    Grid::SetRow(m_classFontColorTextBox, 2);
+    Grid::SetColumn(m_classFontColorTextBox, 0);
+    Grid::SetRow(teacherField, 2);
+    Grid::SetColumn(teacherField, 1);
+    detailsGrid.Children().Append(colorField);
+    detailsGrid.Children().Append(m_classGradeCombo);
+    detailsGrid.Children().Append(m_classLevelCombo);
+    detailsGrid.Children().Append(m_classStudentCountTextBox);
+    detailsGrid.Children().Append(m_classReadingBookCombo);
+    detailsGrid.Children().Append(m_classEssayBookCombo);
+    detailsGrid.Children().Append(m_classFontColorTextBox);
+    detailsGrid.Children().Append(teacherField);
+    detailsCard.content.Children().Append(detailsGrid);
     detailsRoot.Children().Append(detailsCard.root);
 
     auto detailsActions = StackPanel();
@@ -13595,6 +13737,90 @@ void MainWindow::populateClassesPage(
     detailsActions.Children().Append(m_classSaveButton);
     detailsActions.Children().Append(m_classDiscardButton);
     detailsRoot.Children().Append(detailsActions);
+
+    auto scheduleCard = ClassMngrWinUISharedUX::buildCard({
+        L"Class Times",
+        L"",
+        L"Class schedule editor"
+        });
+    scheduleCard.root.Padding(Thickness{24.0, 24.0, 24.0, 24.0});
+    scheduleCard.content.Spacing(16.0);
+
+    auto regularScheduleTitle = TextBlock();
+    regularScheduleTitle.Text(L"Regular Schedule");
+    applyResourceStyle(regularScheduleTitle, L"Phase3BodyTextBlockStyle");
+    regularScheduleTitle.FontStyle(
+        Windows::UI::Text::FontStyle::Italic
+        );
+    scheduleCard.content.Children().Append(regularScheduleTitle);
+    m_classRegularScheduleGrid = Grid();
+    m_classRegularScheduleGrid.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    setAutomationName(
+        m_classRegularScheduleGrid,
+        L"Regular class schedule"
+        );
+    scheduleCard.content.Children().Append(m_classRegularScheduleGrid);
+    m_classRegularScheduleAddButton = Button();
+    m_classRegularScheduleAddButton.Content(
+        box_value(hstring(L"+ Add Time"))
+        );
+    m_classRegularScheduleAddButton.Width(200.0);
+    m_classRegularScheduleAddButton.IsTabStop(true);
+    m_classRegularScheduleAddButton.Click(
+        [this](auto const&, auto const&) {
+            addClassScheduleRow(false);
+        }
+        );
+    setAutomationName(
+        m_classRegularScheduleAddButton,
+        L"Add regular class time"
+        );
+    scheduleCard.content.Children().Append(m_classRegularScheduleAddButton);
+
+    auto scheduleDivider = Border();
+    scheduleDivider.Height(1.0);
+    scheduleDivider.Background(
+        Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 92, 99, 108}
+            )
+        );
+    scheduleCard.content.Children().Append(scheduleDivider);
+
+    auto intensiveScheduleTitle = TextBlock();
+    intensiveScheduleTitle.Text(L"Intensive Schedule");
+    applyResourceStyle(intensiveScheduleTitle, L"Phase3BodyTextBlockStyle");
+    intensiveScheduleTitle.FontStyle(
+        Windows::UI::Text::FontStyle::Italic
+        );
+    scheduleCard.content.Children().Append(intensiveScheduleTitle);
+    m_classIntensiveScheduleGrid = Grid();
+    m_classIntensiveScheduleGrid.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    setAutomationName(
+        m_classIntensiveScheduleGrid,
+        L"Intensive class schedule"
+        );
+    scheduleCard.content.Children().Append(m_classIntensiveScheduleGrid);
+    m_classIntensiveScheduleAddButton = Button();
+    m_classIntensiveScheduleAddButton.Content(
+        box_value(hstring(L"+ Add Intensive Time"))
+        );
+    m_classIntensiveScheduleAddButton.Width(260.0);
+    m_classIntensiveScheduleAddButton.IsTabStop(true);
+    m_classIntensiveScheduleAddButton.Click(
+        [this](auto const&, auto const&) {
+            addClassScheduleRow(true);
+        }
+        );
+    setAutomationName(
+        m_classIntensiveScheduleAddButton,
+        L"Add intensive class time"
+        );
+    scheduleCard.content.Children().Append(m_classIntensiveScheduleAddButton);
+    detailsRoot.Children().Append(scheduleCard.root);
 
     auto notesRoot = makeRoot(StackPanel());
     auto notesTitle = TextBlock();
@@ -15224,6 +15450,216 @@ void MainWindow::refreshClassCoTeacher()
     m_classCoTeacherLoading = false;
 }
 
+std::vector<classmngr::engine::ClassTime>
+MainWindow::classScheduleFromForm(bool intensive) const
+{
+    const auto& days = intensive
+        ? m_classIntensiveDayCombos
+        : m_classRegularDayCombos;
+    const auto& starts = intensive
+        ? m_classIntensiveStartBoxes
+        : m_classRegularStartBoxes;
+    const auto& ends = intensive
+        ? m_classIntensiveEndBoxes
+        : m_classRegularEndBoxes;
+    const std::size_t rowCount = std::min(
+        days.size(),
+        std::min(starts.size(), ends.size())
+        );
+    std::vector<classmngr::engine::ClassTime> result;
+    result.reserve(rowCount);
+    for (std::size_t index = 0; index < rowCount; ++index)
+    {
+        result.push_back({
+            asUtf8(selectedComboValue(days[index])),
+            asUtf8(starts[index].Text()),
+            asUtf8(ends[index].Text())
+        });
+    }
+    return result;
+}
+
+void MainWindow::rebuildClassScheduleRows(
+    bool intensive,
+    std::vector<classmngr::engine::ClassTime> const& times
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    auto grid = intensive
+        ? m_classIntensiveScheduleGrid
+        : m_classRegularScheduleGrid;
+    if (!grid)
+    {
+        return;
+    }
+
+    auto& dayCombos = intensive
+        ? m_classIntensiveDayCombos
+        : m_classRegularDayCombos;
+    auto& startBoxes = intensive
+        ? m_classIntensiveStartBoxes
+        : m_classRegularStartBoxes;
+    auto& endBoxes = intensive
+        ? m_classIntensiveEndBoxes
+        : m_classRegularEndBoxes;
+    dayCombos.clear();
+    startBoxes.clear();
+    endBoxes.clear();
+    grid.ColumnDefinitions().Clear();
+    grid.RowDefinitions().Clear();
+    grid.Children().Clear();
+
+    const std::array<double, 4> widths{230.0, 220.0, 220.0, 120.0};
+    for (const double width : widths)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            width,
+            GridUnitType::Pixel
+            ));
+        grid.ColumnDefinitions().Append(definition);
+    }
+    const std::array<wchar_t const*, 4> headers{
+        L"Days", L"Start Time", L"End Time", L""
+    };
+    grid.RowDefinitions().Append(RowDefinition());
+    for (int column = 0; column < 4; ++column)
+    {
+        auto header = TextBlock();
+        header.Text(headers[static_cast<std::size_t>(column)]);
+        header.Margin(Thickness{4.0, 0.0, 4.0, 4.0});
+        applyResourceStyle(header, L"Phase3BodyTextBlockStyle");
+        Grid::SetColumn(header, column);
+        grid.Children().Append(header);
+    }
+
+    const std::array<std::wstring_view, 7> weekdays{
+        L"Monday", L"Tuesday", L"Wednesday", L"Thursday", L"Friday",
+        L"Saturday", L"Sunday"
+    };
+    const bool wasLoading = m_classLoading;
+    m_classLoading = true;
+    for (std::size_t index = 0; index < times.size(); ++index)
+    {
+        grid.RowDefinitions().Append(RowDefinition());
+
+        auto day = ComboBox();
+        day.Width(widths[0]);
+        day.MinWidth(widths[0]);
+        day.IsTabStop(true);
+        day.SelectionChanged({this, &MainWindow::ClassField_SelectionChanged});
+        for (const std::wstring_view weekday : weekdays)
+        {
+            auto item = ComboBoxItem();
+            item.Content(box_value(hstring(weekday)));
+            item.Tag(box_value(hstring(weekday)));
+            day.Items().Append(item);
+        }
+        for (int dayIndex = 0;
+             dayIndex < static_cast<int>(day.Items().Size());
+             ++dayIndex)
+        {
+            const auto item = day.Items().GetAt(dayIndex).try_as<ComboBoxItem>();
+            if (item && boxedString(item.Tag())
+                == asWide(times[index].day))
+            {
+                day.SelectedIndex(dayIndex);
+                break;
+            }
+        }
+        setAutomationName(
+            day,
+            std::wstring(L"Class schedule day ") + std::to_wstring(index + 1)
+            );
+
+        auto start = TextBox();
+        start.Width(widths[1]);
+        start.MinWidth(widths[1]);
+        start.Text(asWide(times[index].startTime));
+        start.PlaceholderText(L"e.g. 4:00 PM");
+        start.IsTabStop(true);
+        start.TextChanging({this, &MainWindow::ClassField_TextChanging});
+        setAutomationName(
+            start,
+            std::wstring(L"Class schedule start time ")
+                + std::to_wstring(index + 1)
+            );
+
+        auto end = TextBox();
+        end.Width(widths[2]);
+        end.MinWidth(widths[2]);
+        end.Text(asWide(times[index].endTime));
+        end.PlaceholderText(L"e.g. 4:50 PM");
+        end.IsTabStop(true);
+        end.TextChanging({this, &MainWindow::ClassField_TextChanging});
+        setAutomationName(
+            end,
+            std::wstring(L"Class schedule end time ")
+                + std::to_wstring(index + 1)
+            );
+
+        auto remove = Button();
+        remove.Content(box_value(hstring(L"Remove")));
+        remove.Width(widths[3]);
+        remove.IsTabStop(true);
+        remove.Click(
+            [this, intensive, index](auto const&, auto const&) {
+                removeClassScheduleRow(
+                    intensive,
+                    static_cast<int>(index)
+                    );
+            }
+            );
+        setAutomationName(
+            remove,
+            std::wstring(L"Remove class schedule row ")
+                + std::to_wstring(index + 1)
+            );
+
+        Grid::SetRow(day, static_cast<int>(index + 1));
+        Grid::SetColumn(day, 0);
+        Grid::SetRow(start, static_cast<int>(index + 1));
+        Grid::SetColumn(start, 1);
+        Grid::SetRow(end, static_cast<int>(index + 1));
+        Grid::SetColumn(end, 2);
+        Grid::SetRow(remove, static_cast<int>(index + 1));
+        Grid::SetColumn(remove, 3);
+        grid.Children().Append(day);
+        grid.Children().Append(start);
+        grid.Children().Append(end);
+        grid.Children().Append(remove);
+        dayCombos.push_back(day);
+        startBoxes.push_back(start);
+        endBoxes.push_back(end);
+    }
+    grid.MinWidth(std::accumulate(widths.begin(), widths.end(), 0.0));
+    m_classLoading = wasLoading;
+}
+
+void MainWindow::addClassScheduleRow(bool intensive)
+{
+    auto times = classScheduleFromForm(intensive);
+    times.push_back({});
+    rebuildClassScheduleRows(intensive, times);
+    m_classDetailsDirty = true;
+    markClassDirty();
+}
+
+void MainWindow::removeClassScheduleRow(bool intensive, int index)
+{
+    auto times = classScheduleFromForm(intensive);
+    if (index < 0 || index >= static_cast<int>(times.size()))
+    {
+        return;
+    }
+    times.erase(times.begin() + index);
+    rebuildClassScheduleRows(intensive, times);
+    m_classDetailsDirty = true;
+    markClassDirty();
+}
+
 void MainWindow::updateClassActions()
 {
     if (!m_classSelector || !m_classNameTextBox || !m_classSaveButton
@@ -15248,7 +15684,34 @@ void MainWindow::updateClassActions()
     m_classReadingBookCombo.IsEnabled(detailsEnabled);
     m_classEssayBookCombo.IsEnabled(detailsEnabled);
     m_classColorTextBox.IsEnabled(detailsEnabled);
+    m_classColorChooseButton.IsEnabled(detailsEnabled);
     m_classFontColorTextBox.IsEnabled(detailsEnabled);
+    for (const auto& control : m_classRegularDayCombos)
+    {
+        control.IsEnabled(detailsEnabled);
+    }
+    for (const auto& control : m_classRegularStartBoxes)
+    {
+        control.IsEnabled(detailsEnabled);
+    }
+    for (const auto& control : m_classRegularEndBoxes)
+    {
+        control.IsEnabled(detailsEnabled);
+    }
+    for (const auto& control : m_classIntensiveDayCombos)
+    {
+        control.IsEnabled(detailsEnabled);
+    }
+    for (const auto& control : m_classIntensiveStartBoxes)
+    {
+        control.IsEnabled(detailsEnabled);
+    }
+    for (const auto& control : m_classIntensiveEndBoxes)
+    {
+        control.IsEnabled(detailsEnabled);
+    }
+    m_classRegularScheduleAddButton.IsEnabled(detailsEnabled);
+    m_classIntensiveScheduleAddButton.IsEnabled(detailsEnabled);
     m_classNotesTextBox.IsEnabled(notesEnabled || (hasDatabase && m_classNew));
     m_classTimeFillerActivitiesTextBox.IsEnabled(
         notesEnabled || (hasDatabase && m_classNew)
@@ -15397,9 +15860,26 @@ void MainWindow::presentClass(int index)
     m_classColorTextBox.Text(
         asWide(info.classColor.empty() ? "#FFFFFF" : info.classColor)
         );
+    if (m_classColorPreview)
+    {
+        m_classColorPreview.Background(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                uiColorFromHex(
+                    info.classColor.empty() ? "#FFFFFF" : info.classColor
+                    )
+                )
+            );
+    }
     m_classFontColorTextBox.Text(
         asWide(info.fontColor.empty() ? "#000000" : info.fontColor)
         );
+
+    if (m_classStudentCountTextBox)
+    {
+        m_classStudentCountTextBox.Text(L"0");
+    }
+    rebuildClassScheduleRows(false, info.classTimes);
+    rebuildClassScheduleRows(true, info.intensiveTimes);
 
     std::wstring teacher = asWide(info.teacherPreferredName);
     if (teacher.empty())
@@ -16085,6 +16565,8 @@ classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
     info.classColor = asUtf8(m_classColorTextBox.Text());
     info.fontColor = asUtf8(m_classFontColorTextBox.Text());
     info.teacherId = m_classCoTeacherSelectedId;
+    info.classTimes = classScheduleFromForm(false);
+    info.intensiveTimes = classScheduleFromForm(true);
     info.notes = asUtf8(m_classNotesTextBox.Text());
     info.timeFillerActivities = asUtf8(
         m_classTimeFillerActivitiesTextBox.Text()
@@ -18056,6 +18538,10 @@ void MainWindow::refreshClassRoster()
         m_classRosterHeaderGrid.Children().Clear();
         m_classRosterList.Items().Clear();
         m_classRosterList.SelectedIndex(-1);
+        if (m_classStudentCountTextBox)
+        {
+            m_classStudentCountTextBox.Text(L"0");
+        }
         if (m_classRosterTransferTargetCombo)
         {
             m_classRosterTransferTargetCombo.Items().Clear();
@@ -18122,6 +18608,14 @@ void MainWindow::refreshClassRoster()
     for (auto& row : m_classRoster.rows)
     {
         row.resize(m_classRoster.columns.size());
+    }
+    if (m_classStudentCountTextBox)
+    {
+        m_classStudentCountTextBox.Text(
+            std::to_wstring(
+                classmngr::engine::rosterStudentCount(m_classRoster)
+                )
+            );
     }
 
     if (m_classRosterTransferTargetCombo)
@@ -18835,6 +19329,14 @@ void MainWindow::ClassField_TextChanging(
     if (m_classLoading || !m_openDatabase)
     {
         return;
+    }
+    if (sender == m_classColorTextBox && m_classColorPreview)
+    {
+        m_classColorPreview.Background(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                uiColorFromHex(asUtf8(sender.Text()))
+                )
+            );
     }
     if (sender == m_classNotesTextBox
         || sender == m_classTimeFillerActivitiesTextBox)

@@ -338,6 +338,14 @@ private:
     void presentClass(int index);
     void refreshClassInformationOptions();
     void refreshClassCoTeacher();
+    void rebuildClassScheduleRows(
+        bool intensive,
+        std::vector<classmngr::engine::ClassTime> const& times
+        );
+    void addClassScheduleRow(bool intensive);
+    void removeClassScheduleRow(bool intensive, int index);
+    [[nodiscard]] std::vector<classmngr::engine::ClassTime>
+        classScheduleFromForm(bool intensive) const;
     void updateClassActions();
     void markClassDirty();
     void clearClassDirty();
@@ -977,6 +985,9 @@ private:
     Microsoft::UI::Xaml::Controls::ComboBox m_classEssayBookCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_classColorTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_classFontColorTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::Border m_classColorPreview{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classColorChooseButton{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_classStudentCountTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classTeacherText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classValidationText{nullptr};
@@ -1001,6 +1012,22 @@ private:
     Microsoft::UI::Xaml::Controls::TextBox m_classCoTeacherZoomPasswordTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classCoTeacherSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classCoTeacherDiscardButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_classRegularScheduleGrid{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_classIntensiveScheduleGrid{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRegularScheduleAddButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classIntensiveScheduleAddButton{nullptr};
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classRegularDayCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
+        m_classRegularStartBoxes;
+    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
+        m_classRegularEndBoxes;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_classIntensiveDayCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
+        m_classIntensiveStartBoxes;
+    std::vector<Microsoft::UI::Xaml::Controls::TextBox>
+        m_classIntensiveEndBoxes;
     std::vector<classmngr::engine::Classroom> m_classes;
     classmngr::engine::ClassInfo m_classInfo;
     int m_classSelectedIndex{-1};
