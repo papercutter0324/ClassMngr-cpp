@@ -357,6 +357,7 @@ private:
     void clearClassRosterDirty();
     void saveClassRoster();
     void discardClassRoster();
+    void importClassRosterScores();
     void addClassRosterRow();
     void removeClassRosterRow();
     void transferClassRosterRow();
@@ -1056,6 +1057,7 @@ private:
     Microsoft::UI::Xaml::Controls::TextBlock m_classRosterStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classRosterValidationText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classRosterTemplateStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterImportScoresButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterAddButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterRemoveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterTransferButton{nullptr};

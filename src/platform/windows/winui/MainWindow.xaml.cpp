@@ -30,6 +30,7 @@
 #include "classmngr/engine/speaking_evaluation_persistence_service.h"
 #include "classmngr/engine/speaking_evaluation_report_model.h"
 #include "classmngr/engine/speaking_evaluation_validator.h"
+#include "classmngr/engine/student_name.h"
 #include "classmngr/engine/sub_prep_class_information.h"
 #include "classmngr/engine/sub_prep_document.h"
 #include "classmngr/engine/sub_prep_package.h"
@@ -13916,11 +13917,19 @@ void MainWindow::populateClassesPage(
     notesRoot.Children().Append(notesActions);
 
     auto rosterRoot = makeRoot(StackPanel());
+    auto rosterTitle = TextBlock();
+    rosterTitle.Text(L"Class Roster");
+    applyResourceStyle(rosterTitle, L"Phase3PageTitleTextBlockStyle");
+    setAutomationName(rosterTitle, L"Class Roster");
+    rosterRoot.Children().Append(rosterTitle);
+
     auto rosterCard = ClassMngrWinUISharedUX::buildCard({
-        L"Roster editor",
-        L"Edit the engine-backed roster for the selected class. The grid remains virtualized and validates student names before persistence.",
+        L"",
+        L"Student names and evaluation grades are arranged as a classroom spreadsheet. Select a row to manage it, then save when ready.",
         L"Roster editor"
         });
+    rosterCard.root.Padding(Thickness{24.0, 24.0, 24.0, 24.0});
+    rosterCard.content.Spacing(16.0);
 
     m_classRosterStatusText = TextBlock();
     m_classRosterStatusText.Text(L"Select a class to edit its roster.");
@@ -13941,10 +13950,20 @@ void MainWindow::populateClassesPage(
     rosterActions.Orientation(Orientation::Horizontal);
     rosterActions.Spacing(8.0);
 
+    m_classRosterImportScoresButton = Button();
+    m_classRosterImportScoresButton.Content(box_value(hstring(L"Import Scores")));
+    m_classRosterImportScoresButton.IsTabStop(true);
+    m_classRosterImportScoresButton.TabIndex(12);
+    m_classRosterImportScoresButton.Click(
+        [this](auto const&, auto const&) { importClassRosterScores(); }
+        );
+    setAutomationName(m_classRosterImportScoresButton, L"Import roster scores");
+    rosterActions.Children().Append(m_classRosterImportScoresButton);
+
     m_classRosterAddButton = Button();
-    m_classRosterAddButton.Content(box_value(hstring(L"Add student")));
+    m_classRosterAddButton.Content(box_value(hstring(L"Add Student")));
     m_classRosterAddButton.IsTabStop(true);
-    m_classRosterAddButton.TabIndex(12);
+    m_classRosterAddButton.TabIndex(13);
     m_classRosterAddButton.Click(
         [this](auto const&, auto const&) { addClassRosterRow(); }
         );
@@ -13952,9 +13971,9 @@ void MainWindow::populateClassesPage(
     rosterActions.Children().Append(m_classRosterAddButton);
 
     m_classRosterRemoveButton = Button();
-    m_classRosterRemoveButton.Content(box_value(hstring(L"Remove selected")));
+    m_classRosterRemoveButton.Content(box_value(hstring(L"Remove Selected")));
     m_classRosterRemoveButton.IsTabStop(true);
-    m_classRosterRemoveButton.TabIndex(13);
+    m_classRosterRemoveButton.TabIndex(14);
     m_classRosterRemoveButton.Click(
         [this](auto const&, auto const&) { removeClassRosterRow(); }
         );
@@ -13962,9 +13981,9 @@ void MainWindow::populateClassesPage(
     rosterActions.Children().Append(m_classRosterRemoveButton);
 
     m_classRosterSaveButton = Button();
-    m_classRosterSaveButton.Content(box_value(hstring(L"Save roster")));
+    m_classRosterSaveButton.Content(box_value(hstring(L"Save Roster")));
     m_classRosterSaveButton.IsTabStop(true);
-    m_classRosterSaveButton.TabIndex(14);
+    m_classRosterSaveButton.TabIndex(15);
     m_classRosterSaveButton.Click(
         [this](auto const&, auto const&) { saveClassRoster(); }
         );
@@ -13972,26 +13991,24 @@ void MainWindow::populateClassesPage(
     rosterActions.Children().Append(m_classRosterSaveButton);
 
     m_classRosterDiscardButton = Button();
-    m_classRosterDiscardButton.Content(box_value(hstring(L"Discard roster")));
+    m_classRosterDiscardButton.Content(box_value(hstring(L"Discard Changes")));
     m_classRosterDiscardButton.IsTabStop(true);
-    m_classRosterDiscardButton.TabIndex(15);
+    m_classRosterDiscardButton.TabIndex(16);
     m_classRosterDiscardButton.Click(
         [this](auto const&, auto const&) { discardClassRoster(); }
         );
     setAutomationName(m_classRosterDiscardButton, L"Discard class roster changes");
     rosterActions.Children().Append(m_classRosterDiscardButton);
-    rosterCard.content.Children().Append(rosterActions);
-
     m_classRosterHeaderGrid = Grid();
-    m_classRosterHeaderGrid.ColumnSpacing(4.0);
+    m_classRosterHeaderGrid.ColumnSpacing(2.0);
     setAutomationName(m_classRosterHeaderGrid, L"Class roster column headers");
     rosterCard.content.Children().Append(m_classRosterHeaderGrid);
 
     m_classRosterList = ListView();
     m_classRosterList.SelectionMode(ListViewSelectionMode::Single);
     m_classRosterList.IsTabStop(true);
-    m_classRosterList.TabIndex(16);
-    m_classRosterList.Height(320.0);
+    m_classRosterList.TabIndex(17);
+    m_classRosterList.Height(440.0);
     m_classRosterList.HorizontalAlignment(HorizontalAlignment::Stretch);
     m_classRosterList.SelectionChanged(
         [this](auto const&, auto const&) { updateClassRosterActions(); }
@@ -14009,7 +14026,7 @@ void MainWindow::populateClassesPage(
     m_classRosterTransferTargetCombo.PlaceholderText(L"Select a same-grade class");
     m_classRosterTransferTargetCombo.MinWidth(320.0);
     m_classRosterTransferTargetCombo.IsTabStop(true);
-    m_classRosterTransferTargetCombo.TabIndex(17);
+    m_classRosterTransferTargetCombo.TabIndex(18);
     m_classRosterTransferTargetCombo.SelectionChanged(
         [this](auto const&, auto const&) { updateClassRosterActions(); }
         );
@@ -14024,7 +14041,7 @@ void MainWindow::populateClassesPage(
         box_value(hstring(L"Transfer selected student"))
         );
     m_classRosterTransferButton.IsTabStop(true);
-    m_classRosterTransferButton.TabIndex(18);
+    m_classRosterTransferButton.TabIndex(19);
     m_classRosterTransferButton.Click(
         [this](auto const&, auto const&) { transferClassRosterRow(); }
         );
@@ -14039,7 +14056,7 @@ void MainWindow::populateClassesPage(
         box_value(hstring(L"Prepare class transfer package"))
         );
     m_classRosterPrepareTransferButton.IsTabStop(true);
-    m_classRosterPrepareTransferButton.TabIndex(19);
+    m_classRosterPrepareTransferButton.TabIndex(20);
     m_classRosterPrepareTransferButton.Click(
         [this](auto const&, auto const&) { prepareClassTransfer(); }
         );
@@ -14059,7 +14076,7 @@ void MainWindow::populateClassesPage(
     m_classRosterTemplateCombo.Header(box_value(hstring(L"Template")));
     m_classRosterTemplateCombo.MinWidth(320.0);
     m_classRosterTemplateCombo.IsTabStop(true);
-    m_classRosterTemplateCombo.TabIndex(20);
+    m_classRosterTemplateCombo.TabIndex(21);
     setAutomationName(m_classRosterTemplateCombo, L"Roster report template selector");
     for (const auto reportTemplate :
          classmngr::engine::RosterReportTemplateService::availableTemplates())
@@ -14117,6 +14134,7 @@ void MainWindow::populateClassesPage(
         );
     templateCard.content.Children().Append(m_classRosterTemplateStatusText);
     rosterCard.content.Children().Append(templateCard.root);
+    rosterCard.content.Children().Append(rosterActions);
     rosterRoot.Children().Append(rosterCard.root);
 
     auto speakingRoot = makeRoot(StackPanel());
@@ -18733,6 +18751,44 @@ void MainWindow::rebuildClassRosterGrid()
 
     std::vector<double> widths;
     widths.reserve(m_classRoster.columns.size());
+    const auto columnGroup = [](std::string_view column) {
+        if (column == "English" || column == "Korean")
+        {
+            return 0;
+        }
+        if (column == "Winter" || column == "Speech Contest"
+            || column == "Summer" || column == "Fall" || column == "Autumn")
+        {
+            return 1;
+        }
+        return 2;
+    };
+    const auto groupColor = [](int group, bool header) {
+        if (group == 0)
+        {
+            return Windows::UI::Color{
+                255,
+                static_cast<std::uint8_t>(header ? 100 : 232),
+                static_cast<std::uint8_t>(header ? 160 : 242),
+                static_cast<std::uint8_t>(header ? 255 : 255)
+            };
+        }
+        if (group == 1)
+        {
+            return Windows::UI::Color{
+                255,
+                static_cast<std::uint8_t>(header ? 120 : 232),
+                static_cast<std::uint8_t>(header ? 200 : 246),
+                static_cast<std::uint8_t>(header ? 120 : 232)
+            };
+        }
+        return Windows::UI::Color{
+            255,
+            static_cast<std::uint8_t>(header ? 200 : 245),
+            static_cast<std::uint8_t>(header ? 200 : 245),
+            static_cast<std::uint8_t>(header ? 200 : 245)
+        };
+    };
     double totalWidth = 0.0;
     for (std::size_t column = 0; column < m_classRoster.columns.size(); ++column)
     {
@@ -18753,10 +18809,41 @@ void MainWindow::rebuildClassRosterGrid()
             );
         m_classRosterHeaderGrid.ColumnDefinitions().Append(definition);
 
-        auto header = TextBlock();
-        header.Text(asWide(m_classRoster.columns[column]));
-        header.Margin(Thickness{4.0, 4.0, 4.0, 4.0});
-        header.TextWrapping(TextWrapping::Wrap);
+        const int group = columnGroup(m_classRoster.columns[column]);
+        const bool beginsGroup = column == 0
+            || group != columnGroup(m_classRoster.columns[column - 1]);
+        auto header = Border();
+        header.MinHeight(58.0);
+        header.Padding(Thickness{8.0, 6.0, 8.0, 6.0});
+        header.Background(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(groupColor(group, true))
+            );
+        header.CornerRadius(CornerRadius{3.0, 3.0, 3.0, 3.0});
+        auto headerContent = StackPanel();
+        headerContent.Spacing(2.0);
+        auto groupLabel = TextBlock();
+        groupLabel.Text(
+            beginsGroup
+                ? group == 0
+                    ? L"Student Names"
+                    : group == 1 ? L"Evaluations" : L"Student Information"
+                : L""
+            );
+        groupLabel.FontSize(11.0);
+        groupLabel.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 31, 41, 55}
+            ));
+        auto columnLabel = TextBlock();
+        columnLabel.Text(asWide(m_classRoster.columns[column]));
+        columnLabel.TextWrapping(TextWrapping::Wrap);
+        columnLabel.FontSize(14.0);
+        columnLabel.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        columnLabel.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 31, 41, 55}
+            ));
+        headerContent.Children().Append(groupLabel);
+        headerContent.Children().Append(columnLabel);
+        header.Child(headerContent);
         Grid::SetColumn(header, static_cast<int32_t>(column));
         m_classRosterHeaderGrid.Children().Append(header);
     }
@@ -18765,8 +18852,9 @@ void MainWindow::rebuildClassRosterGrid()
     for (std::size_t rowIndex = 0; rowIndex < m_classRoster.rows.size(); ++rowIndex)
     {
         auto rowGrid = Grid();
-        rowGrid.ColumnSpacing(4.0);
+        rowGrid.ColumnSpacing(2.0);
         rowGrid.MinWidth(totalWidth);
+        rowGrid.MinHeight(46.0);
         for (const double width : widths)
         {
             auto definition = ColumnDefinition();
@@ -18787,6 +18875,15 @@ void MainWindow::rebuildClassRosterGrid()
                     : std::wstring{}
                 );
             cell.MinWidth(widths[column]);
+            cell.MinHeight(42.0);
+            cell.VerticalContentAlignment(VerticalAlignment::Center);
+            cell.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                groupColor(columnGroup(m_classRoster.columns[column]), false)
+                ));
+            cell.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{255, 190, 198, 210}
+                ));
+            cell.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
             cell.MaxLength(
                 static_cast<int32_t>(
                     classmngr::engine::RosterValidator::MaximumCellLength
@@ -18838,6 +18935,10 @@ void MainWindow::updateClassRosterActions()
     if (m_classRosterList)
     {
         m_classRosterList.IsEnabled(hasClass);
+    }
+    if (m_classRosterImportScoresButton)
+    {
+        m_classRosterImportScoresButton.IsEnabled(hasClass);
     }
     if (m_classRosterTransferTargetCombo)
     {
@@ -19718,6 +19819,117 @@ void MainWindow::ClassNotesDiscardButton_Click(
         Microsoft::UI::Xaml::Visibility::Collapsed
         );
     updateClassActions();
+}
+
+void MainWindow::importClassRosterScores()
+{
+    if (!m_openDatabase || m_classSelectedId <= 0 || m_classNew)
+    {
+        if (m_classRosterStatusText)
+        {
+            m_classRosterStatusText.Text(
+                L"Save the selected class before importing scores."
+                );
+        }
+        return;
+    }
+
+    classmngr::engine::Roster roster = classRosterFromForm();
+    const auto columnIndex = [&roster](std::string_view name) {
+        for (std::size_t index = 0; index < roster.columns.size(); ++index)
+        {
+            if (roster.columns[index] == name)
+            {
+                return static_cast<int>(index);
+            }
+        }
+        return -1;
+    };
+    const int englishColumn = columnIndex("English");
+    const int koreanColumn = columnIndex("Korean");
+    if (englishColumn < 0 || koreanColumn < 0)
+    {
+        m_classRosterStatusText.Text(
+            L"Roster must contain English and Korean columns to import scores."
+            );
+        return;
+    }
+
+    classmngr::engine::SpeakingEvaluationPersistenceService service(
+        *m_openDatabase
+        );
+    int imported = 0;
+    for (const std::string_view evaluation :
+         classmngr::engine::SpeakingEvaluationNames)
+    {
+        const int evaluationColumn = columnIndex(evaluation);
+        if (evaluationColumn < 0)
+        {
+            continue;
+        }
+
+        const auto scores = service.buildRosterScoreImport(
+            m_classSelectedId,
+            evaluation
+            );
+        if (!scores)
+        {
+            m_classRosterStatusText.Text(winrt::hstring(
+                L"Scores could not be imported: " + asWide(scores.error().message)
+                ));
+            return;
+        }
+
+        std::map<std::string, std::string> scoresByStudent;
+        for (const auto& score : *scores)
+        {
+            scoresByStudent.emplace(
+                classmngr::engine::StudentNameService::namePairKey(
+                    score.englishName,
+                    score.koreanName
+                    ),
+                score.finalGrade
+                );
+        }
+        for (auto& row : roster.rows)
+        {
+            if (static_cast<std::size_t>(englishColumn) >= row.size()
+                || static_cast<std::size_t>(koreanColumn) >= row.size()
+                || static_cast<std::size_t>(evaluationColumn) >= row.size())
+            {
+                continue;
+            }
+            const auto score = scoresByStudent.find(
+                classmngr::engine::StudentNameService::namePairKey(
+                    row[static_cast<std::size_t>(englishColumn)],
+                    row[static_cast<std::size_t>(koreanColumn)]
+                    )
+                );
+            if (score != scoresByStudent.end()
+                && row[static_cast<std::size_t>(evaluationColumn)]
+                    != score->second)
+            {
+                row[static_cast<std::size_t>(evaluationColumn)] = score->second;
+                ++imported;
+            }
+        }
+    }
+
+    if (imported == 0)
+    {
+        m_classRosterStatusText.Text(
+            L"Scores are already current or no saved evaluations match this roster."
+            );
+        return;
+    }
+
+    m_classRoster = std::move(roster);
+    rebuildClassRosterGrid();
+    markClassRosterDirty();
+    m_classRosterStatusText.Text(winrt::hstring(
+        L"Imported " + std::to_wstring(imported)
+            + L" evaluation score" + (imported == 1 ? L"." : L"s.")
+        ));
 }
 
 void MainWindow::ClassCoTeacherSelection_SelectionChanged(
