@@ -108,10 +108,21 @@ struct CampusResourceView
     std::vector<CampusHousingView> housingLocations;
 };
 
+enum class ClassNavigationLocation
+{
+    Top,
+    Bottom
+};
+
 struct MainWindow : MainWindowT<MainWindow>
 {
     MainWindow();
     ~MainWindow();
+
+    [[nodiscard]] ClassNavigationLocation classNavigationLocation() const noexcept;
+    void classNavigationLocation(ClassNavigationLocation location);
+    [[nodiscard]] ClassNavigationLocation getClassNavigationLocation() const noexcept;
+    void setClassNavigationLocation(ClassNavigationLocation location);
 
     [[nodiscard]] bool runPhase1SmokeChecks();
     [[nodiscard]] bool runPhase1InputChecks();
@@ -318,6 +329,9 @@ private:
         );
     void refreshClassesPage();
     void refreshClassNavigation(bool selectFallback);
+    void refreshClassNavigationLocation();
+    void applyClassNavigationLayout();
+    void selectClassSection(int index);
     void selectClassFromNavigation(int classId);
     void selectClassNavigationGrade(bool all, std::string grade);
     void toggleClassNavigationDay(std::string day);
@@ -928,6 +942,14 @@ private:
         m_speakingBatchPlanButton{nullptr};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_classPageRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::SelectorBar m_classSectionSelectorBar{nullptr};
+    std::array<Microsoft::UI::Xaml::Controls::SelectorBarItem, 5>
+        m_classSectionSelectorItems{};
+    Microsoft::UI::Xaml::Controls::ContentControl m_classSectionContentHost{nullptr};
+    std::array<Microsoft::UI::Xaml::Controls::ScrollViewer, 5>
+        m_classSectionScrollViews{};
+    Microsoft::UI::Xaml::Controls::Border m_classNavigationCard{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel m_classNavigationRoot{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel
         m_classNavigationGradeTabs{nullptr};
@@ -963,6 +985,10 @@ private:
     std::vector<std::string> m_classNavigationSelectedDays;
     bool m_classNavigationAll{true};
     bool m_classNavigationLoading{};
+    ClassNavigationLocation m_classNavigationLocation =
+        ClassNavigationLocation::Top;
+    int m_classSectionIndex{};
+    bool m_classSectionSelectionChanging{};
     bool m_classLoading{};
     bool m_classDirty{};
     bool m_classDetailsDirty{};

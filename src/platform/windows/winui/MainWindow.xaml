@@ -240,9 +240,12 @@
                 Grid.Row="1"
                 Margin="{StaticResource Phase5ShellContentMargin}">
                 <Grid.ColumnDefinitions>
+                    <!-- NavigationView has its own content host. Keep this
+                         column pane-sized so that host cannot become a
+                         second visible panel before ContentFrame. -->
                     <ColumnDefinition
                         x:Name="SidebarColumn"
-                        Width="2*"
+                        Width="Auto"
                         MinWidth="{StaticResource Phase5SidebarMinimumWidth}"
                         MaxWidth="{StaticResource Phase5SidebarMaximumWidth}" />
                     <ColumnDefinition
@@ -255,6 +258,8 @@
                     x:Name="RootNavigationView"
                     Grid.Column="0"
                     Margin="{StaticResource Phase5SidebarMargin}"
+                    Width="{StaticResource Phase5SidebarMinimumWidth}"
+                    HorizontalAlignment="Left"
                     Style="{StaticResource Phase3NavigationViewStyle}"
                     IsBackButtonVisible="Visible"
                     IsPaneOpen="True"

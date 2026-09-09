@@ -92,6 +92,8 @@ constexpr std::wstring_view classRosterPageId = L"classes_roster";
 constexpr std::wstring_view classSpeakingEvaluationsPageId = L"classes_speaking_evaluations";
 constexpr std::wstring_view classAnalyticsPageId = L"classes_analytics";
 constexpr std::wstring_view classNotesPageId = L"classes_notes";
+constexpr std::string_view classNavigationLocationKey =
+    "classes/navigationLocation";
 constexpr std::wstring_view aboutPageId = L"about";
 constexpr std::wstring_view campusInformationPageId = L"campus_information";
 constexpr std::wstring_view campusDirectionsPageId = L"campus_directions";
@@ -743,6 +745,27 @@ std::int64_t settingInteger(
         }
     }
     return fallback;
+}
+
+std::optional<winrt::ClassMngrWinUI::implementation::ClassNavigationLocation>
+classNavigationLocationFromSetting(
+    classmngr::engine::SettingValue const& value
+    ) noexcept
+{
+    const auto* text = std::get_if<std::string>(&value);
+    if (text == nullptr)
+    {
+        return std::nullopt;
+    }
+    if (*text == "top")
+    {
+        return winrt::ClassMngrWinUI::implementation::ClassNavigationLocation::Top;
+    }
+    if (*text == "bottom")
+    {
+        return winrt::ClassMngrWinUI::implementation::ClassNavigationLocation::Bottom;
+    }
+    return std::nullopt;
 }
 
 classmngr::engine::Result<std::string> subPrepTextSetting(
@@ -1858,6 +1881,53 @@ MainWindow::MainWindow()
 MainWindow::~MainWindow()
 {
     closeShell();
+}
+
+ClassNavigationLocation MainWindow::classNavigationLocation() const noexcept
+{
+    return m_openDatabase
+        ? m_classNavigationLocation
+        : ClassNavigationLocation::Top;
+}
+
+void MainWindow::classNavigationLocation(ClassNavigationLocation location)
+{
+    if (location != ClassNavigationLocation::Top
+        && location != ClassNavigationLocation::Bottom)
+    {
+        location = ClassNavigationLocation::Top;
+    }
+    if (!m_openDatabase)
+    {
+        location = ClassNavigationLocation::Top;
+    }
+
+    m_classNavigationLocation = location;
+    applyClassNavigationLayout();
+
+    if (m_openDatabase)
+    {
+        const std::string value = location == ClassNavigationLocation::Bottom
+            ? "bottom"
+            : "top";
+        classmngr::engine::ApplicationSettingsService settings(
+            *m_openDatabase
+            );
+        static_cast<void>(settings.save(
+            classNavigationLocationKey,
+            classmngr::engine::SettingValue{value}
+            ));
+    }
+}
+
+ClassNavigationLocation MainWindow::getClassNavigationLocation() const noexcept
+{
+    return classNavigationLocation();
+}
+
+void MainWindow::setClassNavigationLocation(ClassNavigationLocation location)
+{
+    classNavigationLocation(location);
 }
 
 bool MainWindow::runPhase1SmokeChecks()
@@ -4112,6 +4182,7 @@ bool MainWindow::runPhase6ClassInformationChecks()
     refreshClassesPage();
     const bool noDatabaseReady =
         m_currentPageId == classesPageId
+        && classNavigationLocation() == ClassNavigationLocation::Top
         && m_classStatusText
         && m_classStatusText.Text() == L"No database open."
         && m_classNewButton
@@ -4137,6 +4208,39 @@ bool MainWindow::runPhase6ClassInformationChecks()
     if (!emptyReady)
     {
         return fail(3);
+    }
+
+    const auto emptySettings =
+        classmngr::engine::ApplicationSettingsService(*m_openDatabase)
+            .load(classNavigationLocationKey);
+    const bool defaultNavigationReady =
+        emptySettings
+        && std::holds_alternative<std::monostate>(*emptySettings)
+        && classNavigationLocation() == ClassNavigationLocation::Top
+        && m_classPageRoot
+        && m_classPageRoot.RowDefinitions().Size() == 3
+        && m_classSectionSelectorBar
+        && m_classSectionSelectorBar.Items().Size() == 5
+        && m_classSectionContentHost
+        && m_classSectionContentHost.Content().try_as<
+            Microsoft::UI::Xaml::Controls::ScrollViewer>()
+        && m_classNavigationCard
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionSelectorBar
+            ) == 0
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classNavigationCard
+            ) == 1
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 2
+        && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Star;
+    if (!defaultNavigationReady)
+    {
+        return fail(16);
     }
 
     ClassNewButton_Click(
@@ -4228,11 +4332,189 @@ bool MainWindow::runPhase6ClassInformationChecks()
     {
         return fail(8);
     }
+
+    auto firstNavigationInfo = *withNotes;
+    firstNavigationInfo.classId = m_classSelectedId;
+    firstNavigationInfo.classTimes = {
+        {"Monday", "4:00 PM", "4:50 PM"}
+    };
+    if (!classInfo.save(firstNavigationInfo))
+    {
+        return fail(32);
+    }
+    auto secondNavigationInfo = firstNavigationInfo;
+    secondNavigationInfo.classId = *secondId;
+    secondNavigationInfo.classTimes = {
+        {"Tuesday", "5:00 PM", "5:50 PM"}
+    };
+    if (!classInfo.save(secondNavigationInfo))
+    {
+        return fail(64);
+    }
+
     refreshClassesPage();
     if (m_classSelector.Items().Size() != 2)
     {
         return fail(9);
     }
+
+    m_classSectionSelectorBar.SelectedItem(m_classSectionSelectorItems[4]);
+    const bool sectionSelectionReady =
+        m_classSectionIndex == 4
+        && m_classSectionSelectorBar.SelectedItem()
+            == m_classSectionSelectorItems[4]
+        && m_classSectionContentHost.Content().try_as<
+            Microsoft::UI::Xaml::Controls::ScrollViewer>();
+    if (!sectionSelectionReady)
+    {
+        return fail(128);
+    }
+
+    selectClassNavigationGrade(false, firstNavigationInfo.classGrade);
+    toggleClassNavigationDay("Monday");
+    const bool topNavigationReady =
+        classNavigationLocation() == ClassNavigationLocation::Top
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classNavigationCard
+            ) == 1
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 2
+        && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Star
+        && !m_classNavigationAll
+        && std::find(
+            m_classNavigationSelectedDays.begin(),
+            m_classNavigationSelectedDays.end(),
+            "Monday"
+            ) != m_classNavigationSelectedDays.end()
+        && m_classNavigationClassTabs.Children().Size() == 1;
+    if (!topNavigationReady)
+    {
+        return fail(256);
+    }
+
+    const int firstClassId = m_classSelectedId;
+    selectClassFromNavigation(*secondId);
+    const bool secondClassSelected = m_classSelectedId == *secondId;
+    selectClassFromNavigation(firstClassId);
+    const bool firstClassSelected = m_classSelectedId == firstClassId;
+    if (!secondClassSelected || !firstClassSelected)
+    {
+        return fail(512);
+    }
+
+    setClassNavigationLocation(ClassNavigationLocation::Bottom);
+    const auto savedNavigationLocation =
+        classmngr::engine::ApplicationSettingsService(*m_openDatabase)
+            .load(classNavigationLocationKey);
+    const bool bottomNavigationReady =
+        classNavigationLocation() == ClassNavigationLocation::Bottom
+        && savedNavigationLocation
+        && std::get_if<std::string>(&*savedNavigationLocation)
+            != nullptr
+        && *std::get_if<std::string>(&*savedNavigationLocation) == "bottom"
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classNavigationCard
+            ) == 2
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 1
+        && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Star
+        && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classSelectedId == firstClassId
+        && m_classSectionIndex == 4
+        && !m_classNavigationAll
+        && std::find(
+            m_classNavigationSelectedDays.begin(),
+            m_classNavigationSelectedDays.end(),
+            "Monday"
+            ) != m_classNavigationSelectedDays.end();
+    if (!bottomNavigationReady)
+    {
+        return fail(1024);
+    }
+
+    m_classNameTextBox.Text(L"Unsaved Location Change");
+    const bool dirtyBeforeLocationToggle = m_classDirty;
+    setClassNavigationLocation(ClassNavigationLocation::Top);
+    const bool statePreservedByToggle =
+        dirtyBeforeLocationToggle
+        && m_classDirty
+        && m_classSelectedId == firstClassId
+        && m_classSectionIndex == 4
+        && !m_classNavigationAll
+        && std::find(
+            m_classNavigationSelectedDays.begin(),
+            m_classNavigationSelectedDays.end(),
+            "Monday"
+            ) != m_classNavigationSelectedDays.end();
+    if (!statePreservedByToggle)
+    {
+        return fail(2048);
+    }
+    ClassDiscardButton_Click(
+        m_classDiscardButton,
+        Microsoft::UI::Xaml::RoutedEventArgs{}
+        );
+
+    setClassNavigationLocation(ClassNavigationLocation::Bottom);
+    refreshClassesPage();
+    const bool refreshPreservedNavigation =
+        classNavigationLocation() == ClassNavigationLocation::Bottom
+        && m_classSelectedId == firstClassId
+        && m_classSectionIndex == 4
+        && !m_classNavigationAll
+        && std::find(
+            m_classNavigationSelectedDays.begin(),
+            m_classNavigationSelectedDays.end(),
+            "Monday"
+            ) != m_classNavigationSelectedDays.end()
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classNavigationCard
+            ) == 2
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 1
+        && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Star
+        && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto;
+    if (!refreshPreservedNavigation)
+    {
+        return fail(4096);
+    }
+
+    classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+    if (!settings.save(
+            classNavigationLocationKey,
+            classmngr::engine::SettingValue{std::string("invalid")}
+            ))
+    {
+        return fail(8192);
+    }
+    refreshClassesPage();
+    const bool invalidSettingReady =
+        classNavigationLocation() == ClassNavigationLocation::Top
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classNavigationCard
+            ) == 1
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 2
+        && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Star;
+    if (!invalidSettingReady)
+    {
+        return fail(16384);
+    }
+
     m_classNameTextBox.Text(L"Unsaved Class Name");
     const int selectedBefore = m_classSelectedId;
     const int otherIndex = m_classSelectedIndex == 0 ? 1 : 0;
@@ -4253,6 +4535,7 @@ bool MainWindow::runPhase6ClassInformationChecks()
     m_openDatabase.reset();
     refreshClassesPage();
     const bool clearReady = m_classStatusText.Text() == L"No database open."
+        && classNavigationLocation() == ClassNavigationLocation::Top
         && !m_classNameTextBox.IsEnabled()
         && !m_classSaveButton.IsEnabled()
         && !m_classNotesSaveButton.IsEnabled();
@@ -14368,11 +14651,12 @@ void MainWindow::populateClassesPage(
         );
     analyticsRoot.Children().Append(analyticsRankingCard.root);
 
-    auto navigationCard = ClassMngrWinUISharedUX::buildCard({
+    const auto navigationCard = ClassMngrWinUISharedUX::buildCard({
         L"",
         L"",
         L"Classes navigation"
         });
+    m_classNavigationCard = navigationCard.root;
     m_classNavigationRoot = StackPanel();
     m_classNavigationRoot.Spacing(8.0);
     m_classNavigationRoot.HorizontalAlignment(HorizontalAlignment::Stretch);
@@ -14434,35 +14718,96 @@ void MainWindow::populateClassesPage(
         scroll.Content(content);
         return scroll;
     };
-    const auto makePivotItem = [&scrollTab](wchar_t const* header,
-                                            StackPanel const& content,
-                                            wchar_t const* automationName) {
-        auto item = PivotItem();
-        item.Header(winrt::box_value(winrt::hstring(header)));
-        item.Content(scrollTab(content));
-        setAutomationName(item, automationName);
-        return item;
+
+    m_classSectionScrollViews = {
+        scrollTab(detailsRoot),
+        scrollTab(rosterRoot),
+        scrollTab(speakingRoot),
+        scrollTab(analyticsRoot),
+        scrollTab(notesRoot)
     };
 
-    auto tabs = Pivot();
-    tabs.IsTabStop(true);
-    setAutomationName(tabs, L"Classes tabs");
-    tabs.Items().Append(makePivotItem(L"Details", detailsRoot, L"Class Details tab"));
-    tabs.Items().Append(makePivotItem(L"Roster", rosterRoot, L"Class Roster tab"));
-    tabs.Items().Append(makePivotItem(
-        L"Speaking Evaluations",
-        speakingRoot,
-        L"Class Speaking Evaluations tab"
-    ));
-    tabs.Items().Append(makePivotItem(L"Analytics", analyticsRoot, L"Class Analytics tab"));
-    tabs.Items().Append(makePivotItem(L"Notes", notesRoot, L"Class Notes tab"));
+    m_classSectionSelectorBar = SelectorBar();
+    m_classSectionSelectorBar.IsTabStop(true);
+    m_classSectionSelectorBar.TabIndex(0);
+    setAutomationName(
+        m_classSectionSelectorBar,
+        L"Classes section selector"
+        );
+    const std::array<std::pair<wchar_t const*, wchar_t const*>, 5>
+        sectionDefinitions{
+            {
+                {L"Details", L"Class Details section"},
+                {L"Roster", L"Class Roster section"},
+                {L"Speaking Evaluations", L"Class Speaking Evaluations section"},
+                {L"Analytics", L"Class Analytics section"},
+                {L"Notes", L"Class Notes section"}
+            }
+        };
+    for (int index = 0;
+         index < static_cast<int>(sectionDefinitions.size());
+         ++index)
+    {
+        auto item = SelectorBarItem();
+        item.Text(sectionDefinitions[static_cast<std::size_t>(index)].first);
+        item.Tag(box_value(index));
+        setAutomationName(
+            item,
+            sectionDefinitions[static_cast<std::size_t>(index)].second
+            );
+        m_classSectionSelectorItems[static_cast<std::size_t>(index)] = item;
+        m_classSectionSelectorBar.Items().Append(item);
+    }
+    m_classSectionSelectorBar.SelectionChanged(
+        [this](SelectorBar const& sender, auto const&) {
+            if (m_classSectionSelectionChanging)
+            {
+                return;
+            }
+            const auto selected = sender.SelectedItem();
+            if (selected)
+            {
+                selectClassSection(boxedInt(selected.Tag()));
+            }
+        }
+        );
 
-    auto pageRoot = StackPanel();
-    pageRoot.Spacing(12.0);
-    pageRoot.HorizontalAlignment(HorizontalAlignment::Stretch);
-    pageRoot.Children().Append(tabs);
-    pageRoot.Children().Append(navigationCard.root);
-    page.Content(pageRoot);
+    m_classSectionContentHost = ContentControl();
+    m_classSectionContentHost.HorizontalContentAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_classSectionContentHost.VerticalContentAlignment(
+        VerticalAlignment::Stretch
+        );
+    setAutomationName(
+        m_classSectionContentHost,
+        L"Active Classes section content"
+        );
+    selectClassSection(m_classSectionIndex);
+
+    m_classPageRoot = Grid();
+    m_classPageRoot.RowSpacing(12.0);
+    m_classPageRoot.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_classPageRoot.VerticalAlignment(VerticalAlignment::Stretch);
+    for (int rowIndex = 0; rowIndex < 3; ++rowIndex)
+    {
+        auto row = RowDefinition();
+        row.Height(
+            GridLengthHelper::FromValueAndType(
+                1.0,
+                rowIndex == 1 ? GridUnitType::Star : GridUnitType::Auto
+                )
+            );
+        m_classPageRoot.RowDefinitions().Append(row);
+    }
+    Grid::SetRow(m_classSectionSelectorBar, 0);
+    Grid::SetRow(m_classSectionContentHost, 1);
+    Grid::SetRow(m_classNavigationCard, 2);
+    m_classPageRoot.Children().Append(m_classSectionSelectorBar);
+    m_classPageRoot.Children().Append(m_classSectionContentHost);
+    m_classPageRoot.Children().Append(m_classNavigationCard);
+    page.Content(m_classPageRoot);
+    applyClassNavigationLayout();
     refreshClassesPage();
 }
 
@@ -15069,7 +15414,10 @@ void MainWindow::refreshClassNavigation(bool selectFallback)
         && !m_classRosterDirty
         && !m_speakingEvaluationDirty
         && !m_classNew;
-    if (selectFallback && clean && fallbackClassId != m_classSelectedId)
+    if (selectFallback
+        && clean
+        && fallbackClassId > 0
+        && fallbackClassId != m_classSelectedId)
     {
         selectClassFromNavigation(fallbackClassId);
     }
@@ -15170,6 +15518,81 @@ void MainWindow::toggleClassNavigationDay(std::string day)
     refreshClassNavigation(true);
 }
 
+void MainWindow::refreshClassNavigationLocation()
+{
+    m_classNavigationLocation = ClassNavigationLocation::Top;
+    if (m_openDatabase)
+    {
+        classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+        const auto loaded = settings.load(classNavigationLocationKey);
+        if (loaded)
+        {
+            const auto stored = classNavigationLocationFromSetting(*loaded);
+            if (stored)
+            {
+                m_classNavigationLocation = *stored;
+            }
+        }
+    }
+    applyClassNavigationLayout();
+}
+
+void MainWindow::applyClassNavigationLayout()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classPageRoot
+        || !m_classSectionContentHost
+        || !m_classNavigationCard)
+    {
+        return;
+    }
+
+    const bool bottom = m_classNavigationLocation
+        == ClassNavigationLocation::Bottom
+        && static_cast<bool>(m_openDatabase);
+    m_classPageRoot.RowDefinitions().GetAt(1).Height(
+        GridLengthHelper::FromValueAndType(
+            1.0,
+            bottom ? GridUnitType::Star : GridUnitType::Auto
+            )
+        );
+    m_classPageRoot.RowDefinitions().GetAt(2).Height(
+        GridLengthHelper::FromValueAndType(
+            1.0,
+            bottom ? GridUnitType::Auto : GridUnitType::Star
+            )
+        );
+    Grid::SetRow(m_classSectionContentHost, bottom ? 1 : 2);
+    Grid::SetRow(m_classNavigationCard, bottom ? 2 : 1);
+}
+
+void MainWindow::selectClassSection(int index)
+{
+    if (index < 0
+        || index >= static_cast<int>(m_classSectionScrollViews.size())
+        || !m_classSectionContentHost)
+    {
+        return;
+    }
+
+    m_classSectionIndex = index;
+    m_classSectionContentHost.Content(
+        m_classSectionScrollViews[static_cast<std::size_t>(index)]
+        );
+
+    if (m_classSectionSelectorBar
+        && m_classSectionSelectorItems[static_cast<std::size_t>(index)])
+    {
+        m_classSectionSelectionChanging = true;
+        m_classSectionSelectorBar.SelectedItem(
+            m_classSectionSelectorItems[static_cast<std::size_t>(index)]
+            );
+        m_classSectionSelectionChanging = false;
+    }
+}
+
 void MainWindow::refreshClassesPage()
 {
     using namespace Microsoft::UI::Xaml;
@@ -15179,6 +15602,8 @@ void MainWindow::refreshClassesPage()
     {
         return;
     }
+
+    refreshClassNavigationLocation();
 
     if (!m_openDatabase)
     {
