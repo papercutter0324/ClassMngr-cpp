@@ -414,10 +414,16 @@ private:
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
+    void PersonalDetailsCampus_SelectionChanged(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
+        );
     void PersonalDetailsSignatureMode_SelectionChanged(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const& arguments
         );
+    void updatePersonalSignatureControls();
+    void updatePersonalSignaturePreview();
     void presentSelectedCampus(std::wstring_view pageId);
     winrt::fire_and_forget loadCampusImage(
         std::string logicalPath,
@@ -645,13 +651,20 @@ private:
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportCampusResourcesMenu{nullptr};
 
     Microsoft::UI::Xaml::Controls::TextBox m_personalNameTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_personalCampusTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_personalCampusCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_personalZoomLoginIdTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::PasswordBox m_personalZoomPasswordBox{nullptr};
     Microsoft::UI::Xaml::Controls::CheckBox m_personalZoomNotAvailableCheck{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_personalSignatureModeCombo{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_personalSignatureFontCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_personalTypedSignatureTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_personalSignatureImageButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_personalSignatureTypeButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Border m_personalSignaturePreviewBorder{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock m_personalSignaturePreviewText{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel m_personalImageControls{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel m_personalTypedSignatureControls{nullptr};
+    std::vector<Microsoft::UI::Xaml::Controls::Button> m_personalSignatureFontButtons;
     Microsoft::UI::Xaml::Controls::TextBlock m_personalStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_personalValidationText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_personalImageStatusText{nullptr};
