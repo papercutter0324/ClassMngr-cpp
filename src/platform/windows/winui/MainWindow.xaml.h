@@ -10,6 +10,7 @@
 #include "classmngr/engine/class_info.h"
 #include "classmngr/engine/classroom.h"
 #include "classmngr/engine/class_schedule.h"
+#include "classmngr/engine/class_tab_navigation.h"
 #include "classmngr/engine/schedule_import.h"
 #include "classmngr/engine/speaking_analytics.h"
 #include "classmngr/engine/speaking_evaluation_batch_report_policy.h"
@@ -259,6 +260,18 @@ private:
         Microsoft::UI::Xaml::Controls::StackPanel const& scheduleRoot
         );
     void refreshScheduleWorkspace();
+    void refreshScheduleBoard();
+    void setScheduleDisplayMode(int mode);
+    void updateScheduleDisplayButtons();
+    void handleScheduleSlotClick(
+        std::wstring day,
+        std::wstring timeLabel,
+        std::wstring currentState,
+        std::wstring defaultState,
+        bool slotTogglingEnabled,
+        bool testingBlockCreationEnabled
+        );
+    winrt::fire_and_forget openScheduleClassEditor(int classId);
     void saveScheduleEntry();
     void clearScheduleEntry();
     void previewScheduleImport();
@@ -304,6 +317,10 @@ private:
         std::wstring_view pageId
         );
     void refreshClassesPage();
+    void refreshClassNavigation(bool selectFallback);
+    void selectClassFromNavigation(int classId);
+    void selectClassNavigationGrade(bool all, std::string grade);
+    void toggleClassNavigationDay(std::string day);
     void presentClass(int index);
     void refreshClassInformationOptions();
     void updateClassActions();
@@ -748,6 +765,11 @@ private:
     Microsoft::UI::Xaml::Controls::TextBox m_scheduleSlotTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_scheduleStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::Pivot m_scheduleTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_scheduleBoardRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleRegularModeButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleIntensiveModeButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleTestingModeButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleImportModeButton{nullptr};
     Microsoft::UI::Xaml::Controls::Grid m_scheduleHeaderGrid{nullptr};
     Microsoft::UI::Xaml::Controls::ListView m_scheduleList{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_scheduleClassSelector{nullptr};
@@ -798,6 +820,8 @@ private:
     std::vector<classmngr::engine::Classroom> m_scheduleClasses;
     std::vector<classmngr::engine::ClassInfo> m_scheduleInfos;
     std::wstring m_scheduleEditingKey;
+    classmngr::engine::ScheduleReportDisplayMode m_scheduleDisplayMode =
+        classmngr::engine::ScheduleReportDisplayMode::Regular;
     bool m_scheduleLoading{};
     uint32_t m_phase6ScheduleFailureMask{};
 
@@ -904,6 +928,13 @@ private:
         m_speakingBatchPlanButton{nullptr};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel m_classNavigationRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_classNavigationGradeTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_classNavigationDayTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_classNavigationClassTabs{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_classNameTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_classGradeCombo{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_classLevelCombo{nullptr};
@@ -928,6 +959,10 @@ private:
     classmngr::engine::ClassInfo m_classInfo;
     int m_classSelectedIndex{-1};
     int m_classSelectedId{-1};
+    std::string m_classNavigationGrade;
+    std::vector<std::string> m_classNavigationSelectedDays;
+    bool m_classNavigationAll{true};
+    bool m_classNavigationLoading{};
     bool m_classLoading{};
     bool m_classDirty{};
     bool m_classDetailsDirty{};

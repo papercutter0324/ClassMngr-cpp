@@ -1,6 +1,7 @@
 #pragma once
 
 #include "classmngr/engine/class_info.h"
+#include "classmngr/engine/intensive_slot_state.h"
 
 #include <string>
 #include <vector>
@@ -25,13 +26,6 @@ enum class ScheduleImportClassMatchConfidence
     None,
     Possible,
     Confident
-};
-
-struct IntensiveSlotState
-{
-    std::string day;
-    std::string startTime;
-    std::string state;
 };
 
 struct ScheduleImportDiagnostic

@@ -15,6 +15,7 @@
 #include "classmngr/engine/class_transfer_service.h"
 #include "classmngr/engine/database_file_format.h"
 #include "classmngr/engine/gs_team_service.h"
+#include "classmngr/engine/intensive_slot_state_service.h"
 #include "classmngr/engine/native_english_teacher_service.h"
 #include "classmngr/engine/open_database.h"
 #include "classmngr/engine/personal_details_service.h"
@@ -39,22 +40,26 @@
 #include "winui_identity.h"
 #include "winui_platform_services.h"
 #include "winui_shared_ux.h"
+#include "winui_schedule_board.h"
 
 #include <microsoft.ui.xaml.window.h>
 #include <shobjidl_core.h>
 
 #include <winrt/Microsoft.UI.Xaml.Automation.h>
+#include <winrt/Microsoft.UI.Xaml.Markup.h>
 #include <winrt/Microsoft.UI.Xaml.Media.Imaging.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Storage.Pickers.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.UI.h>
+#include <winrt/Windows.UI.Text.h>
 
 #include <charconv>
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <cwctype>
 #include <coroutine>
 #include <filesystem>
@@ -6559,9 +6564,9 @@ void MainWindow::populateHomePage(
     root.Children().Append(m_unsavedChangesButton);
 
     auto scheduleRoot = StackPanel();
-    scheduleRoot.Padding(Thickness{32.0, 16.0, 32.0, 32.0});
-    scheduleRoot.Spacing(16.0);
-    scheduleRoot.MaxWidth(900.0);
+    scheduleRoot.Padding(Thickness{16.0, 12.0, 16.0, 24.0});
+    scheduleRoot.Spacing(12.0);
+    scheduleRoot.MaxWidth(1260.0);
     scheduleRoot.HorizontalAlignment(HorizontalAlignment::Center);
     // Keep the original phase-4 controls available to the semantic hook, but
     // make the engine-backed workspace below the only user-facing schedule
@@ -6661,7 +6666,128 @@ void MainWindow::populateScheduleWorkspace(
     editorContent.Spacing(12.0);
     editorContent.HorizontalAlignment(HorizontalAlignment::Stretch);
 
+    auto modeBar = Grid();
+    modeBar.ColumnSpacing(8.0);
+    modeBar.HorizontalAlignment(HorizontalAlignment::Stretch);
+    for (int column = 0; column < 5; ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            1.0,
+            column == 3 ? GridUnitType::Star : GridUnitType::Auto
+            ));
+        modeBar.ColumnDefinitions().Append(definition);
+    }
+
+    const auto makeModeButton = [](std::wstring_view text,
+                                   std::wstring_view automationName) {
+        auto button = Button();
+        button.Content(box_value(hstring(text)));
+        button.MinWidth(116.0);
+        button.MinHeight(50.0);
+        button.Padding(Thickness{16.0, 7.0, 16.0, 7.0});
+        button.FontSize(20.0);
+        button.IsTabStop(true);
+        setAutomationName(button, automationName);
+        return button;
+    };
+
+    m_scheduleRegularModeButton = makeModeButton(
+        L"Regular",
+        L"Schedule Regular mode"
+        );
+    m_scheduleIntensiveModeButton = makeModeButton(
+        L"Intensive",
+        L"Schedule Intensive mode"
+        );
+    m_scheduleTestingModeButton = makeModeButton(
+        L"Testing",
+        L"Schedule Testing mode"
+        );
+    m_scheduleImportModeButton = makeModeButton(
+        L"Import",
+        L"Schedule Import"
+        );
+    m_scheduleImportModeButton.HorizontalAlignment(HorizontalAlignment::Right);
+
+    Grid::SetColumn(m_scheduleRegularModeButton, 0);
+    Grid::SetColumn(m_scheduleIntensiveModeButton, 1);
+    Grid::SetColumn(m_scheduleTestingModeButton, 2);
+    modeBar.Children().Append(m_scheduleRegularModeButton);
+    modeBar.Children().Append(m_scheduleIntensiveModeButton);
+    modeBar.Children().Append(m_scheduleTestingModeButton);
+    auto modeSpacer = Border();
+    modeSpacer.HorizontalAlignment(HorizontalAlignment::Stretch);
+    Grid::SetColumn(modeSpacer, 3);
+    modeBar.Children().Append(modeSpacer);
+    Grid::SetColumn(m_scheduleImportModeButton, 4);
+    modeBar.Children().Append(m_scheduleImportModeButton);
+    editorContent.Children().Append(modeBar);
+
+    m_scheduleBoardRoot = ClassMngrWinUIScheduleBoard::create({
+        [this](int classId) {
+            openScheduleClassEditor(classId);
+        },
+        [this](std::wstring day,
+               std::wstring timeLabel,
+               std::wstring currentState,
+               std::wstring defaultState,
+               bool slotTogglingEnabled,
+               bool testingBlockCreationEnabled) {
+            handleScheduleSlotClick(
+                std::move(day),
+                std::move(timeLabel),
+                std::move(currentState),
+                std::move(defaultState),
+                slotTogglingEnabled,
+                testingBlockCreationEnabled
+                );
+        }
+    });
+    m_scheduleBoardRoot.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_scheduleBoardRoot.MinWidth(860.0);
+    setAutomationName(m_scheduleBoardRoot, L"Weekly class schedule board");
+    editorContent.Children().Append(m_scheduleBoardRoot);
+
+    m_scheduleRegularModeButton.Click(
+        [this](auto const&, auto const&) {
+            setScheduleDisplayMode(
+                static_cast<int>(
+                    classmngr::engine::ScheduleReportDisplayMode::Regular
+                    )
+                );
+        }
+        );
+    m_scheduleIntensiveModeButton.Click(
+        [this](auto const&, auto const&) {
+            setScheduleDisplayMode(
+                static_cast<int>(
+                    classmngr::engine::ScheduleReportDisplayMode::Intensive
+                    )
+                );
+        }
+        );
+    m_scheduleTestingModeButton.Click(
+        [this](auto const&, auto const&) {
+            setScheduleDisplayMode(
+                static_cast<int>(
+                    classmngr::engine::ScheduleReportDisplayMode::Testing
+                    )
+                );
+        }
+        );
+    m_scheduleImportModeButton.Click(
+        [this](auto const&, auto const&) {
+            if (m_scheduleTabs)
+            {
+                m_scheduleTabs.SelectedIndex(1);
+            }
+        }
+        );
+    updateScheduleDisplayButtons();
+
     auto heading = makeText(L"Class schedules", 24.0);
+    heading.Visibility(Visibility::Collapsed);
     setAutomationName(heading, L"Class schedules heading");
     editorContent.Children().Append(heading);
     auto description = makeText(
@@ -6669,12 +6795,14 @@ void MainWindow::populateScheduleWorkspace(
         L"engine reject invalid or overlapping schedules. The table remains "
         L"virtualized by the WinUI ListView for larger class directories."
         );
+    description.Visibility(Visibility::Collapsed);
     setAutomationName(description, L"Class schedules description");
     editorContent.Children().Append(description);
 
     m_scheduleHeaderGrid = Grid();
     m_scheduleHeaderGrid.ColumnSpacing(8.0);
     m_scheduleHeaderGrid.MinWidth(680.0);
+    m_scheduleHeaderGrid.Visibility(Visibility::Collapsed);
     setAutomationName(m_scheduleHeaderGrid, L"Class schedule column headers");
     const std::array<double, 5> columnWidths{190.0, 105.0, 125.0, 120.0, 120.0};
     for (const double width : columnWidths)
@@ -6698,6 +6826,7 @@ void MainWindow::populateScheduleWorkspace(
     m_scheduleList.IsTabStop(true);
     m_scheduleList.TabIndex(21);
     m_scheduleList.Height(280.0);
+    m_scheduleList.Visibility(Visibility::Collapsed);
     m_scheduleList.HorizontalAlignment(HorizontalAlignment::Stretch);
     m_scheduleList.SelectionChanged(
         [this](auto const&, auto const&) {
@@ -6776,6 +6905,7 @@ void MainWindow::populateScheduleWorkspace(
         L"Saving is validated and persisted through the shared engine service.",
         L"Schedule slot editor"
         });
+    formCard.root.Visibility(Visibility::Collapsed);
     m_scheduleClassSelector = ComboBox();
     m_scheduleClassSelector.Header(box_value(hstring(L"Class")));
     m_scheduleClassSelector.PlaceholderText(L"Select a class");
@@ -6879,6 +7009,7 @@ void MainWindow::populateScheduleWorkspace(
     formCard.content.Children().Append(actions);
 
     m_scheduleWorkspaceStatusText = makeText(L"Schedule editor is ready.");
+    m_scheduleWorkspaceStatusText.Visibility(Visibility::Collapsed);
     setAutomationName(m_scheduleWorkspaceStatusText, L"Schedule workspace status");
     formCard.content.Children().Append(m_scheduleWorkspaceStatusText);
     m_scheduleValidationText = makeText(L"");
@@ -7289,15 +7420,312 @@ void MainWindow::populateScheduleWorkspace(
     setAutomationName(testingItem, L"Testing classes tab");
 
     m_scheduleTabs = Pivot();
-    m_scheduleTabs.IsTabStop(true);
+    // The schedule board owns the visible Regular/Intensive/Testing mode
+    // controls. Keep the import/testing pages available to existing command
+    // and smoke-test paths, but do not expose their legacy navigation row.
+    m_scheduleTabs.IsTabStop(false);
     m_scheduleTabs.TabIndex(0);
     m_scheduleTabs.Items().Append(scheduleItem);
     m_scheduleTabs.Items().Append(importItem);
     m_scheduleTabs.Items().Append(testingItem);
+    m_scheduleTabs.HeaderTemplate(
+        winrt::Microsoft::UI::Xaml::Markup::XamlReader::Load(
+            L"<DataTemplate "
+            L"xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/"
+            L"presentation\"><Grid Height=\"0\" "
+            L"Visibility=\"Collapsed\" /></DataTemplate>"
+            )
+            .as<winrt::Microsoft::UI::Xaml::DataTemplate>()
+        );
     setAutomationName(m_scheduleTabs, L"Schedule workspace tabs");
     scheduleRoot.Children().Append(m_scheduleTabs);
     refreshScheduleWorkspace();
     refreshTestingWorkspace();
+}
+
+void MainWindow::refreshScheduleBoard()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace ClassMngrWinUIScheduleBoard;
+
+    if (!m_scheduleBoardRoot)
+    {
+        return;
+    }
+
+    if (!m_openDatabase)
+    {
+        m_scheduleBoardRoot.Visibility(Visibility::Collapsed);
+        return;
+    }
+
+    const auto visibleDays =
+        classmngr::engine::ScheduleReportService::visibleDays(false);
+    const bool useIntensive =
+        m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Intensive;
+    const auto build = classmngr::engine::ScheduleBuilderService::build(
+        m_scheduleInfos,
+        useIntensive,
+        visibleDays
+        );
+
+    classmngr::engine::ScheduleReportRequest request;
+    request.days = visibleDays;
+    request.displayMode = m_scheduleDisplayMode;
+    request.rowFilter = useIntensive
+        ? classmngr::engine::ScheduleReportRowFilter::TrimEmptyOuterRows
+        : classmngr::engine::ScheduleReportRowFilter::None;
+
+    classmngr::engine::IntensiveSlotStateService slotService(*m_openDatabase);
+    if (const auto states = slotService.list())
+    {
+        for (const auto& state : *states)
+        {
+            request.slotStateOverrides.emplace(
+                classmngr::engine::ScheduleReportService::slotKey(
+                    state.day,
+                    state.startTime
+                    ),
+                state.state
+                );
+        }
+    }
+
+    if (
+        m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Testing
+        )
+    {
+        classmngr::engine::TestingBlockService blockService(*m_openDatabase);
+        classmngr::engine::TestingClassService testingClassService(
+            *m_openDatabase
+            );
+        const auto assignments = blockService.listAssignments();
+        const auto testingClasses = testingClassService.list();
+        if (assignments && testingClasses)
+        {
+            for (const auto& assignment : *assignments)
+            {
+                classmngr::engine::ScheduleReportTestingAssignmentView view;
+                view.assignment.day = assignment.day;
+                view.assignment.startTime = assignment.startTime;
+                view.assignment.room = assignment.room;
+                view.assignment.classId = assignment.classId;
+                view.assignment.kind = assignment.kind
+                    == classmngr::engine::TestingAssignmentKind::SpecialClass
+                    ? classmngr::engine::ScheduleReportTestingAssignmentKind::SpecialClass
+                    : classmngr::engine::ScheduleReportTestingAssignmentKind::PlainTesting;
+
+                if (
+                    assignment.kind
+                        == classmngr::engine::TestingAssignmentKind::SpecialClass
+                    )
+                {
+                    const auto testingClass = std::find_if(
+                        testingClasses->cbegin(),
+                        testingClasses->cend(),
+                        [&assignment](const auto& candidate) {
+                            return candidate.classId == assignment.classId;
+                        }
+                        );
+                    if (testingClass != testingClasses->cend())
+                    {
+                        view.testingClassEntry.classId = testingClass->classId;
+                        view.testingClassEntry.kind =
+                            classmngr::engine::ScheduleReportEntryKind::TestingClass;
+                        view.testingClassEntry.className = testingClass->name;
+                        view.testingClassEntry.roomNumber = testingClass->room;
+                        view.testingClassEntry.classGrade = testingClass->grade;
+                        view.testingClassEntry.classLevel = testingClass->level;
+                        view.testingClassEntry.classColor = testingClass->classColor;
+                        view.testingClassEntry.fontColor = testingClass->fontColor;
+                    }
+                }
+
+                request.testingAssignments.emplace(
+                    classmngr::engine::ScheduleReportService::slotKey(
+                        assignment.day,
+                        assignment.startTime
+                        ),
+                    std::move(view)
+                    );
+            }
+        }
+    }
+
+    const auto model = classmngr::engine::ScheduleReportService::build(
+        build,
+        request
+        );
+    m_scheduleBoardRoot.Visibility(Visibility::Visible);
+    render(
+        m_scheduleBoardRoot,
+        model,
+        RenderOptions{true, false, false}
+        );
+}
+
+void MainWindow::setScheduleDisplayMode(int mode)
+{
+    if (
+        mode < static_cast<int>(
+            classmngr::engine::ScheduleReportDisplayMode::Regular
+            )
+        || mode > static_cast<int>(
+            classmngr::engine::ScheduleReportDisplayMode::Testing
+            )
+        )
+    {
+        return;
+    }
+
+    m_scheduleDisplayMode =
+        static_cast<classmngr::engine::ScheduleReportDisplayMode>(mode);
+    updateScheduleDisplayButtons();
+    refreshScheduleBoard();
+}
+
+void MainWindow::updateScheduleDisplayButtons()
+{
+    using namespace Microsoft::UI::Xaml;
+
+    const auto setButtonState = [](auto const& button, bool selected) {
+        if (!button)
+        {
+            return;
+        }
+
+        button.Background(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{
+                    255,
+                    static_cast<std::uint8_t>(selected ? 59 : 48),
+                    static_cast<std::uint8_t>(selected ? 169 : 53),
+                    static_cast<std::uint8_t>(selected ? 225 : 60)
+                }
+                )
+            );
+        button.Foreground(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{
+                    255,
+                    255,
+                    255,
+                    255
+                }
+                )
+            );
+        button.BorderBrush(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{255, 92, 99, 108}
+                )
+            );
+        button.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+        button.CornerRadius(CornerRadius{5.0, 5.0, 5.0, 5.0});
+    };
+
+    setButtonState(
+        m_scheduleRegularModeButton,
+        m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Regular
+        );
+    setButtonState(
+        m_scheduleIntensiveModeButton,
+        m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Intensive
+        );
+    setButtonState(
+        m_scheduleTestingModeButton,
+        m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Testing
+        );
+    setButtonState(m_scheduleImportModeButton, false);
+}
+
+void MainWindow::handleScheduleSlotClick(
+    std::wstring day,
+    std::wstring timeLabel,
+    std::wstring currentState,
+    std::wstring defaultState,
+    bool slotTogglingEnabled,
+    bool testingBlockCreationEnabled
+    )
+{
+    if (!m_openDatabase)
+    {
+        return;
+    }
+
+    if (
+        m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Intensive
+        && slotTogglingEnabled
+        )
+    {
+        classmngr::engine::IntensiveSlotStateService service(*m_openDatabase);
+        const auto saved = service.save(
+            asUtf8(day),
+            asUtf8(timeLabel),
+            classmngr::engine::ScheduleReportService::nextSlotState(
+                asUtf8(currentState)
+                ),
+            asUtf8(defaultState)
+            );
+        if (!saved)
+        {
+            if (m_scheduleWorkspaceStatusText)
+            {
+                m_scheduleWorkspaceStatusText.Text(winrt::hstring(
+                    L"Schedule slot could not be updated: "
+                        + asWide(saved.error().message)
+                    ));
+            }
+            return;
+        }
+
+        m_dirtyState.markDirty();
+        updateFileCommandState();
+        refreshScheduleWorkspace();
+        return;
+    }
+
+    if (
+        m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Testing
+        && (currentState == L"testing" || testingBlockCreationEnabled)
+        )
+    {
+        if (m_scheduleTabs)
+        {
+            m_scheduleTabs.SelectedIndex(2);
+        }
+        if (m_testingDayCombo)
+        {
+            for (int index = 0;
+                 index < static_cast<int>(m_testingDayCombo.Items().Size());
+                 ++index)
+            {
+                const auto item = m_testingDayCombo.Items().GetAt(index)
+                    .try_as<Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+                if (item && boxedString(item.Tag()) == day)
+                {
+                    m_testingDayCombo.SelectedIndex(index);
+                    break;
+                }
+            }
+        }
+        if (m_testingStartTextBox)
+        {
+            m_testingStartTextBox.Text(timeLabel);
+        }
+        if (m_testingStatusText)
+        {
+            m_testingStatusText.Text(
+                L"Choose a testing class or plain testing block for the selected slot."
+                );
+        }
+    }
 }
 
 void MainWindow::refreshScheduleWorkspace()
@@ -7336,6 +7764,7 @@ void MainWindow::refreshScheduleWorkspace()
     if (!hasDatabase)
     {
         m_scheduleWorkspaceStatusText.Text(L"No database open.");
+        refreshScheduleBoard();
         if (m_scheduleValidationText)
         {
             m_scheduleValidationText.Text({});
@@ -7507,7 +7936,380 @@ void MainWindow::refreshScheduleWorkspace()
                 + L" schedule slots."
                 )
         );
+    refreshScheduleBoard();
     m_scheduleLoading = false;
+}
+
+winrt::fire_and_forget MainWindow::openScheduleClassEditor(int classId)
+{
+    auto lifetime = get_strong();
+    if (m_ownedDialog || !m_openDatabase || !RootGrid().XamlRoot())
+    {
+        co_return;
+    }
+
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+    using namespace Microsoft::UI::Xaml::Media;
+
+    classmngr::engine::ClassInfoService service(*m_openDatabase);
+    const auto loaded = service.load(classId);
+    if (!loaded)
+    {
+        if (m_scheduleWorkspaceStatusText)
+        {
+            m_scheduleWorkspaceStatusText.Text(winrt::hstring(
+                L"Class information could not be loaded: "
+                    + asWide(loaded.error().message)
+                ));
+        }
+        co_return;
+    }
+
+    classmngr::engine::ClassInfo draft = *loaded;
+    const std::string originalGrade = draft.classGrade;
+    const std::string originalLevel = draft.classLevel;
+    std::string classColor = draft.classColor.empty()
+        ? "#FFFFFF"
+        : draft.classColor;
+    std::string fontColor = draft.fontColor.empty()
+        ? "#000000"
+        : draft.fontColor;
+
+    const auto hexDigit = [](char value) noexcept {
+        if (value >= '0' && value <= '9')
+        {
+            return value - '0';
+        }
+        if (value >= 'a' && value <= 'f')
+        {
+            return value - 'a' + 10;
+        }
+        if (value >= 'A' && value <= 'F')
+        {
+            return value - 'A' + 10;
+        }
+        return -1;
+    };
+    const auto colorFromHex = [&hexDigit](std::string_view value) {
+        Windows::UI::Color color{255, 255, 255, 255};
+        if (value.size() != 7 || value.front() != '#')
+        {
+            return color;
+        }
+        const int redHigh = hexDigit(value[1]);
+        const int redLow = hexDigit(value[2]);
+        const int greenHigh = hexDigit(value[3]);
+        const int greenLow = hexDigit(value[4]);
+        const int blueHigh = hexDigit(value[5]);
+        const int blueLow = hexDigit(value[6]);
+        if (redHigh < 0 || redLow < 0 || greenHigh < 0 || greenLow < 0
+            || blueHigh < 0 || blueLow < 0)
+        {
+            return color;
+        }
+        color.R = static_cast<std::uint8_t>(redHigh * 16 + redLow);
+        color.G = static_cast<std::uint8_t>(greenHigh * 16 + greenLow);
+        color.B = static_cast<std::uint8_t>(blueHigh * 16 + blueLow);
+        return color;
+    };
+    const auto colorToHex = [](Windows::UI::Color color) {
+        constexpr char digits[] = "0123456789abcdef";
+        std::string value("#000000");
+        value[1] = digits[(color.R >> 4) & 0x0f];
+        value[2] = digits[color.R & 0x0f];
+        value[3] = digits[(color.G >> 4) & 0x0f];
+        value[4] = digits[color.G & 0x0f];
+        value[5] = digits[(color.B >> 4) & 0x0f];
+        value[6] = digits[color.B & 0x0f];
+        return value;
+    };
+
+    auto form = StackPanel();
+    form.Spacing(10.0);
+    form.MaxWidth(520.0);
+
+    auto title = TextBlock();
+    title.Text(L"Edit Class Information");
+    title.FontSize(22.0);
+    title.FontWeight(Windows::UI::Text::FontWeights::Bold());
+    setAutomationName(title, L"Edit Class Information");
+    form.Children().Append(title);
+
+    const auto makeReadOnlyField = [&form](std::wstring_view header,
+                                            std::string_view value,
+                                            std::wstring_view automationName) {
+        auto field = TextBox();
+        field.Header(box_value(hstring(header)));
+        field.Text(asWide(value));
+        field.IsReadOnly(true);
+        field.IsTabStop(false);
+        setAutomationName(field, automationName);
+        form.Children().Append(field);
+        return field;
+    };
+    const auto teacherField = makeReadOnlyField(
+        L"Korean Teacher",
+        draft.teacherKr,
+        L"Schedule class Korean teacher"
+        );
+    const auto roomField = makeReadOnlyField(
+        L"Room Number",
+        draft.roomNumber,
+        L"Schedule class room number"
+        );
+    static_cast<void>(teacherField);
+    static_cast<void>(roomField);
+
+    const auto addChoice = [](ComboBox const& combo,
+                              std::string_view value) {
+        auto item = ComboBoxItem();
+        const hstring text{asWide(value)};
+        item.Content(box_value(text));
+        item.Tag(box_value(text));
+        combo.Items().Append(item);
+    };
+    const auto selectChoice = [](ComboBox const& combo,
+                                 std::string_view value) {
+        for (int index = 0;
+             index < static_cast<int>(combo.Items().Size());
+             ++index)
+        {
+            const auto item = combo.Items().GetAt(index)
+                .try_as<ComboBoxItem>();
+            if (item && boxedString(item.Tag()) == asWide(value))
+            {
+                combo.SelectedIndex(index);
+                return;
+            }
+        }
+        combo.SelectedIndex(-1);
+    };
+
+    auto grade = ComboBox();
+    grade.Header(box_value(hstring(L"Class Grade")));
+    grade.MinWidth(260.0);
+    grade.IsTabStop(true);
+    setAutomationName(grade, L"Schedule class grade");
+    for (const std::string& value : classmngr::engine::ClassInfoConfig::grades())
+    {
+        addChoice(grade, value);
+    }
+    selectChoice(grade, draft.classGrade);
+    form.Children().Append(grade);
+
+    auto level = ComboBox();
+    level.Header(box_value(hstring(L"Class Level")));
+    level.MinWidth(260.0);
+    level.IsTabStop(true);
+    setAutomationName(level, L"Schedule class level");
+    form.Children().Append(level);
+
+    bool loadingOptions = true;
+    const auto rebuildLevels = [&]() {
+        const std::wstring selected = selectedComboValue(level);
+        level.Items().Clear();
+        for (const std::string& value :
+             classmngr::engine::ClassInfoConfig::levelsForGrade(
+                 asUtf8(selectedComboValue(grade))
+                 ))
+        {
+            addChoice(level, value);
+        }
+        selectChoice(
+            level,
+            selected.empty() ? draft.classLevel : asUtf8(selected)
+            );
+    };
+    grade.SelectionChanged(
+        [&loadingOptions, &rebuildLevels](auto const&, auto const&) {
+            if (!loadingOptions)
+            {
+                rebuildLevels();
+            }
+        }
+        );
+    rebuildLevels();
+    selectChoice(level, draft.classLevel);
+    loadingOptions = false;
+
+    auto colorPicker = ColorPicker();
+    colorPicker.IsAlphaEnabled(false);
+    colorPicker.IsHexInputVisible(true);
+    colorPicker.Visibility(Visibility::Collapsed);
+    colorPicker.MinHeight(260.0);
+    setAutomationName(colorPicker, L"Schedule class color picker");
+
+    auto classColorRow = StackPanel();
+    classColorRow.Orientation(Orientation::Horizontal);
+    classColorRow.Spacing(8.0);
+    auto classPreview = Button();
+    classPreview.Width(38.0);
+    classPreview.Height(38.0);
+    classPreview.Padding(Thickness{0.0, 0.0, 0.0, 0.0});
+    classPreview.IsTabStop(false);
+    classPreview.Content(box_value(hstring(L"")));
+    setAutomationName(classPreview, L"Schedule class color preview");
+    auto classColorButton = Button();
+    classColorButton.Content(box_value(hstring(L"Choose Color")));
+    setAutomationName(classColorButton, L"Choose schedule class color");
+    classColorRow.Children().Append(classPreview);
+    classColorRow.Children().Append(classColorButton);
+    auto classColorLabel = TextBlock();
+    classColorLabel.Text(L"Class Color");
+    classColorLabel.VerticalAlignment(VerticalAlignment::Center);
+    form.Children().Append(classColorLabel);
+    form.Children().Append(classColorRow);
+
+    auto fontColorRow = StackPanel();
+    fontColorRow.Orientation(Orientation::Horizontal);
+    fontColorRow.Spacing(8.0);
+    auto fontPreview = Button();
+    fontPreview.Width(38.0);
+    fontPreview.Height(38.0);
+    fontPreview.Padding(Thickness{0.0, 0.0, 0.0, 0.0});
+    fontPreview.IsTabStop(false);
+    fontPreview.Content(box_value(hstring(L"")));
+    setAutomationName(fontPreview, L"Schedule font color preview");
+    auto fontColorButton = Button();
+    fontColorButton.Content(box_value(hstring(L"Choose Color")));
+    setAutomationName(fontColorButton, L"Choose schedule font color");
+    fontColorRow.Children().Append(fontPreview);
+    fontColorRow.Children().Append(fontColorButton);
+    auto fontColorLabel = TextBlock();
+    fontColorLabel.Text(L"Font Color");
+    fontColorLabel.VerticalAlignment(VerticalAlignment::Center);
+    form.Children().Append(fontColorLabel);
+    form.Children().Append(fontColorRow);
+    form.Children().Append(colorPicker);
+
+    const auto updatePreview = [&colorFromHex](Button const& preview,
+                                                std::string_view value) {
+        preview.Background(SolidColorBrush(colorFromHex(value)));
+        preview.BorderBrush(
+            SolidColorBrush(Windows::UI::Color{255, 128, 128, 128})
+            );
+        preview.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+        preview.CornerRadius(CornerRadius{5.0, 5.0, 5.0, 5.0});
+    };
+    updatePreview(classPreview, classColor);
+    updatePreview(fontPreview, fontColor);
+
+    int activeColor = 0;
+    classColorButton.Click(
+        [&activeColor, &colorPicker, &colorFromHex, &classColor](
+            auto const&, auto const&) {
+            activeColor = 0;
+            colorPicker.Color(colorFromHex(classColor));
+            colorPicker.Visibility(Visibility::Visible);
+        }
+        );
+    fontColorButton.Click(
+        [&activeColor, &colorPicker, &colorFromHex, &fontColor](
+            auto const&, auto const&) {
+            activeColor = 1;
+            colorPicker.Color(colorFromHex(fontColor));
+            colorPicker.Visibility(Visibility::Visible);
+        }
+        );
+    colorPicker.ColorChanged(
+        [&activeColor,
+         &colorToHex,
+         &classColor,
+         &fontColor,
+         &classPreview,
+         &fontPreview,
+         &updatePreview](
+            auto const&,
+            ColorChangedEventArgs const& arguments
+            ) {
+            const std::string value = colorToHex(arguments.NewColor());
+            if (activeColor == 0)
+            {
+                classColor = value;
+                updatePreview(classPreview, classColor);
+            }
+            else
+            {
+                fontColor = value;
+                updatePreview(fontPreview, fontColor);
+            }
+        }
+        );
+
+    auto validation = TextBlock();
+    validation.TextWrapping(TextWrapping::Wrap);
+    validation.Visibility(Visibility::Collapsed);
+    validation.Foreground(
+        SolidColorBrush(Windows::UI::Color{255, 196, 43, 28})
+        );
+    setAutomationName(validation, L"Schedule class validation");
+    form.Children().Append(validation);
+
+    auto dialog = ContentDialog();
+    dialog.XamlRoot(RootGrid().XamlRoot());
+    dialog.Title(box_value(hstring(L"Edit Schedule Cell")));
+    dialog.Content(form);
+    dialog.PrimaryButtonText(L"Save");
+    dialog.CloseButtonText(L"Cancel");
+    dialog.DefaultButton(ContentDialogButton::Primary);
+    m_ownedDialog = dialog;
+
+    for (;;)
+    {
+        ContentDialogResult result = ContentDialogResult::None;
+        try
+        {
+            result = co_await dialog.ShowAsync();
+        }
+        catch (...)
+        {
+            break;
+        }
+        if (result != ContentDialogResult::Primary)
+        {
+            break;
+        }
+
+        const std::string newGrade = asUtf8(selectedComboValue(grade));
+        const std::string newLevel = asUtf8(selectedComboValue(level));
+        draft.classGrade = newGrade;
+        draft.classLevel = newLevel;
+        draft.classColor = classColor;
+        draft.fontColor = fontColor;
+        if (newGrade != originalGrade || newLevel != originalLevel)
+        {
+            draft.readingBook.clear();
+            draft.essayBook.clear();
+        }
+
+        const auto saved = service.save(draft);
+        if (!saved)
+        {
+            validation.Text(winrt::hstring(
+                L"The class information could not be saved: "
+                    + asWide(saved.error().message)
+                ));
+            validation.Visibility(Visibility::Visible);
+            continue;
+        }
+
+        m_dirtyState.markDirty();
+        updateFileCommandState();
+        refreshScheduleWorkspace();
+        if (m_scheduleWorkspaceStatusText)
+        {
+            m_scheduleWorkspaceStatusText.Text(
+                L"Class information saved."
+                );
+        }
+        break;
+    }
+
+    if (m_ownedDialog == dialog)
+    {
+        m_ownedDialog = nullptr;
+    }
 }
 
 void MainWindow::saveScheduleEntry()
@@ -13565,6 +14367,66 @@ void MainWindow::populateClassesPage(
         m_speakingAnalyticsRankingList
         );
     analyticsRoot.Children().Append(analyticsRankingCard.root);
+
+    auto navigationCard = ClassMngrWinUISharedUX::buildCard({
+        L"",
+        L"",
+        L"Classes navigation"
+        });
+    m_classNavigationRoot = StackPanel();
+    m_classNavigationRoot.Spacing(8.0);
+    m_classNavigationRoot.HorizontalAlignment(HorizontalAlignment::Stretch);
+    setAutomationName(m_classNavigationRoot, L"Classes navigation controls");
+
+    auto navigationFilters = Grid();
+    navigationFilters.ColumnSpacing(12.0);
+    navigationFilters.ColumnDefinitions().Append(ColumnDefinition());
+    navigationFilters.ColumnDefinitions().Append(ColumnDefinition());
+
+    m_classNavigationGradeTabs = StackPanel();
+    m_classNavigationGradeTabs.Orientation(Orientation::Horizontal);
+    m_classNavigationGradeTabs.Spacing(6.0);
+    m_classNavigationGradeTabs.HorizontalAlignment(HorizontalAlignment::Left);
+    setAutomationName(
+        m_classNavigationGradeTabs,
+        L"Class grade filters"
+        );
+    Grid::SetColumn(m_classNavigationGradeTabs, 0);
+    navigationFilters.Children().Append(m_classNavigationGradeTabs);
+
+    auto dayFilterScroll = ScrollViewer();
+    dayFilterScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Auto);
+    dayFilterScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Disabled);
+    dayFilterScroll.HorizontalAlignment(HorizontalAlignment::Right);
+    m_classNavigationDayTabs = StackPanel();
+    m_classNavigationDayTabs.Orientation(Orientation::Horizontal);
+    m_classNavigationDayTabs.Spacing(6.0);
+    m_classNavigationDayTabs.HorizontalAlignment(HorizontalAlignment::Right);
+    setAutomationName(
+        m_classNavigationDayTabs,
+        L"Class day filters"
+        );
+    dayFilterScroll.Content(m_classNavigationDayTabs);
+    Grid::SetColumn(dayFilterScroll, 1);
+    navigationFilters.Children().Append(dayFilterScroll);
+    m_classNavigationRoot.Children().Append(navigationFilters);
+
+    auto classTabScroll = ScrollViewer();
+    classTabScroll.Height(64.0);
+    classTabScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Auto);
+    classTabScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Disabled);
+    m_classNavigationClassTabs = StackPanel();
+    m_classNavigationClassTabs.Orientation(Orientation::Horizontal);
+    m_classNavigationClassTabs.Spacing(6.0);
+    m_classNavigationClassTabs.HorizontalAlignment(HorizontalAlignment::Left);
+    setAutomationName(
+        m_classNavigationClassTabs,
+        L"Class selection tabs"
+        );
+    classTabScroll.Content(m_classNavigationClassTabs);
+    m_classNavigationRoot.Children().Append(classTabScroll);
+    navigationCard.content.Children().Append(m_classNavigationRoot);
+
     const auto scrollTab = [](StackPanel const& content) {
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
@@ -13591,10 +14453,16 @@ void MainWindow::populateClassesPage(
         L"Speaking Evaluations",
         speakingRoot,
         L"Class Speaking Evaluations tab"
-        ));
+    ));
     tabs.Items().Append(makePivotItem(L"Analytics", analyticsRoot, L"Class Analytics tab"));
     tabs.Items().Append(makePivotItem(L"Notes", notesRoot, L"Class Notes tab"));
-    page.Content(tabs);
+
+    auto pageRoot = StackPanel();
+    pageRoot.Spacing(12.0);
+    pageRoot.HorizontalAlignment(HorizontalAlignment::Stretch);
+    pageRoot.Children().Append(tabs);
+    pageRoot.Children().Append(navigationCard.root);
+    page.Content(pageRoot);
     refreshClassesPage();
 }
 
@@ -13880,6 +14748,428 @@ void MainWindow::presentClass(int index)
     updateClassActions();
 }
 
+void MainWindow::refreshClassNavigation(bool selectFallback)
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_classNavigationGradeTabs
+        || !m_classNavigationDayTabs
+        || !m_classNavigationClassTabs)
+    {
+        return;
+    }
+
+    m_classNavigationLoading = true;
+    m_classNavigationGradeTabs.Children().Clear();
+    m_classNavigationDayTabs.Children().Clear();
+    m_classNavigationClassTabs.Children().Clear();
+
+    if (!m_openDatabase || m_classes.empty())
+    {
+        m_classNavigationGrade.clear();
+        m_classNavigationSelectedDays.clear();
+        m_classNavigationAll = true;
+        auto empty = TextBlock();
+        empty.Text(
+            !m_openDatabase
+                ? L"Open a database to browse scheduled classes."
+                : L"No classes are available."
+            );
+        empty.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(empty, L"Class navigation empty state");
+        m_classNavigationClassTabs.Children().Append(empty);
+        m_classNavigationLoading = false;
+        return;
+    }
+
+    classmngr::engine::ClassInfoService infoService(*m_openDatabase);
+    std::vector<classmngr::engine::ClassTabNavigationService::ClassEntry>
+        entries;
+    entries.reserve(m_classes.size());
+    for (const classmngr::engine::Classroom& classroom : m_classes)
+    {
+        if (classroom.id <= 0)
+        {
+            continue;
+        }
+
+        classmngr::engine::ClassInfo info;
+        const auto loaded = infoService.load(classroom.id);
+        if (loaded)
+        {
+            info = *loaded;
+        }
+
+        classmngr::engine::ClassTabNavigationService::ClassEntry entry;
+        entry.classId = classroom.id;
+        entry.classroomName = classroom.name;
+        entry.grade = info.classGrade;
+        entry.level = info.classLevel;
+        entry.regularTimes = info.classTimes;
+        entry.intensiveTimes = info.intensiveTimes;
+        entry.teacherEn = info.teacherEn;
+        entry.teacherKr = info.teacherKr;
+        entries.push_back(std::move(entry));
+    }
+
+    const auto isWeekendDay = [](std::string value) {
+        std::transform(
+            value.begin(),
+            value.end(),
+            value.begin(),
+            [](char character) {
+                return static_cast<char>(
+                    std::tolower(static_cast<unsigned char>(character))
+                    );
+            }
+            );
+        return value == "saturday" || value == "sunday";
+    };
+    const auto includesWeekend = [&isWeekendDay](
+        const std::vector<classmngr::engine::ClassTime>& times
+        ) {
+        return std::any_of(
+            times.begin(),
+            times.end(),
+            [&isWeekendDay](const auto& time) {
+                return isWeekendDay(time.day);
+            }
+            );
+    };
+    const bool weekendAvailable = std::any_of(
+        entries.begin(),
+        entries.end(),
+        [&includesWeekend](const auto& entry) {
+            return includesWeekend(entry.regularTimes)
+                || includesWeekend(entry.intensiveTimes);
+        }
+        );
+
+    if (!weekendAvailable)
+    {
+        m_classNavigationSelectedDays.erase(
+            std::remove(
+                m_classNavigationSelectedDays.begin(),
+                m_classNavigationSelectedDays.end(),
+                "Wkend"
+                ),
+            m_classNavigationSelectedDays.end()
+            );
+    }
+
+    classmngr::engine::ClassTabNavigationService::DayFilter dayFilter;
+    dayFilter.selectedDays = m_classNavigationSelectedDays;
+    dayFilter.scheduleSource =
+        classmngr::engine::ClassTabNavigationService::ScheduleSource::Regular;
+    dayFilter.visibilityScope =
+        classmngr::engine::ClassTabNavigationService::VisibilityScope::ActiveSchedule;
+    const auto navigation =
+        classmngr::engine::ClassTabNavigationService::build(
+            entries,
+            classmngr::engine::ClassTabNavigationService::GroupingPolicy::AlwaysGradeGrouped,
+            dayFilter
+            );
+
+    if (!m_classNavigationAll)
+    {
+        const bool gradeAvailable = std::any_of(
+            navigation.gradeGroups.begin(),
+            navigation.gradeGroups.end(),
+            [this](const auto& group) {
+                return group.grade == m_classNavigationGrade;
+            }
+            );
+        if (!gradeAvailable)
+        {
+            m_classNavigationAll = true;
+            m_classNavigationGrade.clear();
+        }
+    }
+
+    const auto setButtonState = [](Button const& button, bool selected) {
+        button.Background(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{
+                    255,
+                    static_cast<std::uint8_t>(selected ? 59 : 48),
+                    static_cast<std::uint8_t>(selected ? 169 : 53),
+                    static_cast<std::uint8_t>(selected ? 225 : 60)
+                }
+                )
+            );
+        button.Foreground(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{255, 255, 255, 255}
+                )
+            );
+        button.BorderBrush(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{255, 92, 99, 108}
+                )
+            );
+        button.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+        button.CornerRadius(CornerRadius{5.0, 5.0, 5.0, 5.0});
+    };
+
+    const auto makeNavigationButton = [](std::wstring const& label) {
+        auto button = Button();
+        button.Content(box_value(hstring(label)));
+        button.MinHeight(34.0);
+        button.Padding(Thickness{12.0, 4.0, 12.0, 4.0});
+        button.IsTabStop(true);
+        button.HorizontalAlignment(HorizontalAlignment::Left);
+        return button;
+    };
+
+    for (const auto& group : navigation.gradeGroups)
+    {
+        const std::wstring label = asWide(group.label);
+        auto button = makeNavigationButton(label);
+        setAutomationName(
+            button,
+            std::wstring(L"Class grade filter ") + label
+            );
+        setButtonState(
+            button,
+            !m_classNavigationAll
+                && group.grade == m_classNavigationGrade
+            );
+        const std::string grade = group.grade;
+        button.Click(
+            [this, grade](auto const&, auto const&) {
+                selectClassNavigationGrade(false, grade);
+            }
+            );
+        m_classNavigationGradeTabs.Children().Append(button);
+    }
+
+    if (!navigation.allClasses.empty())
+    {
+        auto button = makeNavigationButton(L"All");
+        setAutomationName(button, L"Class grade filter All");
+        setButtonState(button, m_classNavigationAll);
+        button.Click(
+            [this](auto const&, auto const&) {
+                selectClassNavigationGrade(true, {});
+            }
+            );
+        m_classNavigationGradeTabs.Children().Append(button);
+    }
+
+    const std::array<std::pair<std::wstring_view, std::string_view>, 6>
+        dayButtons{
+            {
+                {L"M", "Monday"},
+                {L"T", "Tuesday"},
+                {L"W", "Wednesday"},
+                {L"Th", "Thursday"},
+                {L"F", "Friday"},
+                {L"Wkend", "Wkend"}
+            }
+        };
+    for (const auto& definition : dayButtons)
+    {
+        if (definition.second == "Wkend" && !weekendAvailable)
+        {
+            continue;
+        }
+
+        const std::wstring label(definition.first);
+        auto button = makeNavigationButton(label);
+        setAutomationName(
+            button,
+            std::wstring(L"Class day filter ") + asWide(definition.second)
+            );
+        const std::string day(definition.second);
+        const bool selected = std::find(
+            m_classNavigationSelectedDays.begin(),
+            m_classNavigationSelectedDays.end(),
+            day
+            ) != m_classNavigationSelectedDays.end();
+        setButtonState(button, selected);
+        button.Click(
+            [this, day](auto const&, auto const&) {
+                toggleClassNavigationDay(day);
+            }
+            );
+        m_classNavigationDayTabs.Children().Append(button);
+    }
+
+    const std::vector<
+        classmngr::engine::ClassTabNavigationService::ClassTab>* visibleClasses =
+        &navigation.allClasses;
+    if (!m_classNavigationAll)
+    {
+        visibleClasses = nullptr;
+        for (const auto& group : navigation.gradeGroups)
+        {
+            if (group.grade == m_classNavigationGrade)
+            {
+                visibleClasses = &group.classes;
+                break;
+            }
+        }
+    }
+
+    if (!visibleClasses || visibleClasses->empty())
+    {
+        auto empty = TextBlock();
+        empty.Text(L"No scheduled classes match the current filters.");
+        empty.TextWrapping(TextWrapping::Wrap);
+        setAutomationName(
+            empty,
+            L"No scheduled classes match the current filters"
+            );
+        m_classNavigationClassTabs.Children().Append(empty);
+    }
+    else
+    {
+        for (const auto& classTab : *visibleClasses)
+        {
+            std::wstring label = asWide(classTab.label);
+            if (label.empty())
+            {
+                label = L"Class " + std::to_wstring(classTab.classId);
+            }
+            auto button = makeNavigationButton(label);
+            setAutomationName(
+                button,
+                std::wstring(L"Class tab ") + label
+                );
+            setButtonState(button, classTab.classId == m_classSelectedId);
+            const int classId = classTab.classId;
+            button.Click(
+                [this, classId](auto const&, auto const&) {
+                    selectClassFromNavigation(classId);
+                }
+                );
+            m_classNavigationClassTabs.Children().Append(button);
+        }
+    }
+
+    int fallbackClassId = -1;
+    if (visibleClasses && !visibleClasses->empty())
+    {
+        const auto current = std::find_if(
+            visibleClasses->begin(),
+            visibleClasses->end(),
+            [this](const auto& classTab) {
+                return classTab.classId == m_classSelectedId;
+            }
+            );
+        if (current == visibleClasses->end())
+        {
+            fallbackClassId = visibleClasses->front().classId;
+        }
+    }
+
+    m_classNavigationLoading = false;
+    const bool clean = !m_classDirty
+        && !m_classRosterDirty
+        && !m_speakingEvaluationDirty
+        && !m_classNew;
+    if (selectFallback && clean && fallbackClassId != m_classSelectedId)
+    {
+        selectClassFromNavigation(fallbackClassId);
+    }
+}
+
+void MainWindow::selectClassFromNavigation(int classId)
+{
+    if (!m_openDatabase || !m_classSelector || m_classNew)
+    {
+        return;
+    }
+
+    if (m_classDirty || m_classRosterDirty || m_speakingEvaluationDirty)
+    {
+        m_classStatusText.Text(
+            m_speakingEvaluationDirty
+                ? L"Save or discard the current speaking evaluation before selecting another."
+                : m_classRosterDirty
+                    ? L"Save or discard the current roster before selecting another."
+                    : L"Save or discard the current class before selecting another."
+            );
+        return;
+    }
+
+    int resolvedIndex = -1;
+    for (int index = 0; index < static_cast<int>(m_classes.size()); ++index)
+    {
+        if (m_classes[static_cast<std::size_t>(index)].id == classId)
+        {
+            resolvedIndex = index;
+            break;
+        }
+    }
+
+    if (resolvedIndex == m_classSelectedIndex)
+    {
+        refreshClassNavigation(false);
+        return;
+    }
+
+    m_classSelector.SelectedIndex(resolvedIndex);
+}
+
+void MainWindow::selectClassNavigationGrade(bool all, std::string grade)
+{
+    if (m_classNavigationLoading)
+    {
+        return;
+    }
+    if (m_classDirty || m_classRosterDirty || m_speakingEvaluationDirty)
+    {
+        m_classStatusText.Text(
+            m_speakingEvaluationDirty
+                ? L"Save or discard the current speaking evaluation before changing class filters."
+                : m_classRosterDirty
+                    ? L"Save or discard the current roster before changing class filters."
+                    : L"Save or discard the current class before changing class filters."
+            );
+        return;
+    }
+
+    m_classNavigationAll = all;
+    m_classNavigationGrade = all ? std::string{} : std::move(grade);
+    refreshClassNavigation(true);
+}
+
+void MainWindow::toggleClassNavigationDay(std::string day)
+{
+    if (m_classNavigationLoading)
+    {
+        return;
+    }
+    if (m_classDirty || m_classRosterDirty || m_speakingEvaluationDirty)
+    {
+        m_classStatusText.Text(
+            m_speakingEvaluationDirty
+                ? L"Save or discard the current speaking evaluation before changing class filters."
+                : m_classRosterDirty
+                    ? L"Save or discard the current roster before changing class filters."
+                    : L"Save or discard the current class before changing class filters."
+            );
+        return;
+    }
+
+    const auto found = std::find(
+        m_classNavigationSelectedDays.begin(),
+        m_classNavigationSelectedDays.end(),
+        day
+        );
+    if (found == m_classNavigationSelectedDays.end())
+    {
+        m_classNavigationSelectedDays.push_back(std::move(day));
+    }
+    else
+    {
+        m_classNavigationSelectedDays.erase(found);
+    }
+    refreshClassNavigation(true);
+}
+
 void MainWindow::refreshClassesPage()
 {
     using namespace Microsoft::UI::Xaml;
@@ -13899,6 +15189,7 @@ void MainWindow::refreshClassesPage()
         m_classNew = false;
         m_classSelector.Items().Clear();
         presentClass(-1);
+        refreshClassNavigation(false);
         m_classLoading = false;
         m_classStatusText.Text(L"No database open.");
         m_classNotesStatusText.Text(L"No database open.");
@@ -13923,6 +15214,7 @@ void MainWindow::refreshClassesPage()
         m_classes.clear();
         m_classSelector.Items().Clear();
         presentClass(-1);
+        refreshClassNavigation(false);
         m_classLoading = false;
         m_classStatusText.Text(winrt::hstring(
             L"Classes could not be loaded: " + asWide(loaded.error().message)
@@ -14005,6 +15297,7 @@ void MainWindow::refreshClassesPage()
     refreshClassRoster();
     refreshSpeakingEvaluation();
     refreshSpeakingAnalytics();
+    refreshClassNavigation(true);
 }
 
 classmngr::engine::ClassInfo MainWindow::classInfoFromForm() const
@@ -16761,8 +18054,9 @@ void MainWindow::ClassSelection_SelectionChanged(
         resolvedIndex >= 0
             ? L"Select a class tab to edit notes."
             : L"No class selected."
-        );
+    );
     refreshClassRoster();
+    refreshClassNavigation(false);
 }
 
 void MainWindow::ClassField_TextChanging(
@@ -16839,6 +18133,7 @@ void MainWindow::ClassNewButton_Click(
     m_classSelector.SelectedIndex(-1);
     m_classLoading = false;
     presentClass(-1);
+    refreshClassNavigation(false);
     m_classDetailsDirty = true;
     m_classNotesDirty = false;
     m_classDirty = true;
