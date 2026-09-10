@@ -15,7 +15,7 @@ can start with the current phase context without loading the full history.
 
 ## Progress Dashboard
 
-Last updated: 2026-09-09 (Asia/Seoul)
+Last updated: 2026-09-10 (Asia/Seoul)
 
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ Last updated: 2026-09-09 (Asia/Seoul)
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Complete** | Shell/database flows, native save/export/folder workflows, and the engine-backed Campus Information slice are committed. Host-level x64/x86 Debug/Release builds and staged verifiers pass; WinUI captures and x64 measurements are recorded. The owner approved the five-scenario review, interactive review, the Phase 5 exception for missing Qt empty/populated/error fixtures, and the Qt-derived table-parity handoff. The x64 Release first-navigation gate passes with 20/20 valid samples. Phase 6 begins with Qt parity reconciliation. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **In progress** | Shared table-parity resources and Campus selector/tab reconciliation are accepted. Personal Details `f1f9ba7`, Korean Teacher `1baea21`, Native English Teacher `856ccf1`, GS Team `3a733a6`, class information `951f272`, calendar `33f33e6`, roster `3ed19f9`, schedule editor `a5f4593`, schedule import/testing classes `37ba09b`, speaking analytics `dc8a790`, speaking AI comments `b690203`, speaking batch operations `45403aa`, substitute preparation `2d52d9d`, and bundled-document planning `c8b8234` pass their implementation checks. Closure revision `b99ed8f` removes the WinUI SDK macro collision; x64/x86 Debug/Release WinUI builds are warning-free, focused Phase 6 engine tests pass 23/23 in all four lanes, and the Sub Prep hook passes in all four lanes. x86 stage smoke passes; x64 semantic-stage and three resource-manifest lanes remain open, along with paired-visual, table-parity, and aggregate-verifier evidence. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
-| [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
+| [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | Exploratory x64 WinUI Debug idle-memory trend evidence is recorded under `artifacts/phase8/`; all six revision checkpoints pass the 200 MiB idle steady-state target. Feature-workload, x86, Release, private/GPU/handle, and packaging evidence remain open. |
 
 ## Historical Context
 
@@ -202,6 +202,25 @@ The current WinUI bootstrap evidence and pinned inputs are recorded under
 [`docs/porting/windows-winui`](../../docs/porting/windows-winui/README.md).
 
 ## Historical Progress Log
+
+- **2026-09-10 — Phase 8 WinUI idle-memory revision trend recorded.** The x64
+  Debug self-contained WinUI stage was rebuilt at the grouped
+  `28521383eed70b93e8ec3cac2c7f4fba85802656` checkpoint (covering incoming
+  commits `12d4a25`, `a790730`, `e83cbf1`, and `2852138`), then at `9c0e9c5`,
+  `6bbacb7`, `982bd80`, `a01c6dd`, and `afd1be5` one at a time. The automated
+  `measure_windows_winui_memory.ps1` capture used a five-second warmup and
+  fifteen-second idle sample window. Startup/steady-state/process peak
+  working-set MiB were: `28521383` 120.45/120.45/125.46; `9c0e9c5`
+  120.31/120.31/125.33; `6bbacb7` 121.11/121.11/126.11; `982bd80`
+  125.01/126.66/131.67; `a01c6dd` 114.93/114.93/114.93; and `afd1be5`
+  121.86/121.86/124.72. All six idle steady-state reports passed the 200 MiB
+  target. JSON evidence is retained under `artifacts/phase8/` as
+  `memory-28521383-x64-winui-debug.json`, `memory-9c0e9c5-x64-winui-debug.json`,
+  `memory-6bbacb7-x64-winui-debug.json`, `memory-982bd80-x64-winui-debug.json`,
+  `memory-a01c6dd-x64-winui-debug.json`, and
+  `memory-afd1be5-x64-winui-debug.json`. These are trend evidence only: they
+  are x64 Debug idle captures, not the required three-run feature workload,
+  x86, Release, private/GPU/handle, or packaging evidence.
 
 - **2026-09-09 — Phase 6 Personal Details implementation committed.** Revision
   `f1f9ba7` adds the engine-backed WinUI Personal Details route with
