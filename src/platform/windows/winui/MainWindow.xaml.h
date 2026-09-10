@@ -108,6 +108,13 @@ struct CampusResourceView
     std::vector<CampusHousingView> housingLocations;
 };
 
+struct ClassRosterTransferTarget
+{
+    int classId{-1};
+    std::wstring label;
+    bool full{};
+};
+
 enum class ClassNavigationLocation
 {
     Top,
@@ -352,6 +359,8 @@ private:
     [[nodiscard]] classmngr::engine::ClassInfo classInfoFromForm() const;
     void refreshClassRoster();
     void rebuildClassRosterGrid();
+    [[nodiscard]] Microsoft::UI::Xaml::Controls::MenuFlyout
+        createClassRosterContextMenu(int row);
     void updateClassRosterActions();
     void markClassRosterDirty();
     void clearClassRosterDirty();
@@ -360,8 +369,8 @@ private:
     void importClassRosterScores();
     void addClassRosterRow();
     void removeClassRosterRow();
-    void transferClassRosterRow();
-    void prepareClassTransfer();
+    void removeClassRosterRow(int row);
+    void transferClassRosterRow(int row, int targetClassId);
     [[nodiscard]] classmngr::engine::Roster classRosterFromForm() const;
     void refreshSpeakingEvaluation();
     void rebuildSpeakingEvaluationGrid();
@@ -1064,19 +1073,15 @@ private:
 
     Microsoft::UI::Xaml::Controls::Grid m_classRosterHeaderGrid{nullptr};
     Microsoft::UI::Xaml::Controls::ListView m_classRosterList{nullptr};
-    Microsoft::UI::Xaml::Controls::ComboBox m_classRosterTransferTargetCombo{nullptr};
-    Microsoft::UI::Xaml::Controls::ComboBox m_classRosterTemplateCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classRosterStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classRosterValidationText{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBlock m_classRosterTemplateStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterImportScoresButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterAddButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterRemoveButton{nullptr};
-    Microsoft::UI::Xaml::Controls::Button m_classRosterTransferButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterDiscardButton{nullptr};
-    Microsoft::UI::Xaml::Controls::Button m_classRosterPrepareTransferButton{nullptr};
     classmngr::engine::Roster m_classRoster;
+    std::vector<ClassRosterTransferTarget> m_classRosterTransferTargets;
     std::vector<std::vector<Microsoft::UI::Xaml::Controls::TextBox>>
         m_classRosterCellBoxes;
     bool m_classRosterLoading{};
