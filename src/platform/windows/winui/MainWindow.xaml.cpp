@@ -1781,6 +1781,67 @@ bool isUsableWindowBounds(RECT const& bounds) noexcept
         && bounds.top < 100000;
 }
 
+bool moveWindowBoundsIntoWorkArea(RECT* bounds) noexcept
+{
+    if (!bounds)
+    {
+        return false;
+    }
+
+    const HMONITOR monitor = MonitorFromRect(
+        bounds,
+        MONITOR_DEFAULTTONEAREST
+        );
+    if (!monitor)
+    {
+        return false;
+    }
+
+    MONITORINFO monitorInfo{sizeof(monitorInfo)};
+    if (!GetMonitorInfoW(monitor, &monitorInfo))
+    {
+        return false;
+    }
+
+    const LONG width = bounds->right - bounds->left;
+    const LONG height = bounds->bottom - bounds->top;
+    const LONG workAreaWidth =
+        monitorInfo.rcWork.right - monitorInfo.rcWork.left;
+    const LONG workAreaHeight =
+        monitorInfo.rcWork.bottom - monitorInfo.rcWork.top;
+
+    // Keep the entire window in the work area when it fits.  If a saved
+    // window is larger than the available work area, keep its top-left corner
+    // visible so the user can resize or move it back into place.
+    if (width <= workAreaWidth)
+    {
+        bounds->left = std::clamp(
+            bounds->left,
+            monitorInfo.rcWork.left,
+            monitorInfo.rcWork.right - width
+            );
+    }
+    else
+    {
+        bounds->left = monitorInfo.rcWork.left;
+    }
+    if (height <= workAreaHeight)
+    {
+        bounds->top = std::clamp(
+            bounds->top,
+            monitorInfo.rcWork.top,
+            monitorInfo.rcWork.bottom - height
+            );
+    }
+    else
+    {
+        bounds->top = monitorInfo.rcWork.top;
+    }
+    bounds->right = bounds->left + width;
+    bounds->bottom = bounds->top + height;
+    return true;
+}
+
 void setAutomationName(
     winrt::Microsoft::UI::Xaml::DependencyObject const& element,
     std::wstring_view name
@@ -23802,19 +23863,25 @@ void MainWindow::restoreWindowBounds() noexcept
         return;
     }
 
+    RECT bounds = state.windowBounds;
+    if (!moveWindowBoundsIntoWorkArea(&bounds))
+    {
+        return;
+    }
+
     HWND const handle = windowHandle(this);
     if (!handle)
     {
         return;
     }
 
-    const LONG width = state.windowBounds.right - state.windowBounds.left;
-    const LONG height = state.windowBounds.bottom - state.windowBounds.top;
+    const LONG width = bounds.right - bounds.left;
+    const LONG height = bounds.bottom - bounds.top;
     SetWindowPos(
         handle,
         nullptr,
-        state.windowBounds.left,
-        state.windowBounds.top,
+        bounds.left,
+        bounds.top,
         width,
         height,
         SWP_NOZORDER | SWP_NOACTIVATE
