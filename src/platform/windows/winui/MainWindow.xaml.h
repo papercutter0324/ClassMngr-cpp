@@ -364,11 +364,11 @@ private:
     void updateClassRosterActions();
     void markClassRosterDirty();
     void clearClassRosterDirty();
-    void saveClassRoster();
+    void saveClassRoster(bool rebuildGrid = true);
     void discardClassRoster();
+    winrt::fire_and_forget addClassRosterColumn();
+    void removeClassRosterColumn();
     void importClassRosterScores();
-    void addClassRosterRow();
-    void removeClassRosterRow();
     void removeClassRosterRow(int row);
     void transferClassRosterRow(int row, int targetClassId);
     [[nodiscard]] classmngr::engine::Roster classRosterFromForm() const;
@@ -638,6 +638,8 @@ private:
     void restoreWindowBounds() noexcept;
     void saveShellState() noexcept;
     void updateNavigationState();
+    void restoreNavigationSelection();
+    void confirmClassRosterNavigation(std::function<void()> continuation);
     void showOwnedDialog();
     void showUnsavedChangesConfirmation();
     void showDialog(
@@ -1076,14 +1078,13 @@ private:
     Microsoft::UI::Xaml::Controls::TextBlock m_classRosterStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_classRosterValidationText{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterImportScoresButton{nullptr};
-    Microsoft::UI::Xaml::Controls::Button m_classRosterAddButton{nullptr};
-    Microsoft::UI::Xaml::Controls::Button m_classRosterRemoveButton{nullptr};
-    Microsoft::UI::Xaml::Controls::Button m_classRosterSaveButton{nullptr};
-    Microsoft::UI::Xaml::Controls::Button m_classRosterDiscardButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterAddColumnButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_classRosterRemoveColumnButton{nullptr};
     classmngr::engine::Roster m_classRoster;
     std::vector<ClassRosterTransferTarget> m_classRosterTransferTargets;
     std::vector<std::vector<Microsoft::UI::Xaml::Controls::TextBox>>
         m_classRosterCellBoxes;
+    int m_classRosterCurrentColumn{-1};
     bool m_classRosterLoading{};
     bool m_classRosterDirty{};
     uint32_t m_phase6RosterFailureMask{};
