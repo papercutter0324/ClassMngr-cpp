@@ -160,16 +160,16 @@ collected.
 
 ## macOS and Linux fixture ownership
 
-The automated `phase2-exit-gate.yml` workflow now runs and archives these
-retained-Qt directions as part of its final gate. The manually dispatched
-`refactoring-baseline.yml` workflow remains the historical owner of the same
-fixture directions:
+The automated `phase2-exit-gate.yml` workflow runs and archives these
+retained-Qt directions as part of its final gate. The retired
+`refactoring-baseline.yml` workflow previously owned the same fixture
+directions:
 
 - `baseline` / `Linux x64 Debug` (`linux-gcc-debug`)
 - `baseline` / `macOS universal Debug` (`macos-clang-debug`)
 
-That workflow archives JSON, JUnit, and CTest logs. Release workflows are not
-substitutes because they set `BUILD_TESTING=OFF`.
+Its archived JSON, JUnit, and CTest logs remain historical evidence. Release
+workflows are not substitutes because they set `BUILD_TESTING=OFF`.
 
 Automation proves the declared build, inventory, test, artifact, and metadata
 contracts. Human review remains required for interpreting fixture semantics,
