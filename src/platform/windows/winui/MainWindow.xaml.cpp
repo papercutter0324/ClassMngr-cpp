@@ -15417,10 +15417,15 @@ void MainWindow::populateClassesPage(
     m_classNavigationRoot.Children().Append(classTabScroll);
     navigationCard.content.Children().Append(m_classNavigationRoot);
 
-    const auto scrollTab = [](StackPanel const& content) {
+    const auto scrollTab = [](StackPanel const& content,
+                              bool allowHorizontalScroll = false) {
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
-        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.HorizontalScrollBarVisibility(
+            allowHorizontalScroll
+                ? ScrollBarVisibility::Auto
+                : ScrollBarVisibility::Disabled
+            );
         scroll.HorizontalContentAlignment(HorizontalAlignment::Stretch);
         scroll.Content(content);
         return scroll;
@@ -15428,9 +15433,9 @@ void MainWindow::populateClassesPage(
 
     m_classSectionScrollViews = {
         scrollTab(detailsRoot),
-        scrollTab(rosterRoot),
+        scrollTab(rosterRoot, true),
         scrollTab(analyticsRoot),
-        scrollTab(speakingRoot),
+        scrollTab(speakingRoot, true),
         scrollTab(coTeacherRoot),
         scrollTab(notesRoot)
     };
