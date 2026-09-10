@@ -2055,6 +2055,9 @@ MainWindow::MainWindow()
         Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
     m_closeFileMenu = RootGrid().FindName(L"CloseFileMenuItem").as<
         Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    m_printCurrentPageMenu = RootGrid().FindName(
+        L"PrintCurrentPageMenuItem"
+        ).as<Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
     m_saveCurrentPageMenu = RootGrid().FindName(
         L"SaveCurrentPageMenuItem"
         ).as<Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
@@ -5495,7 +5498,25 @@ void MainWindow::SaveCurrentPageMenuItem_Click(
 {
     static_cast<void>(sender);
     static_cast<void>(arguments);
+    if (m_currentPageId == classesPageId && m_classSectionIndex == 3)
+    {
+        openSpeakingBatchReportDialog(true);
+        return;
+    }
     openCurrentPageSavePicker();
+}
+
+void MainWindow::PrintCurrentPageMenuItem_Click(
+    Windows::Foundation::IInspectable const& sender,
+    Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+    )
+{
+    static_cast<void>(sender);
+    static_cast<void>(arguments);
+    if (m_currentPageId == classesPageId && m_classSectionIndex == 3)
+    {
+        openSpeakingBatchReportDialog(false);
+    }
 }
 
 void MainWindow::ExportCampusResourcesMenuItem_Click(
@@ -14217,10 +14238,10 @@ void MainWindow::populateClassesPage(
     speakingTopBar.ColumnDefinitions().Append(ColumnDefinition());
 
     auto speakingTitle = TextBlock();
-    speakingTitle.Text(L"Evaluations");
+    speakingTitle.Text(L"Speaking Evaluations");
     applyResourceStyle(speakingTitle, L"Phase3PageTitleTextBlockStyle");
     speakingTitle.VerticalAlignment(VerticalAlignment::Center);
-    setAutomationName(speakingTitle, L"Evaluations");
+    setAutomationName(speakingTitle, L"Speaking Evaluations");
     Grid::SetColumn(speakingTitle, 0);
     speakingTopBar.Children().Append(speakingTitle);
 
@@ -14241,7 +14262,6 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationStatusText,
         L"Speaking evaluation status"
         );
-    speakingCard.content.Children().Append(m_speakingEvaluationStatusText);
 
     m_speakingEvaluationValidationText = TextBlock();
     m_speakingEvaluationValidationText.TextWrapping(TextWrapping::Wrap);
@@ -14250,7 +14270,6 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationValidationText,
         L"Speaking evaluation validation summary"
         );
-    speakingCard.content.Children().Append(m_speakingEvaluationValidationText);
 
     m_speakingEvaluationSelector = ComboBox();
     m_speakingEvaluationSelector.Header(
@@ -14328,9 +14347,20 @@ void MainWindow::populateClassesPage(
     speakingTopBar.Children().Append(m_speakingEvaluationSelector);
     speakingRoot.Children().Append(speakingTopBar);
 
-    auto speakingActions = StackPanel();
-    speakingActions.Orientation(Orientation::Horizontal);
-    speakingActions.Spacing(8.0);
+    auto speakingActions = Grid();
+    speakingActions.ColumnSpacing(8.0);
+    speakingActions.ColumnDefinitions().Append(ColumnDefinition());
+    speakingActions.ColumnDefinitions().Append(ColumnDefinition());
+    speakingActions.ColumnDefinitions().Append(ColumnDefinition());
+    speakingActions.ColumnDefinitions().GetAt(0).Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
+    speakingActions.ColumnDefinitions().GetAt(1).Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    speakingActions.ColumnDefinitions().GetAt(2).Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
 
     m_speakingEvaluationImportNamesButton = Button();
     m_speakingEvaluationImportNamesButton.Content(
@@ -14347,6 +14377,7 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationImportNamesButton,
         L"Import speaking evaluation names"
         );
+    Grid::SetColumn(m_speakingEvaluationImportNamesButton, 0);
     speakingActions.Children().Append(m_speakingEvaluationImportNamesButton);
 
     m_speakingEvaluationSaveButton = Button();
@@ -14362,7 +14393,6 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationSaveButton,
         L"Save speaking evaluation"
         );
-    speakingActions.Children().Append(m_speakingEvaluationSaveButton);
 
     m_speakingEvaluationDiscardButton = Button();
     m_speakingEvaluationDiscardButton.Content(
@@ -14377,7 +14407,51 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationDiscardButton,
         L"Discard speaking evaluation changes"
         );
-    speakingActions.Children().Append(m_speakingEvaluationDiscardButton);
+
+    auto speakingReportActions = StackPanel();
+    speakingReportActions.Orientation(Orientation::Horizontal);
+    speakingReportActions.Spacing(8.0);
+    speakingReportActions.HorizontalAlignment(HorizontalAlignment::Right);
+
+    m_speakingEvaluationReportEditorButton = Button();
+    m_speakingEvaluationReportEditorButton.Content(
+        box_value(hstring(L"Report Editor"))
+        );
+    m_speakingEvaluationReportEditorButton.IsTabStop(true);
+    m_speakingEvaluationReportEditorButton.TabIndex(2);
+    m_speakingEvaluationReportEditorButton.Click(
+        [this](auto const&, auto const&) {
+            openSpeakingReportEditor();
+        }
+        );
+    setAutomationName(
+        m_speakingEvaluationReportEditorButton,
+        L"Open speaking evaluation report editor"
+        );
+    speakingReportActions.Children().Append(
+        m_speakingEvaluationReportEditorButton
+        );
+
+    m_speakingEvaluationGenerateCommentsButton = Button();
+    m_speakingEvaluationGenerateCommentsButton.Content(
+        box_value(hstring(L"Generate Comments"))
+        );
+    m_speakingEvaluationGenerateCommentsButton.IsTabStop(true);
+    m_speakingEvaluationGenerateCommentsButton.TabIndex(3);
+    m_speakingEvaluationGenerateCommentsButton.Click(
+        [this](auto const&, auto const&) {
+            openSpeakingAiDialog();
+        }
+        );
+    setAutomationName(
+        m_speakingEvaluationGenerateCommentsButton,
+        L"Open speaking evaluation comments dialog"
+        );
+    speakingReportActions.Children().Append(
+        m_speakingEvaluationGenerateCommentsButton
+        );
+    Grid::SetColumn(speakingReportActions, 2);
+    speakingActions.Children().Append(speakingReportActions);
 
     m_speakingEvaluationHeaderGrid = Grid();
     m_speakingEvaluationHeaderGrid.ColumnSpacing(4.0);
@@ -14420,7 +14494,6 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationPasteTextBox,
         L"Speaking evaluation score range"
         );
-    speakingCard.content.Children().Append(m_speakingEvaluationPasteTextBox);
 
     m_speakingEvaluationPasteButton = Button();
     m_speakingEvaluationPasteButton.Content(
@@ -14435,17 +14508,9 @@ void MainWindow::populateClassesPage(
         m_speakingEvaluationPasteButton,
         L"Apply speaking evaluation score range"
         );
-    speakingCard.content.Children().Append(m_speakingEvaluationPasteButton);
 
     auto speakingActionBar = Border();
-    speakingActionBar.Padding(Thickness{8.0, 8.0, 8.0, 8.0});
-    speakingActionBar.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
-        Windows::UI::Color{255, 245, 247, 250}
-        ));
-    speakingActionBar.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush(
-        Windows::UI::Color{255, 190, 198, 210}
-        ));
-    speakingActionBar.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+    speakingActionBar.Padding(Thickness{0.0, 8.0, 0.0, 0.0});
     speakingActionBar.Child(speakingActions);
     speakingCard.content.Children().Append(speakingActionBar);
 
@@ -14694,7 +14759,6 @@ void MainWindow::populateClassesPage(
     aiCard.content.Children().Append(aiResponseActions);
 
     speakingRoot.Children().Append(speakingCard.root);
-    speakingRoot.Children().Append(aiCard.root);
 
     auto batchReportCard = ClassMngrWinUISharedUX::buildCard({
         L"Batch report operations",
@@ -14868,12 +14932,34 @@ void MainWindow::populateClassesPage(
         m_speakingBatchOutputDirectoryTextBox
         );
 
+    m_speakingBatchChooseOutputButton = Button();
+    m_speakingBatchChooseOutputButton.Content(
+        box_value(hstring(L"Choose..."))
+        );
+    m_speakingBatchChooseOutputButton.IsTabStop(true);
+    m_speakingBatchChooseOutputButton.TabIndex(25);
+    m_speakingBatchChooseOutputButton.HorizontalAlignment(
+        HorizontalAlignment::Left
+        );
+    m_speakingBatchChooseOutputButton.Click(
+        [this](auto const&, auto const&) {
+            chooseSpeakingBatchOutputDirectory();
+        }
+        );
+    setAutomationName(
+        m_speakingBatchChooseOutputButton,
+        L"Choose speaking batch report output folder"
+        );
+    batchReportCard.content.Children().Append(
+        m_speakingBatchChooseOutputButton
+        );
+
     m_speakingBatchPlanButton = Button();
     m_speakingBatchPlanButton.Content(
         box_value(hstring(L"Plan Batch Reports"))
         );
     m_speakingBatchPlanButton.IsTabStop(true);
-    m_speakingBatchPlanButton.TabIndex(25);
+    m_speakingBatchPlanButton.TabIndex(26);
     m_speakingBatchPlanButton.HorizontalAlignment(
         HorizontalAlignment::Left
         );
@@ -14887,7 +14973,8 @@ void MainWindow::populateClassesPage(
         L"Plan speaking batch reports"
         );
     batchReportCard.content.Children().Append(m_speakingBatchPlanButton);
-    speakingRoot.Children().Append(batchReportCard.root);
+    m_speakingAiDialogRoot = aiCard.root;
+    m_speakingBatchDialogRoot = batchReportCard.root;
 
     auto analyticsRoot = makeRoot(StackPanel());
     auto analyticsTopBar = Grid();
@@ -16816,6 +16903,7 @@ void MainWindow::selectClassSection(int index)
             );
         m_classSectionSelectionChanging = false;
     }
+    updateFileCommandState();
 }
 
 void MainWindow::refreshClassesPage()
@@ -18075,6 +18163,33 @@ void MainWindow::updateSpeakingEvaluationActions()
     {
         m_speakingEvaluationImportNamesButton.IsEnabled(hasClass);
     }
+    const bool hasNamedStudents = std::any_of(
+        m_speakingEvaluationCellBoxes.cbegin(),
+        m_speakingEvaluationCellBoxes.cend(),
+        [](const auto& cells) {
+            const int englishColumn = classmngr::engine::toInt(
+                classmngr::engine::SpeakingEvaluationColumn::EnglishName
+                );
+            const int koreanColumn = classmngr::engine::toInt(
+                classmngr::engine::SpeakingEvaluationColumn::KoreanName
+                );
+            return cells.size() > static_cast<std::size_t>(koreanColumn)
+                && (!cells[static_cast<std::size_t>(englishColumn)].Text().empty()
+                    || !cells[static_cast<std::size_t>(koreanColumn)].Text().empty());
+        }
+        );
+    if (m_speakingEvaluationReportEditorButton)
+    {
+        m_speakingEvaluationReportEditorButton.IsEnabled(
+            hasClass && hasNamedStudents
+            );
+    }
+    if (m_speakingEvaluationGenerateCommentsButton)
+    {
+        m_speakingEvaluationGenerateCommentsButton.IsEnabled(
+            hasClass && hasNamedStudents
+            );
+    }
     if (m_speakingEvaluationPasteButton)
     {
         m_speakingEvaluationPasteButton.IsEnabled(hasClass);
@@ -18909,6 +19024,10 @@ void MainWindow::updateSpeakingBatchReportActions()
     m_speakingBatchPlanButton.IsEnabled(
         hasClass && reportCount > 0 && (savePdf || printReports)
         );
+    if (m_speakingBatchChooseOutputButton)
+    {
+        m_speakingBatchChooseOutputButton.IsEnabled(hasClass && savePdf);
+    }
 }
 
 void MainWindow::markSpeakingEvaluationDirty()
@@ -19277,7 +19396,439 @@ void MainWindow::applySpeakingEvaluationPaste()
         L"Applied " + std::to_wstring(applied)
             + L" score cells starting at row " + std::to_wstring(startRow + 1)
             + L". Save to persist them."
-        ));
+    ));
+}
+
+winrt::fire_and_forget MainWindow::openSpeakingAiDialog()
+{
+    auto lifetime = get_strong();
+    if (!m_speakingAiDialogRoot
+        || m_ownedDialog
+        || !RootGrid().XamlRoot())
+    {
+        co_return;
+    }
+
+    refreshSpeakingAiSelection();
+    updateSpeakingAiActions();
+
+    auto dialog = Microsoft::UI::Xaml::Controls::ContentDialog();
+    dialog.XamlRoot(RootGrid().XamlRoot());
+    dialog.Title(box_value(hstring(L"Generate Class Comments")));
+    dialog.Content(m_speakingAiDialogRoot);
+    dialog.CloseButtonText(L"Cancel");
+    dialog.DefaultButton(
+        Microsoft::UI::Xaml::Controls::ContentDialogButton::Close
+        );
+    m_ownedDialog = dialog;
+
+    try
+    {
+        static_cast<void>(co_await dialog.ShowAsync());
+    }
+    catch (...)
+    {
+        // Dialog cancellation during navigation or shell teardown is normal.
+    }
+
+    if (m_ownedDialog == dialog)
+    {
+        m_ownedDialog = nullptr;
+    }
+}
+
+winrt::fire_and_forget MainWindow::openSpeakingBatchReportDialog(bool saveMode)
+{
+    auto lifetime = get_strong();
+    if (!m_speakingBatchDialogRoot
+        || m_ownedDialog
+        || !RootGrid().XamlRoot())
+    {
+        co_return;
+    }
+
+    if (m_speakingBatchSavePdfCheck)
+    {
+        m_speakingBatchSavePdfCheck.IsChecked(saveMode);
+    }
+    if (m_speakingBatchPrintCheck)
+    {
+        m_speakingBatchPrintCheck.IsChecked(!saveMode);
+    }
+    updateSpeakingBatchReportActions();
+
+    auto dialog = Microsoft::UI::Xaml::Controls::ContentDialog();
+    dialog.XamlRoot(RootGrid().XamlRoot());
+    dialog.Title(box_value(hstring(
+        saveMode
+            ? L"Save Speaking Reports As"
+            : L"Print Speaking Reports"
+        )));
+    dialog.Content(m_speakingBatchDialogRoot);
+    dialog.CloseButtonText(L"Cancel");
+    dialog.DefaultButton(
+        Microsoft::UI::Xaml::Controls::ContentDialogButton::Close
+        );
+    m_ownedDialog = dialog;
+
+    try
+    {
+        static_cast<void>(co_await dialog.ShowAsync());
+    }
+    catch (...)
+    {
+        // Dialog cancellation during navigation or shell teardown is normal.
+    }
+
+    if (m_ownedDialog == dialog)
+    {
+        m_ownedDialog = nullptr;
+    }
+}
+
+winrt::fire_and_forget MainWindow::chooseSpeakingBatchOutputDirectory()
+{
+    auto lifetime = get_strong();
+    if (m_filePickerActive
+        || !m_speakingBatchOutputDirectoryTextBox)
+    {
+        co_return;
+    }
+    m_filePickerActive = true;
+
+    try
+    {
+        auto picker = winrt::Windows::Storage::Pickers::FolderPicker();
+        const HWND handle = windowHandle(this);
+        if (!handle)
+        {
+            m_speakingBatchStatusText.Text(
+                L"The output-folder picker is not available."
+                );
+        }
+        else
+        {
+            const auto initializer = picker.as<::IInitializeWithWindow>();
+            winrt::check_hresult(initializer->Initialize(handle));
+            picker.SuggestedStartLocation(
+                winrt::Windows::Storage::Pickers::PickerLocationId::DocumentsLibrary
+                );
+            picker.FileTypeFilter().Append(L"*");
+            const auto folder = co_await picker.PickSingleFolderAsync();
+            if (folder)
+            {
+                m_speakingBatchOutputDirectoryTextBox.Text(folder.Path());
+                updateSpeakingBatchReportActions();
+            }
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        m_speakingBatchStatusText.Text(winrt::hstring(
+            L"The output-folder picker failed: "
+                + asWide(winrt::to_string(error.message()))
+            ));
+    }
+    catch (...)
+    {
+        m_speakingBatchStatusText.Text(
+            L"The output-folder picker could not be opened."
+            );
+    }
+
+    m_filePickerActive = false;
+}
+
+winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
+{
+    auto lifetime = get_strong();
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (m_ownedDialog
+        || !m_openDatabase
+        || m_classSelectedId <= 0
+        || m_classNew
+        || !m_speakingEvaluationList
+        || !RootGrid().XamlRoot())
+    {
+        co_return;
+    }
+
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    const int commentsColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Comments
+        );
+    const int notesColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Notes
+        );
+    const int firstScoreColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Grammar
+        );
+
+    std::vector<int> reportRows;
+    for (int row = 0;
+         row < static_cast<int>(m_speakingEvaluationCellBoxes.size());
+         ++row)
+    {
+        const auto& cells = m_speakingEvaluationCellBoxes[
+            static_cast<std::size_t>(row)
+            ];
+        if (cells.size() > static_cast<std::size_t>(koreanColumn)
+            && (!cells[static_cast<std::size_t>(englishColumn)].Text().empty()
+                || !cells[static_cast<std::size_t>(koreanColumn)].Text().empty()))
+        {
+            reportRows.push_back(row);
+        }
+    }
+    if (reportRows.empty())
+    {
+        if (m_speakingEvaluationStatusText)
+        {
+            m_speakingEvaluationStatusText.Text(
+                L"Import or enter a student name before opening the report editor."
+                );
+        }
+        co_return;
+    }
+
+    auto content = StackPanel();
+    content.Spacing(10.0);
+    content.MaxWidth(1050.0);
+
+    auto studentSelector = ComboBox();
+    studentSelector.Header(box_value(hstring(L"Student")));
+    studentSelector.IsTabStop(true);
+    studentSelector.MinWidth(360.0);
+    setAutomationName(studentSelector, L"Speaking report editor student");
+    for (const int row : reportRows)
+    {
+        const auto& cells = m_speakingEvaluationCellBoxes[
+            static_cast<std::size_t>(row)
+            ];
+        std::wstring label = cells[static_cast<std::size_t>(englishColumn)].Text().c_str();
+        const std::wstring korean = cells[
+            static_cast<std::size_t>(koreanColumn)
+            ].Text().c_str();
+        if (!label.empty() && !korean.empty())
+        {
+            label += L" (" + korean + L")";
+        }
+        else if (label.empty())
+        {
+            label = korean;
+        }
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(label)));
+        item.Tag(box_value(row));
+        studentSelector.Items().Append(item);
+    }
+    content.Children().Append(studentSelector);
+
+    auto navigation = StackPanel();
+    navigation.Orientation(Orientation::Horizontal);
+    navigation.Spacing(8.0);
+    auto previousButton = Button();
+    previousButton.Content(box_value(hstring(L"Previous")));
+    auto nextButton = Button();
+    nextButton.Content(box_value(hstring(L"Next")));
+    setAutomationName(previousButton, L"Previous speaking report");
+    setAutomationName(nextButton, L"Next speaking report");
+    navigation.Children().Append(previousButton);
+    navigation.Children().Append(nextButton);
+    content.Children().Append(navigation);
+
+    auto scoreGrid = Grid();
+    scoreGrid.ColumnSpacing(8.0);
+    const std::array<wchar_t const*, 6> scoreNames{
+        L"Grammar", L"Pronunciation", L"Fluency", L"Manner", L"Content",
+        L"Overall Effort"
+    };
+    for (std::size_t index = 0; index < scoreNames.size(); ++index)
+    {
+        scoreGrid.ColumnDefinitions().Append(ColumnDefinition());
+        auto scoreField = TextBox();
+        scoreField.Header(box_value(hstring(scoreNames[index])));
+        scoreField.MaxLength(2);
+        scoreField.IsTabStop(true);
+        setAutomationName(
+            scoreField,
+            L"Speaking report " + std::wstring(scoreNames[index])
+            );
+        Grid::SetColumn(scoreField, static_cast<int>(index));
+        scoreGrid.Children().Append(scoreField);
+    }
+    content.Children().Append(scoreGrid);
+
+    auto commentsField = TextBox();
+    commentsField.Header(box_value(hstring(L"Comments")));
+    commentsField.AcceptsReturn(true);
+    commentsField.TextWrapping(TextWrapping::Wrap);
+    commentsField.Height(120.0);
+    setAutomationName(commentsField, L"Speaking report comments");
+    content.Children().Append(commentsField);
+
+    auto notesField = TextBox();
+    notesField.Header(box_value(hstring(L"Private Notes (not included in the report)")));
+    notesField.AcceptsReturn(true);
+    notesField.TextWrapping(TextWrapping::Wrap);
+    notesField.Height(120.0);
+    setAutomationName(notesField, L"Speaking report private notes");
+    content.Children().Append(notesField);
+
+    auto status = TextBlock();
+    status.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(status, L"Speaking report editor status");
+    content.Children().Append(status);
+
+    std::vector<TextBox> scoreFields;
+    scoreFields.reserve(scoreNames.size());
+    for (const auto& child : scoreGrid.Children())
+    {
+        scoreFields.push_back(child.as<TextBox>());
+    }
+    bool updating = false;
+    const auto selectedRow = [&studentSelector]() {
+        const auto item = studentSelector.SelectedItem().try_as<ComboBoxItem>();
+        return item ? boxedInt(item.Tag()) : -1;
+    };
+    const auto refreshEditor = [&]() {
+        const int row = selectedRow();
+        if (row < 0 || row >= static_cast<int>(m_speakingEvaluationCellBoxes.size()))
+        {
+            return;
+        }
+        const auto& cells = m_speakingEvaluationCellBoxes[
+            static_cast<std::size_t>(row)
+            ];
+        updating = true;
+        for (std::size_t index = 0; index < scoreFields.size(); ++index)
+        {
+            scoreFields[index].Text(cells[
+                static_cast<std::size_t>(firstScoreColumn)
+                    + index
+                ].Text());
+        }
+        commentsField.Text(cells[static_cast<std::size_t>(commentsColumn)].Text());
+        notesField.Text(cells[static_cast<std::size_t>(notesColumn)].Text());
+        updating = false;
+        status.Text(L"Edit the report values here or use the evaluation table.");
+    };
+
+    studentSelector.SelectionChanged(
+        [&refreshEditor](auto const&, auto const&) { refreshEditor(); }
+        );
+    previousButton.Click(
+        [&studentSelector](auto const&, auto const&) {
+            const int count = static_cast<int>(studentSelector.Items().Size());
+            if (count > 1)
+            {
+                studentSelector.SelectedIndex(
+                    (studentSelector.SelectedIndex() - 1 + count) % count
+                    );
+            }
+        }
+        );
+    nextButton.Click(
+        [&studentSelector](auto const&, auto const&) {
+            const int count = static_cast<int>(studentSelector.Items().Size());
+            if (count > 1)
+            {
+                studentSelector.SelectedIndex(
+                    (studentSelector.SelectedIndex() + 1) % count
+                    );
+            }
+        }
+        );
+    for (std::size_t index = 0; index < scoreFields.size(); ++index)
+    {
+        scoreFields[index].TextChanging(
+            [this, &updating, &selectedRow, index, firstScoreColumn](
+                TextBox const& sender,
+                TextBoxTextChangingEventArgs const&)
+            {
+                if (updating)
+                {
+                    return;
+                }
+                const int row = selectedRow();
+                if (row >= 0
+                    && row < static_cast<int>(m_speakingEvaluationCellBoxes.size())
+                    && m_speakingEvaluationCellBoxes[static_cast<std::size_t>(row)].size()
+                        > static_cast<std::size_t>(firstScoreColumn + index))
+                {
+                    m_speakingEvaluationCellBoxes[static_cast<std::size_t>(row)][
+                        static_cast<std::size_t>(firstScoreColumn) + index
+                        ].Text(sender.Text());
+                }
+            }
+            );
+    }
+    const auto connectEditorField = [this, &updating, &selectedRow](
+        TextBox& field,
+        int column
+        ) {
+        field.TextChanging(
+            [this, &updating, &selectedRow, column](
+                TextBox const& sender,
+                TextBoxTextChangingEventArgs const&)
+            {
+                if (updating)
+                {
+                    return;
+                }
+                const int row = selectedRow();
+                if (row >= 0
+                    && row < static_cast<int>(m_speakingEvaluationCellBoxes.size())
+                    && m_speakingEvaluationCellBoxes[static_cast<std::size_t>(row)].size()
+                        > static_cast<std::size_t>(column))
+                {
+                    m_speakingEvaluationCellBoxes[static_cast<std::size_t>(row)][
+                        static_cast<std::size_t>(column)
+                        ].Text(sender.Text());
+                }
+            }
+            );
+    };
+    connectEditorField(commentsField, commentsColumn);
+    connectEditorField(notesField, notesColumn);
+
+    studentSelector.SelectedIndex(0);
+    refreshEditor();
+
+    auto dialog = ContentDialog();
+    dialog.XamlRoot(RootGrid().XamlRoot());
+    dialog.Title(box_value(hstring(L"Speaking Evaluation Reports")));
+    dialog.Content(content);
+    dialog.PrimaryButtonText(L"Print");
+    dialog.SecondaryButtonText(L"Save As PDF");
+    dialog.CloseButtonText(L"Close");
+    dialog.DefaultButton(ContentDialogButton::Primary);
+    m_ownedDialog = dialog;
+
+    ContentDialogResult result = ContentDialogResult::None;
+    try
+    {
+        result = co_await dialog.ShowAsync();
+    }
+    catch (...)
+    {
+        result = ContentDialogResult::None;
+    }
+    if (m_ownedDialog == dialog)
+    {
+        m_ownedDialog = nullptr;
+    }
+    if (result == ContentDialogResult::Primary
+        || result == ContentDialogResult::Secondary)
+    {
+        openSpeakingBatchReportDialog(result == ContentDialogResult::Secondary);
+    }
 }
 
 void MainWindow::refreshClassRoster()
@@ -23845,9 +24396,42 @@ void MainWindow::updateFileCommandState()
         && (m_campusInformationState == L"no_database"
             || m_campusInformationState == L"empty"
             || m_campusInformationState == L"populated");
+    const bool speakingEvaluationSection =
+        m_currentPageId == classesPageId
+        && m_classSectionIndex == 3;
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    const bool hasSpeakingReports = speakingEvaluationSection
+        && std::any_of(
+            m_speakingEvaluationCellBoxes.cbegin(),
+            m_speakingEvaluationCellBoxes.cend(),
+            [englishColumn, koreanColumn](const auto& cells) {
+                return cells.size() > static_cast<std::size_t>(koreanColumn)
+                    && (!cells[static_cast<std::size_t>(englishColumn)].Text().empty()
+                        || !cells[static_cast<std::size_t>(koreanColumn)].Text().empty());
+            }
+            );
+    if (m_printCurrentPageMenu)
+    {
+        m_printCurrentPageMenu.Text(
+            speakingEvaluationSection
+                ? hstring(L"Print Speaking Reports...")
+                : hstring(L"Print current page")
+            );
+        m_printCurrentPageMenu.IsEnabled(hasSpeakingReports);
+    }
     if (m_saveCurrentPageMenu)
     {
-        m_saveCurrentPageMenu.IsEnabled(pageCanBeSaved);
+        m_saveCurrentPageMenu.Text(
+            speakingEvaluationSection
+                ? hstring(L"Save Speaking Reports As...")
+                : hstring(L"Save current page as...")
+            );
+        m_saveCurrentPageMenu.IsEnabled(pageCanBeSaved || hasSpeakingReports);
     }
     if (m_exportCampusResourcesMenu)
     {

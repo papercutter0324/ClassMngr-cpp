@@ -201,7 +201,13 @@
                     x:Name="PrintExportMenu"
                     Title="Print / Export"
                     AutomationProperties.Name="Print and export menu">
-                    <MenuFlyoutItem Text="Print current page" Tag="print.current_page" IsEnabled="False" AutomationProperties.Name="Print current page command" />
+                    <MenuFlyoutItem
+                        x:Name="PrintCurrentPageMenuItem"
+                        Text="Print current page"
+                        Tag="print.current_page"
+                        IsEnabled="False"
+                        Click="PrintCurrentPageMenuItem_Click"
+                        AutomationProperties.Name="Print current page command" />
                     <MenuFlyoutItem
                         x:Name="SaveCurrentPageMenuItem"
                         Text="Save current page as..."

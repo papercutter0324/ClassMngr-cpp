@@ -207,6 +207,10 @@ struct MainWindow : MainWindowT<MainWindow>
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
+    void PrintCurrentPageMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
     void ExportCampusResourcesMenuItem_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
@@ -381,6 +385,10 @@ private:
     void discardSpeakingEvaluation();
     void importSpeakingEvaluationNames();
     void applySpeakingEvaluationPaste();
+    winrt::fire_and_forget openSpeakingReportEditor();
+    winrt::fire_and_forget openSpeakingAiDialog();
+    winrt::fire_and_forget openSpeakingBatchReportDialog(bool saveMode);
+    winrt::fire_and_forget chooseSpeakingBatchOutputDirectory();
     void refreshSpeakingAiSelection();
     void generateSpeakingAiPrompt();
     void copySpeakingAiPrompt(bool openProvider);
@@ -707,6 +715,7 @@ private:
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveAsFileMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportFileMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_closeFileMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_printCurrentPageMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveCurrentPageMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportCampusResourcesMenu{nullptr};
 
@@ -900,6 +909,10 @@ private:
     Microsoft::UI::Xaml::Controls::Button
         m_speakingEvaluationImportNamesButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button
+        m_speakingEvaluationReportEditorButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingEvaluationGenerateCommentsButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
         m_speakingEvaluationPasteButton{nullptr};
     std::vector<std::vector<Microsoft::UI::Xaml::Controls::TextBox>>
         m_speakingEvaluationCellBoxes;
@@ -977,6 +990,12 @@ private:
         m_speakingBatchStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::Button
         m_speakingBatchPlanButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_speakingBatchChooseOutputButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Border
+        m_speakingAiDialogRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::Border
+        m_speakingBatchDialogRoot{nullptr};
 
     Microsoft::UI::Xaml::Controls::ComboBox m_classSelector{nullptr};
     Microsoft::UI::Xaml::Controls::Grid m_classPageRoot{nullptr};
