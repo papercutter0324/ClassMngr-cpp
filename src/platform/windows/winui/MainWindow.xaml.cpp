@@ -96,6 +96,14 @@ constexpr std::wstring_view classAnalyticsPageId = L"classes_analytics";
 constexpr std::wstring_view classNotesPageId = L"classes_notes";
 constexpr std::string_view classNavigationLocationKey =
     "classes/navigationLocation";
+constexpr std::array<std::wstring_view, 6> classSectionTitles{
+    L"Class Details",
+    L"Class Roster",
+    L"Class Analytics",
+    L"Speaking Evaluations",
+    L"Co-Teacher",
+    L"Class Notes"
+};
 constexpr std::wstring_view aboutPageId = L"about";
 constexpr std::wstring_view campusInformationPageId = L"campus_information";
 constexpr std::wstring_view campusDirectionsPageId = L"campus_directions";
@@ -553,6 +561,57 @@ SpeakingAiPrivateNotes splitSpeakingAiPrivateNotes(std::string notes)
             ),
         notes.substr(separator + needsImprovementMarker.size())
     };
+}
+
+std::string joinSpeakingAiPrivateNotes(
+    std::string didWell,
+    std::string needsImprovement
+    )
+{
+    didWell = normalizeSpeakingAiLineEndings(std::move(didWell));
+    needsImprovement = normalizeSpeakingAiLineEndings(std::move(needsImprovement));
+    if (didWell.empty() && needsImprovement.empty())
+    {
+        return {};
+    }
+
+    return "[Did Well]\n" + didWell
+        + "\n[Needs Improvement]\n" + needsImprovement;
+}
+
+std::string bulletizeSpeakingAiNotes(std::string notes)
+{
+    notes = normalizeSpeakingAiLineEndings(std::move(notes));
+    if (notes.empty())
+    {
+        return {};
+    }
+
+    std::string result;
+    std::size_t lineStart = 0;
+    while (lineStart <= notes.size())
+    {
+        const std::size_t lineEnd = notes.find('\n', lineStart);
+        std::string_view line = std::string_view(notes).substr(
+            lineStart,
+            (lineEnd == std::string::npos ? notes.size() : lineEnd) - lineStart
+            );
+        if (!result.empty())
+        {
+            result.push_back('\n');
+        }
+        if (!line.empty() && !line.starts_with("\xE2\x80\xA2"))
+        {
+            result += "\xE2\x80\xA2 ";
+        }
+        result += line;
+        if (lineEnd == std::string::npos)
+        {
+            break;
+        }
+        lineStart = lineEnd + 1;
+    }
+    return result;
 }
 
 void replaceSpeakingAiPlaceholder(
@@ -3371,10 +3430,7 @@ bool MainWindow::runPhase6SpeakingEvaluationChecks()
     refreshSpeakingAnalytics();
     const bool analyticsReady =
         m_speakingAnalyticsStatusText
-        && contains(
-            m_speakingAnalyticsStatusText.Text(),
-            L"Analytics loaded for All"
-            )
+        && m_speakingAnalyticsStatusText.Text().empty()
         && m_speakingAnalyticsCriteriaPanel
         && m_speakingAnalyticsCriteriaPanel.Children().Size() == 6
         && m_speakingAnalyticsRankingList
@@ -4463,9 +4519,11 @@ bool MainWindow::runPhase6ClassInformationChecks()
         && std::holds_alternative<std::monostate>(*emptySettings)
         && classNavigationLocation() == ClassNavigationLocation::Top
         && m_classPageRoot
-        && m_classPageRoot.RowDefinitions().Size() == 3
+        && m_classPageRoot.RowDefinitions().Size() == 5
         && m_classSectionSelectorBar
         && m_classSectionSelectorBar.Items().Size() == 6
+        && m_classSectionTitle
+        && m_classSectionTitle.Text() == L"Class Details"
         && m_classSectionContentHost
         && m_classSectionContentHost.Content().try_as<
             Microsoft::UI::Xaml::Controls::ScrollViewer>()
@@ -4477,11 +4535,19 @@ bool MainWindow::runPhase6ClassInformationChecks()
             m_classNavigationCard
             ) == 1
         && Microsoft::UI::Xaml::Controls::Grid::GetRow(
-            m_classSectionContentHost
+            m_classSectionTitle
             ) == 2
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 3
+        && m_classSectionActionsHost
+        && m_classSectionActionsHost.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
         && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Auto
         && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(3).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Star;
     if (!defaultNavigationReady)
     {
@@ -4608,12 +4674,39 @@ bool MainWindow::runPhase6ClassInformationChecks()
         m_classSectionIndex == 5
         && m_classSectionSelectorBar.SelectedItem()
             == m_classSectionSelectorItems[5]
+        && m_classSectionTitle.Text() == L"Class Notes"
         && m_classSectionContentHost.Content().try_as<
             Microsoft::UI::Xaml::Controls::ScrollViewer>();
     if (!sectionSelectionReady)
     {
         return fail(128);
     }
+
+    m_classSectionSelectorBar.SelectedItem(m_classSectionSelectorItems[1]);
+    const bool rosterActionsReady =
+        m_classSectionTitle.Text() == L"Class Roster"
+        && m_classSectionActionsHost.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && m_classSectionActionsHost.Content().try_as<
+            Microsoft::UI::Xaml::Controls::Grid>()
+            == m_classRosterActions;
+    if (!rosterActionsReady)
+    {
+        return fail(65536);
+    }
+    m_classSectionSelectorBar.SelectedItem(m_classSectionSelectorItems[3]);
+    const bool evaluationActionsReady =
+        m_classSectionTitle.Text() == L"Speaking Evaluations"
+        && m_classSectionActionsHost.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && m_classSectionActionsHost.Content().try_as<
+            Microsoft::UI::Xaml::Controls::Grid>()
+            == m_speakingEvaluationActions;
+    if (!evaluationActionsReady)
+    {
+        return fail(131072);
+    }
+    m_classSectionSelectorBar.SelectedItem(m_classSectionSelectorItems[5]);
 
     selectClassNavigationGrade(false, firstNavigationInfo.classGrade);
     toggleClassNavigationDay("Monday");
@@ -4623,11 +4716,19 @@ bool MainWindow::runPhase6ClassInformationChecks()
             m_classNavigationCard
             ) == 1
         && Microsoft::UI::Xaml::Controls::Grid::GetRow(
-            m_classSectionContentHost
+            m_classSectionTitle
             ) == 2
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 3
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionActionsHost
+            ) == 4
         && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Auto
         && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(3).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Star
         && !m_classNavigationAll
         && std::find(
@@ -4665,11 +4766,19 @@ bool MainWindow::runPhase6ClassInformationChecks()
             m_classNavigationCard
             ) == 2
         && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionTitle
+            ) == 3
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
             m_classSectionContentHost
             ) == 1
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionActionsHost
+            ) == 4
         && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Star
         && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(3).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Auto
         && m_classSelectedId == firstClassId
         && m_classSectionIndex == 5
@@ -4723,11 +4832,19 @@ bool MainWindow::runPhase6ClassInformationChecks()
             m_classNavigationCard
             ) == 2
         && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionTitle
+            ) == 3
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
             m_classSectionContentHost
             ) == 1
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionActionsHost
+            ) == 4
         && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Star
         && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(3).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Auto;
     if (!refreshPreservedNavigation)
     {
@@ -4749,11 +4866,16 @@ bool MainWindow::runPhase6ClassInformationChecks()
             m_classNavigationCard
             ) == 1
         && Microsoft::UI::Xaml::Controls::Grid::GetRow(
-            m_classSectionContentHost
+            m_classSectionTitle
             ) == 2
+        && Microsoft::UI::Xaml::Controls::Grid::GetRow(
+            m_classSectionContentHost
+            ) == 3
         && m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Auto
         && m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_classPageRoot.RowDefinitions().GetAt(3).Height().GridUnitType
             == Microsoft::UI::Xaml::GridUnitType::Star;
     if (!invalidSettingReady)
     {
@@ -13609,11 +13731,6 @@ void MainWindow::populateClassesPage(
     };
 
     auto detailsRoot = makeRoot(StackPanel());
-    auto detailsTitle = TextBlock();
-    detailsTitle.Text(L"Class Details");
-    applyResourceStyle(detailsTitle, L"Phase3PageTitleTextBlockStyle");
-    setAutomationName(detailsTitle, L"Class Details");
-    detailsRoot.Children().Append(detailsTitle);
 
     auto detailsDescription = TextBlock();
     detailsDescription.Text(
@@ -13628,7 +13745,7 @@ void MainWindow::populateClassesPage(
     detailsRoot.Children().Append(detailsDescription);
 
     m_classStatusText = TextBlock();
-    m_classStatusText.Text(L"Loading classes...");
+    m_classStatusText.Text({});
     m_classStatusText.TextWrapping(TextWrapping::Wrap);
     setAutomationName(m_classStatusText, L"Class information status");
     detailsRoot.Children().Append(m_classStatusText);
@@ -14026,11 +14143,6 @@ void MainWindow::populateClassesPage(
     detailsRoot.Children().Append(scheduleCard.root);
 
     auto notesRoot = makeRoot(StackPanel());
-    auto notesTitle = TextBlock();
-    notesTitle.Text(L"Class Notes");
-    applyResourceStyle(notesTitle, L"Phase3PageTitleTextBlockStyle");
-    setAutomationName(notesTitle, L"Class Notes");
-    notesRoot.Children().Append(notesTitle);
 
     auto notesDescription = TextBlock();
     notesDescription.Text(
@@ -14099,9 +14211,6 @@ void MainWindow::populateClassesPage(
     notesCard.content.Children().Append(m_classTimeFillerActivitiesTextBox);
     notesRoot.Children().Append(notesCard.root);
 
-    auto notesActions = StackPanel();
-    notesActions.Orientation(Orientation::Horizontal);
-    notesActions.Spacing(8.0);
     m_classNotesSaveButton = Button();
     m_classNotesSaveButton.Content(box_value(hstring(L"Save Changes")));
     m_classNotesSaveButton.IsTabStop(true);
@@ -14114,16 +14223,10 @@ void MainWindow::populateClassesPage(
     m_classNotesDiscardButton.TabIndex(3);
     m_classNotesDiscardButton.Click({this, &MainWindow::ClassNotesDiscardButton_Click});
     setAutomationName(m_classNotesDiscardButton, L"Discard class notes changes");
-    notesActions.Children().Append(m_classNotesSaveButton);
-    notesActions.Children().Append(m_classNotesDiscardButton);
-    notesRoot.Children().Append(notesActions);
+    m_classNotesSaveButton.Visibility(Visibility::Collapsed);
+    m_classNotesDiscardButton.Visibility(Visibility::Collapsed);
 
     auto rosterRoot = makeRoot(StackPanel());
-    auto rosterTitle = TextBlock();
-    rosterTitle.Text(L"Class Roster");
-    applyResourceStyle(rosterTitle, L"Phase3PageTitleTextBlockStyle");
-    setAutomationName(rosterTitle, L"Class Roster");
-    rosterRoot.Children().Append(rosterTitle);
 
     auto rosterCard = ClassMngrWinUISharedUX::buildCard({
         L"",
@@ -14223,7 +14326,7 @@ void MainWindow::populateClassesPage(
     setAutomationName(m_classRosterList, L"Class roster student grid");
     rosterCard.content.Children().Append(m_classRosterList);
 
-    rosterCard.content.Children().Append(rosterActions);
+    m_classRosterActions = rosterActions;
     rosterRoot.Children().Append(rosterCard.root);
 
     auto speakingRoot = makeRoot(StackPanel());
@@ -14236,14 +14339,6 @@ void MainWindow::populateClassesPage(
         ));
     speakingTopBar.ColumnDefinitions().Append(speakingTitleColumn);
     speakingTopBar.ColumnDefinitions().Append(ColumnDefinition());
-
-    auto speakingTitle = TextBlock();
-    speakingTitle.Text(L"Speaking Evaluations");
-    applyResourceStyle(speakingTitle, L"Phase3PageTitleTextBlockStyle");
-    speakingTitle.VerticalAlignment(VerticalAlignment::Center);
-    setAutomationName(speakingTitle, L"Speaking Evaluations");
-    Grid::SetColumn(speakingTitle, 0);
-    speakingTopBar.Children().Append(speakingTitle);
 
     auto speakingCard = ClassMngrWinUISharedUX::buildCard({
         {},
@@ -14509,31 +14604,24 @@ void MainWindow::populateClassesPage(
         L"Apply speaking evaluation score range"
         );
 
-    auto speakingActionBar = Border();
-    speakingActionBar.Padding(Thickness{0.0, 8.0, 0.0, 0.0});
-    speakingActionBar.Child(speakingActions);
-    speakingCard.content.Children().Append(speakingActionBar);
+    m_speakingEvaluationActions = speakingActions;
 
-    auto aiCard = ClassMngrWinUISharedUX::buildCard({
-        L"AI comments",
-        L"Build privacy-preserving prompts from the selected student's private observations, then paste and review the provider response before applying it.",
-        L"Speaking AI comment workflow"
-        });
-    m_speakingAiStatusText = TextBlock();
-    m_speakingAiStatusText.Text(
-        L"Select a speaking-evaluation row to prepare an AI comment."
-        );
-    m_speakingAiStatusText.TextWrapping(TextWrapping::Wrap);
-    setAutomationName(m_speakingAiStatusText, L"Speaking AI comment status");
-    aiCard.content.Children().Append(m_speakingAiStatusText);
+    // The Qt product presents batch comments as a small two-step dialog. Keep
+    // this root separate from the page cards so its contents are not reparented
+    // when the ContentDialog opens.
+    m_speakingAiDialogRoot = Border();
+    m_speakingAiDialogRoot.Padding(Thickness{12.0});
+    setAutomationName(m_speakingAiDialogRoot, L"Generate class comments workflow");
+    auto aiTabs = Pivot();
+    aiTabs.IsTabStop(true);
+    aiTabs.TabIndex(7);
+    setAutomationName(aiTabs, L"Generate class comments tabs");
+    m_speakingAiDialogRoot.Child(aiTabs);
 
     m_speakingAiVoiceSelector = ComboBox();
-    m_speakingAiVoiceSelector.Header(
-        box_value(hstring(L"Comment voice"))
-        );
-    m_speakingAiVoiceSelector.MinWidth(320.0);
-    m_speakingAiVoiceSelector.IsTabStop(true);
-    m_speakingAiVoiceSelector.TabIndex(7);
+    // Voice remains available to the shared prompt service. The batch dialog
+    // follows the Qt layout, which uses the stored preference rather than an
+    // in-dialog selector.
     const auto appendAiVoice = [this](std::wstring_view label, int tag) {
         auto item = ComboBoxItem();
         item.Content(box_value(hstring(label)));
@@ -14544,8 +14632,6 @@ void MainWindow::populateClassesPage(
     appendAiVoice(L"Direct to Student", 0);
     appendAiVoice(L"Third Person", 1);
     m_speakingAiVoiceSelector.SelectedIndex(0);
-    setAutomationName(m_speakingAiVoiceSelector, L"Speaking AI comment voice");
-    aiCard.content.Children().Append(m_speakingAiVoiceSelector);
 
     const auto configureAiEditor = [](
         TextBox& editor,
@@ -14562,6 +14648,8 @@ void MainWindow::populateClassesPage(
         editor.IsTabStop(true);
         editor.TabIndex(tabIndex);
     };
+    // Retain the focused student-prompt controls for the existing command and
+    // Phase 6 smoke path, but do not place them in this batch-only dialog.
     m_speakingAiDidWellTextBox = TextBox();
     configureAiEditor(
         m_speakingAiDidWellTextBox,
@@ -14570,12 +14658,6 @@ void MainWindow::populateClassesPage(
         84.0,
         8
         );
-    setAutomationName(
-        m_speakingAiDidWellTextBox,
-        L"Speaking AI Did Well observations"
-        );
-    aiCard.content.Children().Append(m_speakingAiDidWellTextBox);
-
     m_speakingAiNeedsImprovementTextBox = TextBox();
     configureAiEditor(
         m_speakingAiNeedsImprovementTextBox,
@@ -14584,66 +14666,35 @@ void MainWindow::populateClassesPage(
         84.0,
         9
         );
-    setAutomationName(
-        m_speakingAiNeedsImprovementTextBox,
-        L"Speaking AI Needs Improvement observations"
-        );
-    aiCard.content.Children().Append(m_speakingAiNeedsImprovementTextBox);
-
-    auto aiStudentActions = StackPanel();
-    aiStudentActions.Orientation(Orientation::Horizontal);
-    aiStudentActions.Spacing(8.0);
-
     m_speakingAiGenerateButton = Button();
     m_speakingAiGenerateButton.Content(
         box_value(hstring(L"Generate Student Prompt"))
         );
-    m_speakingAiGenerateButton.IsTabStop(true);
-    m_speakingAiGenerateButton.TabIndex(10);
-    m_speakingAiGenerateButton.HorizontalAlignment(
-        HorizontalAlignment::Left
-        );
     m_speakingAiGenerateButton.Click(
         [this](auto const&, auto const&) { generateSpeakingAiPrompt(); }
         );
-    setAutomationName(
-        m_speakingAiGenerateButton,
-        L"Generate speaking AI student prompt"
-        );
-    aiStudentActions.Children().Append(m_speakingAiGenerateButton);
-
     m_speakingAiGenerateBatchButton = Button();
     m_speakingAiGenerateBatchButton.Content(
-        box_value(hstring(L"Generate Batch Prompt"))
+        box_value(hstring(L"Create Class Prompt"))
         );
     m_speakingAiGenerateBatchButton.IsTabStop(true);
     m_speakingAiGenerateBatchButton.TabIndex(11);
-    m_speakingAiGenerateBatchButton.HorizontalAlignment(
-        HorizontalAlignment::Left
-        );
+    m_speakingAiGenerateBatchButton.HorizontalAlignment(HorizontalAlignment::Right);
     m_speakingAiGenerateBatchButton.Click(
         [this](auto const&, auto const&) {
             generateSpeakingAiBatchPrompt();
         }
         );
-    setAutomationName(
-        m_speakingAiGenerateBatchButton,
-        L"Generate speaking AI batch prompt"
-        );
-    aiStudentActions.Children().Append(m_speakingAiGenerateBatchButton);
-    aiCard.content.Children().Append(aiStudentActions);
-
     m_speakingAiPromptTextBox = TextBox();
     configureAiEditor(
         m_speakingAiPromptTextBox,
-        L"Prompt (copy to the selected AI provider)",
-        L"The generated prompt will appear here.",
-        190.0,
+        L"",
+        L"Select students and create the class prompt.",
+        250.0,
         12
         );
     m_speakingAiPromptTextBox.IsReadOnly(true);
     setAutomationName(m_speakingAiPromptTextBox, L"Speaking AI prompt");
-    aiCard.content.Children().Append(m_speakingAiPromptTextBox);
 
     auto aiPromptActions = StackPanel();
     aiPromptActions.Orientation(Orientation::Horizontal);
@@ -14653,7 +14704,7 @@ void MainWindow::populateClassesPage(
     m_speakingAiCopyButton.Content(box_value(hstring(L"Copy Prompt")));
     m_speakingAiCopyButton.IsTabStop(true);
     m_speakingAiCopyButton.TabIndex(13);
-    m_speakingAiCopyButton.HorizontalAlignment(HorizontalAlignment::Left);
+    m_speakingAiCopyButton.HorizontalAlignment(HorizontalAlignment::Right);
     m_speakingAiCopyButton.Click(
         [this](auto const&, auto const&) { copySpeakingAiPrompt(false); }
         );
@@ -14661,14 +14712,9 @@ void MainWindow::populateClassesPage(
     aiPromptActions.Children().Append(m_speakingAiCopyButton);
 
     m_speakingAiCopyOpenButton = Button();
-    m_speakingAiCopyOpenButton.Content(
-        box_value(hstring(L"Copy and Open ChatGPT"))
-        );
+    m_speakingAiCopyOpenButton.Content(box_value(hstring(L"Copy Prompt and Open ChatGPT")));
     m_speakingAiCopyOpenButton.IsTabStop(true);
     m_speakingAiCopyOpenButton.TabIndex(14);
-    m_speakingAiCopyOpenButton.HorizontalAlignment(
-        HorizontalAlignment::Left
-        );
     m_speakingAiCopyOpenButton.Click(
         [this](auto const&, auto const&) { copySpeakingAiPrompt(true); }
         );
@@ -14677,86 +14723,105 @@ void MainWindow::populateClassesPage(
         L"Copy speaking AI prompt and open ChatGPT"
         );
     aiPromptActions.Children().Append(m_speakingAiCopyOpenButton);
-    aiCard.content.Children().Append(aiPromptActions);
 
     m_speakingAiResponseTextBox = TextBox();
     configureAiEditor(
         m_speakingAiResponseTextBox,
-        L"Provider response (paste here)",
-        L"Paste the completed student comment or marked batch response.",
-        150.0,
+        L"",
+        L"Paste the response containing the STUDENT blocks here...",
+        190.0,
         15
         );
     m_speakingAiResponseTextBox.TextChanging(
         [this](auto const&, auto const&) { updateSpeakingAiActions(); }
-        );
+    );
     setAutomationName(m_speakingAiResponseTextBox, L"Speaking AI response");
-    aiCard.content.Children().Append(m_speakingAiResponseTextBox);
-
-    auto aiResponseActions = StackPanel();
-    aiResponseActions.Orientation(Orientation::Horizontal);
-    aiResponseActions.Spacing(8.0);
 
     m_speakingAiApplyStudentButton = Button();
     m_speakingAiApplyStudentButton.Content(
         box_value(hstring(L"Apply Student Comment"))
-        );
-    m_speakingAiApplyStudentButton.IsTabStop(true);
-    m_speakingAiApplyStudentButton.TabIndex(16);
-    m_speakingAiApplyStudentButton.HorizontalAlignment(
-        HorizontalAlignment::Left
         );
     m_speakingAiApplyStudentButton.Click(
         [this](auto const&, auto const&) {
             applySpeakingAiStudentComment();
         }
         );
-    setAutomationName(
-        m_speakingAiApplyStudentButton,
-        L"Apply speaking AI student comment"
-        );
-    aiResponseActions.Children().Append(m_speakingAiApplyStudentButton);
-
     m_speakingAiParseBatchButton = Button();
     m_speakingAiParseBatchButton.Content(
-        box_value(hstring(L"Parse Batch Response"))
+        box_value(hstring(L"Parse Response"))
         );
     m_speakingAiParseBatchButton.IsTabStop(true);
     m_speakingAiParseBatchButton.TabIndex(17);
-    m_speakingAiParseBatchButton.HorizontalAlignment(
-        HorizontalAlignment::Left
-        );
+    m_speakingAiParseBatchButton.HorizontalAlignment(HorizontalAlignment::Right);
     m_speakingAiParseBatchButton.Click(
         [this](auto const&, auto const&) {
             parseSpeakingAiBatchResponse();
         }
         );
-    setAutomationName(
-        m_speakingAiParseBatchButton,
-        L"Parse speaking AI batch response"
-        );
-    aiResponseActions.Children().Append(m_speakingAiParseBatchButton);
-
     m_speakingAiApplyBatchButton = Button();
     m_speakingAiApplyBatchButton.Content(
-        box_value(hstring(L"Apply Parsed Batch Comments"))
+        box_value(hstring(L"Apply Selected Comments"))
         );
     m_speakingAiApplyBatchButton.IsTabStop(true);
     m_speakingAiApplyBatchButton.TabIndex(18);
-    m_speakingAiApplyBatchButton.HorizontalAlignment(
-        HorizontalAlignment::Left
-        );
+    m_speakingAiApplyBatchButton.HorizontalAlignment(HorizontalAlignment::Right);
     m_speakingAiApplyBatchButton.Click(
         [this](auto const&, auto const&) {
             applySpeakingAiBatchComments();
         }
         );
-    setAutomationName(
-        m_speakingAiApplyBatchButton,
-        L"Apply speaking AI batch comments"
-        );
-    aiResponseActions.Children().Append(m_speakingAiApplyBatchButton);
-    aiCard.content.Children().Append(aiResponseActions);
+    auto promptPage = StackPanel();
+    promptPage.Spacing(8.0);
+    auto selectionLabel = TextBlock();
+    selectionLabel.Text(L"Select students. Eligible students without comments are selected automatically.");
+    selectionLabel.TextWrapping(TextWrapping::Wrap);
+    selectionLabel.FontSize(18.0);
+    promptPage.Children().Append(selectionLabel);
+    m_speakingAiBatchSelectionList = ListView();
+    m_speakingAiBatchSelectionList.SelectionMode(ListViewSelectionMode::None);
+    m_speakingAiBatchSelectionList.Height(230.0);
+    setAutomationName(m_speakingAiBatchSelectionList, L"Speaking AI student selection table");
+    promptPage.Children().Append(m_speakingAiBatchSelectionList);
+    promptPage.Children().Append(m_speakingAiGenerateBatchButton);
+    auto privacyLabel = TextBlock();
+    privacyLabel.Text(L"Real student names are removed from the prompt and are restored locally after the response is pasted.");
+    privacyLabel.TextWrapping(TextWrapping::Wrap);
+    privacyLabel.FontSize(16.0);
+    promptPage.Children().Append(privacyLabel);
+    promptPage.Children().Append(m_speakingAiPromptTextBox);
+    aiPromptActions.HorizontalAlignment(HorizontalAlignment::Right);
+    promptPage.Children().Append(aiPromptActions);
+    auto promptItem = PivotItem();
+    promptItem.Header(box_value(hstring(L"1. Create Prompt")));
+    promptItem.Content(promptPage);
+    aiTabs.Items().Append(promptItem);
+
+    auto reviewPage = StackPanel();
+    reviewPage.Spacing(8.0);
+    auto responseLabel = TextBlock();
+    responseLabel.Text(L"Paste the complete AI response below.");
+    responseLabel.FontSize(18.0);
+    reviewPage.Children().Append(responseLabel);
+    reviewPage.Children().Append(m_speakingAiResponseTextBox);
+    reviewPage.Children().Append(m_speakingAiParseBatchButton);
+    m_speakingAiParseSummary = TextBlock();
+    m_speakingAiParseSummary.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_speakingAiParseSummary, L"Speaking AI response parse summary");
+    reviewPage.Children().Append(m_speakingAiParseSummary);
+    m_speakingAiBatchReviewList = ListView();
+    m_speakingAiBatchReviewList.SelectionMode(ListViewSelectionMode::None);
+    m_speakingAiBatchReviewList.Height(310.0);
+    setAutomationName(m_speakingAiBatchReviewList, L"Speaking AI comment review table");
+    reviewPage.Children().Append(m_speakingAiBatchReviewList);
+    m_speakingAiStatusText = TextBlock();
+    m_speakingAiStatusText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(m_speakingAiStatusText, L"Speaking AI comment status");
+    reviewPage.Children().Append(m_speakingAiStatusText);
+    reviewPage.Children().Append(m_speakingAiApplyBatchButton);
+    auto reviewItem = PivotItem();
+    reviewItem.Header(box_value(hstring(L"2. Paste and Review")));
+    reviewItem.Content(reviewPage);
+    aiTabs.Items().Append(reviewItem);
 
     speakingRoot.Children().Append(speakingCard.root);
 
@@ -14987,14 +15052,6 @@ void MainWindow::populateClassesPage(
     analyticsTopBar.ColumnDefinitions().Append(analyticsTitleColumn);
     analyticsTopBar.ColumnDefinitions().Append(ColumnDefinition());
 
-    auto analyticsTitle = TextBlock();
-    analyticsTitle.Text(L"Class Analytics");
-    applyResourceStyle(analyticsTitle, L"Phase3PageTitleTextBlockStyle");
-    setAutomationName(analyticsTitle, L"Class Analytics");
-    analyticsTitle.VerticalAlignment(VerticalAlignment::Center);
-    Grid::SetColumn(analyticsTitle, 0);
-    analyticsTopBar.Children().Append(analyticsTitle);
-
     m_speakingAnalyticsStatusText = TextBlock();
     m_speakingAnalyticsStatusText.Text(
         L"Select a class to view speaking analytics."
@@ -15194,11 +15251,6 @@ void MainWindow::populateClassesPage(
     analyticsRoot.Children().Append(analyticsRankingCard.root);
 
     auto coTeacherRoot = makeRoot(StackPanel());
-    auto coTeacherTitle = TextBlock();
-    coTeacherTitle.Text(L"Co-Teacher");
-    applyResourceStyle(coTeacherTitle, L"Phase3PageTitleTextBlockStyle");
-    setAutomationName(coTeacherTitle, L"Co-Teacher");
-    coTeacherRoot.Children().Append(coTeacherTitle);
 
     auto coTeacherCard = ClassMngrWinUISharedUX::buildCard({
         L"Korean Teacher",
@@ -15329,9 +15381,6 @@ void MainWindow::populateClassesPage(
     coTeacherCard.content.Children().Append(coTeacherGrid);
     coTeacherRoot.Children().Append(coTeacherCard.root);
 
-    auto coTeacherActions = StackPanel();
-    coTeacherActions.Orientation(Orientation::Horizontal);
-    coTeacherActions.Spacing(8.0);
     m_classCoTeacherSaveButton = Button();
     m_classCoTeacherSaveButton.Content(box_value(hstring(L"Save Changes")));
     m_classCoTeacherSaveButton.IsTabStop(true);
@@ -15353,9 +15402,8 @@ void MainWindow::populateClassesPage(
         m_classCoTeacherDiscardButton,
         L"Discard co-teacher changes"
         );
-    coTeacherActions.Children().Append(m_classCoTeacherSaveButton);
-    coTeacherActions.Children().Append(m_classCoTeacherDiscardButton);
-    coTeacherRoot.Children().Append(coTeacherActions);
+    m_classCoTeacherSaveButton.Visibility(Visibility::Collapsed);
+    m_classCoTeacherDiscardButton.Visibility(Visibility::Collapsed);
 
     const auto navigationCard = ClassMngrWinUISharedUX::buildCard({
         L"",
@@ -15498,6 +15546,17 @@ void MainWindow::populateClassesPage(
         }
         );
 
+    m_classSectionTitle = TextBlock();
+    m_classSectionTitle.FontSize(24.0);
+    m_classSectionTitle.Margin(Thickness{16.0, 0.0, 16.0, 0.0});
+    m_classSectionTitle.HorizontalAlignment(HorizontalAlignment::Left);
+    m_classSectionTitle.VerticalAlignment(VerticalAlignment::Center);
+    applyResourceStyle(
+        m_classSectionTitle,
+        L"Phase3PageTitleTextBlockStyle"
+        );
+    setAutomationName(m_classSectionTitle, L"Active Classes section title");
+
     m_classSectionContentHost = ContentControl();
     m_classSectionContentHost.HorizontalContentAlignment(
         HorizontalAlignment::Stretch
@@ -15509,28 +15568,49 @@ void MainWindow::populateClassesPage(
         m_classSectionContentHost,
         L"Active Classes section content"
         );
+
+    m_classSectionActionsHost = ContentControl();
+    m_classSectionActionsHost.HorizontalContentAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_classSectionActionsHost.VerticalContentAlignment(
+        VerticalAlignment::Bottom
+        );
+    m_classSectionActionsHost.Margin(Thickness{16.0, 0.0, 16.0, 12.0});
+    m_classSectionActionsHost.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_classSectionActionsHost,
+        L"Active Classes section actions"
+        );
+
     selectClassSection(m_classSectionIndex);
 
     m_classPageRoot = Grid();
     m_classPageRoot.RowSpacing(12.0);
     m_classPageRoot.HorizontalAlignment(HorizontalAlignment::Stretch);
     m_classPageRoot.VerticalAlignment(VerticalAlignment::Stretch);
-    for (int rowIndex = 0; rowIndex < 3; ++rowIndex)
+    for (int rowIndex = 0; rowIndex < 5; ++rowIndex)
     {
         auto row = RowDefinition();
         row.Height(
             GridLengthHelper::FromValueAndType(
                 1.0,
-                rowIndex == 1 ? GridUnitType::Star : GridUnitType::Auto
+                rowIndex == 3 ? GridUnitType::Star : GridUnitType::Auto
                 )
             );
         m_classPageRoot.RowDefinitions().Append(row);
     }
     Grid::SetRow(m_classSectionSelectorBar, 0);
-    Grid::SetRow(m_classSectionContentHost, 1);
-    Grid::SetRow(m_classNavigationCard, 2);
+    Grid::SetRow(m_classSectionTitle, 2);
+    Grid::SetRow(m_classSectionContentHost, 3);
+    Grid::SetRow(m_classSectionActionsHost, 4);
     m_classPageRoot.Children().Append(m_classSectionSelectorBar);
+    m_classPageRoot.Children().Append(m_classSectionTitle);
     m_classPageRoot.Children().Append(m_classSectionContentHost);
+    m_classPageRoot.Children().Append(m_classSectionActionsHost);
+    // applyClassNavigationLayout() assigns the navigation card, title, and
+    // content host to their preference-dependent rows after the fixed section
+    // selector/action chrome is in place.
     m_classPageRoot.Children().Append(m_classNavigationCard);
     page.Content(m_classPageRoot);
     applyClassNavigationLayout();
@@ -16861,6 +16941,8 @@ void MainWindow::applyClassNavigationLayout()
 
     if (!m_classPageRoot
         || !m_classSectionContentHost
+        || !m_classSectionTitle
+        || !m_classSectionActionsHost
         || !m_classNavigationCard)
     {
         return;
@@ -16869,6 +16951,9 @@ void MainWindow::applyClassNavigationLayout()
     const bool bottom = m_classNavigationLocation
         == ClassNavigationLocation::Bottom
         && static_cast<bool>(m_openDatabase);
+    // The title stays immediately below the navigation card, while the action
+    // footer remains the final row so it stays at the viewport bottom in
+    // either navigation mode.
     m_classPageRoot.RowDefinitions().GetAt(1).Height(
         GridLengthHelper::FromValueAndType(
             1.0,
@@ -16876,17 +16961,41 @@ void MainWindow::applyClassNavigationLayout()
             )
         );
     m_classPageRoot.RowDefinitions().GetAt(2).Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
+    m_classPageRoot.RowDefinitions().GetAt(3).Height(
         GridLengthHelper::FromValueAndType(
             1.0,
             bottom ? GridUnitType::Auto : GridUnitType::Star
             )
         );
-    Grid::SetRow(m_classSectionContentHost, bottom ? 1 : 2);
-    Grid::SetRow(m_classNavigationCard, bottom ? 2 : 1);
+    m_classPageRoot.RowDefinitions().GetAt(4).Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
+    // With bottom navigation the content occupies row 1, navigation row 2,
+    // title row 3, and footer row 4. With top navigation the navigation card
+    // is row 1, title row 2, content row 3, and footer row 4.
+    if (bottom)
+    {
+        Grid::SetRow(m_classSectionContentHost, 1);
+        Grid::SetRow(m_classNavigationCard, 2);
+        Grid::SetRow(m_classSectionTitle, 3);
+        Grid::SetRow(m_classSectionActionsHost, 4);
+    }
+    else
+    {
+        Grid::SetRow(m_classNavigationCard, 1);
+        Grid::SetRow(m_classSectionTitle, 2);
+        Grid::SetRow(m_classSectionContentHost, 3);
+        Grid::SetRow(m_classSectionActionsHost, 4);
+    }
 }
 
 void MainWindow::selectClassSection(int index)
 {
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
     if (index < 0
         || index >= static_cast<int>(m_classSectionScrollViews.size())
         || !m_classSectionContentHost)
@@ -16898,6 +17007,31 @@ void MainWindow::selectClassSection(int index)
     m_classSectionContentHost.Content(
         m_classSectionScrollViews[static_cast<std::size_t>(index)]
         );
+
+    if (m_classSectionTitle)
+    {
+        m_classSectionTitle.Text(winrt::hstring(
+            std::wstring(classSectionTitles[static_cast<std::size_t>(index)])
+            ));
+    }
+
+    if (m_classSectionActionsHost)
+    {
+        if (index == 1 && m_classRosterActions)
+        {
+            m_classSectionActionsHost.Content(m_classRosterActions);
+            m_classSectionActionsHost.Visibility(Visibility::Visible);
+        }
+        else if (index == 3 && m_speakingEvaluationActions)
+        {
+            m_classSectionActionsHost.Content(m_speakingEvaluationActions);
+            m_classSectionActionsHost.Visibility(Visibility::Visible);
+        }
+        else
+        {
+            m_classSectionActionsHost.Visibility(Visibility::Collapsed);
+        }
+    }
 
     if (m_classSectionSelectorBar
         && m_classSectionSelectorItems[static_cast<std::size_t>(index)])
@@ -17019,7 +17153,7 @@ void MainWindow::refreshClassesPage()
     if (selectedIndex >= 0)
     {
         presentClass(selectedIndex);
-        m_classStatusText.Text(L"Class directory loaded.");
+        m_classStatusText.Text({});
         m_classNotesStatusText.Text(L"Select a class tab to edit notes.");
     }
     else
@@ -17305,12 +17439,7 @@ void MainWindow::rebuildSpeakingAnalytics(
         return;
     }
 
-    const std::wstring scope = m_speakingAnalyticsName.empty()
-        ? L"All"
-        : asWide(m_speakingAnalyticsName);
-    m_speakingAnalyticsStatusText.Text(
-        hstring(L"Analytics loaded for " + scope + L".")
-        );
+    m_speakingAnalyticsStatusText.Text({});
 
     std::wstring summary = L"Class average: ";
     if (dashboard.selectedSnapshot.hasData)
@@ -17903,7 +18032,7 @@ void MainWindow::refreshSpeakingEvaluation()
     m_speakingEvaluationStatusText.Text(
         loaded->empty()
             ? L"No saved speaking evaluation; enter scores and save."
-            : L"Speaking evaluation loaded."
+            : L""
         );
     m_speakingEvaluationValidationText.Text({});
     m_speakingEvaluationValidationText.Visibility(Visibility::Collapsed);
@@ -18268,9 +18397,7 @@ void MainWindow::refreshSpeakingAiSelection()
     m_speakingAiResponseTextBox.Text({});
     m_speakingAiBatchRows.clear();
     m_speakingAiParsedComments.clear();
-    m_speakingAiStatusText.Text(
-        L"Private observations loaded for the selected student."
-        );
+    m_speakingAiStatusText.Text({});
     updateSpeakingAiActions();
     if (m_speakingBatchStatusText)
     {
@@ -19606,8 +19733,35 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
     content.Spacing(10.0);
     content.MaxWidth(1050.0);
 
+    auto header = Grid();
+    header.ColumnSpacing(10.0);
+    auto labelColumn = ColumnDefinition();
+    labelColumn.Width(GridLengthHelper::FromValueAndType(
+        1.0,
+        GridUnitType::Auto
+        ));
+    auto selectorColumn = ColumnDefinition();
+    selectorColumn.Width(GridLengthHelper::FromValueAndType(
+        1.0,
+        GridUnitType::Star
+        ));
+    auto navigationColumn = ColumnDefinition();
+    navigationColumn.Width(GridLengthHelper::FromValueAndType(
+        1.0,
+        GridUnitType::Auto
+        ));
+    header.ColumnDefinitions().Append(labelColumn);
+    header.ColumnDefinitions().Append(selectorColumn);
+    header.ColumnDefinitions().Append(navigationColumn);
+
+    auto studentLabel = TextBlock();
+    studentLabel.Text(L"Student:");
+    studentLabel.VerticalAlignment(VerticalAlignment::Center);
+    studentLabel.FontSize(18.0);
+    Grid::SetColumn(studentLabel, 0);
+    header.Children().Append(studentLabel);
+
     auto studentSelector = ComboBox();
-    studentSelector.Header(box_value(hstring(L"Student")));
     studentSelector.IsTabStop(true);
     studentSelector.MinWidth(360.0);
     setAutomationName(studentSelector, L"Speaking report editor student");
@@ -19633,7 +19787,8 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
         item.Tag(box_value(row));
         studentSelector.Items().Append(item);
     }
-    content.Children().Append(studentSelector);
+    Grid::SetColumn(studentSelector, 1);
+    header.Children().Append(studentSelector);
 
     auto navigation = StackPanel();
     navigation.Orientation(Orientation::Horizontal);
@@ -19646,7 +19801,107 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
     setAutomationName(nextButton, L"Next speaking report");
     navigation.Children().Append(previousButton);
     navigation.Children().Append(nextButton);
-    content.Children().Append(navigation);
+    Grid::SetColumn(navigation, 2);
+    header.Children().Append(navigation);
+    content.Children().Append(header);
+
+    auto notesLabel = TextBlock();
+    notesLabel.Text(L"Private Notes (not included in the report)");
+    notesLabel.FontSize(16.0);
+    content.Children().Append(notesLabel);
+
+    auto notesGrid = Grid();
+    notesGrid.ColumnSpacing(12.0);
+    notesGrid.ColumnDefinitions().Append(ColumnDefinition());
+    notesGrid.ColumnDefinitions().Append(ColumnDefinition());
+    auto didWellField = TextBox();
+    didWellField.Header(box_value(hstring(L"Did Well")));
+    didWellField.PlaceholderText(L"\u2022 Add positive observations...");
+    didWellField.AcceptsReturn(true);
+    didWellField.TextWrapping(TextWrapping::Wrap);
+    didWellField.Height(120.0);
+    didWellField.IsTabStop(true);
+    didWellField.TabIndex(1);
+    setAutomationName(didWellField, L"Speaking report Did Well notes");
+    Grid::SetColumn(didWellField, 0);
+    notesGrid.Children().Append(didWellField);
+
+    auto needsImprovementField = TextBox();
+    needsImprovementField.Header(box_value(hstring(L"Needs Improvement")));
+    needsImprovementField.PlaceholderText(L"\u2022 Add areas for improvement...");
+    needsImprovementField.AcceptsReturn(true);
+    needsImprovementField.TextWrapping(TextWrapping::Wrap);
+    needsImprovementField.Height(120.0);
+    needsImprovementField.IsTabStop(true);
+    needsImprovementField.TabIndex(2);
+    setAutomationName(
+        needsImprovementField,
+        L"Speaking report Needs Improvement notes"
+        );
+    Grid::SetColumn(needsImprovementField, 1);
+    notesGrid.Children().Append(needsImprovementField);
+    content.Children().Append(notesGrid);
+
+    auto aiActions = StackPanel();
+    aiActions.Orientation(Orientation::Horizontal);
+    aiActions.Spacing(8.0);
+    aiActions.HorizontalAlignment(HorizontalAlignment::Right);
+    auto previewAiButton = Button();
+    previewAiButton.Content(box_value(hstring(L"Preview AI Prompt")));
+    previewAiButton.IsTabStop(true);
+    previewAiButton.TabIndex(3);
+    setAutomationName(previewAiButton, L"Preview speaking report AI prompt");
+    aiActions.Children().Append(previewAiButton);
+    auto copyOpenAiButton = Button();
+    copyOpenAiButton.Content(box_value(hstring(L"Copy Prompt and Open ChatGPT")));
+    copyOpenAiButton.IsTabStop(true);
+    copyOpenAiButton.TabIndex(4);
+    setAutomationName(copyOpenAiButton, L"Copy and open speaking report AI prompt");
+    aiActions.Children().Append(copyOpenAiButton);
+    content.Children().Append(aiActions);
+
+    auto promptPreview = TextBox();
+    promptPreview.Header(box_value(hstring(L"AI Prompt Preview")));
+    promptPreview.AcceptsReturn(true);
+    promptPreview.TextWrapping(TextWrapping::Wrap);
+    promptPreview.IsReadOnly(true);
+    promptPreview.Height(180.0);
+    promptPreview.Visibility(Visibility::Collapsed);
+    setAutomationName(promptPreview, L"Speaking report AI prompt preview");
+    content.Children().Append(promptPreview);
+
+    auto reportScroll = ScrollViewer();
+    reportScroll.Height(430.0);
+    reportScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+    reportScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+    auto reportSurface = Border();
+    reportSurface.Padding(Thickness{28.0, 22.0, 28.0, 28.0});
+    reportSurface.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
+        Windows::UI::Color{255, 255, 255, 255}
+        ));
+    reportSurface.BorderBrush(Microsoft::UI::Xaml::Media::SolidColorBrush(
+        Windows::UI::Color{255, 92, 99, 108}
+        ));
+    reportSurface.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+    reportSurface.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+    auto report = StackPanel();
+    report.Spacing(12.0);
+    auto reportTitle = TextBlock();
+    reportTitle.Text(L"Speaking Evaluation");
+    reportTitle.FontSize(30.0);
+    reportTitle.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+    reportTitle.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+        Windows::UI::Color{255, 184, 20, 25}
+        ));
+    reportTitle.HorizontalAlignment(HorizontalAlignment::Center);
+    report.Children().Append(reportTitle);
+    auto reportDetails = TextBlock();
+    reportDetails.TextWrapping(TextWrapping::Wrap);
+    reportDetails.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+        Windows::UI::Color{255, 0, 0, 0}
+        ));
+    setAutomationName(reportDetails, L"Speaking report preview details");
+    report.Children().Append(reportDetails);
 
     auto scoreGrid = Grid();
     scoreGrid.ColumnSpacing(8.0);
@@ -19656,7 +19911,16 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
     };
     for (std::size_t index = 0; index < scoreNames.size(); ++index)
     {
-        scoreGrid.ColumnDefinitions().Append(ColumnDefinition());
+        const int row = static_cast<int>(index / 2);
+        const int column = static_cast<int>(index % 2);
+        if (scoreGrid.RowDefinitions().Size() <= static_cast<uint32_t>(row))
+        {
+            scoreGrid.RowDefinitions().Append(RowDefinition());
+        }
+        if (scoreGrid.ColumnDefinitions().Size() <= static_cast<uint32_t>(column))
+        {
+            scoreGrid.ColumnDefinitions().Append(ColumnDefinition());
+        }
         auto scoreField = TextBox();
         scoreField.Header(box_value(hstring(scoreNames[index])));
         scoreField.MaxLength(2);
@@ -19665,26 +19929,24 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
             scoreField,
             L"Speaking report " + std::wstring(scoreNames[index])
             );
-        Grid::SetColumn(scoreField, static_cast<int>(index));
+        scoreField.TabIndex(10 + static_cast<int32_t>(index));
+        Grid::SetRow(scoreField, row);
+        Grid::SetColumn(scoreField, column);
         scoreGrid.Children().Append(scoreField);
     }
-    content.Children().Append(scoreGrid);
+    report.Children().Append(scoreGrid);
 
     auto commentsField = TextBox();
     commentsField.Header(box_value(hstring(L"Comments")));
     commentsField.AcceptsReturn(true);
     commentsField.TextWrapping(TextWrapping::Wrap);
     commentsField.Height(120.0);
+    commentsField.TabIndex(16);
     setAutomationName(commentsField, L"Speaking report comments");
-    content.Children().Append(commentsField);
-
-    auto notesField = TextBox();
-    notesField.Header(box_value(hstring(L"Private Notes (not included in the report)")));
-    notesField.AcceptsReturn(true);
-    notesField.TextWrapping(TextWrapping::Wrap);
-    notesField.Height(120.0);
-    setAutomationName(notesField, L"Speaking report private notes");
-    content.Children().Append(notesField);
+    report.Children().Append(commentsField);
+    reportSurface.Child(report);
+    reportScroll.Content(reportSurface);
+    content.Children().Append(reportScroll);
 
     auto status = TextBlock();
     status.TextWrapping(TextWrapping::Wrap);
@@ -19701,6 +19963,49 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
     const auto selectedRow = [&studentSelector]() {
         const auto item = studentSelector.SelectedItem().try_as<ComboBoxItem>();
         return item ? boxedInt(item.Tag()) : -1;
+    };
+    const auto currentAiPrompt = [&]() {
+        const int row = selectedRow();
+        if (row < 0 || row >= static_cast<int>(m_speakingEvaluationCellBoxes.size()))
+        {
+            return std::string{};
+        }
+        const auto& cells = m_speakingEvaluationCellBoxes[
+            static_cast<std::size_t>(row)
+            ];
+        if (cells.size() <= static_cast<std::size_t>(notesColumn))
+        {
+            return std::string{};
+        }
+
+        classmngr::engine::SpeakingEvaluationAiPromptInput input;
+        input.grade = classmngr::engine::SpeakingEvaluationReportModel::elementaryGrade(
+            m_classInfo.classGrade
+            );
+        input.englishName = asUtf8(
+            cells[static_cast<std::size_t>(englishColumn)].Text()
+            );
+        input.koreanName = asUtf8(
+            cells[static_cast<std::size_t>(koreanColumn)].Text()
+            );
+        input.didWell = asUtf8(didWellField.Text());
+        input.needsImprovement = asUtf8(needsImprovementField.Text());
+        input.voice = m_speakingAiVoiceSelector
+            && m_speakingAiVoiceSelector.SelectedIndex() == 1
+            ? classmngr::engine::SpeakingEvaluationAiVoice::ThirdPerson
+            : classmngr::engine::SpeakingEvaluationAiVoice::DirectToStudent;
+        return classmngr::engine::SpeakingEvaluationAiPromptService::canBuildPrompt(
+            input
+            )
+            ? classmngr::engine::SpeakingEvaluationAiPromptService::buildCommentPrompt(
+                input
+                )
+            : std::string{};
+    };
+    const auto updateAiActions = [&]() {
+        const bool enabled = !currentAiPrompt().empty();
+        previewAiButton.IsEnabled(enabled);
+        copyOpenAiButton.IsEnabled(enabled);
     };
     const auto refreshEditor = [&]() {
         const int row = selectedRow();
@@ -19720,9 +20025,35 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
                 ].Text());
         }
         commentsField.Text(cells[static_cast<std::size_t>(commentsColumn)].Text());
-        notesField.Text(cells[static_cast<std::size_t>(notesColumn)].Text());
+        const auto notes = splitSpeakingAiPrivateNotes(asUtf8(
+            cells[static_cast<std::size_t>(notesColumn)].Text()
+            ));
+        didWellField.Text(asWide(bulletizeSpeakingAiNotes(notes.didWell)));
+        needsImprovementField.Text(
+            asWide(bulletizeSpeakingAiNotes(notes.needsImprovement))
+            );
         updating = false;
-        status.Text(L"Edit the report values here or use the evaluation table.");
+        promptPreview.Text({});
+        promptPreview.Visibility(Visibility::Collapsed);
+        std::wstring name = cells[static_cast<std::size_t>(englishColumn)].Text().c_str();
+        const std::wstring korean = cells[static_cast<std::size_t>(koreanColumn)].Text().c_str();
+        if (!name.empty() && !korean.empty())
+        {
+            name += L" (" + korean + L")";
+        }
+        else if (name.empty())
+        {
+            name = korean;
+        }
+        reportDetails.Text(hstring(
+            L"Student: " + name
+            + L"\nClass: " + asWide(m_classInfo.classGrade)
+            + L" " + asWide(m_classInfo.classLevel)
+            + L"\nNative Teacher: " + asWide(m_classInfo.teacherEn)
+            + L"\nKorean Teacher: " + asWide(m_classInfo.teacherKr)
+            ));
+        status.Text(L"Edit report values and private observations; save the evaluation to persist them.");
+        updateAiActions();
     };
 
     studentSelector.SelectionChanged(
@@ -19770,6 +20101,7 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
                     m_speakingEvaluationCellBoxes[static_cast<std::size_t>(row)][
                         static_cast<std::size_t>(firstScoreColumn) + index
                         ].Text(sender.Text());
+                    markSpeakingEvaluationDirty();
                 }
             }
             );
@@ -19796,20 +20128,107 @@ winrt::fire_and_forget MainWindow::openSpeakingReportEditor()
                     m_speakingEvaluationCellBoxes[static_cast<std::size_t>(row)][
                         static_cast<std::size_t>(column)
                         ].Text(sender.Text());
+                    markSpeakingEvaluationDirty();
                 }
             }
             );
     };
     connectEditorField(commentsField, commentsColumn);
-    connectEditorField(notesField, notesColumn);
+    const auto savePrivateNotes = [this,
+                                   &updating,
+                                   &selectedRow,
+                                   &didWellField,
+                                   &needsImprovementField,
+                                   notesColumn,
+                                   &updateAiActions](TextBox const&,
+                                                     TextBoxTextChangingEventArgs const&) {
+        if (updating)
+        {
+            return;
+        }
+        const int row = selectedRow();
+        if (row < 0 || row >= static_cast<int>(m_speakingEvaluationCellBoxes.size()))
+        {
+            return;
+        }
+        auto& cells = m_speakingEvaluationCellBoxes[static_cast<std::size_t>(row)];
+        if (cells.size() <= static_cast<std::size_t>(notesColumn))
+        {
+            return;
+        }
+        cells[static_cast<std::size_t>(notesColumn)].Text(asWide(
+            joinSpeakingAiPrivateNotes(
+                bulletizeSpeakingAiNotes(asUtf8(didWellField.Text())),
+                bulletizeSpeakingAiNotes(asUtf8(needsImprovementField.Text()))
+                )
+            ));
+        markSpeakingEvaluationDirty();
+        updateAiActions();
+    };
+    didWellField.TextChanging(savePrivateNotes);
+    needsImprovementField.TextChanging(savePrivateNotes);
+    previewAiButton.Click(
+        [&currentAiPrompt, &promptPreview, &status](auto const&, auto const&) {
+            const std::string prompt = currentAiPrompt();
+            if (prompt.empty())
+            {
+                status.Text(
+                    L"AI prompts require an E4-E6 class and at least one observation in both sections."
+                    );
+                return;
+            }
+            promptPreview.Text(asWide(prompt));
+            promptPreview.Visibility(Visibility::Visible);
+            status.Text(L"Review the privacy-preserving AI prompt before copying it.");
+        }
+        );
+    copyOpenAiButton.Click(
+        [&currentAiPrompt, &status](auto const&, auto const&) {
+            const std::string prompt = currentAiPrompt();
+            if (prompt.empty())
+            {
+                status.Text(
+                    L"AI prompts require an E4-E6 class and at least one observation in both sections."
+                    );
+                return;
+            }
+            const auto copied = classmngr::windows::winui::WindowsClipboard::writeText(
+                prompt
+                );
+            if (!copied)
+            {
+                status.Text(hstring(
+                    L"The AI prompt could not be copied: "
+                        + asWide(copied.error().message)
+                    ));
+                return;
+            }
+            const auto opened = classmngr::windows::winui::WindowsUrlLauncher::openUrl(
+                "https://chatgpt.com/"
+                );
+            status.Text(
+                opened
+                    ? L"AI prompt copied; ChatGPT was opened for review."
+                    : hstring(
+                        L"AI prompt copied, but ChatGPT could not be opened: "
+                            + asWide(opened.error().message)
+                        )
+                );
+        }
+        );
 
     studentSelector.SelectedIndex(0);
     refreshEditor();
 
+    auto dialogScroll = ScrollViewer();
+    dialogScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+    dialogScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+    dialogScroll.Content(content);
+
     auto dialog = ContentDialog();
     dialog.XamlRoot(RootGrid().XamlRoot());
     dialog.Title(box_value(hstring(L"Speaking Evaluation Reports")));
-    dialog.Content(content);
+    dialog.Content(dialogScroll);
     dialog.PrimaryButtonText(L"Print");
     dialog.SecondaryButtonText(L"Save As PDF");
     dialog.CloseButtonText(L"Close");
@@ -20953,7 +21372,7 @@ void MainWindow::ClassSelection_SelectionChanged(
     clearClassDirty();
     m_classStatusText.Text(
         resolvedIndex >= 0
-            ? L"Class information loaded."
+            ? L""
             : L"No class selected."
         );
     m_classNotesStatusText.Text(

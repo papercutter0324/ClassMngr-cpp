@@ -392,8 +392,10 @@ private:
     void refreshSpeakingAiSelection();
     void generateSpeakingAiPrompt();
     void copySpeakingAiPrompt(bool openProvider);
+    void refreshSpeakingAiBatchSelection();
     void generateSpeakingAiBatchPrompt();
     void parseSpeakingAiBatchResponse();
+    void rebuildSpeakingAiBatchReview();
     void applySpeakingAiStudentComment();
     void applySpeakingAiBatchComments();
     void updateSpeakingAiActions();
@@ -914,6 +916,8 @@ private:
         m_speakingEvaluationGenerateCommentsButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button
         m_speakingEvaluationPasteButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid
+        m_speakingEvaluationActions{nullptr};
     std::vector<std::vector<Microsoft::UI::Xaml::Controls::TextBox>>
         m_speakingEvaluationCellBoxes;
     classmngr::engine::SpeakingEvaluationRows m_speakingEvaluationRows;
@@ -955,6 +959,12 @@ private:
         m_speakingAiResponseTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock
         m_speakingAiStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView
+        m_speakingAiBatchSelectionList{nullptr};
+    Microsoft::UI::Xaml::Controls::ListView
+        m_speakingAiBatchReviewList{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_speakingAiParseSummary{nullptr};
     Microsoft::UI::Xaml::Controls::Button
         m_speakingAiGenerateButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button
@@ -1002,7 +1012,10 @@ private:
     Microsoft::UI::Xaml::Controls::SelectorBar m_classSectionSelectorBar{nullptr};
     std::array<Microsoft::UI::Xaml::Controls::SelectorBarItem, 6>
         m_classSectionSelectorItems{};
+    Microsoft::UI::Xaml::Controls::TextBlock m_classSectionTitle{nullptr};
     Microsoft::UI::Xaml::Controls::ContentControl m_classSectionContentHost{nullptr};
+    Microsoft::UI::Xaml::Controls::ContentControl
+        m_classSectionActionsHost{nullptr};
     std::array<Microsoft::UI::Xaml::Controls::ScrollViewer, 6>
         m_classSectionScrollViews{};
     Microsoft::UI::Xaml::Controls::Border m_classNavigationCard{nullptr};
@@ -1099,6 +1112,7 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_classRosterImportScoresButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterAddColumnButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_classRosterRemoveColumnButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_classRosterActions{nullptr};
     classmngr::engine::Roster m_classRoster;
     std::vector<ClassRosterTransferTarget> m_classRosterTransferTargets;
     std::vector<std::vector<Microsoft::UI::Xaml::Controls::TextBox>>
