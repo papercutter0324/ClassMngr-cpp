@@ -202,7 +202,7 @@ void RosterEditorWidget::buildUi()
         QStringLiteral("columns"),
         m_table
         );
-    contentLayout()->addWidget(m_table);
+    contentLayout()->addWidget(m_table, 1);
     contentLayout()->addWidget(m_validationMessage);
 
     m_importButton = new TextFitPushButton(tr("Import Scores"), this);

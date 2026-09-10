@@ -192,7 +192,7 @@ void SpeakingEvalPage::buildUi()
         );
 
     contentLayout()->addWidget(m_emptyLabel);
-    contentLayout()->addWidget(m_table);
+    contentLayout()->addWidget(m_table, 1);
     contentLayout()->addWidget(m_validationMessage);
 
     setupTable();
