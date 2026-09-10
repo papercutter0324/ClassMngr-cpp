@@ -272,6 +272,16 @@ build successfully once the command has host-level filesystem access. Apply
 the same host rule to the x86 Debug/Release and x64 Release lanes before
 collecting runtime evidence.
 
+### Git index access note
+
+In the restricted sandbox, Git staging and commit operations can fail with
+`Unable to create '.git/index.lock': Permission denied` because the repository
+index is not writable there, even though the working tree is writable. When a
+commit is explicitly required, run the Git operation from a host-level shell
+with write access to `.git`; on this machine, use the full Windows PowerShell
+executable at `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
+instead of the WindowsApps `pwsh.exe` alias.
+
 Next work, in order:
 
 1. Close the remaining Phase 6 x64 semantic/resource, x86 resource,
