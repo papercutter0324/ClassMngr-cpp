@@ -2,20 +2,41 @@
 
 ## Detailed Current State
 
-The `agent_docs` framework was initialized for codex_workflow v1.1.17 using verified repository evidence. The required context documents describe the product purpose, core technologies, and stable project structure. No active deployment plan exists.
+Medium deployment `report_editor_ui_20260911` updated the WinUI Speaking
+Evaluation Report Editor after direct comparison with
+`SpeakingEvalReportDialog` and `SpeakingEvalPrivateNotesEditor` in the Qt
+feature.
 
 ## Session Changes
 
-The six framework documents were populated: overview, core technologies, structure, progress, diary, and latest session work. This task made no source or build-system changes.
+- `src/platform/windows/winui/MainWindow.xaml.cpp` now presents student selection
+  and cyclic navigation on one row, visible two-column private notes, prompt preview
+  and copy/open actions, and a scrollable white report surface containing editable
+  scores and comments.
+- Private notes serialize back to the canonical `[Did Well]` and `[Needs
+  Improvement]` markers. The display/save helpers normalize per-line bullets so Qt
+  and WinUI observation content remain acceptable to the engine AI-prompt service.
+- Editor changes now mark the evaluation dirty, as the grid editors do.
 
 ## Verification
 
-All six framework documents exist and contain no bootstrap template marker. The project README, build instructions, CMake configuration, source layout, and test layout were inspected for the recorded facts. This task did not edit source files, entry points, personalization, Git state, or user-level files.
+`git diff --check` passes. The first focused x64 WinUI Debug build failed before
+the edited source because parallel compilation could not open the shared engine
+PDB (`C1041`). A serial engine rebuild then completed. The direct WinUI project
+build subsequently stopped before source compilation in the known host MSBuild
+FileTracker initialization failure: `UnauthorizedAccessException`/`MSB4018`,
+despite the script's `TrackFileAccess=false` property. No build-success or
+source-level compiler claim is made.
 
 ## Pending Work and Blockers
 
-No implementation work or deployment plan was assigned, and no bootstrap blocker was identified. Future work must define its own scope and validation.
+Resolve the FileTracker host failure, then run the staged Phase 6
+speaking-evaluation test. UI rendering must be manually reviewed once a staged
+executable is available. Phase 7 remains responsible for real report rendering,
+PDF save, printing, and Office automation.
 
 ## Next Entry Point
 
-Read `project_overview.md`, `project_core_tech.md`, and `project_structure.md` before planning changes; use `project_progress.md` and `project_diary.md` for current state and durable lessons.
+Start with `MainWindow::openSpeakingReportEditor`, then retry the direct
+`scripts/build_windows_winui.ps1` x64 Debug command after resolving FileTracker.
+Preserve unrelated existing work in the same WinUI source and header files.
