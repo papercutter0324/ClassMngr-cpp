@@ -6,6 +6,41 @@ namespace winrt::ClassMngrWinUI::implementation
 {
 using namespace MainWindowDetail;
 
+namespace
+{
+void selectHomeInformationTab(
+    Microsoft::UI::Xaml::Controls::Page const& page
+    )
+{
+    const auto workspace = page.Content().try_as<
+        Microsoft::UI::Xaml::Controls::Grid>();
+    if (!workspace || workspace.Children().Size() < 2)
+    {
+        return;
+    }
+
+    const auto tabs = workspace.Children().GetAt(0).try_as<
+        Microsoft::UI::Xaml::Controls::Pivot>();
+    const auto content = workspace.Children().GetAt(1).try_as<
+        Microsoft::UI::Xaml::Controls::Grid>();
+    if (!tabs || !content || tabs.Items().Size() == 0)
+    {
+        return;
+    }
+
+    tabs.SelectedIndex(0);
+    const auto children = content.Children();
+    for (uint32_t index = 0; index < children.Size(); ++index)
+    {
+        children.GetAt(index).Visibility(
+            index == 0
+                ? Microsoft::UI::Xaml::Visibility::Visible
+                : Microsoft::UI::Xaml::Visibility::Collapsed
+            );
+    }
+}
+} // namespace
+
 void MainWindow::ShellInfoMenuItem_Click(
     Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::RoutedEventArgs const& arguments
@@ -211,12 +246,9 @@ void MainWindow::NavigationView_SelectionChanged(
         navigateTo(homePageId);
         const auto homePage = m_contentFrame.Content().try_as<
             Microsoft::UI::Xaml::Controls::Page>();
-        const auto homeTabs = homePage
-            ? homePage.Content().try_as<Microsoft::UI::Xaml::Controls::Pivot>()
-            : nullptr;
-        if (homeTabs)
+        if (homePage)
         {
-            homeTabs.SelectedIndex(0);
+            selectHomeInformationTab(homePage);
         }
         return;
     }
@@ -295,6 +327,10 @@ void MainWindow::ContentFrame_Navigated(
         pageId = std::wstring(homePageId);
     }
     populatePage(page, pageId);
+    if (pageId == homePageId)
+    {
+        selectHomeInformationTab(page);
+    }
     m_currentPageId = pageId;
 
     m_selectionChanging = true;
@@ -814,44 +850,106 @@ void MainWindow::populateHomePage(
         scroll.Content(content);
         return scroll;
     };
-    const auto makePivotItem = [&scrollTab](
-                                    wchar_t const* header,
-                                    StackPanel const& content,
-                                    wchar_t const* automationName) {
+    const auto makeWorkspaceTab = [](wchar_t const* header,
+                                     wchar_t const* automationName) {
         auto item = PivotItem();
         item.Header(winrt::box_value(winrt::hstring(header)));
-        item.Content(scrollTab(content));
+        // The Pivot is used only for the tab strip.  Keeping the page
+        // content outside the Pivot avoids losing the selected item's visual
+        // tree when the Home page is cached by Frame navigation.
+        item.Content(Grid());
         setAutomationName(item, automationName);
         return item;
     };
 
     auto personalDetailsHost = ContentControl();
     populatePersonalDetailsPage(personalDetailsHost, false);
-    auto informationContent = Grid();
-    informationContent.Children().Append(personalDetailsHost);
-
-    auto informationItem = PivotItem();
-    informationItem.Header(winrt::box_value(winrt::hstring(L"My Information")));
-    informationItem.Content(informationContent);
-    setAutomationName(informationItem, L"My Information workspace tab");
+    auto workspaceContent = Grid();
+    setAutomationName(workspaceContent, L"My Workspace content");
+    workspaceContent.Children().Append(personalDetailsHost);
+    workspaceContent.Children().Append(scrollTab(scheduleRoot));
+    workspaceContent.Children().Append(scrollTab(calendarRoot));
+    const auto workspaceChildren = workspaceContent.Children();
+    for (uint32_t index = 0; index < workspaceChildren.Size(); ++index)
+    {
+        workspaceChildren.GetAt(index).Visibility(
+            index == 0 ? Visibility::Visible : Visibility::Collapsed
+            );
+    }
 
     auto tabs = Pivot();
     tabs.IsTabStop(true);
     tabs.TabIndex(0);
     setAutomationName(tabs, L"My Workspace tabs");
-    tabs.Items().Append(informationItem);
-    tabs.Items().Append(makePivotItem(
+    tabs.Items().Append(makeWorkspaceTab(
+        L"My Information",
+        L"My Information workspace tab"
+        ));
+    tabs.Items().Append(makeWorkspaceTab(
         L"Schedule",
-        scheduleRoot,
         L"Schedule workspace tab"
         ));
-    tabs.Items().Append(makePivotItem(
+    tabs.Items().Append(makeWorkspaceTab(
         L"Calendar",
-        calendarRoot,
         L"Calendar workspace tab"
         ));
     tabs.SelectedIndex(0);
-    page.Content(tabs);
+    tabs.SelectionChanged([workspaceContent](auto const& sender, auto const&) {
+        const auto pivot = sender.template try_as<Pivot>();
+        if (!pivot)
+        {
+            return;
+        }
+
+        const int32_t selectedIndex = pivot.SelectedIndex();
+        const auto children = workspaceContent.Children();
+        if (selectedIndex < 0
+            || selectedIndex >= static_cast<int32_t>(children.Size()))
+        {
+            // Pivot briefly reports no selection while a cached Home page is
+            // reattached. Keep the current content instead of collapsing all
+            // workspace panels during that transient state.
+            return;
+        }
+        for (uint32_t index = 0; index < children.Size(); ++index)
+        {
+            children.GetAt(index).Visibility(
+                static_cast<int32_t>(index) == selectedIndex
+                    ? Visibility::Visible
+                    : Visibility::Collapsed
+                );
+        }
+    });
+    tabs.Loaded([workspaceContent](auto const& sender, auto const&) {
+        const auto pivot = sender.template try_as<Pivot>();
+        if (!pivot)
+        {
+            return;
+        }
+
+        // Reattached cached pages can restore a transient Pivot selection
+        // after NavigationFrame::Navigated has already selected this tab.
+        // Reset the tab and its sibling content once the Pivot is loaded.
+        pivot.SelectedIndex(0);
+        const auto children = workspaceContent.Children();
+        for (uint32_t index = 0; index < children.Size(); ++index)
+        {
+            children.GetAt(index).Visibility(
+                index == 0 ? Visibility::Visible : Visibility::Collapsed
+                );
+        }
+    });
+
+    auto workspace = Grid();
+    auto tabsRow = RowDefinition();
+    tabsRow.Height(GridLengthHelper::FromPixels(60.0));
+    workspace.RowDefinitions().Append(tabsRow);
+    workspace.RowDefinitions().Append(RowDefinition());
+    Grid::SetRow(tabs, 0);
+    Grid::SetRow(workspaceContent, 1);
+    workspace.Children().Append(tabs);
+    workspace.Children().Append(workspaceContent);
+    page.Content(workspace);
 }
 
 } // namespace winrt::ClassMngrWinUI::implementation
