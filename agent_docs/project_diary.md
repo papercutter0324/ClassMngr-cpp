@@ -1,5 +1,13 @@
 # Project Diary
 
+## Classes Navigation Layout
+
+- The Qt Classes page keeps section navigation and class/grade navigation outside
+  the selected editor stack. When section navigation is shown above the class
+  selectors, its placeholder page spacing must be zero; otherwise the unused
+  stacked-page area creates an uneven gap and makes the navigation rows appear
+  to shift.
+
 ## Decisions and Lessons
 
 - For the WinUI My Workspace lifecycle bug, do not rely on late Pivot

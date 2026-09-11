@@ -1,5 +1,33 @@
 # Latest Session Work
 
+## Latest Deployment Handoff
+
+Deployment `classes_layout_medium_20260911` is complete. The Qt Classes page
+now displays its section selector above the class/grade selector rows, followed
+by the selected editor content. The navigation rows remain outside
+`m_editorStack`, so switching Details, Roster, Analytics, Evaluations, or other
+sections does not move the class/grade selectors.
+
+### Changes
+
+- `src/features/classes/ui/classes_page.cpp` adds the section selector before
+  the class/grade selector container and sets its unused placeholder page
+  spacing to zero.
+- `tests/classes_page_tests.cpp` updates the navigation-row spacing assertion
+  and adds a regression check for ordering and stable selector positions while
+  switching sections.
+
+### Verification
+
+- The Debug `ClassMngrClassesPageTests` target built successfully with the
+  existing `/FORCE` linker warning.
+- The complete `ClassMngrClassesPageTests.exe -platform offscreen` run passed.
+- `git diff --check` passed.
+
+The separate `my_information_lifecycle_20260911` WinUI deployment remains
+paused and UI-Automation-unverified; preserve its protected unrelated edit if
+that work resumes.
+
 ## Current Deployment Handoff
 
 Deployment `my_information_lifecycle_20260911` made a source-only fix for the

@@ -1,5 +1,21 @@
 # Project Progress
 
+## Latest Completed Deployment
+
+Deployment `classes_layout_medium_20260911` is complete. The Qt Classes page
+now places the Details/Roster/Analytics/Evaluations section selector above the
+class/grade selector rows. Both navigation groups remain outside the selected
+editor stack, so changing sections leaves the class/grade rows in place.
+
+The section selector's placeholder page spacing is disabled because its actual
+content is hosted by the editor stack below the navigation rows. The focused
+Debug target `ClassMngrClassesPageTests` built successfully with the repository's
+existing linker `/FORCE` warning, and the complete test executable passed in
+offscreen mode. `git diff --check` also passes.
+
+The implementation is in `src/features/classes/ui/classes_page.cpp`; ordering and
+positional stability are covered by `tests/classes_page_tests.cpp`.
+
 ## Active Deployment Handoff
 
 Deployment `my_information_lifecycle_20260911` addresses the WinUI My Information

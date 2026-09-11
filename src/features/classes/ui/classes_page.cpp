@@ -727,7 +727,6 @@ void ClassesPage::buildUi()
     m_classTabsLayout = new QVBoxLayout(m_classTabsContainer);
     m_classTabsLayout->setContentsMargins(0, 0, 0, 0);
     m_classTabsLayout->setSpacing(0);
-    navigationLayout->addWidget(m_classTabsContainer);
 
     m_sectionTabs =
         new NavigationTabWidget(
@@ -736,7 +735,15 @@ void ClassesPage::buildUi()
             m_navigationContainer
             );
     m_sectionTabs->setObjectName("classesSectionTabs");
+    // Section pages are placeholders; the selected editor is hosted by
+    // m_editorStack below the navigation rows, so do not reserve page space
+    // between this strip and the class/grade selectors.
+    m_sectionTabs->setPageSpacing(0);
+    // Keep the section selector above the class/grade selectors.  Both
+    // navigation rows stay outside m_editorStack, so changing Details,
+    // Roster, Analytics, or another section cannot move the class selectors.
     navigationLayout->addWidget(m_sectionTabs);
+    navigationLayout->addWidget(m_classTabsContainer);
     rebuildSectionTabs();
     contentLayout()->addWidget(m_navigationContainer);
 

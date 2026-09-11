@@ -13,6 +13,7 @@
 
 - The engine owns reusable domain services, persistence, validation, document/report output, and other logic that must remain usable without Qt.
 - The Qt-side object libraries separate core, data, domain, shared UI, features, and application services before they are assembled into the runtime.
+- The Qt Classes feature owns class selection, section navigation, and selected-editor-stack composition.
 - Platform directories adapt the products to their host UI and deployment environment.
 
 ## Main Interfaces and Integration Boundaries

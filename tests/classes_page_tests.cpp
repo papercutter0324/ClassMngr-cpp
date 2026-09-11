@@ -129,6 +129,7 @@ private slots:
     void selectedGradeRemainsVisibleWhenCurrentClassIsFilteredOut();
     void navigationControlsUsePills();
     void navigationRowsUseUniformSpacing();
+    void sectionTabsStayAboveClassSelectorsWhenSectionChanges();
     void filterPillsKeepStaticWidthsWhenPageResizes();
     void classInfoShowsInlineValidationAndBlocksManualSave();
     void speakingEvaluationShowsInlineValidationAndBlocksManualSave();
@@ -644,8 +645,52 @@ void ClassesPageTests::navigationRowsUseUniformSpacing()
     };
 
     QCOMPARE(
-        rowGap(gradeTabs->tabStrip(), classTabs->tabStrip()),
-        rowGap(classTabs->tabStrip(), sectionTabs->tabStrip())
+        rowGap(sectionTabs->tabStrip(), gradeTabs->tabStrip()),
+        rowGap(gradeTabs->tabStrip(), classTabs->tabStrip())
+        );
+}
+
+void ClassesPageTests::sectionTabsStayAboveClassSelectorsWhenSectionChanges()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42, ClassesSection::Details));
+    page.show();
+    QApplication::processEvents();
+
+    auto* sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    auto* gradeTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesGradeTabs")
+        );
+    QVERIFY(sectionTabs);
+    QVERIFY(gradeTabs);
+
+    auto* classTabs = gradeTabs->currentWidget()
+        ? gradeTabs->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(classTabs);
+
+    const int sectionTop = sectionTabs->mapTo(&page, QPoint(0, 0)).y();
+    const int gradeTop = gradeTabs->mapTo(&page, QPoint(0, 0)).y();
+    const int classTop = classTabs->mapTo(&page, QPoint(0, 0)).y();
+    QVERIFY(sectionTop < gradeTop);
+    QVERIFY(gradeTop < classTop);
+
+    sectionTabs->setCurrentIndex(2);
+    QApplication::processEvents();
+
+    QCOMPARE(
+        gradeTabs->mapTo(&page, QPoint(0, 0)).y(),
+        gradeTop
+        );
+    QCOMPARE(
+        classTabs->mapTo(&page, QPoint(0, 0)).y(),
+        classTop
         );
 }
 
