@@ -8,21 +8,11 @@ using namespace MainWindowDetail;
 
 namespace
 {
-void selectHomeInformationTab(
-    Microsoft::UI::Xaml::Controls::Page const& page
+void resetHomeInformationContent(
+    Microsoft::UI::Xaml::Controls::Pivot const& tabs,
+    Microsoft::UI::Xaml::Controls::Grid const& content
     )
 {
-    const auto workspace = page.Content().try_as<
-        Microsoft::UI::Xaml::Controls::Grid>();
-    if (!workspace || workspace.Children().Size() < 2)
-    {
-        return;
-    }
-
-    const auto tabs = workspace.Children().GetAt(0).try_as<
-        Microsoft::UI::Xaml::Controls::Pivot>();
-    const auto content = workspace.Children().GetAt(1).try_as<
-        Microsoft::UI::Xaml::Controls::Grid>();
     if (!tabs || !content || tabs.Items().Size() == 0)
     {
         return;
@@ -38,6 +28,24 @@ void selectHomeInformationTab(
                 : Microsoft::UI::Xaml::Visibility::Collapsed
             );
     }
+}
+
+void selectHomeInformationTab(
+    Microsoft::UI::Xaml::Controls::Page const& page
+    )
+{
+    const auto workspace = page.Content().try_as<
+        Microsoft::UI::Xaml::Controls::Grid>();
+    if (!workspace || workspace.Children().Size() < 2)
+    {
+        return;
+    }
+
+    const auto tabs = workspace.Children().GetAt(0).try_as<
+        Microsoft::UI::Xaml::Controls::Pivot>();
+    const auto content = workspace.Children().GetAt(1).try_as<
+        Microsoft::UI::Xaml::Controls::Grid>();
+    resetHomeInformationContent(tabs, content);
 }
 } // namespace
 
@@ -330,6 +338,25 @@ void MainWindow::ContentFrame_Navigated(
     if (pageId == homePageId)
     {
         selectHomeInformationTab(page);
+
+        // A cached Page can reattach its Pivot after Navigated and emit a
+        // valid selection for the previously active tab. Apply one final
+        // reset at low priority, after the reattachment and its selection
+        // events have settled.
+        const auto dispatcher = DispatcherQueue();
+        if (dispatcher)
+        {
+            const auto weak = get_weak();
+            static_cast<void>(dispatcher.TryEnqueue(
+                Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
+                [weak, page]() {
+                    if (weak.get())
+                    {
+                        selectHomeInformationTab(page);
+                    }
+                }
+                ));
+        }
     }
     m_currentPageId = pageId;
 
@@ -920,7 +947,8 @@ void MainWindow::populateHomePage(
                 );
         }
     });
-    tabs.Loaded([workspaceContent](auto const& sender, auto const&) {
+    const auto homeWeak = get_weak();
+    tabs.Loaded([homeWeak, workspaceContent](auto const& sender, auto const&) {
         const auto pivot = sender.template try_as<Pivot>();
         if (!pivot)
         {
@@ -930,13 +958,26 @@ void MainWindow::populateHomePage(
         // Reattached cached pages can restore a transient Pivot selection
         // after NavigationFrame::Navigated has already selected this tab.
         // Reset the tab and its sibling content once the Pivot is loaded.
-        pivot.SelectedIndex(0);
-        const auto children = workspaceContent.Children();
-        for (uint32_t index = 0; index < children.Size(); ++index)
+        resetHomeInformationContent(pivot, workspaceContent);
+
+        if (auto self = homeWeak.get())
         {
-            children.GetAt(index).Visibility(
-                index == 0 ? Visibility::Visible : Visibility::Collapsed
-                );
+            const auto dispatcher = self->DispatcherQueue();
+            if (dispatcher)
+            {
+                static_cast<void>(dispatcher.TryEnqueue(
+                    Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
+                    [homeWeak, pivot, workspaceContent]() {
+                        if (homeWeak.get())
+                        {
+                            resetHomeInformationContent(
+                                pivot,
+                                workspaceContent
+                                );
+                        }
+                    }
+                    ));
+            }
         }
     });
 
