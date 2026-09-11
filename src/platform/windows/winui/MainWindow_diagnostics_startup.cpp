@@ -337,6 +337,29 @@ bool MainWindow::runPhase6SubPrepChecks()
         return fail(1);
     }
 
+    const auto retainedSubPrepScroll = m_subPrepScroll;
+    navigateTo(classesPageId);
+    navigateTo(subPrepPageId);
+    const auto returnedSubPrepPage = m_contentFrame
+        ? m_contentFrame.Content().try_as<
+              Microsoft::UI::Xaml::Controls::Page>()
+        : Microsoft::UI::Xaml::Controls::Page{nullptr};
+    const bool returnReady =
+        m_currentPageId == subPrepPageId
+        && retainedSubPrepScroll
+        && returnedSubPrepPage
+        && returnedSubPrepPage.Content().try_as<
+               Microsoft::UI::Xaml::Controls::ScrollViewer>()
+            == retainedSubPrepScroll
+        && m_subPrepTabs
+        && m_subPrepTabs.Items().Size() == 3
+        && m_subPrepStatusText
+        && m_subPrepStatusText.Text() == L"No database open.";
+    if (!returnReady)
+    {
+        return fail(262144);
+    }
+
     auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
     if (!opened || *opened == nullptr)
     {

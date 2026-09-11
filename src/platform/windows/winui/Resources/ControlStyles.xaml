@@ -28,6 +28,34 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!-- Keep the labels for the top-level page tabs visually consistent across
+         Pivot and SelectorBar implementations. -->
+    <Style x:Key="Phase3TopTabTextBlockStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Phase3TextFontFamily}" />
+        <Setter Property="FontSize" Value="{ThemeResource PivotHeaderItemFontSize}" />
+        <Setter Property="FontWeight" Value="{StaticResource Phase3TitleFontWeight}" />
+        <Setter Property="IsTextScaleFactorEnabled" Value="True" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="Phase3TopTabPivotStyle" TargetType="Pivot">
+        <Setter Property="FontFamily" Value="{StaticResource Phase3TextFontFamily}" />
+        <Setter Property="FontSize" Value="{ThemeResource PivotHeaderItemFontSize}" />
+        <Setter Property="FontWeight" Value="{StaticResource Phase3TitleFontWeight}" />
+    </Style>
+
+    <Style x:Key="Phase3TopTabSelectorBarStyle" TargetType="SelectorBar">
+        <Setter Property="FontFamily" Value="{StaticResource Phase3TextFontFamily}" />
+        <Setter Property="FontSize" Value="{ThemeResource PivotHeaderItemFontSize}" />
+        <Setter Property="FontWeight" Value="{StaticResource Phase3TitleFontWeight}" />
+    </Style>
+
+    <Style x:Key="Phase3TopTabSelectorBarItemStyle" TargetType="SelectorBarItem">
+        <Setter Property="FontFamily" Value="{StaticResource Phase3TextFontFamily}" />
+        <Setter Property="FontSize" Value="{ThemeResource PivotHeaderItemFontSize}" />
+        <Setter Property="FontWeight" Value="{StaticResource Phase3TitleFontWeight}" />
+    </Style>
+
     <Style x:Key="Phase3PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="Background" Value="{ThemeResource Phase3AccentBrush}" />
         <Setter Property="Foreground" Value="{ThemeResource Phase3OnAccentBrush}" />

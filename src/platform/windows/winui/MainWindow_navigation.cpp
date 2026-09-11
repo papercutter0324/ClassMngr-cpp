@@ -470,7 +470,7 @@ void MainWindow::populatePage(
         }
         else if (pageId == subPrepPageId)
         {
-            refreshSubPrepPage();
+            populateSubPrepPage(page, true);
         }
         else if (pageId == classesPageId)
         {
@@ -868,7 +868,9 @@ void MainWindow::populateHomePage(
     const auto makeWorkspaceTab = [](wchar_t const* header,
                                      wchar_t const* automationName) {
         auto item = PivotItem();
-        item.Header(winrt::box_value(winrt::hstring(header)));
+        item.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+            winrt::hstring(header)
+            ));
         // The Pivot is used only for the tab strip.  Keeping the page
         // content outside the Pivot avoids losing the selected item's visual
         // tree when the Home page is cached by Frame navigation.
@@ -895,6 +897,7 @@ void MainWindow::populateHomePage(
     auto tabs = Pivot();
     tabs.IsTabStop(true);
     tabs.TabIndex(0);
+    applyResourceStyle(tabs, L"Phase3TopTabPivotStyle");
     setAutomationName(tabs, L"My Workspace tabs");
     tabs.Items().Append(makeWorkspaceTab(
         L"My Information",

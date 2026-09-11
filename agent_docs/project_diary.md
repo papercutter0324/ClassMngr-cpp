@@ -1,5 +1,19 @@
 # Project Diary
 
+## Sub Prep Tabs and Frame Lifecycle
+
+- Deployment `sub_prep_tabs_return_20260911` confirmed the WinUI navigation
+  failure was a visual-host lifecycle issue: Sub Prep retained member-owned
+  controls while Frame navigation supplied a fresh `Page`, leaving the new
+  page empty. Disabling page caching and reattaching a retained ScrollViewer
+  mirrors the successful My Information fix.
+- Top-level Pivot and SelectorBar labels now use shared `Phase3TopTab*`
+  resources, and `buildTopTabHeader` applies the same typography to Pivot
+  headers on My Workspace, Sub Prep, and Campus Directory.
+- The phase-6 Sub Prep check explicitly navigates away and back before testing
+  the populated workflow; it passed with the targeted WinUI build and focused
+  Classes/Campus runtime verifiers.
+
 ## Classes Navigation Layout
 
 - The Qt Classes page keeps section navigation and class/grade navigation outside

@@ -1210,6 +1210,10 @@ private:
     bool m_personalDetailsLoaded{};
     bool m_personalDetailsDirty{};
 
+    // Keep the stateful Sub Prep view separate from its Frame page host so a
+    // fresh page can attach the existing controls when navigation returns.
+    Microsoft::UI::Xaml::Controls::Page m_subPrepPageHost{nullptr};
+    Microsoft::UI::Xaml::Controls::ScrollViewer m_subPrepScroll{nullptr};
     Microsoft::UI::Xaml::Controls::Pivot m_subPrepTabs{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_subPrepStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_subPrepValidationText{nullptr};

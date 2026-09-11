@@ -2,54 +2,41 @@
 
 ## Latest Deployment Handoff
 
-Deployment `classes_layout_medium_20260911` is complete. The Qt Classes page
-now displays its section selector above the class/grade selector rows, followed
-by the selected editor content. The navigation rows remain outside
-`m_editorStack`, so switching Details, Roster, Analytics, Evaluations, or other
-sections does not move the class/grade selectors.
+Deployment `sub_prep_tabs_return_20260911` is complete.
 
 ### Changes
 
-- `src/features/classes/ui/classes_page.cpp` adds the section selector before
-  the class/grade selector container and sets its unused placeholder page
-  spacing to zero.
-- `tests/classes_page_tests.cpp` updates the navigation-row spacing assertion
-  and adds a regression check for ordering and stable selector positions while
-  switching sections.
+- Sub Prep moves its Pivot before the page status/content and retains its
+  ScrollViewer so a fresh Frame page can reattach the existing stateful view.
+- Shared `Phase3TopTab*` resources and `buildTopTabHeader` align the top-tab
+  typography on My Workspace, Classes, Sub Prep, and Campus Directory.
+- The phase-6 Sub Prep verifier now navigates to Classes and back, then checks
+  that the retained content and controls are restored.
 
 ### Verification
 
-- The Debug `ClassMngrClassesPageTests` target built successfully with the
-  existing `/FORCE` linker warning.
-- The complete `ClassMngrClassesPageTests.exe -platform offscreen` run passed.
-- `git diff --check` passed.
-
-The separate `my_information_lifecycle_20260911` WinUI deployment remains
-paused and UI-Automation-unverified; preserve its protected unrelated edit if
-that work resumes.
+- The targeted x64 Debug WinUI build staged successfully with zero errors and
+  two pre-existing Visual Studio library-path warnings.
+- `--phase6-sub-prep-test`, `--phase6-class-information-test`, and
+  `--phase5-campus-test` each exited 0.
+- `git diff --check` passed; the read-only Git handoff contains only the nine
+  intended WinUI files.
 
 ## Current Deployment Handoff
 
-Deployment `my_information_lifecycle_20260911` made a source-only fix for the
-WinUI My Information page disappearing after navigation to Classes and back.
-`MainWindow_navigation.cpp` now disables Home-page caching and removes the
-late cached-Pivot reset callbacks. `MainWindow_personal_details.cpp` and
-`MainWindow.xaml.h` retain the personal-details ScrollViewer and reattach it to
-the fresh page host, preserving the stateful controls and event wiring.
+No active deployment remains. The staged executable is
+`dist/ClassMngr-windows-winui-x64/Debug/ClassMngrWinUI.exe`. Manual UI
+Automation or screenshot review was not run; the focused runtime verifiers
+cover the requested navigation and shared-tab resource paths.
 
-The targeted x64 Debug WinUI build for this fix passed after an elevated retry,
-with zero errors and two pre-existing Visual Studio library-path warnings. No
-UI Automation or focused My Information smoke check was run. The next action
-is behavioral validation of Classes -> My Workspace.
-
-## Detailed Current State
+## Prior Session Context
 
 Medium deployment `report_editor_ui_20260911` updated the WinUI Speaking
 Evaluation Report Editor after direct comparison with
 `SpeakingEvalReportDialog` and `SpeakingEvalPrivateNotesEditor` in the Qt
 feature.
 
-## Session Changes
+### Prior Session Changes
 
 - `src/platform/windows/winui/MainWindow.xaml.cpp` now presents student selection
   and cyclic navigation on one row, visible two-column private notes, prompt preview
@@ -65,7 +52,7 @@ feature.
   validity label, enabled state, and apply checkbox without discarding a user's
   valid explicit deselection.
 
-## Verification
+### Prior Verification
 
 `git diff --check` passes. The targeted x64 Debug WinUI build now compiles and
 stages `ClassMngrWinUI.exe` successfully with zero errors and no source
@@ -75,14 +62,14 @@ sandbox-only CMake engine attempt still exhibits the shared-PDB `C1041`, but the
 elevated host retry clears the prior FileTracker access failure. No UI
 Automation or current My Information smoke check was run.
 
-## Pending Work and Blockers
+### Prior Pending Work and Blockers
 
 Manually review the editor at supported window sizes. Phase 7 remains
 responsible for real report rendering, PDF save, printing, and Office
 automation.
 
-## Next Entry Point
+### Next Entry Point
 
-Run the focused Classes -> My Workspace UI Automation sequence against the
-staged Debug executable if behavioral validation is requested. Preserve
-unrelated existing work in the same WinUI source and header files.
+Perform a manual visual pass at supported window sizes if visual confirmation
+of tab spacing and font appearance is requested. Preserve unrelated existing
+work in the same WinUI source and header files.

@@ -15,11 +15,33 @@ void MainWindow::populateSubPrepPage(
     using namespace Microsoft::UI::Xaml::Controls;
 
     static_cast<void>(refresh);
-    if (!m_subPrepTabs)
+    page.NavigationCacheMode(
+        Microsoft::UI::Xaml::Navigation::NavigationCacheMode::Disabled
+        );
+
+    if (m_subPrepScroll && page)
+    {
+        if (m_subPrepPageHost && m_subPrepPageHost != page)
+        {
+            // The disabled-cache page is recreated on each visit. Detach the
+            // retained view from its previous host before reattaching it.
+            m_subPrepPageHost.Content(nullptr);
+        }
+
+        const auto currentContent = page.Content().try_as<ScrollViewer>();
+        if (currentContent != m_subPrepScroll)
+        {
+            page.Content(m_subPrepScroll);
+        }
+        m_subPrepPageHost = page;
+    }
+
+    if (!m_subPrepScroll)
     {
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
         scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        m_subPrepScroll = scroll;
 
         auto root = StackPanel();
         root.Padding(Thickness{32.0, 24.0, 32.0, 32.0});
@@ -41,6 +63,13 @@ void MainWindow::populateSubPrepPage(
         setAutomationName(description, L"Sub Prep description");
         root.Children().Append(description);
 
+        m_subPrepTabs = Pivot();
+        m_subPrepTabs.IsTabStop(true);
+        m_subPrepTabs.TabIndex(0);
+        applyResourceStyle(m_subPrepTabs, L"Phase3TopTabPivotStyle");
+        setAutomationName(m_subPrepTabs, L"Sub Prep sections");
+        root.Children().Append(m_subPrepTabs);
+
         m_subPrepStatusText = TextBlock();
         m_subPrepStatusText.Text(L"Loading substitute-preparation information...");
         m_subPrepStatusText.TextWrapping(TextWrapping::Wrap);
@@ -55,11 +84,6 @@ void MainWindow::populateSubPrepPage(
             L"Sub Prep validation summary"
             );
         root.Children().Append(m_subPrepValidationText);
-
-        m_subPrepTabs = Pivot();
-        m_subPrepTabs.IsTabStop(true);
-        m_subPrepTabs.TabIndex(0);
-        setAutomationName(m_subPrepTabs, L"Sub Prep sections");
 
         const auto appendReadOnlyValue = [](
             ClassMngrWinUISharedUX::Card& card,
@@ -406,19 +430,25 @@ void MainWindow::populateSubPrepPage(
         classInformationRoot.Children().Append(m_subPrepClassInformationList);
 
         auto importantTab = PivotItem();
-        importantTab.Header(box_value(hstring(L"Important Information")));
+        importantTab.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+            hstring(L"Important Information")
+            ));
         importantTab.Content(importantRoot);
         setAutomationName(importantTab, L"Sub Prep Important Information tab");
         m_subPrepTabs.Items().Append(importantTab);
 
         auto scheduleTab = PivotItem();
-        scheduleTab.Header(box_value(hstring(L"Schedule")));
+        scheduleTab.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+            hstring(L"Schedule")
+            ));
         scheduleTab.Content(scheduleRoot);
         setAutomationName(scheduleTab, L"Sub Prep Schedule tab");
         m_subPrepTabs.Items().Append(scheduleTab);
 
         auto classInformationTab = PivotItem();
-        classInformationTab.Header(box_value(hstring(L"Class Information")));
+        classInformationTab.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+            hstring(L"Class Information")
+            ));
         classInformationTab.Content(classInformationRoot);
         setAutomationName(
             classInformationTab,
@@ -426,9 +456,9 @@ void MainWindow::populateSubPrepPage(
             );
         m_subPrepTabs.Items().Append(classInformationTab);
 
-        root.Children().Append(m_subPrepTabs);
         scroll.Content(root);
-        page.Content(scroll);
+        page.Content(m_subPrepScroll);
+        m_subPrepPageHost = page;
     }
 
     refreshSubPrepPage();

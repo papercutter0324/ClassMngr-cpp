@@ -321,12 +321,15 @@ void MainWindow::populateCampusPage(
 
     m_campusTabs = Pivot();
     m_campusTabs.IsTabStop(true);
+    applyResourceStyle(m_campusTabs, L"Phase3TopTabPivotStyle");
     setAutomationName(m_campusTabs, L"Campus detail tabs");
     for (std::wstring_view const header : {
              L"Information", L"Directions", L"Address", L"Housing", L"Maps"})
     {
         auto tab = PivotItem();
-        tab.Header(winrt::box_value(winrt::hstring(localize(header))));
+        tab.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+            winrt::hstring(localize(header))
+            ));
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
         scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);

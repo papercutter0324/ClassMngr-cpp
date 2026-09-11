@@ -153,4 +153,8 @@ namespace ClassMngrWinUISharedUX
         winrt::Windows::UI::Color initialColor,
         winrt::hstring const& automationName = {}
         );
+
+    winrt::Microsoft::UI::Xaml::Controls::TextBlock buildTopTabHeader(
+        winrt::hstring const& text
+        );
 } // namespace ClassMngrWinUISharedUX

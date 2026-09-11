@@ -111,6 +111,10 @@ void MainWindow::populateClassesPage(
     m_classSectionSelectorBar = SelectorBar();
     m_classSectionSelectorBar.IsTabStop(true);
     m_classSectionSelectorBar.TabIndex(0);
+    applyResourceStyle(
+        m_classSectionSelectorBar,
+        L"Phase3TopTabSelectorBarStyle"
+        );
     setAutomationName(
         m_classSectionSelectorBar,
         L"Classes section selector"
@@ -133,6 +137,10 @@ void MainWindow::populateClassesPage(
         auto item = SelectorBarItem();
         item.Text(sectionDefinitions[static_cast<std::size_t>(index)].first);
         item.Tag(box_value(index));
+        applyResourceStyle(
+            item,
+            L"Phase3TopTabSelectorBarItemStyle"
+            );
         setAutomationName(
             item,
             sectionDefinitions[static_cast<std::size_t>(index)].second

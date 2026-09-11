@@ -2,58 +2,49 @@
 
 ## Latest Completed Deployment
 
-Deployment `classes_layout_medium_20260911` is complete. The Qt Classes page
-now places the Details/Roster/Analytics/Evaluations section selector above the
-class/grade selector rows. Both navigation groups remain outside the selected
-editor stack, so changing sections leaves the class/grade rows in place.
+Deployment `sub_prep_tabs_return_20260911` is complete. The WinUI Sub Prep
+Pivot now appears immediately below the page description, and its headers use
+the shared top-tab typography used by My Workspace, Classes, and Campus
+Directory.
 
-The section selector's placeholder page spacing is disabled because its actual
-content is hosted by the editor stack below the navigation rows. The focused
-Debug target `ClassMngrClassesPageTests` built successfully with the repository's
-existing linker `/FORCE` warning, and the complete test executable passed in
-offscreen mode. `git diff --check` also passes.
+Sub Prep retains its stateful ScrollViewer and explicitly reattaches it to a
+fresh Frame page on every activation. The phase-6 verifier now covers the
+Sub Prep -> Classes -> Sub Prep return path and confirms that the page content,
+tabs, and status controls are restored.
 
-The implementation is in `src/features/classes/ui/classes_page.cpp`; ordering and
-positional stability are covered by `tests/classes_page_tests.cpp`.
+The targeted x64 Debug WinUI build passed with zero errors and two pre-existing
+Visual Studio library-path warnings. The Sub Prep, Classes, and Campus
+Directory runtime verifiers exited 0, and `git diff --check` passes.
 
 ## Active Deployment Handoff
 
-Deployment `my_information_lifecycle_20260911` addresses the WinUI My Information
-page disappearing after Classes -> My Workspace. The source-only fix explicitly
-disables Home-page navigation caching and reattaches the retained personal-
-details ScrollViewer to each newly created ContentControl host. The targeted
-x64 Debug WinUI build now passes with zero errors; it emitted two pre-existing
-Visual Studio library-path warnings. Lifecycle behavior remains UI Automation-
-unverified.
-
-Next milestone: run the focused Classes -> My Workspace UI Automation check.
+No active deployment remains. The read-only Git handoff contains only the nine
+WinUI files changed for this deployment; no unrelated tracked edits were
+present.
 
 ## Goal
 
-Bring the WinUI Speaking Evaluation Report Editor into the established Qt
-dialog's practical layout and interaction model without moving Phase 7 output
-adapter work forward.
+Keep the Windows WinUI feature pages visually consistent and resilient across
+Frame navigation while preserving stateful page controls and existing engine
+contracts.
 
 ## Overall Progress
 
-The WinUI editor now has the reference hierarchy: student selector with previous/next
-navigation, separate Did Well and Needs Improvement private-note editors, AI-prompt
-actions, and a scrollable report-like editor surface. The existing report planning
-buttons remain the Phase 6 handoff to the batch-plan dialog; native PDF/print/Office
-output is still Phase 7 work.
+The WinUI lane now has shared typography resources and a shared top-tab header
+builder for the Workspace, Classes, Sub Prep, and Campus Directory navigation
+surfaces. My Information already uses the retained-host lifecycle pattern that
+Sub Prep now follows.
 
 ## Current Position
 
-The changed WinUI code is in `src/platform/windows/winui/MainWindow.xaml.cpp`.
-The report-editor/AI workflow now exposes the Direct-to-Student and Third-Person
-voice choices, and an edited batch-comment row immediately updates its count,
-validity label, enabled state, and apply selection. A host-level x64 Debug
-WinUI build now compiles and stages the target, and the staged
-`--phase6-speaking-evaluation-test` hook passes. The complete x64 Debug staged
-verifier also passes all 23 manifest, smoke, lifecycle, semantic, and Phase 6
-checks.
+The implementation is in `src/platform/windows/winui`. The staged Debug
+executable is ready at
+`dist/ClassMngr-windows-winui-x64/Debug/ClassMngrWinUI.exe`.
+
+Manual UI Automation or screenshot review was not run; runtime coverage is
+provided by the focused phase verifiers.
 
 ## Next Milestone
 
-Inspect the editor interactively at its supported window sizes and retain the
-staged verifier evidence with the Phase 6 closure artifacts.
+If requested, perform a manual visual pass at supported window sizes to review
+tab spacing and font appearance alongside the existing UI Automation coverage.

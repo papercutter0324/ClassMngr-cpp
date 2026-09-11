@@ -76,6 +76,14 @@ namespace
 
 namespace ClassMngrWinUISharedUX
 {
+    TextBlock buildTopTabHeader(hstring const& text)
+    {
+        auto header = TextBlock();
+        header.Text(text);
+        applyStyle(header, L"Phase3TopTabTextBlockStyle");
+        return header;
+    }
+
     FormField buildFormField(FormFieldOptions const& options)
     {
         FormField result;
