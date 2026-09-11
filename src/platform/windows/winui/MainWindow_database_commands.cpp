@@ -358,6 +358,7 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
         refreshSubPrepPage();
         refreshClassesPage();
         refreshCalendarPage();
+        refreshScheduleWorkspace();
         updateFileCommandState();
         saveShellState();
         return true;
@@ -404,6 +405,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
     refreshSubPrepPage();
     refreshClassesPage();
     refreshCalendarPage();
+    refreshScheduleWorkspace();
 
     if (pathExists(candidate))
     {
@@ -456,6 +458,7 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
         refreshSubPrepPage();
         refreshClassesPage();
         refreshCalendarPage();
+        refreshScheduleWorkspace();
         updateFileCommandState();
         saveShellState();
         return true;

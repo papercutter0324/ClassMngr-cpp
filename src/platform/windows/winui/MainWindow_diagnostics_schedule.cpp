@@ -142,8 +142,19 @@ bool MainWindow::runPhase6ScheduleChecks()
     }
 
     refreshScheduleWorkspace();
+    const bool regularBoardReady =
+        m_scheduleInfos.size() == 2
+        && m_scheduleDisplayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Regular
+        && m_scheduleBoardRoot
+        && m_scheduleBoardRoot.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && m_scheduleBoardRoot.ColumnDefinitions().Size() > 1
+        && m_scheduleBoardRoot.RowDefinitions().Size() > 1;
     const bool populatedReady =
-        m_scheduleHeaderGrid && m_scheduleHeaderGrid.Children().Size() == 5
+        regularBoardReady
+        && m_scheduleHeaderGrid
+        && m_scheduleHeaderGrid.Children().Size() == 5
         && m_scheduleClassSelector
         && m_scheduleClassSelector.Items().Size() == 2
         && m_scheduleList && m_scheduleList.Items().Size() == 2;
