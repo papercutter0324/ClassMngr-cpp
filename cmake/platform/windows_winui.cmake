@@ -109,54 +109,133 @@ endif()
 function(classmngr_add_windows_winui_target)
     set(classmngr_winui_target ClassMngrWindowsWinUI)
 
-    add_custom_target(${classmngr_winui_target}
-        COMMAND "${CLASSMNGR_WINUI_POWERSHELL_EXECUTABLE}"
-            -NoLogo
-            -NoProfile
-            -NonInteractive
-            -ExecutionPolicy Bypass
-            -File "${CLASSMNGR_WINUI_SCRIPT}"
-            -ProjectFile "${CLASSMNGR_WINUI_PROJECT_FILE}"
-            -ProjectDirectory "${CLASSMNGR_WINUI_PROJECT_DIRECTORY}"
-            -Configuration "$<CONFIG>"
-            -Platform "${CLASSMNGR_WINUI_PLATFORM}"
-            -PackagesDirectory "${CLASSMNGR_WINUI_PACKAGES_DIRECTORY}"
-            -NuGetConfigFile "${CLASSMNGR_WINUI_NUGET_CONFIG}"
-            -OutputDirectory
-                "${CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT}/$<CONFIG>"
-            -IntermediateDirectory
-                "${CLASSMNGR_WINUI_INTERMEDIATE_DIRECTORY}/$<CONFIG>"
-            -EngineLibrary "$<TARGET_FILE:ClassMngrEngine>"
-            -EngineIncludeDirectory
-                "${PROJECT_SOURCE_DIR}/src/engine/include"
-            -GeneratedIncludeDirectory
-                "${CLASSMNGR_WINUI_GENERATED_INCLUDE_DIRECTORY}"
-            -ResourceFile "${CLASSMNGR_WINUI_RESOURCE_FILE}"
-            -ResourceManifest "${CLASSMNGR_RESOURCE_MANIFEST}"
-            -ProjectRoot "${PROJECT_SOURCE_DIR}"
-            -MinimumWindowsVersion "${CLASSMNGR_WINUI_MIN_WINDOWS_VERSION}"
-            -WindowsAppSdkVersion "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_VERSION}"
-            -WindowsAppSdkBaseVersion
-                "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_BASE_VERSION}"
-            -WindowsAppSdkFoundationVersion
-                "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_FOUNDATION_VERSION}"
-            -WindowsAppSdkInteractiveVersion
-                "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_INTERACTIVE_VERSION}"
-            -WindowsAppSdkWinUIVersion
-                "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_WINUI_VERSION}"
-            -WindowsAppSdkRuntimeVersion
-                "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_RUNTIME_VERSION}"
-            -WebView2Version "${CLASSMNGR_WINUI_WEBVIEW2_VERSION}"
-            -WindowsSdkMsixVersion
-                "${CLASSMNGR_WINUI_MSIX_BUILD_TOOLS_VERSION}"
-            -CppWinRTVersion "${CLASSMNGR_WINUI_CPPWINRT_VERSION}"
-            -BuildToolsVersion "${CLASSMNGR_WINUI_BUILD_TOOLS_VERSION}"
+    # The wrapper invokes NuGet, the WinUI resource generator, MSBuild, and
+    # MakePri.  Model that work as an actual per-configuration output so an
+    # unchanged build does not run the entire wrapper again.
+    set(classmngr_winui_stamp
+        "${CMAKE_CURRENT_BINARY_DIR}/ClassMngrWindowsWinUI-$<CONFIG>.stamp"
+    )
+    set(classmngr_winui_stage_executable
+        "${CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT}/$<CONFIG>/ClassMngrWinUI.exe"
+    )
+
+    file(GLOB_RECURSE classmngr_winui_project_inputs
+        CONFIGURE_DEPENDS
+        LIST_DIRECTORIES FALSE
+        "${CLASSMNGR_WINUI_PROJECT_DIRECTORY}/*"
+    )
+    file(GLOB_RECURSE classmngr_winui_engine_include_inputs
+        CONFIGURE_DEPENDS
+        LIST_DIRECTORIES FALSE
+        "${PROJECT_SOURCE_DIR}/src/engine/include/*"
+    )
+    file(GLOB_RECURSE classmngr_winui_translation_inputs
+        CONFIGURE_DEPENDS
+        LIST_DIRECTORIES FALSE
+        "${PROJECT_SOURCE_DIR}/resources/assets/translations/ClassMngr_*.ts"
+    )
+    file(GLOB_RECURSE classmngr_winui_license_inputs
+        CONFIGURE_DEPENDS
+        LIST_DIRECTORIES FALSE
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/*"
+    )
+    set(classmngr_winui_build_inputs
+        ${classmngr_winui_project_inputs}
+        ${classmngr_winui_engine_include_inputs}
+        ${classmngr_winui_translation_inputs}
+        ${classmngr_winui_license_inputs}
+        ${CLASSMNGR_RESOURCE_FILES}
+        "${PROJECT_SOURCE_DIR}/CMakeLists.txt"
+        "${PROJECT_SOURCE_DIR}/cmake/engine.cmake"
+        "${PROJECT_SOURCE_DIR}/cmake/native_resources.cmake"
+        "${PROJECT_SOURCE_DIR}/cmake/platform/windows_winui.cmake"
+        "${PROJECT_SOURCE_DIR}/cmake/resource_catalog.cmake"
+        "${CLASSMNGR_WINUI_SCRIPT}"
+        "${PROJECT_SOURCE_DIR}/scripts/generate_winui_resw.ps1"
+        "${CLASSMNGR_WINUI_GENERATED_INCLUDE_DIRECTORY}/winui_build_info.h"
+        "${CLASSMNGR_WINUI_RESOURCE_FILE}"
+        "${CLASSMNGR_RESOURCE_MANIFEST}"
+    )
+    list(REMOVE_DUPLICATES classmngr_winui_build_inputs)
+
+    set(classmngr_winui_build_command
+        "${CLASSMNGR_WINUI_POWERSHELL_EXECUTABLE}"
+        -NoLogo
+        -NoProfile
+        -NonInteractive
+        -ExecutionPolicy Bypass
+        -File "${CLASSMNGR_WINUI_SCRIPT}"
+        -ProjectFile "${CLASSMNGR_WINUI_PROJECT_FILE}"
+        -ProjectDirectory "${CLASSMNGR_WINUI_PROJECT_DIRECTORY}"
+        -Configuration "$<CONFIG>"
+        -Platform "${CLASSMNGR_WINUI_PLATFORM}"
+        -PackagesDirectory "${CLASSMNGR_WINUI_PACKAGES_DIRECTORY}"
+        -NuGetConfigFile "${CLASSMNGR_WINUI_NUGET_CONFIG}"
+        -OutputDirectory
+            "${CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT}/$<CONFIG>"
+        -IntermediateDirectory
+            "${CLASSMNGR_WINUI_INTERMEDIATE_DIRECTORY}/$<CONFIG>"
+        -EngineLibrary "$<TARGET_FILE:ClassMngrEngine>"
+        -EngineIncludeDirectory
+            "${PROJECT_SOURCE_DIR}/src/engine/include"
+        -GeneratedIncludeDirectory
+            "${CLASSMNGR_WINUI_GENERATED_INCLUDE_DIRECTORY}"
+        -ResourceFile "${CLASSMNGR_WINUI_RESOURCE_FILE}"
+        -ResourceManifest "${CLASSMNGR_RESOURCE_MANIFEST}"
+        -ProjectRoot "${PROJECT_SOURCE_DIR}"
+        -MinimumWindowsVersion "${CLASSMNGR_WINUI_MIN_WINDOWS_VERSION}"
+        -WindowsAppSdkVersion "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_VERSION}"
+        -WindowsAppSdkBaseVersion
+            "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_BASE_VERSION}"
+        -WindowsAppSdkFoundationVersion
+            "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_FOUNDATION_VERSION}"
+        -WindowsAppSdkInteractiveVersion
+            "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_INTERACTIVE_VERSION}"
+        -WindowsAppSdkWinUIVersion
+            "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_WINUI_VERSION}"
+        -WindowsAppSdkRuntimeVersion
+            "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_RUNTIME_VERSION}"
+        -WebView2Version "${CLASSMNGR_WINUI_WEBVIEW2_VERSION}"
+        -WindowsSdkMsixVersion
+            "${CLASSMNGR_WINUI_MSIX_BUILD_TOOLS_VERSION}"
+        -CppWinRTVersion "${CLASSMNGR_WINUI_CPPWINRT_VERSION}"
+        -BuildToolsVersion "${CLASSMNGR_WINUI_BUILD_TOOLS_VERSION}"
+    )
+
+    add_custom_command(
+        OUTPUT
+            "${classmngr_winui_stamp}"
+            "${classmngr_winui_stage_executable}"
+        COMMAND ${classmngr_winui_build_command}
+        COMMAND "${CMAKE_COMMAND}" -E touch "${classmngr_winui_stamp}"
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         DEPENDS
             ClassMngrEngine
-            ClassMngrResourceManifest
+            ${classmngr_winui_build_inputs}
         USES_TERMINAL
+        VERBATIM
     )
+
+    add_custom_target(${classmngr_winui_target}
+        DEPENDS "${classmngr_winui_stamp}"
+    )
+    add_dependencies(
+        ${classmngr_winui_target}
+        ClassMngrResourceManifest
+    )
+
+    # Building the app target is the fast development path.  Keep the old
+    # complete engine-test dependency behavior behind an explicit aggregate
+    # target so CI and exit-gate workflows can still request it without
+    # making every edit rebuild or check every test executable.
+    if(BUILD_TESTING)
+        add_custom_target(ClassMngrWindowsWinUIWithTests)
+        add_dependencies(
+            ClassMngrWindowsWinUIWithTests
+            ${classmngr_winui_target}
+        )
+        set(classmngr_winui_target ClassMngrWindowsWinUIWithTests)
+    endif()
 
     if(TARGET ClassMngrEngineTests)
         add_dependencies(${classmngr_winui_target} ClassMngrEngineTests)

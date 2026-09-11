@@ -52,24 +52,28 @@ into the stage. The PowerShell verifier checks PE architecture, self-contained
 runtime payload, compiled XAML/MRT resources, embedded manifest behavior, and
 absence of Qt files/imports.
 
+`ClassMngrWindowsWinUI` is the fast app-only development target. The separate
+`ClassMngrWindowsWinUIWithTests` target adds the portable-engine test
+executables when CTest validation is needed.
+
 ## Local commands
 
 ```powershell
 ./scripts/verify_windows_vs2026.ps1
 cmake --fresh --preset windows-x64-winui-debug
-cmake --build --preset windows-x64-winui-debug --parallel 2
+cmake --build build/windows-x64-winui-debug --config Debug --target ClassMngrWindowsWinUIWithTests --parallel 2
 ctest --test-dir build/windows-x64-winui-debug -C Debug --output-on-failure
 
 cmake --fresh --preset windows-x86-winui-debug
-cmake --build --preset windows-x86-winui-debug --parallel 2
+cmake --build build/windows-x86-winui-debug --config Debug --target ClassMngrWindowsWinUIWithTests --parallel 2
 ctest --test-dir build/windows-x86-winui-debug -C Debug --output-on-failure
 
 cmake --fresh --preset windows-x64-winui-release
-cmake --build --preset windows-x64-winui-release --parallel 2
+cmake --build build/windows-x64-winui-release --config Release --target ClassMngrWindowsWinUIWithTests --parallel 2
 ctest --test-dir build/windows-x64-winui-release -C Release --output-on-failure
 
 cmake --fresh --preset windows-x86-winui-release
-cmake --build --preset windows-x86-winui-release --parallel 2
+cmake --build build/windows-x86-winui-release --config Release --target ClassMngrWindowsWinUIWithTests --parallel 2
 ctest --test-dir build/windows-x86-winui-release -C Release --output-on-failure
 ```
 

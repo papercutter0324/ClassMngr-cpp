@@ -31,6 +31,17 @@ set(CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR
 )
 set(CLASSMNGR_RESOURCE_PACK_FILES)
 
+function(classmngr_write_if_different path content)
+    set(existing_content "")
+    if(EXISTS "${path}")
+        file(READ "${path}" existing_content)
+    endif()
+
+    if(NOT "${existing_content}" STREQUAL "${content}")
+        file(WRITE "${path}" "${content}")
+    endif()
+endfunction()
+
 function(classmngr_add_scoped_resource_pack pack_id asset_directory)
     file(GLOB_RECURSE pack_files CONFIGURE_DEPENDS
         RELATIVE "${asset_directory}"
@@ -57,7 +68,7 @@ function(classmngr_add_scoped_resource_pack pack_id asset_directory)
 
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/resource-packs")
     set(qrc_file "${CMAKE_CURRENT_BINARY_DIR}/generated/resource-packs/${pack_id}.qrc")
-    file(WRITE "${qrc_file}" "${qrc_content}")
+    classmngr_write_if_different("${qrc_file}" "${qrc_content}")
 
     set(pack_file "${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}/${pack_id}.rcc")
     add_custom_command(
@@ -131,7 +142,7 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/resource-packs")
 set(CLASSMNGR_TEMPLATES_PACK_QRC
     "${CMAKE_CURRENT_BINARY_DIR}/generated/resource-packs/templates.qrc"
 )
-file(WRITE "${CLASSMNGR_TEMPLATES_PACK_QRC}"
+classmngr_write_if_different("${CLASSMNGR_TEMPLATES_PACK_QRC}"
     "${CLASSMNGR_SPEAKING_EVAL_TEMPLATE_QRC_CONTENT}"
 )
 set(CLASSMNGR_TEMPLATES_PACK_FILE

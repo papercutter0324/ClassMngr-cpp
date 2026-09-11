@@ -10,7 +10,9 @@ set(CLASSMNGR_RESOURCE_MANIFEST
 file(MAKE_DIRECTORY
     "${CMAKE_CURRENT_BINARY_DIR}/generated/native-resources"
 )
-file(WRITE "${CLASSMNGR_RESOURCE_MANIFEST}" "{\n  \"format\": \"classmngr-native-resources-v1\",\n  \"entries\": [\n")
+set(classmngr_resource_manifest_content
+    "{\n  \"format\": \"classmngr-native-resources-v1\",\n  \"entries\": [\n"
+)
 
 list(LENGTH CLASSMNGR_RESOURCE_FILES classmngr_resource_count)
 set(classmngr_resource_index 0)
@@ -34,16 +36,34 @@ foreach(resource_file IN LISTS CLASSMNGR_RESOURCE_FILES)
     if(classmngr_resource_index EQUAL classmngr_resource_count)
         set(resource_separator "")
     endif()
-    file(APPEND "${CLASSMNGR_RESOURCE_MANIFEST}"
+    string(APPEND classmngr_resource_manifest_content
         "    {\"source\":\"${resource_relative_path}\","
         "\"key\":\"/${resource_relative_path}\","
         "\"size\":${resource_size},"
         "\"sha256\":\"${resource_sha256}\"}${resource_separator}\n"
     )
 endforeach()
-file(APPEND "${CLASSMNGR_RESOURCE_MANIFEST}"
+string(APPEND classmngr_resource_manifest_content
     "  ]\n}\n"
 )
+
+# Do not touch the manifest when its content is unchanged.  The WinUI build
+# consumes this file as an input, so an unconditional file(WRITE) would make
+# every reconfigure look like a resource change.
+set(classmngr_existing_resource_manifest_content "")
+if(EXISTS "${CLASSMNGR_RESOURCE_MANIFEST}")
+    file(READ
+        "${CLASSMNGR_RESOURCE_MANIFEST}"
+        classmngr_existing_resource_manifest_content
+    )
+endif()
+if(NOT "${classmngr_existing_resource_manifest_content}"
+       STREQUAL "${classmngr_resource_manifest_content}")
+    file(WRITE
+        "${CLASSMNGR_RESOURCE_MANIFEST}"
+        "${classmngr_resource_manifest_content}"
+    )
+endif()
 
 add_custom_target(ClassMngrResourceManifest
     SOURCES "${CLASSMNGR_RESOURCE_MANIFEST}"

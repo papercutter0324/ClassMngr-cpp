@@ -103,7 +103,10 @@ jobs:
       - name: Build WinUI ${{ matrix.configuration }}
         shell: pwsh
         run: >-
-          cmake --build --preset ${{ matrix.preset }} --parallel 2
+          cmake --build build/${{ matrix.preset }}
+          --config ${{ matrix.configuration }}
+          --target ClassMngrWindowsWinUIWithTests
+          --parallel 2
           -- /p:TrackFileAccess=false
 
       - name: Verify Qt-free CMake cache

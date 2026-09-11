@@ -142,9 +142,18 @@ bootstrap with:
 ```powershell
 ./scripts/verify_windows_vs2026.ps1
 cmake --fresh --preset windows-x64-winui-debug
-cmake --build --preset windows-x64-winui-debug --parallel 2
+cmake --build build/windows-x64-winui-debug --config Debug --target ClassMngrWindowsWinUIWithTests --parallel 2
 ctest --test-dir build/windows-x64-winui-debug -C Debug --output-on-failure
 ```
+
+The build preset targets only `ClassMngrWindowsWinUI` for fast app iteration:
+
+```powershell
+cmake --build --preset windows-x64-winui-debug --parallel 2
+```
+
+`ClassMngrWindowsWinUIWithTests` adds the portable-engine test executables for
+CTest validation.
 
 The x64 Release lane and the required x86/Win32 lanes use the corresponding
 `windows-x64-winui-release`, `windows-x86-winui-debug`, and

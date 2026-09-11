@@ -97,11 +97,11 @@ cmake --fresh --preset windows-x86-winui-debug
 cmake --fresh --preset windows-x86-winui-release
 ```
 
-Build every registered target rather than using the matching build preset,
-which builds only `ClassMngrWindowsWinUI`:
+Build the explicit WinUI validation aggregate rather than using the matching
+build preset, which builds only `ClassMngrWindowsWinUI`:
 
 ```powershell
-cmake --build build/windows-x64-winui-debug --config Debug --clean-first --parallel 2 -- /p:TrackFileAccess=false
+cmake --build build/windows-x64-winui-debug --config Debug --target ClassMngrWindowsWinUIWithTests --clean-first --parallel 2 -- /p:TrackFileAccess=false
 ctest --test-dir build/windows-x64-winui-debug -C Debug -R "^ClassMngrEngine" --output-on-failure
 ```
 

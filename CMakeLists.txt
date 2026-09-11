@@ -12,10 +12,11 @@ if(POLICY CMP0219)
 endif()
 
 # CMake's Visual Studio compiler probe runs MSBuild before the project has
-# declared its normal VS globals.  Make the FileTracker workaround a process
-# environment property early enough for that probe as well as later targets.
+# declared its normal VS globals.  Enable MSBuild file tracking early enough
+# for that probe as well as later targets so unchanged projects can remain
+# incremental.
 if(WIN32 AND CMAKE_GENERATOR MATCHES "^Visual Studio")
-    set(ENV{TrackFileAccess} "false")
+    set(ENV{TrackFileAccess} "true")
 endif()
 
 project(ClassMngr
@@ -94,10 +95,10 @@ option(CLASSMNGR_ENABLE_MSVC_PARALLEL_COMPILE
 )
 
 if(WIN32 AND CMAKE_GENERATOR MATCHES "^Visual Studio")
-    # The host's MSBuild FileTracker fails while /MP compiler workers contend
-    # for generated objects.  Keep the reliable default deterministic; callers
-    # can opt back into /MP on a host with a stable FileTracker environment.
-    list(APPEND CMAKE_VS_GLOBALS "TrackFileAccess=false")
+    # Keep FileTracker enabled so MSBuild can skip unchanged translation units.
+    # /FS serializes PDB writes, while /MP remains opt-in for hosts where the
+    # FileTracker and parallel compiler combination is known to be stable.
+    list(APPEND CMAKE_VS_GLOBALS "TrackFileAccess=true")
 endif()
 
 add_compile_options(
@@ -213,7 +214,22 @@ endif()
 if(CLASSMNGR_GIT_REVISION STREQUAL "")
     set(CLASSMNGR_GIT_REVISION "unknown")
 endif()
-string(TIMESTAMP CLASSMNGR_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
+
+# Keep generated build metadata stable across ordinary reconfiguration.  A
+# moving timestamp changes the generated header on every configure, which
+# invalidates every translation unit that includes it even when no source
+# input changed.  Fresh build directories still receive a new timestamp, and
+# clearing this cache entry refreshes it deliberately.
+set(CLASSMNGR_BUILD_TIMESTAMP "" CACHE STRING
+    "UTC timestamp associated with this configured build directory"
+)
+if(CLASSMNGR_BUILD_TIMESTAMP STREQUAL "")
+    string(TIMESTAMP CLASSMNGR_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
+    set(CLASSMNGR_BUILD_TIMESTAMP "${CLASSMNGR_BUILD_TIMESTAMP}" CACHE STRING
+        "UTC timestamp associated with this configured build directory"
+        FORCE
+    )
+endif()
 
 configure_file(
     src/core/build_info.h.in
