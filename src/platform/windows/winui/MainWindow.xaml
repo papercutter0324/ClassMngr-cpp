@@ -71,7 +71,7 @@
             Grid.Row="1"
             Margin="{StaticResource Phase5ShellBodyMargin}">
             <Grid.RowDefinitions>
-                <RowDefinition Height="28" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
@@ -82,7 +82,7 @@
             <MenuBar
                 x:Name="ShellMenuBar"
                 Grid.Row="0"
-                Height="{StaticResource Phase5MenuBarHeight}"
+                MinHeight="{StaticResource Phase5MenuBarHeight}"
                 AutomationProperties.Name="Application menu bar">
                 <MenuBarItem
                     x:Name="FileMenu"
