@@ -338,6 +338,12 @@ private:
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId
         );
+    Microsoft::UI::Xaml::Controls::StackPanel buildClassDetailsSection();
+    Microsoft::UI::Xaml::Controls::StackPanel buildClassNotesSection();
+    Microsoft::UI::Xaml::Controls::StackPanel buildClassRosterSection();
+    Microsoft::UI::Xaml::Controls::StackPanel buildClassSpeakingSection();
+    Microsoft::UI::Xaml::Controls::StackPanel buildClassAnalyticsSection();
+    Microsoft::UI::Xaml::Controls::StackPanel buildClassCoTeacherSection();
     void refreshClassesPage();
     void refreshClassNavigation(bool selectFallback);
     void refreshClassNavigationLocation();

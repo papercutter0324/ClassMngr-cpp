@@ -153,6 +153,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="MainWindow_internal.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="winui_dialogs.h" />
     <ClInclude Include="winui_threading.h" />
@@ -208,6 +209,56 @@
     <ClCompile Include="MainWindow.xaml.cpp">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="MainWindow_calendar_editor.cpp" />
+    <ClCompile Include="MainWindow_calendar_page.cpp" />
+    <ClCompile Include="MainWindow_campus.cpp" />
+    <ClCompile Include="MainWindow_class_handlers.cpp" />
+    <ClCompile Include="MainWindow_classes_navigation.cpp" />
+    <ClCompile Include="MainWindow_classes_options.cpp" />
+    <ClCompile Include="MainWindow_classes_page.cpp" />
+    <ClCompile Include="MainWindow_classes_page_analytics.cpp" />
+    <ClCompile Include="MainWindow_classes_page_details.cpp" />
+    <ClCompile Include="MainWindow_classes_page_roster.cpp" />
+    <ClCompile Include="MainWindow_classes_schedule.cpp" />
+    <ClCompile Include="MainWindow_classes_state.cpp" />
+    <ClCompile Include="MainWindow_database_commands.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_calendar.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_class.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_data.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_phase5.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_roster.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_schedule.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_speaking.cpp" />
+    <ClCompile Include="MainWindow_diagnostics_startup.cpp" />
+    <ClCompile Include="MainWindow_file_commands.cpp" />
+    <ClCompile Include="MainWindow_gs_team.cpp" />
+    <ClCompile Include="MainWindow_internal_calendar.cpp" />
+    <ClCompile Include="MainWindow_internal_campus.cpp" />
+    <ClCompile Include="MainWindow_internal_general.cpp" />
+    <ClCompile Include="MainWindow_internal_schedule.cpp" />
+    <ClCompile Include="MainWindow_internal_shell.cpp" />
+    <ClCompile Include="MainWindow_internal_ui.cpp" />
+    <ClCompile Include="MainWindow_korean_handlers.cpp" />
+    <ClCompile Include="MainWindow_korean_teachers.cpp" />
+    <ClCompile Include="MainWindow_native_english_teachers.cpp" />
+    <ClCompile Include="MainWindow_navigation.cpp" />
+    <ClCompile Include="MainWindow_personal_details.cpp" />
+    <ClCompile Include="MainWindow_personal_handlers.cpp" />
+    <ClCompile Include="MainWindow_roster_actions.cpp" />
+    <ClCompile Include="MainWindow_roster_view.cpp" />
+    <ClCompile Include="MainWindow_schedule_board.cpp" />
+    <ClCompile Include="MainWindow_schedule_editor.cpp" />
+    <ClCompile Include="MainWindow_schedule_page.cpp" />
+    <ClCompile Include="MainWindow_shell.cpp" />
+    <ClCompile Include="MainWindow_speaking_ai_batch.cpp" />
+    <ClCompile Include="MainWindow_speaking_ai_prompt.cpp" />
+    <ClCompile Include="MainWindow_speaking_analytics.cpp" />
+    <ClCompile Include="MainWindow_speaking_batch_reports.cpp" />
+    <ClCompile Include="MainWindow_speaking_evaluation.cpp" />
+    <ClCompile Include="MainWindow_speaking_report_editor.cpp" />
+    <ClCompile Include="MainWindow_subprep_actions.cpp" />
+    <ClCompile Include="MainWindow_subprep_page.cpp" />
+    <ClCompile Include="MainWindow_testing.cpp" />
     <ClCompile Include="winui_view_model.cpp" />
     <ClCompile Include="winui_dialogs.cpp" />
     <ClCompile Include="winui_threading.cpp" />
