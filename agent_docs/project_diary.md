@@ -14,3 +14,7 @@
   Phase 7 adapters. The Phase 6 WinUI editor should provide an editable report-like
   surface and retain the existing renderer-neutral batch-plan handoff, not claim
   output parity it cannot yet deliver.
+- A WinUI control stored in a member remains ineffective until it is appended to
+  the active visual tree; review the visible control path as well as the prompt
+  service input. Editable review rows must update their displayed validity and
+  apply eligibility in the same text-change path as their backing model.

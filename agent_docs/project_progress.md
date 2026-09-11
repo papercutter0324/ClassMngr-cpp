@@ -17,13 +17,15 @@ output is still Phase 7 work.
 ## Current Position
 
 The changed WinUI code is in `src/platform/windows/winui/MainWindow.xaml.cpp`.
-The engine library rebuilt serially, but the direct WinUI project build stops before
-compiling `MainWindow.xaml.cpp`: MSBuild's FileTracker initialization raises
-`UnauthorizedAccessException`/`MSB4018` even though the build script passes
-`TrackFileAccess=false`.
+The report-editor/AI workflow now exposes the Direct-to-Student and Third-Person
+voice choices, and an edited batch-comment row immediately updates its count,
+validity label, enabled state, and apply selection. A host-level x64 Debug
+WinUI build now compiles and stages the target, and the staged
+`--phase6-speaking-evaluation-test` hook passes. The complete x64 Debug staged
+verifier also passes all 23 manifest, smoke, lifecycle, semantic, and Phase 6
+checks.
 
 ## Next Milestone
 
-Resolve the host FileTracker failure, then build and stage the x64 Debug WinUI target,
-run the Phase 6 speaking-evaluation hook, and inspect the editor interactively at its
-supported window sizes.
+Inspect the editor interactively at its supported window sizes and retain the
+staged verifier evidence with the Phase 6 closure artifacts.

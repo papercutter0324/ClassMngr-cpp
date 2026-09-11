@@ -314,6 +314,16 @@ After meaningful work:
 
 ## Current Phase Progress
 
+- **2026-09-11 - Speaking report/editor workflow review repaired.** The AI
+  comment voice selector now appears on the Create Prompt step, making the
+  existing Third Person input reachable for batch and report-editor prompts.
+  Editing a parsed batch comment updates that row's character count, displayed
+  validity, enabled state, and apply selection immediately. `git diff --check`
+  passes. The host-level x64 Debug WinUI build now compiles and stages the
+  target successfully, and the staged `--phase6-speaking-evaluation-test` hook
+  exits 0. The complete x64 Debug staged verifier passes all 23 checks;
+  interactive review remains pending.
+
 - **2026-09-08 - Phase 6 opening data-entry migration slice implemented.** The
   shared `TableStyles.xaml` resource dictionary now carries the Qt-derived
   table tokens, metrics, state styles, and compact schedule variants. The

@@ -14611,6 +14611,8 @@ void MainWindow::populateClassesPage(
     // when the ContentDialog opens.
     m_speakingAiDialogRoot = Border();
     m_speakingAiDialogRoot.Padding(Thickness{12.0});
+    m_speakingAiDialogRoot.MinWidth(850.0);
+    m_speakingAiDialogRoot.MaxWidth(1050.0);
     setAutomationName(m_speakingAiDialogRoot, L"Generate class comments workflow");
     auto aiTabs = Pivot();
     aiTabs.IsTabStop(true);
@@ -14619,9 +14621,10 @@ void MainWindow::populateClassesPage(
     m_speakingAiDialogRoot.Child(aiTabs);
 
     m_speakingAiVoiceSelector = ComboBox();
-    // Voice remains available to the shared prompt service. The batch dialog
-    // follows the Qt layout, which uses the stored preference rather than an
-    // in-dialog selector.
+    m_speakingAiVoiceSelector.Header(box_value(hstring(L"Comment voice")));
+    m_speakingAiVoiceSelector.IsTabStop(true);
+    m_speakingAiVoiceSelector.TabIndex(8);
+    setAutomationName(m_speakingAiVoiceSelector, L"Speaking AI comment voice");
     const auto appendAiVoice = [this](std::wstring_view label, int tag) {
         auto item = ComboBoxItem();
         item.Content(box_value(hstring(label)));
@@ -14777,6 +14780,7 @@ void MainWindow::populateClassesPage(
     selectionLabel.TextWrapping(TextWrapping::Wrap);
     selectionLabel.FontSize(18.0);
     promptPage.Children().Append(selectionLabel);
+    promptPage.Children().Append(m_speakingAiVoiceSelector);
     m_speakingAiBatchSelectionList = ListView();
     m_speakingAiBatchSelectionList.SelectionMode(ListViewSelectionMode::None);
     m_speakingAiBatchSelectionList.Height(230.0);
@@ -15038,7 +15042,6 @@ void MainWindow::populateClassesPage(
         L"Plan speaking batch reports"
         );
     batchReportCard.content.Children().Append(m_speakingBatchPlanButton);
-    m_speakingAiDialogRoot = aiCard.root;
     m_speakingBatchDialogRoot = batchReportCard.root;
 
     auto analyticsRoot = makeRoot(StackPanel());
@@ -18545,8 +18548,156 @@ void MainWindow::copySpeakingAiPrompt(bool openProvider)
         );
 }
 
+void MainWindow::refreshSpeakingAiBatchSelection()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_speakingAiBatchSelectionList)
+    {
+        return;
+    }
+
+    m_speakingAiBatchSelectionList.Items().Clear();
+    const auto appendColumn = [](Grid const& grid, double value, GridUnitType type) {
+        auto column = ColumnDefinition();
+        column.Width(GridLengthHelper::FromValueAndType(value, type));
+        grid.ColumnDefinitions().Append(column);
+    };
+    const auto addText = [](Grid const& grid, std::wstring_view text, int column,
+                            bool header = false) {
+        auto block = TextBlock();
+        block.Text(hstring(text));
+        block.TextWrapping(TextWrapping::Wrap);
+        if (header)
+        {
+            block.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        }
+        Grid::SetColumn(block, column);
+        grid.Children().Append(block);
+    };
+    const auto addRow = [this, &appendColumn, &addText](
+                            std::wstring_view include,
+                            std::wstring_view student,
+                            std::wstring_view status,
+                            int row,
+                            bool enabled,
+                            bool checked) {
+        auto grid = Grid();
+        grid.ColumnSpacing(8.0);
+        appendColumn(grid, 84.0, GridUnitType::Pixel);
+        appendColumn(grid, 180.0, GridUnitType::Pixel);
+        appendColumn(grid, 1.0, GridUnitType::Star);
+        if (row < 0)
+        {
+            addText(grid, include, 0, true);
+        }
+        else
+        {
+            auto check = CheckBox();
+            check.Content(box_value(hstring(include)));
+            check.Tag(box_value(row));
+            check.IsChecked(checked);
+            check.IsEnabled(enabled);
+            check.Click([this](auto const&, auto const&) {
+                m_speakingAiBatchRows.clear();
+                m_speakingAiParsedComments.clear();
+                if (m_speakingAiPromptTextBox)
+                {
+                    m_speakingAiPromptTextBox.Text({});
+                }
+                if (m_speakingAiResponseTextBox)
+                {
+                    m_speakingAiResponseTextBox.Text({});
+                }
+                if (m_speakingAiParseSummary)
+                {
+                    m_speakingAiParseSummary.Text({});
+                }
+                if (m_speakingAiStatusText)
+                {
+                    m_speakingAiStatusText.Text({});
+                }
+                rebuildSpeakingAiBatchReview();
+                updateSpeakingAiActions();
+            });
+            Grid::SetColumn(check, 0);
+            grid.Children().Append(check);
+        }
+        addText(grid, student, 1, row < 0);
+        addText(grid, status, 2, row < 0);
+        auto item = ListViewItem();
+        item.Content(grid);
+        item.IsTabStop(false);
+        m_speakingAiBatchSelectionList.Items().Append(item);
+    };
+    addRow(L"Include", L"Student", L"Status", -1, false, false);
+
+    const int grade = classmngr::engine::SpeakingEvaluationReportModel::elementaryGrade(
+        m_classInfo.classGrade
+        );
+    const int englishColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::EnglishName
+        );
+    const int koreanColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::KoreanName
+        );
+    const int commentsColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Comments
+        );
+    const int notesColumn = classmngr::engine::toInt(
+        classmngr::engine::SpeakingEvaluationColumn::Notes
+        );
+    for (std::size_t row = 0; row < m_speakingEvaluationCellBoxes.size(); ++row)
+    {
+        const auto& cells = m_speakingEvaluationCellBoxes[row];
+        if (cells.size() <= static_cast<std::size_t>(notesColumn))
+        {
+            continue;
+        }
+        const std::wstring english = cells[static_cast<std::size_t>(englishColumn)].Text().c_str();
+        const std::wstring korean = cells[static_cast<std::size_t>(koreanColumn)].Text().c_str();
+        const std::wstring comment = cells[static_cast<std::size_t>(commentsColumn)].Text().c_str();
+        const auto notes = splitSpeakingAiPrivateNotes(asUtf8(
+            cells[static_cast<std::size_t>(notesColumn)].Text()
+            ));
+        std::wstring reason;
+        if (english.empty() && korean.empty())
+        {
+            reason = L"Student name is missing.";
+        }
+        else if (grade < 4 || grade > 6)
+        {
+            reason = L"AI comments are available for grades E4 through E6.";
+        }
+        else if (classmngr::engine::SpeakingEvaluationAiPromptService::observationItems(
+                     notes.didWell).empty())
+        {
+            reason = L"Add at least one Did Well note.";
+        }
+        else if (classmngr::engine::SpeakingEvaluationAiPromptService::observationItems(
+                     notes.needsImprovement).empty())
+        {
+            reason = L"Add at least one Needs Improvement note.";
+        }
+        const bool eligible = reason.empty();
+        if (eligible)
+        {
+            reason = comment.empty()
+                ? L"Ready"
+                : L"Existing comment — select to regenerate";
+        }
+        const std::wstring student = english.empty() ? korean : english;
+        addRow(L"", student, reason, static_cast<int>(row), eligible,
+               eligible && comment.empty());
+    }
+}
+
 void MainWindow::generateSpeakingAiBatchPrompt()
 {
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
     if (!m_speakingAiPromptTextBox
         || !m_speakingAiResponseTextBox
         || !m_speakingAiStatusText
@@ -18568,9 +18719,6 @@ void MainWindow::generateSpeakingAiBatchPrompt()
         );
     const int koreanColumn = classmngr::engine::toInt(
         classmngr::engine::SpeakingEvaluationColumn::KoreanName
-        );
-    const int commentsColumn = classmngr::engine::toInt(
-        classmngr::engine::SpeakingEvaluationColumn::Comments
         );
     const int notesColumn = classmngr::engine::toInt(
         classmngr::engine::SpeakingEvaluationColumn::Notes
@@ -18598,7 +18746,39 @@ void MainWindow::generateSpeakingAiBatchPrompt()
         }
     }
 
+    std::vector<int> selectedRows;
+    const bool hasBatchSelection = m_speakingAiBatchSelectionList
+        && m_speakingAiBatchSelectionList.Items().Size() > 1;
+    if (hasBatchSelection)
+    {
+        for (uint32_t index = 1;
+             index < m_speakingAiBatchSelectionList.Items().Size();
+             ++index)
+        {
+            const auto item = m_speakingAiBatchSelectionList.Items().GetAt(index)
+                .try_as<ListViewItem>();
+            const auto row = item ? item.Content().try_as<Grid>() : nullptr;
+            const auto check = row && row.Children().Size() > 0
+                ? row.Children().GetAt(0).try_as<CheckBox>()
+                : nullptr;
+            if (check)
+            {
+                const auto checked = check.IsChecked();
+                if (checked && checked.Value())
+                {
+                    selectedRows.push_back(unbox_value<int>(check.Tag()));
+                }
+            }
+        }
+    }
+
     m_speakingAiBatchRows.clear();
+    m_speakingAiParsedComments.clear();
+    if (m_speakingAiParseSummary)
+    {
+        m_speakingAiParseSummary.Text({});
+    }
+    rebuildSpeakingAiBatchReview();
     for (std::size_t rowIndex = 0;
          rowIndex < m_speakingEvaluationCellBoxes.size();
          ++rowIndex)
@@ -18614,14 +18794,10 @@ void MainWindow::generateSpeakingAiBatchPrompt()
         const std::string koreanName = asUtf8(
             cells[static_cast<std::size_t>(koreanColumn)].Text()
             );
-        const std::string existingComment = asUtf8(
-            cells[static_cast<std::size_t>(commentsColumn)].Text()
-            );
         const auto notes = splitSpeakingAiPrivateNotes(asUtf8(
             cells[static_cast<std::size_t>(notesColumn)].Text()
             ));
         if ((englishName.empty() && koreanName.empty())
-            || !existingComment.empty()
             || grade < 4
             || grade > 6
             || classmngr::engine::SpeakingEvaluationAiPromptService::observationItems(
@@ -18630,6 +18806,12 @@ void MainWindow::generateSpeakingAiBatchPrompt()
             || classmngr::engine::SpeakingEvaluationAiPromptService::observationItems(
                 notes.needsImprovement
                 ).empty())
+        {
+            continue;
+        }
+        if (hasBatchSelection
+            && std::find(selectedRows.begin(), selectedRows.end(),
+                         static_cast<int>(rowIndex)) == selectedRows.end())
         {
             continue;
         }
@@ -18651,7 +18833,7 @@ void MainWindow::generateSpeakingAiBatchPrompt()
         m_speakingAiResponseTextBox.Text({});
         m_speakingAiParsedComments.clear();
         m_speakingAiStatusText.Text(
-            L"No eligible students. Each batch row needs a name, an E4-E6 class, both private observation sections, and no existing comment."
+            L"No selected eligible students. Each batch row needs a name, an E4-E6 class, and observations in both note sections."
             );
         updateSpeakingAiActions();
         return;
@@ -18746,7 +18928,166 @@ void MainWindow::parseSpeakingAiBatchResponse()
             + std::to_wstring(parsed.unknownIds.size()) + L".";
     }
     m_speakingAiStatusText.Text(hstring(status));
+    if (m_speakingAiParseSummary)
+    {
+        m_speakingAiParseSummary.Text(hstring(status));
+    }
+    rebuildSpeakingAiBatchReview();
     updateSpeakingAiActions();
+}
+
+void MainWindow::rebuildSpeakingAiBatchReview()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_speakingAiBatchReviewList)
+    {
+        return;
+    }
+    m_speakingAiBatchReviewList.Items().Clear();
+    const auto appendColumn = [](Grid const& grid, double value, GridUnitType type) {
+        auto column = ColumnDefinition();
+        column.Width(GridLengthHelper::FromValueAndType(value, type));
+        grid.ColumnDefinitions().Append(column);
+    };
+    const auto addText = [](Grid const& grid, std::wstring_view text, int column,
+                            bool header = false) {
+        auto block = TextBlock();
+        block.Text(hstring(text));
+        block.TextWrapping(TextWrapping::Wrap);
+        if (header)
+        {
+            block.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
+        }
+        Grid::SetColumn(block, column);
+        grid.Children().Append(block);
+    };
+    const auto makeRow = [&appendColumn, &addText](bool header) {
+        auto grid = Grid();
+        grid.ColumnSpacing(8.0);
+        appendColumn(grid, 58.0, GridUnitType::Pixel);
+        appendColumn(grid, 150.0, GridUnitType::Pixel);
+        appendColumn(grid, 130.0, GridUnitType::Pixel);
+        appendColumn(grid, 88.0, GridUnitType::Pixel);
+        appendColumn(grid, 1.0, GridUnitType::Star);
+        if (header)
+        {
+            addText(grid, L"Apply", 0, true);
+            addText(grid, L"Student", 1, true);
+            addText(grid, L"Status", 2, true);
+            addText(grid, L"Characters", 3, true);
+            addText(grid, L"Comment", 4, true);
+        }
+        return grid;
+    };
+    auto header = ListViewItem();
+    header.Content(makeRow(true));
+    header.IsTabStop(false);
+    m_speakingAiBatchReviewList.Items().Append(header);
+
+    for (const auto& parsed : m_speakingAiParsedComments)
+    {
+        const auto rowIt = std::find_if(
+            m_speakingAiBatchRows.begin(), m_speakingAiBatchRows.end(),
+            [&parsed](int row) {
+                return speakingAiStudentId(static_cast<std::size_t>(row)) == parsed.id;
+            });
+        if (rowIt == m_speakingAiBatchRows.end())
+        {
+            continue;
+        }
+        const int rowIndex = *rowIt;
+        if (rowIndex < 0
+            || rowIndex >= static_cast<int>(m_speakingEvaluationCellBoxes.size()))
+        {
+            continue;
+        }
+        const int englishColumn = classmngr::engine::toInt(
+            classmngr::engine::SpeakingEvaluationColumn::EnglishName
+            );
+        const int koreanColumn = classmngr::engine::toInt(
+            classmngr::engine::SpeakingEvaluationColumn::KoreanName
+            );
+        const auto& cells = m_speakingEvaluationCellBoxes[
+            static_cast<std::size_t>(rowIndex)
+            ];
+        const std::wstring english = cells[static_cast<std::size_t>(englishColumn)].Text().c_str();
+        const std::wstring korean = cells[static_cast<std::size_t>(koreanColumn)].Text().c_str();
+        const std::wstring comment = asWide(parsed.comment);
+        const bool valid = !comment.empty()
+            && comment.size() <= static_cast<std::size_t>(
+                classmngr::engine::SpeakingEvaluationCommentMaxLength);
+        const std::wstring status = !valid
+            ? (comment.empty() ? L"Comment is empty" : L"Over 450 characters")
+            : (comment.size() < 100 ? L"Short comment" : L"Ready");
+        auto grid = makeRow(false);
+        auto check = CheckBox();
+        check.Tag(box_value(hstring(asWide(parsed.id))));
+        check.IsChecked(valid);
+        check.IsEnabled(valid);
+        Grid::SetColumn(check, 0);
+        grid.Children().Append(check);
+        addText(grid, english.empty() ? korean : english, 1);
+        auto statusText = TextBlock();
+        statusText.Text(hstring(status));
+        statusText.TextWrapping(TextWrapping::Wrap);
+        Grid::SetColumn(statusText, 2);
+        grid.Children().Append(statusText);
+        auto characterCountText = TextBlock();
+        characterCountText.Text(std::to_wstring(comment.size()));
+        characterCountText.TextWrapping(TextWrapping::Wrap);
+        Grid::SetColumn(characterCountText, 3);
+        grid.Children().Append(characterCountText);
+        auto edit = TextBox();
+        edit.Text(hstring(comment));
+        edit.Tag(box_value(hstring(asWide(parsed.id))));
+        edit.AcceptsReturn(true);
+        edit.TextWrapping(TextWrapping::Wrap);
+        edit.TextChanging([this, check, statusText, characterCountText](
+            auto const& sender,
+            auto const&
+            ) {
+            const auto editor = sender.template try_as<TextBox>();
+            if (!editor)
+            {
+                return;
+            }
+            const std::string id = asUtf8(unbox_value<hstring>(editor.Tag()));
+            const auto comment = std::find_if(
+                m_speakingAiParsedComments.begin(), m_speakingAiParsedComments.end(),
+                [&id](const auto& item) { return item.id == id; });
+            if (comment != m_speakingAiParsedComments.end())
+            {
+                comment->comment = asUtf8(editor.Text());
+            }
+            const std::wstring editedComment = editor.Text().c_str();
+            const bool valid = !editedComment.empty()
+                && editedComment.size() <= static_cast<std::size_t>(
+                    classmngr::engine::SpeakingEvaluationCommentMaxLength
+                    );
+            statusText.Text(
+                !valid
+                    ? (editedComment.empty()
+                        ? L"Comment is empty"
+                        : L"Over 450 characters")
+                    : (editedComment.size() < 100 ? L"Short comment" : L"Ready")
+                );
+            characterCountText.Text(std::to_wstring(editedComment.size()));
+            check.IsEnabled(valid);
+            if (!valid)
+            {
+                check.IsChecked(false);
+            }
+            updateSpeakingAiActions();
+        });
+        Grid::SetColumn(edit, 4);
+        grid.Children().Append(edit);
+        auto item = ListViewItem();
+        item.Content(grid);
+        item.IsTabStop(false);
+        m_speakingAiBatchReviewList.Items().Append(item);
+    }
 }
 
 void MainWindow::applySpeakingAiStudentComment()
@@ -18823,6 +19164,9 @@ void MainWindow::applySpeakingAiStudentComment()
 
 void MainWindow::applySpeakingAiBatchComments()
 {
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
     if (!m_speakingAiStatusText)
     {
         return;
@@ -18845,10 +19189,43 @@ void MainWindow::applySpeakingAiBatchComments()
     const int commentsColumn = classmngr::engine::toInt(
         classmngr::engine::SpeakingEvaluationColumn::Comments
         );
+    std::vector<std::string> selectedCommentIds;
+    const bool hasReviewSelection = m_speakingAiBatchReviewList
+        && m_speakingAiBatchReviewList.Items().Size() > 1;
+    if (hasReviewSelection)
+    {
+        for (uint32_t index = 1;
+             index < m_speakingAiBatchReviewList.Items().Size();
+             ++index)
+        {
+            const auto item = m_speakingAiBatchReviewList.Items().GetAt(index)
+                .try_as<ListViewItem>();
+            const auto grid = item ? item.Content().try_as<Grid>() : nullptr;
+            const auto check = grid && grid.Children().Size() > 0
+                ? grid.Children().GetAt(0).try_as<CheckBox>()
+                : nullptr;
+            if (check)
+            {
+                const auto checked = check.IsChecked();
+                if (checked && checked.Value())
+                {
+                    selectedCommentIds.push_back(asUtf8(
+                        unbox_value<hstring>(check.Tag())
+                        ));
+                }
+            }
+        }
+    }
     std::size_t applied = 0;
     std::size_t skipped = 0;
     for (const auto& parsed : m_speakingAiParsedComments)
     {
+        if (hasReviewSelection
+            && std::find(selectedCommentIds.begin(), selectedCommentIds.end(),
+                         parsed.id) == selectedCommentIds.end())
+        {
+            continue;
+        }
         const auto rowIt = std::find_if(
             m_speakingAiBatchRows.begin(),
             m_speakingAiBatchRows.end(),
@@ -18898,6 +19275,11 @@ void MainWindow::applySpeakingAiBatchComments()
         }
         cells[static_cast<std::size_t>(commentsColumn)].Text(hstring(comment));
         ++applied;
+    }
+
+    if (applied > 0)
+    {
+        markSpeakingEvaluationDirty();
     }
 
     m_speakingAiStatusText.Text(winrt::hstring(
@@ -19542,6 +19924,16 @@ winrt::fire_and_forget MainWindow::openSpeakingAiDialog()
     }
 
     refreshSpeakingAiSelection();
+    m_speakingAiBatchRows.clear();
+    m_speakingAiParsedComments.clear();
+    m_speakingAiPromptTextBox.Text({});
+    m_speakingAiResponseTextBox.Text({});
+    if (m_speakingAiParseSummary)
+    {
+        m_speakingAiParseSummary.Text({});
+    }
+    refreshSpeakingAiBatchSelection();
+    rebuildSpeakingAiBatchReview();
     updateSpeakingAiActions();
 
     auto dialog = Microsoft::UI::Xaml::Controls::ContentDialog();

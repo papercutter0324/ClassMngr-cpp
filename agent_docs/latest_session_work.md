@@ -17,23 +17,28 @@ feature.
   Improvement]` markers. The display/save helpers normalize per-line bullets so Qt
   and WinUI observation content remain acceptable to the engine AI-prompt service.
 - Editor changes now mark the evaluation dirty, as the grid editors do.
+- The AI comment voice selector is part of the Create Prompt visual tree, so
+  Third Person reaches both batch and report-editor prompt generation.
+- Editing a parsed batch comment now refreshes that row's character count,
+  validity label, enabled state, and apply checkbox without discarding a user's
+  valid explicit deselection.
 
 ## Verification
 
-`git diff --check` passes. The first focused x64 WinUI Debug build failed before
-the edited source because parallel compilation could not open the shared engine
-PDB (`C1041`). A serial engine rebuild then completed. The direct WinUI project
-build subsequently stopped before source compilation in the known host MSBuild
-FileTracker initialization failure: `UnauthorizedAccessException`/`MSB4018`,
-despite the script's `TrackFileAccess=false` property. No build-success or
-source-level compiler claim is made.
+`git diff --check` passes. The host-level direct x64 Debug WinUI build now
+compiles and stages `ClassMngrWinUI.exe` successfully with no source diagnostics.
+The staged `--phase6-speaking-evaluation-test` hook exits 0. The earlier
+sandbox-only CMake engine attempt still exhibits the shared-PDB `C1041`, but the
+host build uses the existing engine library and clears the prior FileTracker
+failure. The complete x64 Debug staged verifier passes all 23 checks, including
+the Phase 3 semantic and Phase 6 sequences. Interactive editor review remains
+pending.
 
 ## Pending Work and Blockers
 
-Resolve the FileTracker host failure, then run the staged Phase 6
-speaking-evaluation test. UI rendering must be manually reviewed once a staged
-executable is available. Phase 7 remains responsible for real report rendering,
-PDF save, printing, and Office automation.
+Manually review the editor at supported window sizes. Phase 7 remains
+responsible for real report rendering, PDF save, printing, and Office
+automation.
 
 ## Next Entry Point
 
