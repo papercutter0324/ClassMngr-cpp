@@ -1,5 +1,17 @@
 # Project Progress
 
+## Active Deployment Handoff
+
+Deployment `my_information_lifecycle_20260911` addresses the WinUI My Information
+page disappearing after Classes -> My Workspace. The source-only fix explicitly
+disables Home-page navigation caching and reattaches the retained personal-
+details ScrollViewer to each newly created ContentControl host. The targeted
+x64 Debug WinUI build now passes with zero errors; it emitted two pre-existing
+Visual Studio library-path warnings. Lifecycle behavior remains UI Automation-
+unverified.
+
+Next milestone: run the focused Classes -> My Workspace UI Automation check.
+
 ## Goal
 
 Bring the WinUI Speaking Evaluation Report Editor into the established Qt

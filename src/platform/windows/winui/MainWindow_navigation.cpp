@@ -338,25 +338,6 @@ void MainWindow::ContentFrame_Navigated(
     if (pageId == homePageId)
     {
         selectHomeInformationTab(page);
-
-        // A cached Page can reattach its Pivot after Navigated and emit a
-        // valid selection for the previously active tab. Apply one final
-        // reset at low priority, after the reattachment and its selection
-        // events have settled.
-        const auto dispatcher = DispatcherQueue();
-        if (dispatcher)
-        {
-            const auto weak = get_weak();
-            static_cast<void>(dispatcher.TryEnqueue(
-                Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
-                [weak, page]() {
-                    if (weak.get())
-                    {
-                        selectHomeInformationTab(page);
-                    }
-                }
-                ));
-        }
     }
     m_currentPageId = pageId;
 
@@ -553,6 +534,13 @@ void MainWindow::populateHomePage(
 {
     using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
+
+    // The Home page owns stateful controls whose visual host is rebuilt by
+    // populateHomePage. Do not let Frame navigation reattach a stale Pivot
+    // visual tree after the page is left and revisited.
+    page.NavigationCacheMode(
+        Microsoft::UI::Xaml::Navigation::NavigationCacheMode::Disabled
+        );
 
     auto root = StackPanel();
     root.Padding(Thickness{32.0, 32.0, 32.0, 32.0});
@@ -947,40 +935,6 @@ void MainWindow::populateHomePage(
                 );
         }
     });
-    const auto homeWeak = get_weak();
-    tabs.Loaded([homeWeak, workspaceContent](auto const& sender, auto const&) {
-        const auto pivot = sender.template try_as<Pivot>();
-        if (!pivot)
-        {
-            return;
-        }
-
-        // Reattached cached pages can restore a transient Pivot selection
-        // after NavigationFrame::Navigated has already selected this tab.
-        // Reset the tab and its sibling content once the Pivot is loaded.
-        resetHomeInformationContent(pivot, workspaceContent);
-
-        if (auto self = homeWeak.get())
-        {
-            const auto dispatcher = self->DispatcherQueue();
-            if (dispatcher)
-            {
-                static_cast<void>(dispatcher.TryEnqueue(
-                    Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
-                    [homeWeak, pivot, workspaceContent]() {
-                        if (homeWeak.get())
-                        {
-                            resetHomeInformationContent(
-                                pivot,
-                                workspaceContent
-                                );
-                        }
-                    }
-                    ));
-            }
-        }
-    });
-
     auto workspace = Grid();
     auto tabsRow = RowDefinition();
     tabsRow.Height(GridLengthHelper::FromPixels(60.0));

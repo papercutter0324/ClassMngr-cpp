@@ -31,6 +31,24 @@ void MainWindow::populatePersonalDetailsPage(
     using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
 
+    if (m_personalNameTextBox && host && m_personalDetailsScroll)
+    {
+        if (m_personalDetailsHost && m_personalDetailsHost != host)
+        {
+            // A disabled-cache Home page gets a fresh ContentControl on
+            // every visit. Detach the retained view from the old host before
+            // attaching it to the new one.
+            m_personalDetailsHost.Content(nullptr);
+        }
+
+        const auto currentContent = host.Content().try_as<ScrollViewer>();
+        if (currentContent != m_personalDetailsScroll)
+        {
+            host.Content(m_personalDetailsScroll);
+        }
+        m_personalDetailsHost = host;
+    }
+
     if (!m_personalNameTextBox)
     {
         auto scroll = ScrollViewer();
@@ -483,7 +501,9 @@ void MainWindow::populatePersonalDetailsPage(
         root.Children().Append(actions);
 
         scroll.Content(root);
+        m_personalDetailsScroll = scroll;
         host.Content(scroll);
+        m_personalDetailsHost = host;
         m_personalSignatureModeCombo.SelectedIndex(0);
         m_personalSignatureFontCombo.SelectedIndex(0);
         updatePersonalSignatureControls();

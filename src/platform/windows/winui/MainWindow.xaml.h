@@ -727,6 +727,11 @@ private:
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveCurrentPageMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportCampusResourcesMenu{nullptr};
 
+    // Keep the personal-details view separate from its page host so a newly
+    // created Home page can attach the existing controls without rebuilding
+    // their stateful event wiring.
+    Microsoft::UI::Xaml::Controls::ContentControl m_personalDetailsHost{nullptr};
+    Microsoft::UI::Xaml::Controls::ScrollViewer m_personalDetailsScroll{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_personalNameTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_personalCampusCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_personalZoomLoginIdTextBox{nullptr};
