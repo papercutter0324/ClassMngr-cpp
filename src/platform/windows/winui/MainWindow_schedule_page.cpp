@@ -12,6 +12,7 @@ void MainWindow::populateScheduleWorkspace(
 {
     using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
+    using winrt::Windows::UI::Color;
 
     if (m_scheduleTabs)
     {
@@ -46,12 +47,12 @@ void MainWindow::populateScheduleWorkspace(
     auto modeBar = Grid();
     modeBar.ColumnSpacing(8.0);
     modeBar.HorizontalAlignment(HorizontalAlignment::Stretch);
-    for (int column = 0; column < 5; ++column)
+    for (int column = 0; column < 6; ++column)
     {
         auto definition = ColumnDefinition();
         definition.Width(GridLengthHelper::FromValueAndType(
             1.0,
-            column == 3 ? GridUnitType::Star : GridUnitType::Auto
+            column == 4 ? GridUnitType::Star : GridUnitType::Auto
             ));
         modeBar.ColumnDefinitions().Append(definition);
     }
@@ -86,20 +87,60 @@ void MainWindow::populateScheduleWorkspace(
         L"Schedule Import"
         );
     m_scheduleImportModeButton.HorizontalAlignment(HorizontalAlignment::Right);
+    m_scheduleTestingClassesButton = makeModeButton(
+        L"Testing Classes",
+        L"Schedule Testing classes"
+        );
+    m_scheduleTestingClassesButton.MinWidth(132.0);
+    m_scheduleTestingClassesButton.Visibility(Visibility::Collapsed);
 
     Grid::SetColumn(m_scheduleRegularModeButton, 0);
     Grid::SetColumn(m_scheduleIntensiveModeButton, 1);
     Grid::SetColumn(m_scheduleTestingModeButton, 2);
+    Grid::SetColumn(m_scheduleTestingClassesButton, 3);
     modeBar.Children().Append(m_scheduleRegularModeButton);
     modeBar.Children().Append(m_scheduleIntensiveModeButton);
     modeBar.Children().Append(m_scheduleTestingModeButton);
+    modeBar.Children().Append(m_scheduleTestingClassesButton);
     auto modeSpacer = Border();
     modeSpacer.HorizontalAlignment(HorizontalAlignment::Stretch);
-    Grid::SetColumn(modeSpacer, 3);
+    Grid::SetColumn(modeSpacer, 4);
     modeBar.Children().Append(modeSpacer);
-    Grid::SetColumn(m_scheduleImportModeButton, 4);
+    Grid::SetColumn(m_scheduleImportModeButton, 5);
     modeBar.Children().Append(m_scheduleImportModeButton);
     editorContent.Children().Append(modeBar);
+
+    m_scheduleTestingBanner = Border();
+    m_scheduleTestingBanner.Padding(Thickness{8.0, 8.0, 8.0, 8.0});
+    m_scheduleTestingBanner.MinHeight(36.0);
+    m_scheduleTestingBanner.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_scheduleTestingBanner.CornerRadius(CornerRadius{6.0, 6.0, 6.0, 6.0});
+    m_scheduleTestingBanner.Background(
+        Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Color{255, 255, 244, 204}
+            )
+        );
+    m_scheduleTestingBanner.BorderBrush(
+        Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Color{255, 213, 165, 46}
+            )
+        );
+    m_scheduleTestingBanner.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+    m_scheduleTestingBanner.Visibility(Visibility::Collapsed);
+    auto testingBannerText = TextBlock();
+    testingBannerText.Text(
+        L"Testing View \u2014 M2 and M3 classes are hidden; M1 classes remain"
+        );
+    testingBannerText.Foreground(
+        Microsoft::UI::Xaml::Media::SolidColorBrush(Color{255, 80, 59, 0})
+        );
+    testingBannerText.TextWrapping(TextWrapping::Wrap);
+    testingBannerText.HorizontalAlignment(HorizontalAlignment::Stretch);
+    testingBannerText.TextAlignment(TextAlignment::Center);
+    setAutomationName(testingBannerText, L"Schedule testing banner text");
+    m_scheduleTestingBanner.Child(testingBannerText);
+    setAutomationName(m_scheduleTestingBanner, L"Schedule testing banner");
+    editorContent.Children().Append(m_scheduleTestingBanner);
 
     m_scheduleBoardRoot = ClassMngrWinUIScheduleBoard::create({
         [this](int classId) {
@@ -150,7 +191,16 @@ void MainWindow::populateScheduleWorkspace(
                 static_cast<int>(
                     classmngr::engine::ScheduleReportDisplayMode::Testing
                     )
-                );
+            );
+        }
+        );
+    m_scheduleTestingClassesButton.Click(
+        [this](auto const&, auto const&) {
+            refreshTestingWorkspace();
+            if (m_scheduleTabs)
+            {
+                m_scheduleTabs.SelectedIndex(2);
+            }
         }
         );
     m_scheduleImportModeButton.Click(
@@ -395,16 +445,20 @@ void MainWindow::populateScheduleWorkspace(
     formCard.content.Children().Append(m_scheduleValidationText);
     editorContent.Children().Append(formCard.root);
 
-    auto scrollTab = [](StackPanel const& content) {
+    auto scrollTab = [](StackPanel const& content, bool horizontal = false) {
         auto scroll = ScrollViewer();
         scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
-        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.HorizontalScrollBarVisibility(
+            horizontal
+                ? ScrollBarVisibility::Auto
+                : ScrollBarVisibility::Disabled
+            );
         scroll.Content(content);
         return scroll;
     };
     auto scheduleItem = PivotItem();
     scheduleItem.Header(box_value(hstring(L"Schedule")));
-    scheduleItem.Content(scrollTab(editorContent));
+    scheduleItem.Content(scrollTab(editorContent, true));
     setAutomationName(scheduleItem, L"Schedule editor tab");
 
     auto importContent = StackPanel();
@@ -617,6 +671,21 @@ void MainWindow::populateScheduleWorkspace(
         );
     setAutomationName(testingDescription, L"Testing classes description");
     testingContent.Children().Append(testingDescription);
+    auto testingBackButton = Button();
+    testingBackButton.Content(
+        box_value(hstring(L"Back to Testing Schedule"))
+        );
+    testingBackButton.IsTabStop(true);
+    testingBackButton.Click(
+        [this](auto const&, auto const&) {
+            if (m_scheduleTabs)
+            {
+                m_scheduleTabs.SelectedIndex(0);
+            }
+        }
+        );
+    setAutomationName(testingBackButton, L"Back to Testing Schedule workspace");
+    testingContent.Children().Append(testingBackButton);
 
     auto testingCard = ClassMngrWinUISharedUX::buildCard({
         L"Testing-class profile",

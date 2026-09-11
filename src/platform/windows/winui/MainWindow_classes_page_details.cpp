@@ -22,6 +22,26 @@ MainWindow::buildClassDetailsSection()
 
     auto detailsRoot = makeRoot(StackPanel());
 
+    const auto updateStatusVisibility = [](
+        DependencyObject const& source,
+        DependencyProperty const& property
+        ) {
+        static_cast<void>(property);
+        const auto sender = source.try_as<TextBlock>();
+        if (!sender)
+        {
+            return;
+        }
+        const winrt::hstring message = sender.Text();
+        const std::wstring_view text(message.c_str(), message.size());
+        const bool isError = text.find(L"could not") != std::wstring_view::npos
+            || text.find(L"error") != std::wstring_view::npos
+            || text.find(L"failed") != std::wstring_view::npos
+            || text.find(L"required") != std::wstring_view::npos
+            || text.find(L"unavailable") != std::wstring_view::npos;
+        sender.Visibility(isError ? Visibility::Visible : Visibility::Collapsed);
+    };
+
     auto detailsDescription = TextBlock();
     detailsDescription.Text(
         L"Edit class information shared by schedules, rosters, and reports."
@@ -37,6 +57,12 @@ MainWindow::buildClassDetailsSection()
     m_classStatusText = TextBlock();
     m_classStatusText.Text({});
     m_classStatusText.TextWrapping(TextWrapping::Wrap);
+    applyResourceStyle(m_classStatusText, L"Phase4ValidationTextBlockStyle");
+    m_classStatusText.Visibility(Visibility::Collapsed);
+    m_classStatusText.RegisterPropertyChangedCallback(
+        TextBlock::TextProperty(),
+        updateStatusVisibility
+        );
     setAutomationName(m_classStatusText, L"Class information status");
     detailsRoot.Children().Append(m_classStatusText);
 
@@ -102,7 +128,9 @@ MainWindow::buildClassDetailsSection()
         );
     m_classNameTextBox.InputScope(classNameInputScope);
     m_classNameTextBox.TabIndex(1);
-    detailsCard.content.Children().Append(m_classNameTextBox);
+    // Keep the name editor as the existing create/rename state bridge, but do
+    // not place the class-name field in the visible details form.
+    m_classNameTextBox.Visibility(Visibility::Collapsed);
 
     const auto appendChoice = [](ComboBox combo,
                                  std::wstring_view display,
@@ -203,9 +231,13 @@ MainWindow::buildClassDetailsSection()
     m_classFontColorTextBox.IsTabStop(false);
 
     m_classStudentCountTextBox = TextBox();
-    m_classStudentCountTextBox.Header(box_value(hstring(L"# of Students")));
-    m_classStudentCountTextBox.MinWidth(64.0);
-    m_classStudentCountTextBox.Width(64.0);
+    auto studentCountHeader = TextBlock();
+    studentCountHeader.Text(L"# of Students");
+    studentCountHeader.TextWrapping(TextWrapping::NoWrap);
+    studentCountHeader.TextTrimming(TextTrimming::None);
+    m_classStudentCountTextBox.Header(studentCountHeader);
+    m_classStudentCountTextBox.MinWidth(136.0);
+    m_classStudentCountTextBox.Width(136.0);
     m_classStudentCountTextBox.IsReadOnly(true);
     m_classStudentCountTextBox.IsTabStop(false);
     setAutomationName(m_classStudentCountTextBox, L"Class student count");
@@ -277,7 +309,7 @@ MainWindow::buildClassDetailsSection()
     detailsGrid.ColumnSpacing(16.0);
     detailsGrid.RowSpacing(8.0);
     const std::array<double, 4> detailWidths{
-        200.0, 130.0, 180.0, 120.0
+        200.0, 130.0, 180.0, 136.0
     };
     for (const double width : detailWidths)
     {
@@ -464,6 +496,26 @@ MainWindow::buildClassNotesSection()
 
     auto notesRoot = makeRoot(StackPanel());
 
+    const auto updateStatusVisibility = [](
+        DependencyObject const& source,
+        DependencyProperty const& property
+        ) {
+        static_cast<void>(property);
+        const auto sender = source.try_as<TextBlock>();
+        if (!sender)
+        {
+            return;
+        }
+        const winrt::hstring message = sender.Text();
+        const std::wstring_view text(message.c_str(), message.size());
+        const bool isError = text.find(L"could not") != std::wstring_view::npos
+            || text.find(L"error") != std::wstring_view::npos
+            || text.find(L"failed") != std::wstring_view::npos
+            || text.find(L"required") != std::wstring_view::npos
+            || text.find(L"unavailable") != std::wstring_view::npos;
+        sender.Visibility(isError ? Visibility::Visible : Visibility::Collapsed);
+    };
+
     auto notesDescription = TextBlock();
     notesDescription.Text(
         L"Keep class notes and time-filler activities with the selected class."
@@ -478,6 +530,10 @@ MainWindow::buildClassNotesSection()
     m_classNotesStatusText.TextWrapping(TextWrapping::Wrap);
     applyResourceStyle(m_classNotesStatusText, L"Phase4CardDescriptionTextBlockStyle");
     m_classNotesStatusText.Visibility(Visibility::Collapsed);
+    m_classNotesStatusText.RegisterPropertyChangedCallback(
+        TextBlock::TextProperty(),
+        updateStatusVisibility
+        );
     setAutomationName(m_classNotesStatusText, L"Class notes status");
     notesRoot.Children().Append(m_classNotesStatusText);
 

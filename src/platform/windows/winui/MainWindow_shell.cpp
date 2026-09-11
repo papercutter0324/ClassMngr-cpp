@@ -163,6 +163,10 @@ void MainWindow::updateFileCommandState()
     {
         m_closeFileMenu.IsEnabled(hasDatabase);
     }
+    if (m_preferencesMenu)
+    {
+        m_preferencesMenu.IsEnabled(hasDatabase);
+    }
 
     const bool pageCanBeSaved = isCampusPageId(m_currentPageId)
         && (m_campusInformationState == L"no_database"
@@ -208,6 +212,101 @@ void MainWindow::updateFileCommandState()
     if (m_exportCampusResourcesMenu)
     {
         m_exportCampusResourcesMenu.IsEnabled(pageCanBeSaved);
+    }
+}
+
+void MainWindow::PreferencesMenuItem_Click(
+    Windows::Foundation::IInspectable const&,
+    Microsoft::UI::Xaml::RoutedEventArgs const&
+    )
+{
+    openPreferencesDialog();
+}
+
+winrt::fire_and_forget MainWindow::openPreferencesDialog()
+{
+    auto lifetime = get_strong();
+    if (!m_openDatabase || m_ownedDialog || !RootGrid().XamlRoot())
+    {
+        co_return;
+    }
+
+    constexpr std::string_view defaultHoverBorderColor = "#D39B25";
+    const auto isHexDigit = [](const char value) noexcept {
+        return (value >= '0' && value <= '9')
+            || (value >= 'A' && value <= 'F')
+            || (value >= 'a' && value <= 'f');
+    };
+    const auto isValidColor = [&isHexDigit](const std::string_view value) {
+        return value.size() == 7
+            && value.front() == '#'
+            && std::all_of(value.begin() + 1, value.end(), isHexDigit);
+    };
+    std::string storedColor(defaultHoverBorderColor);
+    classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+    if (const auto loaded = settings.load("schedule/hoverBorderColor"); loaded)
+    {
+        if (const auto* value = std::get_if<std::string>(&*loaded);
+            value && isValidColor(*value))
+        {
+            storedColor = *value;
+        }
+    }
+
+    auto picker = ClassMngrWinUISharedUX::buildColorPickerDialog(
+        RootGrid().XamlRoot(),
+        L"Schedule hover border color",
+        uiColorFromHex(storedColor),
+        L"Schedule hover border color preferences"
+        );
+    picker.dialog.PrimaryButtonText(L"Apply");
+    m_ownedDialog = picker.dialog;
+    const std::string originalColor = storedColor;
+    picker.picker.ColorChanged(
+        [this](Microsoft::UI::Xaml::Controls::ColorPicker const& sender,
+               auto const&) {
+            if (!m_openDatabase)
+            {
+                return;
+            }
+            classmngr::engine::ApplicationSettingsService settings(
+                *m_openDatabase
+                );
+            const auto saved = settings.save(
+                "schedule/hoverBorderColor",
+                classmngr::engine::SettingValue{uiHexFromColor(sender.Color())}
+                );
+            if (saved)
+            {
+                refreshScheduleBoard();
+            }
+        }
+        );
+
+    Microsoft::UI::Xaml::Controls::ContentDialogResult result =
+        Microsoft::UI::Xaml::Controls::ContentDialogResult::None;
+    try
+    {
+        result = co_await picker.dialog.ShowAsync();
+    }
+    catch (...)
+    {
+        result = Microsoft::UI::Xaml::Controls::ContentDialogResult::None;
+    }
+
+    if (m_ownedDialog == picker.dialog)
+    {
+        m_ownedDialog = nullptr;
+    }
+    if (result != Microsoft::UI::Xaml::Controls::ContentDialogResult::Primary
+        && m_openDatabase)
+    {
+        classmngr::engine::ApplicationSettingsService restoreSettings(*m_openDatabase);
+        static_cast<void>(restoreSettings.save(
+            "schedule/hoverBorderColor",
+            classmngr::engine::SettingValue{originalColor}
+            ));
+        refreshScheduleBoard();
     }
 }
 
@@ -432,6 +531,242 @@ void MainWindow::confirmClassRosterNavigation(
         );
 }
 
+bool MainWindow::hasUnsavedChanges() const noexcept
+{
+    return m_dirtyState.isDirty()
+        || m_personalDetailsDirty
+        || m_koreanTeacherDirty
+        || m_nativeEnglishTeacherDirty
+        || m_gsTeamDirty
+        || m_classDirty
+        || m_classDetailsDirty
+        || m_classNotesDirty
+        || m_classRosterDirty
+        || m_speakingEvaluationDirty
+        || m_calendarPreferencesDirty
+        || m_subPrepDirty;
+}
+
+void MainWindow::confirmUnsavedNavigation(std::function<void()> continuation)
+{
+    if (!hasUnsavedChanges())
+    {
+        if (continuation)
+        {
+            continuation();
+        }
+        return;
+    }
+
+    const auto xamlRoot = RootGrid().XamlRoot();
+    if (m_navigationConfirmationPending
+        || m_ownedDialog
+        || !m_contentFrame
+        || !xamlRoot)
+    {
+        restoreNavigationSelection();
+        return;
+    }
+
+    m_navigationConfirmationPending = true;
+    auto weak = get_weak();
+    showDialog(
+        L"Unsaved changes",
+        L"Save changes before leaving? Choose Save to save the current feature, Discard to discard it, or Keep editing to stay.",
+        L"Save",
+        L"Discard",
+        L"Keep editing",
+        [weak, continuation = std::move(continuation)](
+            ClassMngrWinUIDialogs::DialogOutcome outcome
+            ) mutable {
+            if (auto self = weak.get())
+            {
+                self->m_navigationConfirmationPending = false;
+                const auto eventArguments = Microsoft::UI::Xaml::RoutedEventArgs{};
+                const bool classDetailsDirty =
+                    self->m_classDirty || self->m_classDetailsDirty;
+
+                if (outcome
+                    == ClassMngrWinUIDialogs::DialogOutcome::Primary)
+                {
+                    if (self->m_personalDetailsDirty)
+                    {
+                        self->PersonalDetailsSaveButton_Click(
+                            self->m_personalSaveButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_koreanTeacherDirty)
+                    {
+                        self->KoreanTeacherSaveButton_Click(
+                            self->m_koreanTeacherSaveButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_nativeEnglishTeacherDirty)
+                    {
+                        self->NativeEnglishTeacherSaveButton_Click(
+                            self->m_nativeEnglishTeacherSaveButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_gsTeamDirty)
+                    {
+                        self->GsTeamSaveButton_Click(
+                            self->m_gsTeamSaveButton,
+                            eventArguments
+                            );
+                    }
+                    if (classDetailsDirty)
+                    {
+                        self->ClassSaveButton_Click(
+                            self->m_classSaveButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_classNotesDirty)
+                    {
+                        self->ClassNotesSaveButton_Click(
+                            self->m_classNotesSaveButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_classRosterDirty)
+                    {
+                        self->saveClassRoster();
+                    }
+                    if (self->m_speakingEvaluationDirty)
+                    {
+                        self->saveSpeakingEvaluation();
+                    }
+                    if (self->m_calendarPreferencesDirty)
+                    {
+                        self->saveCalendarPreferences();
+                    }
+                    if (self->m_subPrepDirty)
+                    {
+                        self->saveSubPrepPage();
+                    }
+                }
+                else if (outcome
+                    == ClassMngrWinUIDialogs::DialogOutcome::Secondary)
+                {
+                    if (self->m_personalDetailsDirty)
+                    {
+                        self->PersonalDetailsDiscardButton_Click(
+                            self->m_personalDiscardButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_koreanTeacherDirty)
+                    {
+                        self->KoreanTeacherDiscardButton_Click(
+                            self->m_koreanTeacherDiscardButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_nativeEnglishTeacherDirty)
+                    {
+                        self->NativeEnglishTeacherDiscardButton_Click(
+                            self->m_nativeEnglishTeacherDiscardButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_gsTeamDirty)
+                    {
+                        self->GsTeamDiscardButton_Click(
+                            self->m_gsTeamDiscardButton,
+                            eventArguments
+                            );
+                    }
+                    if (classDetailsDirty)
+                    {
+                        self->ClassDiscardButton_Click(
+                            self->m_classDiscardButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_classNotesDirty)
+                    {
+                        self->ClassNotesDiscardButton_Click(
+                            self->m_classNotesDiscardButton,
+                            eventArguments
+                            );
+                    }
+                    if (self->m_classRosterDirty)
+                    {
+                        self->discardClassRoster();
+                    }
+                    if (self->m_speakingEvaluationDirty)
+                    {
+                        self->discardSpeakingEvaluation();
+                    }
+                    if (self->m_calendarPreferencesDirty)
+                    {
+                        self->m_calendarPreferencesDirty = false;
+                        self->refreshCalendarPage();
+                    }
+                    if (self->m_subPrepDirty)
+                    {
+                        self->discardSubPrepPage();
+                    }
+                    self->m_dirtyState.markClean();
+                }
+                else
+                {
+                    self->restoreNavigationSelection();
+                    if (self->m_statusText)
+                    {
+                        self->m_statusText.Text(
+                            L"Continuing to edit unsaved changes."
+                            );
+                    }
+                    return;
+                }
+
+                const bool featureChangesRemain =
+                    self->m_personalDetailsDirty
+                    || self->m_koreanTeacherDirty
+                    || self->m_nativeEnglishTeacherDirty
+                    || self->m_gsTeamDirty
+                    || self->m_classDirty
+                    || self->m_classDetailsDirty
+                    || self->m_classNotesDirty
+                    || self->m_classRosterDirty
+                    || self->m_speakingEvaluationDirty
+                    || self->m_calendarPreferencesDirty
+                    || self->m_subPrepDirty;
+                if (!featureChangesRemain)
+                {
+                    // Some engine-backed commands commit immediately and
+                    // only use the shell dirty state to enable Save. Once
+                    // their save path has completed, navigation can proceed.
+                    self->m_dirtyState.markClean();
+                }
+                if (self->hasUnsavedChanges())
+                {
+                    self->restoreNavigationSelection();
+                    if (self->m_statusText)
+                    {
+                        self->m_statusText.Text(
+                            outcome
+                                == ClassMngrWinUIDialogs::DialogOutcome::Primary
+                                ? L"Changes could not be saved; resolve the validation errors before leaving."
+                                : L"Some changes remain unsaved."
+                            );
+                    }
+                    return;
+                }
+
+                if (continuation)
+                {
+                    continuation();
+                }
+            }
+        }
+        );
+}
+
 void MainWindow::showOwnedDialog()
 {
     showDialog(
@@ -446,13 +781,7 @@ void MainWindow::showOwnedDialog()
 
 void MainWindow::showUnsavedChangesConfirmation()
 {
-    if (m_classRosterDirty && !m_classDirty && !m_speakingEvaluationDirty)
-    {
-        confirmClassRosterNavigation({});
-        return;
-    }
-
-    if (!m_dirtyState.isDirty())
+    if (!hasUnsavedChanges())
     {
         if (m_statusText)
         {
@@ -460,41 +789,7 @@ void MainWindow::showUnsavedChangesConfirmation()
         }
         return;
     }
-
-    auto weak = get_weak();
-    showDialog(
-        L"Unsaved changes",
-        L"Choose Save to let the feature save changes, Discard to discard them, or Keep editing to cancel.",
-        L"Save",
-        L"Discard",
-        L"Keep editing",
-        [weak](ClassMngrWinUIDialogs::DialogOutcome outcome) {
-            if (auto self = weak.get())
-            {
-                switch (ClassMngrWinUIDialogs::resolveUnsavedChanges(
-                    self->m_dirtyState,
-                    outcome
-                    ))
-                {
-                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Save:
-                    self->m_statusText.Text(
-                        L"Save requested; changes remain dirty until the feature completes it."
-                        );
-                    break;
-                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Discard:
-                    self->m_dirtyState.markClean();
-                    self->m_statusText.Text(L"Unsaved changes discarded.");
-                    break;
-                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Stay:
-                    self->m_statusText.Text(L"Continuing to edit unsaved changes.");
-                    break;
-                case ClassMngrWinUIDialogs::UnsavedChangesDecision::Proceed:
-                    self->m_statusText.Text(L"No unsaved changes.");
-                    break;
-                }
-            }
-        }
-        );
+    confirmUnsavedNavigation({});
 }
 
 void MainWindow::showDialog(
@@ -625,11 +920,6 @@ void MainWindow::closeShell() noexcept
         {
             m_navigationView.SelectionChanged(m_selectionChangedToken);
             m_selectionChangedToken = {};
-        }
-        if (m_backRequestedToken.value != 0)
-        {
-            m_navigationView.BackRequested(m_backRequestedToken);
-            m_backRequestedToken = {};
         }
         if (m_navigatedToken.value != 0)
         {

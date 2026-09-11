@@ -163,6 +163,103 @@ bool MainWindow::runPhase6ScheduleChecks()
         return fail(32);
     }
 
+    const auto testingClassesButton = m_scheduleTestingClassesButton;
+    const auto testingBanner = m_scheduleTestingBanner;
+    const auto scheduleScroll = m_scheduleTabs.Items().GetAt(0)
+        .try_as<Microsoft::UI::Xaml::Controls::PivotItem>()
+        .Content()
+        .try_as<Microsoft::UI::Xaml::Controls::ScrollViewer>();
+    bool fixedRowsReady = true;
+    if (!m_scheduleBoardRoot || m_scheduleBoardRoot.RowDefinitions().Size() < 2)
+    {
+        fixedRowsReady = false;
+    }
+    else
+    {
+        for (uint32_t row = 1;
+             row < m_scheduleBoardRoot.RowDefinitions().Size();
+             ++row)
+        {
+            const auto height = m_scheduleBoardRoot.RowDefinitions().GetAt(row)
+                .Height();
+            if (height.GridUnitType != Microsoft::UI::Xaml::GridUnitType::Pixel
+                || height.Value != 48.0)
+            {
+                fixedRowsReady = false;
+                break;
+            }
+        }
+    }
+    const bool testingClassesButtonReady =
+        testingClassesButton
+        && testingClassesButton.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed;
+    const bool testingBannerReady =
+        testingBanner
+        && testingBanner.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed;
+    const bool testingClassesColumnReady =
+        testingClassesButton
+        && Microsoft::UI::Xaml::Controls::Grid::GetColumn(
+            testingClassesButton
+            ) == 3;
+    const uint32_t testingClassesColumnValue = testingClassesButton
+        ? Microsoft::UI::Xaml::Controls::Grid::GetColumn(testingClassesButton)
+        : 15u;
+    const bool importButtonReady =
+        m_scheduleImportModeButton
+        && Microsoft::UI::Xaml::Controls::Grid::GetColumn(
+            m_scheduleImportModeButton
+            ) == 5;
+    const bool scheduleScrollFound = static_cast<bool>(scheduleScroll);
+    const bool scheduleScrollHorizontalReady =
+        scheduleScrollFound
+        && scheduleScroll.HorizontalScrollBarVisibility()
+            == Microsoft::UI::Xaml::Controls::ScrollBarVisibility::Auto;
+    const uint32_t regularChromeFailureMask =
+        (!testingClassesButtonReady ? 1u : 0u)
+        | (!testingBannerReady ? 2u : 0u)
+        | (!testingClassesColumnReady ? 4u : 0u)
+        | (!importButtonReady ? 8u : 0u)
+        | (!scheduleScrollFound ? 16u : 0u)
+        | (!scheduleScrollHorizontalReady ? 64u : 0u)
+        | (!fixedRowsReady ? 32u : 0u);
+    const bool regularChromeReady = regularChromeFailureMask == 0;
+    if (!regularChromeReady)
+    {
+        return fail(
+            524288
+            | regularChromeFailureMask
+            | ((testingClassesColumnValue & 0x0Fu) << 8)
+            );
+    }
+
+    setScheduleDisplayMode(
+        static_cast<int>(
+            classmngr::engine::ScheduleReportDisplayMode::Testing
+            )
+        );
+    const auto testingBannerText = testingBanner.Child().try_as<
+        Microsoft::UI::Xaml::Controls::TextBlock>();
+    const bool testingChromeReady =
+        testingClassesButton.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && testingBanner.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && testingBannerText
+        && std::wstring_view(testingBannerText.Text().c_str()).find(
+            L"Testing View"
+            ) != std::wstring_view::npos;
+    setScheduleDisplayMode(
+        static_cast<int>(
+            classmngr::engine::ScheduleReportDisplayMode::Regular
+            )
+        );
+    if (!testingChromeReady)
+    {
+        return fail(1048576);
+    }
+
     m_scheduleTypeCombo.SelectedIndex(0);
     m_scheduleDayCombo.SelectedIndex(0);
     m_scheduleStartTextBox.Text(L"4:00 PM");

@@ -2,49 +2,53 @@
 
 ## Latest Completed Deployment
 
-Deployment `sub_prep_tabs_return_20260911` is complete. The WinUI Sub Prep
-Pivot now appears immediately below the page description, and its headers use
-the shared top-tab typography used by My Workspace, Classes, and Campus
-Directory.
+Deployment `winui_parity_pass_20260912` completed the dependency-ordered
+Medium-route WinUI parity pass for the shell, My Information, Schedule and
+Testing, Classes, and Speaking Analytics surfaces. Existing engine, service,
+and persistence contracts were preserved.
 
-Sub Prep retains its stateful ScrollViewer and explicitly reattaches it to a
-fresh Frame page on every activation. The phase-6 verifier now covers the
-Sub Prep -> Classes -> Sub Prep return path and confirms that the page content,
-tabs, and status controls are restored.
+The pass adds shared unsaved-navigation continuation, debounced My Information
+autosave and preview fallbacks, persisted schedule hover customization,
+testing-class workflow/navigation, responsive class analytics, and an actual
+Speaking Analytics year-to-date line chart. Phase-6 diagnostics were expanded
+to cover the new behavior.
 
-The targeted x64 Debug WinUI build passed with zero errors and two pre-existing
-Visual Studio library-path warnings. The Sub Prep, Classes, and Campus
-Directory runtime verifiers exited 0, and `git diff --check` passes.
+## Verified Handoff
+
+- Full x64 Debug CTest: 60/60 passed.
+- Engine/feature subset: 18/18 passed.
+- x64 WinUI Debug and Release builds and stage verification passed.
+- x86/Win32 WinUI Release build and stage verification passed.
+- All listed phase-3, phase-4, phase-5, and phase-6 WinUI diagnostics passed.
+- The native scenario runner produced and validated
+  `artifacts/phase6/winui-parity-x64-debug-final2/phase6-winui-shell-final2.png`
+  and its
+  metadata sidecar with process exit code 0 and no forced termination.
+
+The local Qt reference pictures remain available under
+`artifacts/phase0/windows-qt-visual`; no reattachment was required. The
+current host clamps the native capture to 800x600 while the reference set is
+1270x1040 at 150%, so a same-dimension pixel diff was not claimed or run.
 
 ## Active Deployment Handoff
 
-No active deployment remains. The read-only Git handoff contains only the nine
-WinUI files changed for this deployment; no unrelated tracked edits were
-present.
+No active deployment remains after the parity-pass commit. The staged Debug
+executable is at
+`dist/ClassMngr-windows-winui-x64/Debug/ClassMngrWinUI.exe`.
 
 ## Goal
 
-Keep the Windows WinUI feature pages visually consistent and resilient across
-Frame navigation while preserving stateful page controls and existing engine
-contracts.
+Keep the Windows WinUI feature pages visually consistent with the Qt
+references, make navigation and page state resilient, and preserve existing
+engine contracts while completing this parity slice.
 
 ## Overall Progress
 
-The WinUI lane now has shared typography resources and a shared top-tab header
-builder for the Workspace, Classes, Sub Prep, and Campus Directory navigation
-surfaces. My Information already uses the retained-host lifecycle pattern that
-Sub Prep now follows.
-
-## Current Position
-
-The implementation is in `src/platform/windows/winui`. The staged Debug
-executable is ready at
-`dist/ClassMngr-windows-winui-x64/Debug/ClassMngrWinUI.exe`.
-
-Manual UI Automation or screenshot review was not run; runtime coverage is
-provided by the focused phase verifiers.
+The requested parity slice is implemented and verified. Remaining visual work
+belongs to later product phases or requires a host with a matching capture
+size; it is not a blocker for this deployment.
 
 ## Next Milestone
 
-If requested, perform a manual visual pass at supported window sizes to review
-tab spacing and font appearance alongside the existing UI Automation coverage.
+Continue with the next explicitly requested porting phase. Do not broaden this
+commit into unrelated encoding cleanup or Phase-7 report/PDF/Office adapters.

@@ -17,6 +17,46 @@ void MainWindow::refreshScheduleWorkspace()
     }
 
     const bool hasDatabase = static_cast<bool>(m_openDatabase);
+    if (!hasDatabase)
+    {
+        m_scheduleDisplayMode =
+            classmngr::engine::ScheduleReportDisplayMode::Regular;
+    }
+    else
+    {
+        classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
+        const auto storedMode = settings.load("schedule_display_mode");
+        const auto* mode = storedMode
+            ? std::get_if<std::string>(&*storedMode)
+            : nullptr;
+        if (mode)
+        {
+            if (*mode == "intensive")
+            {
+                m_scheduleDisplayMode =
+                    classmngr::engine::ScheduleReportDisplayMode::Intensive;
+            }
+            else if (*mode == "testing")
+            {
+                m_scheduleDisplayMode =
+                    classmngr::engine::ScheduleReportDisplayMode::Testing;
+            }
+            else
+            {
+                m_scheduleDisplayMode =
+                    classmngr::engine::ScheduleReportDisplayMode::Regular;
+            }
+        }
+        else
+        {
+            const auto legacyMode = settings.load("schedule_show_intensive");
+            m_scheduleDisplayMode =
+                legacyMode
+                    && MainWindowDetail::settingBool(*legacyMode, false)
+                ? classmngr::engine::ScheduleReportDisplayMode::Intensive
+                : classmngr::engine::ScheduleReportDisplayMode::Regular;
+        }
+    }
     const auto setEnabled = [hasDatabase](auto const& control) {
         if (control)
         {

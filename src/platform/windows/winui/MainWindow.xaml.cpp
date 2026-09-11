@@ -78,6 +78,8 @@ MainWindow::MainWindow()
         Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
     m_closeFileMenu = RootGrid().FindName(L"CloseFileMenuItem").as<
         Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
+    m_preferencesMenu = RootGrid().FindName(L"PreferencesMenuItem").as<
+        Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
     m_printCurrentPageMenu = RootGrid().FindName(
         L"PrintCurrentPageMenuItem"
         ).as<Microsoft::UI::Xaml::Controls::MenuFlyoutItem>();
@@ -134,9 +136,6 @@ MainWindow::MainWindow()
 
     m_selectionChangedToken = m_navigationView.SelectionChanged(
         {this, &MainWindow::NavigationView_SelectionChanged}
-        );
-    m_backRequestedToken = m_navigationView.BackRequested(
-        {this, &MainWindow::NavigationView_BackRequested}
         );
     m_navigatedToken = m_contentFrame.Navigated(
         {this, &MainWindow::ContentFrame_Navigated}

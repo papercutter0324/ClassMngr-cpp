@@ -22,20 +22,46 @@ MainWindow::buildClassAnalyticsSection()
 
     auto analyticsRoot = makeRoot(StackPanel());
     auto analyticsTopBar = Grid();
-    analyticsTopBar.ColumnSpacing(16.0);
+    analyticsTopBar.ColumnSpacing(12.0);
     auto analyticsTitleColumn = ColumnDefinition();
     analyticsTitleColumn.Width(GridLengthHelper::FromValueAndType(
         1.0,
         GridUnitType::Star
         ));
     analyticsTopBar.ColumnDefinitions().Append(analyticsTitleColumn);
-    analyticsTopBar.ColumnDefinitions().Append(ColumnDefinition());
+    auto evaluationColumn = ColumnDefinition();
+    evaluationColumn.Width(GridLengthHelper::FromValueAndType(
+        1.0,
+        GridUnitType::Auto
+        ));
+    analyticsTopBar.ColumnDefinitions().Append(evaluationColumn);
 
     m_speakingAnalyticsStatusText = TextBlock();
     m_speakingAnalyticsStatusText.Text(
         L"Select a class to view speaking analytics."
         );
     m_speakingAnalyticsStatusText.TextWrapping(TextWrapping::Wrap);
+    m_speakingAnalyticsStatusText.Visibility(Visibility::Collapsed);
+    m_speakingAnalyticsStatusText.RegisterPropertyChangedCallback(
+        TextBlock::TextProperty(),
+        [](DependencyObject const& source, DependencyProperty const& property) {
+            static_cast<void>(property);
+            const auto sender = source.try_as<TextBlock>();
+            if (!sender)
+            {
+                return;
+            }
+            const winrt::hstring message = sender.Text();
+            const std::wstring_view text(message.c_str(), message.size());
+            const bool isError = text.find(L"could not")
+                    != std::wstring_view::npos
+                || text.find(L"error") != std::wstring_view::npos
+                || text.find(L"unavailable") != std::wstring_view::npos;
+            sender.Visibility(
+                isError ? Visibility::Visible : Visibility::Collapsed
+                );
+        }
+        );
     setAutomationName(
         m_speakingAnalyticsStatusText,
         L"Speaking analytics status"
@@ -43,7 +69,9 @@ MainWindow::buildClassAnalyticsSection()
     m_speakingAnalyticsLoading = true;
     m_speakingAnalyticsName = "All";
     m_speakingAnalyticsSelector = ComboBox();
-    m_speakingAnalyticsSelector.MinWidth(220.0);
+    m_speakingAnalyticsSelector.MinWidth(168.0);
+    m_speakingAnalyticsSelector.Width(180.0);
+    m_speakingAnalyticsSelector.MaxWidth(220.0);
     m_speakingAnalyticsSelector.IsTabStop(true);
     m_speakingAnalyticsSelector.TabIndex(0);
     setAutomationName(
@@ -88,6 +116,7 @@ MainWindow::buildClassAnalyticsSection()
     auto evaluationControls = StackPanel();
     evaluationControls.Orientation(Orientation::Horizontal);
     evaluationControls.Spacing(8.0);
+    evaluationControls.HorizontalAlignment(HorizontalAlignment::Right);
     evaluationControls.VerticalAlignment(VerticalAlignment::Center);
     auto evaluationLabel = TextBlock();
     evaluationLabel.Text(L"Evaluation");
@@ -102,17 +131,14 @@ MainWindow::buildClassAnalyticsSection()
 
     auto analyticsSummaryGrid = Grid();
     analyticsSummaryGrid.ColumnSpacing(12.0);
+    analyticsSummaryGrid.RowSpacing(12.0);
+    analyticsSummaryGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
     const std::array<wchar_t const*, 4> summaryTitles{
         L"Class Average", L"Students Fully Scored", L"Strongest Area", L"Focus Area"
     };
+    std::array<Border, 4> summaryCards{};
     for (int column = 0; column < static_cast<int>(summaryTitles.size()); ++column)
     {
-        auto definition = ColumnDefinition();
-        definition.Width(GridLengthHelper::FromValueAndType(
-            1.0,
-            GridUnitType::Star
-            ));
-        analyticsSummaryGrid.ColumnDefinitions().Append(definition);
         auto card = ClassMngrWinUISharedUX::buildCard({
             summaryTitles[static_cast<std::size_t>(column)],
             L"",
@@ -120,15 +146,62 @@ MainWindow::buildClassAnalyticsSection()
                 + hstring(summaryTitles[static_cast<std::size_t>(column)])
             });
         auto value = TextBlock();
-        value.Text(L"â€”");
+        value.Text(L"\u2014");
         value.FontSize(20.0);
         value.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
         value.TextWrapping(TextWrapping::Wrap);
         m_speakingAnalyticsSummaryValues[static_cast<std::size_t>(column)] = value;
         card.content.Children().Append(value);
-        Grid::SetColumn(card.root, column);
+        summaryCards[static_cast<std::size_t>(column)] = card.root;
         analyticsSummaryGrid.Children().Append(card.root);
     }
+    const auto applySummaryLayout = [analyticsSummaryGrid, summaryCards](
+        double width
+        ) {
+        const int columns = width >= 1120.0
+            ? 4
+            : width >= 680.0
+                ? 2
+                : 1;
+        analyticsSummaryGrid.ColumnDefinitions().Clear();
+        analyticsSummaryGrid.RowDefinitions().Clear();
+        for (int column = 0; column < columns; ++column)
+        {
+            auto definition = ColumnDefinition();
+            definition.Width(GridLengthHelper::FromValueAndType(
+                1.0,
+                GridUnitType::Star
+                ));
+            analyticsSummaryGrid.ColumnDefinitions().Append(definition);
+        }
+        const int rows = (4 + columns - 1) / columns;
+        for (int row = 0; row < rows; ++row)
+        {
+            auto definition = RowDefinition();
+            definition.Height(GridLengthHelper::FromValueAndType(
+                1.0,
+                GridUnitType::Auto
+                ));
+            analyticsSummaryGrid.RowDefinitions().Append(definition);
+        }
+        for (int index = 0; index < 4; ++index)
+        {
+            Grid::SetColumn(
+                summaryCards[static_cast<std::size_t>(index)],
+                index % columns
+                );
+            Grid::SetRow(
+                summaryCards[static_cast<std::size_t>(index)],
+                index / columns
+                );
+        }
+    };
+    analyticsSummaryGrid.SizeChanged(
+        [applySummaryLayout, analyticsSummaryGrid](auto const&, auto const&) {
+            applySummaryLayout(analyticsSummaryGrid.ActualWidth());
+        }
+        );
+    applySummaryLayout(1200.0);
     analyticsRoot.Children().Append(analyticsSummaryGrid);
 
     m_speakingAnalyticsSummaryText = TextBlock();
@@ -142,40 +215,54 @@ MainWindow::buildClassAnalyticsSection()
 
     auto analyticsChartsGrid = Grid();
     analyticsChartsGrid.ColumnSpacing(12.0);
-    for (int column = 0; column < 2; ++column)
-    {
-        auto definition = ColumnDefinition();
-        definition.Width(GridLengthHelper::FromValueAndType(
-            1.0,
-            GridUnitType::Star
-            ));
-        analyticsChartsGrid.ColumnDefinitions().Append(definition);
-    }
+    analyticsChartsGrid.RowSpacing(12.0);
+    analyticsChartsGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
 
     auto analyticsCriteriaCard = ClassMngrWinUISharedUX::buildCard({
         L"By Criterion",
         L"Average score and grade distribution across each criterion.",
         L"Speaking analytics criteria"
         });
+    analyticsCriteriaCard.root.HorizontalAlignment(HorizontalAlignment::Stretch);
+    analyticsCriteriaCard.content.HorizontalAlignment(HorizontalAlignment::Stretch);
     auto analyticsLegend = StackPanel();
     analyticsLegend.Orientation(Orientation::Horizontal);
     analyticsLegend.Spacing(12.0);
     for (const std::wstring_view grade : {L"A+", L"A", L"B+", L"B", L"C"})
     {
-        auto item = TextBlock();
-        item.Text(hstring(L"â— ") + hstring(grade));
-        item.FontSize(12.0);
+        auto item = StackPanel();
+        item.Orientation(Orientation::Horizontal);
+        item.Spacing(6.0);
+        item.VerticalAlignment(VerticalAlignment::Center);
         const auto gradeColor = grade == L"A+" ? Windows::UI::Color{255, 21, 148, 71}
             : grade == L"A" ? Windows::UI::Color{255, 63, 126, 203}
             : grade == L"B+" ? Windows::UI::Color{255, 215, 163, 22}
             : grade == L"B" ? Windows::UI::Color{255, 239, 90, 19}
             : Windows::UI::Color{255, 189, 24, 33};
-        item.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(gradeColor));
+        auto swatch = Border();
+        swatch.Width(10.0);
+        swatch.Height(10.0);
+        swatch.CornerRadius(CornerRadius{5.0, 5.0, 5.0, 5.0});
+        swatch.Background(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(gradeColor)
+            );
+        auto label = TextBlock();
+        label.Text(hstring(grade));
+        label.FontSize(12.0);
+        label.VerticalAlignment(VerticalAlignment::Center);
+        label.Foreground(
+            Microsoft::UI::Xaml::Media::SolidColorBrush(gradeColor)
+            );
+        item.Children().Append(swatch);
+        item.Children().Append(label);
         analyticsLegend.Children().Append(item);
     }
     analyticsCriteriaCard.content.Children().Append(analyticsLegend);
     m_speakingAnalyticsCriteriaPanel = StackPanel();
-    m_speakingAnalyticsCriteriaPanel.Spacing(10.0);
+    m_speakingAnalyticsCriteriaPanel.Spacing(12.0);
+    m_speakingAnalyticsCriteriaPanel.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
     setAutomationName(
         m_speakingAnalyticsCriteriaPanel,
         L"Speaking analytics criterion metrics"
@@ -191,6 +278,8 @@ MainWindow::buildClassAnalyticsSection()
         L"Grade histogram for the selected evaluation and year-to-date trend.",
         L"Speaking analytics class shape"
         });
+    analyticsShapeCard.root.HorizontalAlignment(HorizontalAlignment::Stretch);
+    analyticsShapeCard.content.HorizontalAlignment(HorizontalAlignment::Stretch);
     m_speakingAnalyticsShapeText = TextBlock();
     m_speakingAnalyticsShapeText.TextWrapping(TextWrapping::Wrap);
     m_speakingAnalyticsShapeText.Visibility(Visibility::Collapsed);
@@ -200,10 +289,71 @@ MainWindow::buildClassAnalyticsSection()
         );
     analyticsShapeCard.content.Children().Append(m_speakingAnalyticsShapeText);
     m_speakingAnalyticsShapePanel = StackPanel();
-    m_speakingAnalyticsShapePanel.Spacing(10.0);
+    m_speakingAnalyticsShapePanel.Spacing(12.0);
+    m_speakingAnalyticsShapePanel.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
     analyticsShapeCard.content.Children().Append(m_speakingAnalyticsShapePanel);
     Grid::SetColumn(analyticsShapeCard.root, 1);
     analyticsChartsGrid.Children().Append(analyticsShapeCard.root);
+    const std::array<Border, 2> analyticsChartCards{
+        analyticsCriteriaCard.root,
+        analyticsShapeCard.root
+    };
+    const auto applyChartsLayout = [analyticsChartsGrid, analyticsChartCards](
+        double width
+        ) {
+        const bool wide = width >= 900.0;
+        analyticsChartsGrid.ColumnDefinitions().Clear();
+        analyticsChartsGrid.RowDefinitions().Clear();
+        if (wide)
+        {
+            for (const double weight : {6.0, 4.0})
+            {
+                auto definition = ColumnDefinition();
+                definition.Width(GridLengthHelper::FromValueAndType(
+                    weight,
+                    GridUnitType::Star
+                    ));
+                analyticsChartsGrid.ColumnDefinitions().Append(definition);
+            }
+        }
+        else
+        {
+            auto definition = ColumnDefinition();
+            definition.Width(GridLengthHelper::FromValueAndType(
+                1.0,
+                GridUnitType::Star
+                ));
+            analyticsChartsGrid.ColumnDefinitions().Append(definition);
+        }
+        for (int row = 0; row < (wide ? 1 : 2); ++row)
+        {
+            auto definition = RowDefinition();
+            definition.Height(GridLengthHelper::FromValueAndType(
+                1.0,
+                GridUnitType::Auto
+                ));
+            analyticsChartsGrid.RowDefinitions().Append(definition);
+        }
+        for (int index = 0; index < 2; ++index)
+        {
+            Grid::SetColumn(
+                analyticsChartCards[static_cast<std::size_t>(index)],
+                wide ? index : 0
+                );
+            Grid::SetRow(
+                analyticsChartCards[static_cast<std::size_t>(index)],
+                wide ? 0 : index
+                );
+        }
+    };
+    analyticsChartsGrid.SizeChanged(
+        [applyChartsLayout, analyticsChartsGrid](auto const&, auto const&) {
+            applyChartsLayout(analyticsChartsGrid.ActualWidth());
+        }
+        );
+    applyChartsLayout(1000.0);
     analyticsRoot.Children().Append(analyticsChartsGrid);
 
     auto analyticsRankingCard = ClassMngrWinUISharedUX::buildCard({

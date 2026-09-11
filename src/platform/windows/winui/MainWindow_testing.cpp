@@ -174,6 +174,8 @@ void MainWindow::createTestingClass()
         m_testingValidationText.Visibility(Visibility::Visible);
         return;
     }
+    m_dirtyState.markDirty();
+    updateFileCommandState();
     refreshTestingWorkspace();
     for (int index = 0;
          index < static_cast<int>(m_testingClassSelector.Items().Size());
@@ -232,7 +234,10 @@ void MainWindow::assignTestingClass()
         m_testingValidationText.Visibility(Visibility::Visible);
         return;
     }
+    m_dirtyState.markDirty();
+    updateFileCommandState();
     refreshTestingWorkspace();
+    refreshScheduleBoard();
     m_testingStatusText.Text(L"Testing assignment saved.");
 }
 
@@ -270,7 +275,10 @@ void MainWindow::deleteTestingAssignment()
         m_testingValidationText.Visibility(Visibility::Visible);
         return;
     }
+    m_dirtyState.markDirty();
+    updateFileCommandState();
     refreshTestingWorkspace();
+    refreshScheduleBoard();
     m_testingStatusText.Text(L"Testing assignment deleted.");
 }
 

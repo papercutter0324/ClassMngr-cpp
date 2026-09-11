@@ -13,6 +13,23 @@ bool MainWindow::runPhase6ClassInformationChecks()
         m_phase6ClassInformationFailureMask = failureMask;
         return false;
     };
+    const auto containsKnownEncodingCorruption = [](winrt::hstring const& value) {
+        const std::wstring_view text(value.c_str(), value.size());
+        for (const std::wstring_view marker : {
+                 L"\uFFFD",
+                 L"\u00C3\u00A2",
+                 L"\u00C3\u201A",
+                 L"\u00C2\u00B7",
+                 L"\u00E2\u2014"
+             })
+        {
+            if (text.find(marker) != std::wstring_view::npos)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
     m_dirtyState.markClean();
@@ -29,12 +46,30 @@ bool MainWindow::runPhase6ClassInformationChecks()
         && classNavigationLocation() == ClassNavigationLocation::Top
         && m_classStatusText
         && m_classStatusText.Text() == L"No database open."
+        && m_classStatusText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
         && m_classNewButton
         && !m_classNewButton.IsEnabled()
-        && m_classNotesStatusText.Text() == L"No database open.";
+        && m_classNotesStatusText.Text() == L"No database open."
+        && m_classNotesStatusText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
+        && m_classNameTextBox
+        && m_classNameTextBox.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed;
     if (!noDatabaseReady)
     {
         return fail(1);
+    }
+    const bool noKnownEncodingCorruption =
+        !containsKnownEncodingCorruption(m_classStatusText.Text())
+        && !containsKnownEncodingCorruption(m_classValidationText.Text())
+        && !containsKnownEncodingCorruption(m_classSectionTitle.Text())
+        && !containsKnownEncodingCorruption(m_speakingAnalyticsStatusText.Text())
+        && !containsKnownEncodingCorruption(m_speakingAnalyticsSummaryText.Text())
+        && !containsKnownEncodingCorruption(m_speakingAnalyticsShapeText.Text());
+    if (!noKnownEncodingCorruption)
+    {
+        return fail(32768);
     }
 
     auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
@@ -48,6 +83,8 @@ bool MainWindow::runPhase6ClassInformationChecks()
         m_classSelector.Items().Size() == 0
         && m_classStatusText.Text()
             == L"No classes found. Choose New Class to add one."
+        && m_classStatusText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
         && m_classNewButton.IsEnabled();
     if (!emptyReady)
     {
@@ -253,6 +290,14 @@ bool MainWindow::runPhase6ClassInformationChecks()
 
     selectClassNavigationGrade(false, firstNavigationInfo.classGrade);
     toggleClassNavigationDay("Monday");
+    const auto firstClassTab = m_classNavigationClassTabs.Children().Size() == 1
+        ? m_classNavigationClassTabs.Children().GetAt(0).try_as<
+            Microsoft::UI::Xaml::Controls::Button>()
+        : Microsoft::UI::Xaml::Controls::Button{nullptr};
+    const bool classTabHeaderReady = firstClassTab
+        && boxedString(firstClassTab.Content()).starts_with(
+            L"Portable Class Updated - "
+            );
     const bool topNavigationReady =
         classNavigationLocation() == ClassNavigationLocation::Top
         && Microsoft::UI::Xaml::Controls::Grid::GetRow(
@@ -279,10 +324,75 @@ bool MainWindow::runPhase6ClassInformationChecks()
             m_classNavigationSelectedDays.end(),
             "Monday"
             ) != m_classNavigationSelectedDays.end()
-        && m_classNavigationClassTabs.Children().Size() == 1;
+        && m_classNavigationClassTabs.Children().Size() == 1
+        && classTabHeaderReady;
     if (!topNavigationReady)
     {
-        return fail(256);
+        uint32_t topNavigationFailureMask = 0;
+        if (classNavigationLocation() != ClassNavigationLocation::Top)
+        {
+            topNavigationFailureMask |= 1u << 18;
+        }
+        if (Microsoft::UI::Xaml::Controls::Grid::GetRow(
+                m_classNavigationCard
+                ) != 1)
+        {
+            topNavigationFailureMask |= 1u << 19;
+        }
+        if (Microsoft::UI::Xaml::Controls::Grid::GetRow(
+                m_classSectionTitle
+                ) != 2)
+        {
+            topNavigationFailureMask |= 1u << 20;
+        }
+        if (Microsoft::UI::Xaml::Controls::Grid::GetRow(
+                m_classSectionContentHost
+                ) != 3)
+        {
+            topNavigationFailureMask |= 1u << 21;
+        }
+        if (Microsoft::UI::Xaml::Controls::Grid::GetRow(
+                m_classSectionActionsHost
+                ) != 4)
+        {
+            topNavigationFailureMask |= 1u << 22;
+        }
+        if (m_classPageRoot.RowDefinitions().GetAt(1).Height().GridUnitType
+            != Microsoft::UI::Xaml::GridUnitType::Auto)
+        {
+            topNavigationFailureMask |= 1u << 23;
+        }
+        if (m_classPageRoot.RowDefinitions().GetAt(2).Height().GridUnitType
+            != Microsoft::UI::Xaml::GridUnitType::Auto)
+        {
+            topNavigationFailureMask |= 1u << 24;
+        }
+        if (m_classPageRoot.RowDefinitions().GetAt(3).Height().GridUnitType
+            != Microsoft::UI::Xaml::GridUnitType::Star)
+        {
+            topNavigationFailureMask |= 1u << 25;
+        }
+        if (m_classNavigationAll)
+        {
+            topNavigationFailureMask |= 1u << 26;
+        }
+        if (std::find(
+                m_classNavigationSelectedDays.begin(),
+                m_classNavigationSelectedDays.end(),
+                "Monday"
+                ) == m_classNavigationSelectedDays.end())
+        {
+            topNavigationFailureMask |= 1u << 27;
+        }
+        if (m_classNavigationClassTabs.Children().Size() != 1)
+        {
+            topNavigationFailureMask |= 1u << 28;
+        }
+        if (!classTabHeaderReady)
+        {
+            topNavigationFailureMask |= 1u << 29;
+        }
+        return fail(256 | topNavigationFailureMask);
     }
 
     const int firstClassId = m_classSelectedId;
@@ -445,7 +555,11 @@ bool MainWindow::runPhase6ClassInformationChecks()
     m_openDatabase.reset();
     refreshClassesPage();
     const bool clearReady = m_classStatusText.Text() == L"No database open."
+        && m_classStatusText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
         && classNavigationLocation() == ClassNavigationLocation::Top
+        && m_classNameTextBox.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
         && !m_classNameTextBox.IsEnabled()
         && !m_classSaveButton.IsEnabled()
         && !m_classNotesSaveButton.IsEnabled();

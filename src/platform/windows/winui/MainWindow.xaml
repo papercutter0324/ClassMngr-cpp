@@ -176,7 +176,7 @@
                         x:Name="PreferencesMenuItem"
                         Text="Preferences..."
                         Tag="edit.preferences"
-                        IsEnabled="False"
+                        Click="PreferencesMenuItem_Click"
                         AutomationProperties.Name="Preferences command" />
                 </MenuBarItem>
                 <MenuBarItem
@@ -280,7 +280,7 @@
                     Width="{StaticResource Phase5SidebarMinimumWidth}"
                     HorizontalAlignment="Left"
                     Style="{StaticResource Phase3NavigationViewStyle}"
-                    IsBackButtonVisible="Visible"
+                    IsBackButtonVisible="Collapsed"
                     IsPaneOpen="True"
                     IsPaneToggleButtonVisible="False"
                     IsSettingsVisible="False"

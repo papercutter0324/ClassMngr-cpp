@@ -6,6 +6,31 @@ namespace winrt::ClassMngrWinUI::implementation
 {
 using namespace MainWindowDetail;
 
+namespace
+{
+bool hasPersonalText(std::wstring_view value) noexcept
+{
+    return value.find_first_not_of(L" \t\r\n") != std::wstring_view::npos;
+}
+
+void cancelPersonalDetailsAutosave(
+    Microsoft::UI::Xaml::Controls::ScrollViewer const& scroll
+    )
+{
+    if (!scroll)
+    {
+        return;
+    }
+
+    if (const auto timer = scroll.Tag().try_as<
+            Microsoft::UI::Dispatching::DispatcherQueueTimer>())
+    {
+        timer.Stop();
+    }
+    scroll.Tag(nullptr);
+}
+} // namespace
+
 void MainWindow::populatePersonalDetailsPage(
     Microsoft::UI::Xaml::Controls::Page const& page,
     bool refresh
@@ -57,27 +82,13 @@ void MainWindow::populatePersonalDetailsPage(
 
         auto root = StackPanel();
         root.Padding(Thickness{32.0, 24.0, 32.0, 32.0});
-        root.Spacing(18.0);
+        root.Spacing(8.0);
         root.MaxWidth(1180.0);
         root.HorizontalAlignment(HorizontalAlignment::Center);
 
-        auto title = TextBlock();
-        title.Text(L"My Information");
-        title.FontSize(28.0);
-        setAutomationName(title, L"My Information");
-        root.Children().Append(title);
-
-        auto description = TextBlock();
-        description.Text(
-            L"Enter your personal information and choose the signature shown on generated documents."
-            );
-        description.TextWrapping(TextWrapping::Wrap);
-        setAutomationName(description, L"Personal details description");
-        root.Children().Append(description);
-
         m_personalStatusText = TextBlock();
-        m_personalStatusText.Text(L"Loading personal details...");
         m_personalStatusText.TextWrapping(TextWrapping::Wrap);
+        m_personalStatusText.Visibility(Visibility::Collapsed);
         setAutomationName(m_personalStatusText, L"Personal details status");
         root.Children().Append(m_personalStatusText);
 
@@ -189,7 +200,7 @@ void MainWindow::populatePersonalDetailsPage(
             L"Zoom not available (N/A)"
             );
         auto informationFields = Grid();
-        informationFields.ColumnSpacing(16.0);
+        informationFields.ColumnSpacing(8.0);
         for (int index = 0; index < 4; ++index)
         {
             auto column = ColumnDefinition();
@@ -301,33 +312,12 @@ void MainWindow::populatePersonalDetailsPage(
         m_personalSignaturePreviewBorder.HorizontalAlignment(
             HorizontalAlignment::Stretch
             );
-        m_personalSignaturePreviewBorder.CornerRadius(
-            CornerRadius{6.0, 6.0, 6.0, 6.0}
-            );
-        m_personalSignaturePreviewBorder.BorderThickness(
-            Thickness{1.0, 1.0, 1.0, 1.0}
-            );
+        m_personalSignaturePreviewBorder.BorderThickness(Thickness{});
         m_personalSignaturePreviewBorder.Background(
             Microsoft::UI::Xaml::Media::SolidColorBrush(
                 Windows::UI::Color{255, 255, 255, 255}
                 )
             );
-        try
-        {
-            const auto resources = Application::Current().Resources();
-            const auto stroke = resources.Lookup(
-                box_value(hstring(L"Phase3ControlStrokeBrush"))
-                );
-            if (stroke)
-            {
-                m_personalSignaturePreviewBorder.BorderBrush(
-                    stroke.as<Microsoft::UI::Xaml::Media::Brush>()
-                    );
-            }
-        }
-        catch (...)
-        {
-        }
         m_personalSignaturePreviewText = TextBlock();
         m_personalSignaturePreviewText.HorizontalAlignment(
             HorizontalAlignment::Center
@@ -340,7 +330,7 @@ void MainWindow::populatePersonalDetailsPage(
         m_personalSignaturePreviewText.FontSize(38.0);
         m_personalSignaturePreviewText.Foreground(
             Microsoft::UI::Xaml::Media::SolidColorBrush(
-                Windows::UI::Color{255, 24, 24, 24}
+                Windows::UI::Color{255, 0, 0, 0}
                 )
             );
         setAutomationName(m_personalSignaturePreviewText, L"Signature preview");
@@ -415,8 +405,25 @@ void MainWindow::populatePersonalDetailsPage(
             fontName.Text(hstring(boxedString(item.Content())));
             auto sample = TextBlock();
             sample.Text(L"Your Signature");
-            sample.HorizontalAlignment(HorizontalAlignment::Center);
+            sample.HorizontalAlignment(HorizontalAlignment::Stretch);
+            sample.VerticalAlignment(VerticalAlignment::Center);
+            sample.TextAlignment(TextAlignment::Center);
+            sample.TextWrapping(TextWrapping::Wrap);
             sample.FontSize(28.0);
+            sample.Foreground(
+                Microsoft::UI::Xaml::Media::SolidColorBrush(
+                    Windows::UI::Color{255, 0, 0, 0}
+                    )
+                );
+            auto sampleSurface = Border();
+            sampleSurface.MinHeight(64.0);
+            sampleSurface.BorderThickness(Thickness{});
+            sampleSurface.Background(
+                Microsoft::UI::Xaml::Media::SolidColorBrush(
+                    Windows::UI::Color{255, 255, 255, 255}
+                    )
+                );
+            sampleSurface.Child(sample);
             const std::array<wchar_t const*, 4> sampleFonts{
                 L"Comic Sans MS", L"Segoe Script", L"Lucida Handwriting", L"Segoe Print"};
             sample.FontFamily(Microsoft::UI::Xaml::Media::FontFamily(
@@ -424,12 +431,13 @@ void MainWindow::populatePersonalDetailsPage(
             auto select = Button();
             select.IsTabStop(true);
             select.TabIndex(9 + index);
+            select.Tag(sampleSurface);
             select.Click([this, index](auto const&, auto const&) {
                 m_personalSignatureFontCombo.SelectedIndex(index);
             });
             setAutomationName(select, L"Use signature font " + boxedString(item.Content()));
             cardContents.Children().Append(fontName);
-            cardContents.Children().Append(sample);
+            cardContents.Children().Append(sampleSurface);
             cardContents.Children().Append(select);
             card.Child(cardContents);
             Grid::SetColumn(card, index % 2);
@@ -473,32 +481,6 @@ void MainWindow::populatePersonalDetailsPage(
         signatureCard.content.Children().Append(m_personalImageControls);
         signatureCard.content.Children().Append(m_personalTypedSignatureControls);
         root.Children().Append(signatureCard.root);
-
-        auto actions = StackPanel();
-        actions.Orientation(Orientation::Horizontal);
-        actions.Spacing(8.0);
-        m_personalSaveButton = Button();
-        m_personalSaveButton.Content(box_value(hstring(L"Save Changes")));
-        m_personalSaveButton.IsTabStop(true);
-        m_personalSaveButton.TabIndex(13);
-        m_personalSaveButton.Click(
-            {this, &MainWindow::PersonalDetailsSaveButton_Click}
-            );
-        setAutomationName(m_personalSaveButton, L"Save personal details");
-        m_personalDiscardButton = Button();
-        m_personalDiscardButton.Content(box_value(hstring(L"Discard Changes")));
-        m_personalDiscardButton.IsTabStop(true);
-        m_personalDiscardButton.TabIndex(14);
-        m_personalDiscardButton.Click(
-            {this, &MainWindow::PersonalDetailsDiscardButton_Click}
-            );
-        setAutomationName(
-            m_personalDiscardButton,
-            L"Discard personal detail changes"
-            );
-        actions.Children().Append(m_personalSaveButton);
-        actions.Children().Append(m_personalDiscardButton);
-        root.Children().Append(actions);
 
         scroll.Content(root);
         m_personalDetailsScroll = scroll;
@@ -566,19 +548,12 @@ void MainWindow::populatePersonalDetailsPage(
                 enabled && m_personalSignatureModeCombo.SelectedIndex() == 1
                 );
         }
-        if (m_personalSaveButton)
-        {
-            m_personalSaveButton.IsEnabled(enabled && m_personalDetailsDirty);
-        }
-        if (m_personalDiscardButton)
-        {
-            m_personalDiscardButton.IsEnabled(enabled && m_personalDetailsDirty);
-        }
         updatePersonalSignatureControls();
     };
 
     if (!m_openDatabase)
     {
+        cancelPersonalDetailsAutosave(m_personalDetailsScroll);
         m_personalDetailsLoading = true;
         m_personalDetailsLoaded = false;
         m_personalDetailsDirty = false;
@@ -595,6 +570,7 @@ void MainWindow::populatePersonalDetailsPage(
             L"No database is open. Open a .tps or .db file to edit personal details."
             );
         m_personalStatusText.Text(L"No database open.");
+        m_personalStatusText.Visibility(Visibility::Visible);
         m_personalValidationText.Text({});
         m_personalValidationText.Visibility(Visibility::Collapsed);
         m_personalDetailsLoading = false;
@@ -604,10 +580,10 @@ void MainWindow::populatePersonalDetailsPage(
 
     if (refresh && m_personalDetailsDirty)
     {
-        m_personalStatusText.Text(L"Unsaved personal detail changes are retained.");
         return;
     }
 
+    cancelPersonalDetailsAutosave(m_personalDetailsScroll);
     m_personalDetailsLoading = true;
     classmngr::engine::ApplicationSettingsService settings(*m_openDatabase);
     classmngr::engine::PersonalDetailsService service(settings);
@@ -620,6 +596,7 @@ void MainWindow::populatePersonalDetailsPage(
             L"Personal details could not be loaded: "
             + asWide(loaded.error().message)
             ));
+        m_personalStatusText.Visibility(Visibility::Visible);
         m_personalValidationText.Text(L"The engine rejected the personal-details read.");
         m_personalValidationText.Visibility(Visibility::Visible);
         m_personalDetailsLoading = false;
@@ -677,7 +654,8 @@ void MainWindow::populatePersonalDetailsPage(
         );
     m_personalDetailsLoaded = true;
     m_personalDetailsDirty = false;
-    m_personalStatusText.Text(L"Personal details loaded.");
+    m_personalStatusText.Text({});
+    m_personalStatusText.Visibility(Visibility::Collapsed);
     m_personalValidationText.Text({});
     m_personalValidationText.Visibility(Visibility::Collapsed);
     m_personalImageStatusText.Text(
@@ -742,6 +720,32 @@ void MainWindow::updatePersonalSignatureControls()
     };
     setModeStyle(m_personalSignatureImageButton, !typed);
     setModeStyle(m_personalSignatureTypeButton, typed);
+
+    const std::wstring typedText = m_personalTypedSignatureTextBox
+        ? asWString(m_personalTypedSignatureTextBox.Text())
+        : std::wstring{};
+    const std::wstring nameText = m_personalNameTextBox
+        ? asWString(m_personalNameTextBox.Text())
+        : std::wstring{};
+    const hstring previewText = hasPersonalText(typedText)
+        ? hstring(typedText)
+        : hasPersonalText(nameText)
+            ? hstring(nameText)
+            : hstring(L"Your Signature");
+    const std::array<wchar_t const*, 4> previewFonts{
+        L"Comic Sans MS",
+        L"Segoe Script",
+        L"Lucida Handwriting",
+        L"Segoe Print"
+    };
+    const auto previewBackground =
+        Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 255, 255, 255}
+            );
+    const auto previewForeground =
+        Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 0, 0, 0}
+            );
     const int selectedFont = m_personalSignatureFontCombo
         ? m_personalSignatureFontCombo.SelectedIndex()
         : -1;
@@ -755,6 +759,30 @@ void MainWindow::updatePersonalSignatureControls()
             selected ? L"Selected" : L"Use this font"
             )));
         setModeStyle(button, selected);
+        if (const auto previewSurface = button.Tag().try_as<
+                Microsoft::UI::Xaml::Controls::Border>())
+        {
+            previewSurface.BorderThickness(Microsoft::UI::Xaml::Thickness{});
+            previewSurface.Background(previewBackground);
+            if (const auto preview = previewSurface.Child().try_as<
+                    Microsoft::UI::Xaml::Controls::TextBlock>())
+            {
+                preview.Text(previewText);
+                preview.FontFamily(
+                    Microsoft::UI::Xaml::Media::FontFamily(previewFonts[index])
+                    );
+                preview.Foreground(previewForeground);
+                preview.HorizontalAlignment(
+                    Microsoft::UI::Xaml::HorizontalAlignment::Stretch
+                    );
+                preview.VerticalAlignment(
+                    Microsoft::UI::Xaml::VerticalAlignment::Center
+                    );
+                preview.TextAlignment(
+                    Microsoft::UI::Xaml::TextAlignment::Center
+                    );
+            }
+        }
     }
     updatePersonalSignaturePreview();
 }
@@ -784,10 +812,15 @@ void MainWindow::updatePersonalSignaturePreview()
     const std::wstring typedText = asWString(
         m_personalTypedSignatureTextBox.Text()
         );
+    const std::wstring nameText = m_personalNameTextBox
+        ? asWString(m_personalNameTextBox.Text())
+        : std::wstring{};
     m_personalSignaturePreviewText.Text(
-        typedText.find_first_not_of(L" \t\r\n") == std::wstring::npos
-            ? L"Your Signature"
-            : winrt::hstring(typedText)
+        hasPersonalText(typedText)
+            ? winrt::hstring(typedText)
+            : hasPersonalText(nameText)
+                ? winrt::hstring(nameText)
+                : winrt::hstring(L"Your Signature")
         );
     m_personalSignaturePreviewText.FontSize(38.0);
     const std::array<wchar_t const*, 4> previewFonts{

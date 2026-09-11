@@ -1,5 +1,35 @@
 # Project Diary
 
+## WinUI Parity Pass
+
+- Deployment `winui_parity_pass_20260912` used the Medium route for one
+  dependency-ordered parity slice. The required Qt reference pictures were
+  already tracked locally under `artifacts/phase0/windows-qt-visual`; no
+  reattachment was needed.
+- Navigation now funnels feature dirty flags through one
+  Save/Discard/Keep-editing continuation. It restores the prior selection when
+  a user keeps editing and preserves unrelated dirty feature state when one
+  feature is saved or discarded.
+- Schedule hover customization is persisted as
+  `schedule/hoverBorderColor`, defaulting to the existing gold/yellow color.
+  It changes the pointer-over border only, leaving class-cell fills intact.
+- Schedule testing controls are member-owned because controls appended to a
+  retained page fragment are not reliably discoverable through a parent-tree
+  lookup during diagnostics. Member ownership keeps the visible control and
+  its state synchronized.
+- Speaking Analytics keeps the engine dashboard as the source of truth and
+  renders the year-to-date trend as a WinUI Canvas line chart with guide lines,
+  markers, and evaluation labels. This remains a presentation adapter; no
+  engine contract was changed.
+- The native capture runner passed, but this host produced an 800x600 window
+  while the Qt references are 1270x1040 at 150%. The evidence therefore
+  records lifecycle/capture success and source/layout review, not a
+  same-dimension pixel-match claim.
+- The workflow intake searched for the configured
+  `codex_workflow/medium_route.md` but that file was unavailable in the user
+  profile. The deployment still followed the repository's Medium-route and
+  orchestration instructions.
+
 ## Sub Prep Tabs and Frame Lifecycle
 
 - Deployment `sub_prep_tabs_return_20260911` confirmed the WinUI navigation
@@ -26,10 +56,9 @@
 
 - For the WinUI My Workspace lifecycle bug, do not rely on late Pivot
   selection callbacks to restore a stateful editor. Disable Home-page caching
-  and explicitly reattach the retained personal-details view to the new host;
-  the targeted x64 Debug WinUI build passes with zero errors (two pre-existing
-  library-path warnings), while focused UI Automation validation remains
-  pending.
+  and explicitly reattach the retained personal-details view to the new host.
+  The later parity pass included the focused phase verifiers and native
+  capture validation.
 
 - `ClassMngrEngine` is intentionally Qt-free and configured before Qt discovery; keep portable engine changes independent of Qt where possible.
 - Product selection happens before Qt package discovery so the Windows WinUI lane can configure without a Qt installation.

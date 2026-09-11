@@ -28,6 +28,9 @@ struct RenderOptions
     bool enabled = true;
     bool showEnglishNames = false;
     bool compactPreview = false;
+    classmngr::engine::ScheduleReportDisplayMode displayMode =
+        classmngr::engine::ScheduleReportDisplayMode::Regular;
+    std::string hoverBorderColor = "#D39B25";
 };
 
 winrt::Microsoft::UI::Xaml::Controls::Grid create(

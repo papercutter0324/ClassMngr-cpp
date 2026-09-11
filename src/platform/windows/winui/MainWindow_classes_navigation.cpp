@@ -129,6 +129,34 @@ void MainWindow::refreshClassNavigation(bool selectFallback)
             dayFilter
             );
 
+    const auto classroomNameForId = [&entries](int classId) {
+        for (const auto& entry : entries)
+        {
+            if (entry.classId != classId)
+            {
+                continue;
+            }
+
+            const std::wstring name = asWide(entry.classroomName);
+            if (!name.empty())
+            {
+                return name;
+            }
+            break;
+        }
+        return L"Class " + std::to_wstring(classId);
+    };
+    const auto classTabHeader = [&classroomNameForId](
+        const classmngr::engine::ClassTabNavigationService::ClassTab& classTab
+        ) {
+        std::wstring tabName = asWide(classTab.label);
+        if (tabName.empty())
+        {
+            tabName = L"Class " + std::to_wstring(classTab.classId);
+        }
+        return classroomNameForId(classTab.classId) + L" - " + tabName;
+    };
+
     if (!m_classNavigationAll)
     {
         const bool gradeAvailable = std::any_of(
@@ -285,11 +313,7 @@ void MainWindow::refreshClassNavigation(bool selectFallback)
     {
         for (const auto& classTab : *visibleClasses)
         {
-            std::wstring label = asWide(classTab.label);
-            if (label.empty())
-            {
-                label = L"Class " + std::to_wstring(classTab.classId);
-            }
+            const std::wstring label = classTabHeader(classTab);
             auto button = makeNavigationButton(label);
             setAutomationName(
                 button,

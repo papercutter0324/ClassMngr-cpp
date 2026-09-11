@@ -277,32 +277,6 @@ void MainWindow::NavigationView_SelectionChanged(
     navigateTo(pageId);
 }
 
-void MainWindow::NavigationView_BackRequested(
-    Microsoft::UI::Xaml::Controls::NavigationView const& sender,
-    Microsoft::UI::Xaml::Controls::NavigationViewBackRequestedEventArgs const& arguments
-    )
-{
-    static_cast<void>(sender);
-    static_cast<void>(arguments);
-    if (m_classRosterDirty)
-    {
-        restoreNavigationSelection();
-        confirmClassRosterNavigation([this]() {
-            if (m_contentFrame.CanGoBack())
-            {
-                m_contentFrame.GoBack();
-            }
-            updateNavigationState();
-        });
-        return;
-    }
-    if (m_contentFrame.CanGoBack())
-    {
-        m_contentFrame.GoBack();
-    }
-    updateNavigationState();
-}
-
 void MainWindow::ContentFrame_Navigated(
     Windows::Foundation::IInspectable const& sender,
     Microsoft::UI::Xaml::Navigation::NavigationEventArgs const& arguments
@@ -421,11 +395,11 @@ void MainWindow::navigateTo(std::wstring_view pageId)
         return;
     }
 
-    if (m_classRosterDirty)
+    if (hasUnsavedChanges())
     {
         const std::wstring requestedPage(pageId);
         restoreNavigationSelection();
-        confirmClassRosterNavigation([this, requestedPage]() {
+        confirmUnsavedNavigation([this, requestedPage]() {
             navigateTo(requestedPage);
         });
         return;
@@ -634,8 +608,8 @@ void MainWindow::populateHomePage(
     m_scheduleSlotTextBox.Header(
         winrt::box_value(winrt::hstring(L"Time-slot label"))
         );
-    m_scheduleSlotTextBox.Text(L"09:00â€“09:45");
-    m_scheduleSlotTextBox.PlaceholderText(L"e.g. 09:00â€“09:45");
+    m_scheduleSlotTextBox.Text(L"09:00\u201309:45");
+    m_scheduleSlotTextBox.PlaceholderText(L"e.g. 09:00\u201309:45");
     m_scheduleSlotTextBox.IsTabStop(true);
     m_scheduleSlotTextBox.TabIndex(4);
     m_scheduleSlotTextBox.TextChanging({this, &MainWindow::NameTextBox_TextChanged});
@@ -700,7 +674,9 @@ void MainWindow::populateHomePage(
     rosterLists.Children().Append(m_rosterSourceList);
     rosterLists.Children().Append(m_rosterTransferredList);
     auto rosterTransfer = Button();
-    rosterTransfer.Content(winrt::box_value(winrt::hstring(L"Transfer selected â†’")));
+    rosterTransfer.Content(
+        winrt::box_value(winrt::hstring(L"Transfer selected \u2192"))
+        );
     rosterTransfer.IsTabStop(true);
     rosterTransfer.TabIndex(6);
     rosterTransfer.HorizontalAlignment(HorizontalAlignment::Left);

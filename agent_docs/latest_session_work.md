@@ -1,33 +1,51 @@
 # Latest Session Work
 
-## Latest Deployment Handoff
-
-Deployment `sub_prep_tabs_return_20260911` is complete.
-
-### Changes
-
-- Sub Prep moves its Pivot before the page status/content and retains its
-  ScrollViewer so a fresh Frame page can reattach the existing stateful view.
-- Shared `Phase3TopTab*` resources and `buildTopTabHeader` align the top-tab
-  typography on My Workspace, Classes, Sub Prep, and Campus Directory.
-- The phase-6 Sub Prep verifier now navigates to Classes and back, then checks
-  that the retained content and controls are restored.
-
-### Verification
-
-- The targeted x64 Debug WinUI build staged successfully with zero errors and
-  two pre-existing Visual Studio library-path warnings.
-- `--phase6-sub-prep-test`, `--phase6-class-information-test`, and
-  `--phase5-campus-test` each exited 0.
-- `git diff --check` passed; the read-only Git handoff contains only the nine
-  intended WinUI files.
-
 ## Current Deployment Handoff
 
-No active deployment remains. The staged executable is
-`dist/ClassMngr-windows-winui-x64/Debug/ClassMngrWinUI.exe`. Manual UI
-Automation or screenshot review was not run; the focused runtime verifiers
-cover the requested navigation and shared-tab resource paths.
+Deployment `winui_parity_pass_20260912` completed the requested Medium-route
+WinUI parity slice. The implementation is committed after the verification
+listed below. No reference pictures had to be reattached: the tracked Qt set
+under `artifacts/phase0/windows-qt-visual` was reused.
+
+### Implemented Areas
+
+- Shell navigation hides the back button and uses one shared unsaved-change
+  Save/Discard/Keep-editing continuation across feature dirty flags.
+- My Information removes duplicate actions, validates retained fields, uses
+  debounced autosave, applies typed/name/default signature fallbacks to every
+  preview, and keeps the requested centered white/black preview treatment.
+- Schedule uses fixed row heights, border-only hover feedback with persisted
+  `schedule/hoverBorderColor`, horizontal scrolling, testing banner/actions,
+  and the engine-backed Testing Classes flow.
+- Classes uses prefixed/selected tab headers, compact status treatment, a
+  single-line student count, and responsive analytics with shared summaries,
+  charts, criteria, grade colors, segmented bars, and a real year-to-date line
+  chart for Speaking Analytics.
+- Phase diagnostics cover the changed shell, personal-details, class,
+  schedule, testing, and analytics behavior without changing engine/service
+  contracts.
+
+### Verification Evidence
+
+- x64 Debug feature subset: 18/18 tests passed.
+- Full x64 Debug CTest: 60/60 tests passed.
+- x64 WinUI Debug and Release builds/stage verification passed.
+- x86/Win32 WinUI Release build/stage verification passed.
+- All listed phase-3, phase-4, phase-5, and phase-6 diagnostics passed.
+- Native scenario capture and
+  `scripts/porting/windows/validate_winui_scenario_artifacts.ps1 -RequirePassed`
+  passed for `artifacts/phase6/winui-parity-x64-debug-final2` with process exit code 0,
+  no forced termination, and released window resources.
+- `git diff --check` passed. The capture host produced 800x600 while the Qt
+  references are 1270x1040 at 150%, so no same-dimension pixel-diff claim was
+  made.
+
+### Continuation
+
+The staged Debug executable is
+`dist/ClassMngr-windows-winui-x64/Debug/ClassMngrWinUI.exe`. The next entry
+point is the next explicitly requested porting phase; unrelated encoding
+cleanup and Phase-7 report/PDF/Office adapters remain out of scope.
 
 ## Prior Session Context
 

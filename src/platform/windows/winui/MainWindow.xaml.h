@@ -142,6 +142,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] uint32_t phase4SemanticFailureMask();
     [[nodiscard]] bool runPhase5CampusChecks();
     [[nodiscard]] bool runPhase6PersonalDetailsChecks();
+    [[nodiscard]] uint32_t phase6PersonalDetailsFailureMask() const noexcept;
     [[nodiscard]] bool runPhase6KoreanTeacherChecks();
     [[nodiscard]] bool runPhase6NativeEnglishTeacherChecks();
     [[nodiscard]] bool runPhase6GsTeamChecks();
@@ -176,6 +177,10 @@ struct MainWindow : MainWindowT<MainWindow>
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
     void ShellInfoMenuItem_Click(
+        Windows::Foundation::IInspectable const& sender,
+        Microsoft::UI::Xaml::RoutedEventArgs const& arguments
+        );
+    void PreferencesMenuItem_Click(
         Windows::Foundation::IInspectable const& sender,
         Microsoft::UI::Xaml::RoutedEventArgs const& arguments
         );
@@ -252,10 +257,6 @@ private:
     void NavigationView_SelectionChanged(
         Microsoft::UI::Xaml::Controls::NavigationView const& sender,
         Microsoft::UI::Xaml::Controls::NavigationViewSelectionChangedEventArgs const& arguments
-        );
-    void NavigationView_BackRequested(
-        Microsoft::UI::Xaml::Controls::NavigationView const& sender,
-        Microsoft::UI::Xaml::Controls::NavigationViewBackRequestedEventArgs const& arguments
         );
     void ContentFrame_Navigated(
         Windows::Foundation::IInspectable const& sender,
@@ -656,6 +657,8 @@ private:
     void updateNavigationState();
     void restoreNavigationSelection();
     void confirmClassRosterNavigation(std::function<void()> continuation);
+    void confirmUnsavedNavigation(std::function<void()> continuation);
+    [[nodiscard]] bool hasUnsavedChanges() const noexcept;
     void showOwnedDialog();
     void showUnsavedChangesConfirmation();
     void showDialog(
@@ -666,6 +669,7 @@ private:
         winrt::hstring const& closeText,
         std::function<void(ClassMngrWinUIDialogs::DialogOutcome)> completion
         );
+    winrt::fire_and_forget openPreferencesDialog();
     winrt::fire_and_forget completeOwnedDialog(
         Microsoft::UI::Xaml::Controls::ContentDialog dialog,
         std::function<void(ClassMngrWinUIDialogs::DialogOutcome)> completion
@@ -723,6 +727,7 @@ private:
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveAsFileMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportFileMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_closeFileMenu{nullptr};
+    Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_preferencesMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_printCurrentPageMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_saveCurrentPageMenu{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutItem m_exportCampusResourcesMenu{nullptr};
@@ -838,7 +843,9 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_scheduleRegularModeButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleIntensiveModeButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleTestingModeButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_scheduleTestingClassesButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleImportModeButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Border m_scheduleTestingBanner{nullptr};
     Microsoft::UI::Xaml::Controls::Grid m_scheduleHeaderGrid{nullptr};
     Microsoft::UI::Xaml::Controls::ListView m_scheduleList{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_scheduleClassSelector{nullptr};
@@ -953,6 +960,8 @@ private:
         m_speakingAnalyticsShapeText{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel
         m_speakingAnalyticsShapePanel{nullptr};
+    Microsoft::UI::Xaml::Controls::Canvas
+        m_speakingAnalyticsYearToDateChart{nullptr};
     Microsoft::UI::Xaml::Controls::ListView
         m_speakingAnalyticsRankingList{nullptr};
     std::string m_speakingAnalyticsName;
@@ -1193,7 +1202,6 @@ private:
     Microsoft::UI::Xaml::Controls::ContentDialog m_ownedDialog{nullptr};
 
     winrt::event_token m_selectionChangedToken{};
-    winrt::event_token m_backRequestedToken{};
     winrt::event_token m_navigatedToken{};
     winrt::event_token m_activatedToken{};
     winrt::event_token m_closedToken{};
@@ -1201,6 +1209,7 @@ private:
     winrt::event_token m_phase5FirstNavigationRenderingToken{};
     bool m_restoringState{};
     bool m_selectionChanging{};
+    bool m_navigationConfirmationPending{};
     bool m_windowBoundsRestored{};
     bool m_filePickerActive{};
     bool m_phase5FirstNavigationAwaitingHome{};
@@ -1209,6 +1218,7 @@ private:
     bool m_personalDetailsLoading{};
     bool m_personalDetailsLoaded{};
     bool m_personalDetailsDirty{};
+    uint32_t m_phase6PersonalDetailsFailureMask{};
 
     // Keep the stateful Sub Prep view separate from its Frame page host so a
     // fresh page can attach the existing controls when navigation returns.

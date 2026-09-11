@@ -25,14 +25,10 @@ using winrt::Windows::UI::Text::FontWeights;
 
 constexpr double TimeColumnWidth = 90.0;
 constexpr double CompactTimeColumnWidth = 84.0;
-constexpr double HeaderHeight = 50.0;
+constexpr double HeaderHeight = 42.0;
 constexpr double CompactHeaderHeight = 36.0;
-constexpr double MinimumRowHeight = 62.0;
-constexpr double CompactMinimumRowHeight = 40.0;
-constexpr double RowBaseHeight = 24.0;
-constexpr double CompactRowBaseHeight = 19.0;
-constexpr double RowHeightPerEntry = 42.0;
-constexpr double CompactRowHeightPerEntry = 32.0;
+constexpr double RowHeight = 48.0;
+constexpr double CompactRowHeight = 40.0;
 constexpr double BoardSpacing = 8.0;
 constexpr double CardCornerRadius = 7.0;
 
@@ -64,6 +60,52 @@ struct CallbackState : winrt::implements<
 winrt::Microsoft::UI::Xaml::Media::SolidColorBrush brush(Color color)
 {
     return winrt::Microsoft::UI::Xaml::Media::SolidColorBrush(color);
+}
+
+void installCellPointerVisuals(
+    Button const& button,
+    Color backgroundColor,
+    Color borderColor,
+    Thickness borderThickness,
+    Color hoverBorderColor
+    )
+{
+    button.PointerEntered(
+        [backgroundColor, hoverBorderColor](
+            winrt::Windows::Foundation::IInspectable const& sender,
+            auto const&
+            ) {
+            const auto hovered = sender.try_as<Button>();
+            if (!hovered)
+            {
+                return;
+            }
+
+            // Keep the cell's state fill stable.  The pointer-over state is
+            // represented by the cell border only.
+            hovered.Background(brush(backgroundColor));
+            hovered.BorderBrush(brush(hoverBorderColor));
+            hovered.BorderThickness(
+                Thickness{1.0, 1.0, 1.0, 1.0}
+                );
+        }
+        );
+    button.PointerExited(
+        [backgroundColor, borderColor, borderThickness](
+            winrt::Windows::Foundation::IInspectable const& sender,
+            auto const&
+            ) {
+            const auto hovered = sender.try_as<Button>();
+            if (!hovered)
+            {
+                return;
+            }
+
+            hovered.Background(brush(backgroundColor));
+            hovered.BorderBrush(brush(borderColor));
+            hovered.BorderThickness(borderThickness);
+        }
+        );
 }
 
 int hexDigit(char value) noexcept
@@ -223,18 +265,29 @@ StackPanel makeClassPair(
     pair.VerticalAlignment(VerticalAlignment::Center);
 
     auto teacher = TextBlock();
-    teacher.Text(toHString(ScheduleReportService::teacherRoomLine(
-        entry,
-        options.showEnglishNames
-        )));
+    teacher.Text(
+        entry.kind == classmngr::engine::ScheduleReportEntryKind::TestingClass
+            ? toHString(entry.className)
+            : toHString(ScheduleReportService::teacherRoomLine(
+                entry,
+                options.showEnglishNames
+                ))
+        );
     teacher.Foreground(brush(parseColor(entry.fontColor, DefaultFontColor)));
-    teacher.FontSize(options.compactPreview ? 11.0 : 20.0);
+    teacher.FontSize(options.compactPreview ? 11.0 : 16.0);
     teacher.FontWeight(FontWeights::Bold());
     teacher.TextAlignment(TextAlignment::Center);
     teacher.TextWrapping(TextWrapping::Wrap);
     teacher.HorizontalAlignment(HorizontalAlignment::Stretch);
     teacher.VerticalAlignment(VerticalAlignment::Center);
-    setAutomationName(teacher, automationName + L" teacher and room");
+    setAutomationName(
+        teacher,
+        automationName
+            + (entry.kind
+                   == classmngr::engine::ScheduleReportEntryKind::TestingClass
+                   ? L" testing class"
+                   : L" teacher and room")
+        );
 
     auto classLine = TextBlock();
     classLine.Text(toHString(ScheduleReportService::classLine(
@@ -252,13 +305,28 @@ StackPanel makeClassPair(
 
     pair.Children().Append(teacher);
     pair.Children().Append(classLine);
+    if (entry.kind == classmngr::engine::ScheduleReportEntryKind::TestingClass
+        && !entry.roomNumber.empty())
+    {
+        auto room = TextBlock();
+        room.Text(toHString("Room: " + entry.roomNumber));
+        room.Foreground(brush(parseColor(entry.fontColor, DefaultFontColor)));
+        room.FontSize(options.compactPreview ? 10.0 : 12.0);
+        room.TextAlignment(TextAlignment::Center);
+        room.TextWrapping(TextWrapping::Wrap);
+        room.HorizontalAlignment(HorizontalAlignment::Stretch);
+        room.VerticalAlignment(VerticalAlignment::Center);
+        setAutomationName(room, automationName + L" room");
+        pair.Children().Append(room);
+    }
     return pair;
 }
 
 Button makeClassButton(
     ScheduleReportEntry const& entry,
     ClassMngrWinUIScheduleBoard::Callbacks const& callbacks,
-    ClassMngrWinUIScheduleBoard::RenderOptions const& options
+    ClassMngrWinUIScheduleBoard::RenderOptions const& options,
+    bool classClickEnabled
     )
 {
     auto button = Button();
@@ -276,7 +344,7 @@ Button makeClassButton(
     button.Background(brush(classColor));
     button.Foreground(brush(fontColor));
     button.BorderBrush(brush(TransparentColor));
-    button.BorderThickness(Thickness{0.0, 0.0, 0.0, 0.0});
+    button.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
     button.CornerRadius(
         CornerRadius{
             CardCornerRadius,
@@ -298,8 +366,12 @@ Button makeClassButton(
     setAutomationName(button, automationName);
     button.Content(makeClassPair(entry, options, automationName));
 
-    const bool canClick = entry.classId > 0 && callbacks.classClicked;
-    button.IsEnabled(canClick && options.enabled);
+    const bool canClick = classClickEnabled
+        && entry.kind == classmngr::engine::ScheduleReportEntryKind::RegularClass
+        && entry.classId > 0
+        && callbacks.classClicked;
+    button.IsEnabled(options.enabled);
+    button.IsHitTestVisible(options.enabled);
     if (canClick)
     {
         const std::function<void(int)> classClicked = callbacks.classClicked;
@@ -310,6 +382,13 @@ Button makeClassButton(
             }
             );
     }
+    installCellPointerVisuals(
+        button,
+        classColor,
+        TransparentColor,
+        Thickness{1.0, 1.0, 1.0, 1.0},
+        parseColor(options.hoverBorderColor, TestingBorderColor)
+        );
     return button;
 }
 
@@ -325,7 +404,7 @@ Button makeSlotButton(
     const std::wstring automationName =
         L"Schedule slot " + day + L" " + timeLabel;
 
-    button.BorderThickness(Thickness{0.0, 0.0, 0.0, 0.0});
+    button.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
     button.BorderBrush(brush(TransparentColor));
     button.Padding(
         options.compactPreview
@@ -339,9 +418,13 @@ Button makeSlotButton(
     button.IsTabStop(true);
     setAutomationName(button, automationName);
 
+    Color slotBackground = TransparentColor;
+    Color slotBorder = TransparentColor;
+    const Thickness slotBorderThickness{1.0, 1.0, 1.0, 1.0};
     const auto& state = cell.slotState;
     if (state == ScheduleReportService::essaySlotState())
     {
+        slotBackground = EssayColor;
         button.Background(brush(EssayColor));
         button.Foreground(brush(DefaultFontColor));
         button.CornerRadius(
@@ -355,7 +438,7 @@ Button makeSlotButton(
         auto label = TextBlock();
         label.Text(L"Essay");
         label.Foreground(brush(DefaultFontColor));
-        label.FontSize(options.compactPreview ? 14.0 : 23.0);
+        label.FontSize(options.compactPreview ? 14.0 : 16.0);
         label.FontWeight(FontWeights::Bold());
         label.FontStyle(FontStyle::Italic);
         label.TextAlignment(TextAlignment::Center);
@@ -367,6 +450,7 @@ Button makeSlotButton(
     }
     else if (state == ScheduleReportService::lunchSlotState())
     {
+        slotBackground = LunchColor;
         button.Background(brush(LunchColor));
         button.Foreground(brush(DefaultFontColor));
         button.CornerRadius(
@@ -380,7 +464,7 @@ Button makeSlotButton(
         auto label = TextBlock();
         label.Text(L"Lunch");
         label.Foreground(brush(DefaultFontColor));
-        label.FontSize(options.compactPreview ? 14.0 : 23.0);
+        label.FontSize(options.compactPreview ? 14.0 : 16.0);
         label.FontWeight(FontWeights::Bold());
         label.FontStyle(FontStyle::Italic);
         label.TextAlignment(TextAlignment::Center);
@@ -392,6 +476,8 @@ Button makeSlotButton(
     }
     else if (state == ScheduleReportService::testingSlotState())
     {
+        slotBackground = TestingColor;
+        slotBorder = TestingBorderColor;
         button.Background(brush(TestingColor));
         button.Foreground(brush(TestingTextColor));
         button.BorderBrush(brush(TestingBorderColor));
@@ -411,7 +497,7 @@ Button makeSlotButton(
         auto label = TextBlock();
         label.Text(testingText);
         label.Foreground(brush(TestingTextColor));
-        label.FontSize(options.compactPreview ? 12.0 : 18.0);
+        label.FontSize(options.compactPreview ? 12.0 : 14.0);
         label.FontWeight(FontWeights::Bold());
         label.FontStyle(FontStyle::Italic);
         label.TextAlignment(TextAlignment::Center);
@@ -423,14 +509,25 @@ Button makeSlotButton(
     }
     else
     {
+        slotBackground = TransparentColor;
         button.Background(brush(TransparentColor));
         button.Foreground(brush(DefaultFontColor));
     }
 
+    const bool regularEssay =
+        options.displayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Regular
+        && state == ScheduleReportService::essaySlotState();
+    const bool existingTestingAssignment =
+        options.displayMode
+            == classmngr::engine::ScheduleReportDisplayMode::Testing
+        && state == ScheduleReportService::testingSlotState();
     const bool metadataAllowsInteraction =
-        cell.slotTogglingEnabled || cell.testingBlockCreationEnabled;
+        cell.slotTogglingEnabled
+        || cell.testingBlockCreationEnabled
+        || existingTestingAssignment;
     const bool canClick =
-        metadataAllowsInteraction && callbacks.slotClicked;
+        !regularEssay && metadataAllowsInteraction && callbacks.slotClicked;
     // Keep non-interactive Regular-mode cells enabled visually. A disabled
     // WinUI Button applies its disabled visual state over the local
     // background, which makes Essay cells lose their white fill. Hit testing
@@ -438,6 +535,16 @@ Button makeSlotButton(
     button.IsEnabled(options.enabled);
     button.IsTabStop(canClick && options.enabled);
     button.IsHitTestVisible(canClick && options.enabled);
+    if (canClick)
+    {
+        installCellPointerVisuals(
+            button,
+            slotBackground,
+            slotBorder,
+            slotBorderThickness,
+            parseColor(options.hoverBorderColor, TestingBorderColor)
+            );
+    }
     if (canClick)
     {
         const std::function<void(
@@ -547,7 +654,15 @@ void appendEntryCell(
     for (std::size_t entryIndex = 0; entryIndex < entryCount; ++entryIndex)
     {
         const ScheduleReportEntry& entry = cell.entries[entryIndex];
-        auto classButton = makeClassButton(entry, callbacks, options);
+        const bool isTestingAssignment = cell.testingClassAssignment
+            || entry.kind
+                == classmngr::engine::ScheduleReportEntryKind::TestingClass;
+        auto classButton = makeClassButton(
+            entry,
+            callbacks,
+            options,
+            !isTestingAssignment
+            );
         if (entryCount > 1)
         {
             setAutomationName(
@@ -557,6 +672,39 @@ void appendEntryCell(
                         entry,
                         options.showEnglishNames
                         ))
+                );
+        }
+        if (isTestingAssignment && entryIndex == 0
+            && callbacks.slotClicked)
+        {
+            const std::function<void(
+                std::wstring,
+                std::wstring,
+                std::wstring,
+                std::wstring,
+                bool,
+                bool
+                )> slotClicked = callbacks.slotClicked;
+            const std::wstring day = toWide(cell.day);
+            const std::wstring timeLabel = toWide(cell.timeLabel);
+            const std::wstring currentState = toWide(cell.slotState);
+            const std::wstring defaultState = toWide(cell.defaultSlotState);
+            classButton.IsTabStop(options.enabled);
+            classButton.Click(
+                [slotClicked,
+                 day,
+                 timeLabel,
+                 currentState,
+                 defaultState](auto const&, auto const&) {
+                    slotClicked(
+                        day,
+                        timeLabel,
+                        currentState,
+                        defaultState,
+                        false,
+                        true
+                        );
+                }
                 );
         }
         content.Children().Append(classButton);
@@ -678,18 +826,9 @@ void render(
     {
         const ScheduleReportRowView& modelRow = model.rows[rowIndex];
         auto bodyRow = RowDefinition();
-        const int maxEntryCount = std::max(0, modelRow.maxEntryCount);
-        const double rowHeight = options.compactPreview
-            ? std::max(
-                CompactMinimumRowHeight,
-                CompactRowBaseHeight
-                    + CompactRowHeightPerEntry * maxEntryCount
-                )
-            : std::max(
-                MinimumRowHeight,
-                RowBaseHeight + RowHeightPerEntry * maxEntryCount
-                );
-        bodyRow.Height(GridLengthHelper::FromPixels(rowHeight));
+        bodyRow.Height(GridLengthHelper::FromPixels(
+            options.compactPreview ? CompactRowHeight : RowHeight
+            ));
         root.RowDefinitions().Append(bodyRow);
 
         auto timeCell = makeTimeCell(

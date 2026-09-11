@@ -480,6 +480,14 @@ void App::OnLaunched(
             else if (phase6PersonalDetailsTest)
             {
                 passed = mainWindow->runPhase6PersonalDetailsChecks();
+                const auto failureMask =
+                    mainWindow->phase6PersonalDetailsFailureMask();
+                scheduleTestExit(
+                    m_window,
+                    passed,
+                    ERROR_INVALID_DATA + failureMask
+                    );
+                return;
             }
             else if (phase6KoreanTeacherTest)
             {

@@ -2,6 +2,8 @@
 #include "MainWindow.xaml.h"
 #include "MainWindow_internal.h"
 
+#include <winrt/Microsoft.UI.Xaml.Shapes.h>
+
 namespace winrt::ClassMngrWinUI::implementation
 {
 using namespace MainWindowDetail;
@@ -25,6 +27,7 @@ void MainWindow::refreshSpeakingAnalytics()
     m_speakingAnalyticsSummaryText.Text({});
     m_speakingAnalyticsShapeText.Text({});
     m_speakingAnalyticsShapePanel.Children().Clear();
+    m_speakingAnalyticsYearToDateChart = nullptr;
     for (auto const& value : m_speakingAnalyticsSummaryValues)
     {
         if (value)
@@ -156,7 +159,7 @@ void MainWindow::rebuildSpeakingAnalytics(
         return result;
     };
     const auto displayOrDash = [](std::wstring value) {
-        return value.empty() ? std::wstring(L"â€”") : value;
+        return value.empty() ? std::wstring(L"\u2014") : value;
     };
 
     const auto gradeColor = [](std::wstring_view grade) {
@@ -228,7 +231,7 @@ void MainWindow::rebuildSpeakingAnalytics(
                 ));
         setSummaryValue(
             0,
-            asWide(snapshot.classAverageLetter) + L" Â· " + average
+            asWide(snapshot.classAverageLetter) + L" \u00B7 " + average
             );
         std::wstring assessed = std::to_wstring(snapshot.fullyScoredCount);
         if (snapshot.rosterStudentCount > 0)
@@ -239,7 +242,7 @@ void MainWindow::rebuildSpeakingAnalytics(
         setSummaryValue(2, displayOrDash(join(snapshot.strongestLabels, L", ")));
         setSummaryValue(3, displayOrDash(join(snapshot.focusLabels, L", ")));
         summary += asWide(snapshot.classAverageLetter)
-            + L" Â· " + asWide(
+            + L" \u00B7 " + asWide(
                 classmngr::engine::SpeakingAnalyticsService::formatAverage(
                     snapshot.classAverage3
                     )
@@ -257,7 +260,7 @@ void MainWindow::rebuildSpeakingAnalytics(
     }
     else
     {
-        summary += L"â€”\nNo aggregate score is available for the selected scope.";
+        summary += L"\u2014\nNo aggregate score is available for the selected scope.";
     }
     if (!dashboard.selectedSnapshot.hasData)
     {
@@ -287,12 +290,12 @@ void MainWindow::rebuildSpeakingAnalytics(
                         )
                     )
                 );
-            text += L" Â· average " + asWide(
+            text += L" \u00B7 average " + asWide(
                 classmngr::engine::SpeakingAnalyticsService::formatAverage(
                     criterion.average3
                     )
                 );
-            text += L" Â· distribution: ";
+            text += L" \u00B7 distribution: ";
             bool hasDistribution = false;
             for (const std::string_view grade :
                  classmngr::engine::SpeakingEvaluationScoreValues)
@@ -372,7 +375,7 @@ void MainWindow::rebuildSpeakingAnalytics(
     }
     std::wstring shape = L"Class-shape evaluation: ";
     shape += dashboard.classShapeEvaluationName.empty()
-        ? L"â€”"
+        ? L"\u2014"
         : asWide(dashboard.classShapeEvaluationName);
     shape += L"\nOverall grades: ";
     bool hasShape = false;
@@ -393,7 +396,7 @@ void MainWindow::rebuildSpeakingAnalytics(
     }
     if (!hasShape)
     {
-        shape += L"â€”";
+        shape += L"\u2014";
     }
     shape += L"\nYear to date: ";
     if (dashboard.yearToDatePoints.empty())
@@ -479,7 +482,6 @@ void MainWindow::rebuildSpeakingAnalytics(
     trendHeading.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
     m_speakingAnalyticsShapePanel.Children().Append(trendHeading);
     auto trend = StackPanel();
-    trend.Orientation(Orientation::Horizontal);
     trend.Spacing(8.0);
     if (dashboard.yearToDatePoints.empty())
     {
@@ -489,32 +491,118 @@ void MainWindow::rebuildSpeakingAnalytics(
     }
     else
     {
-        for (const auto& point : dashboard.yearToDatePoints)
+        constexpr double plotCanvasWidth = 368.0;
+        constexpr double plotCanvasHeight = 156.0;
+        constexpr double plotLeft = 24.0;
+        constexpr double plotTop = 8.0;
+        constexpr double plotWidth = 336.0;
+        constexpr double plotHeight = 112.0;
+        const auto chartBrush = Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 63, 126, 203}
+            );
+        const auto guideBrush = Microsoft::UI::Xaml::Media::SolidColorBrush(
+            Windows::UI::Color{255, 224, 228, 234}
+            );
+        auto chart = Microsoft::UI::Xaml::Controls::Canvas();
+        chart.Width(plotCanvasWidth);
+        chart.Height(plotCanvasHeight);
+        chart.HorizontalAlignment(HorizontalAlignment::Center);
+        chart.VerticalAlignment(VerticalAlignment::Top);
+        chart.IsHitTestVisible(false);
+        for (int tick = 1; tick <= 5; ++tick)
         {
-            auto pointCard = Border();
-            pointCard.Background(Microsoft::UI::Xaml::Media::SolidColorBrush(
-                Windows::UI::Color{255, 49, 55, 65}));
-            pointCard.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
-            pointCard.Padding(Thickness{8.0, 5.0, 8.0, 5.0});
-            auto pointContent = StackPanel();
-            auto pointName = TextBlock();
-            pointName.Text(hstring(asWide(point.evaluationName)));
-            pointName.FontSize(11.0);
-            pointContent.Children().Append(pointName);
-            auto pointValue = StackPanel();
-            pointValue.Orientation(Orientation::Horizontal);
-            pointValue.Spacing(5.0);
-            pointValue.Children().Append(gradeBadge(asWide(point.classAverageLetter)));
-            auto average = TextBlock();
-            average.Text(hstring(asWide(
-                classmngr::engine::SpeakingAnalyticsService::formatAverage(
-                    point.classAverage3))));
-            average.VerticalAlignment(VerticalAlignment::Center);
-            pointValue.Children().Append(average);
-            pointContent.Children().Append(pointValue);
-            pointCard.Child(pointContent);
-            trend.Children().Append(pointCard);
+            const double y = plotTop + plotHeight
+                * (5.0 - static_cast<double>(tick)) / 4.0;
+            auto guide = Microsoft::UI::Xaml::Shapes::Line();
+            guide.X1(plotLeft);
+            guide.Y1(y);
+            guide.X2(plotLeft + plotWidth);
+            guide.Y2(y);
+            guide.Stroke(guideBrush);
+            guide.StrokeThickness(1.0);
+            chart.Children().Append(guide);
+
+            auto label = TextBlock();
+            label.Text(std::to_wstring(tick));
+            label.FontSize(10.0);
+            label.Foreground(Microsoft::UI::Xaml::Media::SolidColorBrush(
+                Windows::UI::Color{255, 96, 102, 112}
+                ));
+            Canvas::SetLeft(label, 0.0);
+            Canvas::SetTop(label, y - 8.0);
+            chart.Children().Append(label);
         }
+
+        const std::size_t pointCount = dashboard.yearToDatePoints.size();
+        double previousX = 0.0;
+        double previousY = 0.0;
+        for (std::size_t index = 0; index < pointCount; ++index)
+        {
+            const auto& point = dashboard.yearToDatePoints[index];
+            const double x = pointCount == 1
+                ? plotLeft + plotWidth / 2.0
+                : plotLeft + plotWidth * static_cast<double>(index)
+                    / static_cast<double>(pointCount - 1);
+            const double average = std::clamp(point.classAverage3, 1.0, 5.0);
+            const double y = plotTop + plotHeight
+                * (5.0 - average) / 4.0;
+            if (index > 0)
+            {
+                auto segment = Microsoft::UI::Xaml::Shapes::Line();
+                segment.X1(previousX);
+                segment.Y1(previousY);
+                segment.X2(x);
+                segment.Y2(y);
+                segment.Stroke(chartBrush);
+                segment.StrokeThickness(3.0);
+                chart.Children().Append(segment);
+            }
+
+            auto marker = Microsoft::UI::Xaml::Shapes::Ellipse();
+            marker.Width(10.0);
+            marker.Height(10.0);
+            marker.Fill(chartBrush);
+            Canvas::SetLeft(marker, x - 5.0);
+            Canvas::SetTop(marker, y - 5.0);
+            chart.Children().Append(marker);
+            previousX = x;
+            previousY = y;
+        }
+        setAutomationName(chart, L"Speaking analytics year-to-date line chart");
+        m_speakingAnalyticsYearToDateChart = chart;
+        trend.Children().Append(chart);
+
+        auto labels = Grid();
+        labels.Width(plotCanvasWidth);
+        labels.HorizontalAlignment(HorizontalAlignment::Center);
+        labels.ColumnSpacing(4.0);
+        for (std::size_t index = 0; index < pointCount; ++index)
+        {
+            auto definition = ColumnDefinition();
+            definition.Width(GridLengthHelper::FromValueAndType(
+                1.0,
+                GridUnitType::Star
+                ));
+            labels.ColumnDefinitions().Append(definition);
+            const auto& point = dashboard.yearToDatePoints[index];
+            auto value = TextBlock();
+            value.Text(hstring(
+                asWide(point.evaluationName) + L"\n"
+                + asWide(
+                    classmngr::engine::SpeakingAnalyticsService::formatAverage(
+                        point.classAverage3
+                        )
+                    )
+                + L" \u00B7 " + asWide(point.classAverageLetter)
+                ));
+            value.FontSize(11.0);
+            value.TextAlignment(TextAlignment::Center);
+            value.TextWrapping(TextWrapping::Wrap);
+            Grid::SetColumn(value, static_cast<int>(index));
+            labels.Children().Append(value);
+        }
+        setAutomationName(labels, L"Speaking analytics year-to-date labels");
+        trend.Children().Append(labels);
     }
     m_speakingAnalyticsShapePanel.Children().Append(trend);
 
@@ -569,7 +657,7 @@ void MainWindow::rebuildSpeakingAnalytics(
                     rank.overall3
                     )
                 ) + L" (" + asWide(rank.overallLetter) + L")",
-            join(rank.criterionLetters, L" Â· ")
+            join(rank.criterionLetters, L" \u00B7 ")
         };
         for (int column = 0; column < static_cast<int>(values.size()); ++column)
         {

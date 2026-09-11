@@ -33,7 +33,7 @@ uint32_t MainWindow::phase4SemanticFailureMask()
             != std::wstring_view::npos;
     };
     const auto eventArguments = Microsoft::UI::Xaml::RoutedEventArgs();
-    m_scheduleSlotTextBox.Text(L"09:45â€“10:30");
+    m_scheduleSlotTextBox.Text(L"09:45\u201310:30");
     ScheduleApplyButton_Click(nullptr, eventArguments);
     const auto scheduleStatus = m_scheduleStatusText.Text();
     const bool scheduleReady = contains(scheduleStatus, L"not persisted");
@@ -205,6 +205,11 @@ bool MainWindow::runPhase5CampusChecks()
 
 bool MainWindow::runPhase6PersonalDetailsChecks()
 {
+    m_phase6PersonalDetailsFailureMask = 0;
+    const auto fail = [this](uint32_t failureMask) {
+        m_phase6PersonalDetailsFailureMask = failureMask;
+        return false;
+    };
     m_openDatabase.reset();
     m_currentDatabasePath.clear();
     m_dirtyState.markClean();
@@ -216,20 +221,22 @@ bool MainWindow::runPhase6PersonalDetailsChecks()
         m_currentPageId == homePageId
         && m_personalStatusText
         && m_personalStatusText.Text() == L"No database open."
-        && m_personalSaveButton
-        && !m_personalSaveButton.IsEnabled();
+        && m_personalStatusText.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && !m_personalSaveButton
+        && !m_personalDiscardButton;
 
     auto opened = classmngr::engine::OpenDatabase::execute(":memory:");
     if (!noDatabaseReady || !opened || *opened == nullptr)
     {
-        return false;
+        return fail(!noDatabaseReady ? 1 : 2);
     }
 
     m_openDatabase = std::move(*opened);
     refreshPersonalDetailsPage();
     if (!m_personalDetailsLoaded || !m_personalNameTextBox)
     {
-        return false;
+        return fail(4);
     }
 
     m_personalNameTextBox.Text(L"í™ê¸¸ë™");
@@ -246,14 +253,67 @@ bool MainWindow::runPhase6PersonalDetailsChecks()
     m_personalSignatureModeCombo.SelectedIndex(1);
     m_personalTypedSignatureTextBox.Text(L"í™ê¸¸ë™ ì„œëª…");
     m_personalSignatureFontCombo.SelectedIndex(2);
+    const auto diagnosticName = m_personalNameTextBox.Text();
+    const auto diagnosticZoomPassword = m_personalZoomPasswordBox.Password();
+    const auto diagnosticTypedSignature = m_personalTypedSignatureTextBox.Text();
+    m_personalZoomNotAvailableCheck.IsChecked(true);
+    m_personalZoomLoginIdTextBox.Text(L"N/A");
+    m_personalZoomPasswordBox.Password(L"N/A");
+    const bool zoomReady =
+        m_personalZoomNotAvailableCheck.IsChecked()
+            && !m_personalZoomLoginIdTextBox.IsEnabled()
+            && !m_personalZoomPasswordBox.IsEnabled();
+    m_personalZoomNotAvailableCheck.IsChecked(false);
+    m_personalZoomLoginIdTextBox.Text(L"teacher@example.test");
+    m_personalZoomPasswordBox.Password(diagnosticZoomPassword);
+    m_personalTypedSignatureTextBox.Text({});
+    updatePersonalSignatureControls();
+    const auto firstFontPreviewText = [this]() {
+        if (m_personalSignatureFontButtons.empty())
+        {
+            return winrt::hstring{};
+        }
+        const auto surface = m_personalSignatureFontButtons.front().Tag()
+            .try_as<Microsoft::UI::Xaml::Controls::Border>();
+        if (!surface)
+        {
+            return winrt::hstring{};
+        }
+        const auto preview = surface.Child().try_as<
+            Microsoft::UI::Xaml::Controls::TextBlock>();
+        return preview ? preview.Text() : winrt::hstring{};
+    };
+    const bool nameFallbackReady =
+        m_personalSignaturePreviewText.Text() == m_personalNameTextBox.Text()
+        && firstFontPreviewText() == m_personalNameTextBox.Text();
+    m_personalNameTextBox.Text({});
+    updatePersonalSignatureControls();
+    const bool defaultFallbackReady =
+        m_personalSignaturePreviewText.Text() == L"Your Signature"
+        && firstFontPreviewText() == L"Your Signature";
+    m_personalNameTextBox.Text(diagnosticName);
+    m_personalTypedSignatureTextBox.Text(diagnosticTypedSignature);
+    updatePersonalSignatureControls();
+    const bool autosaveScheduled =
+        m_personalDetailsScroll
+        && m_personalDetailsScroll.Tag().try_as<
+            Microsoft::UI::Dispatching::DispatcherQueueTimer>();
+    const bool dirtyReady =
+        m_personalDetailsDirty
+        && m_dirtyState.isDirty()
+        && m_personalStatusText.Text().empty()
+        && !m_personalSaveButton
+        && !m_personalDiscardButton;
     PersonalDetailsSaveButton_Click(
-        m_personalSaveButton,
+        nullptr,
         Microsoft::UI::Xaml::RoutedEventArgs{}
         );
     if (m_personalDetailsDirty
-        || m_personalStatusText.Text() != L"Personal details saved.")
+        || !m_personalStatusText.Text().empty()
+        || m_personalStatusText.Visibility()
+            != Microsoft::UI::Xaml::Visibility::Collapsed)
     {
-        return false;
+        return fail(8);
     }
 
     refreshPersonalDetailsPage();
@@ -273,8 +333,22 @@ bool MainWindow::runPhase6PersonalDetailsChecks()
     const bool clearReady =
         m_personalStatusText.Text() == L"No database open."
         && !m_personalNameTextBox.IsEnabled()
-        && !m_personalSaveButton.IsEnabled();
-    return roundTripReady && clearReady;
+        && !m_personalSaveButton
+        && !m_personalDiscardButton;
+    m_phase6PersonalDetailsFailureMask =
+        (roundTripReady ? 0u : 16u)
+        | (clearReady ? 0u : 32u)
+        | (zoomReady ? 0u : 64u)
+        | (nameFallbackReady ? 0u : 128u)
+        | (defaultFallbackReady ? 0u : 256u)
+        | (autosaveScheduled ? 0u : 512u)
+        | (dirtyReady ? 0u : 1024u);
+    return m_phase6PersonalDetailsFailureMask == 0;
+}
+
+uint32_t MainWindow::phase6PersonalDetailsFailureMask() const noexcept
+{
+    return m_phase6PersonalDetailsFailureMask;
 }
 
 bool MainWindow::runPhase6KoreanTeacherChecks()

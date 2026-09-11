@@ -163,9 +163,9 @@ bool MainWindow::runPhase3LocalizationChecks()
 
     const WinUILocalizer korean(L"ko-KR");
     return korean.hasString(actionContext, aboutSource)
-        && korean.getString(actionContext, aboutSource) == L"ì •ë³´"
+        && korean.getString(actionContext, aboutSource) == L"\uC815\uBCF4"
         && korean.getString(actionContext, informationSource)
-            == L"ì• í”Œë¦¬ì¼€ì´ì…˜ ì •ë³´ í‘œì‹œ"
+            == L"\uC560\uD50C\uB9AC\uCF00\uC774\uC158 \uC815\uBCF4 \uD45C\uC2DC"
         && !korean.hasString(L"MissingContext", L"Missing resource")
         && WinUILocalizer::makeResourceId(actionContext, aboutSource)
             != WinUILocalizer::makeResourceId(actionContext, L"about");
@@ -214,6 +214,11 @@ MainWindow::runPhase3SemanticChecks()
     bool focusReady = false;
     if (inputReady)
     {
+        // The input contract intentionally exercises the TextChanging
+        // handler, which marks the prototype shell dirty.  The semantic
+        // navigation assertions below are programmatic setup, so clear that
+        // transient state before they navigate between pages.
+        m_dirtyState.markClean();
         navigateTo(aboutPageId);
         const bool aboutPageReady = m_currentPageId == aboutPageId;
         navigateTo(homePageId);

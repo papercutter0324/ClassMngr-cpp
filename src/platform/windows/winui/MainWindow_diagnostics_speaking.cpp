@@ -197,6 +197,8 @@ bool MainWindow::runPhase6SpeakingEvaluationChecks()
         && m_speakingAnalyticsStatusText.Text().empty()
         && m_speakingAnalyticsCriteriaPanel
         && m_speakingAnalyticsCriteriaPanel.Children().Size() == 6
+        && m_speakingAnalyticsYearToDateChart
+        && m_speakingAnalyticsYearToDateChart.Children().Size() >= 11
         && m_speakingAnalyticsRankingList
         && m_speakingAnalyticsRankingList.Items().Size() == 1
         && contains(
