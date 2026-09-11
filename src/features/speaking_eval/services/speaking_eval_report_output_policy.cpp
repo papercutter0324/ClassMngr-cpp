@@ -1,59 +1,53 @@
 #include "speaking_eval_report_output_policy.h"
 
-#include "core/utils/file_name_utils.h"
+#include "classmngr/engine/speaking_evaluation_report_output_policy.h"
 
-#include <QDir>
 #include <QObject>
-#include <QRegularExpression>
+#include <QByteArray>
 #include <QStandardPaths>
-#include <QTime>
+
+#include <string>
 
 namespace
 {
-QString safeFolderName(const QString& value, const QString& fallback)
+std::string toUtf8(
+    const QString& value
+    )
 {
-    QString name = value.trimmed();
-    name.replace(
-        QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")),
-        QStringLiteral("-")
+    const QByteArray encoded = value.toUtf8();
+    return std::string(
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
         );
-    name = name.simplified();
-    return name.isEmpty() ? fallback : name;
 }
 
-QString shortDay(const QString& day)
+QString fromUtf8(
+    const std::string& value
+    )
 {
-    const QString normalized = day.trimmed().toLower();
-    if (normalized.startsWith(QStringLiteral("mon"))) return QStringLiteral("M");
-    if (normalized.startsWith(QStringLiteral("tue"))) return QStringLiteral("T");
-    if (normalized.startsWith(QStringLiteral("wed"))) return QStringLiteral("W");
-    if (normalized.startsWith(QStringLiteral("thu"))) return QStringLiteral("Th");
-    if (normalized.startsWith(QStringLiteral("fri"))) return QStringLiteral("F");
-    if (normalized.startsWith(QStringLiteral("sat"))) return QStringLiteral("Sa");
-    if (normalized.startsWith(QStringLiteral("sun"))) return QStringLiteral("Su");
-    return day.trimmed().left(2);
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
 
-QString shortTime(const QString& value)
+classmngr::engine::ClassInfo toPortableClassInfo(
+    const ClassInfo& source
+    )
 {
-    const QStringList formats{
-        QStringLiteral("h:mm AP"), QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"), QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"), QStringLiteral("HH:mm")
-    };
-    for (const QString& format : formats)
+    classmngr::engine::ClassInfo result;
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
+    result.classTimes.reserve(source.classTimes.size());
+    for (const ClassTime& time : source.classTimes)
     {
-        const QTime time = QTime::fromString(value.trimmed(), format);
-        if (time.isValid())
-        {
-            return time.toString(
-                time.minute() == 0
-                    ? QStringLiteral("hap")
-                    : QStringLiteral("h:mmap")
-                ).toLower();
-        }
+        result.classTimes.push_back({
+            toUtf8(time.day),
+            toUtf8(time.startTime),
+            toUtf8(time.endTime)
+        });
     }
-    return value.trimmed().remove(QLatin1Char(' ')).toLower();
+    return result;
 }
 }
 
@@ -63,52 +57,16 @@ QString SpeakingEvalReportOutputPolicy::defaultDirectory(
     const QString& documentsDirectory
     )
 {
-    QString className = QStringList{
-        classInfo.classGrade.trimmed(),
-        classInfo.classLevel.trimmed()
-    }.filter(QRegularExpression(QStringLiteral(".+"))).join(QLatin1Char(' '));
-    if (className.isEmpty())
-    {
-        className = QObject::tr("Speaking Evaluation");
-    }
-
-    QStringList days;
-    for (const ClassTime& classTime : classInfo.classTimes)
-    {
-        const QString day = shortDay(classTime.day);
-        if (!day.isEmpty() && !days.contains(day))
-        {
-            days.append(day);
-        }
-    }
-    QString schedule;
-    if (!classInfo.classTimes.isEmpty())
-    {
-        const QString time = shortTime(classInfo.classTimes.first().startTime);
-        if (!days.isEmpty() && !time.isEmpty())
-        {
-            schedule = QStringLiteral("%1 - %2").arg(days.join(QString()), time);
-        }
-        else
-        {
-            schedule = !days.isEmpty() ? days.join(QString()) : time;
-        }
-    }
-    if (!schedule.trimmed().isEmpty())
-    {
-        className += QStringLiteral(" (%1)").arg(schedule);
-    }
-
     const QString root = documentsDirectory.trimmed().isEmpty()
         ? QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
         : documentsDirectory;
-    return QDir::cleanPath(
-        QDir(root).filePath(
-            QStringLiteral("DYB/SpeakingEvals/%1/%2")
-                .arg(
-                    safeFolderName(className, QObject::tr("Speaking Evaluation")),
-                    safeFolderName(evaluationName, QObject::tr("Evaluation"))
-                    )
+    return fromUtf8(
+        classmngr::engine::SpeakingEvaluationReportOutputPolicy::defaultDirectory(
+            toPortableClassInfo(classInfo),
+            toUtf8(evaluationName),
+            toUtf8(root),
+            toUtf8(QObject::tr("Speaking Evaluation")),
+            toUtf8(QObject::tr("Evaluation"))
             )
         );
 }
@@ -117,12 +75,12 @@ QString SpeakingEvalReportOutputPolicy::batchArchivePath(
     const QString& outputDirectory
     )
 {
-    const QDir directory(QDir::cleanPath(outputDirectory));
-    const QString baseName = safeFolderName(
-        directory.dirName(),
-        QObject::tr("Speaking Evaluation Reports")
+    return fromUtf8(
+        classmngr::engine::SpeakingEvaluationReportOutputPolicy::batchArchivePath(
+            toUtf8(outputDirectory),
+            toUtf8(QObject::tr("Speaking Evaluation Reports"))
+            )
         );
-    return directory.filePath(baseName + QStringLiteral(".zip"));
 }
 
 QString SpeakingEvalReportOutputPolicy::studentFileName(
@@ -130,21 +88,20 @@ QString SpeakingEvalReportOutputPolicy::studentFileName(
     const QString& koreanName
     )
 {
-    const QString english = englishName.trimmed();
-    const QString korean = koreanName.trimmed();
-    QString baseName;
-    if (!english.isEmpty() && !korean.isEmpty())
-    {
-        baseName = QStringLiteral("%1 (%2)").arg(english, korean);
-    }
-    else
-    {
-        baseName = !english.isEmpty() ? english : korean;
-    }
-    return FileNameUtils::filesystemSafeFileName(
-        baseName.simplified(),
-        QStringLiteral(".pdf"),
-        QObject::tr("Student"),
-        QChar(u'-')
-        );
+    const QString english =
+        englishName.normalized(QString::NormalizationForm_C).simplified();
+    const QString korean =
+        koreanName.normalized(QString::NormalizationForm_C).simplified();
+    const std::string englishUtf8 = toUtf8(english);
+    const std::string koreanUtf8 = toUtf8(korean);
+    const std::string fallbackUtf8 = toUtf8(QObject::tr("Student"));
+    const std::string output =
+        classmngr::engine::SpeakingEvaluationReportOutputPolicy::studentFileName(
+            englishUtf8,
+            koreanUtf8,
+            ".pdf",
+            fallbackUtf8,
+            '-'
+            );
+    return fromUtf8(output);
 }

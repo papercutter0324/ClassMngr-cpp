@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="ClassMngrWinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="ClassMngr">
+    <Grid
+        x:Name="RootGrid"
+        Background="{ThemeResource Phase3WindowBackgroundBrush}"
+        MinWidth="{StaticResource Phase5ShellMinimumWidth}"
+        MinHeight="{StaticResource Phase5ShellMinimumHeight}"
+        RequestedTheme="Default">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="AppTitleBar"
+            Grid.Row="0"
+            Padding="{StaticResource Phase3TitleBarPadding}"
+            Background="{ThemeResource Phase3WindowBackgroundBrush}"
+            AutomationProperties.Name="Application title bar">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="{StaticResource Phase3Spacing8}"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False">
+                <Image
+                    Width="24"
+                    Height="24"
+                    VerticalAlignment="Center"
+                    Source="ms-appx:///Assets/ClassMngrIcon.png"
+                    Stretch="Uniform"
+                    AutomationProperties.Name="ClassMngr icon" />
+                <TextBlock
+                    x:Name="AppTitleBarText"
+                    Style="{StaticResource Phase3TitleBarTextBlockStyle}"
+                    Text="ClassMngr"
+                    AutomationProperties.Name="Application title" />
+            </StackPanel>
+            <TextBlock
+                x:Name="ShellDatabaseStatusText"
+                Grid.Column="1"
+                Margin="{StaticResource Phase5DatabaseStatusMargin}"
+                Style="{StaticResource Phase3BodyTextBlockStyle}"
+                Text="No database open"
+                TextTrimming="CharacterEllipsis"
+                MaxWidth="360"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="Current database status" />
+            <Button
+                x:Name="ShellInfoButton"
+                Grid.Column="2"
+                Style="{StaticResource Phase3SecondaryButtonStyle}"
+                Content="About shell"
+                Click="ShellInfoButton_Click"
+                AutomationProperties.Name="Show shell information" />
+        </Grid>
+
+        <Grid
+            x:Name="ShellBodyGrid"
+            Grid.Row="1"
+            Margin="{StaticResource Phase5ShellBodyMargin}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- This menu is intentionally below the custom title bar. The
+                 title-bar grid remains the only drag region registered with
+                 SetTitleBar. Unimplemented commands are visible as disabled
+                 shell affordances until their feature slices arrive. -->
+            <MenuBar
+                x:Name="ShellMenuBar"
+                Grid.Row="0"
+                MinHeight="{StaticResource Phase5MenuBarHeight}"
+                AutomationProperties.Name="Application menu bar">
+                <MenuBarItem
+                    x:Name="FileMenu"
+                    Title="File"
+                    AutomationProperties.Name="File menu">
+                    <MenuFlyoutItem
+                        x:Name="NewFileMenuItem"
+                        Text="New"
+                        Tag="file.new"
+                        Click="NewDatabaseMenuItem_Click"
+                        AutomationProperties.Name="New file command">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="N" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem
+                        x:Name="OpenFileMenuItem"
+                        Text="Open..."
+                        Tag="file.open"
+                        Click="OpenDatabaseMenuItem_Click"
+                        AutomationProperties.Name="Open file command">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="O" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutSubItem
+                        x:Name="RecentFilesMenuItem"
+                        Text="Recent Files"
+                        Tag="file.recent"
+                        AutomationProperties.Name="Recent database files submenu" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
+                        x:Name="SaveFileMenuItem"
+                        Text="Save"
+                        Tag="file.save"
+                        Click="SaveDatabaseMenuItem_Click"
+                        AutomationProperties.Name="Save file command">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="S" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem
+                        x:Name="SaveAsFileMenuItem"
+                        Text="Save As..."
+                        Tag="file.save_as"
+                        Click="SaveDatabaseAsMenuItem_Click"
+                        AutomationProperties.Name="Save database as command" />
+                    <MenuFlyoutItem
+                        x:Name="ExportFileMenuItem"
+                        Text="Export As..."
+                        Tag="file.export"
+                        Click="ExportDatabaseMenuItem_Click"
+                        AutomationProperties.Name="Export database command" />
+                    <MenuFlyoutItem
+                        x:Name="CloseFileMenuItem"
+                        Text="Close"
+                        Tag="file.close"
+                        Click="CloseDatabaseMenuItem_Click"
+                        AutomationProperties.Name="Close file command">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="W" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                </MenuBarItem>
+                <MenuBarItem
+                    x:Name="EditMenu"
+                    Title="Edit"
+                    AutomationProperties.Name="Edit menu">
+                    <MenuFlyoutItem
+                        x:Name="UndoMenuItem"
+                        Text="Undo"
+                        Tag="edit.undo"
+                        IsEnabled="False"
+                        AutomationProperties.Name="Undo command">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Z" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem
+                        x:Name="RedoMenuItem"
+                        Text="Redo"
+                        Tag="edit.redo"
+                        IsEnabled="False"
+                        AutomationProperties.Name="Redo command">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Y" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem
+                        x:Name="PreferencesMenuItem"
+                        Text="Preferences..."
+                        Tag="edit.preferences"
+                        IsEnabled="False"
+                        AutomationProperties.Name="Preferences command" />
+                </MenuBarItem>
+                <MenuBarItem
+                    x:Name="ClassesMenu"
+                    Title="Classes"
+                    AutomationProperties.Name="Classes menu">
+                    <MenuFlyoutItem Text="New class" Tag="classes.new" IsEnabled="False" AutomationProperties.Name="New class command" />
+                    <MenuFlyoutItem Text="Delete class" Tag="classes.delete" IsEnabled="False" AutomationProperties.Name="Delete class command" />
+                    <MenuFlyoutItem Text="Import classes" Tag="classes.import" IsEnabled="False" AutomationProperties.Name="Import classes command" />
+                    <MenuFlyoutItem Text="Export classes" Tag="classes.export" IsEnabled="False" AutomationProperties.Name="Export classes command" />
+                </MenuBarItem>
+                <MenuBarItem
+                    x:Name="TeachersMenu"
+                    Title="Teachers"
+                    AutomationProperties.Name="Teachers menu">
+                    <MenuFlyoutItem Text="New teacher" Tag="teachers.new" IsEnabled="False" AutomationProperties.Name="New teacher command" />
+                    <MenuFlyoutItem Text="Delete teacher" Tag="teachers.delete" IsEnabled="False" AutomationProperties.Name="Delete teacher command" />
+                    <MenuFlyoutItem Text="Upcoming birthdays" Tag="teachers.birthdays" IsEnabled="False" AutomationProperties.Name="Upcoming birthdays command" />
+                    <MenuFlyoutItem Text="Import teachers" Tag="teachers.import" IsEnabled="False" AutomationProperties.Name="Import teachers command" />
+                </MenuBarItem>
+                <MenuBarItem
+                    x:Name="PrintExportMenu"
+                    Title="Print / Export"
+                    AutomationProperties.Name="Print and export menu">
+                    <MenuFlyoutItem
+                        x:Name="PrintCurrentPageMenuItem"
+                        Text="Print current page"
+                        Tag="print.current_page"
+                        IsEnabled="False"
+                        Click="PrintCurrentPageMenuItem_Click"
+                        AutomationProperties.Name="Print current page command" />
+                    <MenuFlyoutItem
+                        x:Name="SaveCurrentPageMenuItem"
+                        Text="Save current page as..."
+                        Tag="print.save_page"
+                        Click="SaveCurrentPageMenuItem_Click"
+                        AutomationProperties.Name="Save current page command" />
+                    <MenuFlyoutItem
+                        x:Name="ExportCampusResourcesMenuItem"
+                        Text="Export campus resources..."
+                        Tag="print.export_campus_resources"
+                        Click="ExportCampusResourcesMenuItem_Click"
+                        AutomationProperties.Name="Export campus resources command" />
+                </MenuBarItem>
+                <MenuBarItem
+                    x:Name="HelpMenu"
+                    Title="Help"
+                    AutomationProperties.Name="Help menu">
+                    <MenuFlyoutItem
+                        x:Name="ShellInfoMenuItem"
+                        Text="About"
+                        Tag="help.about"
+                        Click="ShellInfoMenuItem_Click"
+                        AutomationProperties.Name="Show application information command" />
+                    <MenuFlyoutItem
+                        x:Name="CheckForUpdatesMenuItem"
+                        Text="Check for updates"
+                        Tag="help.updates"
+                        IsEnabled="False"
+                        AutomationProperties.Name="Check for updates command" />
+                </MenuBarItem>
+                <MenuBarItem
+                    x:Name="AdminMenu"
+                    Title="Admin"
+                    IsEnabled="False"
+                    AutomationProperties.Name="Admin menu unavailable in prototype shell">
+                    <MenuFlyoutItem Text="Manage campuses" Tag="admin.manage_campuses" IsEnabled="False" AutomationProperties.Name="Manage campuses command" />
+                </MenuBarItem>
+                <MenuBarItem
+                    x:Name="DeveloperMenu"
+                    Title="Developer"
+                    IsEnabled="False"
+                    AutomationProperties.Name="Developer menu unavailable in prototype shell">
+                    <MenuFlyoutItem Text="Memory usage monitor" Tag="developer.memory_usage" IsEnabled="False" AutomationProperties.Name="Memory usage monitor command" />
+                </MenuBarItem>
+            </MenuBar>
+
+            <Grid
+                x:Name="ShellContentGrid"
+                Grid.Row="1"
+                Margin="{StaticResource Phase5ShellContentMargin}">
+                <Grid.ColumnDefinitions>
+                    <!-- NavigationView has its own content host. Keep this
+                         column pane-sized so that host cannot become a
+                         second visible panel before ContentFrame. -->
+                    <ColumnDefinition
+                        x:Name="SidebarColumn"
+                        Width="Auto"
+                        MinWidth="{StaticResource Phase5SidebarMinimumWidth}"
+                        MaxWidth="{StaticResource Phase5SidebarMaximumWidth}" />
+                    <ColumnDefinition
+                        x:Name="ContentColumn"
+                        Width="*"
+                        MinWidth="{StaticResource Phase5ContentMinimumWidth}" />
+                </Grid.ColumnDefinitions>
+
+                <NavigationView
+                    x:Name="RootNavigationView"
+                    Grid.Column="0"
+                    Margin="{StaticResource Phase5SidebarMargin}"
+                    Width="{StaticResource Phase5SidebarMinimumWidth}"
+                    HorizontalAlignment="Left"
+                    Style="{StaticResource Phase3NavigationViewStyle}"
+                    IsBackButtonVisible="Visible"
+                    IsPaneOpen="True"
+                    IsPaneToggleButtonVisible="False"
+                    IsSettingsVisible="False"
+                    OpenPaneLength="{StaticResource Phase5SidebarMinimumWidth}"
+                    PaneDisplayMode="Left"
+                    AutomationProperties.Name="Primary navigation">
+                    <NavigationView.MenuItems>
+                        <NavigationViewItem
+                            x:Name="HomeNavigationItem"
+                            Content="My Workspace"
+                            Tag="home"
+                            AutomationProperties.Name="My Workspace navigation root">
+                        </NavigationViewItem>
+                        <NavigationViewItem
+                            x:Name="ClassesNavigationItem"
+                            Content="Classes"
+                            Tag="classes"
+                            AutomationProperties.Name="Classes navigation root">
+                        </NavigationViewItem>
+                        <NavigationViewItem
+                            x:Name="SubPrepNavigationItem"
+                            Content="Sub Prep"
+                            Tag="sub_prep"
+                            IsEnabled="True"
+                            AutomationProperties.Name="Sub Prep navigation item" />
+                        <NavigationViewItem
+                            x:Name="CoTeachersNavigationItem"
+                            Content="Co-Teachers"
+                            Tag="co_teachers"
+                            IsEnabled="False"
+                            IsExpanded="True"
+                            AutomationProperties.Name="Co-Teachers navigation root unavailable in prototype shell" />
+                        <NavigationViewItem
+                            x:Name="CampusStaffNavigationItem"
+                            Content="Campus Staff"
+                            Tag="campus_staff"
+                            IsEnabled="True"
+                            IsExpanded="True"
+                            AutomationProperties.Name="Campus Staff navigation root">
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    x:Name="KoreanTeachersNavigationItem"
+                                    Content="Korean Teachers"
+                                    Tag="teachers_all_korean"
+                                    IsEnabled="True"
+                                    AutomationProperties.Name="Korean Teachers navigation item" />
+                                <NavigationViewItem
+                                    x:Name="NativeEnglishTeachersNavigationItem"
+                                    Content="Native English Teachers"
+                                    Tag="native_english_teachers"
+                                    IsEnabled="True"
+                                    AutomationProperties.Name="Native English Teachers navigation item" />
+                                <NavigationViewItem
+                                    x:Name="GsTeamNavigationItem"
+                                    Content="GS Team"
+                                    Tag="gs_team"
+                                    IsEnabled="True"
+                                    AutomationProperties.Name="GS Team navigation item" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+                        <NavigationViewItem
+                            x:Name="UsefulLinksNavigationItem"
+                            Content="Useful Links"
+                            Tag="useful_links"
+                            IsEnabled="False"
+                            IsExpanded="True"
+                            AutomationProperties.Name="Useful Links navigation root unavailable in prototype shell">
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem Content="Dropbox" Tag="useful_dropbox" IsEnabled="False" AutomationProperties.Name="Dropbox link unavailable in prototype shell" />
+                                <NavigationViewItem Content="Vacation Calendar" Tag="useful_vacation_calendar" IsEnabled="False" AutomationProperties.Name="Vacation Calendar link unavailable in prototype shell" />
+                                <NavigationViewItem Content="Yearly Calendar" Tag="useful_yearly_calendar" IsEnabled="False" AutomationProperties.Name="Yearly Calendar link unavailable in prototype shell" />
+                                <NavigationViewItem Content="Training Website" Tag="useful_training_website" IsEnabled="False" AutomationProperties.Name="Training Website link unavailable in prototype shell" />
+                                <NavigationViewItem Content="NET Website" Tag="useful_net_website" IsEnabled="False" AutomationProperties.Name="NET Website link unavailable in prototype shell" />
+                                <NavigationViewItem Content="LMS Website" Tag="useful_lms_website" IsEnabled="False" AutomationProperties.Name="LMS Website link unavailable in prototype shell" />
+                                <NavigationViewItem Content="Highlights Library" Tag="useful_highlights_library" IsEnabled="False" AutomationProperties.Name="Highlights Library link unavailable in prototype shell" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+                        <NavigationViewItem
+                            x:Name="CampusDirectoryNavigationItem"
+                            Content="Campus Directory"
+                            Tag="campus_info"
+                            IsExpanded="True"
+                            AutomationProperties.Name="Campus Directory navigation root">
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem x:Name="CampusInformationNavigationItem" Content="Information" Tag="campus_information" AutomationProperties.Name="Campus Information navigation item" />
+                                <NavigationViewItem x:Name="CampusDirectionsNavigationItem" Content="Directions" Tag="campus_directions" AutomationProperties.Name="Campus Directions navigation item" />
+                                <NavigationViewItem x:Name="CampusAddressNavigationItem" Content="Address" Tag="campus_address" AutomationProperties.Name="Campus Address navigation item" />
+                                <NavigationViewItem x:Name="CampusHousingNavigationItem" Content="Housing" Tag="campus_housing" AutomationProperties.Name="Campus Housing navigation item" />
+                                <NavigationViewItem x:Name="CampusMapNavigationItem" Content="Maps" Tag="campus_map" AutomationProperties.Name="Campus Maps navigation item" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+                        <NavigationViewItem
+                            x:Name="AboutNavigationItem"
+                            Content="About"
+                            Tag="about"
+                            AutomationProperties.Name="About navigation item" />
+                    </NavigationView.MenuItems>
+                </NavigationView>
+
+                <!-- Keep the frame as the shell's content region so its
+                     existing lazy navigation and state persistence remain
+                     independent of the sidebar's layout. -->
+                <Frame
+                    x:Name="ContentFrame"
+                    Grid.Column="1"
+                    MinWidth="{StaticResource Phase5ContentMinimumWidth}"
+                    IsNavigationStackEnabled="True"
+                    AutomationProperties.Name="Page content" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

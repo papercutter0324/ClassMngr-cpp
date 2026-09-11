@@ -6,6 +6,7 @@
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
+#include <QFrame>
 #include <QtTest>
 
 class MyWorkspacePageTests : public QObject
@@ -18,6 +19,7 @@ private slots:
     void preservesChildPagesWhenSwitchingTabs();
     void defersCalendarConstructionWhileOtherTabsAreOpen();
     void initializesCalendarWithoutChangingTheActiveWorkspaceTab();
+    void showsOnlyTheWorkspaceBannerWhenNoDatabaseIsOpen();
     void isAvailableAsTheDefaultTopLevelPage();
     void receivesTheTopLevelDatabaseState();
 };
@@ -96,6 +98,52 @@ void MyWorkspacePageTests::initializesCalendarWithoutChangingTheActiveWorkspaceT
         QVERIFY(pages.ensureCalendarPage());
         QCOMPARE(workspace->currentTab(), tab);
     }
+}
+
+void MyWorkspacePageTests::showsOnlyTheWorkspaceBannerWhenNoDatabaseIsOpen()
+{
+    MyWorkspacePage page(nullptr);
+    page.resize(800, 600);
+    page.setDatabaseOpen(false);
+    page.show();
+
+    auto* workspaceBanner = page.findChild<QFrame*>(
+        QStringLiteral("noDatabaseBanner"),
+        Qt::FindDirectChildrenOnly
+        );
+    QVERIFY(workspaceBanner);
+    QVERIFY(workspaceBanner->isVisible());
+
+    page.openTab(WorkspaceTab::Details);
+    QCoreApplication::processEvents();
+
+    auto* detailsBanner = page.personalDetailsPage()->findChild<QFrame*>(
+        QStringLiteral("noDatabaseBanner"),
+        Qt::FindDirectChildrenOnly
+        );
+    QVERIFY(detailsBanner);
+    QVERIFY(!detailsBanner->isVisible());
+
+    page.openTab(WorkspaceTab::Schedule);
+    QCoreApplication::processEvents();
+
+    auto* scheduleBanner = page.schedulePage()->findChild<QFrame*>(
+        QStringLiteral("noDatabaseBanner"),
+        Qt::FindDirectChildrenOnly
+        );
+    QVERIFY(scheduleBanner);
+    QVERIFY(!scheduleBanner->isVisible());
+
+    page.openTab(WorkspaceTab::Calendar);
+    QCoreApplication::processEvents();
+
+    QVERIFY(page.calendarPage());
+    auto* calendarBanner = page.calendarPage()->findChild<QFrame*>(
+        QStringLiteral("noDatabaseBanner"),
+        Qt::FindDirectChildrenOnly
+        );
+    QVERIFY(calendarBanner);
+    QVERIFY(!calendarBanner->isVisible());
 }
 
 void MyWorkspacePageTests::isAvailableAsTheDefaultTopLevelPage()

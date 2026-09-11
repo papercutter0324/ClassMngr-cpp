@@ -1,8 +1,9 @@
 #pragma once
 
+#include "classmngr/engine/academic_calendar.h"
+
 #include <QDate>
 #include <QJsonObject>
-#include <QMap>
 
 #include <array>
 
@@ -78,11 +79,5 @@ public:
     [[nodiscard]] bool fromJson(const QJsonObject& root);
 
 private:
-    using ScheduleMap = QMap<int, AcademicYearSchedule>;
-
-    [[nodiscard]] const ScheduleMap& schedules(SchoolLevel level) const;
-    [[nodiscard]] ScheduleMap& schedules(SchoolLevel level);
-
-    ScheduleMap m_elementarySchedules;
-    ScheduleMap m_middleSchedules;
+    classmngr::engine::AcademicCalendarSchedule m_engine;
 };

@@ -20,12 +20,12 @@ if(APPLE)
         add_custom_target(ClassMngrInstaller
             COMMAND
                 "${CMAKE_COMMAND}" -E rm -rf
-                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/Frameworks"
-                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/PlugIns"
-                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/Resources/qml"
+                "$<TARGET_BUNDLE_DIR:${CLASSMNGR_QT_DESKTOP_TARGET}>/Contents/Frameworks"
+                "$<TARGET_BUNDLE_DIR:${CLASSMNGR_QT_DESKTOP_TARGET}>/Contents/PlugIns"
+                "$<TARGET_BUNDLE_DIR:${CLASSMNGR_QT_DESKTOP_TARGET}>/Contents/Resources/qml"
             COMMAND
                 "${CMAKE_COMMAND}" -E rm -f
-                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/Resources/qt.conf"
+                "$<TARGET_BUNDLE_DIR:${CLASSMNGR_QT_DESKTOP_TARGET}>/Contents/Resources/qt.conf"
             COMMAND
                 "${CMAKE_COMMAND}" -E rm -rf
                 "${CLASSMNGR_DMG_STAGING_DIR}"
@@ -54,7 +54,7 @@ if(APPLE)
                 -ov
                 -format UDZO
                 "${CLASSMNGR_DMG_OUTPUT}"
-            DEPENDS ClassMngr
+            DEPENDS ${CLASSMNGR_QT_DESKTOP_TARGET}
             BYPRODUCTS "${CLASSMNGR_DMG_OUTPUT}"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
             COMMENT "Building ClassMngr macOS universal disk image"

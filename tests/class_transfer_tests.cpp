@@ -15,6 +15,24 @@
 
 namespace
 {
+QJsonObject loadFixtureObject(const QString& name)
+{
+    const QString path = QFINDTESTDATA(
+        QStringLiteral("fixtures/class-transfer/") + name);
+    if (path.isEmpty())
+    {
+        return {};
+    }
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+
+    return QJsonDocument::fromJson(file.readAll()).object();
+}
+
 Teacher completeTeacher(
     const QString& englishName = QStringLiteral("Alex Kim")
     )
@@ -62,8 +80,23 @@ ClassInfo completeClassInfo(
     info.teacherId = teacherId;
     info.classGrade = grade;
     info.classLevel = level;
-    info.readingBook = QStringLiteral("Reading Explorer 3");
-    info.essayBook = QStringLiteral("4C");
+    if (grade == QStringLiteral("E4"))
+    {
+        info.readingBook = level == QStringLiteral("Theseus")
+            ? QStringLiteral("Reading Explorer 1")
+            : QStringLiteral("Reading Explorer 2");
+        info.essayBook = QStringLiteral("4A");
+    }
+    else if (grade == QStringLiteral("E5"))
+    {
+        info.readingBook = QStringLiteral("Reading Explorer 4");
+        info.essayBook = QStringLiteral("5E");
+    }
+    else if (grade == QStringLiteral("E6"))
+    {
+        info.readingBook = QStringLiteral("Reading Explorer 5");
+        info.essayBook = QStringLiteral("6E");
+    }
     info.classColor = QStringLiteral("#123456");
     info.fontColor = QStringLiteral("#FEDCBA");
     info.notes = QStringLiteral("수업 노트\nSecond line");
@@ -177,6 +210,7 @@ class ClassTransferTests : public QObject
 
 private slots:
     void jsonRoundTripPreservesCompletePackage();
+    void codecFixturesCoverValidAndLegacyPackages();
     void importsCompleteClassesAndDeduplicatesTeacher();
     void previewMatchesCourseAndTeacherIgnoringSchedule();
     void replacementRetainsIdAndClearsOldChildren();
@@ -281,6 +315,25 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
             .preferredRomanization.isEmpty()
         );
     QVERIFY(legacyPackage->teachers.first().teacher.preferredName.isEmpty());
+    QVERIFY(legacyPackage->teachers.first().teacher.birthday.isEmpty());
+    QVERIFY(legacyPackage->teachers.first().teacher.phoneNumber.isEmpty());
+}
+
+void ClassTransferTests::codecFixturesCoverValidAndLegacyPackages()
+{
+    const QJsonObject valid = loadFixtureObject(QStringLiteral("valid.json"));
+    const auto validPackage = ClassTransferJsonCodec::fromJson(valid);
+    QVERIFY2(validPackage.has_value(),
+             validPackage ? "" : qPrintable(validPackage.error()));
+    QCOMPARE(validPackage->teachers.size(), 1);
+    QCOMPARE(validPackage->classes.size(), 1);
+    QCOMPARE(validPackage->classes.first().info.classGrade,
+             QStringLiteral("E4"));
+
+    const QJsonObject legacy = loadFixtureObject(QStringLiteral("legacy.json"));
+    const auto legacyPackage = ClassTransferJsonCodec::fromJson(legacy);
+    QVERIFY2(legacyPackage.has_value(),
+             legacyPackage ? "" : qPrintable(legacyPackage.error()));
     QVERIFY(legacyPackage->teachers.first().teacher.birthday.isEmpty());
     QVERIFY(legacyPackage->teachers.first().teacher.phoneNumber.isEmpty());
 }
@@ -613,6 +666,8 @@ void ClassTransferTests::importedClassesConflictAtomically()
     conflictingClass.key = QStringLiteral("class-2");
     conflictingClass.info.classGrade = QStringLiteral("E5");
     conflictingClass.info.classLevel = QStringLiteral("Apollo");
+    conflictingClass.info.readingBook = QStringLiteral("Reading Explorer 4");
+    conflictingClass.info.essayBook = QStringLiteral("5E");
     conflictingClass.info.intensiveTimes.first().day = QStringLiteral("Tuesday");
     package.classes.append(conflictingClass);
 
@@ -621,7 +676,10 @@ void ClassTransferTests::importedClassesConflictAtomically()
     const auto result = service.importClasses(
         package, createAllPlan(package));
     QVERIFY(!result.has_value());
-    QVERIFY(result.error().contains(QStringLiteral("Schedule conflicts")));
+    QVERIFY2(
+        result.error().contains(QStringLiteral("Schedule conflicts")),
+        qPrintable(result.error())
+        );
     QVERIFY(service.getClasses().value_or(QList<Classroom>{}).isEmpty());
     QVERIFY(service.getAllTeachers().value_or(QList<Teacher>{}).isEmpty());
 }
@@ -671,7 +729,6 @@ void ClassTransferTests::incompleteCourseSignatureDoesNotMatch()
     ClassInfo sourceInfo;
     sourceInfo.classId = sourceClass;
     sourceInfo.teacherId = teacherId;
-    sourceInfo.classGrade = QStringLiteral("E4");
     QVERIFY(service.saveClassInfo(sourceInfo));
     const auto package = service.buildClassTransferPackage({sourceClass});
     QVERIFY(package.has_value());
@@ -683,7 +740,6 @@ void ClassTransferTests::incompleteCourseSignatureDoesNotMatch()
     ClassInfo destinationInfo;
     destinationInfo.classId = destinationClass;
     destinationInfo.teacherId = destinationTeacher;
-    destinationInfo.classGrade = QStringLiteral("E4");
     QVERIFY(service.saveClassInfo(destinationInfo));
 
     const auto preview = service.previewClassImport(*package);
@@ -702,6 +758,16 @@ void ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages()
     malformedFile.write("{not-json");
     malformedFile.close();
     QVERIFY(!ClassTransferJsonCodec::loadFile(malformedPath).has_value());
+
+    const QString malformedFixture = QFINDTESTDATA(
+        QStringLiteral("fixtures/class-transfer/malformed.json"));
+    QVERIFY(!malformedFixture.isEmpty());
+    QVERIFY(!ClassTransferJsonCodec::loadFile(malformedFixture).has_value());
+
+    const QString unsupportedFixture = QFINDTESTDATA(
+        QStringLiteral("fixtures/class-transfer/unsupported.json"));
+    QVERIFY(!unsupportedFixture.isEmpty());
+    QVERIFY(!ClassTransferJsonCodec::loadFile(unsupportedFixture).has_value());
 
     ClassTransferPackage package;
     package.exportedAtUtc = QDateTime::currentDateTimeUtc();
@@ -741,21 +807,30 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
 
     ClassInfo zuluInfo;
     zuluInfo.classId = zuluClass;
-    zuluInfo.classGrade = QStringLiteral("Zulu");
+    zuluInfo.classGrade = QStringLiteral("E6");
+    zuluInfo.classLevel = QStringLiteral("Gaia");
+    zuluInfo.readingBook = QStringLiteral("Reading Explorer 5");
+    zuluInfo.essayBook = QStringLiteral("6E");
     QVERIFY(service.saveClassInfo(zuluInfo));
 
     ClassInfo alphaInfo;
     alphaInfo.classId = alphaClass;
-    alphaInfo.classGrade = QStringLiteral("Alpha");
+    alphaInfo.classGrade = QStringLiteral("E4");
+    alphaInfo.classLevel = QStringLiteral("Theseus");
+    alphaInfo.readingBook = QStringLiteral("Reading Explorer 1");
+    alphaInfo.essayBook = QStringLiteral("4A");
     QVERIFY(service.saveClassInfo(alphaInfo));
 
     ClassInfo mikeInfo;
     mikeInfo.classId = mikeClass;
-    mikeInfo.classGrade = QStringLiteral("Mike");
+    mikeInfo.classGrade = QStringLiteral("E5");
+    mikeInfo.classLevel = QStringLiteral("Apollo");
+    mikeInfo.readingBook = QStringLiteral("Reading Explorer 4");
+    mikeInfo.essayBook = QStringLiteral("5E");
     QVERIFY(service.saveClassInfo(mikeInfo));
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
+    ClassService classes(service.databaseSession());
+    TeacherService teachers(service.databaseSession());
     ClassExportDialog dialog(&classes, &teachers);
     QCOMPARE(dialog.selectedClassIds(), QList<int>());
 
@@ -848,8 +923,8 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
     QVERIFY(preview.has_value());
     QCOMPARE(preview->teachers.first().matchingTeacherIds.size(), 2);
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
+    ClassService classes(service.databaseSession());
+    TeacherService teachers(service.databaseSession());
     ClassImportDialog dialog(
         &classes, &teachers, *package, *preview);
     auto* importButton = dialog.findChild<QPushButton*>(

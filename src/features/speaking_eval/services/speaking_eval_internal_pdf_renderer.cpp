@@ -1,6 +1,8 @@
 #include "speaking_eval_internal_pdf_renderer.h"
 
+#include "speaking_eval_report_content_adapter.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QFileInfo>
@@ -11,6 +13,7 @@
 #include <QPdfWriter>
 
 #include <algorithm>
+#include <cstddef>
 
 namespace
 {
@@ -37,14 +40,21 @@ QRectF reportPageRect(const QPdfWriter& writer)
         ? QRectF(pageRect)
         : QRectF(0.0, 0.0, writer.width(), writer.height());
 }
+
 }
 
 bool SpeakingEvalInternalPdfRenderer::render(
-    const SpeakingEvalReportData& data,
+    const classmngr::engine::SpeakingEvaluationReportContent& content,
+    const QByteArray& signatureImage,
     const QString& documentPath,
     QString* errorMessage
     )
 {
+    const SpeakingEvalReportData data =
+        SpeakingEvalReportContentAdapter::toQt(
+            content,
+            signatureImage
+            );
     const SpeakingEvalTemplateAssets& assets =
         speakingEvalTemplateAssets(data.reportTemplate);
     if (!assets.valid)

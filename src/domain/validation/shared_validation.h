@@ -1,5 +1,8 @@
 #pragma once
 
+// Compatibility-only Qt validation retained for SharedPolicy tests. New
+// production callers must use the portable engine validation APIs.
+
 #include "domain/validation/validation_result.h"
 #include "domain/validation/validation_rules.h"
 

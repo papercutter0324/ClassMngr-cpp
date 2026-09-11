@@ -309,10 +309,12 @@ void MyWorkspacePage::buildUi()
 
     m_personalDetailsPage = new PersonalDetailsPage(m_services, m_tabs);
     m_personalDetailsPage->setPageHeaderVisible(false);
+    m_personalDetailsPage->setNoDatabaseBannerEnabled(false);
     connectChildPageSignals(m_personalDetailsPage);
 
     m_schedulePage = new SchedulePage(m_services, m_tabs);
     m_schedulePage->setPageHeaderVisible(false);
+    m_schedulePage->setNoDatabaseBannerEnabled(false);
     connectChildPageSignals(m_schedulePage);
 
     m_calendarPlaceholder = createPlaceholder(m_tabs);
@@ -358,6 +360,7 @@ void MyWorkspacePage::ensureCalendarInitialized()
 
     m_calendarPage = new CalendarPage(m_services, m_tabs);
     m_calendarPage->setPageHeaderVisible(false);
+    m_calendarPage->setNoDatabaseBannerEnabled(false);
     m_calendarPage->setDatabaseOpen(isDatabaseOpen());
     connectChildPageSignals(m_calendarPage);
 

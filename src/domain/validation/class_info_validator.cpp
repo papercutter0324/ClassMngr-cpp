@@ -1,237 +1,206 @@
 #include "class_info_validator.h"
 
-#include "core/utils/colorutils.h"
-#include "domain/validation/class_time_validator.h"
-#include "domain/validation/validation_rules.h"
-#include "features/classes/config/class_info_config.h"
+#include "classmngr/engine/class_info_validator.h"
 
-#include <QStringList>
+#include <QByteArray>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
 
 namespace
 {
 constexpr qsizetype NotesMaximumLength = 10000;
 
-ValidationLocation field(const QString& name)
+std::string toUtf8(const QString& value)
 {
-    return {.field = name};
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-QString canonicalChoice(const QString& value, const QStringList& choices)
+QString fromUtf8(std::string_view value)
 {
-    const QString trimmed = value.trimmed();
-    for (const QString& choice : choices)
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+classmngr::engine::ClassTime toEngine(const ClassTime& time)
+{
+    return {
+        .day = toUtf8(time.day),
+        .startTime = toUtf8(time.startTime),
+        .endTime = toUtf8(time.endTime)
+    };
+}
+
+ClassTime fromEngine(const classmngr::engine::ClassTime& time)
+{
+    return {
+        .day = fromUtf8(time.day),
+        .startTime = fromUtf8(time.startTime),
+        .endTime = fromUtf8(time.endTime)
+    };
+}
+
+classmngr::engine::ClassInfo toEngine(const ClassInfo& info)
+{
+    classmngr::engine::ClassInfo result;
+    result.classId = info.classId;
+    result.teacherId = info.teacherId;
+    result.teacherKr = toUtf8(info.teacherKr);
+    result.teacherEn = toUtf8(info.teacherEn);
+    result.teacherPreferredName = toUtf8(info.teacherPreferredName);
+    result.roomNumber = toUtf8(info.roomNumber);
+    result.wifiName = toUtf8(info.wifiName);
+    result.wifiPassword = toUtf8(info.wifiPassword);
+    result.internetType = toUtf8(info.internetType);
+    result.zoomId = toUtf8(info.zoomId);
+    result.zoomPassword = toUtf8(info.zoomPassword);
+    result.projectionType = toUtf8(info.projectionType);
+    result.classGrade = toUtf8(info.classGrade);
+    result.classLevel = toUtf8(info.classLevel);
+    result.readingBook = toUtf8(info.readingBook);
+    result.essayBook = toUtf8(info.essayBook);
+    result.classColor = toUtf8(info.classColor);
+    result.fontColor = toUtf8(info.fontColor);
+
+    result.classTimes.reserve(
+        static_cast<std::size_t>(info.classTimes.size())
+        );
+    for (const ClassTime& time : info.classTimes)
     {
-        if (choice.compare(trimmed, Qt::CaseInsensitive) == 0)
-        {
-            return choice;
-        }
+        result.classTimes.push_back(toEngine(time));
     }
 
-    return trimmed;
+    result.intensiveTimes.reserve(
+        static_cast<std::size_t>(info.intensiveTimes.size())
+        );
+    for (const ClassTime& time : info.intensiveTimes)
+    {
+        result.intensiveTimes.push_back(toEngine(time));
+    }
+
+    result.notes = toUtf8(info.notes);
+    result.timeFillerActivities = toUtf8(info.timeFillerActivities);
+    return result;
 }
 
-ValidationResult allowedValue(
-    const QString& value,
-    const QStringList& allowedValues,
-    const QString& name
+ClassInfo fromEngine(const classmngr::engine::ClassInfo& info)
+{
+    ClassInfo result;
+    result.classId = info.classId;
+    result.teacherId = info.teacherId;
+    result.teacherKr = fromUtf8(info.teacherKr);
+    result.teacherEn = fromUtf8(info.teacherEn);
+    result.teacherPreferredName = fromUtf8(info.teacherPreferredName);
+    result.roomNumber = fromUtf8(info.roomNumber);
+    result.wifiName = fromUtf8(info.wifiName);
+    result.wifiPassword = fromUtf8(info.wifiPassword);
+    result.internetType = fromUtf8(info.internetType);
+    result.zoomId = fromUtf8(info.zoomId);
+    result.zoomPassword = fromUtf8(info.zoomPassword);
+    result.projectionType = fromUtf8(info.projectionType);
+    result.classGrade = fromUtf8(info.classGrade);
+    result.classLevel = fromUtf8(info.classLevel);
+    result.readingBook = fromUtf8(info.readingBook);
+    result.essayBook = fromUtf8(info.essayBook);
+    result.classColor = fromUtf8(info.classColor);
+    result.fontColor = fromUtf8(info.fontColor);
+
+    for (const classmngr::engine::ClassTime& time : info.classTimes)
+    {
+        result.classTimes.append(fromEngine(time));
+    }
+    for (const classmngr::engine::ClassTime& time : info.intensiveTimes)
+    {
+        result.intensiveTimes.append(fromEngine(time));
+    }
+
+    result.notes = fromUtf8(info.notes);
+    result.timeFillerActivities = fromUtf8(info.timeFillerActivities);
+    return result;
+}
+
+void restoreLengthArguments(
+    ValidationIssue& issue,
+    const ClassInfo& info
     )
 {
-    if (allowedValues.contains(value))
+    if (issue.code != QStringLiteral("validation.length.out_of_bounds"))
     {
-        return {};
+        return;
     }
 
-    return ValidationResult(ValidationRules::issue(
-        QStringLiteral("class_info.value.not_allowed"),
-        field(name),
-        ValidationSeverity::Error,
-        {{QStringLiteral("value"), value},
-         {QStringLiteral("allowedValues"), allowedValues}}
-        ));
+    const QString* value = nullptr;
+    if (issue.field == QStringLiteral("notes"))
+    {
+        value = &info.notes;
+    }
+    else if (issue.field == QStringLiteral("timeFillerActivities"))
+    {
+        value = &info.timeFillerActivities;
+    }
+
+    if (value == nullptr)
+    {
+        return;
+    }
+
+    issue.arguments = {
+        {QStringLiteral("length"), static_cast<qlonglong>(value->size())},
+        {QStringLiteral("minimum"), 0},
+        {QStringLiteral("maximum"), static_cast<qlonglong>(NotesMaximumLength)}
+    };
 }
+
+ValidationResult fromEngine(
+    const classmngr::engine::ValidationResult& validation,
+    const ClassInfo* info = nullptr
+    )
+{
+    ValidationResult result;
+    for (const classmngr::engine::ValidationIssue& source :
+         validation.issues())
+    {
+        ValidationIssue issue{
+            .code = fromUtf8(source.code),
+            .field = fromUtf8(source.field),
+            .row = source.row,
+            .column = source.column,
+            .severity = source.isWarning()
+                ? ValidationSeverity::Warning
+                : ValidationSeverity::Error
+        };
+        if (info != nullptr)
+        {
+            restoreLengthArguments(issue, *info);
+        }
+        result.add(std::move(issue));
+    }
+
+    return result;
 }
+} // namespace
 
 ClassInfo ClassInfoValidator::normalized(const ClassInfo& info)
 {
-    ClassInfo normalized = info;
-    normalized.classGrade = canonicalChoice(info.classGrade, ClassInfoConfig::Grades);
-    const QStringList levels =
-        ClassInfoConfig::levelsForGrade(normalized.classGrade);
-    normalized.classLevel = canonicalChoice(info.classLevel, levels);
-    if (ClassInfoConfig::Grades.contains(normalized.classGrade)
-        && levels.contains(normalized.classLevel))
-    {
-        normalized.readingBook = canonicalChoice(
-            info.readingBook,
-            ClassInfoConfig::readingBooks(
-                normalized.classGrade,
-                normalized.classLevel
-                )
-            );
-        normalized.essayBook = canonicalChoice(
-            info.essayBook,
-            ClassInfoConfig::essayBooks(
-                normalized.classGrade,
-                normalized.classLevel
-                )
-            );
-    }
-    else
-    {
-        normalized.readingBook = info.readingBook.trimmed();
-        normalized.essayBook = info.essayBook.trimmed();
-    }
-    for (ClassTime& time : normalized.classTimes)
-    {
-        time = ClassTimeValidator::normalized(time);
-    }
-    for (ClassTime& time : normalized.intensiveTimes)
-    {
-        time = ClassTimeValidator::normalized(time);
-    }
-    normalized.notes = info.notes.trimmed();
-    normalized.timeFillerActivities = info.timeFillerActivities.trimmed();
-
-    if (const auto classColor = ColorUtils::canonicalHexColor(info.classColor))
-    {
-        normalized.classColor = *classColor;
-    }
-    else
-    {
-        normalized.classColor = info.classColor.trimmed();
-    }
-
-    if (const auto fontColor = ColorUtils::canonicalHexColor(info.fontColor))
-    {
-        normalized.fontColor = *fontColor;
-    }
-    else
-    {
-        normalized.fontColor = info.fontColor.trimmed();
-    }
-
-    return normalized;
+    return fromEngine(
+        classmngr::engine::ClassInfoValidator::normalized(toEngine(info))
+        );
 }
 
 ValidationResult ClassInfoValidator::validate(const ClassInfo& info)
 {
-    ValidationResult result;
-
-    if (info.classId <= 0)
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("class_info.class_id.invalid"),
-            field(QStringLiteral("classId")),
-            ValidationSeverity::Error,
-            {{QStringLiteral("value"), info.classId}}
-            ));
-    }
-
-    if (info.teacherId == 0 || info.teacherId < -1)
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("class_info.teacher_id.invalid"),
-            field(QStringLiteral("teacherId")),
-            ValidationSeverity::Error,
-            {{QStringLiteral("value"), info.teacherId}}
-            ));
-    }
-
-    const QString grade = info.classGrade.trimmed();
-    const QString level = info.classLevel.trimmed();
-    if (grade.isEmpty() != level.isEmpty())
-    {
-        result.add(ValidationRules::issue(
-            grade.isEmpty()
-                ? QStringLiteral("class_info.grade.required")
-                : QStringLiteral("class_info.level.required"),
-            field(grade.isEmpty()
-                ? QStringLiteral("classGrade")
-                : QStringLiteral("classLevel"))
-            ));
-    }
-    else if (!grade.isEmpty())
-    {
-        result.merge(allowedValue(
-            grade,
-            ClassInfoConfig::Grades,
-            QStringLiteral("classGrade")
-            ));
-
-        const QStringList levels = ClassInfoConfig::levelsForGrade(grade);
-        result.merge(allowedValue(
-            level,
-            levels,
-            QStringLiteral("classLevel")
-            ));
-
-        if (ClassInfoConfig::Grades.contains(grade) && levels.contains(level))
-        {
-            result.merge(allowedValue(
-                info.readingBook.trimmed(),
-                ClassInfoConfig::readingBooks(grade, level),
-                QStringLiteral("readingBook")
-                ));
-            result.merge(allowedValue(
-                info.essayBook.trimmed(),
-                ClassInfoConfig::essayBooks(grade, level),
-                QStringLiteral("essayBook")
-                ));
-        }
-    }
-    else if (!info.readingBook.trimmed().isEmpty()
-             || !info.essayBook.trimmed().isEmpty())
-    {
-        if (!info.readingBook.trimmed().isEmpty())
-        {
-            result.add(ValidationRules::issue(
-                QStringLiteral("class_info.book.requires_grade_level"),
-                field(QStringLiteral("readingBook"))
-                ));
-        }
-        if (!info.essayBook.trimmed().isEmpty())
-        {
-            result.add(ValidationRules::issue(
-                QStringLiteral("class_info.book.requires_grade_level"),
-                field(QStringLiteral("essayBook"))
-                ));
-        }
-    }
-
-    if (!ColorUtils::canonicalHexColor(info.classColor))
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("color.invalid_hex"),
-            field(QStringLiteral("classColor")),
-            ValidationSeverity::Error,
-            {{QStringLiteral("value"), info.classColor}}
-            ));
-    }
-    if (!ColorUtils::canonicalHexColor(info.fontColor))
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("color.invalid_hex"),
-            field(QStringLiteral("fontColor")),
-            ValidationSeverity::Error,
-            {{QStringLiteral("value"), info.fontColor}}
-            ));
-    }
-
-    result.merge(validateNotes(
-        info.classId,
-        info.notes,
-        info.timeFillerActivities
-        ));
-    result.merge(ClassTimeValidator::validate(
-        info.classTimes,
-        QStringLiteral("classTimes")
-        ));
-    result.merge(ClassTimeValidator::validate(
-        info.intensiveTimes,
-        QStringLiteral("intensiveTimes")
-        ));
-
-    return result;
+    return fromEngine(
+        classmngr::engine::ClassInfoValidator::validate(toEngine(info)),
+        &info
+        );
 }
 
 ValidationResult ClassInfoValidator::validateNotes(
@@ -240,28 +209,17 @@ ValidationResult ClassInfoValidator::validateNotes(
     const QString& timeFillerActivities
     )
 {
-    ValidationResult result;
-    if (classId <= 0)
-    {
-        result.add(ValidationRules::issue(
-            QStringLiteral("class_info.class_id.invalid"),
-            field(QStringLiteral("classId")),
-            ValidationSeverity::Error,
-            {{QStringLiteral("value"), classId}}
-            ));
-    }
+    ClassInfo info;
+    info.classId = classId;
+    info.notes = notes;
+    info.timeFillerActivities = timeFillerActivities;
 
-    result.merge(ValidationRules::textLength(
-        notes,
-        0,
-        NotesMaximumLength,
-        field(QStringLiteral("notes"))
-        ));
-    result.merge(ValidationRules::textLength(
-        timeFillerActivities,
-        0,
-        NotesMaximumLength,
-        field(QStringLiteral("timeFillerActivities"))
-        ));
-    return result;
+    return fromEngine(
+        classmngr::engine::ClassInfoValidator::validateNotes(
+            classId,
+            toUtf8(notes),
+            toUtf8(timeFillerActivities)
+            ),
+        &info
+        );
 }

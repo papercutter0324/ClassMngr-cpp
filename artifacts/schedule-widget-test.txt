@@ -1,0 +1,320 @@
+********* Start testing of ScheduleWidgetTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+INFO   : ScheduleWidgetTests::initTestCase() entering
+PASS   : ScheduleWidgetTests::initTestCase()
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() entering
+QWARN  : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QFontDatabase: Cannot find font directory C:/Qt/6.11.1/msvc2022_64/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(intensive)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(92) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(settings)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(93) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QCOMPARE(ScheduleWidgetTestStubs::settingValue( QStringLiteral("schedule_display_mode") ), QStringLiteral("intensive"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(101) : message location
+QWARN  : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() This plugin does not support propagateSizeHints()
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(dialog)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(111) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(check)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(125) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(check)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(125) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(check)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(125) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(check)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(125) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(check)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(125) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QCOMPARE(ScheduleWidgetTestStubs::settingValue( QStringLiteral("schedule_show_all_hours_v2") ), QStringLiteral("true"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(139) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(145) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(scheduledClass)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(151) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(scheduledClass->text().contains(QStringLiteral("Susan")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(152) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(!scheduledClass->text().contains(QStringLiteral("???")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(153) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(state.use24HourTime)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(164) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(state.showWeekends)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(165) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(state.showKoreanTeacherEnglishNames)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(166) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(state.showAllHours)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(167) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QVERIFY(state.testingAffectsM1)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(168) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QCOMPARE(state.displayMode, ScheduleDisplayMode::Intensive)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(172) : message location
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QCOMPARE(mirrored.visibleClassIds(), QSet<int>{42})
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(176) : message location
+PASS   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption()
+INFO   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() entering
+QWARN  : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() This plugin does not support propagateSizeHints()
+INFO   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(189) : message location
+INFO   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(190) : message location
+QWARN  : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() This plugin does not support propagateSizeHints()
+INFO   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 2)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(198) : message location
+INFO   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() QVERIFY(!ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(199) : message location
+PASS   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
+INFO   : ScheduleWidgetTests::importButtonRequestsScheduleImport() entering
+INFO   : ScheduleWidgetTests::importButtonRequestsScheduleImport() QVERIFY(importButton)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(210) : message location
+INFO   : ScheduleWidgetTests::importButtonRequestsScheduleImport() QCOMPARE(importButton->text(), QStringLiteral("Import"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(214) : message location
+INFO   : ScheduleWidgetTests::importButtonRequestsScheduleImport() QCOMPARE(spy.count(), 1)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(221) : message location
+PASS   : ScheduleWidgetTests::importButtonRequestsScheduleImport()
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() entering
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(241) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(dynamic_cast<TextFitPushButton*>(button))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(242) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button->minimumSizeHint().width() >= button->sizeHint().width())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(246) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(241) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(dynamic_cast<TextFitPushButton*>(button))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(242) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button->minimumSizeHint().width() >= button->sizeHint().width())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(246) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(241) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(dynamic_cast<TextFitPushButton*>(button))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(242) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button->minimumSizeHint().width() >= button->sizeHint().width())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(246) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(241) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(dynamic_cast<TextFitPushButton*>(button))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(242) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button->minimumSizeHint().width() >= button->sizeHint().width())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(246) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(241) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(dynamic_cast<TextFitPushButton*>(button))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(242) : message location
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() QVERIFY(button->minimumSizeHint().width() >= button->sizeHint().width())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(246) : message location
+PASS   : ScheduleWidgetTests::controlsUseTextFitButtons()
+INFO   : ScheduleWidgetTests::legacyHourSettingsDoNotCarryForward() entering
+INFO   : ScheduleWidgetTests::legacyHourSettingsDoNotCarryForward() QVERIFY(!widget.displayState().showAllHours)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(265) : message location
+PASS   : ScheduleWidgetTests::legacyHourSettingsDoNotCarryForward()
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() entering
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QCOMPARE(widget.visibleClassIds(), QSet<int>({42, 44, 45}))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(283) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(testingButton)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(297) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(banner)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(298) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(299) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Testing)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(305) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QCOMPARE(widget.visibleClassIds(), QSet<int>({42, 45}))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(309) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(banner->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(310) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(banner->text().contains(QStringLiteral("M2 and M3")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(311) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(monday)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(317) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(monday->text().contains(QStringLiteral("Oral Testing")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(318) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(monday->text().contains(QStringLiteral("Library")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(319) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QCOMPARE(monday->property("slot_state").toString(), scheduleTestingSlotState())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(323) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QCOMPARE(widget.visibleClassIds(), QSet<int>{42})
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(331) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(banner->text().contains(QStringLiteral("M1, M2, and M3")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(332) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(wednesday)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(337) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QCOMPARE(wednesday->text(), QStringLiteral("Essay"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(338) : message location
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() QVERIFY(wednesday ->property("testing_block_creation_enabled") .toBool())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(343) : message location
+PASS   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock()
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() entering
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(testingButton)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(382) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(classesButton)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(383) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(384) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(classesButton->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(387) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(label)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(393) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QCOMPARE(label->property("class_id").toInt(), 100)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(394) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(label->property("testing_class_assignment").toBool())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(397) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(accessible.contains(QStringLiteral("Writing Lab")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(400) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(accessible.contains(QStringLiteral("M2")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(401) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(accessible.contains(QStringLiteral("Mixed (High)")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(402) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(accessible.contains(QStringLiteral("Library")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(403) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QVERIFY(!label->text().contains( QStringLiteral("Writing Lab Library") ))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(408) : message location
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() QCOMPARE(label->palette().color(QPalette::Highlight), QColor(QStringLiteral("#FFFFFF")))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(412) : message location
+PASS   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard()
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() entering
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QVERIFY(mode)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(451) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QVERIFY(classes)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(452) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QVERIFY(classLabel)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(453) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QVERIFY(buttons)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(454) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(mode->itemText(0), QStringLiteral("Oral Testing Block"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(458) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(mode->itemText(1), QStringLiteral("Testing Class"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(462) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(mode->itemText(2), QStringLiteral("Essay Block"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(466) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(assignDialog.height(), assignDialog.sizeHint().height())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(470) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(assignDialog.minimumSize(), assignDialog.maximumSize())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(471) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(assignDialog.size(), assignDialog.minimumSize())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(472) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QVERIFY(assignDialog.layout()->alignment().testFlag( Qt::AlignTop ))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(477) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(assignDialog.height(), assignDialog.minimumHeight())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(489) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(mode->geometry().top(), modeTop)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(490) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(buttons->geometry().top(), footerTop)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(491) : message location
+QWARN  : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() This plugin does not support propagateSizeHints()
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(classes->currentData().toInt(), 100)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(494) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(classLabel->geometry().top(), 8)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(498) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(classes->parentWidget()->height() - classes->geometry().bottom() - 1, 8)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(504) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QVERIFY(manage)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(509) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QVERIFY(manage->isVisibleTo(&assignDialog))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(510) : message location
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() QCOMPARE(manage->geometry().top(), buttons->geometry().top())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(511) : message location
+FAIL!  : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() Compared values are not the same
+   Actual   (manage->geometry().top()) : 0
+   Expected (buttons->geometry().top()): 144
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(511) : failure location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() entering
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(controls)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(615) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(controls->isHidden())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(616) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(617) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QCOMPARE(table->rowCount(), 1)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(618) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Intensive)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(622) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QCOMPARE(ScheduleWidgetTestStubs::settingValue( QStringLiteral("schedule_display_mode") ), QStringLiteral("intensive"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(628) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(controls->findChildren<QCheckBox*>().isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(632) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QCOMPARE(buttons.size(), 6)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(633) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(std::any_of( buttons.cbegin(), buttons.cend(), [](const QPushButton* button) { return button->text() == QStringLiteral("Import"); } ))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(644) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(!button->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(648) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(!button->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(648) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(!button->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(648) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(!button->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(648) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(!button->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(648) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(!button->isVisibleTo(&widget))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(648) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QVERIFY(QMetaObject::invokeMethod( &widget, "onCellClicked", Qt::DirectConnection, Q_ARG(int, 0), Q_ARG(int, 1) ))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(659) : message location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 0)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(663) : message location
+PASS   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks()
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() entering
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(table)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(676) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QCOMPARE(table->selectionMode(), QAbstractItemView::NoSelection)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(677) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(header)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(680) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(!header->sectionsClickable())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(681) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(!header->highlightSections())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(682) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QCOMPARE(header->focusPolicy(), Qt::NoFocus)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(683) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(timeItem)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(686) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(!(timeItem->flags() & Qt::ItemIsSelectable))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(687) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(timeDelegate)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(691) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QCOMPARE(timeDelegate->objectName(), QStringLiteral("scheduleTimeColumnDelegate"))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(695) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(defaultAppearance == renderTimeItem(baseState | QStyle::State_MouseOver))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(732) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(defaultAppearance == renderTimeItem(baseState | QStyle::State_Selected))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(736) : message location
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() QVERIFY(defaultAppearance == renderTimeItem(baseState | QStyle::State_HasFocus))
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(740) : message location
+PASS   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive()
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() entering
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QCOMPARE(widget.visibleClassIds(), QSet<int>{42})
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(749) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(widget.visibleClassIds().isEmpty())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(768) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(!cleared.use24HourTime)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(771) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(!cleared.showKoreanTeacherEnglishNames)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(772) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(!cleared.showAllHours)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(773) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(!cleared.showWeekends)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(774) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(!cleared.testingAffectsM1)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(775) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QCOMPARE(cleared.displayMode, ScheduleDisplayMode::Regular)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(779) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(regular)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(784) : message location
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() QVERIFY(regular->isChecked())
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(785) : message location
+PASS   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings()
+INFO   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() entering
+INFO   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() QVERIFY(scrollArea)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(799) : message location
+INFO   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() QVERIFY(schedule)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(800) : message location
+INFO   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() QCOMPARE(scrollArea->verticalScrollBarPolicy(), Qt::ScrollBarAsNeeded)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(804) : message location
+QWARN  : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() This plugin does not support propagateSizeHints()
+INFO   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() QCOMPARE(schedule->height(), scheduleHeight)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(815) : message location
+INFO   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() QVERIFY(scrollArea->verticalScrollBar()->maximum() > 0)
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(816) : message location
+PASS   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule()
+INFO   : ScheduleWidgetTests::cleanupTestCase() entering
+PASS   : ScheduleWidgetTests::cleanupTestCase()
+Totals: 13 passed, 1 failed, 0 skipped, 0 blacklisted, 198ms
+********* Finished testing of ScheduleWidgetTests *********

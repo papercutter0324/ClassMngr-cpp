@@ -2,6 +2,7 @@
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QtTest>
 
 class TestingBlockRepositoryTests : public QObject
@@ -37,6 +38,9 @@ bool createTable(
 void TestingBlockRepositoryTests
     ::assignsTestingClassesAndRequiresExplicitReplacement()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_assignment_repository_crud");
 
@@ -46,9 +50,16 @@ void TestingBlockRepositoryTests
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createTable(database));
+
+        QSqlQuery schemaVersionQuery(database);
+        QVERIFY(schemaVersionQuery.exec(
+            QStringLiteral("PRAGMA user_version = 6")
+            ));
 
         QSqlQuery query(database);
         QVERIFY(query.exec(R"(
@@ -66,8 +77,12 @@ void TestingBlockRepositoryTests
         QVERIFY(query.exec(R"(
             CREATE TABLE class_info (
                 class_id INTEGER PRIMARY KEY,
+                teacher_id INTEGER,
                 class_grade TEXT,
-                class_level TEXT
+                class_level TEXT,
+                class_color TEXT,
+                font_color TEXT,
+                notes TEXT
             )
         )"));
         QVERIFY(query.exec(R"(
@@ -216,6 +231,9 @@ void TestingBlockRepositoryTests
 
 void TestingBlockRepositoryTests::savesUpdatesDeletesAndClearsBlocks()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_block_repository_crud");
 
@@ -225,9 +243,16 @@ void TestingBlockRepositoryTests::savesUpdatesDeletesAndClearsBlocks()
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createTable(database));
+
+        QSqlQuery schemaVersionQuery(database);
+        QVERIFY(schemaVersionQuery.exec(
+            QStringLiteral("PRAGMA user_version = 6")
+            ));
 
         TestingBlockRepository repository(database);
         QVERIFY(
@@ -289,6 +314,9 @@ void TestingBlockRepositoryTests::savesUpdatesDeletesAndClearsBlocks()
 void TestingBlockRepositoryTests
     ::reportsInvalidKeysAndDatabaseFailures()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_block_repository_errors");
 
@@ -298,8 +326,17 @@ void TestingBlockRepositoryTests
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(
+            QStringLiteral(
+                "CREATE VIEW schedule_testing_blocks AS SELECT 1 AS id"
+                )
+            ));
 
         TestingBlockRepository repository(database);
         QVERIFY(

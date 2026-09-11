@@ -5,9 +5,14 @@
 
 #include <QByteArray>
 
+#include <functional>
+
+using ScheduleImportCancellation = std::function<bool()>;
+
 Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
     const QByteArray& data,
-    ScheduleImportKind kind
+    ScheduleImportKind kind,
+    const ScheduleImportCancellation& isCancelled = {}
     );
 
 QString normalizedScheduleImportUserName(

@@ -28,9 +28,18 @@ quint64 procKiBValue(
         return 0;
     }
 
-    while (!file.atEnd())
+    // procfs files report a zero size even though they provide readable
+    // content. QFile::atEnd() therefore reports EOF before the first read on
+    // some Linux systems; use the null QByteArray returned by readLine() as
+    // the actual EOF signal instead.
+    while (true)
     {
         const QByteArray line = file.readLine();
+        if (line.isNull())
+        {
+            break;
+        }
+
         if (!line.startsWith(key))
         {
             continue;

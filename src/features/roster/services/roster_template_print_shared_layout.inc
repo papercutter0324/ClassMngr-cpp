@@ -1,31 +1,5 @@
-// Shared PDF, cell-value, and layout helpers.
+// Shared PDF layout helpers.
 
-
-void appendCellValue(
-    QList<RosterCellValue>& values,
-    const QString& day,
-    int column,
-    int row,
-    const QString& value
-    )
-{
-    const QString trimmed =
-        value.trimmed();
-
-    if (trimmed.isEmpty())
-    {
-        return;
-    }
-
-    values.append(
-        {
-            day,
-            row,
-            column,
-            trimmed
-        }
-        );
-}
 
 QString failedPdfMessage(
     const QString& message

@@ -1,0 +1,31 @@
+{
+    "checkpoints": [
+        {
+            "elapsedMs": 4731,
+            "name": "window-constructed",
+            "privateBytes": 639500288,
+            "workingSetBytes": 748630016
+        },
+        {
+            "elapsedMs": 5343,
+            "name": "ready",
+            "privateBytes": 638111744,
+            "workingSetBytes": 747765760
+        }
+    ],
+    "finalProgress": 100,
+    "format": "classmngr-scenario-report-v1",
+    "processStartToReadyMs": 5343,
+    "processStartToWindowConstructedMs": 4731,
+    "progressUpdates": 15,
+    "scenario": {
+        "actions": [
+            "launch with an empty settings profile",
+            "construct the main window",
+            "wait until the startup-ready checkpoint"
+        ],
+        "name": "startup-empty-profile"
+    },
+    "windowConstructedPrivateBytes": 639500288,
+    "windowConstructedWorkingSetBytes": 748630016
+}

@@ -1,5 +1,10 @@
+#include "features/classes/config/class_info_config.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "ui/shared/widgets/sidebar/sidebar_definitions.h"
+
+#include "classmngr/engine/class_info_config.h"
+
+#include <string>
 
 #include <QtTest>
 
@@ -56,6 +61,20 @@ QList<int> classIds(
 
     return result;
 }
+
+QStringList toQtStringList(
+    const classmngr::engine::ClassInfoConfig::StringList& values
+    )
+{
+    QStringList result;
+
+    for (const std::string& value : values)
+    {
+        result.append(QString::fromStdString(value));
+    }
+
+    return result;
+}
 }
 
 class ClassTabNavigationTests : public QObject
@@ -75,6 +94,7 @@ private slots:
     void dayFilterUsesSelectedScheduleSource();
     void activeScheduleScopeExcludesClassesWithoutSelectedSchedule();
     void sidebarDefinesClassesPage();
+    void classInfoConfigMatchesEngineCatalog();
 };
 
 void ClassTabNavigationTests::sixOrFewerClassesUseFlatTabs()
@@ -594,6 +614,117 @@ void ClassTabNavigationTests::sidebarDefinesClassesPage()
     QCOMPARE(classes->label, QStringLiteral("Classes"));
     QCOMPARE(classes->type, NodeType::Page);
 
+}
+
+void ClassTabNavigationTests::classInfoConfigMatchesEngineCatalog()
+{
+    using classmngr::engine::ClassInfoConfig::essayBooks;
+    using classmngr::engine::ClassInfoConfig::levelsForGrade;
+    using classmngr::engine::ClassInfoConfig::readingBooks;
+
+    QCOMPARE(
+        ClassInfoConfig::Grades,
+        toQtStringList(classmngr::engine::ClassInfoConfig::grades())
+        );
+    QCOMPARE(
+        ClassInfoConfig::Days,
+        toQtStringList(classmngr::engine::ClassInfoConfig::days())
+        );
+    QCOMPARE(
+        ClassInfoConfig::RegularHours,
+        toQtStringList(classmngr::engine::ClassInfoConfig::regularHours())
+        );
+    QCOMPARE(
+        ClassInfoConfig::IntensiveHours,
+        toQtStringList(classmngr::engine::ClassInfoConfig::intensiveHours())
+        );
+    QCOMPARE(
+        ClassInfoConfig::StartMinutes,
+        toQtStringList(classmngr::engine::ClassInfoConfig::startMinutes())
+        );
+    QCOMPARE(
+        ClassInfoConfig::EndMinutes,
+        toQtStringList(classmngr::engine::ClassInfoConfig::endMinutes())
+        );
+
+    for (const QString& grade : ClassInfoConfig::Grades)
+    {
+        const std::string engineGrade = grade.toStdString();
+        const QStringList expectedLevels =
+            toQtStringList(levelsForGrade(engineGrade));
+
+        QCOMPARE(ClassInfoConfig::levelsForGrade(grade), expectedLevels);
+
+        for (const QString& level : expectedLevels)
+        {
+            const std::string engineLevel = level.toStdString();
+
+            QCOMPARE(
+                ClassInfoConfig::readingBooks(grade, level),
+                toQtStringList(readingBooks(engineGrade, engineLevel))
+                );
+            QCOMPARE(
+                ClassInfoConfig::essayBooks(grade, level),
+                toQtStringList(essayBooks(engineGrade, engineLevel))
+                );
+        }
+    }
+
+    QCOMPARE(
+        ClassInfoConfig::readingBooks(
+            QStringLiteral("M1"),
+            QStringLiteral("Elephantus")
+            ),
+        toQtStringList(readingBooks("M1", "Elephantus"))
+        );
+    QCOMPARE(
+        ClassInfoConfig::readingBooks(
+            QStringLiteral("M2"),
+            QStringLiteral("Ursa")
+            ),
+        toQtStringList(readingBooks("M2", "Ursa"))
+        );
+    QCOMPARE(
+        ClassInfoConfig::readingBooks(
+            QStringLiteral("M1"),
+            QStringLiteral("Solis")
+            ),
+        toQtStringList(readingBooks("M1", "Solis"))
+        );
+    QCOMPARE(
+        ClassInfoConfig::essayBooks(
+            QStringLiteral("M1"),
+            QStringLiteral("Solis")
+            ),
+        toQtStringList(essayBooks("M1", "Solis"))
+        );
+    QCOMPARE(
+        ClassInfoConfig::readingBooks(
+            QStringLiteral("E4"),
+            QStringLiteral("unknown")
+            ),
+        toQtStringList(readingBooks("E4", "unknown"))
+        );
+
+    const QString invalidGrade = QStringLiteral("e4");
+    const QString canonicalLevel = QStringLiteral("Theseus");
+    QCOMPARE(
+        ClassInfoConfig::levelsForGrade(invalidGrade),
+        toQtStringList(levelsForGrade(invalidGrade.toStdString()))
+        );
+    QCOMPARE(
+        ClassInfoConfig::readingBooks(invalidGrade, canonicalLevel),
+        toQtStringList(
+            readingBooks(invalidGrade.toStdString(), canonicalLevel.toStdString())
+            )
+        );
+    QCOMPARE(
+        ClassInfoConfig::essayBooks(
+            QStringLiteral("E4"),
+            QStringLiteral("theseus")
+            ),
+        toQtStringList(essayBooks("E4", "theseus"))
+        );
 }
 
 QTEST_APPLESS_MAIN(ClassTabNavigationTests)

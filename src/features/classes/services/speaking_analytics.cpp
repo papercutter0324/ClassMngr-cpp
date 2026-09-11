@@ -1,442 +1,378 @@
 #include "features/classes/services/speaking_analytics.h"
 
-#include "core/utils/student_name_utils.h"
+#include "classmngr/engine/speaking_analytics.h"
 
-#include <QHash>
-#include <QLocale>
+#include <QByteArray>
 
-#include <algorithm>
-#include <array>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace SpeakingAnalytics
 {
-
 namespace
 {
+using PortableCriterionSlice =
+    classmngr::engine::SpeakingAnalyticsCriterionSlice;
+using PortableRoster = classmngr::engine::SpeakingAnalyticsRoster;
+using PortableRow = classmngr::engine::SpeakingAnalyticsRow;
+using PortableRows = classmngr::engine::SpeakingAnalyticsRows;
+using PortableService = classmngr::engine::SpeakingAnalyticsService;
+using PortableSnapshot = classmngr::engine::SpeakingAnalyticsSnapshot;
+using PortableEvaluation =
+    classmngr::engine::SpeakingAnalyticsEvaluation;
+using PortableDashboardInput =
+    classmngr::engine::SpeakingAnalyticsDashboardInput;
+using PortableDashboard = classmngr::engine::SpeakingAnalyticsDashboard;
+using PortableStudentRank =
+    classmngr::engine::SpeakingAnalyticsStudentRank;
+using PortableYearToDatePoint =
+    classmngr::engine::SpeakingAnalyticsYearToDatePoint;
 
-constexpr std::array<SpeakingEvalColumn, CriterionCount> kCriterionColumns{
-    SpeakingEvalColumn::Grammar,
-    SpeakingEvalColumn::Pronunciation,
-    SpeakingEvalColumn::Fluency,
-    SpeakingEvalColumn::Manner,
-    SpeakingEvalColumn::Content,
-    SpeakingEvalColumn::OverallEffort
-};
-
-const std::array<QString, CriterionCount> kCriterionNames{
-    QStringLiteral("Grammar"),
-    QStringLiteral("Pronunciation"),
-    QStringLiteral("Fluency"),
-    QStringLiteral("Manner"),
-    QStringLiteral("Content"),
-    QStringLiteral("Overall Effort")
-};
-
-struct StudentAccumulator
+std::string toUtf8(const QString& value)
 {
-    QString englishName;
-    QString koreanName;
-    std::array<double, CriterionCount> sums{};
-    std::array<int, CriterionCount> counts{};
-};
-
-QString studentKey(const QString& englishName, const QString& koreanName)
-{
-    const QString normalizedEnglish =
-        StudentNameUtils::normalizeEnglishName(englishName).toCaseFolded();
-    if (!normalizedEnglish.isEmpty())
-        return QStringLiteral("en:") + normalizedEnglish;
-
-    const QString normalizedKorean =
-        StudentNameUtils::baseKoreanName(koreanName).trimmed();
-    return normalizedKorean.isEmpty()
-        ? QString()
-        : QStringLiteral("ko:") + normalizedKorean;
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-QString criterionLabel(const CriterionSlice& slice)
+QString fromUtf8(std::string_view value)
 {
-    if (!slice.hasData)
-        return slice.name;
-
-    return QStringLiteral("%1 (%2)")
-        .arg(slice.name, numberToGrade(roundAverageToGrade(slice.average3)));
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
 
+PortableRow toPortable(const QStringList& row)
+{
+    PortableRow result;
+    result.reserve(static_cast<std::size_t>(row.size()));
+    for (const QString& value : row)
+    {
+        result.push_back(toUtf8(value));
+    }
+    return result;
+}
+
+PortableRows toPortable(const SpeakingEvalRows& rows)
+{
+    PortableRows result;
+    result.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& row : rows)
+    {
+        result.push_back(toPortable(row));
+    }
+    return result;
+}
+
+PortableEvaluation toPortable(const Evaluation& evaluation)
+{
+    return {
+        toUtf8(evaluation.name),
+        toPortable(evaluation.rows)
+    };
+}
+
+std::vector<PortableRows> toPortable(
+    const QList<SpeakingEvalRows>& matrices
+    )
+{
+    std::vector<PortableRows> result;
+    result.reserve(static_cast<std::size_t>(matrices.size()));
+    for (const SpeakingEvalRows& matrix : matrices)
+    {
+        result.push_back(toPortable(matrix));
+    }
+    return result;
+}
+
+SpeakingEvalRows fromPortable(const PortableRows& rows)
+{
+    SpeakingEvalRows result;
+    result.reserve(static_cast<qsizetype>(rows.size()));
+    for (const PortableRow& row : rows)
+    {
+        QStringList converted;
+        converted.reserve(static_cast<qsizetype>(row.size()));
+        for (const std::string& value : row)
+        {
+            converted.append(fromUtf8(value));
+        }
+        result.append(std::move(converted));
+    }
+    return result;
+}
+
+PortableRoster toPortable(const Roster& roster)
+{
+    PortableRoster result;
+    result.columns.reserve(static_cast<std::size_t>(roster.columns.size()));
+    for (const QString& column : roster.columns)
+    {
+        result.columns.push_back(toUtf8(column));
+    }
+    result.rows.reserve(static_cast<std::size_t>(roster.rows.size()));
+    for (const QStringList& row : roster.rows)
+    {
+        result.rows.push_back(toPortable(row));
+    }
+    return result;
+}
+
+CriterionSlice fromPortable(const PortableCriterionSlice& source)
+{
+    CriterionSlice result;
+    result.order = source.order;
+    result.name = fromUtf8(source.name);
+    result.students = source.students;
+    for (const auto& [grade, count] : source.distribution)
+    {
+        result.distribution.insert(fromUtf8(grade), count);
+    }
+    result.average3 = source.average3;
+    result.hasData = source.hasData;
+    return result;
+}
+
+StudentRank fromPortable(const PortableStudentRank& source)
+{
+    StudentRank result;
+    result.englishName = fromUtf8(source.englishName);
+    result.koreanName = fromUtf8(source.koreanName);
+    result.overall3 = source.overall3;
+    result.overallLetter = fromUtf8(source.overallLetter);
+    result.criterionLetters.reserve(
+        static_cast<qsizetype>(source.criterionLetters.size())
+        );
+    for (const std::string& letter : source.criterionLetters)
+    {
+        result.criterionLetters.append(fromUtf8(letter));
+    }
+    result.fullyScored = source.fullyScored;
+    return result;
+}
+
+Snapshot fromPortable(const PortableSnapshot& source)
+{
+    Snapshot result;
+    result.hasData = source.hasData;
+    result.classAverage3 = source.classAverage3;
+    result.classAverageLetter = fromUtf8(source.classAverageLetter);
+    result.rosterStudentCount = source.rosterStudentCount;
+    result.fullyScoredCount = source.fullyScoredCount;
+
+    result.criteria.reserve(static_cast<qsizetype>(source.criteria.size()));
+    for (const PortableCriterionSlice& slice : source.criteria)
+    {
+        result.criteria.append(fromPortable(slice));
+    }
+
+    const auto appendStrings = [](const std::vector<std::string>& source,
+                                  QStringList* destination)
+    {
+        destination->reserve(static_cast<qsizetype>(source.size()));
+        for (const std::string& value : source)
+        {
+            destination->append(fromUtf8(value));
+        }
+    };
+    appendStrings(source.strongestNames, &result.strongestNames);
+    appendStrings(source.focusNames, &result.focusNames);
+    appendStrings(source.strongestLabels, &result.strongestLabels);
+    appendStrings(source.focusLabels, &result.focusLabels);
+    appendStrings(source.overallLetters, &result.overallLetters);
+
+    result.rankings.reserve(static_cast<qsizetype>(source.rankings.size()));
+    for (const PortableStudentRank& rank : source.rankings)
+    {
+        result.rankings.append(fromPortable(rank));
+    }
+    return result;
+}
+
+YearToDatePoint fromPortable(const PortableYearToDatePoint& source)
+{
+    return {
+        fromUtf8(source.evaluationName),
+        source.classAverage3,
+        fromUtf8(source.classAverageLetter)
+    };
+}
+
+Dashboard fromPortable(const PortableDashboard& source)
+{
+    Dashboard result;
+    result.selectedSnapshot = fromPortable(source.selectedSnapshot);
+    result.classShapeEvaluationName = fromUtf8(
+        source.classShapeEvaluationName);
+    result.classShapeSnapshot = fromPortable(source.classShapeSnapshot);
+    result.yearToDatePoints.reserve(
+        static_cast<qsizetype>(source.yearToDatePoints.size())
+        );
+    for (const PortableYearToDatePoint& point : source.yearToDatePoints)
+    {
+        result.yearToDatePoints.append(fromPortable(point));
+    }
+    return result;
+}
+
+QList<int> fromPortable(const std::vector<int>& values)
+{
+    QList<int> result;
+    result.reserve(static_cast<qsizetype>(values.size()));
+    for (const int value : values)
+    {
+        result.append(value);
+    }
+    return result;
+}
 } // namespace
 
 QStringList evaluationNames()
 {
-    return {
-        QStringLiteral("Winter"),
-        QStringLiteral("Speech Contest"),
-        QStringLiteral("Summer"),
-        QStringLiteral("Fall")
-    };
+    const std::vector<std::string> names = PortableService::evaluationNames();
+    QStringList result;
+    result.reserve(static_cast<qsizetype>(names.size()));
+    for (const std::string& name : names)
+    {
+        result.append(fromUtf8(name));
+    }
+    return result;
 }
 
 double roundTo3(double value)
 {
-    return qRound(value * 1000.0) / 1000.0;
+    return PortableService::roundTo3(value);
 }
 
 QString formatAverage(double average)
 {
-    return QLocale().toString(roundTo3(average), 'f', 1);
+    return fromUtf8(PortableService::formatAverage(average));
 }
 
 int gradeToNumber(const QString& grade)
 {
-    if (grade == QStringLiteral("A+"))
-        return 5;
-    if (grade == QStringLiteral("A"))
-        return 4;
-    if (grade == QStringLiteral("B+"))
-        return 3;
-    if (grade == QStringLiteral("B"))
-        return 2;
-    if (grade == QStringLiteral("C"))
-        return 1;
-    return 0;
+    return PortableService::gradeToNumber(toUtf8(grade));
 }
 
 QString numberToGrade(int number)
 {
-    switch (qBound(1, number, 5))
-    {
-    case 5:
-        return QStringLiteral("A+");
-    case 4:
-        return QStringLiteral("A");
-    case 3:
-        return QStringLiteral("B+");
-    case 2:
-        return QStringLiteral("B");
-    default:
-        return QStringLiteral("C");
-    }
+    return fromUtf8(PortableService::numberToGrade(number));
 }
 
 int roundAverageToGrade(double average)
 {
-    if (average <= 0.0)
-        return 0;
-    if (average >= 5.0)
-        return 5;
-
-    const int whole = static_cast<int>(qFloor(average));
-    return whole + (average - whole >= 0.4 ? 1 : 0);
+    return PortableService::roundAverageToGrade(average);
 }
 
 QList<int> strongestIndices(const QList<double>& averages3)
 {
-    QList<int> result;
-    if (averages3.isEmpty())
-        return result;
-
-    const double best = *std::max_element(averages3.cbegin(), averages3.cend());
-    for (qsizetype i = 0; i < averages3.size(); ++i)
+    std::vector<double> portable;
+    portable.reserve(static_cast<std::size_t>(averages3.size()));
+    for (const double average : averages3)
     {
-        if (qAbs(averages3.at(i) - best) < 1e-9)
-            result.append(static_cast<int>(i));
+        portable.push_back(average);
     }
-    return result;
+    return fromPortable(PortableService::strongestIndices(portable));
 }
 
 QList<int> focusIndices(const QList<double>& averages3)
 {
-    QList<int> result;
-    if (averages3.isEmpty())
-        return result;
-
-    const double worst = *std::min_element(averages3.cbegin(), averages3.cend());
-    for (qsizetype i = 0; i < averages3.size(); ++i)
+    std::vector<double> portable;
+    portable.reserve(static_cast<std::size_t>(averages3.size()));
+    for (const double average : averages3)
     {
-        if (qAbs(averages3.at(i) - worst) < 1e-9)
-            result.append(static_cast<int>(i));
+        portable.push_back(average);
     }
-    return result;
+    return fromPortable(PortableService::focusIndices(portable));
 }
 
 Snapshot compute(
     const QList<SpeakingEvalRows>& matrices,
     int rosterStudentCount
-)
+    )
 {
-    QHash<QString, int> accumulatorByStudent;
-    QList<StudentAccumulator> students;
-
-    const int englishColumn =
-        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
-    const int koreanColumn =
-        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
-
-    for (const SpeakingEvalRows& matrix : matrices)
-    {
-        for (const QStringList& row : matrix)
-        {
-            const QString englishName = row.value(englishColumn).trimmed();
-            const QString koreanName = row.value(koreanColumn).trimmed();
-            const QString key = studentKey(englishName, koreanName);
-            if (key.isEmpty())
-                continue;
-
-            int studentIndex = accumulatorByStudent.value(key, -1);
-            if (studentIndex < 0)
-            {
-                studentIndex = students.size();
-                accumulatorByStudent.insert(key, studentIndex);
-                students.append({ englishName, koreanName, {}, {} });
-            }
-
-            StudentAccumulator& student = students[studentIndex];
-            if (student.englishName.isEmpty())
-                student.englishName = englishName;
-            if (student.koreanName.isEmpty())
-                student.koreanName = koreanName;
-
-            for (int criterion = 0; criterion < CriterionCount; ++criterion)
-            {
-                const QString grade = row.value(
-                    SpeakingEval::toInt(kCriterionColumns.at(criterion))).trimmed();
-                const int value = gradeToNumber(grade);
-                if (value <= 0)
-                    continue;
-
-                student.sums[criterion] += value;
-                ++student.counts[criterion];
-            }
-        }
-    }
-
-    Snapshot snapshot;
-    snapshot.rosterStudentCount = qMax(0, rosterStudentCount);
-
-    std::array<double, CriterionCount> criterionSums{};
-    std::array<int, CriterionCount> criterionCounts{};
-    std::array<int, CriterionCount> criterionStudentCounts{};
-    std::array<QMap<QString, int>, CriterionCount> distributions;
-    QList<double> criterionAverages;
-    criterionAverages.reserve(CriterionCount);
-
-    double classSum = 0.0;
-    int classCount = 0;
-
-    for (const StudentAccumulator& student : students)
-    {
-        double scoreSum = 0.0;
-        int scoreCount = 0;
-        bool fullyScored = true;
-        QList<QString> letters;
-        letters.reserve(CriterionCount);
-
-        for (int criterion = 0; criterion < CriterionCount; ++criterion)
-        {
-            if (student.counts[criterion] == 0)
-            {
-                fullyScored = false;
-                letters.append(QString());
-                continue;
-            }
-
-            const double average = roundTo3(
-                student.sums[criterion] / student.counts[criterion]);
-            const QString letter = numberToGrade(roundAverageToGrade(average));
-            letters.append(letter);
-
-            criterionSums[criterion] += student.sums[criterion];
-            criterionCounts[criterion] += student.counts[criterion];
-            ++criterionStudentCounts[criterion];
-            distributions[criterion][letter] += 1;
-            scoreSum += student.sums[criterion];
-            scoreCount += student.counts[criterion];
-        }
-
-        if (scoreCount == 0)
-            continue;
-
-        StudentRank rank;
-        rank.englishName = student.englishName;
-        rank.koreanName = student.koreanName;
-        rank.overall3 = roundTo3(scoreSum / scoreCount);
-        rank.overallLetter = numberToGrade(roundAverageToGrade(rank.overall3));
-        rank.criterionLetters = letters;
-        rank.fullyScored = fullyScored;
-        snapshot.rankings.append(rank);
-        snapshot.overallLetters.append(rank.overallLetter);
-
-        classSum += rank.overall3;
-        ++classCount;
-        if (fullyScored)
-            ++snapshot.fullyScoredCount;
-    }
-
-    snapshot.hasData = classCount > 0;
-    if (!snapshot.hasData)
-        return snapshot;
-
-    snapshot.classAverage3 = roundTo3(classSum / classCount);
-    snapshot.classAverageLetter =
-        numberToGrade(roundAverageToGrade(snapshot.classAverage3));
-
-    for (int criterion = 0; criterion < CriterionCount; ++criterion)
-    {
-        CriterionSlice slice;
-        slice.order = criterion;
-        slice.name = kCriterionNames.at(criterion);
-        slice.students = criterionStudentCounts[criterion];
-        slice.distribution = distributions[criterion];
-        slice.hasData = criterionCounts[criterion] > 0;
-        if (slice.hasData)
-        {
-            slice.average3 = roundTo3(
-                criterionSums[criterion] / criterionCounts[criterion]);
-            criterionAverages.append(slice.average3);
-        }
-        else
-        {
-            criterionAverages.append(-1.0);
-        }
-        snapshot.criteria.append(slice);
-    }
-
-    double strongest = -1.0;
-    double focus = 6.0;
-    for (double average : criterionAverages)
-    {
-        if (average < 0.0)
-            continue;
-        strongest = qMax(strongest, average);
-        focus = qMin(focus, average);
-    }
-    for (const CriterionSlice& slice : snapshot.criteria)
-    {
-        if (!slice.hasData)
-            continue;
-        if (qAbs(slice.average3 - strongest) < 1e-9)
-        {
-            snapshot.strongestNames.append(slice.name);
-            snapshot.strongestLabels.append(criterionLabel(slice));
-        }
-        if (qAbs(slice.average3 - focus) < 1e-9)
-        {
-            snapshot.focusNames.append(slice.name);
-            snapshot.focusLabels.append(criterionLabel(slice));
-        }
-    }
-
-    std::sort(
-        snapshot.rankings.begin(),
-        snapshot.rankings.end(),
-        [](const StudentRank& left, const StudentRank& right)
-        {
-            if (!qFuzzyCompare(left.overall3 + 1.0, right.overall3 + 1.0))
-                return left.overall3 > right.overall3;
-            return left.englishName.localeAwareCompare(right.englishName) < 0;
-        });
-
-    return snapshot;
+    return fromPortable(PortableService::compute(
+        toPortable(matrices),
+        rosterStudentCount
+        ));
 }
 
 std::optional<YearToDatePoint> yearToDatePoint(
     const QString& evaluationName,
     const Snapshot& snapshot
-)
+    )
 {
-    if (snapshot.fullyScoredCount <= 0)
-        return std::nullopt;
+    // Reuse the same conversion path as compute so the retained namespace
+    // remains a presentation adapter rather than a second implementation.
+    PortableSnapshot portableSnapshot;
+    portableSnapshot.hasData = snapshot.hasData;
+    portableSnapshot.classAverage3 = snapshot.classAverage3;
+    portableSnapshot.classAverageLetter = toUtf8(snapshot.classAverageLetter);
+    portableSnapshot.rosterStudentCount = snapshot.rosterStudentCount;
+    portableSnapshot.fullyScoredCount = snapshot.fullyScoredCount;
 
-    double sum = 0.0;
-    int count = 0;
+    portableSnapshot.rankings.reserve(
+        static_cast<std::size_t>(snapshot.rankings.size())
+        );
     for (const StudentRank& rank : snapshot.rankings)
     {
-        if (!rank.fullyScored)
-            continue;
-
-        sum += rank.overall3;
-        ++count;
+        PortableStudentRank portableRank;
+        portableRank.englishName = toUtf8(rank.englishName);
+        portableRank.koreanName = toUtf8(rank.koreanName);
+        portableRank.overall3 = rank.overall3;
+        portableRank.overallLetter = toUtf8(rank.overallLetter);
+        portableRank.fullyScored = rank.fullyScored;
+        portableRank.criterionLetters.reserve(
+            static_cast<std::size_t>(rank.criterionLetters.size())
+            );
+        for (const QString& letter : rank.criterionLetters)
+        {
+            portableRank.criterionLetters.push_back(toUtf8(letter));
+        }
+        portableSnapshot.rankings.push_back(std::move(portableRank));
     }
 
-    if (count == 0)
-        return std::nullopt;
-
-    YearToDatePoint point;
-    point.evaluationName = evaluationName;
-    point.classAverage3 = roundTo3(sum / count);
-    point.classAverageLetter =
-        numberToGrade(roundAverageToGrade(point.classAverage3));
-    return point;
+    const auto point = PortableService::yearToDatePoint(
+        toUtf8(evaluationName),
+        portableSnapshot
+        );
+    return point.has_value()
+        ? std::optional<YearToDatePoint>(fromPortable(*point))
+        : std::nullopt;
 }
 
 SpeakingEvalRows filterMatrixByRoster(
     const SpeakingEvalRows& matrix,
     const Roster& roster
+    )
+{
+    return fromPortable(PortableService::filterMatrixByRoster(
+        toPortable(matrix),
+        toPortable(roster)
+        ));
+}
+
+Dashboard buildDashboard(
+    const QString& selection,
+    const Roster& roster,
+    const QList<Evaluation>& evaluations
 )
 {
-    const int englishColumn = roster.columns.indexOf(QStringLiteral("English"));
-    const int koreanColumn = roster.columns.indexOf(QStringLiteral("Korean"));
-    if (englishColumn < 0 && koreanColumn < 0)
-        return matrix;
-
-    const auto namesInColumn = [&roster](int column)
+    PortableDashboardInput input;
+    input.selection = toUtf8(selection);
+    input.roster = toPortable(roster);
+    input.evaluations.reserve(static_cast<std::size_t>(evaluations.size()));
+    for (const Evaluation& evaluation : evaluations)
     {
-        QStringList names;
-        if (column < 0)
-            return names;
-
-        for (const QStringList& row : roster.rows)
-        {
-            const QString name = row.value(column).trimmed();
-            if (!name.isEmpty())
-                names.append(name);
-        }
-        return names;
-    };
-
-    const QStringList englishNames = namesInColumn(englishColumn);
-    const QStringList koreanNames = namesInColumn(koreanColumn);
-    if (englishNames.isEmpty() && koreanNames.isEmpty())
-        return matrix;
-
-    const auto matchesEnglish = [&englishNames](const QString& name)
-    {
-        const QString normalized =
-            StudentNameUtils::normalizeEnglishName(name).toCaseFolded();
-        return !normalized.isEmpty()
-            && std::ranges::any_of(
-                   englishNames,
-                   [&normalized](const QString& rosterName)
-                   {
-                       return StudentNameUtils::normalizeEnglishName(rosterName)
-                           .toCaseFolded() == normalized;
-                   });
-    };
-    const auto matchesKorean = [&koreanNames](const QString& name)
-    {
-        const QString normalized = StudentNameUtils::baseKoreanName(name);
-        return !normalized.isEmpty()
-            && std::ranges::any_of(
-                   koreanNames,
-                   [&normalized](const QString& rosterName)
-                   {
-                       return StudentNameUtils::baseKoreanName(rosterName)
-                           == normalized;
-                   });
-    };
-
-    SpeakingEvalRows filtered;
-    filtered.reserve(matrix.size());
-    for (const QStringList& row : matrix)
-    {
-        if (matchesEnglish(row.value(SpeakingEval::toInt(
-                               SpeakingEvalColumn::EnglishName)))
-            || matchesKorean(row.value(SpeakingEval::toInt(
-                                  SpeakingEvalColumn::KoreanName))))
-        {
-            filtered.append(row);
-        }
+        input.evaluations.push_back(toPortable(evaluation));
     }
-    return filtered;
+
+    return fromPortable(PortableService::buildDashboard(input));
 }
 
 } // namespace SpeakingAnalytics

@@ -5,16 +5,30 @@
 
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class ScheduleImportRepository
 {
 public:
+    explicit ScheduleImportRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit ScheduleImportRepository(
         QSqlDatabase& database
         );
+    ~ScheduleImportRepository();
 
     [[nodiscard]] Result<ScheduleImportPreview> preview(
         const ScheduleImportUserBlock& user,
         ScheduleImportKind kind
+        );
+
+    [[nodiscard]] Status validateImport(
+        const ScheduleImportPlan& plan
         );
 
     [[nodiscard]] Result<ScheduleImportSummary> apply(
@@ -22,5 +36,12 @@ public:
         );
 
 private:
-    QSqlDatabase& m_database;
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        );
+
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

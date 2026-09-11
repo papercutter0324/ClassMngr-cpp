@@ -107,8 +107,8 @@ void SidebarStructureTests::classesPageContainsNoIndividualEntries()
             &sidebar,
             "onItemClicked",
             Qt::DirectConnection,
-            Q_ARG(QTreeWidgetItem*, classesPage),
-            Q_ARG(int, 0)
+            classesPage,
+            0
             )
         );
     QCOMPARE(selectionSpy.count(), 1);
@@ -171,7 +171,7 @@ void SidebarStructureTests::classesPageContextMenuOffersAddClass()
             &sidebar,
             "showContextMenu",
             Qt::DirectConnection,
-            Q_ARG(QPoint, tree->visualItemRect(classesPage).center())
+            tree->visualItemRect(classesPage).center()
             )
         );
     QVERIFY(foundAddClassAction);

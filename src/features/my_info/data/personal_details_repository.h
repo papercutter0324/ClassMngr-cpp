@@ -6,7 +6,13 @@
 #include <QString>
 #include <QVariant>
 
+#include <memory>
+
 class SettingsService;
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
 
 enum class SignatureMode
 {
@@ -31,6 +37,7 @@ class PersonalDetailsRepository
 {
 public:
     explicit PersonalDetailsRepository(SettingsService* settingsService);
+    ~PersonalDetailsRepository();
 
     PersonalDetails load() const;
     bool save(const PersonalDetails& details) const;
@@ -44,5 +51,12 @@ public:
         ) const;
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        ) const;
+
     SettingsService* m_settingsService = nullptr;
+    mutable std::unique_ptr<classmngr::engine::SqliteDatabase>
+        m_engineDatabase;
+    mutable QString m_engineDatabasePath;
 };

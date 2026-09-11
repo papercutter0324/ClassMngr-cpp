@@ -16,6 +16,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrAcademicCalendarTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Sql
@@ -118,6 +119,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrCampusDashboardPageTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Test
@@ -177,6 +179,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
         tests/speaking_eval_report_widget_tests.cpp
         src/core/fontmanager.cpp
+        src/features/speaking_eval/services/speaking_eval_report_data_assembler.cpp
         src/features/speaking_eval/ui/speaking_eval_comment_edit.cpp
         src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
@@ -196,6 +199,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrSpeakingEvalReportWidgetTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Test
@@ -248,6 +252,8 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.h
+        src/features/speaking_eval/services/speaking_eval_report_content_adapter.cpp
+        src/features/speaking_eval/services/speaking_eval_report_content_adapter.h
         src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.h
         src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.cpp
@@ -292,6 +298,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrSpeakingEvalBatchReportServiceTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -339,13 +346,19 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
     )
 
+    set_tests_properties(
+        ClassMngrSpeakingEvalBatchReportServiceTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
     )
 
     add_dependencies(
         ClassMngrStartupPerformanceTests
-        ClassMngr
+        ${CLASSMNGR_QT_DESKTOP_TARGET}
     )
 
     target_compile_features(ClassMngrStartupPerformanceTests
@@ -395,7 +408,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         ClassMngrStartupPerformanceTests
         PROPERTIES
         ENVIRONMENT
-            "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:ClassMngr>"
+            "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:${CLASSMNGR_QT_DESKTOP_TARGET}>"
     )
 
     if(WIN32)

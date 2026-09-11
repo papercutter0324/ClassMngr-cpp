@@ -1,0 +1,45 @@
+{
+  "format": "ClassMngr Classes",
+  "version": 1,
+  "exported_at_utc": "2026-07-20T12:34:56.789Z",
+  "teachers": [
+    {
+      "key": "legacy-teacher",
+      "teacher_kr": "김하늘",
+      "teacher_en": "Haneul Kim",
+      "room_number": "413",
+      "wifi_name": "Campus WiFi",
+      "wifi_password": "wifi-password",
+      "internet_type": "WiFi",
+      "zoom_id": "legacy",
+      "zoom_password": "legacy-password",
+      "projection_type": "Any",
+      "notes": "Legacy fixture"
+    }
+  ],
+  "classes": [
+    {
+      "key": "legacy-class",
+      "name": "Legacy Class",
+      "teacher_ref": "legacy-teacher",
+      "info": {
+        "class_grade": "E5",
+        "class_level": "Zeus",
+        "reading_book": "",
+        "essay_book": "",
+        "class_color": "#FFFFFF",
+        "font_color": "#000000",
+        "notes": "",
+        "time_filler_activities": "",
+        "regular_times": [],
+        "intensive_times": []
+      },
+      "roster": {
+        "columns": [],
+        "column_widths": [],
+        "rows": []
+      },
+      "speaking_evaluations": []
+    }
+  ]
+}

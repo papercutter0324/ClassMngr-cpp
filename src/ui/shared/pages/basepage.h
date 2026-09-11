@@ -89,6 +89,10 @@ public:
         bool databaseOpen
         );
 
+    void setNoDatabaseBannerEnabled(
+        bool enabled
+        );
+
 
 
 signals:
@@ -164,6 +168,8 @@ private:
     QPushButton* m_initialSetupButton = nullptr;
 
     bool m_noDatabaseBannerEnabled = false;
+
+    bool m_noDatabaseBannerAllowed = true;
 
     bool m_noDatabaseBannerFontUpdateQueued = false;
 

@@ -1,138 +1,226 @@
 #include "calendar_event_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
+#include "classmngr/engine/calendar_event_service.h"
+#include "classmngr/engine/open_database.h"
 
-#include <QDebug>
+#include <QByteArray>
 #include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QVariant>
+
+#include <cstddef>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-CalendarEvent eventFromQuery(
-    const QSqlQuery& query
+using EngineCalendarDate = classmngr::engine::CalendarDate;
+using EngineCalendarEvent = classmngr::engine::CalendarEvent;
+using EngineCalendarEventService =
+    classmngr::engine::CalendarEventService;
+using EngineCalendarEventImportResult =
+    classmngr::engine::CalendarImportResult;
+using EngineCalendarEventImportSummary =
+    classmngr::engine::CalendarEventImportSummary;
+using EngineError = classmngr::engine::Error;
+
+std::string toUtf8(
+    const QString& value
     )
 {
-    CalendarEvent event;
-
-    event.id =
-        query.value("id").toInt();
-    event.title =
-        query.value("title").toString();
-    event.eventType =
-        normalizedCalendarEventType(
-            query.value("event_type").toString()
-            );
-    event.timeStatus =
-        normalizedCalendarEventTimeStatus(
-            query.value("time_status").toString()
-            );
-    event.repeatSeriesId =
-        query.value("repeat_series_id").toString().trimmed();
-    event.allDay =
-        query.value("all_day").toBool();
-    event.startDate =
-        QDate::fromString(
-            query.value("start_date").toString(),
-            Qt::ISODate
-            );
-    event.startTime =
-        QTime::fromString(
-            query.value("start_time").toString(),
-            QStringLiteral("HH:mm")
-            );
-    event.endDate =
-        QDate::fromString(
-            query.value("end_date").toString(),
-            Qt::ISODate
-            );
-    event.endTime =
-        QTime::fromString(
-            query.value("end_time").toString(),
-            QStringLiteral("HH:mm")
-            );
-
-    return event;
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-QString eventIdentity(const CalendarEvent& event)
+QString fromUtf8(
+    std::string_view value
+    )
 {
-    if (event.id > 0)
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail = {}
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
     {
-        return QObject::tr("calendar event id %1").arg(event.id);
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
     }
 
-    return QObject::tr("calendar event '%1' on %2")
-        .arg(event.title.trimmed(), event.startDate.toString(Qt::ISODate));
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
 }
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error
+    )
+{
+    return operationFailure(operation, engineErrorDetail(error));
+}
+
+QString boundaryConversionFailure(
+    const QString& operation
+    )
+{
+    return operationFailure(
+        operation,
+        QObject::tr("The calendar event contains an unsupported value.")
+        );
+}
+
+QList<CalendarEvent> fromEngineEvents(
+    const std::vector<EngineCalendarEvent>& source
+    )
+{
+    QList<CalendarEvent> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const EngineCalendarEvent& event : source)
+    {
+        result.append(calendarEventFromEngine(event));
+    }
+    return result;
+}
+
+std::vector<EngineCalendarEvent> toEngineEvents(
+    const QList<CalendarEvent>& source
+    )
+{
+    std::vector<EngineCalendarEvent> result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const CalendarEvent& event : source)
+    {
+        result.push_back(calendarEventToEngine(event));
+    }
+    return result;
+}
+} // namespace
+
+CalendarEventRepository::CalendarEventRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
 }
 
 CalendarEventRepository::CalendarEventRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : CalendarEventRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
+}
+
+CalendarEventRepository::~CalendarEventRepository() = default;
+
+Status CalendarEventRepository::ensureEngineDatabase(
+    const QString& operation
+    )
+{
+    if (!m_compatibilityDatabaseWasOpen)
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_databasePath;
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        toUtf8(databasePath)
+        );
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
 }
 
 Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForDate(
     const QDate& date
     )
 {
-    QList<CalendarEvent> events;
-
-    if (!date.isValid())
+    const QString operation = QObject::tr("Loading calendar events for date");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Loading calendar events failed: invalid date.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT
-            id,
-            title,
-            event_type,
-            time_status,
-            repeat_series_id,
-            all_day,
-            start_date,
-            start_time,
-            end_date,
-            end_time
-        FROM calendar_events
-        WHERE ? >= start_date
-        AND ? <= end_date
-        ORDER BY start_time, title
-    )");
-
-    const QString isoDate =
-        date.toString(Qt::ISODate);
-
-    query.addBindValue(isoDate);
-    query.addBindValue(isoDate);
-
-    const auto loaded = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading calendar events for date"),
-        QObject::tr("date %1").arg(isoDate)
-        );
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineCalendarEvent>> loaded =
+        service.loadForDate(calendar_event_detail::toEngineDate(date));
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
 
-    while (query.next())
-    {
-        events.append(
-            eventFromQuery(query)
-            );
-    }
-
-    return events;
+    return fromEngineEvents(*loaded);
 }
 
 Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsInRange(
@@ -140,484 +228,345 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsInRange(
     const QDate& endDate
     )
 {
-    QList<CalendarEvent> events;
-
-    if (
-        !startDate.isValid()
-        || !endDate.isValid()
-        || endDate < startDate
-        )
+    const QString operation = QObject::tr("Loading calendar events in range");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Loading calendar events failed: invalid date range.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT
-            id,
-            title,
-            event_type,
-            time_status,
-            repeat_series_id,
-            all_day,
-            start_date,
-            start_time,
-            end_date,
-            end_time
-        FROM calendar_events
-        WHERE end_date >= ?
-        AND start_date <= ?
-        ORDER BY start_date, start_time, title
-    )");
-
-    query.addBindValue(
-        startDate.toString(Qt::ISODate)
-        );
-    query.addBindValue(
-        endDate.toString(Qt::ISODate)
-        );
-
-    const auto loaded = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading calendar events in range"),
-        QObject::tr("from %1 to %2")
-            .arg(startDate.toString(Qt::ISODate), endDate.toString(Qt::ISODate))
-        );
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineCalendarEvent>> loaded =
+        service.loadInRange(
+            calendar_event_detail::toEngineDate(startDate),
+            calendar_event_detail::toEngineDate(endDate)
+            );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
 
-    while (query.next())
-    {
-        events.append(
-            eventFromQuery(query)
-            );
-    }
-
-    return events;
+    return fromEngineEvents(*loaded);
 }
 
-Result<QList<CalendarEvent>> CalendarEventRepository::loadUpcomingCalendarEvents(
+Result<QList<CalendarEvent>>
+CalendarEventRepository::loadUpcomingCalendarEvents(
     const QDate& fromDate,
     int limit
     )
 {
-    QList<CalendarEvent> events;
-
-    if (
-        !fromDate.isValid()
-        || limit <= 0
-        )
+    const QString operation = QObject::tr("Loading upcoming calendar events");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Loading upcoming calendar events failed: invalid request.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT
-            id,
-            title,
-            event_type,
-            time_status,
-            repeat_series_id,
-            all_day,
-            start_date,
-            start_time,
-            end_date,
-            end_time
-        FROM calendar_events
-        WHERE end_date >= ?
-        ORDER BY start_date, start_time, title
-        LIMIT ?
-    )");
-
-    query.addBindValue(
-        fromDate.toString(Qt::ISODate)
-        );
-    query.addBindValue(limit);
-
-    const auto loaded = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading upcoming calendar events"),
-        QObject::tr("from %1, limit %2")
-            .arg(fromDate.toString(Qt::ISODate))
-            .arg(limit)
-        );
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineCalendarEvent>> loaded =
+        service.loadUpcoming(
+            calendar_event_detail::toEngineDate(fromDate),
+            limit
+            );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
 
-    while (query.next())
-    {
-        events.append(
-            eventFromQuery(query)
-            );
-    }
-
-    return events;
+    return fromEngineEvents(*loaded);
 }
 
 Result<QDate> CalendarEventRepository::findNextCalendarEventStartDate(
     const QDate& fromDate
     )
 {
-    if (!fromDate.isValid())
+    const QString operation =
+        QObject::tr("Finding next calendar event start date");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Finding next calendar event failed: invalid date.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT MIN(start_date)
-        FROM calendar_events
-        WHERE start_date >= ?
-    )");
-    query.addBindValue(
-        fromDate.toString(Qt::ISODate)
-        );
-
-    const auto loaded = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Finding next calendar event start date"),
-        QObject::tr("from %1").arg(fromDate.toString(Qt::ISODate))
-        );
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::optional<EngineCalendarDate>> loaded =
+        service.findNextStartDate(
+            calendar_event_detail::toEngineDate(fromDate)
+            );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
-
-    if (!query.next())
+    if (!loaded->has_value())
     {
-        return {};
+        return QDate{};
     }
 
-    return QDate::fromString(
-        query.value(0).toString(),
-        Qt::ISODate
-        );
+    const QDate converted = calendar_event_detail::fromEngineDate(**loaded);
+    if (!converted.isValid())
+    {
+        return std::unexpected(boundaryConversionFailure(operation));
+    }
+    return converted;
 }
 
 Result<CalendarEvent> CalendarEventRepository::getCalendarEvent(
     int eventId
     )
 {
-    if (eventId <= 0)
+    const QString operation = QObject::tr("Loading calendar event");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Loading calendar event failed: invalid event id %1.")
-                .arg(eventId)
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT
-            id,
-            title,
-            event_type,
-            time_status,
-            repeat_series_id,
-            all_day,
-            start_date,
-            start_time,
-            end_date,
-            end_time
-        FROM calendar_events
-        WHERE id=?
-    )");
-
-    query.addBindValue(eventId);
-
-    const auto loaded = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading calendar event"),
-        QObject::tr("calendar event id %1").arg(eventId)
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineCalendarEvent> loaded = service.get(
+        eventId
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
 
-    if (!query.next())
-    {
-        return std::unexpected(
-            QObject::tr("Loading calendar event failed: no matching record exists for event id %1.")
-                .arg(eventId)
-            );
-    }
-
-    return eventFromQuery(query);
+    return calendarEventFromEngine(*loaded);
 }
 
-Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate(
+Result<QList<CalendarEvent>>
+CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate(
     const QString& repeatSeriesId,
     const QDate& startDate
     )
 {
-    QList<CalendarEvent> events;
-
-    const QString normalizedRepeatSeriesId =
-        repeatSeriesId.trimmed();
-
-    if (
-        normalizedRepeatSeriesId.isEmpty()
-        || !startDate.isValid()
-        )
+    const QString operation =
+        QObject::tr("Loading calendar repeat series events");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Loading calendar repeat series failed: invalid series or start date.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT
-            id,
-            title,
-            event_type,
-            time_status,
-            repeat_series_id,
-            all_day,
-            start_date,
-            start_time,
-            end_date,
-            end_time
-        FROM calendar_events
-        WHERE repeat_series_id=?
-        AND start_date >= ?
-        ORDER BY start_date, start_time, title, id
-    )");
-
-    query.addBindValue(normalizedRepeatSeriesId);
-    query.addBindValue(
-        startDate.toString(Qt::ISODate)
-        );
-
-    const auto loaded = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading calendar repeat series events"),
-        QObject::tr("repeat series '%1' from %2")
-            .arg(normalizedRepeatSeriesId, startDate.toString(Qt::ISODate))
-        );
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineCalendarEvent>> loaded =
+        service.loadRepeatSeriesFromDate(
+            toUtf8(repeatSeriesId),
+            calendar_event_detail::toEngineDate(startDate)
+            );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
 
-    while (query.next())
+    return fromEngineEvents(*loaded);
+}
+
+Result<QList<CalendarEvent>> CalendarEventRepository::expandRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const QDate& untilDate
+    )
+{
+    const QString operation = QObject::tr("Expanding calendar repeat series");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        events.append(
-            eventFromQuery(query)
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    return events;
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineCalendarEvent>> expanded =
+        service.expandRepeatSeries(
+            calendarEventToEngine(event),
+            frequency,
+            calendar_event_detail::toEngineDate(untilDate)
+            );
+    if (!expanded)
+    {
+        return std::unexpected(engineFailure(operation, expanded.error()));
+    }
+
+    return fromEngineEvents(*expanded);
+}
+
+Result<QList<int>> CalendarEventRepository::createRepeatSeries(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const QDate& untilDate
+    )
+{
+    const QString operation = QObject::tr("Creating calendar repeat series");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<int>> created =
+        service.createRepeatSeries(
+            calendarEventToEngine(event),
+            frequency,
+            calendar_event_detail::toEngineDate(untilDate)
+            );
+    if (!created)
+    {
+        return std::unexpected(engineFailure(operation, created.error()));
+    }
+
+    QList<int> result;
+    result.reserve(static_cast<qsizetype>(created->size()));
+    for (const int eventId : *created)
+    {
+        result.append(eventId);
+    }
+    return result;
+}
+
+Status CalendarEventRepository::updateRepeatSeriesFromDate(
+    const CalendarEvent& originalEvent,
+    const CalendarEvent& editedEvent
+    )
+{
+    const QString operation =
+        QObject::tr("Updating calendar repeat series events");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return engineReady;
+    }
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Status updated =
+        service.updateRepeatSeriesFromDate(
+            calendarEventToEngine(originalEvent),
+            calendarEventToEngine(editedEvent)
+            );
+    if (!updated)
+    {
+        return std::unexpected(engineFailure(operation, updated.error()));
+    }
+    return {};
 }
 
 Result<int> CalendarEventRepository::saveCalendarEvent(
     const CalendarEvent& event
     )
 {
-    QSqlQuery query(m_database);
-    const QString eventType =
-        normalizedCalendarEventType(
-            event.eventType
-            );
-    const QString timeStatus =
-        event.allDay
-            ? QStringLiteral("Timed")
-            : normalizedCalendarEventTimeStatus(
-                event.timeStatus
-                );
-    const QString repeatSeriesId =
-        event.repeatSeriesId.trimmed();
-    const QVariant repeatSeriesValue =
-        repeatSeriesId.isEmpty()
-            ? QVariant()
-            : QVariant(repeatSeriesId);
-
-    if (event.id > 0)
+    const QString operation = event.id > 0
+        ? QObject::tr("Updating calendar event")
+        : QObject::tr("Creating calendar event");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        query.prepare(R"(
-            UPDATE calendar_events
-            SET
-                title=?,
-                event_type=?,
-                time_status=?,
-                repeat_series_id=?,
-                all_day=?,
-                start_date=?,
-                start_time=?,
-                end_date=?,
-                end_time=?
-            WHERE id=?
-        )");
-
-        query.addBindValue(event.title);
-        query.addBindValue(eventType);
-        query.addBindValue(timeStatus);
-        query.addBindValue(repeatSeriesValue);
-        query.addBindValue(event.allDay ? 1 : 0);
-        query.addBindValue(event.startDate.toString(Qt::ISODate));
-        query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
-        query.addBindValue(event.endDate.toString(Qt::ISODate));
-        query.addBindValue(event.endTime.toString(QStringLiteral("HH:mm")));
-        query.addBindValue(event.id);
-
-        const auto executed = SqlQueryUtils::executePrepared(
-            query,
-            QObject::tr("Updating calendar event"),
-            eventIdentity(event)
-            );
-        if (!executed)
-        {
-            return std::unexpected(executed.error().userMessage());
-        }
-        if (query.numRowsAffected() == 0)
-        {
-            return std::unexpected(
-                QObject::tr("Updating %1 failed: no matching record exists.")
-                    .arg(eventIdentity(event))
-                );
-        }
-
-        return event.id;
+        return std::unexpected(engineReady.error());
     }
 
-    query.prepare(R"(
-        INSERT INTO calendar_events (
-            title,
-            event_type,
-            time_status,
-            repeat_series_id,
-            all_day,
-            start_date,
-            start_time,
-            end_date,
-            end_time
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    )");
-
-    query.addBindValue(event.title);
-    query.addBindValue(eventType);
-    query.addBindValue(timeStatus);
-    query.addBindValue(repeatSeriesValue);
-    query.addBindValue(event.allDay ? 1 : 0);
-    query.addBindValue(event.startDate.toString(Qt::ISODate));
-    query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
-    query.addBindValue(event.endDate.toString(Qt::ISODate));
-    query.addBindValue(event.endTime.toString(QStringLiteral("HH:mm")));
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Creating calendar event"),
-        eventIdentity(event)
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<int> saved = service.save(
+        calendarEventToEngine(event)
         );
-    if (!executed)
+    if (!saved)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(engineFailure(operation, saved.error()));
     }
 
-    const int eventId = query.lastInsertId().toInt();
-    if (eventId <= 0)
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Creating %1 failed: the database did not return a valid "
-                "record id."
-                ).arg(eventIdentity(event))
-            );
-    }
-
-    return eventId;
+    return *saved;
 }
 
 Result<QList<int>> CalendarEventRepository::saveCalendarEvents(
     const QList<CalendarEvent>& events
     )
 {
+    const QString operation = QObject::tr("Saving calendar event batch");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<int>> saved = service.saveBatch(
+        toEngineEvents(events)
+        );
+    if (!saved)
+    {
+        return std::unexpected(engineFailure(operation, saved.error()));
+    }
+
+    QList<int> result;
+    result.reserve(static_cast<qsizetype>(saved->size()));
+    for (const int eventId : *saved)
+    {
+        result.append(eventId);
+    }
+    return result;
+}
+
+Result<CalendarEventImportSummary>
+CalendarEventRepository::importCalendarEvents(
+    const QList<CalendarEvent>& events,
+    int parserSkippedCount
+    )
+{
+    const QString operation = QObject::tr("Importing calendar events");
+    if (parserSkippedCount < 0)
+    {
+        return std::unexpected(operationFailure(
+            operation,
+            QObject::tr("The parser skipped count is invalid.")
+            ));
+    }
+
     if (events.isEmpty())
     {
-        return QList<int>{};
+        return CalendarEventImportSummary{
+            0,
+            parserSkippedCount
+        };
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Starting calendar event save transaction failed: %1")
-                .arg(m_database.lastError().text())
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QList<int> eventIds;
-    eventIds.reserve(events.size());
-    for (const CalendarEvent& event : events)
+    EngineCalendarEventImportResult parsed;
+    parsed.events = toEngineEvents(events);
+    parsed.skippedCount = parserSkippedCount;
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineCalendarEventImportSummary> imported =
+        service.importParsed(parsed);
+    if (!imported)
     {
-        const Result<int> saved = saveCalendarEvent(event);
-        if (!saved)
-        {
-            return std::unexpected(saved.error());
-        }
-        eventIds.append(*saved);
+        return std::unexpected(engineFailure(operation, imported.error()));
     }
 
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing calendar event saves failed: %1")
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    return eventIds;
+    return CalendarEventImportSummary{
+        imported->importedCount,
+        imported->skippedCount
+    };
 }
 
 Status CalendarEventRepository::deleteCalendarEvent(
     int eventId
     )
 {
-    if (eventId <= 0)
+    const QString operation = QObject::tr("Deleting calendar event");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Deleting calendar event failed: invalid event id %1.")
-                .arg(eventId)
-            );
+        return engineReady;
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        DELETE FROM calendar_events
-        WHERE id=?
-    )");
-
-    query.addBindValue(eventId);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Deleting calendar event"),
-        QObject::tr("calendar event id %1").arg(eventId)
-        );
-    if (!executed)
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Status deleted = service.remove(eventId);
+    if (!deleted)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(engineFailure(operation, deleted.error()));
     }
-
     return {};
 }
 
@@ -626,63 +575,41 @@ Status CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate(
     const QDate& startDate
     )
 {
-    const QString normalizedRepeatSeriesId =
-        repeatSeriesId.trimmed();
-
-    if (
-        normalizedRepeatSeriesId.isEmpty()
-        || !startDate.isValid()
-        )
+    const QString operation =
+        QObject::tr("Deleting calendar repeat series events");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr(
-                "Deleting calendar repeat series failed: invalid series or "
-                "start date."
-                )
+        return engineReady;
+    }
+
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Status deleted =
+        service.removeRepeatSeriesFromDate(
+            toUtf8(repeatSeriesId),
+            calendar_event_detail::toEngineDate(startDate)
             );
-    }
-
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        DELETE FROM calendar_events
-        WHERE repeat_series_id=?
-        AND start_date >= ?
-    )");
-
-    query.addBindValue(normalizedRepeatSeriesId);
-    query.addBindValue(
-        startDate.toString(Qt::ISODate)
-        );
-
-    const QString identity = QObject::tr("repeat series '%1' from %2")
-        .arg(normalizedRepeatSeriesId, startDate.toString(Qt::ISODate));
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Deleting calendar repeat series events"),
-        identity
-        );
-    if (!executed)
+    if (!deleted)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(engineFailure(operation, deleted.error()));
     }
-
     return {};
 }
 
 Status CalendarEventRepository::deleteAllCalendarEvents()
 {
-    QSqlQuery query(m_database);
-
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QStringLiteral("DELETE FROM calendar_events"),
-        QObject::tr("Deleting all calendar events")
-        );
-    if (!executed)
+    const QString operation = QObject::tr("Deleting all calendar events");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(executed.error().userMessage());
+        return engineReady;
     }
 
+    EngineCalendarEventService service(*m_engineDatabase);
+    const classmngr::engine::Status deleted = service.removeAll();
+    if (!deleted)
+    {
+        return std::unexpected(engineFailure(operation, deleted.error()));
+    }
     return {};
 }

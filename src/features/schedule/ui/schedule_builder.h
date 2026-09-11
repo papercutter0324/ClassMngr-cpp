@@ -7,7 +7,6 @@
 #include <QMap>
 #include <QString>
 #include <QStringList>
-#include <QTime>
 
 class ClassService;
 
@@ -57,24 +56,6 @@ public:
     [[nodiscard]] Result<ScheduleBuildResult> build(
         bool useIntensive,
         const QStringList& visibleDays
-        ) const;
-
-private:
-    struct ParsedClass
-    {
-        QString day;
-        QTime startTime;
-        ScheduleEntry entry;
-    };
-
-    QTime parseTime(
-        const QString& value
-        ) const;
-
-    QList<ScheduleRow> buildRows(
-        int startHour,
-        int finalHour,
-        int offset
         ) const;
 
 private:

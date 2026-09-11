@@ -1,6 +1,7 @@
 #include "resource_pack_manager.h"
 
 #include "core/memory_usage_diagnostics.h"
+#include "classmngr/engine/resource_pack_policy.h"
 
 #include <QCoreApplication>
 #include <QCryptographicHash>
@@ -284,8 +285,24 @@ Status ResourcePackManager::stagePack(
     }
 
     const QFileInfo downloadedFile(downloadedFilePath);
-    if (!downloadedFile.isFile() || downloadedFile.size() != artifact.sizeBytes
-        || sha256ForFile(downloadedFilePath).compare(artifact.sha256, Qt::CaseInsensitive) != 0)
+    const auto policyVersion = classmngr::engine::SemanticVersion::parse(
+        artifact.version.toString().toUtf8().toStdString()
+        );
+    const classmngr::engine::ResourcePackArtifact policyArtifact{
+        artifact.id.toUtf8().toStdString(),
+        policyVersion ? *policyVersion : classmngr::engine::SemanticVersion(),
+        artifact.url.toString(QUrl::FullyEncoded).toUtf8().toStdString(),
+        artifact.fileName.toUtf8().toStdString(),
+        artifact.sha256.toUtf8().toStdString(),
+        artifact.sizeBytes
+    };
+    if (!downloadedFile.isFile()
+        || !policyVersion
+        || !classmngr::engine::ResourcePackPolicy::acceptsDownload(
+            policyArtifact,
+            downloadedFile.size(),
+            sha256ForFile(downloadedFilePath).toUtf8().toStdString()
+            ))
     {
         return std::unexpected(QStringLiteral("Downloaded resource pack '%1' failed its integrity check.").arg(artifact.id));
     }
@@ -374,16 +391,40 @@ Status ResourcePackManager::discoverInstalledPack(const Definition& packDefiniti
     const auto version = Version::parse(metadata.value(QStringLiteral("version")).toString());
     const QString fileName = metadata.value(QStringLiteral("fileName")).toString();
     const QString expectedHash = metadata.value(QStringLiteral("sha256")).toString().toLower();
-    if (!document.isObject()
-        || metadata.value(QStringLiteral("schemaVersion")).toInt(-1) != InstalledMetadataSchemaVersion
-        || metadata.value(QStringLiteral("id")).toString() != packDefinition.id
-        || !version || *version <= packDefinition.baselineVersion
-        || fileName.isEmpty() || QFileInfo(fileName).fileName() != fileName
-        || expectedHash.size() != 64)
+    const auto baselineVersion = classmngr::engine::SemanticVersion::parse(
+        packDefinition.baselineVersion.toString().toUtf8().toStdString()
+        );
+    const classmngr::engine::ResourcePackDefinition policyDefinition{
+        packDefinition.id.toUtf8().toStdString(),
+        baselineVersion ? *baselineVersion : classmngr::engine::SemanticVersion(),
+        packDefinition.updateable
+    };
+    const classmngr::engine::InstalledResourcePackMetadata policyMetadata{
+        metadata.value(QStringLiteral("schemaVersion")).toInt(-1),
+        metadata.value(QStringLiteral("id")).toString().toUtf8().toStdString(),
+        metadata.value(QStringLiteral("version")).toString().toUtf8().toStdString(),
+        fileName.toUtf8().toStdString(), expectedHash.toUtf8().toStdString()
+    };
+    if (!document.isObject() || !baselineVersion)
     {
         return std::unexpected(QStringLiteral("Metadata for resource pack '%1' is invalid.").arg(packDefinition.id));
     }
-    const QString filePath = QDir(m_storageDirectory).filePath(fileName);
+    const auto validatedMetadata =
+        classmngr::engine::ResourcePackPolicy::validateInstalledMetadata(
+            policyMetadata,
+            policyDefinition
+            );
+    if (!validatedMetadata)
+    {
+        return std::unexpected(QStringLiteral("Metadata for resource pack '%1' is invalid.").arg(packDefinition.id));
+    }
+    const QString normalizedFileName = QString::fromStdString(
+        validatedMetadata->fileName
+        );
+    const QString normalizedHash = QString::fromStdString(
+        validatedMetadata->sha256
+        );
+    const QString filePath = QDir(m_storageDirectory).filePath(normalizedFileName);
     const QFileInfo fileInfo(filePath);
     if (!fileInfo.isFile())
     {
@@ -391,7 +432,7 @@ Status ResourcePackManager::discoverInstalledPack(const Definition& packDefiniti
     }
     m_installedPacks.insert(
         packDefinition.id,
-        {fileInfo.absoluteFilePath(), *version, expectedHash}
+        {fileInfo.absoluteFilePath(), *version, normalizedHash}
         );
     return {};
 }
@@ -415,17 +456,50 @@ Status ResourcePackManager::mount(const Definition& packDefinition)
         return {};
     }
     auto installed = m_installedPacks.constFind(packDefinition.id);
-    if (installed != m_installedPacks.cend()
-        && !validateInstalledPack(packDefinition.id, *installed))
+    const bool hasInstalled = installed != m_installedPacks.cend();
+    const bool installedIntegrityValid = hasInstalled
+        && validateInstalledPack(packDefinition.id, *installed).has_value();
+    const auto baselineVersion = classmngr::engine::SemanticVersion::parse(
+        packDefinition.baselineVersion.toString().toUtf8().toStdString()
+        );
+    std::optional<classmngr::engine::InstalledResourcePackMetadata>
+        installedMetadata;
+    if (hasInstalled)
+    {
+        installedMetadata = classmngr::engine::InstalledResourcePackMetadata{
+            InstalledMetadataSchemaVersion,
+            packDefinition.id.toUtf8().toStdString(),
+            installed->version.toString().toUtf8().toStdString(),
+            QFileInfo(installed->filePath).fileName().toUtf8().toStdString(),
+            installed->expectedHash.toUtf8().toStdString()
+        };
+    }
+    const classmngr::engine::ResourcePackSelection selection =
+        classmngr::engine::ResourcePackPolicy::select(
+            {
+                packDefinition.id.toUtf8().toStdString(),
+                baselineVersion
+                    ? *baselineVersion
+                    : classmngr::engine::SemanticVersion(),
+                packDefinition.updateable
+            },
+            installedMetadata,
+            installedIntegrityValid
+            );
+    if (selection.discardInstalled)
     {
         discardInstalledPack(packDefinition.id);
         installed = m_installedPacks.cend();
     }
 
-    const QString filePath = installed != m_installedPacks.cend()
+    const bool useInstalled =
+        selection.source == classmngr::engine::ResourcePackSource::Installed
+        && installed != m_installedPacks.cend();
+
+    const QString filePath = useInstalled
         ? installed->filePath
         : QDir(m_baselineDirectory).filePath(packDefinition.id + QStringLiteral(".rcc"));
-    const Version version = installed != m_installedPacks.cend()
+    const Version version = useInstalled
         ? installed->version
         : packDefinition.baselineVersion;
     if (!QFileInfo(filePath).isFile())

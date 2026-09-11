@@ -5,7 +5,6 @@
 #include <QObject>
 #include <QHash>
 #include <QRegularExpression>
-#include <QSet>
 
 #include <algorithm>
 
@@ -241,10 +240,6 @@ bool filledCell(
     return workbook.styles.at(cell->style).filled;
 }
 
-QString normalizedIdentity(const QString& value)
-{
-    return value.simplified().toCaseFolded();
-}
 }
 
 QString SectionedContactListTemplate::id() const
@@ -318,10 +313,6 @@ Result<TeacherImportPreview> SectionedContactListTemplate::parse(
     preview.templateName = displayName();
     preview.sourceDate = *parsedDate;
     QHash<QString, QList<KoreanTeacherImportCandidate>> koreanByLevel;
-    QSet<QString> koreanIdentities;
-    QSet<QString> nativeIdentities;
-    QSet<QString> gsEnglishIdentities;
-    QSet<QString> gsKoreanIdentities;
 
     int lastWorksheetRow = 0;
     for (const CalendarImport::Cell& cell : worksheet.cells)
@@ -354,16 +345,6 @@ Result<TeacherImportPreview> SectionedContactListTemplate::parse(
             if (LevelOrder.contains(section.name))
             {
                 const auto [name, selectedByDefault] = cleanedKoreanName(rawName);
-                const QString identity = normalizedIdentity(name);
-                if (identity.isEmpty())
-                {
-                    return std::unexpected(QObject::tr("Korean teacher name in row %1 is empty.").arg(row));
-                }
-                if (koreanIdentities.contains(identity))
-                {
-                    return std::unexpected(QObject::tr("Korean teacher name in row %1 is duplicated.").arg(row));
-                }
-                koreanIdentities.insert(identity);
 
                 Teacher teacher;
                 teacher.teacherKr = name;
@@ -375,12 +356,6 @@ Result<TeacherImportPreview> SectionedContactListTemplate::parse(
             else if (section.name == QStringLiteral("Ntr"))
             {
                 const QString name = rawName.simplified();
-                const QString identity = normalizedIdentity(name);
-                if (nativeIdentities.contains(identity))
-                {
-                    return std::unexpected(QObject::tr("Native English Teacher name in row %1 is duplicated.").arg(row));
-                }
-                nativeIdentities.insert(identity);
                 QString position = cellText(cells, row, 4);
                 if (position.isEmpty())
                 {
@@ -397,14 +372,6 @@ Result<TeacherImportPreview> SectionedContactListTemplate::parse(
             {
                 const auto [name, position] = cleanedStaffName(rawName);
                 const bool korean = containsHangul(name);
-                const QString identity = normalizedIdentity(name);
-                QSet<QString>& identities = korean
-                    ? gsKoreanIdentities : gsEnglishIdentities;
-                if (identities.contains(identity))
-                {
-                    return std::unexpected(QObject::tr("GS Team name in row %1 is duplicated.").arg(row));
-                }
-                identities.insert(identity);
 
                 GsTeamMember member;
                 if (korean) member.koreanName = name;

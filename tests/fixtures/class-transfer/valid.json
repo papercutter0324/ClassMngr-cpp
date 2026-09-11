@@ -1,0 +1,51 @@
+{
+  "format": "ClassMngr Classes",
+  "version": 1,
+  "exported_at_utc": "2026-07-20T12:34:56.789Z",
+  "teachers": [
+    {
+      "key": "teacher-1",
+      "teacher_kr": "김알렉스",
+      "teacher_en": "Alex Kim",
+      "preferred_romanization": "Gim Allekseu",
+      "preferred_name": "Alex",
+      "room_number": "504",
+      "birthday": "02-29",
+      "phone_number": "010-1234-5678",
+      "wifi_name": "Campus WiFi",
+      "wifi_password": "wifi-password",
+      "internet_type": "Both",
+      "zoom_id": "123 456 7890",
+      "zoom_password": "zoom-password",
+      "projection_type": "Any",
+      "notes": "Fixture teacher"
+    }
+  ],
+  "classes": [
+    {
+      "key": "class-1",
+      "name": "Fixture Class",
+      "teacher_ref": "teacher-1",
+      "info": {
+        "class_grade": "E4",
+        "class_level": "Perseus",
+        "reading_book": "Reading Explorer 3",
+        "essay_book": "4C",
+        "class_color": "#123456",
+        "font_color": "#FEDCBA",
+        "notes": "Fixture notes",
+        "time_filler_activities": "Word chain",
+        "regular_times": [
+          {"day": "Monday", "start_time": "4:00 PM", "end_time": "4:50 PM"}
+        ],
+        "intensive_times": []
+      },
+      "roster": {
+        "columns": ["English", "Korean"],
+        "column_widths": [180, 190],
+        "rows": [["Jamie", "학생"]]
+      },
+      "speaking_evaluations": []
+    }
+  ]
+}

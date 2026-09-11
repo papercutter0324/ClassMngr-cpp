@@ -22,6 +22,7 @@ class CampusMapTests : public QObject
 
 private slots:
     void mapConfigurationRoundTrips();
+    void codecFixturesCoverValidLegacyAndMalformedFiles();
     void legacyAddressNoteMigratesToSharedField();
     void legacyImageMainRemainsSupported();
     void explicitEmptyMapDoesNotRestoreLegacyImage();
@@ -33,6 +34,42 @@ private slots:
     void wideMapControlsAreNotCompressed();
     void galleryHandlesMissingImagesAndCampusChanges();
 };
+
+void CampusMapTests::codecFixturesCoverValidLegacyAndMalformedFiles()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const auto copyFixture = [&directory](const QString& name)
+    {
+        const QString source = QFINDTESTDATA(
+            QStringLiteral("fixtures/campuses/") + name);
+        QVERIFY2(!source.isEmpty(), qPrintable(name));
+        QVERIFY(QFile::copy(
+            source,
+            directory.filePath(name)
+            ));
+    };
+    copyFixture(QStringLiteral("valid.json"));
+    copyFixture(QStringLiteral("legacy.json"));
+    copyFixture(QStringLiteral("malformed.json"));
+
+    CampusJsonRepository repository(directory.path());
+    const QList<CampusInfo> campuses = repository.loadCampuses();
+    QCOMPARE(campuses.size(), 2);
+    QCOMPARE(campuses.first().id, QStringLiteral("bundang"));
+    QCOMPARE(campuses.first().mapImagePaths,
+             QStringList({QStringLiteral("bundang/map.png"),
+                          QStringLiteral("bundang/building.png")}));
+
+    const std::optional<CampusInfo> legacy = repository.loadCampus(
+        QStringLiteral("legacy"));
+    QVERIFY(legacy.has_value());
+    QCOMPARE(legacy->directionsNote,
+             QStringLiteral("Legacy directions note"));
+    QCOMPARE(legacy->mapImagePaths,
+             QStringList{QStringLiteral("legacy/map.png")});
+}
 
 void CampusMapTests::mapConfigurationRoundTrips()
 {

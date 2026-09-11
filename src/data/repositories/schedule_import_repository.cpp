@@ -1,186 +1,721 @@
 #include "schedule_import_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
-#include "data/repositories/class_info_repository.h"
-#include "data/repositories/class_repository.h"
-#include "data/repositories/teacher_repository.h"
-#include "domain/rules/schedule_import_rules.h"
-#include "features/classes/config/class_info_config.h"
-#include "features/schedule/services/schedule_import_plan_validator.h"
-#include "features/schedule/services/schedule_import_matcher.h"
-#include "features/schedule/services/schedule_import_state_validator.h"
-#include "features/teacher/import/teacher_import_name_utils.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/schedule_import_service.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QHash>
+#include <QByteArray>
 #include <QObject>
-#include <QRegularExpression>
-#include <QSet>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QTime>
 
-#include <algorithm>
+#include <cstddef>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-QString teacherKey(
+using EngineClassTime = classmngr::engine::ClassTime;
+using EngineError = classmngr::engine::Error;
+using EngineIntensiveSlotState = classmngr::engine::IntensiveSlotState;
+using EngineScheduleImportClassAction =
+    classmngr::engine::ScheduleImportClassAction;
+using EngineScheduleImportClassCandidate =
+    classmngr::engine::ScheduleImportClassCandidate;
+using EngineScheduleImportClassMatchConfidence =
+    classmngr::engine::ScheduleImportClassMatchConfidence;
+using EngineScheduleImportClassPreview =
+    classmngr::engine::ScheduleImportClassPreview;
+using EngineScheduleImportClassResolution =
+    classmngr::engine::ScheduleImportClassResolution;
+using EngineScheduleImportDiagnostic =
+    classmngr::engine::ScheduleImportDiagnostic;
+using EngineScheduleImportIntensiveMode =
+    classmngr::engine::ScheduleImportIntensiveMode;
+using EngineScheduleImportKind = classmngr::engine::ScheduleImportKind;
+using EngineScheduleImportPlan = classmngr::engine::ScheduleImportPlan;
+using EngineScheduleImportPreview =
+    classmngr::engine::ScheduleImportPreview;
+using EngineScheduleImportService =
+    classmngr::engine::ScheduleImportService;
+using EngineScheduleImportSummary =
+    classmngr::engine::ScheduleImportSummary;
+using EngineScheduleImportTeacherAction =
+    classmngr::engine::ScheduleImportTeacherAction;
+using EngineScheduleImportTeacherPreview =
+    classmngr::engine::ScheduleImportTeacherPreview;
+using EngineScheduleImportTeacherResolution =
+    classmngr::engine::ScheduleImportTeacherResolution;
+using EngineScheduleImportUserBlock =
+    classmngr::engine::ScheduleImportUserBlock;
+
+std::string toUtf8(
     const QString& value
     )
 {
-    return TeacherImportNameUtils::hangulOnly(value);
-}
-
-QString queryFailure(
-    const QSqlQuery& query,
-    const QString& action
-    )
-{
-    return SqlQueryUtils::errorFor(query, action).userMessage();
-}
-
-int dayIndex(
-    const QString& day
-    )
-{
-    static const QStringList days{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday"),
-        QStringLiteral("Saturday"),
-        QStringLiteral("Sunday")
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
     };
-    return days.indexOf(day);
 }
 
-QString normalizedHexColor(
-    const QString& value
+QString fromUtf8(
+    std::string_view value
     )
 {
-    static const QRegularExpression expression(
-        QStringLiteral("^#[0-9A-Fa-f]{6}$")
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
-    const QString color =
-        value.trimmed();
-    return expression.match(color).hasMatch()
-        ? color.toUpper()
-        : QString();
 }
 
-QList<ClassTime> selectedTimes(
-    const ClassInfo& info,
-    ScheduleImportKind kind
+std::vector<std::string> toEngineStrings(
+    const QStringList& source
     )
 {
-    return kind == ScheduleImportKind::Intensive
-        ? info.intensiveTimes
-        : info.classTimes;
-}
-
-Status writeTimes(
-    QSqlDatabase& database,
-    const QString& table,
-    int classId,
-    const QList<ClassTime>& times
-    )
-{
-    QSqlQuery query(database);
-    query.prepare(
-        QStringLiteral(
-            "INSERT INTO %1 "
-            "(class_id, day, start_time, end_time) "
-            "VALUES (?, ?, ?, ?)"
-            )
-            .arg(table)
-        );
-
-    for (const ClassTime& time : times)
+    std::vector<std::string> result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const QString& value : source)
     {
-        query.bindValue(0, classId);
-        query.bindValue(1, time.day);
-        query.bindValue(2, time.startTime);
-        query.bindValue(3, time.endTime);
+        result.push_back(toUtf8(value));
+    }
+    return result;
+}
 
-        if (!query.exec())
-        {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Writing imported class times")
-                    )
-                );
-        }
+QStringList fromEngineStrings(
+    const std::vector<std::string>& source
+    )
+{
+    QStringList result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const std::string& value : source)
+    {
+        result.append(fromUtf8(value));
+    }
+    return result;
+}
+
+QList<int> fromEngineIds(
+    const std::vector<int>& source
+    )
+{
+    QList<int> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const int value : source)
+    {
+        result.append(value);
+    }
+    return result;
+}
+
+std::optional<EngineScheduleImportKind> toEngineKind(
+    ScheduleImportKind source
+    )
+{
+    switch (source)
+    {
+    case ScheduleImportKind::Normal:
+        return EngineScheduleImportKind::Normal;
+    case ScheduleImportKind::Intensive:
+        return EngineScheduleImportKind::Intensive;
     }
 
-    return {};
+    return std::nullopt;
 }
 
-Status writeIntensiveSlotStates(
-    QSqlDatabase& database,
-    const QList<IntensiveSlotState>& states
+std::optional<ScheduleImportKind> fromEngineKind(
+    EngineScheduleImportKind source
     )
 {
-    static const QSet<QString> validStates{
-        QStringLiteral("empty"),
-        QStringLiteral("essay"),
-        QStringLiteral("lunch")
-    };
-
-    QSet<QString> keys;
-    QSqlQuery query(database);
-    query.prepare(R"(
-        INSERT INTO intensive_slot_states (day, start_time, state)
-        VALUES (?, ?, ?)
-    )");
-
-    for (const IntensiveSlotState& state : states)
+    switch (source)
     {
-        const int day = dayIndex(state.day);
-        const QTime startTime =
-            QTime::fromString(
-                state.startTime,
-                QStringLiteral("HH:mm")
-                );
-        const QString key =
-            state.day + QLatin1Char('\x1f') + state.startTime;
-        if (
-            day < 0
-            || !startTime.isValid()
-            || !validStates.contains(state.state)
-            || keys.contains(key)
-            )
-        {
-            return std::unexpected(
-                QObject::tr("The import contains an invalid intensive slot state.")
-                );
-        }
-        keys.insert(key);
-
-        query.bindValue(0, state.day);
-        query.bindValue(1, state.startTime);
-        query.bindValue(2, state.state);
-        if (!query.exec())
-        {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Writing imported intensive slot states")
-                    )
-                );
-        }
+    case EngineScheduleImportKind::Normal:
+        return ScheduleImportKind::Normal;
+    case EngineScheduleImportKind::Intensive:
+        return ScheduleImportKind::Intensive;
     }
 
-    return {};
+    return std::nullopt;
 }
+
+std::optional<EngineScheduleImportIntensiveMode> toEngineIntensiveMode(
+    ScheduleImportIntensiveMode source
+    )
+{
+    switch (source)
+    {
+    case ScheduleImportIntensiveMode::UpdateExisting:
+        return EngineScheduleImportIntensiveMode::UpdateExisting;
+    case ScheduleImportIntensiveMode::ReplaceWithNew:
+        return EngineScheduleImportIntensiveMode::ReplaceWithNew;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<EngineScheduleImportTeacherAction> toEngineTeacherAction(
+    ScheduleImportTeacherAction source
+    )
+{
+    switch (source)
+    {
+    case ScheduleImportTeacherAction::Reuse:
+        return EngineScheduleImportTeacherAction::Reuse;
+    case ScheduleImportTeacherAction::UpdateRoom:
+        return EngineScheduleImportTeacherAction::UpdateRoom;
+    case ScheduleImportTeacherAction::Create:
+        return EngineScheduleImportTeacherAction::Create;
+    case ScheduleImportTeacherAction::Skip:
+        return EngineScheduleImportTeacherAction::Skip;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<EngineScheduleImportClassAction> toEngineClassAction(
+    ScheduleImportClassAction source
+    )
+{
+    switch (source)
+    {
+    case ScheduleImportClassAction::UpdateExisting:
+        return EngineScheduleImportClassAction::UpdateExisting;
+    case ScheduleImportClassAction::CreateNew:
+        return EngineScheduleImportClassAction::CreateNew;
+    case ScheduleImportClassAction::Skip:
+        return EngineScheduleImportClassAction::Skip;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<ScheduleImportClassMatchConfidence> fromEngineConfidence(
+    EngineScheduleImportClassMatchConfidence source
+    )
+{
+    switch (source)
+    {
+    case EngineScheduleImportClassMatchConfidence::None:
+        return ScheduleImportClassMatchConfidence::None;
+    case EngineScheduleImportClassMatchConfidence::Possible:
+        return ScheduleImportClassMatchConfidence::Possible;
+    case EngineScheduleImportClassMatchConfidence::Confident:
+        return ScheduleImportClassMatchConfidence::Confident;
+    }
+
+    return std::nullopt;
+}
+
+EngineClassTime toEngineClassTime(
+    const ClassTime& source
+    )
+{
+    EngineClassTime result;
+    result.day = toUtf8(source.day);
+    result.startTime = toUtf8(source.startTime);
+    result.endTime = toUtf8(source.endTime);
+    return result;
+}
+
+ClassTime fromEngineClassTime(
+    const EngineClassTime& source
+    )
+{
+    ClassTime result;
+    result.day = fromUtf8(source.day);
+    result.startTime = fromUtf8(source.startTime);
+    result.endTime = fromUtf8(source.endTime);
+    return result;
+}
+
+std::vector<EngineClassTime> toEngineClassTimes(
+    const QList<ClassTime>& source
+    )
+{
+    std::vector<EngineClassTime> result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const ClassTime& value : source)
+    {
+        result.push_back(toEngineClassTime(value));
+    }
+    return result;
+}
+
+QList<ClassTime> fromEngineClassTimes(
+    const std::vector<EngineClassTime>& source
+    )
+{
+    QList<ClassTime> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const EngineClassTime& value : source)
+    {
+        result.append(fromEngineClassTime(value));
+    }
+    return result;
+}
+
+EngineIntensiveSlotState toEngineIntensiveSlotState(
+    const IntensiveSlotState& source
+    )
+{
+    EngineIntensiveSlotState result;
+    result.day = toUtf8(source.day);
+    result.startTime = toUtf8(source.startTime);
+    result.state = toUtf8(source.state);
+    return result;
+}
+
+IntensiveSlotState fromEngineIntensiveSlotState(
+    const EngineIntensiveSlotState& source
+    )
+{
+    IntensiveSlotState result;
+    result.day = fromUtf8(source.day);
+    result.startTime = fromUtf8(source.startTime);
+    result.state = fromUtf8(source.state);
+    return result;
+}
+
+std::vector<EngineIntensiveSlotState> toEngineIntensiveSlotStates(
+    const QList<IntensiveSlotState>& source
+    )
+{
+    std::vector<EngineIntensiveSlotState> result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const IntensiveSlotState& value : source)
+    {
+        result.push_back(toEngineIntensiveSlotState(value));
+    }
+    return result;
+}
+
+QList<IntensiveSlotState> fromEngineIntensiveSlotStates(
+    const std::vector<EngineIntensiveSlotState>& source
+    )
+{
+    QList<IntensiveSlotState> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const EngineIntensiveSlotState& value : source)
+    {
+        result.append(fromEngineIntensiveSlotState(value));
+    }
+    return result;
+}
+
+EngineScheduleImportDiagnostic toEngineDiagnostic(
+    const ScheduleImportDiagnostic& source
+    )
+{
+    EngineScheduleImportDiagnostic result;
+    result.sheetName = toUtf8(source.sheetName);
+    result.userName = toUtf8(source.userName);
+    result.cellReference = toUtf8(source.cellReference);
+    result.value = toUtf8(source.value);
+    result.message = toUtf8(source.message);
+    return result;
+}
+
+ScheduleImportDiagnostic fromEngineDiagnostic(
+    const EngineScheduleImportDiagnostic& source
+    )
+{
+    ScheduleImportDiagnostic result;
+    result.sheetName = fromUtf8(source.sheetName);
+    result.userName = fromUtf8(source.userName);
+    result.cellReference = fromUtf8(source.cellReference);
+    result.value = fromUtf8(source.value);
+    result.message = fromUtf8(source.message);
+    return result;
+}
+
+EngineScheduleImportClassCandidate toEngineClassCandidate(
+    const ScheduleImportClassCandidate& source
+    )
+{
+    EngineScheduleImportClassCandidate result;
+    result.teacherKey = toUtf8(source.teacherKey);
+    result.teacherKr = toUtf8(source.teacherKr);
+    result.rooms = toEngineStrings(source.rooms);
+    result.importedColors = toEngineStrings(source.importedColors);
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
+    result.times = toEngineClassTimes(source.times);
+    result.sourceCells = toEngineStrings(source.sourceCells);
+    result.meetingPatternError = toUtf8(source.meetingPatternError);
+    return result;
+}
+
+ScheduleImportClassCandidate fromEngineClassCandidate(
+    const EngineScheduleImportClassCandidate& source
+    )
+{
+    ScheduleImportClassCandidate result;
+    result.teacherKey = fromUtf8(source.teacherKey);
+    result.teacherKr = fromUtf8(source.teacherKr);
+    result.rooms = fromEngineStrings(source.rooms);
+    result.importedColors = fromEngineStrings(source.importedColors);
+    result.classGrade = fromUtf8(source.classGrade);
+    result.classLevel = fromUtf8(source.classLevel);
+    result.times = fromEngineClassTimes(source.times);
+    result.sourceCells = fromEngineStrings(source.sourceCells);
+    result.meetingPatternError = fromUtf8(source.meetingPatternError);
+    return result;
+}
+
+EngineScheduleImportUserBlock toEngineUserBlock(
+    const ScheduleImportUserBlock& source
+    )
+{
+    EngineScheduleImportUserBlock result;
+    result.name = toUtf8(source.name);
+    result.headerCell = toUtf8(source.headerCell);
+    result.classes.reserve(static_cast<std::size_t>(source.classes.size()));
+    for (const ScheduleImportClassCandidate& value : source.classes)
+    {
+        result.classes.push_back(toEngineClassCandidate(value));
+    }
+    result.intensiveSlotStates = toEngineIntensiveSlotStates(
+        source.intensiveSlotStates
+        );
+    result.diagnostics.reserve(
+        static_cast<std::size_t>(source.diagnostics.size())
+        );
+    for (const ScheduleImportDiagnostic& value : source.diagnostics)
+    {
+        result.diagnostics.push_back(toEngineDiagnostic(value));
+    }
+    return result;
+}
+
+ScheduleImportUserBlock fromEngineUserBlock(
+    const EngineScheduleImportUserBlock& source
+    )
+{
+    ScheduleImportUserBlock result;
+    result.name = fromUtf8(source.name);
+    result.headerCell = fromUtf8(source.headerCell);
+    result.classes.reserve(static_cast<qsizetype>(source.classes.size()));
+    for (const EngineScheduleImportClassCandidate& value : source.classes)
+    {
+        result.classes.append(fromEngineClassCandidate(value));
+    }
+    result.intensiveSlotStates = fromEngineIntensiveSlotStates(
+        source.intensiveSlotStates
+        );
+    result.diagnostics.reserve(
+        static_cast<qsizetype>(source.diagnostics.size())
+        );
+    for (const EngineScheduleImportDiagnostic& value : source.diagnostics)
+    {
+        result.diagnostics.append(fromEngineDiagnostic(value));
+    }
+    return result;
+}
+
+std::optional<EngineScheduleImportPlan> toEnginePlan(
+    const ScheduleImportPlan& source
+    )
+{
+    const std::optional<EngineScheduleImportKind> kind = toEngineKind(
+        source.kind
+        );
+    const std::optional<EngineScheduleImportIntensiveMode> intensiveMode =
+        toEngineIntensiveMode(source.intensiveMode);
+    if (!kind || !intensiveMode)
+    {
+        return std::nullopt;
+    }
+
+    EngineScheduleImportPlan result;
+    result.kind = *kind;
+    result.intensiveMode = *intensiveMode;
+    result.selectedUserName = toUtf8(source.selectedUserName);
+    result.saveProfileNameIfBlank = source.saveProfileNameIfBlank;
+    result.updateProfileName = source.updateProfileName;
+    result.unknownCellsAcknowledged = source.unknownCellsAcknowledged;
+
+    result.candidates.reserve(
+        static_cast<std::size_t>(source.candidates.size())
+        );
+    for (const ScheduleImportClassCandidate& value : source.candidates)
+    {
+        result.candidates.push_back(toEngineClassCandidate(value));
+    }
+
+    result.intensiveSlotStates = toEngineIntensiveSlotStates(
+        source.intensiveSlotStates
+        );
+
+    result.diagnostics.reserve(
+        static_cast<std::size_t>(source.diagnostics.size())
+        );
+    for (const ScheduleImportDiagnostic& value : source.diagnostics)
+    {
+        result.diagnostics.push_back(toEngineDiagnostic(value));
+    }
+
+    result.teachers.reserve(
+        static_cast<std::size_t>(source.teachers.size())
+        );
+    for (const ScheduleImportTeacherResolution& value : source.teachers)
+    {
+        const std::optional<EngineScheduleImportTeacherAction> action =
+            toEngineTeacherAction(value.action);
+        if (!action)
+        {
+            return std::nullopt;
+        }
+
+        EngineScheduleImportTeacherResolution converted;
+        converted.teacherKey = toUtf8(value.teacherKey);
+        converted.action = *action;
+        converted.targetTeacherId = value.targetTeacherId;
+        converted.selectedRoom = toUtf8(value.selectedRoom);
+        result.teachers.push_back(std::move(converted));
+    }
+
+    result.classes.reserve(
+        static_cast<std::size_t>(source.classes.size())
+        );
+    for (const ScheduleImportClassResolution& value : source.classes)
+    {
+        const std::optional<EngineScheduleImportClassAction> action =
+            toEngineClassAction(value.action);
+        if (!action)
+        {
+            return std::nullopt;
+        }
+
+        EngineScheduleImportClassResolution converted;
+        converted.candidateIndex = value.candidateIndex;
+        converted.action = *action;
+        converted.targetClassId = value.targetClassId;
+        converted.classColor = toUtf8(value.classColor);
+        converted.fontColor = toUtf8(value.fontColor);
+        result.classes.push_back(std::move(converted));
+    }
+
+    return result;
+}
+
+std::optional<ScheduleImportClassPreview> fromEngineClassPreview(
+    const EngineScheduleImportClassPreview& source
+    )
+{
+    const std::optional<ScheduleImportClassMatchConfidence> confidence =
+        fromEngineConfidence(source.matchConfidence);
+    if (!confidence)
+    {
+        return std::nullopt;
+    }
+
+    ScheduleImportClassPreview result;
+    result.candidateIndex = source.candidateIndex;
+    result.matchingClassIds = fromEngineIds(source.matchingClassIds);
+    result.suggestedClassId = source.suggestedClassId;
+    result.exactMatch = source.exactMatch;
+    result.matchConfidence = *confidence;
+    result.matchExplanation = fromUtf8(source.matchExplanation);
+    return result;
+}
+
+std::optional<ScheduleImportPreview> fromEnginePreview(
+    const EngineScheduleImportPreview& source
+    )
+{
+    const std::optional<ScheduleImportKind> kind = fromEngineKind(
+        source.kind
+        );
+    if (!kind)
+    {
+        return std::nullopt;
+    }
+
+    ScheduleImportPreview result;
+    result.kind = *kind;
+    result.inventory.classCount = source.inventory.classCount;
+    result.inventory.hasRegularHours = source.inventory.hasRegularHours;
+    result.inventory.hasIntensiveHours = source.inventory.hasIntensiveHours;
+    result.user = fromEngineUserBlock(source.user);
+
+    result.teachers.reserve(static_cast<qsizetype>(source.teachers.size()));
+    for (const EngineScheduleImportTeacherPreview& value : source.teachers)
+    {
+        ScheduleImportTeacherPreview converted;
+        converted.teacherKey = fromUtf8(value.teacherKey);
+        converted.teacherKr = fromUtf8(value.teacherKr);
+        converted.importedRooms = fromEngineStrings(value.importedRooms);
+        converted.matchingTeacherIds = fromEngineIds(
+            value.matchingTeacherIds
+            );
+        converted.affectedClassCount = value.affectedClassCount;
+        result.teachers.append(std::move(converted));
+    }
+
+    result.classes.reserve(static_cast<qsizetype>(source.classes.size()));
+    for (const EngineScheduleImportClassPreview& value : source.classes)
+    {
+        const std::optional<ScheduleImportClassPreview> converted =
+            fromEngineClassPreview(value);
+        if (!converted)
+        {
+            return std::nullopt;
+        }
+        result.classes.append(*converted);
+    }
+
+    result.initiallyAbsentClassIds = fromEngineIds(
+        source.initiallyAbsentClassIds
+        );
+    return result;
+}
+
+ScheduleImportSummary fromEngineSummary(
+    const EngineScheduleImportSummary& source
+    )
+{
+    ScheduleImportSummary result;
+    result.teachersCreated = source.teachersCreated;
+    result.teachersUpdated = source.teachersUpdated;
+    result.classesCreated = source.classesCreated;
+    result.classesUpdated = source.classesUpdated;
+    result.classesSkipped = source.classesSkipped;
+    result.schedulesCleared = source.schedulesCleared;
+    result.ignoredCells = source.ignoredCells;
+    result.profileNameUpdated = source.profileNameUpdated;
+    return result;
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error
+    )
+{
+    return operationFailure(operation, engineErrorDetail(error));
+}
+
+QString boundaryConversionFailure(
+    const QString& operation
+    )
+{
+    return operationFailure(
+        operation,
+        QObject::tr("The schedule import contains an unsupported value.")
+        );
+}
+} // namespace
+
+ScheduleImportRepository::ScheduleImportRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
 }
 
 ScheduleImportRepository::ScheduleImportRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : ScheduleImportRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
+}
+
+ScheduleImportRepository::~ScheduleImportRepository() = default;
+
+Status ScheduleImportRepository::ensureEngineDatabase(
+    const QString& operation
+    )
+{
+    if (!m_compatibilityDatabaseWasOpen)
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_databasePath;
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        toUtf8(databasePath)
+        );
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
 }
 
 Result<ScheduleImportPreview> ScheduleImportRepository::preview(
@@ -188,547 +723,97 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     ScheduleImportKind kind
     )
 {
-    if (!m_database.isOpen())
+    const QString operation = QObject::tr("Previewing schedule import");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("No Teacher Profile is open.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    TeacherRepository teacherRepository(m_database);
-    ClassRepository classRepository(m_database);
-    ClassInfoRepository classInfoRepository(m_database);
-    const Result<QList<Teacher>> teachers =
-        teacherRepository.getAllTeachers();
-    if (!teachers)
-    {
-        return std::unexpected(teachers.error());
-    }
-
-    const Result<QList<Classroom>> classrooms =
-        classRepository.getClasses();
-    if (!classrooms)
-    {
-        return std::unexpected(classrooms.error());
-    }
-
-    QHash<int, ClassInfo> classInfo;
-    for (const Classroom& classroom : *classrooms)
-    {
-        const Result<ClassInfo> info =
-            classInfoRepository.loadClassInfo(classroom.id);
-        if (!info)
-        {
-            return std::unexpected(info.error());
-        }
-
-        classInfo.insert(classroom.id, *info);
-    }
-
-    return ScheduleImportMatcher::preview(
-        user,
-        kind,
-        *teachers,
-        *classrooms,
-        classInfo
+    const std::optional<EngineScheduleImportKind> engineKind = toEngineKind(
+        kind
         );
+    if (!engineKind)
+    {
+        return std::unexpected(boundaryConversionFailure(operation));
+    }
+
+    const EngineScheduleImportUserBlock engineUser = toEngineUserBlock(user);
+    EngineScheduleImportService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineScheduleImportPreview> preview =
+        service.previewImport(engineUser, *engineKind);
+    if (!preview)
+    {
+        return std::unexpected(engineFailure(operation, preview.error()));
+    }
+
+    const std::optional<ScheduleImportPreview> converted = fromEnginePreview(
+        *preview
+        );
+    if (!converted)
+    {
+        return std::unexpected(boundaryConversionFailure(operation));
+    }
+    return *converted;
+}
+
+Status ScheduleImportRepository::validateImport(
+    const ScheduleImportPlan& plan
+    )
+{
+    const QString operation = QObject::tr("Validating schedule import");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    const std::optional<EngineScheduleImportPlan> enginePlan = toEnginePlan(
+        plan
+        );
+    if (!enginePlan)
+    {
+        return std::unexpected(boundaryConversionFailure(operation));
+    }
+
+    EngineScheduleImportService service(*m_engineDatabase);
+    const classmngr::engine::Status validated = service.validateImport(
+        *enginePlan
+        );
+    if (!validated)
+    {
+        return std::unexpected(engineFailure(operation, validated.error()));
+    }
+
+    return {};
 }
 
 Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     const ScheduleImportPlan& plan
     )
 {
-    if (!m_database.isOpen())
+    const QString operation = QObject::tr("Applying schedule import");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("No Teacher Profile is open.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    const Result<ValidatedScheduleImportPlan> validatedPlan =
-        ScheduleImportPlanValidator::validate(plan);
-    if (!validatedPlan)
-    {
-        return std::unexpected(validatedPlan.error());
-    }
-    const auto& teacherResolutions =
-        validatedPlan->teacherResolutions;
-    const auto& classResolutions =
-        validatedPlan->classResolutions;
-
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Unable to start the schedule import transaction."
-                )
-            );
-    }
-
-    TeacherRepository teacherRepository(m_database);
-    ClassRepository classRepository(m_database);
-    ClassInfoRepository classInfoRepository(m_database);
-    const Result<QList<Teacher>> existingTeachers =
-        teacherRepository.getAllTeachers();
-    if (!existingTeachers)
-    {
-        return std::unexpected(existingTeachers.error());
-    }
-
-    const Result<QList<Classroom>> existingClasses =
-        classRepository.getClasses();
-    if (!existingClasses)
-    {
-        return std::unexpected(existingClasses.error());
-    }
-
-    QHash<int, ClassInfo> existingInfo;
-    for (const Classroom& classroom : *existingClasses)
-    {
-        const Result<ClassInfo> info =
-            classInfoRepository.loadClassInfo(classroom.id);
-        if (!info)
-        {
-            return std::unexpected(info.error());
-        }
-
-        existingInfo.insert(classroom.id, *info);
-    }
-
-    const Status currentState = ScheduleImportStateValidator::validate(
-        plan,
-        *validatedPlan,
-        *existingTeachers,
-        *existingClasses,
-        existingInfo
+    const std::optional<EngineScheduleImportPlan> enginePlan = toEnginePlan(
+        plan
         );
-    if (!currentState)
+    if (!enginePlan)
     {
-        return std::unexpected(currentState.error());
+        return std::unexpected(boundaryConversionFailure(operation));
     }
 
-    ScheduleImportSummary summary;
-    summary.ignoredCells =
-        plan.diagnostics.size();
-    QHash<QString, int> resolvedTeacherIds;
-    QSqlQuery query(m_database);
-
-    for (
-        auto iterator = teacherResolutions.cbegin();
-        iterator != teacherResolutions.cend();
-        ++iterator
-        )
+    EngineScheduleImportService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineScheduleImportSummary> imported =
+        service.importSchedule(*enginePlan);
+    if (!imported)
     {
-        const ScheduleImportTeacherResolution& resolution =
-            iterator.value();
-
-        if (
-            resolution.action
-                == ScheduleImportTeacherAction::Skip
-            )
-        {
-            resolvedTeacherIds.insert(iterator.key(), -1);
-            continue;
-        }
-
-        if (
-            resolution.action
-                == ScheduleImportTeacherAction::Create
-            )
-        {
-            QString teacherName;
-            for (const ScheduleImportClassCandidate& candidate : plan.candidates)
-            {
-                if (candidate.teacherKey == iterator.key())
-                {
-                    teacherName = candidate.teacherKr;
-                    break;
-                }
-            }
-            teacherName =
-                teacherKey(teacherName);
-
-            query.prepare(R"(
-                INSERT INTO teachers (
-                    teacher_kr,
-                    room_number
-                )
-                VALUES (?, ?)
-            )");
-            query.addBindValue(teacherName);
-            query.addBindValue(
-                resolution.selectedRoom.trimmed()
-                );
-
-            if (!query.exec())
-            {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Creating a Korean teacher")
-                        )
-                    );
-            }
-
-            const int teacherId =
-                query.lastInsertId().toInt();
-            if (teacherId <= 0)
-            {
-                return std::unexpected(
-                    QObject::tr(
-                        "A Korean teacher could not be created."
-                        )
-                    );
-            }
-            resolvedTeacherIds.insert(iterator.key(), teacherId);
-            ++summary.teachersCreated;
-            continue;
-        }
-
-        resolvedTeacherIds.insert(
-            iterator.key(),
-            resolution.targetTeacherId
-            );
-
-        if (
-            resolution.action
-                == ScheduleImportTeacherAction::UpdateRoom
-            )
-        {
-            query.prepare(R"(
-                UPDATE teachers
-                SET room_number=?
-                WHERE id=?
-            )");
-            query.addBindValue(
-                resolution.selectedRoom.trimmed()
-                );
-            query.addBindValue(resolution.targetTeacherId);
-
-            if (!query.exec())
-            {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Updating a Korean teacher room")
-                        )
-                    );
-            }
-            ++summary.teachersUpdated;
-        }
+        return std::unexpected(engineFailure(operation, imported.error()));
     }
 
-    const QString timeTable =
-        plan.kind == ScheduleImportKind::Intensive
-            ? QStringLiteral("class_intensive_times")
-            : QStringLiteral("class_times");
-    const bool preservesAbsentIntensiveClasses =
-        plan.kind == ScheduleImportKind::Intensive
-        && plan.intensiveMode
-            == ScheduleImportIntensiveMode::UpdateExisting;
-    QHash<int, QList<ClassTime>> finalTimes;
-    for (int index = 0; index < plan.candidates.size(); ++index)
-    {
-        const ScheduleImportClassCandidate& candidate =
-            plan.candidates[index];
-        const ScheduleImportClassResolution resolution =
-            classResolutions.value(index);
-
-        if (
-            resolution.action
-                == ScheduleImportClassAction::Skip
-            )
-        {
-            ++summary.classesSkipped;
-            if (
-                !preservesAbsentIntensiveClasses
-                && resolution.targetClassId > 0
-                && existingInfo.contains(resolution.targetClassId)
-                )
-            {
-                finalTimes.insert(
-                    resolution.targetClassId,
-                    selectedTimes(
-                        existingInfo.value(
-                            resolution.targetClassId
-                            ),
-                        plan.kind
-                        )
-                    );
-            }
-            continue;
-        }
-
-        const int teacherId =
-            resolvedTeacherIds.value(
-                candidate.teacherKey,
-                -1
-                );
-        if (teacherId <= 0)
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "A class cannot be imported because its Korean teacher was skipped."
-                    )
-                );
-        }
-
-        int classId =
-            resolution.targetClassId;
-
-        if (
-            resolution.action
-                == ScheduleImportClassAction::CreateNew
-            )
-        {
-            query.prepare(
-                QStringLiteral(
-                    "INSERT INTO classes (name) VALUES (?)"
-                    )
-                );
-            query.addBindValue(
-                QStringLiteral("%1 %2")
-                    .arg(
-                        candidate.classGrade,
-                        candidate.classLevel
-                        )
-                    .simplified()
-                );
-            if (!query.exec())
-            {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Creating a class")
-                        )
-                    );
-            }
-            classId =
-                query.lastInsertId().toInt();
-            ++summary.classesCreated;
-        }
-        else
-        {
-            ++summary.classesUpdated;
-        }
-
-        query.prepare(R"(
-            INSERT INTO class_info (
-                class_id,
-                teacher_id,
-                class_grade,
-                class_level,
-                class_color,
-                font_color
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(class_id)
-            DO UPDATE SET
-                teacher_id=excluded.teacher_id,
-                class_grade=excluded.class_grade,
-                class_level=excluded.class_level,
-                class_color=excluded.class_color,
-                font_color=excluded.font_color
-        )");
-        query.addBindValue(classId);
-        query.addBindValue(teacherId);
-        query.addBindValue(candidate.classGrade);
-        query.addBindValue(candidate.classLevel);
-        query.addBindValue(
-            normalizedHexColor(
-                resolution.classColor
-                )
-            );
-        query.addBindValue(
-            normalizedHexColor(
-                resolution.fontColor
-                )
-            );
-
-        if (!query.exec())
-        {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Updating imported class information")
-                    )
-                );
-        }
-
-        finalTimes.insert(classId, candidate.times);
-    }
-
-    if (!preservesAbsentIntensiveClasses)
-    {
-        for (const Classroom& classroom : *existingClasses)
-        {
-            const bool hadTimes =
-                !selectedTimes(
-                    existingInfo.value(classroom.id),
-                    plan.kind
-                    ).isEmpty();
-            if (
-                hadTimes
-                && !finalTimes.contains(classroom.id)
-                )
-            {
-                ++summary.schedulesCleared;
-            }
-        }
-    }
-
-    if (preservesAbsentIntensiveClasses)
-    {
-        query.prepare(
-            QStringLiteral(
-                "DELETE FROM %1 WHERE class_id=?"
-                )
-                .arg(timeTable)
-            );
-        for (
-            auto iterator = finalTimes.cbegin();
-            iterator != finalTimes.cend();
-            ++iterator
-            )
-        {
-            query.bindValue(0, iterator.key());
-            if (!query.exec())
-            {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr(
-                            "Clearing an existing intensive class schedule"
-                            )
-                        )
-                    );
-            }
-        }
-    }
-    else if (
-        !query.exec(
-            QStringLiteral("DELETE FROM %1")
-                .arg(timeTable)
-            )
-        )
-    {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Clearing the previous schedule snapshot")
-                )
-            );
-    }
-
-    for (
-        auto iterator = finalTimes.cbegin();
-        iterator != finalTimes.cend();
-        ++iterator
-        )
-    {
-        const Status written =
-            writeTimes(
-                m_database,
-                timeTable,
-                iterator.key(),
-                iterator.value()
-                );
-        if (!written)
-        {
-            return std::unexpected(written.error());
-        }
-    }
-
-    if (plan.kind == ScheduleImportKind::Intensive)
-    {
-        if (!query.exec(QStringLiteral("DELETE FROM intensive_slot_states")))
-        {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Clearing the previous intensive slot states")
-                    )
-                );
-        }
-
-        const Status statesWritten =
-            writeIntensiveSlotStates(
-                m_database,
-                plan.intensiveSlotStates
-                );
-        if (!statesWritten)
-        {
-            return std::unexpected(statesWritten.error());
-        }
-    }
-
-    if (
-        plan.saveProfileNameIfBlank
-        || plan.updateProfileName
-        )
-    {
-        query.prepare(
-            QStringLiteral(
-                "SELECT value FROM app_settings WHERE key='myInfo/name'"
-                )
-            );
-        if (!query.exec())
-        {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Reading My Information name")
-                    )
-                );
-        }
-
-        QString existingName;
-        if (query.next())
-        {
-            existingName =
-                query.value(0).toString().trimmed();
-        }
-
-        if (
-            (
-                existingName.isEmpty()
-                || plan.updateProfileName
-                )
-            && !plan.selectedUserName.trimmed().isEmpty()
-            )
-        {
-            query.prepare(R"(
-                INSERT INTO app_settings (key, value)
-                VALUES ('myInfo/name', ?)
-                ON CONFLICT(key)
-                DO UPDATE SET value=excluded.value
-            )");
-            query.addBindValue(
-                plan.selectedUserName.trimmed()
-                );
-            if (!query.exec())
-            {
-                return std::unexpected(
-                    queryFailure(
-                        query,
-                        QObject::tr("Saving My Information name")
-                        )
-                    );
-            }
-            summary.profileNameUpdated = true;
-        }
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Unable to commit the schedule import transaction: %1"
-                )
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    return summary;
+    return fromEngineSummary(*imported);
 }

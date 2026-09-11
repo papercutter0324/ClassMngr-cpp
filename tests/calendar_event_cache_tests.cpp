@@ -1,59 +1,41 @@
-#include "data/repositories/calendar_event_repository.h"
+#include "classmngr/engine/calendar_event_service.h"
+#include "classmngr/engine/open_database.h"
 #include "features/calendar/ui/calendar_event_cache.h"
 #include "features/calendar/ui/calendar_event_model.h"
 
-#include <QSqlDatabase>
-#include <QSqlQuery>
+#include <QFileInfo>
+#include <QByteArray>
 #include <QTemporaryDir>
-#include <QUuid>
 #include <QtTest>
 
 #include <algorithm>
+#include <chrono>
+#include <cstddef>
+#include <string_view>
 
 namespace
 {
-void createCalendarEventsTable(
-    QSqlDatabase& database
-    )
-{
-    QSqlQuery query(database);
-
-    QVERIFY(
-        query.exec(R"(
-            CREATE TABLE calendar_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                event_type TEXT DEFAULT 'Other',
-                time_status TEXT DEFAULT 'Timed',
-                repeat_series_id TEXT,
-                all_day INTEGER DEFAULT 0,
-                start_date TEXT,
-                start_time TEXT,
-                end_date TEXT,
-                end_time TEXT
-            )
-        )")
-        );
-}
-
 void saveEvent(
-    QSqlDatabase& database,
+    classmngr::engine::CalendarEventService& service,
     const QDate& date,
     const QString& title,
     const QDate& endDate = {}
     )
 {
-    CalendarEvent event;
-    event.title = title;
-    event.startDate = date;
-    event.endDate = endDate.isValid()
-        ? endDate
-        : date;
-    event.startTime = QTime(9, 0);
-    event.endTime = QTime(10, 0);
+    classmngr::engine::CalendarEvent event;
+    const QByteArray utf8Title = title.toUtf8();
+    event.title = std::string(
+        utf8Title.constData(),
+        static_cast<std::size_t>(utf8Title.size())
+        );
+    event.startDate = calendar_event_detail::toEngineDate(date);
+    event.endDate = calendar_event_detail::toEngineDate(
+        endDate.isValid() ? endDate : date
+        );
+    event.startTime = std::chrono::hours{9};
+    event.endTime = std::chrono::hours{10};
 
-    CalendarEventRepository repository(database);
-    const Result<int> saved = repository.saveCalendarEvent(event);
+    const classmngr::engine::Result<int> saved = service.save(event);
     QVERIFY(saved);
     QVERIFY(*saved > 0);
 }
@@ -62,29 +44,41 @@ void createDatabase(
     const QString& databasePath
     )
 {
-    const QString connectionName =
-        QStringLiteral("calendar-event-cache-setup-%1").arg(
-            QUuid::createUuid().toString(QUuid::WithoutBraces)
-            );
+    const QByteArray utf8Path = databasePath.toUtf8();
+    const auto database = classmngr::engine::OpenDatabase::execute(
+        std::string_view(
+            utf8Path.constData(),
+            static_cast<std::size_t>(utf8Path.size())
+            )
+        );
+    QVERIFY(database);
 
-    {
-        QSqlDatabase database =
-            QSqlDatabase::addDatabase(
-                QStringLiteral("QSQLITE"),
-                connectionName
-                );
-        database.setDatabaseName(databasePath);
-        QVERIFY(database.open());
-        createCalendarEventsTable(database);
-        saveEvent(
-            database,
-            QDate(2026, 7, 10),
-            QStringLiteral("Cached event")
-            );
-        database.close();
-    }
+    classmngr::engine::CalendarEventService service(**database);
+    saveEvent(
+        service,
+        QDate(2026, 7, 10),
+        QStringLiteral("Cached event")
+        );
+}
 
-    QSqlDatabase::removeDatabase(connectionName);
+void appendEvent(
+    const QString& databasePath,
+    const QDate& date,
+    const QString& title,
+    const QDate& endDate = {}
+    )
+{
+    const QByteArray utf8Path = databasePath.toUtf8();
+    const auto database = classmngr::engine::OpenDatabase::execute(
+        std::string_view(
+            utf8Path.constData(),
+            static_cast<std::size_t>(utf8Path.size())
+            )
+        );
+    QVERIFY(database);
+
+    classmngr::engine::CalendarEventService service(**database);
+    saveEvent(service, date, title, endDate);
 }
 }
 
@@ -94,6 +88,8 @@ class CalendarEventCacheTests : public QObject
 
 private slots:
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
+    void fileBackedLoadPreflightsAndCreatesUnicodePath();
+    void nextEventMonthUsesEngineForFileBackedDatabase();
     void invalidationDiscardsCompletedWorkerResult();
     void multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates();
     void retainedRangesEvictEventsAndRejectEvictedWorkerResults();
@@ -151,6 +147,66 @@ void CalendarEventCacheTests::rangeLoadPopulatesModelWithoutUiThreadDatabaseAcce
         ));
 }
 
+void CalendarEventCacheTests::fileBackedLoadPreflightsAndCreatesUnicodePath()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath = temporaryDirectory.filePath(
+        QStringLiteral("프로필/캘린더.db")
+        );
+
+    CalendarEventCache cache;
+    cache.setDatabasePath(databasePath);
+    cache.requestRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            ),
+        5000
+        );
+    QVERIFY(QFileInfo::exists(databasePath));
+    QVERIFY(QFileInfo(databasePath).isFile());
+    QVERIFY(cache.eventsInRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        ).isEmpty());
+}
+
+void CalendarEventCacheTests::nextEventMonthUsesEngineForFileBackedDatabase()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath =
+        temporaryDirectory.filePath(QStringLiteral("calendar.db"));
+    createDatabase(databasePath);
+    appendEvent(
+        databasePath,
+        QDate(2026, 7, 20),
+        QStringLiteral("Next cached event")
+        );
+
+    CalendarEventCache cache;
+    QSignalSpy nextEventSpy(
+        &cache,
+        &CalendarEventCache::nextEventMonthFound
+        );
+    cache.setDatabasePath(databasePath);
+    cache.requestNextEventMonth(QDate(2026, 7, 11));
+
+    QTRY_COMPARE_WITH_TIMEOUT(nextEventSpy.count(), 1, 5000);
+    QCOMPARE(
+        nextEventSpy.constFirst().constFirst().toDate(),
+        QDate(2026, 7, 20)
+        );
+}
+
 void CalendarEventCacheTests::invalidationDiscardsCompletedWorkerResult()
 {
     QTemporaryDir temporaryDirectory;
@@ -200,27 +256,12 @@ void CalendarEventCacheTests::multiDayEventsUseOneCanonicalRecordAndRangeDedupli
         temporaryDirectory.filePath(QStringLiteral("calendar.db"));
     createDatabase(databasePath);
 
-    const QString connectionName =
-        QStringLiteral("calendar-event-cache-multiday-%1").arg(
-            QUuid::createUuid().toString(QUuid::WithoutBraces)
-            );
-    {
-        QSqlDatabase database =
-            QSqlDatabase::addDatabase(
-                QStringLiteral("QSQLITE"),
-                connectionName
-                );
-        database.setDatabaseName(databasePath);
-        QVERIFY(database.open());
-        saveEvent(
-            database,
-            QDate(2026, 7, 12),
-            QStringLiteral("Three-day event"),
-            QDate(2026, 7, 14)
-            );
-        database.close();
-    }
-    QSqlDatabase::removeDatabase(connectionName);
+    appendEvent(
+        databasePath,
+        QDate(2026, 7, 12),
+        QStringLiteral("Three-day event"),
+        QDate(2026, 7, 14)
+        );
 
     CalendarEventCache cache;
     cache.setDatabasePath(databasePath);

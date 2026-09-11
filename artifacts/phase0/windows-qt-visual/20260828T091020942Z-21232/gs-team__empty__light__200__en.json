@@ -1,0 +1,41 @@
+{
+    "actions": [
+        "Construct MainWindow production entry point",
+        "Show window and wait for native exposure",
+        "Navigate to gs-team",
+        "Allow layout, fonts, and images to settle for 250 ms",
+        "Capture native Windows window pixels",
+        "Close and drain deferred destruction"
+    ],
+    "appLanguage": "en",
+    "architecture": "x64",
+    "artifact": {
+        "file": "gs-team__empty__light__200__en.png",
+        "sha256": "b1ae3e1a92faf08d3b6a977af8a044fd541f6698a8293f3f2ecb47d37e744532"
+    },
+    "displayScalePercent": 200,
+    "fixtureId": "no-database",
+    "fontSize": "normal",
+    "format": "classmngr-phase0-capture-v1",
+    "inputLanguage": "en-US",
+    "ledgerId": "page.gs-team",
+    "observations": {
+        "accessibility": "Manual UI Automation and screen-reader review remains pending.",
+        "inputMethod": "Manual Korean IME evidence remains pending.",
+        "keyboard": "Not exercised by this automated visual capture.",
+        "notes": "Production-entry-point capture; review the PNG before promoting it to a golden."
+    },
+    "sourceRevision": "d9732c8",
+    "theme": "light",
+    "verification": "captured",
+    "window": {
+        "height": 780,
+        "width": 1270,
+        "x": 7,
+        "y": 0
+    },
+    "windows": {
+        "build": "10.0.26200",
+        "edition": "Windows 11 Version 25H2"
+    }
+}

@@ -1,20 +1,252 @@
 #include "speaking_eval_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/speaking_evaluation_persistence_service.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QDebug>
-#include <QHash>
+#include <QByteArray>
 #include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QtGlobal>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+namespace
+{
+using EngineError = classmngr::engine::Error;
+using EngineSpeakingEvaluationCellChange =
+    classmngr::engine::SpeakingEvaluationCellChange;
+using EngineSpeakingEvaluationPersistenceService =
+    classmngr::engine::SpeakingEvaluationPersistenceService;
+using EngineSpeakingEvaluationRow =
+    classmngr::engine::SpeakingEvaluationRow;
+using EngineSpeakingEvaluationRows =
+    classmngr::engine::SpeakingEvaluationRows;
+using EngineSpeakingEvaluationScore =
+    classmngr::engine::SpeakingEvaluationScore;
+
+std::string toUtf8(
+    const QString& value
+    )
+{
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
+}
+
+QString fromUtf8(
+    std::string_view value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail = {},
+    const QString& identity = {}
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedIdentity = identity.trimmed();
+    if (!trimmedIdentity.isEmpty())
+    {
+        message += QObject::tr(" for %1").arg(identity);
+    }
+
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error,
+    const QString& identity = {}
+    )
+{
+    return operationFailure(
+        operation,
+        engineErrorDetail(error),
+        identity
+        );
+}
+
+QString invalidArguments(
+    const QString& operation
+    )
+{
+    return QObject::tr(
+        "%1 failed: invalid class id or evaluation name."
+        ).arg(operation);
+}
+
+EngineSpeakingEvaluationRows toEngineRows(
+    const SpeakingEvalRows& source
+    )
+{
+    EngineSpeakingEvaluationRows result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const QStringList& sourceRow : source)
+    {
+        EngineSpeakingEvaluationRow row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& value : sourceRow)
+        {
+            row.push_back(toUtf8(value));
+        }
+        result.push_back(std::move(row));
+    }
+    return result;
+}
+
+std::vector<EngineSpeakingEvaluationCellChange> toEngineDirtyCells(
+    const QList<SpeakingEvalCellChange>& source
+    )
+{
+    std::vector<EngineSpeakingEvaluationCellChange> result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const SpeakingEvalCellChange& cell : source)
+    {
+        result.push_back({cell.row, cell.column});
+    }
+    return result;
+}
+
+SpeakingEvalRows fromEngineRows(
+    const EngineSpeakingEvaluationRows& source
+    )
+{
+    SpeakingEvalRows result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const EngineSpeakingEvaluationRow& sourceRow : source)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::string& value : sourceRow)
+        {
+            row.append(fromUtf8(value));
+        }
+        result.append(std::move(row));
+    }
+    return result;
+}
+
+SpeakingEvalScore fromEngineScore(
+    const EngineSpeakingEvaluationScore& source
+    )
+{
+    return {
+        fromUtf8(source.englishName),
+        fromUtf8(source.koreanName),
+        fromUtf8(source.finalGrade)
+    };
+}
+} // namespace
+
+SpeakingEvalRepository::SpeakingEvalRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
 
 SpeakingEvalRepository::SpeakingEvalRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : SpeakingEvalRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
+}
+
+SpeakingEvalRepository::~SpeakingEvalRepository() = default;
+
+Status SpeakingEvalRepository::ensureEngineDatabase(
+    const QString& operation
+    ) const
+{
+    if (!m_compatibilityDatabaseWasOpen)
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_databasePath;
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(toUtf8(databasePath));
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
 }
 
 Status SpeakingEvalRepository::saveSpeakingEval(
@@ -24,220 +256,35 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     const QList<SpeakingEvalCellChange>& dirtyCells
     )
 {
+    const QString operation = QObject::tr("Saving speaking evaluation");
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return std::unexpected(
-            QObject::tr(
-                "Saving speaking evaluation failed: invalid class id or "
-                "evaluation name."
-                )
-            );
+        return std::unexpected(invalidArguments(operation));
     }
 
-    const QString normalizedEvaluationName = evaluationName.trimmed();
     const QString identity = QObject::tr("evaluation '%1' for class id %2")
-        .arg(normalizedEvaluationName)
+        .arg(evaluationName.trimmed())
         .arg(classId);
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Starting speaking evaluation transaction failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
-            );
+        return engineReady;
     }
 
-    QSqlQuery query(m_database);
-    auto execute = [&](const QString& action) -> Status
+    EngineSpeakingEvaluationPersistenceService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.save(
+        classId,
+        toUtf8(evaluationName),
+        toEngineRows(rows),
+        toEngineDirtyCells(dirtyCells)
+        );
+    if (!saved)
     {
-        const auto result = SqlQueryUtils::executePrepared(
-            query, action, identity);
-        return result
-            ? Status{}
-            : Status(std::unexpected(result.error().userMessage()));
-    };
-
-    int evaluationId = -1;
-
-    query.prepare(R"(
-        SELECT id
-        FROM speaking_evaluations
-        WHERE class_id=? AND evaluation_name=?
-    )");
-
-    query.addBindValue(classId);
-    query.addBindValue(normalizedEvaluationName);
-
-    Status statement = execute(QObject::tr("Loading speaking evaluation"));
-    if (!statement)
-    {
-        return statement;
-    }
-
-    if (query.next())
-    {
-        evaluationId =
-            query.value("id").toInt();
-    }
-    else
-    {
-        query.prepare(R"(
-            INSERT INTO speaking_evaluations (
-                class_id,
-                evaluation_name
-            )
-            VALUES (?, ?)
-        )");
-
-        query.addBindValue(classId);
-        query.addBindValue(normalizedEvaluationName);
-
-        statement = execute(QObject::tr("Creating speaking evaluation"));
-        if (!statement)
-        {
-            return statement;
-        }
-
-        evaluationId =
-            query.lastInsertId().toInt();
-
-        if (evaluationId <= 0)
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "Creating %1 failed: the database did not return a valid "
-                    "record id."
-                    ).arg(identity)
-                );
-        }
-    }
-
-    for (int row = 0; row < SpeakingEval::RowCount; ++row)
-    {
-        query.prepare(R"(
-            INSERT OR IGNORE INTO speaking_eval_data (
-                evaluation_id,
-                row_index
-            )
-            VALUES (?, ?)
-        )");
-
-        query.addBindValue(evaluationId);
-        query.addBindValue(row);
-
-        statement = execute(QObject::tr("Ensuring speaking evaluation row"));
-        if (!statement)
-        {
-            return statement;
-        }
-    }
-
-    query.prepare(R"(
-        SELECT *
-        FROM speaking_eval_data
-        WHERE evaluation_id=?
-    )");
-
-    query.addBindValue(evaluationId);
-
-    statement = execute(QObject::tr("Loading speaking evaluation rows"));
-    if (!statement)
-    {
-        return statement;
-    }
-
-    QHash<int, QStringList> existingRows;
-
-    while (query.next())
-    {
-        QStringList values;
-
-        for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
-        {
-            values.append(
-                query.value(
-                    QStringLiteral("col_%1")
-                        .arg(column)
-                    ).toString()
-                );
-        }
-
-        existingRows.insert(
-            query.value("row_index").toInt(),
-            values
-            );
-    }
-
-    QList<SpeakingEvalCellChange> cellsToUpdate =
-        dirtyCells;
-
-    if (cellsToUpdate.isEmpty())
-    {
-        for (int row = 0; row < SpeakingEval::RowCount; ++row)
-        {
-            for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
-            {
-                cellsToUpdate.append({ row, column });
-            }
-        }
-    }
-
-    for (const SpeakingEvalCellChange& cell : cellsToUpdate)
-    {
-        if (
-            cell.row < 0
-            || cell.row >= SpeakingEval::RowCount
-            || cell.column < 0
-            || cell.column >= SpeakingEval::ColumnCount
-            )
-        {
-            continue;
-        }
-
-        const QString newValue =
-            cell.row < rows.size()
-            && cell.column < rows[cell.row].size()
-                ? rows[cell.row][cell.column]
-                : QString();
-
-        const QStringList existingRow =
-            existingRows.value(cell.row);
-
-        const QString oldValue =
-            cell.column < existingRow.size()
-                ? existingRow[cell.column]
-                : QString();
-
-        if ((oldValue.isNull() ? QString() : oldValue) == newValue)
-        {
-            continue;
-        }
-
-        query.prepare(
-            QString(R"(
-                UPDATE speaking_eval_data
-                SET col_%1=?
-                WHERE evaluation_id=? AND row_index=?
-            )").arg(cell.column)
-            );
-
-        query.addBindValue(newValue);
-        query.addBindValue(evaluationId);
-        query.addBindValue(cell.row);
-
-        statement = execute(QObject::tr("Updating speaking evaluation cell"));
-        if (!statement)
-        {
-            return statement;
-        }
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing speaking evaluation failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
-            );
+        return std::unexpected(engineFailure(
+            operation,
+            saved.error(),
+            identity
+            ));
     }
 
     return {};
@@ -248,223 +295,75 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
     const QString& evaluationName
     )
 {
-    SpeakingEvalRows rows;
-
+    const QString operation = QObject::tr("Loading speaking evaluation");
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return std::unexpected(
-            QObject::tr(
-                "Loading speaking evaluation failed: invalid class id or "
-                "evaluation name."
-                )
-            );
+        return std::unexpected(invalidArguments(operation));
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT id
-        FROM speaking_evaluations
-        WHERE class_id=? AND evaluation_name=?
-    )");
-
-    query.addBindValue(classId);
-    query.addBindValue(evaluationName);
-
-    const QString identity = QObject::tr(
-        "class id %1, evaluation '%2'")
+    const QString identity = QObject::tr("class id %1, evaluation '%2'")
         .arg(classId)
-        .arg(evaluationName);
-    const auto loadedEvaluation = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading speaking evaluation"),
-        identity
-        );
-    if (!loadedEvaluation)
+        .arg(evaluationName.trimmed());
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(loadedEvaluation.error().userMessage());
+        return std::unexpected(engineReady.error());
     }
 
-    if (!query.next())
+    EngineSpeakingEvaluationPersistenceService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineSpeakingEvaluationRows> loaded =
+        service.load(classId, toUtf8(evaluationName));
+    if (!loaded)
     {
-        return rows;
+        return std::unexpected(engineFailure(
+            operation,
+            loaded.error(),
+            identity
+            ));
     }
 
-    const int evaluationId =
-        query.value("id").toInt();
-
-    query.prepare(R"(
-        SELECT *
-        FROM speaking_eval_data
-        WHERE evaluation_id=?
-        ORDER BY row_index
-    )");
-
-    query.addBindValue(evaluationId);
-
-    const auto loadedRows = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading speaking evaluation rows"),
-        identity
-        );
-    if (!loadedRows)
-    {
-        return std::unexpected(loadedRows.error().userMessage());
-    }
-
-    while (query.next())
-    {
-        QStringList row;
-
-        for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
-        {
-            row.append(
-                query.value(
-                    QStringLiteral("col_%1")
-                        .arg(column)
-                    ).toString()
-                );
-        }
-
-        rows.append(row);
-    }
-
-    return rows;
+    return fromEngineRows(*loaded);
 }
 
-Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
+Result<QList<SpeakingEvalScore>>
+SpeakingEvalRepository::buildRosterScoreImport(
     int classId,
     const QString& evaluationName
     )
 {
-    QList<SpeakingEvalScore> scores;
-
-    const Result<SpeakingEvalRows> rows =
-        loadSpeakingEval(
-            classId,
-            evaluationName
-            );
-
-    if (!rows)
+    const QString operation = QObject::tr("Loading speaking evaluation");
+    if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return std::unexpected(rows.error());
+        return std::unexpected(invalidArguments(operation));
     }
 
-    if (rows->isEmpty())
+    const QString identity = QObject::tr("class id %1, evaluation '%2'")
+        .arg(classId)
+        .arg(evaluationName.trimmed());
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return scores;
+        return std::unexpected(engineReady.error());
     }
 
-    const QHash<QString, int> gradeToNumber{
-        { QStringLiteral("C"), 1 },
-        { QStringLiteral("B"), 2 },
-        { QStringLiteral("B+"), 3 },
-        { QStringLiteral("A"), 4 },
-        { QStringLiteral("A+"), 5 }
-    };
-
-    const QHash<int, QString> numberToGrade{
-        { 1, QStringLiteral("C") },
-        { 2, QStringLiteral("B") },
-        { 3, QStringLiteral("B+") },
-        { 4, QStringLiteral("A") },
-        { 5, QStringLiteral("A+") }
-    };
-
-    const QList<int> scoreColumns{
-        SpeakingEval::toInt(SpeakingEvalColumn::Grammar),
-        SpeakingEval::toInt(SpeakingEvalColumn::Pronunciation),
-        SpeakingEval::toInt(SpeakingEvalColumn::Fluency),
-        SpeakingEval::toInt(SpeakingEvalColumn::Manner),
-        SpeakingEval::toInt(SpeakingEvalColumn::Content),
-        SpeakingEval::toInt(SpeakingEvalColumn::OverallEffort)
-    };
-
-    for (const QStringList& row : *rows)
+    EngineSpeakingEvaluationPersistenceService service(*m_engineDatabase);
+    const classmngr::engine::Result<
+        std::vector<EngineSpeakingEvaluationScore>> loaded =
+        service.buildRosterScoreImport(classId, toUtf8(evaluationName));
+    if (!loaded)
     {
-        if (row.size() < SpeakingEval::ColumnCount)
-        {
-            continue;
-        }
-
-        const QString englishName =
-            row[SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)]
-                .trimmed();
-
-        const QString koreanName =
-            row[SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)]
-                .trimmed();
-
-        if (englishName.isEmpty() || koreanName.isEmpty())
-        {
-            continue;
-        }
-
-        QList<int> numericScores;
-        bool valid = true;
-
-        for (int column : scoreColumns)
-        {
-            const QString value =
-                row[column].trimmed();
-
-            if (!gradeToNumber.contains(value))
-            {
-                valid = false;
-                break;
-            }
-
-            numericScores.append(
-                gradeToNumber.value(value)
-                );
-        }
-
-        QString finalGrade =
-            QStringLiteral("N/A");
-
-        if (valid && numericScores.size() == scoreColumns.size())
-        {
-            int sum = 0;
-
-            for (int score : numericScores)
-            {
-                sum += score;
-            }
-
-            const double average =
-                static_cast<double>(sum)
-                / numericScores.size();
-
-            int rounded =
-                static_cast<int>(average);
-
-            if (average - rounded >= 0.4)
-            {
-                ++rounded;
-            }
-
-            rounded =
-                qBound(
-                    1,
-                    rounded,
-                    5
-                    );
-
-            finalGrade =
-                numberToGrade.value(
-                    rounded,
-                    QStringLiteral("N/A")
-                    );
-        }
-
-        scores.append(
-            {
-                englishName,
-                koreanName,
-                finalGrade
-            }
-            );
+        return std::unexpected(engineFailure(
+            operation,
+            loaded.error(),
+            identity
+            ));
     }
 
-    return scores;
+    QList<SpeakingEvalScore> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineSpeakingEvaluationScore& score : *loaded)
+    {
+        result.append(fromEngineScore(score));
+    }
+    return result;
 }

@@ -2,7 +2,6 @@
 
 #include "core/result.h"
 
-#include <QSqlDatabase>
 #include <QString>
 
 #include <memory>
@@ -24,6 +23,10 @@ class TeacherRepository;
 class TestingBlockRepository;
 class TestingClassRepository;
 
+// Session around the portable engine database pipeline. File-backed opens are
+// normalized, migrated, and validated by the engine before retained Qt-facing
+// repositories are made available. Qt SQL compatibility fixtures must open
+// their own explicit connection; the session does not own a Qt connection.
 class DatabaseSession final
 {
 public:
@@ -37,8 +40,8 @@ public:
     void close();
 
     [[nodiscard]] bool isOpen() const;
+    [[nodiscard]] bool isEngineBacked() const;
     [[nodiscard]] QString databasePath() const;
-    [[nodiscard]] QSqlDatabase database() const;
 
     SettingsRepository* settingsRepository() const;
     CampusRecordRepository* campusRecordRepository() const;
@@ -59,8 +62,6 @@ public:
 
 private:
     QString m_databasePath;
-    QString m_connectionName;
-    QSqlDatabase m_database;
 
     std::unique_ptr<SettingsRepository> m_settingsRepository;
     std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;

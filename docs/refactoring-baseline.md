@@ -51,11 +51,11 @@ while it is in progress. Each test is limited to 120 seconds by default so a
 stuck UI test cannot consume the entire measurement job; use the same
 `--test-timeout` value for comparisons.
 
-The manually dispatched `Refactoring baseline` workflow runs the same command
-on Windows, Linux, and macOS and uploads the JSON report, JUnit report, and CTest
-logs for each platform. It is deliberately not a pull-request gate: the clean
-matrix is relatively expensive, and recorded failures are baseline evidence
-rather than an invitation to hide an existing failure.
+The historical baseline matrix was formerly run by a manually dispatched
+`Refactoring baseline` workflow. That workflow has been retired because the
+measurements are comparison evidence rather than a pull-request gate. Use the
+local commands above when a new baseline comparison is needed; retain the
+resulting report and platform-specific logs with the evidence for that change.
 
 ## Characterization coverage
 

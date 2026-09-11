@@ -6,12 +6,22 @@
 #include <QList>
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class CampusRecordRepository
 {
 public:
+    explicit CampusRecordRepository(const QString& databasePath);
+    // Compatibility-only constructor for retained Qt SQL tests/adapters.
     explicit CampusRecordRepository(
         QSqlDatabase& database
         );
+    ~CampusRecordRepository();
 
     [[nodiscard]] Result<int> saveCampus(
         const CampusRecord& campus
@@ -28,5 +38,13 @@ public:
         );
 
 private:
-    QSqlDatabase& m_database;
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation,
+        const QString& campusContext = {}
+        );
+
+    QString m_databasePath;
+    bool m_compatibilityDatabaseWasOpen = true;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

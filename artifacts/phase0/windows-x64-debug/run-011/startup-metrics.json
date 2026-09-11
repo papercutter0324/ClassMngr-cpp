@@ -1,0 +1,611 @@
+{
+    "checkpoints": [
+        {
+            "detail": "",
+            "elapsedMs": 40,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.202",
+                "handleCount": 177,
+                "pagefileUsageBytes": 5107712,
+                "peakWorkingSetBytes": 24236032,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 5107712,
+                "privateWorkingSetBytes": 2842624,
+                "threadCount": 4,
+                "workingSetBytes": 24236032
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 0
+            },
+            "name": "process-start",
+            "sequence": 1
+        },
+        {
+            "detail": "",
+            "elapsedMs": 101,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.264",
+                "handleCount": 250,
+                "pagefileUsageBytes": 6189056,
+                "peakWorkingSetBytes": 36900864,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 6189056,
+                "privateWorkingSetBytes": 3682304,
+                "threadCount": 6,
+                "workingSetBytes": 36900864
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 0
+            },
+            "name": "qapplication-created",
+            "sequence": 2
+        },
+        {
+            "detail": "",
+            "elapsedMs": 142,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.304",
+                "handleCount": 250,
+                "pagefileUsageBytes": 6275072,
+                "peakWorkingSetBytes": 38133760,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 6275072,
+                "privateWorkingSetBytes": 3686400,
+                "threadCount": 6,
+                "workingSetBytes": 37236736
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 0
+            },
+            "name": "preferences-resolved",
+            "sequence": 3
+        },
+        {
+            "detail": "",
+            "elapsedMs": 185,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.347",
+                "handleCount": 252,
+                "pagefileUsageBytes": 6426624,
+                "peakWorkingSetBytes": 38469632,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 6426624,
+                "privateWorkingSetBytes": 3883008,
+                "threadCount": 6,
+                "workingSetBytes": 38367232
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 0
+            },
+            "name": "locale-applied",
+            "sequence": 4
+        },
+        {
+            "detail": "",
+            "elapsedMs": 322,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.485",
+                "handleCount": 253,
+                "pagefileUsageBytes": 570068992,
+                "peakWorkingSetBytes": 628822016,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 570068992,
+                "privateWorkingSetBytes": 566255616,
+                "threadCount": 6,
+                "workingSetBytes": 622145536
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 0
+            },
+            "name": "font-applied",
+            "sequence": 5
+        },
+        {
+            "detail": "",
+            "elapsedMs": 363,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.525",
+                "handleCount": 253,
+                "pagefileUsageBytes": 570068992,
+                "peakWorkingSetBytes": 628822016,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 570068992,
+                "privateWorkingSetBytes": 566292480,
+                "threadCount": 6,
+                "workingSetBytes": 622297088
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 0
+            },
+            "name": "theme-applied",
+            "sequence": 6
+        },
+        {
+            "detail": "",
+            "elapsedMs": 404,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.566",
+                "handleCount": 253,
+                "pagefileUsageBytes": 570003456,
+                "peakWorkingSetBytes": 628822016,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 570003456,
+                "privateWorkingSetBytes": 566235136,
+                "threadCount": 6,
+                "workingSetBytes": 622321664
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 0
+            },
+            "name": "resource-system-initialized",
+            "sequence": 7
+        },
+        {
+            "detail": "",
+            "elapsedMs": 785,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:44.947",
+                "handleCount": 1028,
+                "pagefileUsageBytes": 599683072,
+                "peakWorkingSetBytes": 697917440,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 599683072,
+                "privateWorkingSetBytes": 593547264,
+                "threadCount": 13,
+                "workingSetBytes": 697917440
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 5
+            },
+            "name": "splash-shown",
+            "sequence": 8
+        },
+        {
+            "detail": "",
+            "elapsedMs": 890,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.037",
+                "handleCount": 1032,
+                "pagefileUsageBytes": 600989696,
+                "peakWorkingSetBytes": 704167936,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 600989696,
+                "privateWorkingSetBytes": 595406848,
+                "threadCount": 14,
+                "workingSetBytes": 704167936
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 32
+            },
+            "name": "main-window-shell-created",
+            "sequence": 9
+        },
+        {
+            "detail": "",
+            "elapsedMs": 956,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.103",
+                "handleCount": 1034,
+                "pagefileUsageBytes": 601403392,
+                "peakWorkingSetBytes": 705400832,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 601403392,
+                "privateWorkingSetBytes": 595845120,
+                "threadCount": 14,
+                "workingSetBytes": 705183744
+            },
+            "metrics": {
+                "instantiatedPageCount": 0,
+                "liveScheduleWidgetCount": 0,
+                "registeredPageCount": 0,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 0,
+                "widgetCount": 32
+            },
+            "name": "services-created",
+            "sequence": 10
+        },
+        {
+            "detail": "",
+            "elapsedMs": 1148,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.294",
+                "handleCount": 1034,
+                "pagefileUsageBytes": 614244352,
+                "peakWorkingSetBytes": 716001280,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 614244352,
+                "privateWorkingSetBytes": 603611136,
+                "threadCount": 14,
+                "workingSetBytes": 716001280
+            },
+            "metrics": {
+                "instantiatedPageCount": 1,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 177
+            },
+            "name": "page-manager-initialized",
+            "sequence": 11
+        },
+        {
+            "detail": "",
+            "elapsedMs": 1289,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.449",
+                "handleCount": 1041,
+                "pagefileUsageBytes": 622018560,
+                "peakWorkingSetBytes": 727261184,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 622018560,
+                "privateWorkingSetBytes": 611262464,
+                "threadCount": 14,
+                "workingSetBytes": 727261184
+            },
+            "metrics": {
+                "instantiatedPageCount": 1,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 177
+            },
+            "name": "controllers-connected",
+            "sequence": 12
+        },
+        {
+            "detail": "unavailable",
+            "elapsedMs": 1527,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.689",
+                "handleCount": 1041,
+                "pagefileUsageBytes": 628383744,
+                "peakWorkingSetBytes": 735408128,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 628383744,
+                "privateWorkingSetBytes": 617463808,
+                "threadCount": 14,
+                "workingSetBytes": 735408128
+            },
+            "metrics": {
+                "instantiatedPageCount": 2,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 433
+            },
+            "name": "database-opened",
+            "sequence": 13
+        },
+        {
+            "detail": "",
+            "elapsedMs": 1569,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.730",
+                "handleCount": 1041,
+                "pagefileUsageBytes": 628383744,
+                "peakWorkingSetBytes": 736641024,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 628383744,
+                "privateWorkingSetBytes": 617463808,
+                "threadCount": 14,
+                "workingSetBytes": 735408128
+            },
+            "metrics": {
+                "instantiatedPageCount": 2,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 433
+            },
+            "name": "navigation-data-loaded",
+            "sequence": 14
+        },
+        {
+            "detail": "campus-dashboard",
+            "elapsedMs": 1609,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.771",
+                "handleCount": 1041,
+                "pagefileUsageBytes": 628383744,
+                "peakWorkingSetBytes": 736641024,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 628383744,
+                "privateWorkingSetBytes": 617463808,
+                "threadCount": 14,
+                "workingSetBytes": 735408128
+            },
+            "metrics": {
+                "instantiatedPageCount": 2,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 433
+            },
+            "name": "startup-page-created",
+            "sequence": 15
+        },
+        {
+            "detail": "campus-dashboard",
+            "elapsedMs": 1651,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:45.811",
+                "handleCount": 1041,
+                "pagefileUsageBytes": 628383744,
+                "peakWorkingSetBytes": 736641024,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 628383744,
+                "privateWorkingSetBytes": 617463808,
+                "threadCount": 14,
+                "workingSetBytes": 735408128
+            },
+            "metrics": {
+                "instantiatedPageCount": 2,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 433
+            },
+            "name": "startup-page-loaded",
+            "sequence": 16
+        },
+        {
+            "detail": "",
+            "elapsedMs": 3382,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:47.539",
+                "handleCount": 1045,
+                "pagefileUsageBytes": 628740096,
+                "peakWorkingSetBytes": 736641024,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 628740096,
+                "privateWorkingSetBytes": 617926656,
+                "threadCount": 14,
+                "workingSetBytes": 736231424
+            },
+            "metrics": {
+                "instantiatedPageCount": 2,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 434
+            },
+            "name": "window-shown",
+            "sequence": 17
+        },
+        {
+            "detail": "",
+            "elapsedMs": 3431,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-08-28T02:58:47.588",
+                "handleCount": 1043,
+                "pagefileUsageBytes": 627310592,
+                "peakWorkingSetBytes": 737464320,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 627310592,
+                "privateWorkingSetBytes": 616628224,
+                "threadCount": 14,
+                "workingSetBytes": 734892032
+            },
+            "metrics": {
+                "instantiatedPageCount": 2,
+                "liveScheduleWidgetCount": 1,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 0,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 0,
+                "scheduleTableItemsCreated": 0,
+                "scheduleWidgetsCreated": 1,
+                "widgetCount": 429
+            },
+            "name": "startup-complete",
+            "sequence": 18
+        }
+    ],
+    "events": [
+        {
+            "detail": "owner=SchedulePage; mode=interactive",
+            "elapsedMs": 1016,
+            "name": "schedule-widget-created"
+        },
+        {
+            "detail": "my-workspace",
+            "elapsedMs": 1084,
+            "name": "page-created"
+        },
+        {
+            "detail": "campus-dashboard",
+            "elapsedMs": 1421,
+            "name": "page-created"
+        },
+        {
+            "detail": "expected=1; live=1; created=1; passed=true",
+            "elapsedMs": 3431,
+            "name": "schedule-widget-startup-diagnostic"
+        }
+    ],
+    "finalProgress": 100,
+    "format": "classmngr-startup-profile-v2",
+    "peakMemory": {
+        "available": true,
+        "capturedAt": "",
+        "checkpointSampleCount": 18,
+        "handleCount": 1045,
+        "pagefileUsageBytes": 628740096,
+        "peakWorkingSetBytes": 737464320,
+        "platform": "windows",
+        "privateDirtyBytes": 0,
+        "privateUsageBytes": 628740096,
+        "privateWorkingSetBytes": 617926656,
+        "threadCount": 14,
+        "workingSetBytes": 736231424
+    },
+    "progressUpdates": 14,
+    "scenario": {
+        "actions": [
+            "launch without a startup database",
+            "construct the main window",
+            "capture startup-complete and requested settled checkpoints",
+            "suppress interactive startup prompts during profiling"
+        ],
+        "name": "minimal-startup",
+        "settleMilliseconds": 0
+    }
+}

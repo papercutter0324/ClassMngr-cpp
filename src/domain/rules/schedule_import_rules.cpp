@@ -1,35 +1,178 @@
 #include "schedule_import_rules.h"
 
+#include "classmngr/engine/schedule_import_rules.h"
+
+#include <QByteArray>
 #include <QObject>
 
-#include <algorithm>
+#include <cstddef>
+#include <string>
 #include <utility>
+#include <vector>
+
+namespace
+{
+using EngineClassInfo = classmngr::engine::ClassInfo;
+using EngineClassTime = classmngr::engine::ClassTime;
+using EngineCandidate = classmngr::engine::ScheduleImportClassCandidate;
+using EngineKind = classmngr::engine::ScheduleImportKind;
+using EngineRules = classmngr::engine::ScheduleImportRules;
+using EngineExpectation =
+    classmngr::engine::ScheduleImportMeetingPatternExpectation;
+using EnginePatternStatus =
+    classmngr::engine::ScheduleImportMeetingPatternStatus;
+
+std::string toUtf8(
+    const QString& value
+    )
+{
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
+}
+
+QString fromUtf8(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+EngineKind toEngineKind(
+    ScheduleImportKind kind
+    )
+{
+    return kind == ScheduleImportKind::Intensive
+        ? EngineKind::Intensive
+        : EngineKind::Normal;
+}
+
+EngineClassTime toEngineClassTime(
+    const ClassTime& source
+    )
+{
+    EngineClassTime result;
+    result.day = toUtf8(source.day);
+    result.startTime = toUtf8(source.startTime);
+    result.endTime = toUtf8(source.endTime);
+    return result;
+}
+
+std::vector<EngineClassTime> toEngineClassTimes(
+    const QList<ClassTime>& source
+    )
+{
+    std::vector<EngineClassTime> result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const ClassTime& value : source)
+    {
+        result.push_back(toEngineClassTime(value));
+    }
+    return result;
+}
+
+QList<ClassTime> fromEngineClassTimes(
+    const std::vector<EngineClassTime>& source
+    )
+{
+    QList<ClassTime> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const EngineClassTime& value : source)
+    {
+        ClassTime converted;
+        converted.day = fromUtf8(value.day);
+        converted.startTime = fromUtf8(value.startTime);
+        converted.endTime = fromUtf8(value.endTime);
+        result.append(std::move(converted));
+    }
+    return result;
+}
+
+EngineClassInfo toEngineClassInfo(
+    const ClassInfo& source
+    )
+{
+    EngineClassInfo result;
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
+    result.classTimes = toEngineClassTimes(source.classTimes);
+    result.intensiveTimes = toEngineClassTimes(source.intensiveTimes);
+    return result;
+}
+
+EngineCandidate toEngineCandidate(
+    const ScheduleImportClassCandidate& source
+    )
+{
+    EngineCandidate result;
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
+    result.times = toEngineClassTimes(source.times);
+    return result;
+}
+
+QStringList fromEngineStrings(
+    const std::vector<std::string>& source
+    )
+{
+    QStringList result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const std::string& value : source)
+    {
+        result.append(fromUtf8(value));
+    }
+    return result;
+}
+
+QList<QStringList> fromEnginePatterns(
+    const std::vector<std::vector<std::string>>& source
+    )
+{
+    QList<QStringList> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const std::vector<std::string>& pattern : source)
+    {
+        result.append(fromEngineStrings(pattern));
+    }
+    return result;
+}
+
+QString localizedMeetingPatternExpectation(
+    EngineExpectation expectation
+    )
+{
+    switch (expectation)
+    {
+    case EngineExpectation::WeekdayPairs:
+        return QObject::tr(
+            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
+            );
+    case EngineExpectation::WeekdayTripleOrTuesdayThursday:
+        return QObject::tr(
+            "Expected Monday/Wednesday/Friday or Tuesday/Thursday."
+            );
+    case EngineExpectation::OneWeekday:
+        return QObject::tr("Expected one weekday meeting.");
+    case EngineExpectation::Unsupported:
+        return QObject::tr(
+            "The imported grade and level do not have a supported meeting-pattern rule."
+            );
+    }
+
+    return {};
+}
+} // namespace
 
 int scheduleImportDayGroup(
     const QList<ClassTime>& times
     )
 {
-    int group = 0;
-    for (const ClassTime& time : times)
-    {
-        const QString day =
-            time.day.trimmed().toCaseFolded();
-        const int dayGroup =
-            day == QStringLiteral("monday")
-                || day == QStringLiteral("wednesday")
-                || day == QStringLiteral("friday")
-                ? 1
-                : day == QStringLiteral("tuesday")
-                    || day == QStringLiteral("thursday")
-                    ? 2
-                    : 0;
-        if (dayGroup == 0 || (group != 0 && group != dayGroup))
-        {
-            return 0;
-        }
-        group = dayGroup;
-    }
-    return group;
+    return EngineRules::dayGroup(toEngineClassTimes(times));
 }
 
 bool scheduleImportDaysAreCompatible(
@@ -37,28 +180,19 @@ bool scheduleImportDaysAreCompatible(
     const QList<ClassTime>& existingTimes
     )
 {
-    const int importedGroup =
-        scheduleImportDayGroup(importedTimes);
-    return importedGroup != 0
-        && importedGroup == scheduleImportDayGroup(existingTimes);
+    return EngineRules::daysAreCompatible(
+        toEngineClassTimes(importedTimes),
+        toEngineClassTimes(existingTimes)
+        );
 }
 
 QStringList scheduleImportMeetingDays(
     const QList<ClassTime>& times
     )
 {
-    QStringList days;
-    for (const ClassTime& time : times)
-    {
-        const QString day =
-            time.day.trimmed().toCaseFolded();
-        if (!days.contains(day))
-        {
-            days.append(day);
-        }
-    }
-    days.sort(Qt::CaseInsensitive);
-    return days;
+    return fromEngineStrings(
+        EngineRules::meetingDays(toEngineClassTimes(times))
+        );
 }
 
 bool scheduleImportMeetingDaysMatch(
@@ -66,12 +200,10 @@ bool scheduleImportMeetingDaysMatch(
     const QList<ClassTime>& existingTimes
     )
 {
-    return scheduleImportDaysAreCompatible(
-        importedTimes,
-        existingTimes
-        )
-        && scheduleImportMeetingDays(importedTimes)
-            == scheduleImportMeetingDays(existingTimes);
+    return EngineRules::meetingDaysMatch(
+        toEngineClassTimes(importedTimes),
+        toEngineClassTimes(existingTimes)
+        );
 }
 
 QList<ClassTime> scheduleImportTimesForKind(
@@ -79,17 +211,10 @@ QList<ClassTime> scheduleImportTimesForKind(
     ScheduleImportKind kind
     )
 {
-    const QList<ClassTime>& preferred =
-        kind == ScheduleImportKind::Intensive
-            ? info.intensiveTimes
-            : info.classTimes;
-    if (!preferred.isEmpty())
-    {
-        return preferred;
-    }
-    return kind == ScheduleImportKind::Intensive
-        ? info.classTimes
-        : info.intensiveTimes;
+    const EngineClassInfo converted = toEngineClassInfo(info);
+    return fromEngineClassTimes(
+        EngineRules::timesForKind(converted, toEngineKind(kind))
+        );
 }
 
 QList<ClassTime> scheduleImportTargetTimesForKind(
@@ -97,9 +222,10 @@ QList<ClassTime> scheduleImportTargetTimesForKind(
     ScheduleImportKind kind
     )
 {
-    return kind == ScheduleImportKind::Intensive
-        ? info.intensiveTimes
-        : info.classTimes;
+    const EngineClassInfo converted = toEngineClassInfo(info);
+    return fromEngineClassTimes(
+        EngineRules::targetTimesForKind(converted, toEngineKind(kind))
+        );
 }
 
 bool scheduleImportClassOptionIsEligible(
@@ -108,21 +234,11 @@ bool scheduleImportClassOptionIsEligible(
     ScheduleImportKind kind
     )
 {
-    return candidate.classGrade.simplified().compare(
-        existing.classGrade.simplified(),
-        Qt::CaseInsensitive
-        ) == 0
-        && candidate.classLevel.simplified().compare(
-            existing.classLevel.simplified(),
-            Qt::CaseInsensitive
-            ) == 0
-        && (
-            scheduleImportTimesForKind(existing, kind).isEmpty()
-            || scheduleImportDaysAreCompatible(
-                candidate.times,
-                scheduleImportTimesForKind(existing, kind)
-                )
-            );
+    return EngineRules::classOptionIsEligible(
+        toEngineCandidate(candidate),
+        toEngineClassInfo(existing),
+        toEngineKind(kind)
+        );
 }
 
 QList<QStringList> scheduleImportAllowedDayPatterns(
@@ -130,111 +246,12 @@ QList<QStringList> scheduleImportAllowedDayPatterns(
     const QString& classLevel
     )
 {
-    const QString grade =
-        classGrade.trimmed().toUpper();
-    const QString level =
-        classLevel.trimmed();
-    const bool songs =
-        level.compare(
-            QStringLiteral("Song's"),
-            Qt::CaseInsensitive
-            ) == 0;
-
-    const QStringList mondayWednesday{
-        QStringLiteral("Monday"),
-        QStringLiteral("Wednesday")
-    };
-    const QStringList mondayFriday{
-        QStringLiteral("Monday"),
-        QStringLiteral("Friday")
-    };
-    const QStringList wednesdayFriday{
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Friday")
-    };
-    const QStringList tuesdayThursday{
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Thursday")
-    };
-    const QStringList mondayWednesdayFriday{
-        QStringLiteral("Monday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Friday")
-    };
-
-    if (
-        grade == QStringLiteral("E4")
-        || (
-            grade == QStringLiteral("E5")
-            && level.compare(
-                QStringLiteral("Athena"),
-                Qt::CaseInsensitive
-                ) != 0
+    return fromEnginePatterns(
+        EngineRules::allowedDayPatterns(
+            toUtf8(classGrade),
+            toUtf8(classLevel)
             )
-        )
-    {
-        return {
-            mondayWednesday,
-            mondayFriday,
-            wednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        grade == QStringLiteral("E5")
-        && level.compare(
-            QStringLiteral("Athena"),
-            Qt::CaseInsensitive
-            ) == 0
-        )
-    {
-        return {
-            mondayWednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        grade == QStringLiteral("E6")
-        && songs
-        )
-    {
-        return {
-            mondayWednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        (
-            grade == QStringLiteral("M1")
-            || grade == QStringLiteral("M2")
-            || grade == QStringLiteral("M3")
-            )
-        && songs
-        )
-    {
-        return {
-            mondayWednesday,
-            mondayFriday,
-            wednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        grade == QStringLiteral("E6")
-        || grade == QStringLiteral("M1")
-        || grade == QStringLiteral("M2")
-        )
-    {
-        return {
-            {QStringLiteral("Monday")},
-            {QStringLiteral("Tuesday")},
-            {QStringLiteral("Wednesday")},
-            {QStringLiteral("Thursday")},
-            {QStringLiteral("Friday")}
-        };
-    }
-
-    return {};
+        );
 }
 
 QString scheduleImportMeetingPatternExpectation(
@@ -242,72 +259,11 @@ QString scheduleImportMeetingPatternExpectation(
     const QString& classLevel
     )
 {
-    const QString grade =
-        classGrade.trimmed().toUpper();
-    const QString level =
-        classLevel.trimmed();
-    const bool songs =
-        level.compare(
-            QStringLiteral("Song's"),
-            Qt::CaseInsensitive
-            ) == 0;
-
-    if (
-        grade == QStringLiteral("E4")
-        || (
-            grade == QStringLiteral("E5")
-            && level.compare(
-                QStringLiteral("Athena"),
-                Qt::CaseInsensitive
-                ) != 0
+    return localizedMeetingPatternExpectation(
+        EngineRules::meetingPatternExpectation(
+            toUtf8(classGrade),
+            toUtf8(classLevel)
             )
-        )
-    {
-        return QObject::tr(
-            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
-            );
-    }
-    if (
-        (
-            grade == QStringLiteral("E5")
-            && level.compare(
-                QStringLiteral("Athena"),
-                Qt::CaseInsensitive
-                ) == 0
-            )
-        || (
-            grade == QStringLiteral("E6")
-            && songs
-            )
-        )
-    {
-        return QObject::tr(
-            "Expected Monday/Wednesday/Friday or Tuesday/Thursday."
-            );
-    }
-    if (
-        (
-            grade == QStringLiteral("M1")
-            || grade == QStringLiteral("M2")
-            || grade == QStringLiteral("M3")
-            )
-        && songs
-        )
-    {
-        return QObject::tr(
-            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
-            );
-    }
-    if (
-        grade == QStringLiteral("E6")
-        || grade == QStringLiteral("M1")
-        || grade == QStringLiteral("M2")
-        )
-    {
-        return QObject::tr("Expected one weekday meeting.");
-    }
-    return QObject::tr(
-        "The imported grade and level do not have a supported meeting-pattern rule."
         );
 }
 
@@ -350,82 +306,31 @@ QString scheduleImportMeetingPatternError(
     const ScheduleImportClassCandidate& candidate
     )
 {
-    static const QStringList weekdayOrder{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday")
-    };
-    const auto patternKey =
-        [](QStringList days)
-        {
-            std::sort(
-                days.begin(),
-                days.end(),
-                [](
-                    const QString& left,
-                    const QString& right
-                    )
-                {
-                    return weekdayOrder.indexOf(left)
-                        < weekdayOrder.indexOf(right);
-                }
-                );
-            return days.join(QLatin1Char('|'));
-        };
-
-    QStringList days;
-    for (const ClassTime& time : candidate.times)
+    const classmngr::engine::ScheduleImportMeetingPatternResult validation =
+        EngineRules::validateMeetingPattern(toEngineCandidate(candidate));
+    if (validation.status == EnginePatternStatus::Valid)
     {
-        if (
-            !weekdayOrder.contains(time.day)
-            || days.contains(time.day)
-            )
-        {
-            return QObject::tr(
-                "Each imported class must have exactly one meeting per scheduled weekday."
-                );
-        }
-        days.append(time.day);
+        return {};
     }
-
-    const QList<QStringList> allowedPatterns =
-        scheduleImportAllowedDayPatterns(
-            candidate.classGrade,
-            candidate.classLevel
+    if (validation.status == EnginePatternStatus::InvalidWeekdayOrDuplicate)
+    {
+        return QObject::tr(
+            "Each imported class must have exactly one meeting per scheduled weekday."
             );
-    if (allowedPatterns.isEmpty())
-    {
-        return {};
-    }
-
-    QStringList allowedKeys;
-    for (const QStringList& pattern : allowedPatterns)
-    {
-        allowedKeys.append(patternKey(pattern));
-    }
-
-    if (allowedKeys.contains(patternKey(days)))
-    {
-        return {};
     }
 
     QStringList displayDays;
-    displayDays.reserve(days.size());
-    for (const QString& day : std::as_const(days))
+    displayDays.reserve(
+        static_cast<qsizetype>(validation.meetingDays.size())
+        );
+    for (const std::string& day : validation.meetingDays)
     {
-        displayDays.append(
-            scheduleImportWeekdayDisplayName(day)
-            );
+        displayDays.append(scheduleImportWeekdayDisplayName(fromUtf8(day)));
     }
 
     return QObject::tr("%1 Detected: %2.")
         .arg(
-            scheduleImportMeetingPatternExpectation(
-                candidate.classGrade,
-                candidate.classLevel
-                ),
+            localizedMeetingPatternExpectation(validation.expectation),
             displayDays.isEmpty()
                 ? QObject::tr("no meetings")
                 : displayDays.join(QStringLiteral(", "))

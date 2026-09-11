@@ -7,7 +7,7 @@
 #include <QString>
 #include <memory>
 
-class DataService;
+class DatabaseSession;
 class ThemeService;
 class SettingsService;
 class TeacherService;
@@ -48,7 +48,6 @@ public:
         const QString& destinationPath
         );
 
-    [[nodiscard]] DataService* dataService() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;
     [[nodiscard]] ClassService* classService() const;
@@ -60,7 +59,7 @@ public:
     [[nodiscard]] const DocumentCatalog* documentCatalog() const;
 
 private:
-    std::unique_ptr<DataService> m_dataService;
+    std::unique_ptr<DatabaseSession> m_session;
     mutable std::unique_ptr<SettingsService> m_settingsService;
     mutable std::unique_ptr<TeacherService> m_teacherService;
     mutable std::unique_ptr<ClassService> m_classService;

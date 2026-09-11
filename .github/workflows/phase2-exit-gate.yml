@@ -1,0 +1,320 @@
+name: Phase 2 portable-engine exit gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - NativeWindowsPort
+    paths:
+      - ".github/workflows/phase2-exit-gate.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/catalog/**"
+      - "resources/windows/**"
+      - "scripts/phase2_exit_gate.py"
+      - "docs/porting/windows-winui/phase2-exit-gate-runbook.md"
+      - "src/engine/**"
+      - "tests/engine/**"
+      - "tests/fixtures/resource_packs/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_GENERATOR: "Visual Studio 18 2026"
+  # MSBuild reads this as a global property, including CMake's compiler probe.
+  TrackFileAccess: "false"
+
+jobs:
+  windows-engine:
+    name: Engine ${{ matrix.arch }} ${{ matrix.configuration }}
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: windows-x64-winui-debug
+            preset: windows-x64-winui-debug
+            build_dir: build/windows-x64-winui-debug
+            arch: x64
+            configuration: Debug
+          - lane: windows-x64-winui-release
+            preset: windows-x64-winui-release
+            build_dir: build/windows-x64-winui-release
+            arch: x64
+            configuration: Release
+          - lane: windows-x86-winui-debug
+            preset: windows-x86-winui-debug
+            build_dir: build/windows-x86-winui-debug
+            arch: x86
+            configuration: Debug
+          - lane: windows-x86-winui-release
+            preset: windows-x86-winui-release
+            build_dir: build/windows-x86-winui-release
+            arch: x86
+            configuration: Release
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up NuGet and MSBuild
+        uses: NuGet/setup-nuget@v2
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Remove inherited Qt environment
+        shell: pwsh
+        run: |
+          Get-ChildItem Env: | Where-Object {
+            $_.Name -eq "CMAKE_PREFIX_PATH" -or $_.Name -match "^QT_"
+          } | ForEach-Object {
+            Remove-Item -LiteralPath "Env:$($_.Name)"
+          }
+
+      - name: Verify Visual Studio 2026/v145 toolchain
+        shell: pwsh
+        run: pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/verify_windows_vs2026.ps1
+
+      # The runner snapshots the unfiltered CTest inventory after the build,
+      # then executes the complete ClassMngrEngine selection.
+      - name: Run engine exit-gate lane
+        shell: pwsh
+        run: >-
+          python scripts/phase2_exit_gate.py run
+          --lane-id ${{ matrix.lane }}
+          --lane-type engine
+          --configure-preset ${{ matrix.preset }}
+          --build-dir ${{ matrix.build_dir }}
+          --configuration ${{ matrix.configuration }}
+          --output artifacts/phase2/${{ matrix.lane }}/${{ matrix.lane }}.json
+          --logs-dir artifacts/phase2/${{ matrix.lane }}/logs
+
+      - name: Upload engine exit-gate evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase2-exit-gate-${{ matrix.lane }}
+          path: artifacts/phase2/${{ matrix.lane }}
+          if-no-files-found: error
+
+  windows-qt:
+    name: Retained Qt Windows 6.12 x64
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 120
+    env:
+      QT_VERSION: "6.12.0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up NuGet and MSBuild
+        uses: NuGet/setup-nuget@v2
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install exact Qt 6.12 x64
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
+          # py7zr 1.1.1+ can sporadically fail while extracting Qt archives on Windows.
+          python -m pip install --disable-pip-version-check "py7zr==1.1.0"
+          python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir C:\Qt --modules qtpdf
+          "QT_MSVC_X64_PREFIX=C:\Qt\$env:QT_VERSION\msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Run retained Qt exit-gate lane
+        shell: pwsh
+        run: >-
+          python scripts/phase2_exit_gate.py run
+          --lane-id windows-qt-6.12-x64
+          --lane-type retained-qt
+          --configure-preset windows-x64-debug
+          --build-dir build/windows-x64-debug
+          --configuration Debug
+          --qt-version $env:QT_VERSION
+          --qt-architecture x64
+          --qt-prefix-env QT_MSVC_X64_PREFIX
+          --output artifacts/phase2/windows-qt-6.12-x64/windows-qt-6.12-x64.json
+          --logs-dir artifacts/phase2/windows-qt-6.12-x64/logs
+
+      - name: Upload retained Qt Windows evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase2-exit-gate-windows-qt-6.12-x64
+          path: artifacts/phase2/windows-qt-6.12-x64
+          if-no-files-found: error
+
+  linux-qt:
+    name: Retained Qt Linux x64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      QT_VERSION: "6.12.0"
+      QT_QPA_PLATFORM: offscreen
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Linux build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential libcups2-dev libgl1-mesa-dev libxkbcommon-dev \
+            libwayland-dev libxkbcommon-x11-dev libxcb1-dev libxcb-cursor-dev libxcb-icccm4-dev \
+            libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev \
+            libxcb-render-util0-dev libxcb-shape0-dev libxcb-sync-dev \
+            libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-xkb-dev ninja-build zlib1g-dev
+
+      - name: Install exact Qt 6.12 Linux x64
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
+            --outputdir "${GITHUB_WORKSPACE}/Qt" --modules qtpdf
+          echo "QT_LINUX_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/gcc_64" >> "${GITHUB_ENV}"
+
+      - name: Run retained Qt Linux exit-gate lane
+        shell: bash
+        run: |
+          python scripts/phase2_exit_gate.py run \
+            --lane-id linux-qt-6.12-x64 \
+            --lane-type retained-qt \
+            --configure-preset linux-gcc-debug \
+            --build-dir build/linux-gcc-debug \
+            --qt-version "${QT_VERSION}" \
+            --qt-architecture x64 \
+            --qt-prefix-env QT_LINUX_PREFIX \
+            --output artifacts/phase2/linux-qt-6.12-x64/linux-qt-6.12-x64.json \
+            --logs-dir artifacts/phase2/linux-qt-6.12-x64/logs
+
+      - name: Upload retained Qt Linux evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase2-exit-gate-linux-qt-6.12-x64
+          path: artifacts/phase2/linux-qt-6.12-x64
+          if-no-files-found: error
+
+  macos-qt:
+    name: Retained Qt macOS universal
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    env:
+      QT_VERSION: "6.12.0"
+      QT_QPA_PLATFORM: offscreen
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install exact Qt 6.12 macOS Qt
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          python -m aqt install-qt mac desktop "${QT_VERSION}" clang_64 \
+            --outputdir "${GITHUB_WORKSPACE}/Qt" --modules qtpdf
+          echo "QT_MACOS_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/macos" >> "${GITHUB_ENV}"
+
+      - name: Run retained Qt macOS exit-gate lane
+        shell: bash
+        run: |
+          python scripts/phase2_exit_gate.py run \
+            --lane-id macos-qt-6.12-universal \
+            --lane-type retained-qt \
+            --configure-preset macos-clang-debug \
+            --build-dir build/macos-clang-debug \
+            --qt-version "${QT_VERSION}" \
+            --qt-architecture universal \
+            --qt-prefix-env QT_MACOS_PREFIX \
+            --output artifacts/phase2/macos-qt-6.12-universal/macos-qt-6.12-universal.json \
+            --logs-dir artifacts/phase2/macos-qt-6.12-universal/logs
+
+      - name: Upload retained Qt macOS evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase2-exit-gate-macos-qt-6.12-universal
+          path: artifacts/phase2/macos-qt-6.12-universal
+          if-no-files-found: error
+
+  aggregate:
+    name: Aggregate Phase 2 exit gate
+    runs-on: ubuntu-24.04
+    if: always()
+    needs: [windows-engine, windows-qt, linux-qt, macos-qt]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Download all lane evidence
+        if: always()
+        uses: actions/download-artifact@v8
+        with:
+          pattern: phase2-exit-gate-*
+          path: artifacts/phase2/reports
+          # Keep each artifact in its own directory.  Every lane report uses
+          # paths relative to that directory, and merging would overwrite all
+          # lanes' logs/configure.log, build.log, and ctest.log files.
+          merge-multiple: false
+
+      - name: Verify required lane declarations
+        if: always()
+        shell: bash
+        run: >-
+          python -c "from scripts.phase2_exit_gate import ENGINE_LANES, QT_LANES,
+          REQUIRED_COVERAGE; assert len(ENGINE_LANES) == 4 and len(QT_LANES) == 3
+          and len(REQUIRED_COVERAGE) == 5; print('Phase 2 lane declarations: PASS')"
+
+      - name: Validate the complete lane set
+        if: always()
+        shell: bash
+        run: |
+          python scripts/phase2_exit_gate.py validate \
+            --reports-dir artifacts/phase2/reports \
+            --output artifacts/phase2/aggregate-report.json
+
+      - name: Upload aggregate gate report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase2-exit-gate-aggregate
+          path: artifacts/phase2/aggregate-report.json
+          if-no-files-found: error

@@ -1,0 +1,12 @@
+{
+  "id": "legacy",
+  "campus_name": "Legacy Campus",
+  "address": "Old Address",
+  "image_main": "legacy/map.png",
+  "directions": {
+    "en": {
+      "addr_note": "Legacy directions note"
+    },
+    "kr": {}
+  }
+}

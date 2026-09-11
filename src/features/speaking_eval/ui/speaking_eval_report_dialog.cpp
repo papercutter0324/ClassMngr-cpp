@@ -1,6 +1,9 @@
 #include "speaking_eval_report_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "classmngr/engine/speaking_evaluation_report_content.h"
+#include "classmngr/engine/speaking_evaluation_report_model.h"
+
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "core/settingsmanager.h"
@@ -26,21 +29,23 @@
 #include <QVBoxLayout>
 
 #include <array>
+#include <vector>
 
 QString speakingEvalReportDate(
     const QDate& date,
     SpeakingEvalReportTemplate reportTemplate
     )
 {
-    if (reportTemplate == SpeakingEvalReportTemplate::Advanced)
-    {
-        return date.toString(QStringLiteral("MMM. yyyy"));
-    }
-
-    return date.toString(
-        date.month() >= 5 && date.month() <= 7
-            ? QStringLiteral("MMMM yyyy")
-            : QStringLiteral("MMM. yyyy")
+    const auto portableTemplate =
+        reportTemplate == SpeakingEvalReportTemplate::Advanced
+            ? classmngr::engine::SpeakingEvaluationReportTemplate::Advanced
+            : classmngr::engine::SpeakingEvaluationReportTemplate::Standard;
+    return QString::fromStdString(
+        classmngr::engine::SpeakingEvaluationReportModel::reportDate(
+            date.year(),
+            static_cast<unsigned>(date.month()),
+            portableTemplate
+            )
         );
 }
 
@@ -233,128 +238,39 @@ public:
     }
 };
 
-QString classLabel(
-    const ClassInfo& info
+classmngr::engine::ClassInfo toPortableReportClassInfo(
+    const ClassInfo& source
     )
 {
-    QStringList parts;
-
-    if (!info.classGrade.trimmed().isEmpty())
-    {
-        parts.append(info.classGrade.trimmed());
-    }
-
-    if (!info.classLevel.trimmed().isEmpty())
-    {
-        parts.append(info.classLevel.trimmed());
-    }
-
-    return parts.join(QLatin1Char(' '));
+    classmngr::engine::ClassInfo result;
+    result.classGrade = source.classGrade.toStdString();
+    result.classLevel = source.classLevel.toStdString();
+    result.teacherEn = source.teacherEn.toStdString();
+    result.teacherKr = source.teacherKr.toStdString();
+    return result;
 }
 
-SpeakingEvalReportTemplate reportTemplateForClass(
-    const ClassInfo& info
+classmngr::engine::SpeakingEvaluationReportStudentInput
+toPortableReportStudent(
+    const QStringList& values
     )
 {
-    const QString grade =
-        info.classGrade.trimmed();
-    const QString level =
-        info.classLevel.trimmed();
+    using PortableInput =
+        classmngr::engine::SpeakingEvaluationReportStudentInput;
 
-    const bool usesAdvancedTemplate = (
-               grade.compare(
-                   QStringLiteral("E5"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               && level.compare(
-                   QStringLiteral("Athena"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               )
-        || (
-               grade.compare(
-                   QStringLiteral("E6"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               && level.compare(
-                   QStringLiteral("Song's"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               );
-
-    return usesAdvancedTemplate
-        ? SpeakingEvalReportTemplate::Advanced
-        : SpeakingEvalReportTemplate::Standard;
-}
-
-QString studentDisplayName(
-    const SpeakingEvalRows& rows,
-    int row
-    )
-{
-    if (row < 0 || row >= rows.size())
-    {
-        return {};
-    }
-
-    const QString englishName =
-        rows[row].value(
-            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-            ).trimmed();
-    const QString koreanName =
-        rows[row].value(
-            SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-            ).trimmed();
-
-    if (englishName.isEmpty())
-    {
-        return koreanName;
-    }
-    if (koreanName.isEmpty())
-    {
-        return englishName;
-    }
-
-    return QObject::tr("%1 (%2)").arg(englishName, koreanName);
-}
-
-SpeakingEvalReportData reportDataForRow(
-    const SpeakingEvalRows& rows,
-    const ClassInfo& classInfo,
-    int row
-    )
-{
-    SpeakingEvalReportData data;
-    if (row < 0 || row >= rows.size())
-    {
-        return data;
-    }
-
-    const QStringList& values = rows[row];
-    data.englishName = values.value(
+    PortableInput input;
+    input.englishName = values.value(
         SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-        );
-    data.koreanName = values.value(
+        ).toStdString();
+    input.koreanName = values.value(
         SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-        );
-    data.classLabel = classLabel(classInfo);
-    data.nativeTeacher = classInfo.teacherEn;
-    data.koreanTeacher = classInfo.teacherKr;
-    data.comments = values.value(
+        ).toStdString();
+    input.comments = values.value(
         SpeakingEval::toInt(SpeakingEvalColumn::Comments)
-        );
-    data.notes = values.value(
+        ).toStdString();
+    input.notes = values.value(
         SpeakingEval::toInt(SpeakingEvalColumn::Notes)
-        );
-    data.grade =
-        speakingEvalElementaryGrade(
-            classInfo.classGrade
-            );
-    data.reportTemplate = reportTemplateForClass(classInfo);
-    data.date = speakingEvalReportDate(
-        QDate::currentDate(),
-        data.reportTemplate
-        );
+        ).toStdString();
 
     const std::array<SpeakingEvalColumn, 6> scoreColumns{
         SpeakingEvalColumn::Grammar,
@@ -364,13 +280,41 @@ SpeakingEvalReportData reportDataForRow(
         SpeakingEvalColumn::Content,
         SpeakingEvalColumn::OverallEffort
     };
-    for (int index = 0; index < scoreColumns.size(); ++index)
+    for (std::size_t index = 0; index < scoreColumns.size(); ++index)
     {
-        data.scores[index] = values.value(
+        input.scores[index] = values.value(
             SpeakingEval::toInt(scoreColumns[index])
-            );
+            ).toStdString();
     }
 
+    return input;
+}
+
+SpeakingEvalReportData toQtReportData(
+    const classmngr::engine::SpeakingEvaluationReportContent& source,
+    const QByteArray& signatureImage
+    )
+{
+    SpeakingEvalReportData data;
+    data.englishName = QString::fromStdString(source.englishName);
+    data.koreanName = QString::fromStdString(source.koreanName);
+    data.classLabel = QString::fromStdString(source.classLabel);
+    data.nativeTeacher = QString::fromStdString(source.nativeTeacher);
+    data.koreanTeacher = QString::fromStdString(source.koreanTeacher);
+    data.date = QString::fromStdString(source.date);
+    data.comments = QString::fromStdString(source.comments);
+    data.notes = QString::fromStdString(source.notes);
+    data.grade = source.grade;
+    for (std::size_t index = 0; index < source.scores.size(); ++index)
+    {
+        data.scores[index] = QString::fromStdString(source.scores[index]);
+    }
+    data.signatureImage = signatureImage;
+    data.reportTemplate =
+        source.reportTemplate
+                == classmngr::engine::SpeakingEvaluationReportTemplate::Advanced
+            ? SpeakingEvalReportTemplate::Advanced
+            : SpeakingEvalReportTemplate::Standard;
     return data;
 }
 
@@ -383,19 +327,33 @@ buildSpeakingEvalStudentReports(
     const QByteArray& signatureImage
     )
 {
-    QList<SpeakingEvalBatchReportService::StudentReport> reports;
-    for (int row = 0; row < rows.size(); ++row)
+    const QDate reportDate = QDate::currentDate();
+    std::vector<
+        classmngr::engine::SpeakingEvaluationReportStudentInput
+        > students;
+    students.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& values : rows)
     {
-        const QString displayName = studentDisplayName(rows, row);
-        if (displayName.isEmpty())
-        {
-            continue;
-        }
+        students.push_back(toPortableReportStudent(values));
+    }
 
-        SpeakingEvalReportData report =
-            reportDataForRow(rows, classInfo, row);
-        report.signatureImage = signatureImage;
-        reports.append({ displayName, report, row });
+    const auto portableReports =
+        classmngr::engine::SpeakingEvaluationReportContentService::buildReports(
+            students,
+            toPortableReportClassInfo(classInfo),
+            reportDate.year(),
+            static_cast<unsigned>(reportDate.month())
+            );
+
+    QList<SpeakingEvalBatchReportService::StudentReport> reports;
+    reports.reserve(static_cast<qsizetype>(portableReports.size()));
+    for (const auto& source : portableReports)
+    {
+        reports.append({
+            QString::fromStdString(source.displayName),
+            toQtReportData(source, signatureImage),
+            source.sourceRow
+        });
     }
     return reports;
 }

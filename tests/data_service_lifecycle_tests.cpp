@@ -1,7 +1,10 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
+#include "classmngr/engine/database_schema.h"
+#include "classmngr/engine/open_database.h"
 #include "core/application_services.h"
+#include "features/my_info/data/personal_details_repository.h"
 
 #include <QFileInfo>
 #include <QSqlDatabase>
@@ -17,11 +20,64 @@ struct DatabaseIds
     int classId = -1;
     int eventId = -1;
     int campusId = -1;
+    bool classInfoSaved = false;
     bool settingSaved = false;
     bool intensiveSlotStateSaved = false;
     bool testingBlockSaved = false;
     bool rosterSaved = false;
     bool speakingEvaluationSaved = false;
+};
+
+class ScopedQtDatabase final
+{
+public:
+    ScopedQtDatabase(
+        const QString& path,
+        const QString& connectionName
+        )
+        : m_connectionName(connectionName)
+        , m_database(QSqlDatabase::addDatabase(
+              QStringLiteral("QSQLITE"),
+              m_connectionName
+              ))
+    {
+        m_database.setDatabaseName(path);
+        if (m_database.open())
+        {
+            QSqlQuery foreignKeys(m_database);
+            foreignKeys.exec(QStringLiteral("PRAGMA foreign_keys = ON"));
+        }
+    }
+
+    ~ScopedQtDatabase()
+    {
+        if (m_database.isOpen())
+        {
+            m_database.close();
+        }
+        m_database = QSqlDatabase();
+        if (QSqlDatabase::contains(m_connectionName))
+        {
+            QSqlDatabase::removeDatabase(m_connectionName);
+        }
+    }
+
+    ScopedQtDatabase(const ScopedQtDatabase&) = delete;
+    ScopedQtDatabase& operator=(const ScopedQtDatabase&) = delete;
+
+    [[nodiscard]] bool isOpen() const
+    {
+        return m_database.isValid() && m_database.isOpen();
+    }
+
+    [[nodiscard]] QSqlDatabase& database()
+    {
+        return m_database;
+    }
+
+private:
+    QString m_connectionName;
+    QSqlDatabase m_database;
 };
 
 DatabaseIds populateDatabase(
@@ -31,14 +87,12 @@ DatabaseIds populateDatabase(
 {
     Teacher teacher;
     teacher.teacherEn = prefix + QStringLiteral(" Teacher");
-    teacher.teacherKr = prefix + QStringLiteral(" Korean Teacher");
-    teacher.preferredRomanization =
-        prefix + QStringLiteral(" Romanization");
-    teacher.preferredName =
-        prefix + QStringLiteral(" Preferred Name");
+    teacher.teacherKr = QStringLiteral("홍길동");
+    teacher.preferredRomanization = prefix + QStringLiteral(" Roman");
+    teacher.preferredName = prefix + QStringLiteral(" Roman");
     teacher.roomNumber = prefix + QStringLiteral(" Room");
     teacher.birthday = QStringLiteral("02-29");
-    teacher.phoneNumber = prefix + QStringLiteral(" Phone");
+    teacher.phoneNumber = QStringLiteral("010 1234 5678");
     teacher.notes = prefix + QStringLiteral(" Teacher Notes");
 
     DatabaseIds ids;
@@ -54,8 +108,8 @@ DatabaseIds populateDatabase(
     ClassInfo classInfo;
     classInfo.classId = ids.classId;
     classInfo.teacherId = ids.teacherId;
-    classInfo.classGrade = prefix + QStringLiteral(" Grade");
-    classInfo.classLevel = prefix + QStringLiteral(" Level");
+    classInfo.classGrade = QStringLiteral("E4");
+    classInfo.classLevel = QStringLiteral("Theseus");
     classInfo.notes = prefix + QStringLiteral(" Class Notes");
     classInfo.classTimes.append(
         {
@@ -64,9 +118,8 @@ DatabaseIds populateDatabase(
             QStringLiteral("4:50 PM")
         }
         );
-    const bool classInfoSaved =
+    ids.classInfoSaved =
         service.saveClassInfo(classInfo).has_value();
-    Q_UNUSED(classInfoSaved);
 
     ids.intensiveSlotStateSaved = service.saveIntensiveSlotState(
         QStringLiteral("Tuesday"),
@@ -127,6 +180,7 @@ void verifyDatabase(
     const DatabaseIds& ids
     )
 {
+    QVERIFY(ids.classInfoSaved);
     QVERIFY(ids.testingBlockSaved);
     QVERIFY(ids.settingSaved);
     QVERIFY(ids.intensiveSlotStateSaved);
@@ -139,17 +193,18 @@ void verifyDatabase(
     const Result<Teacher> teacher = service.getTeacher(ids.teacherId);
     QVERIFY(teacher);
     QCOMPARE(teacher->teacherEn, prefix + QStringLiteral(" Teacher"));
+    QCOMPARE(teacher->teacherKr, QStringLiteral("홍길동"));
     QCOMPARE(
         teacher->preferredRomanization,
-        prefix + QStringLiteral(" Romanization")
+        prefix + QStringLiteral(" Roman")
         );
     QCOMPARE(
         teacher->preferredName,
-        prefix + QStringLiteral(" Preferred Name")
+        prefix + QStringLiteral(" Roman")
         );
     QCOMPARE(teacher->roomNumber, prefix + QStringLiteral(" Room"));
     QCOMPARE(teacher->birthday, QStringLiteral("02-29"));
-    QCOMPARE(teacher->phoneNumber, prefix + QStringLiteral(" Phone"));
+    QCOMPARE(teacher->phoneNumber, QStringLiteral("010-1234-5678"));
     const Result<Classroom> classroom = service.getClassById(ids.classId);
     QVERIFY(classroom);
     QCOMPARE(
@@ -162,7 +217,7 @@ void verifyDatabase(
         );
     QCOMPARE(
         service.loadClassInfo(ids.classId)->teacherPreferredName,
-        prefix + QStringLiteral(" Preferred Name")
+        prefix + QStringLiteral(" Roman")
         );
     const Result<QList<IntensiveSlotState>> intensiveSlotStates =
         service.loadIntensiveSlotStates();
@@ -220,9 +275,11 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
+    void memoryDatabaseRequiresExplicitEngineOwnership();
     void applicationServicesOwnDatabaseFileOperations();
     void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
+    void fileBackedSessionUsesEngineSchemaPipeline();
     void schemaFailureClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
     void teacherDeleteFailureRollsBackClassAssignments();
@@ -230,9 +287,64 @@ private slots:
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
     void legacyRepositoryWriteFailuresRollBack();
+    void personalDetailsRepositoryUsesEngineBoundary();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
 };
+
+void DataServiceLifecycleTests::personalDetailsRepositoryUsesEngineBoundary()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService dataService;
+    const QString path = directory.filePath(
+        QStringLiteral("personal-details.db")
+        );
+    QVERIFY(dataService.openDatabase(path).has_value());
+
+    SettingsService settings(
+        dataService.databaseSession()
+        );
+    PersonalDetailsRepository repository(&settings);
+
+    PersonalDetails expected;
+    expected.name = QStringLiteral("홍길동 🧑‍🏫");
+    expected.campus = QStringLiteral("서울 캠퍼스");
+    expected.zoomLoginId = QStringLiteral("teacher@example.test");
+    expected.zoomPassword = QStringLiteral("비밀번호");
+    expected.zoomNotAvailable = false;
+    expected.signatureMode = SignatureMode::Type;
+    expected.typedSignatureText = QStringLiteral("서명 이름");
+    expected.typedSignatureFont = 3;
+
+    QVERIFY(repository.save(expected));
+
+    const PersonalDetails loaded = repository.load();
+    QCOMPARE(loaded.name, expected.name);
+    QCOMPARE(loaded.campus, expected.campus);
+    QCOMPARE(loaded.zoomLoginId, expected.zoomLoginId);
+    QCOMPARE(loaded.zoomPassword, expected.zoomPassword);
+    QCOMPARE(loaded.zoomNotAvailable, expected.zoomNotAvailable);
+    QCOMPARE(loaded.signatureMode, expected.signatureMode);
+    QCOMPARE(loaded.typedSignatureText, expected.typedSignatureText);
+    QCOMPARE(loaded.typedSignatureFont, expected.typedSignatureFont);
+
+    QVERIFY(repository.saveCampus(QStringLiteral("부산 캠퍼스")));
+    QCOMPARE(repository.load().campus, QStringLiteral("부산 캠퍼스"));
+
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-personal-details-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT value FROM app_settings WHERE key='myInfo/name'"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), expected.name);
+}
 
 void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
 {
@@ -249,9 +361,19 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     ApplicationServices services;
     QVERIFY(services.openDatabase(sourcePath).has_value());
     QVERIFY(services.settingsService()->save(
+        QStringLiteral("application-services/compatibility"),
+        QStringLiteral("shared-session")
+        ).has_value());
+    QVERIFY(services.settingsService()->save(
         QStringLiteral("application-services/value"),
         QStringLiteral("saved")
         ).has_value());
+    QCOMPARE(
+        services.settingsService()
+            ->load(QStringLiteral("application-services/compatibility"))
+            ->toString(),
+        QStringLiteral("shared-session")
+        );
     services.saveDatabase();
 
     QVERIFY(services.saveDatabaseAs(savedPath).has_value());
@@ -269,6 +391,7 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
         );
 
     services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
 }
@@ -308,15 +431,87 @@ void DataServiceLifecycleTests::schemaFailureClosesDatabaseSession()
     QCOMPARE(session.campusRecordRepository(), nullptr);
 }
 
+void DataServiceLifecycleTests::fileBackedSessionUsesEngineSchemaPipeline()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString path = directory.filePath(
+        QStringLiteral("engine-preflight.db")
+        );
+    const QString connectionName =
+        QStringLiteral("engine-schema-seed");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE teachers ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "teacher_kr TEXT, "
+            "teacher_en TEXT, "
+            "room_number TEXT, "
+            "wifi_name TEXT, "
+            "wifi_password TEXT, "
+            "internet_type TEXT DEFAULT 'WiFi', "
+            "zoom_id TEXT, "
+            "zoom_password TEXT, "
+            "projection_type TEXT DEFAULT 'HDMI', "
+            "notes TEXT"
+            ")"
+            )));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO teachers (teacher_en) VALUES ('Legacy Teacher')"
+            )));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    DatabaseSession session;
+    QVERIFY(session.open(path).has_value());
+    QCOMPARE(
+        session.databasePath(),
+        QFileInfo(path).absoluteFilePath()
+        );
+
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-engine-schema-query")
+        );
+    QVERIFY(database.isOpen());
+
+    QSqlQuery versionQuery(database.database());
+    QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version")));
+    QVERIFY(versionQuery.next());
+    QCOMPARE(
+        versionQuery.value(0).toInt(),
+        classmngr::engine::DatabaseSchemaManager::LatestSchemaVersion
+        );
+
+    QSqlQuery columnQuery(database.database());
+    QVERIFY(columnQuery.exec(QStringLiteral(
+        "SELECT preferred_name FROM teachers"
+        )));
+    QVERIFY(columnQuery.next());
+    QCOMPARE(columnQuery.value(0).toString(), QString());
+}
+
 void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("class-delete-rollback.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("class-delete-rollback.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     const Result<int> createdClass =
         service.createClass(QStringLiteral("Rollback Class"));
@@ -327,8 +522,12 @@ void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
     info.classId = classId;
     QVERIFY(service.saveClassInfo(info));
 
-    QSqlDatabase database = service.databaseSession()->database();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-class-delete-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     query.prepare(QStringLiteral(
         "INSERT INTO roster_columns (class_id, name, position, width) "
         "VALUES (?, 'English', 0, 180)"
@@ -372,9 +571,10 @@ void DataServiceLifecycleTests
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("teacher-delete-rollback.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("teacher-delete-rollback.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Rollback Teacher");
@@ -389,8 +589,12 @@ void DataServiceLifecycleTests
     info.teacherId = *createdTeacher;
     QVERIFY(service.saveClassInfo(info));
 
-    QSqlDatabase database = service.databaseSession()->database();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-teacher-delete-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_teacher_delete "
         "BEFORE DELETE ON teachers "
@@ -468,12 +672,17 @@ void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("write-failures.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("write-failures.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
-    QSqlDatabase database = service.databaseSession()->database();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-write-failures-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
 
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_setting_write "
@@ -609,9 +818,10 @@ void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("core-read-failures.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("core-read-failures.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Readable Teacher");
@@ -654,8 +864,12 @@ void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
         QStringLiteral("class id %1").arg(*classId + 1000)
         ));
 
-    QSqlDatabase database = service.databaseSession()->database();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-core-read-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     QVERIFY(query.exec(QStringLiteral("DROP TABLE classes")));
 
     const Result<Classroom> failedClass = service.getClassById(*classId);
@@ -689,9 +903,10 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("compound-read-failures.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("compound-read-failures.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     const Result<int> classId = service.createClass(QStringLiteral("Read Contract"));
     QVERIFY(classId);
@@ -721,8 +936,12 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
     QVERIFY(missingSetting);
     QVERIFY(!missingSetting->isValid());
 
-    QSqlDatabase database = service.databaseSession()->database();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-compound-read-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
 
     QVERIFY(query.exec(QStringLiteral("DROP TABLE class_times")));
     const Result<ClassInfo> failedClassInfo = service.loadClassInfo(*classId);
@@ -787,9 +1006,10 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     QVERIFY(directory.isValid());
 
     DataService service;
-    QVERIFY(service.openDatabase(
-        directory.filePath(QStringLiteral("legacy-write-rollbacks.db"))
-        ).has_value());
+    const QString path = directory.filePath(
+        QStringLiteral("legacy-write-rollbacks.db")
+        );
+    QVERIFY(service.openDatabase(path).has_value());
 
     const Result<int> createdClass =
         service.createClass(QStringLiteral("Rollback Class"));
@@ -806,8 +1026,12 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     });
     QVERIFY(service.saveClassInfo(originalInfo));
 
-    QSqlDatabase database = service.databaseSession()->database();
-    QSqlQuery query(database);
+    ScopedQtDatabase database(
+        path,
+        QStringLiteral("lifecycle-legacy-write-query")
+        );
+    QVERIFY(database.isOpen());
+    QSqlQuery query(database.database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_intensive_time_insert "
         "BEFORE INSERT ON class_intensive_times "
@@ -1014,7 +1238,6 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.open(path).has_value());
     QVERIFY(session.isOpen());
     QCOMPARE(session.databasePath(), path);
-    QVERIFY(session.database().isOpen());
     QVERIFY(session.teacherRepository() != nullptr);
     QVERIFY(session.classRepository() != nullptr);
     QVERIFY(session.rosterRepository() != nullptr);
@@ -1029,24 +1252,47 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.speakingEvalRepository() == nullptr);
 }
 
+void DataServiceLifecycleTests::memoryDatabaseRequiresExplicitEngineOwnership()
+{
+    DatabaseSession session;
+
+    const Status rejected = session.open(QStringLiteral(":memory:"));
+    QVERIFY(!rejected);
+    QVERIFY(!session.isOpen());
+    QVERIFY(!session.isEngineBacked());
+    QCOMPARE(session.settingsRepository(), nullptr);
+
+    auto engineDatabase =
+        classmngr::engine::OpenDatabase::execute(":memory:");
+    QVERIFY(engineDatabase);
+    QVERIFY((*engineDatabase)->isOpen());
+
+    SettingsService settings(&session);
+    QVERIFY(!settings.isAvailable());
+
+    ApplicationServices services;
+    QVERIFY(!services.openDatabase(QStringLiteral(":memory:")).has_value());
+    QVERIFY(!services.hasOpenDatabase());
+}
+
 void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
     DataService dataService;
-    SettingsService settings(dataService.databaseSession(), &dataService);
-    TeacherService teachers(dataService.databaseSession(), &dataService);
-    ClassService classes(dataService.databaseSession(), &dataService);
-    ScheduleService schedule(dataService.databaseSession(), &dataService);
-    CalendarService calendar(dataService.databaseSession(), &dataService);
-    RosterService rosters(dataService.databaseSession(), &dataService);
-    SpeakingEvaluationService evaluations(
-        dataService.databaseSession(), &dataService);
+    SettingsService settings(dataService.databaseSession());
+    TeacherService teachers(dataService.databaseSession());
+    ClassService classes(dataService.databaseSession());
+    ScheduleService schedule(dataService.databaseSession());
+    CalendarService calendar(dataService.databaseSession());
+    RosterService rosters(dataService.databaseSession());
+    SpeakingEvaluationService evaluations(dataService.databaseSession());
 
     QVERIFY(!settings.isAvailable());
     QVERIFY(!teachers.isAvailable());
     QVERIFY(!classes.isAvailable());
+    QCOMPARE(settings.databaseSession(), dataService.databaseSession());
 
     const QString path =
         directory.filePath(QStringLiteral("feature-services.db"));

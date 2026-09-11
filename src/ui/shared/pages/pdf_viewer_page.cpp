@@ -239,11 +239,11 @@ void PdfViewerPage::releaseDocument()
     m_documentLoadRecorded = false;
     m_documentLoadTimed = false;
 
-    if (m_view && m_view->document() == m_document)
-    {
-        m_view->setDocument(nullptr);
-    }
-
+    // Keep the lifetime-owned document attached to QPdfView.  QtPdf keeps
+    // internal link/navigation models in the view, and detaching the document
+    // while those models are being updated can dereference a null document on
+    // macOS. Closing the document releases its loaded content without
+    // invalidating the view's document association.
     m_document->close();
     m_currentFilePath.clear();
     m_documentDescriptor = {};

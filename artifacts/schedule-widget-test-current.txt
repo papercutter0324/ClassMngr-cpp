@@ -1,0 +1,40 @@
+********* Start testing of ScheduleWidgetTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+INFO   : ScheduleWidgetTests::initTestCase() entering
+PASS   : ScheduleWidgetTests::initTestCase()
+INFO   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() entering
+QWARN  : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() QFontDatabase: Cannot find font directory C:/Qt/6.11.1/msvc2022_64/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QWARN  : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption() This plugin does not support propagateSizeHints()
+PASS   : ScheduleWidgetTests::persistsAndMirrorsEveryViewOption()
+INFO   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() entering
+QWARN  : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() This plugin does not support propagateSizeHints()
+QWARN  : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage() This plugin does not support propagateSizeHints()
+PASS   : ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
+INFO   : ScheduleWidgetTests::importButtonRequestsScheduleImport() entering
+PASS   : ScheduleWidgetTests::importButtonRequestsScheduleImport()
+INFO   : ScheduleWidgetTests::controlsUseTextFitButtons() entering
+PASS   : ScheduleWidgetTests::controlsUseTextFitButtons()
+INFO   : ScheduleWidgetTests::legacyHourSettingsDoNotCarryForward() entering
+PASS   : ScheduleWidgetTests::legacyHourSettingsDoNotCarryForward()
+INFO   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock() entering
+PASS   : ScheduleWidgetTests::testingModeFiltersClassesAndDisplaysSavedBlock()
+INFO   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard() entering
+PASS   : ScheduleWidgetTests::testingModeDisplaysAssignedTestingClassCard()
+INFO   : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() entering
+QWARN  : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() This plugin does not support propagateSizeHints()
+FAIL!  : ScheduleWidgetTests::testingAssignmentDialogSupportsEveryAction() 'manageGeometry.right() < saveGeometry.left()' returned FALSE. ()
+C:\Git\ClassMngr-cpp\tests\schedule_widget_tests.cpp(523) : failure location
+INFO   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks() entering
+PASS   : ScheduleWidgetTests::readOnlyPresentationHidesControlsAndIgnoresClicks()
+INFO   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive() entering
+PASS   : ScheduleWidgetTests::timeColumnAndHeaderAreNonInteractive()
+INFO   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings() entering
+PASS   : ScheduleWidgetTests::clearDatabaseStateRemovesLoadedDataAndSettings()
+INFO   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() entering
+QWARN  : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule() This plugin does not support propagateSizeHints()
+PASS   : ScheduleWidgetTests::schedulePageScrollsWithoutResizingSchedule()
+INFO   : ScheduleWidgetTests::cleanupTestCase() entering
+PASS   : ScheduleWidgetTests::cleanupTestCase()
+Totals: 13 passed, 1 failed, 0 skipped, 0 blacklisted, 200ms
+********* Finished testing of ScheduleWidgetTests *********

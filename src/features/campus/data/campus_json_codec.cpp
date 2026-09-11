@@ -1,5 +1,8 @@
 #include "campus_json_codec.h"
 
+#include "classmngr/engine/resource_pack_policy.h"
+#include "core/resource_packs/resource_pack_manager.h"
+
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
@@ -316,6 +319,46 @@ QString campusIdFromName(const QString& name)
         ? QStringLiteral("campus")
         : id;
 }
+
+QString normalizedCampusResourceReference(const QString& value)
+{
+    const QString activeRoot =
+        ResourcePackManager::instance().activeRoot(QStringLiteral("campuses"));
+    const auto normalized =
+        classmngr::engine::ResourcePackPolicy::normalizeCampusResourceReference(
+            value.toUtf8().toStdString(),
+            activeRoot.toUtf8().toStdString()
+            );
+    return normalized
+        ? QString::fromUtf8(
+            normalized->data(),
+            static_cast<qsizetype>(normalized->size())
+            )
+        : QString();
+}
+
+QJsonArray normalizedHousingLocations(const QJsonArray& locations)
+{
+    QJsonArray result;
+    for (const QJsonValue& value : locations)
+    {
+        QJsonObject location = value.toObject();
+        QJsonObject map = location.value(QStringLiteral("map")).toObject();
+        if (!map.isEmpty())
+        {
+            QJsonArray images;
+            for (const QJsonValue& image : map.value(QStringLiteral("images")).toArray())
+            {
+                const QString reference = normalizedCampusResourceReference(image.toString());
+                if (!reference.isEmpty()) images.append(reference);
+            }
+            map.insert(QStringLiteral("images"), images);
+            location.insert(QStringLiteral("map"), map);
+        }
+        result.append(location);
+    }
+    return result;
+}
 } // namespace
 
 QJsonObject CampusJsonCodec::toJson(
@@ -609,10 +652,10 @@ CampusInfo CampusJsonCodec::fromJson(
             );
 
     campus.imageMain =
-        valueString(
+        normalizedCampusResourceReference(valueString(
             object,
             QStringLiteral("image_main")
-            );
+            ));
 
     const QJsonValue mapValue =
         object.value(QStringLiteral("map"));
@@ -630,8 +673,9 @@ CampusInfo CampusJsonCodec::fromJson(
 
     for (const QJsonValue& image : mapImages)
     {
-        const QString imagePath =
-            image.toString().trimmed();
+        const QString imagePath = normalizedCampusResourceReference(
+            image.toString()
+            );
 
         if (!imagePath.isEmpty())
         {
@@ -707,10 +751,9 @@ CampusInfo CampusJsonCodec::fromJson(
             QStringLiteral("photocopier_code")
             );
 
-    campus.housingLocations =
-        object.value(
-            QStringLiteral("housing_locations")
-            ).toArray();
+    campus.housingLocations = normalizedHousingLocations(
+        object.value(QStringLiteral("housing_locations")).toArray()
+        );
 
     if (campus.id.trimmed().isEmpty())
     {

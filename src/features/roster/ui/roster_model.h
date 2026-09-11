@@ -208,12 +208,6 @@ private:
         int column
         );
 
-    void validateRawInput(
-        int row,
-        int column,
-        const QString& rawValue
-        );
-
     void validateDuplicateNames();
 
     void clearDuplicateNameErrors();

@@ -77,6 +77,12 @@ void ScheduleWidget::refreshSchedule()
     loadSchedule();
 }
 
+void ScheduleWidget::refreshDisplaySettings()
+{
+    loadSettings();
+    updateButtons();
+}
+
 void ScheduleWidget::clearDatabaseState()
 {
     m_use24h = false;

@@ -479,7 +479,8 @@ void BasePage::setDatabaseOpen(
     m_databaseOpen = databaseOpen;
 
     m_noDatabaseBannerEnabled =
-        !databaseOpen;
+        m_noDatabaseBannerAllowed
+        && !databaseOpen;
 
     m_noDatabaseBanner->setVisible(
         m_noDatabaseBannerEnabled
@@ -493,6 +494,25 @@ void BasePage::setDatabaseOpen(
         markStale();
         emit outputCapabilitiesChanged();
     }
+}
+
+void BasePage::setNoDatabaseBannerEnabled(
+    bool enabled
+    )
+{
+    m_noDatabaseBannerAllowed = enabled;
+    m_noDatabaseBannerEnabled =
+        m_noDatabaseBannerAllowed
+        && !m_databaseOpen;
+
+    if (!m_noDatabaseBanner)
+    {
+        return;
+    }
+
+    m_noDatabaseBanner->setVisible(m_noDatabaseBannerEnabled);
+    updateNoDatabaseBannerGeometry();
+    updateNoDatabaseBannerLayout();
 }
 
 void BasePage::changeEvent(

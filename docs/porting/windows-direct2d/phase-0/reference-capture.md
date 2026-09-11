@@ -1,0 +1,129 @@
+# Reference capture protocol
+
+This protocol captures the Qt Windows product before a native equivalent is
+implemented. Store files outside the source tree or in an approved release
+artifact store; only redacted metadata and stable fixture-derived outputs are
+checked in.
+
+## Capture matrix
+
+For every surface in [feature-inventory.md](feature-inventory.md), capture the
+following fixture-backed states where they exist: no database/empty, populated,
+loading/background work, validation/error, dirty/unsaved, disabled command,
+and completed/cancelled output.
+
+| Dimension | Required values |
+| --- | --- |
+| Theme | light, dark |
+| Scaling | 100%, 150%, 200% Windows display scaling |
+| Window | default size plus narrow/short and large layouts where the feature resizes |
+| Language/input | English UI/input and Korean UI/input; test Hangul composition, commit, backspace, arrows, selection, clipboard, undo/redo |
+| Keyboard | keyboard-only focus order and Escape/default behavior |
+| Output | representative PDF/print preview/export files containing English and Korean text |
+
+## Artifact naming
+
+Use `<feature>__<state>__<theme>__<dpi>__<language>`. For example,
+`schedule__import-review__dark__150__ko.png` and
+`speaking-evaluation__batch-report__light__100__en.pdf`. Pair each image/PDF
+with a `.json` metadata record containing the source revision, fixture ID,
+architecture, Windows edition/build, display scaling, app language, input
+language, font-size setting, window size, and exact action sequence.
+
+## Work ledger
+
+[`capture-ledger.csv`](capture-ledger.csv) is the source-backed checklist for
+the inventory. Each row supplies a stable artifact prefix and starts `pending`.
+Use `in-progress`, `captured`, `verified`, `accepted`, `blocked`, or `deferred`
+while preserving a short reason in its notes field. A row is `verified` only
+when all its required states, keyboard/input observations, and output artifact
+(where required) are represented by redacted metadata. Use `accepted` when the
+product owner explicitly accepts a representative or source-backed current
+Qt behavior and no additional pre-native capture is justified; the notes must
+state the acceptance scope and any native follow-up. Deferred rows are retained
+as future-scope inventory and do not block the current x64 Phase 0 gate. The
+ledger records references and status; screenshots, PDFs, recordings, and raw
+diagnostics remain external artifacts.
+
+The deferred `platform.screen-reader` ledger row is retained only as a future
+roadmap inventory anchor; it is not a current Phase 0 evidence requirement.
+
+## Metadata sidecars and validation
+
+After recording a screenshot, PDF, text observation, or other external
+artifact, generate its metadata sidecar from the ledger ID. The filename must
+begin with that ID's `artifact_prefix` followed by `__`; the script writes a
+same-directory `<artifact-name>.json` sidecar and records the artifact's
+SHA-256.
+
+```powershell
+.\scripts\porting\windows\new_phase0_capture_metadata.ps1 `
+  -LedgerId page.calendar `
+  -Architecture x64 `
+  -Theme dark `
+  -DisplayScalePercent 150 `
+  -AppLanguage ko `
+  -InputLanguage ko-KR `
+  -FixtureId typical `
+  -ArtifactPath D:\ClassMngrCapture\calendar__populated__dark__150__ko.png `
+  -SourceRevision 48fc5c5 `
+  -WindowsEdition "Windows 11 Pro" `
+  -WindowsBuild 26100 `
+  -Action "Open typical fixture" `
+  -Action "Navigate to Calendar"
+```
+
+Replace the generated `TODO` observations with the actual keyboard, IME, and
+review notes, then set `verification` to `verified` only after review. UI
+Automation, Narrator, and high-contrast observations are deferred.
+Validate a capture store before linking artifacts in the ledger:
+
+```powershell
+.\scripts\porting\windows\validate_phase0_capture_artifacts.ps1 `
+  -ArtifactRoot D:\ClassMngrCapture `
+  -RequireVerified
+```
+
+## Automated Windows Qt visual lane
+
+The opt-in Windows Qt capture target includes deterministic app-owned dialog
+scenarios in addition to the page/editor matrix. Run the full dialog subset
+with a fixed display scale:
+
+```powershell
+$env:CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT = "150"
+$env:CLASSMNGR_PHASE0_SCENARIO_FILTER = "dialog.*"
+ctest --test-dir build/windows-x64-phase0-visual -C Debug `
+  -R ClassMngrWindowsQtVisualCaptureTests --output-on-failure
+```
+
+The filter accepts comma-separated scenario IDs and prefix patterns ending in
+`*`, for example `dialog.about.default,dialog.preferences.*`. Automated
+captures are evidence with `verification: captured`; promote them to
+`verified` only after the required visual, keyboard, IME, and output review.
+Owner acceptance may instead be recorded in the ledger as `accepted` when the
+baseline is already familiar and representative. Native Windows
+file/folder/printer dialogs, native output behavior, and native control focus
+remain separate implementation acceptance lanes. The current Qt Korean IME
+baseline is owner-accepted; the native controls must still prove IME support.
+
+## Manual workflow
+
+1. Build the current Qt Windows product from a clean settings root and open a
+   copied approved fixture.
+2. Set the theme, language, display scale, and window size specified by the
+   matrix. Do not use private production data.
+3. Take the screenshot only after async work has settled; preserve the visible
+   focus ring when keyboard navigation is under test.
+4. For Korean IME, record the active IME and the exact composition sequence;
+   screenshots must show preedit and committed text when the control exposes
+   it.
+5. For print/PDF/export, retain the source fixture, output checksum, and
+   operation settings; visually inspect Korean glyphs, margins, pagination,
+   tables, images, and cancellation/failure cleanup.
+
+The first native screen cannot be declared equivalent on pixels alone: it must
+also match the recorded workflow, data mutation, error, and input contract.
+Native Windows control appearance may differ where it follows platform
+conventions; information hierarchy and behavior may not. UI Automation,
+Narrator, and high-contrast support are outside the current comparison scope.

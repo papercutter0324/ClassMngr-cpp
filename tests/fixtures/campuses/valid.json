@@ -1,0 +1,35 @@
+{
+  "id": "bundang",
+  "campus_name": "Bundang",
+  "campus_code": "BD",
+  "building_name": "Bundang Campus",
+  "address": "123 Sample Road",
+  "directions": {
+    "en": {
+      "building_name": "Bundang Campus",
+      "city": "Seongnam",
+      "district": "Bundang-gu",
+      "line1": "123 Sample Road",
+      "postal_code": "13561"
+    },
+    "kr": {
+      "building_name": "분당 캠퍼스",
+      "city_district": "성남시 분당구",
+      "line1": "샘플로 123"
+    },
+    "addr_note": "Use the side entrance."
+  },
+  "phone_number": "031-123-4567",
+  "transit_steps": ["Take the subway", "Walk two blocks"],
+  "arrival_info": "Call the office on arrival.",
+  "map": {
+    "images": ["bundang/map.png", "bundang/building.png"],
+    "links": {
+      "naver": "https://map.naver.com/bundang",
+      "kakao": "https://map.kakao.com/bundang"
+    }
+  },
+  "image_main": "bundang/map.png",
+  "printer_driver_url_unavailable": false,
+  "housing_locations": []
+}

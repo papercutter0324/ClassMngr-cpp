@@ -121,6 +121,7 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrClassesPageTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::PrintSupport
@@ -198,6 +199,7 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrScheduleImportDialogTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Concurrent
             Qt6::Core
             Qt6::Gui
@@ -292,6 +294,7 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrSubPrepPageTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -401,6 +404,7 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrSidebarStructureTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Test

@@ -1,0 +1,27 @@
+********* Start testing of ScheduleImportDialogTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : ScheduleImportDialogTests::initTestCase()
+PASS   : ScheduleImportDialogTests::selectsHighestContrastFontColor()
+PASS   : ScheduleImportDialogTests::requiresFileAndScheduleKind()
+PASS   : ScheduleImportDialogTests::reportsAsyncWorkbookFailure()
+PASS   : ScheduleImportDialogTests::discardsSupersededAndClosedLoads()
+PASS   : ScheduleImportDialogTests::acceptedReviewCanTearDownSourceDialog()
+PASS   : ScheduleImportDialogTests::mismatchedProfileRequiresConfirmation()
+PASS   : ScheduleImportDialogTests::compactFlowAndReviewPresentation()
+PASS   : ScheduleImportDialogTests::reviewWarningsUseDedicatedTab()
+PASS   : ScheduleImportDialogTests::intensiveModeChoiceReflectsExistingSchedule()
+PASS   : ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid()
+PASS   : ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
+PASS   : ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
+PASS   : ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
+PASS   : ScheduleImportDialogTests::reviewWarnsWhenRetainedIntensiveClassOverlaps()
+FAIL!  : ScheduleImportDialogTests::reviewPreviewUsesSavedScheduleDisplaySettings() Compared values are not the same
+   Actual   (table->columnCount()): 6
+   Expected (8)                   : 8
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(1944) : failure location
+PASS   : ScheduleImportDialogTests::intensivePreviewPreservesEssayAndLunchBlocks()
+SKIP   : ScheduleImportDialogTests::suppliedWorkbookBuildsStagedReview() Set CLASSMNGR_SCHEDULE_IMPORT_SAMPLE to validate the staged dialog with an external workbook.
+C:\Git\ClassMngr-cpp\tests\schedule_import_dialog_tests.cpp(2152) : failure location
+PASS   : ScheduleImportDialogTests::cleanupTestCase()
+Totals: 17 passed, 1 failed, 1 skipped, 0 blacklisted, 2742ms
+********* Finished testing of ScheduleImportDialogTests *********

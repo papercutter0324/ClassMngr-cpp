@@ -1,87 +1,259 @@
 #include "class_time_validator.h"
 
-#include "domain/rules/schedule_value_parser.h"
-#include "domain/validation/shared_validation.h"
-#include "domain/validation/validation_rules.h"
+#include "classmngr/engine/class_time_validator.h"
 
+#include <QByteArray>
 #include <QHash>
-#include <QTime>
 #include <QVariantList>
 
-#include <optional>
+#include <cstddef>
+#include <map>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-ValidationLocation location(
-    const QString& prefix,
-    int row,
-    int column,
-    const QString& field
-    )
+std::string toUtf8(const QString& value)
 {
+    const QByteArray encoded = value.toUtf8();
     return {
-        .field = QStringLiteral("%1[%2].%3").arg(prefix).arg(row).arg(field),
-        .row = row,
-        .column = column
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
     };
 }
 
-std::optional<QTime> parseClassTime(const QString& value)
+QString fromUtf8(std::string_view value)
 {
-    if (const auto canonical = ScheduleValueParser::parseTime(value))
-    {
-        return canonical->value;
-    }
-
-    const QString normalized = value.trimmed().toUpper();
-    const QTime parsed = QTime::fromString(normalized, QStringLiteral("h:mm AP"));
-    if (!parsed.isValid()
-        || parsed.toString(QStringLiteral("h:mm AP")) != normalized)
-    {
-        return std::nullopt;
-    }
-
-    return parsed;
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
 
-QString timeKey(const QTime& value)
+classmngr::engine::ClassTime toEngine(const ClassTime& time)
 {
-    return value.toString(QStringLiteral("HH:mm"));
+    return {
+        .day = toUtf8(time.day),
+        .startTime = toUtf8(time.startTime),
+        .endTime = toUtf8(time.endTime)
+    };
 }
+
+ClassTime fromEngine(const classmngr::engine::ClassTime& time)
+{
+    return {
+        .day = fromUtf8(time.day),
+        .startTime = fromUtf8(time.startTime),
+        .endTime = fromUtf8(time.endTime)
+    };
 }
+
+QString fieldName(
+    const QString& prefix,
+    int row,
+    const QString& field
+    )
+{
+    return QStringLiteral("%1[%2].%3").arg(prefix).arg(row).arg(field);
+}
+
+struct FieldMetadata
+{
+    int row = -1;
+    int column = -1;
+};
+
+QHash<QString, FieldMetadata> fieldMetadata(
+    const QList<ClassTime>& times,
+    const QString& fieldPrefix
+    )
+{
+    QHash<QString, FieldMetadata> result;
+    for (int row = 0; row < times.size(); ++row)
+    {
+        result.insert(
+            fieldName(fieldPrefix, row, QStringLiteral("day")),
+            {.row = row, .column = 0}
+            );
+        result.insert(
+            fieldName(fieldPrefix, row, QStringLiteral("startTime")),
+            {.row = row, .column = 1}
+            );
+        result.insert(
+            fieldName(fieldPrefix, row, QStringLiteral("endTime")),
+            {.row = row, .column = 2}
+            );
+    }
+    return result;
+}
+
+std::string normalizedSlotKey(
+    const classmngr::engine::ClassTime& time
+    )
+{
+    const classmngr::engine::ClassTime normalized =
+        classmngr::engine::ClassTimeValidator::normalized(time);
+    return normalized.day
+        + '|'
+        + normalized.startTime
+        + '|'
+        + normalized.endTime;
+}
+
+using DuplicateSlotKeys = std::map<int, std::string>;
+using DuplicateRowsBySlot = std::map<std::string, QVariantList>;
+
+void collectDuplicateRows(
+    const classmngr::engine::ValidationResult& validation,
+    const std::vector<classmngr::engine::ClassTime>& times,
+    const QHash<QString, FieldMetadata>& fields,
+    DuplicateSlotKeys& slotKeys,
+    DuplicateRowsBySlot& rowsBySlot
+    )
+{
+    for (const classmngr::engine::ValidationIssue& source :
+         validation.issues())
+    {
+        if (source.code != "class_time.duplicate_slot")
+        {
+            continue;
+        }
+
+        const auto field = fields.constFind(fromUtf8(source.field));
+        if (field == fields.cend())
+        {
+            continue;
+        }
+
+        const int row = field.value().row;
+        if (row < 0 || static_cast<std::size_t>(row) >= times.size())
+        {
+            continue;
+        }
+
+        auto slot = slotKeys.find(row);
+        if (slot == slotKeys.end())
+        {
+            slot = slotKeys.emplace(row, normalizedSlotKey(times.at(row))).first;
+        }
+
+        QVariantList& duplicateRows = rowsBySlot[slot->second];
+        if (!duplicateRows.contains(row))
+        {
+            duplicateRows.append(row);
+        }
+    }
+}
+
+void restoreArguments(
+    ValidationIssue& issue,
+    const ClassTime& time,
+    const FieldMetadata& field,
+    const DuplicateSlotKeys& duplicateSlotKeys,
+    const DuplicateRowsBySlot& duplicateRowsBySlot
+    )
+{
+    if (issue.code == QStringLiteral("schedule.weekday.invalid")
+        && field.column == 0)
+    {
+        issue.arguments = {
+            {QStringLiteral("value"), time.day}
+        };
+    }
+    else if (issue.code == QStringLiteral("schedule.time.invalid_format"))
+    {
+        const QString* value = field.column == 1
+            ? &time.startTime
+            : field.column == 2 ? &time.endTime : nullptr;
+        if (value != nullptr)
+        {
+            issue.arguments = {
+                {QStringLiteral("value"), *value}
+            };
+        }
+    }
+    else if (issue.code == QStringLiteral("schedule.time.end_not_after_start")
+             && field.column == 2)
+    {
+        issue.arguments = {
+            {QStringLiteral("start"), time.startTime},
+            {QStringLiteral("end"), time.endTime}
+        };
+    }
+    else if (issue.code == QStringLiteral("class_time.duplicate_slot")
+             && field.column == 1)
+    {
+        const auto slot = duplicateSlotKeys.find(field.row);
+        if (slot == duplicateSlotKeys.end())
+        {
+            return;
+        }
+
+        const auto rows = duplicateRowsBySlot.find(slot->second);
+        if (rows != duplicateRowsBySlot.end())
+        {
+            issue.arguments = {
+                {QStringLiteral("duplicateRows"), rows->second}
+            };
+        }
+    }
+}
+
+ValidationResult fromEngine(
+    const classmngr::engine::ValidationResult& validation,
+    const QList<ClassTime>& times,
+    const QHash<QString, FieldMetadata>& fields,
+    const DuplicateSlotKeys& duplicateSlotKeys,
+    const DuplicateRowsBySlot& duplicateRowsBySlot
+    )
+{
+    ValidationResult result;
+    for (const classmngr::engine::ValidationIssue& source :
+         validation.issues())
+    {
+        ValidationIssue issue{
+            .code = fromUtf8(source.code),
+            .field = fromUtf8(source.field),
+            .row = source.row,
+            .column = source.column,
+            .severity = source.isWarning()
+                ? ValidationSeverity::Warning
+                : ValidationSeverity::Error
+        };
+
+        const auto field = fields.constFind(issue.field);
+        if (field != fields.cend())
+        {
+            if (issue.row < 0)
+            {
+                issue.row = field.value().row;
+            }
+            if (issue.column < 0)
+            {
+                issue.column = field.value().column;
+            }
+            restoreArguments(
+                issue,
+                times.at(field.value().row),
+                field.value(),
+                duplicateSlotKeys,
+                duplicateRowsBySlot
+                );
+        }
+
+        result.add(std::move(issue));
+    }
+    return result;
+}
+} // namespace
 
 ClassTime ClassTimeValidator::normalized(const ClassTime& time)
 {
-    ClassTime normalized = time;
-
-    if (const auto weekday = ScheduleValueParser::parseWeekday(time.day))
-    {
-        normalized.day = weekday->text;
-    }
-    else
-    {
-        normalized.day = time.day.trimmed();
-    }
-
-    if (const std::optional<QTime> start = parseClassTime(time.startTime))
-    {
-        normalized.startTime = start->toString(QStringLiteral("h:mm AP"));
-    }
-    else
-    {
-        normalized.startTime = time.startTime.trimmed();
-    }
-
-    if (const std::optional<QTime> end = parseClassTime(time.endTime))
-    {
-        normalized.endTime = end->toString(QStringLiteral("h:mm AP"));
-    }
-    else
-    {
-        normalized.endTime = time.endTime.trimmed();
-    }
-
-    return normalized;
+    return fromEngine(
+        classmngr::engine::ClassTimeValidator::normalized(toEngine(time))
+        );
 }
 
 ValidationResult ClassTimeValidator::validate(
@@ -89,87 +261,39 @@ ValidationResult ClassTimeValidator::validate(
     const QString& fieldPrefix
     )
 {
-    ValidationResult result;
-    QHash<QString, QList<int>> rowsBySlot;
-
-    for (int row = 0; row < times.size(); ++row)
+    std::vector<classmngr::engine::ClassTime> engineTimes;
+    engineTimes.reserve(static_cast<std::size_t>(times.size()));
+    for (const ClassTime& time : times)
     {
-        const ClassTime& time = times.at(row);
-        const ValidationLocation dayLocation =
-            location(fieldPrefix, row, 0, QStringLiteral("day"));
-        const ValidationLocation startLocation =
-            location(fieldPrefix, row, 1, QStringLiteral("startTime"));
-        const ValidationLocation endLocation =
-            location(fieldPrefix, row, 2, QStringLiteral("endTime"));
-
-        result.merge(SharedValidation::weekday(time.day, dayLocation));
-
-        const std::optional<QTime> start = parseClassTime(time.startTime);
-        if (!start)
-        {
-            result.add(ValidationRules::issue(
-                QStringLiteral("schedule.time.invalid_format"),
-                startLocation,
-                ValidationSeverity::Error,
-                {{QStringLiteral("value"), time.startTime}}
-                ));
-        }
-
-        const std::optional<QTime> end = parseClassTime(time.endTime);
-        if (!end)
-        {
-            result.add(ValidationRules::issue(
-                QStringLiteral("schedule.time.invalid_format"),
-                endLocation,
-                ValidationSeverity::Error,
-                {{QStringLiteral("value"), time.endTime}}
-                ));
-        }
-
-        if (start && end && *end <= *start)
-        {
-            result.add(ValidationRules::issue(
-                QStringLiteral("schedule.time.end_not_after_start"),
-                endLocation,
-                ValidationSeverity::Error,
-                {{QStringLiteral("start"), time.startTime},
-                 {QStringLiteral("end"), time.endTime}}
-                ));
-        }
-
-        const auto weekday = ScheduleValueParser::parseWeekday(time.day);
-        if (weekday && start && end)
-        {
-            const QString slot = QStringLiteral("%1|%2|%3")
-                .arg(weekday->text, timeKey(*start), timeKey(*end));
-            rowsBySlot[slot].append(row);
-        }
+        engineTimes.push_back(toEngine(time));
     }
 
-    for (auto it = rowsBySlot.cbegin(); it != rowsBySlot.cend(); ++it)
-    {
-        if (it.value().size() < 2)
-        {
-            continue;
-        }
+    const std::string engineFieldPrefix = toUtf8(fieldPrefix);
+    const classmngr::engine::ValidationResult validation =
+        classmngr::engine::ClassTimeValidator::validate(
+            engineTimes,
+            engineFieldPrefix
+            );
 
-        QVariantList duplicateRows;
-        duplicateRows.reserve(it.value().size());
-        for (const int row : it.value())
-        {
-            duplicateRows.append(row);
-        }
+    const QHash<QString, FieldMetadata> fields = fieldMetadata(
+        times,
+        fieldPrefix
+        );
+    DuplicateSlotKeys duplicateSlotKeys;
+    DuplicateRowsBySlot duplicateRowsBySlot;
+    collectDuplicateRows(
+        validation,
+        engineTimes,
+        fields,
+        duplicateSlotKeys,
+        duplicateRowsBySlot
+        );
 
-        for (const int row : it.value())
-        {
-            result.add(ValidationRules::issue(
-                QStringLiteral("class_time.duplicate_slot"),
-                location(fieldPrefix, row, 1, QStringLiteral("startTime")),
-                ValidationSeverity::Error,
-                {{QStringLiteral("duplicateRows"), duplicateRows}}
-                ));
-        }
-    }
-
-    return result;
+    return fromEngine(
+        validation,
+        times,
+        fields,
+        duplicateSlotKeys,
+        duplicateRowsBySlot
+        );
 }

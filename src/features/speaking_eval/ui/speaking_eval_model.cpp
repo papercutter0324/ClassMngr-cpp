@@ -21,11 +21,40 @@ QString domainValidationMessage(const ValidationIssue& issue)
         return SpeakingEvalModel::tr("This value is too long.");
     }
 
+    if (issue.code == QStringLiteral("student_name.english.too_long"))
+    {
+        return SpeakingEvalModel::tr(
+            "English name must be 20 characters or fewer."
+            );
+    }
+
+    if (issue.code == QStringLiteral("student_name.english.non_ascii"))
+    {
+        return SpeakingEvalModel::tr("Only standard English letters are allowed.");
+    }
+
+    if (issue.code == QStringLiteral("student_name.english.invalid_characters"))
+    {
+        return SpeakingEvalModel::tr("English name contains invalid characters.");
+    }
+
+    if (issue.code == QStringLiteral("student_name.korean.invalid_characters"))
+    {
+        return SpeakingEvalModel::tr("Korean name contains invalid characters.");
+    }
+
     if (issue.code == QStringLiteral("student_name.korean.too_short")
         || issue.code == QStringLiteral("student_name.korean.too_long"))
     {
         return SpeakingEvalModel::tr(
             "Korean name has 1 or 5+ syllables. Verify it is correct."
+            );
+    }
+
+    if (issue.code == QStringLiteral("student_name.korean.unusual_length"))
+    {
+        return SpeakingEvalModel::tr(
+            "Korean name has an uncommon length. Verify it is correct."
             );
     }
 
@@ -683,10 +712,28 @@ QStringList SpeakingEvalModel::validateValue(
                 tr("Only standard English letters are allowed.")
                 );
         }
+
+        if (issues.contains(
+                StudentNameUtils::ValidationIssue::EnglishContainsInvalidCharacters
+                ))
+        {
+            errors.append(
+                tr("English name contains invalid characters.")
+                );
+        }
     }
     else if (columnId == SpeakingEvalColumn::KoreanName)
     {
         const auto issues = StudentNameUtils::validateKoreanName(value);
+        if (issues.contains(
+                StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters
+                ))
+        {
+            errors.append(
+                tr("Korean name contains invalid characters.")
+                );
+        }
+
         if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort)
             || issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
         {

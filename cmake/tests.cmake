@@ -3,7 +3,10 @@ include_guard(GLOBAL)
 # Declare a QtTest executable with the project-wide target and CTest defaults.
 # Feature-specific resources and platform libraries remain next to the call site.
 function(classmngr_add_qt_test)
-    set(options OFFSCREEN)
+    set(options
+        OFFSCREEN
+        MANUAL_FINALIZATION
+    )
     set(one_value_arguments
         NAME
         WORKING_DIRECTORY
@@ -56,7 +59,13 @@ function(classmngr_add_qt_test)
     list(FILTER test_sources EXCLUDE REGEX "^${PROJECT_SOURCE_DIR}/src/")
     list(FILTER test_sources EXCLUDE REGEX "^src/")
 
+    set(qt_executable_options)
+    if(CLASSMNGR_TEST_MANUAL_FINALIZATION)
+        list(APPEND qt_executable_options MANUAL_FINALIZATION)
+    endif()
+
     qt_add_executable("${target}"
+        ${qt_executable_options}
         ${test_sources}
     )
 
@@ -133,6 +142,27 @@ function(classmngr_finalize_test_targets)
             continue()
         endif()
 
+        # Engine tests are intentionally Qt-free and already own their
+        # portable engine link. Do not attach the retained Qt runtime or its
+        # Qt SQL test support to them.
+        if(test_name MATCHES "^ClassMngrEngine")
+            continue()
+        endif()
+
+        target_link_libraries("${test_name}"
+            PRIVATE
+                ClassMngrQtSqlTestSupport
+        )
+
+        get_target_property(target_qml_module_uri
+            "${test_name}" QT_QML_MODULE_URI
+        )
+        if(NOT target_qml_module_uri)
+            set_property(TARGET "${test_name}"
+                PROPERTY QT_QML_MODULE_NO_IMPORT_SCAN TRUE
+            )
+        endif()
+
         get_target_property(target_sources "${test_name}" SOURCES)
         set(test_sources)
         set(has_production_overrides FALSE)
@@ -157,6 +187,18 @@ function(classmngr_finalize_test_targets)
 
         set_property(TARGET "${test_name}" PROPERTY SOURCES "${test_sources}")
 
+        get_target_property(test_libraries "${test_name}" LINK_LIBRARIES)
+        if(test_libraries)
+            # ClassMngrRuntime and ClassMngrTestRuntime both expose the
+            # engine transitively. Keep one owner for the archive so the
+            # linker does not receive duplicate libClassMngrEngine inputs.
+            list(REMOVE_ITEM test_libraries ClassMngrEngine)
+            set_property(
+                TARGET "${test_name}"
+                PROPERTY LINK_LIBRARIES "${test_libraries}"
+            )
+        endif()
+
         # Apple's current linker no longer honors -multiply_defined suppress.
         # Use the flat-namespace shared runtime for the few tests that provide
         # focused production overrides; their executable definitions can then
@@ -175,7 +217,16 @@ function(classmngr_finalize_test_targets)
             target_link_libraries("${test_name}" PRIVATE ClassMngrRuntime)
 
             if(has_production_overrides AND MSVC)
-                target_link_options("${test_name}" PRIVATE /FORCE:MULTIPLE)
+                # These tests intentionally interpose focused definitions over
+                # the shared runtime. /INCREMENTAL:NO removes the conflicting
+                # incremental-link option and /IGNORE:4006 suppresses the
+                # duplicate-definition diagnostics; LNK4088 itself cannot be
+                # suppressed by MSVC while /FORCE:MULTIPLE is in use.
+                target_link_options("${test_name}" PRIVATE
+                    /FORCE:MULTIPLE
+                    /INCREMENTAL:NO
+                    /IGNORE:4006
+                )
             elseif(
                 has_production_overrides
                 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"

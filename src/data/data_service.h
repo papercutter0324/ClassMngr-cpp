@@ -21,7 +21,6 @@
 
 #include <QList>
 #include <QPair>
-#include <QSqlDatabase>
 #include <QString>
 #include <QVariantMap>
 
@@ -49,8 +48,9 @@ class TestingClassRepository;
 // Data Service
 // =========================================================
 
-// Compatibility facade retained while callers migrate to the feature services
-// exposed by ApplicationServices. New UI and controller code should depend on
+// Compatibility facade for legacy callers while they migrate to the feature
+// services exposed by ApplicationServices. Operations are forwarded to the
+// engine-backed repositories; new UI and controller code should depend on
 // those narrow services instead of adding operations here.
 class DataService
 {
@@ -80,8 +80,9 @@ public:
 
     [[nodiscard]] QString currentDatabasePath() const;
 
-    // Transitional access for constructing the narrow application services.
-    // UI and controllers must not use the session or its repositories directly.
+    // Transitional access used to construct the narrow application services
+    // and support legacy migration callers. UI and controllers must not use
+    // the session or its repositories directly.
     [[nodiscard]] DatabaseSession* databaseSession() const;
 
     // =====================================================
@@ -192,6 +193,10 @@ public:
         ScheduleImportKind kind
         );
 
+    [[nodiscard]] Status validateScheduleImport(
+        const ScheduleImportPlan& plan
+        );
+
     [[nodiscard]] Result<ScheduleImportSummary> importSchedule(
         const ScheduleImportPlan& plan
         );
@@ -216,15 +221,17 @@ public:
         int classId
         );
 
-    // TODO:
-    // Port class time management
-    // Port intensive time management
+    // Class details and regular/intensive class times are delegated through
+    // ClassInfoRepository to the engine ClassInfoService.
 
 
 
     // =====================================================
     // Intensive Slot States
     // =====================================================
+
+    // Grid-wide intensive-slot state persistence is delegated through the
+    // engine-backed IntensiveSlotStateRepository.
 
     [[nodiscard]] Result<QList<IntensiveSlotState>> loadIntensiveSlotStates();
 
@@ -337,6 +344,11 @@ public:
         const QList<CalendarEvent>& events
         );
 
+    [[nodiscard]] Result<CalendarEventImportSummary> importCalendarEvents(
+        const QList<CalendarEvent>& events,
+        int parserSkippedCount
+        );
+
     [[nodiscard]] Status deleteCalendarEvent(
         int eventId
         );
@@ -360,8 +372,8 @@ public:
         ScheduleType type
         );
 
-    // TODO:
-    // Port time parsing helpers
+    // Class-time conversion and conflict evaluation are delegated through
+    // ClassInfoRepository to the engine ClassScheduleService.
 
 
 
@@ -386,7 +398,9 @@ public:
         int classId
         );
 
-    // Port buildRosterScoreImport()
+    // Roster score-import construction is delegated through
+    // SpeakingEvalRepository to the engine
+    // SpeakingEvaluationPersistenceService.
 
 
 
@@ -437,6 +451,7 @@ public:
     // Manual Saving
     // =====================================================
 
+    // Compatibility no-op. Engine repository writes are transactional.
     void save();
 
     [[nodiscard]] Status saveAs(
@@ -454,7 +469,9 @@ private:
     void refreshRepositoryAdapters();
 
     QString m_initialDatabasePath;
-    std::unique_ptr<DatabaseSession> m_session;
+    std::unique_ptr<DatabaseSession> m_ownedSession;
+    DatabaseSession* m_session = nullptr;
+    bool m_ownsSession = false;
 
     SettingsRepository* m_settingsRepository = nullptr;
     CampusRecordRepository* m_campusRecordRepository = nullptr;

@@ -1,0 +1,220 @@
+{
+    "format":  "classmngr-winui-phase5-measurements-v1",
+    "measuredAtUtc":  "2026-09-07T16:51:48.9447197Z",
+    "platform":  "x64",
+    "stageDirectory":  "C:\\Git\\ClassMngr-cpp\\dist\\ClassMngr-windows-winui-x64\\Release",
+    "executable":  "C:\\Git\\ClassMngr-cpp\\dist\\ClassMngr-windows-winui-x64\\Release\\ClassMngrWinUI.exe",
+    "iterations":  3,
+    "scenarioArguments":  [
+                              "--phase5-campus-populated"
+                          ],
+    "windowTimeoutMilliseconds":  30000,
+    "settleMilliseconds":  1000,
+    "resizeRequested":  {
+                            "width":  1280,
+                            "height":  800
+                        },
+    "targetNotes":  [
+                        "The only evaluated target is the shared steady-state working-set target of 200 MiB when at least one numeric working-set sample exists.",
+                        "First-navigation readiness is represented by the requested-arguments visible-window event as a proxy; no first-navigation threshold is fabricated.",
+                        "Resize latency is reported for comparison with the Phase 0 provisional p95 target of 32 ms; this helper does not assert a resize pass/fail result.",
+                        "No startup or handle-count pass/fail budget is supplied by this helper."
+                    ],
+    "withinKnownTargets":  true,
+    "runs":  [
+                 {
+                     "iteration":  1,
+                     "category":  "cold",
+                     "arguments":  [
+                                       "--phase5-campus-populated"
+                                   ],
+                     "launchToWindowVisibleMs":  207,
+                     "scenarioReadyProxyMs":  207,
+                     "scenarioReadyProxyMethod":  "same visible-window event after requested arguments; proxy only",
+                     "workingSetMiB":  124.4,
+                     "privateMemoryMiB":  107.13,
+                     "peakWorkingSetMiB":  129.11,
+                     "handleCount":  1161,
+                     "initialBounds":  {
+                                           "left":  646,
+                                           "top":  52,
+                                           "right":  1926,
+                                           "bottom":  852,
+                                           "width":  1280,
+                                           "height":  800
+                                       },
+                     "resizeRequested":  {
+                                             "width":  1280,
+                                             "height":  800
+                                         },
+                     "resizeLatencyMs":  6.2,
+                     "resultingBounds":  {
+                                             "left":  646,
+                                             "top":  52,
+                                             "right":  1926,
+                                             "bottom":  852,
+                                             "width":  1280,
+                                             "height":  800
+                                         },
+                     "resizeApplied":  true,
+                     "closeRequested":  true,
+                     "cleanClose":  true,
+                     "forcedTermination":  false,
+                     "windowReleased":  true,
+                     "processExited":  true,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  2,
+                     "category":  "warm",
+                     "arguments":  [
+                                       "--phase5-campus-populated"
+                                   ],
+                     "launchToWindowVisibleMs":  192,
+                     "scenarioReadyProxyMs":  192,
+                     "scenarioReadyProxyMethod":  "same visible-window event after requested arguments; proxy only",
+                     "workingSetMiB":  125.21,
+                     "privateMemoryMiB":  108.63,
+                     "peakWorkingSetMiB":  130.05,
+                     "handleCount":  1171,
+                     "initialBounds":  {
+                                           "left":  646,
+                                           "top":  52,
+                                           "right":  1926,
+                                           "bottom":  852,
+                                           "width":  1280,
+                                           "height":  800
+                                       },
+                     "resizeRequested":  {
+                                             "width":  1280,
+                                             "height":  800
+                                         },
+                     "resizeLatencyMs":  0.1,
+                     "resultingBounds":  {
+                                             "left":  646,
+                                             "top":  52,
+                                             "right":  1926,
+                                             "bottom":  852,
+                                             "width":  1280,
+                                             "height":  800
+                                         },
+                     "resizeApplied":  true,
+                     "closeRequested":  true,
+                     "cleanClose":  true,
+                     "forcedTermination":  false,
+                     "windowReleased":  true,
+                     "processExited":  true,
+                     "status":  "measured",
+                     "failure":  null
+                 },
+                 {
+                     "iteration":  3,
+                     "category":  "warm",
+                     "arguments":  [
+                                       "--phase5-campus-populated"
+                                   ],
+                     "launchToWindowVisibleMs":  184,
+                     "scenarioReadyProxyMs":  184,
+                     "scenarioReadyProxyMethod":  "same visible-window event after requested arguments; proxy only",
+                     "workingSetMiB":  124.8,
+                     "privateMemoryMiB":  108.46,
+                     "peakWorkingSetMiB":  129.6,
+                     "handleCount":  1167,
+                     "initialBounds":  {
+                                           "left":  646,
+                                           "top":  52,
+                                           "right":  1926,
+                                           "bottom":  852,
+                                           "width":  1280,
+                                           "height":  800
+                                       },
+                     "resizeRequested":  {
+                                             "width":  1280,
+                                             "height":  800
+                                         },
+                     "resizeLatencyMs":  0.2,
+                     "resultingBounds":  {
+                                             "left":  646,
+                                             "top":  52,
+                                             "right":  1926,
+                                             "bottom":  852,
+                                             "width":  1280,
+                                             "height":  800
+                                         },
+                     "resizeApplied":  true,
+                     "closeRequested":  true,
+                     "cleanClose":  true,
+                     "forcedTermination":  false,
+                     "windowReleased":  true,
+                     "processExited":  true,
+                     "status":  "measured",
+                     "failure":  null
+                 }
+             ],
+    "summary":  {
+                    "requestedRuns":  3,
+                    "completedRuns":  3,
+                    "successfulRuns":  3,
+                    "failedRuns":  0,
+                    "coldRuns":  1,
+                    "warmRuns":  2,
+                    "launchToWindowVisibleMs":  {
+                                                    "cold":  {
+                                                                 "sampleCount":  1,
+                                                                 "minimum":  207,
+                                                                 "median":  207,
+                                                                 "maximum":  207
+                                                             },
+                                                    "warm":  {
+                                                                 "sampleCount":  2,
+                                                                 "minimum":  184,
+                                                                 "median":  188,
+                                                                 "maximum":  192
+                                                             }
+                                                },
+                    "scenarioReadyProxyMs":  {
+                                                 "sampleCount":  3,
+                                                 "minimum":  184,
+                                                 "median":  192,
+                                                 "maximum":  207
+                                             },
+                    "workingSetMiB":  {
+                                          "sampleCount":  3,
+                                          "minimum":  124.4,
+                                          "median":  124.8,
+                                          "maximum":  125.2
+                                      },
+                    "privateMemoryMiB":  {
+                                             "sampleCount":  3,
+                                             "minimum":  107.1,
+                                             "median":  108.5,
+                                             "maximum":  108.6
+                                         },
+                    "peakWorkingSetMiB":  {
+                                              "sampleCount":  3,
+                                              "minimum":  129.1,
+                                              "median":  129.6,
+                                              "maximum":  130
+                                          },
+                    "handleCount":  {
+                                        "sampleCount":  3,
+                                        "minimum":  1161,
+                                        "median":  1167,
+                                        "maximum":  1171
+                                    },
+                    "resizeLatencyMs":  {
+                                            "sampleCount":  3,
+                                            "minimum":  0.1,
+                                            "median":  0.2,
+                                            "maximum":  6.2
+                                        },
+                    "knownTargetEvaluation":  {
+                                                  "workingSetTargetMiB":  200,
+                                                  "numericWorkingSetSampleCount":  3,
+                                                  "evaluated":  true,
+                                                  "withinTarget":  true,
+                                                  "note":  "This is the only target evaluation; startup, first-navigation, resize, and handle-count pass/fail claims are intentionally omitted."
+                                              }
+                }
+}

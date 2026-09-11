@@ -1,5 +1,8 @@
 #pragma once
 
+// Compatibility-only Qt parser retained for SharedPolicy tests. New
+// production callers must use the portable engine schedule rule APIs.
+
 #include "core/result.h"
 
 #include <QString>

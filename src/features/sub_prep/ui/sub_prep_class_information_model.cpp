@@ -1,383 +1,319 @@
 #include "sub_prep_class_information_model.h"
 
-#include "core/utils/sidebar_node_naming.h"
-#include "features/classes/config/class_info_config.h"
+#include "classmngr/engine/sub_prep_class_information.h"
 
-#include <algorithm>
-#include <limits>
-
-#include <QHash>
 #include <QCoreApplication>
-#include <QTime>
+
+#include <array>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace
 {
-constexpr int UnknownOrder =
-    std::numeric_limits<int>::max();
+using PortableClassInfo = classmngr::engine::ClassInfo;
+using PortableClassTime = classmngr::engine::ClassTime;
+using PortableSourceClass = classmngr::engine::SubPrepSourceClass;
+using PortableTeacher = classmngr::engine::Teacher;
 
-int dayOrder(
-    const QString& day
-    )
+QString fromUtf8(const std::string& value)
 {
-    const int index =
-        ClassInfoConfig::Days.indexOf(
-            day.trimmed()
-            );
-
-    return index >= 0
-        ? index
-        : UnknownOrder;
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
 
-QString dayAbbreviation(
-    const QString& day
-    )
+QString localizeMeetingTimeLabels(QString value)
 {
-    if (day == QStringLiteral("Monday"))
-    {
-        return QCoreApplication::translate(
-            "SubPrepClassInformation",
-            "Mon"
-            );
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
-        return QCoreApplication::translate(
-            "SubPrepClassInformation",
-            "Tues"
-            );
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
-        return QCoreApplication::translate(
-            "SubPrepClassInformation",
-            "Wed"
-            );
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
-        return QCoreApplication::translate(
-            "SubPrepClassInformation",
-            "Thurs"
-            );
-    }
-    if (day == QStringLiteral("Friday"))
-    {
-        return QCoreApplication::translate(
-            "SubPrepClassInformation",
-            "Fri"
-            );
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
-        return QCoreApplication::translate(
-            "SubPrepClassInformation",
-            "Sat"
-            );
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
-        return QCoreApplication::translate(
-            "SubPrepClassInformation",
-            "Sun"
-            );
-    }
-
-    return day.trimmed();
-}
-
-QTime parseTime(
-    const QString& value
-    )
-{
-    const QString trimmed =
-        value.trimmed();
-
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
-    for (const QString& format : formats)
-    {
-        const QTime parsed =
-            QTime::fromString(
-                trimmed,
-                format
-                );
-
-        if (parsed.isValid())
+    const std::array<std::pair<QString, QString>, 7> labels{{
         {
-            return parsed;
+            QStringLiteral("Thurs"),
+            QCoreApplication::translate(
+                "SubPrepClassInformation",
+                "Thurs"
+                )
+        },
+        {
+            QStringLiteral("Tues"),
+            QCoreApplication::translate(
+                "SubPrepClassInformation",
+                "Tues"
+                )
+        },
+        {
+            QStringLiteral("Mon"),
+            QCoreApplication::translate(
+                "SubPrepClassInformation",
+                "Mon"
+                )
+        },
+        {
+            QStringLiteral("Wed"),
+            QCoreApplication::translate(
+                "SubPrepClassInformation",
+                "Wed"
+                )
+        },
+        {
+            QStringLiteral("Fri"),
+            QCoreApplication::translate(
+                "SubPrepClassInformation",
+                "Fri"
+                )
+        },
+        {
+            QStringLiteral("Sat"),
+            QCoreApplication::translate(
+                "SubPrepClassInformation",
+                "Sat"
+                )
+        },
+        {
+            QStringLiteral("Sun"),
+            QCoreApplication::translate(
+                "SubPrepClassInformation",
+                "Sun"
+                )
         }
-    }
+    }};
 
-    return {};
-}
-
-QString compactTime(
-    const QTime& time
-    )
-{
-    if (!time.isValid())
+    QStringList groups = value.split(
+        QStringLiteral(" & "),
+        Qt::KeepEmptyParts
+        );
+    for (QString& group : groups)
     {
-        return {};
-    }
-
-    const QString format =
-        time.minute() == 0
-            ? QStringLiteral("hap")
-            : QStringLiteral("h:mmap");
-
-    return time
-        .toString(format)
-        .toLower();
-}
-
-QString classLabel(
-    const ClassInfo& info
-    )
-{
-    const QString grade =
-        info.classGrade.trimmed();
-    const QString level =
-        info.classLevel.trimmed();
-
-    if (!grade.isEmpty() && !level.isEmpty())
-    {
-        return QStringLiteral("%1 %2")
-            .arg(grade, level);
-    }
-
-    if (!grade.isEmpty())
-    {
-        return grade;
-    }
-
-    if (!level.isEmpty())
-    {
-        return level;
-    }
-
-    return QStringLiteral("N/A");
-}
-
-QString teacherName(
-    const Teacher& teacher
-    )
-{
-    const QString preferredName =
-        teacher.preferredDisplayName();
-
-    return preferredName.isEmpty()
-        ? QStringLiteral("N/A")
-        : preferredName;
-}
-
-int gradeOrder(
-    const QString& grade
-    )
-{
-    const int index =
-        ClassInfoConfig::Grades.indexOf(
-            grade.trimmed()
-            );
-
-    return index >= 0
-        ? index
-        : UnknownOrder;
-}
-
-int levelOrder(
-    const ClassInfo& info
-    )
-{
-    const int index =
-        ClassInfoConfig::levelsForGrade(
-            info.classGrade.trimmed()
-            )
-            .indexOf(
-                info.classLevel.trimmed()
-                );
-
-    return index >= 0
-        ? index
-        : UnknownOrder;
-}
-
-QPair<int, int> firstMeetingOrder(
-    const QList<ClassTime>& times,
-    const QStringList& visibleDays
-    )
-{
-    QPair<int, int> result{
-        UnknownOrder,
-        UnknownOrder
-    };
-
-    for (const ClassTime& meeting : times)
-    {
-        if (!visibleDays.contains(meeting.day))
+        const qsizetype separator = group.indexOf(QChar(u' '));
+        if (separator <= 0)
         {
             continue;
         }
 
-        const QTime time =
-            parseTime(meeting.startTime);
-
-        if (!time.isValid())
+        const QString dayPart = group.left(separator);
+        QString localizedDayPart;
+        qsizetype offset = 0;
+        bool recognized = true;
+        while (offset < dayPart.size())
         {
-            continue;
+            bool matched = false;
+            for (const auto& [source, translation] : labels)
+            {
+                if (dayPart.mid(offset, source.size()) == source)
+                {
+                    localizedDayPart += translation;
+                    offset += source.size();
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched)
+            {
+                recognized = false;
+                break;
+            }
         }
 
-        const QPair<int, int> candidate{
-            dayOrder(meeting.day),
-            (time.hour() * 60) + time.minute()
-        };
-
-        if (candidate < result)
+        if (recognized)
         {
-            result = candidate;
+            group = localizedDayPart + group.mid(separator);
         }
     }
+    return groups.join(QStringLiteral(" & "));
+}
 
+PortableClassTime toPortable(const ClassTime& source)
+{
+    return {
+        source.day.toStdString(),
+        source.startTime.toStdString(),
+        source.endTime.toStdString()
+    };
+}
+
+ClassTime fromPortable(const PortableClassTime& source)
+{
+    return {
+        fromUtf8(source.day),
+        fromUtf8(source.startTime),
+        fromUtf8(source.endTime)
+    };
+}
+
+PortableTeacher toPortable(const Teacher& source)
+{
+    PortableTeacher result;
+    result.id = source.id;
+    result.teacherKr = source.teacherKr.toStdString();
+    result.teacherEn = source.teacherEn.toStdString();
+    result.preferredRomanization = source.preferredRomanization.toStdString();
+    result.preferredName = source.preferredName.toStdString();
+    result.roomNumber = source.roomNumber.toStdString();
+    result.birthday = source.birthday.toStdString();
+    result.phoneNumber = source.phoneNumber.toStdString();
+    result.wifiName = source.wifiName.toStdString();
+    result.wifiPassword = source.wifiPassword.toStdString();
+    result.internetType = source.internetType.toStdString();
+    result.zoomId = source.zoomId.toStdString();
+    result.zoomPassword = source.zoomPassword.toStdString();
+    result.projectionType = source.projectionType.toStdString();
+    result.notes = source.notes.toStdString();
     return result;
 }
+
+Teacher fromPortable(const PortableTeacher& source)
+{
+    Teacher result;
+    result.id = source.id;
+    result.teacherKr = fromUtf8(source.teacherKr);
+    result.teacherEn = fromUtf8(source.teacherEn);
+    result.preferredRomanization = fromUtf8(source.preferredRomanization);
+    result.preferredName = fromUtf8(source.preferredName);
+    result.roomNumber = fromUtf8(source.roomNumber);
+    result.birthday = fromUtf8(source.birthday);
+    result.phoneNumber = fromUtf8(source.phoneNumber);
+    result.wifiName = fromUtf8(source.wifiName);
+    result.wifiPassword = fromUtf8(source.wifiPassword);
+    result.internetType = fromUtf8(source.internetType);
+    result.zoomId = fromUtf8(source.zoomId);
+    result.zoomPassword = fromUtf8(source.zoomPassword);
+    result.projectionType = fromUtf8(source.projectionType);
+    result.notes = fromUtf8(source.notes);
+    return result;
 }
+
+PortableClassInfo toPortable(const ClassInfo& source)
+{
+    PortableClassInfo result;
+    result.classId = source.classId;
+    result.teacherId = source.teacherId;
+    result.teacherKr = source.teacherKr.toStdString();
+    result.teacherEn = source.teacherEn.toStdString();
+    result.teacherPreferredName = source.teacherPreferredName.toStdString();
+    result.roomNumber = source.roomNumber.toStdString();
+    result.wifiName = source.wifiName.toStdString();
+    result.wifiPassword = source.wifiPassword.toStdString();
+    result.internetType = source.internetType.toStdString();
+    result.zoomId = source.zoomId.toStdString();
+    result.zoomPassword = source.zoomPassword.toStdString();
+    result.projectionType = source.projectionType.toStdString();
+    result.classGrade = source.classGrade.toStdString();
+    result.classLevel = source.classLevel.toStdString();
+    result.readingBook = source.readingBook.toStdString();
+    result.essayBook = source.essayBook.toStdString();
+    result.classColor = source.classColor.toStdString();
+    result.fontColor = source.fontColor.toStdString();
+    result.notes = source.notes.toStdString();
+    result.timeFillerActivities = source.timeFillerActivities.toStdString();
+
+    result.classTimes.reserve(source.classTimes.size());
+    for (const ClassTime& time : source.classTimes)
+    {
+        result.classTimes.push_back(toPortable(time));
+    }
+    result.intensiveTimes.reserve(source.intensiveTimes.size());
+    for (const ClassTime& time : source.intensiveTimes)
+    {
+        result.intensiveTimes.push_back(toPortable(time));
+    }
+    return result;
+}
+
+ClassInfo fromPortable(const PortableClassInfo& source)
+{
+    ClassInfo result;
+    result.classId = source.classId;
+    result.teacherId = source.teacherId;
+    result.teacherKr = fromUtf8(source.teacherKr);
+    result.teacherEn = fromUtf8(source.teacherEn);
+    result.teacherPreferredName = fromUtf8(source.teacherPreferredName);
+    result.roomNumber = fromUtf8(source.roomNumber);
+    result.wifiName = fromUtf8(source.wifiName);
+    result.wifiPassword = fromUtf8(source.wifiPassword);
+    result.internetType = fromUtf8(source.internetType);
+    result.zoomId = fromUtf8(source.zoomId);
+    result.zoomPassword = fromUtf8(source.zoomPassword);
+    result.projectionType = fromUtf8(source.projectionType);
+    result.classGrade = fromUtf8(source.classGrade);
+    result.classLevel = fromUtf8(source.classLevel);
+    result.readingBook = fromUtf8(source.readingBook);
+    result.essayBook = fromUtf8(source.essayBook);
+    result.classColor = fromUtf8(source.classColor);
+    result.fontColor = fromUtf8(source.fontColor);
+    result.notes = fromUtf8(source.notes);
+    result.timeFillerActivities = fromUtf8(source.timeFillerActivities);
+
+    result.classTimes.reserve(source.classTimes.size());
+    for (const PortableClassTime& time : source.classTimes)
+    {
+        result.classTimes.append(fromPortable(time));
+    }
+    result.intensiveTimes.reserve(source.intensiveTimes.size());
+    for (const PortableClassTime& time : source.intensiveTimes)
+    {
+        result.intensiveTimes.append(fromPortable(time));
+    }
+    return result;
+}
+
+PortableSourceClass toPortable(
+    const SubPrepClassInformation::SourceClass& source
+    )
+{
+    PortableSourceClass result;
+    result.classroom.id = source.classroom.id;
+    result.classroom.name = source.classroom.name.toStdString();
+    result.info = toPortable(source.info);
+    result.teacher = toPortable(source.teacher);
+    result.studentCount = source.studentCount;
+    return result;
+}
+
+classmngr::engine::SubPrepBuildOptions toPortable(
+    const SubPrepClassInformation::BuildOptions& source
+    )
+{
+    classmngr::engine::SubPrepBuildOptions result;
+    result.visibleClassIds.reserve(source.visibleClassIds.size());
+    for (const int classId : source.visibleClassIds)
+    {
+        result.visibleClassIds.push_back(classId);
+    }
+    result.visibleDays.reserve(source.visibleDays.size());
+    for (const QString& day : source.visibleDays)
+    {
+        result.visibleDays.push_back(day.toStdString());
+    }
+    result.useIntensive = source.useIntensive;
+    return result;
+}
+} // namespace
 
 QString SubPrepClassInformation::formatMeetingTimes(
     const QList<ClassTime>& times,
     const QStringList& visibleDays
     )
 {
-    struct Meeting
+    std::vector<classmngr::engine::ClassTime> portableTimes;
+    portableTimes.reserve(times.size());
+    for (const ClassTime& time : times)
     {
-        QString day;
-        QTime time;
-    };
-
-    QList<Meeting> meetings;
-
-    for (const ClassTime& source : times)
-    {
-        if (!visibleDays.contains(source.day))
-        {
-            continue;
-        }
-
-        const QTime time =
-            parseTime(source.startTime);
-
-        if (!time.isValid())
-        {
-            continue;
-        }
-
-        meetings.append(
-            {
-                source.day,
-                time
-            }
-            );
+        portableTimes.push_back(toPortable(time));
     }
 
-    std::sort(
-        meetings.begin(),
-        meetings.end(),
-        [](const Meeting& left, const Meeting& right)
-        {
-            const int dayComparison =
-                dayOrder(left.day) - dayOrder(right.day);
-
-            if (dayComparison != 0)
-            {
-                return dayComparison < 0;
-            }
-
-            return left.time < right.time;
-        }
-        );
-
-    struct TimeGroup
+    std::vector<std::string> portableDays;
+    portableDays.reserve(visibleDays.size());
+    for (const QString& day : visibleDays)
     {
-        QTime time;
-        QStringList days;
-        int firstDay = UnknownOrder;
-    };
-
-    QList<TimeGroup> groups;
-
-    for (const Meeting& meeting : meetings)
-    {
-        auto group =
-            std::find_if(
-                groups.begin(),
-                groups.end(),
-                [&meeting](const TimeGroup& candidate)
-                {
-                    return candidate.time == meeting.time;
-                }
-                );
-
-        if (group == groups.end())
-        {
-            groups.append(
-                {
-                    meeting.time,
-                    QStringList{meeting.day},
-                    dayOrder(meeting.day)
-                }
-                );
-        }
-        else if (!group->days.contains(meeting.day))
-        {
-            group->days.append(meeting.day);
-        }
+        portableDays.push_back(day.toStdString());
     }
 
-    std::sort(
-        groups.begin(),
-        groups.end(),
-        [](const TimeGroup& left, const TimeGroup& right)
-        {
-            if (left.firstDay != right.firstDay)
-            {
-                return left.firstDay < right.firstDay;
-            }
-
-            return left.time < right.time;
-        }
-        );
-
-    QStringList labels;
-
-    for (const TimeGroup& group : groups)
-    {
-        QString days;
-
-        for (const QString& day : group.days)
-        {
-            days += dayAbbreviation(day);
-        }
-
-        labels.append(
-            QStringLiteral("%1 %2")
-                .arg(
-                    days,
-                    compactTime(group.time)
-                    )
-            );
-    }
-
-    return labels.isEmpty()
-        ? QStringLiteral("N/A")
-        : labels.join(QStringLiteral(" & "));
+    return localizeMeetingTimeLabels(fromUtf8(
+        classmngr::engine::SubPrepClassInformationService::formatMeetingTimes(
+            portableTimes,
+            portableDays
+            )
+        ));
 }
 
 QList<SubPrepClassInformation::TeacherGroup>
@@ -386,146 +322,42 @@ SubPrepClassInformation::build(
     const BuildOptions& options
     )
 {
-    QHash<int, QList<ClassDetails>> classesByTeacher;
-    QHash<int, Teacher> teachersById;
-    QSet<int> processedClassIds;
-
+    std::vector<PortableSourceClass> portableSources;
+    portableSources.reserve(sourceClasses.size());
     for (const SourceClass& source : sourceClasses)
     {
-        const int classId =
-            source.classroom.id;
-        const int teacherId =
-            source.info.teacherId;
-
-        if (
-            classId <= 0
-            || teacherId <= 0
-            || source.teacher.id <= 0
-            || !options.visibleClassIds.contains(classId)
-            || processedClassIds.contains(classId)
-            )
-        {
-            continue;
-        }
-
-        processedClassIds.insert(classId);
-        teachersById.insert(
-            teacherId,
-            source.teacher
-            );
-
-        const QList<ClassTime>& selectedTimes =
-            options.useIntensive
-                ? source.info.intensiveTimes
-                : source.info.classTimes;
-
-        ClassDetails details;
-        details.classId = classId;
-        details.info = source.info;
-        details.studentCount = source.studentCount;
-        details.classLabel = classLabel(source.info);
-        details.timeText =
-            formatMeetingTimes(
-                selectedTimes,
-                options.visibleDays
-                );
-
-        classesByTeacher[teacherId].append(details);
+        portableSources.push_back(toPortable(source));
     }
 
-    QList<Teacher> teachers =
-        teachersById.values();
+    const std::vector<classmngr::engine::SubPrepTeacherGroup> portableGroups =
+        classmngr::engine::SubPrepClassInformationService::build(
+            portableSources,
+            toPortable(options)
+            );
 
-    std::sort(
-        teachers.begin(),
-        teachers.end(),
-        SidebarNodeNaming::teacherDisplayLessThan
-        );
-
-    QList<TeacherGroup> groups;
-
-    for (const Teacher& teacher : teachers)
+    QList<TeacherGroup> result;
+    result.reserve(static_cast<qsizetype>(portableGroups.size()));
+    for (const auto& portableGroup : portableGroups)
     {
-        QList<ClassDetails> classes =
-            classesByTeacher.value(teacher.id);
-
-        std::sort(
-            classes.begin(),
-            classes.end(),
-            [&options](const ClassDetails& left, const ClassDetails& right)
-            {
-                const int leftGrade =
-                    gradeOrder(left.info.classGrade);
-                const int rightGrade =
-                    gradeOrder(right.info.classGrade);
-
-                if (leftGrade != rightGrade)
-                {
-                    return leftGrade < rightGrade;
-                }
-
-                const int leftLevel =
-                    levelOrder(left.info);
-                const int rightLevel =
-                    levelOrder(right.info);
-
-                if (leftLevel != rightLevel)
-                {
-                    return leftLevel < rightLevel;
-                }
-
-                const QList<ClassTime>& leftTimes =
-                    options.useIntensive
-                        ? left.info.intensiveTimes
-                        : left.info.classTimes;
-                const QList<ClassTime>& rightTimes =
-                    options.useIntensive
-                        ? right.info.intensiveTimes
-                        : right.info.classTimes;
-
-                const auto leftMeeting =
-                    firstMeetingOrder(
-                        leftTimes,
-                        options.visibleDays
-                        );
-                const auto rightMeeting =
-                    firstMeetingOrder(
-                        rightTimes,
-                        options.visibleDays
-                        );
-
-                if (leftMeeting != rightMeeting)
-                {
-                    return leftMeeting < rightMeeting;
-                }
-
-                return left.classId < right.classId;
-            }
+        TeacherGroup group;
+        group.teacher = fromPortable(portableGroup.teacher);
+        group.displayName = fromUtf8(portableGroup.displayName);
+        group.classListText = fromUtf8(portableGroup.classListText);
+        group.classes.reserve(
+            static_cast<qsizetype>(portableGroup.classes.size())
             );
 
-        QStringList classLabels;
-        QSet<QString> seenClassLabels;
-
-        for (const ClassDetails& details : classes)
+        for (const auto& portableDetails : portableGroup.classes)
         {
-            if (seenClassLabels.contains(details.classLabel))
-            {
-                continue;
-            }
-
-            seenClassLabels.insert(details.classLabel);
-            classLabels.append(details.classLabel);
+            ClassDetails details;
+            details.classId = portableDetails.classId;
+            details.info = fromPortable(portableDetails.info);
+            details.studentCount = portableDetails.studentCount;
+            details.classLabel = fromUtf8(portableDetails.classLabel);
+            details.timeText = fromUtf8(portableDetails.timeText);
+            group.classes.append(std::move(details));
         }
-
-        TeacherGroup group;
-        group.teacher = teacher;
-        group.displayName = teacherName(teacher);
-        group.classListText =
-            classLabels.join(QStringLiteral(" / "));
-        group.classes = classes;
-
-        groups.append(group);
+        result.append(std::move(group));
     }
-
-    return groups;
+    return result;
 }

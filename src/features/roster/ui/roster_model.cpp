@@ -18,11 +18,38 @@ QString domainValidationMessage(const ValidationIssue& issue)
         return RosterModel::tr("This value is too long.");
     }
 
+    if (issue.code == QStringLiteral("student_name.english.too_long"))
+    {
+        return RosterModel::tr("English name should be 20 characters or less.");
+    }
+
+    if (issue.code == QStringLiteral("student_name.english.non_ascii"))
+    {
+        return RosterModel::tr("English name should use ASCII characters.");
+    }
+
+    if (issue.code == QStringLiteral("student_name.english.invalid_characters"))
+    {
+        return RosterModel::tr("English name contains invalid characters.");
+    }
+
+    if (issue.code == QStringLiteral("student_name.korean.invalid_characters"))
+    {
+        return RosterModel::tr("Korean name contains invalid characters.");
+    }
+
     if (issue.code == QStringLiteral("student_name.korean.too_short")
         || issue.code == QStringLiteral("student_name.korean.too_long"))
     {
         return RosterModel::tr(
             "Korean name has 1 or 5+ syllables. Verify it is correct."
+            );
+    }
+
+    if (issue.code == QStringLiteral("student_name.korean.unusual_length"))
+    {
+        return RosterModel::tr(
+            "Korean name has an uncommon length. Verify it is correct."
             );
     }
 
@@ -161,11 +188,6 @@ bool RosterModel::setData(
     validateCellAt(
         index.row(),
         index.column()
-        );
-    validateRawInput(
-        index.row(),
-        index.column(),
-        value.toString()
         );
     validateDuplicateNames();
 

@@ -1,0 +1,19 @@
+{
+  "format": "classmngr-phase0-startup-baseline-v1",
+  "capturedAtUtc": "2026-08-23T06:38:00.6026611Z",
+  "appPath": "C:\\Git\\ClassMngr-cpp\\build\\windows-x64-debug\\Debug\\ClassMngr.exe",
+  "architecture": "X64",
+  "operatingSystem": {
+    "caption": "Microsoft Windows 11 Pro",
+    "version": "10.0.26200",
+    "buildNumber": "26200"
+  },
+  "hardware": {
+    "manufacturer": "Gigabyte Technology Co., Ltd.",
+    "model": "X870E AORUS PRO",
+    "processor": "AMD Ryzen 9 9950X3D 16-Core Processor          ",
+    "logicalProcessors": 32,
+    "totalPhysicalMemoryBytes": 66155393024
+  },
+  "metricsFile": "startup-metrics.json"
+}

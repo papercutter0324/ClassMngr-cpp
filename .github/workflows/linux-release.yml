@@ -38,7 +38,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  QT_VERSION: "6.11.1"
+  QT_VERSION: "6.12.0"
 
 jobs:
   build:
@@ -47,7 +47,7 @@ jobs:
     timeout-minutes: 60
     env:
       QT_ROOT: ${{ github.workspace }}/Qt
-      QT_LINUX_PREFIX: ${{ github.workspace }}/Qt/6.11.1/gcc_64
+      QT_LINUX_PREFIX: ${{ github.workspace }}/Qt/6.12.0/gcc_64
 
     steps:
       - name: Check out repository
@@ -63,6 +63,7 @@ jobs:
             build-essential \
             libcups2-dev \
             libgl1-mesa-dev \
+            libwayland-dev \
             libxkbcommon-dev \
             libxkbcommon-x11-dev \
             libxcb1-dev \

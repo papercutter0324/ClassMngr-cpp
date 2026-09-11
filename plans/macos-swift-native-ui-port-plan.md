@@ -5,7 +5,7 @@
 Replace the macOS Qt application with a native Swift application while
 preserving ClassMngr behavior, `.tps` database compatibility, English/Korean
 input, Intel and Apple silicon distribution, document/report workflows,
-PowerPoint automation, updates, and the current macOS 13-or-newer baseline
+PowerPoint automation, updates, and the current macOS 14.4-or-newer baseline
 unless an explicit product decision raises it. Linux continues to use Qt.
 
 For macOS, the native frameworks are SwiftUI and AppKit; UIKit is the iOS
@@ -27,7 +27,7 @@ Mac Catalyst.
 - macOS already has platform-specific behavior for menus/actions, file dialogs,
   printing, update installation, application bundle resource paths, font
   handling, and PowerPoint AppleScript automation.
-- The current release is a universal `arm64;x86_64` app targeting macOS 13,
+- The current release is a universal `arm64;x86_64` app targeting macOS 14.4,
   packaged in a versioned DMG and ad-hoc signed by the local installer target.
   The final native release needs a production signing/notarization workflow.
 
@@ -81,7 +81,7 @@ until the native app satisfies the cutover criteria.
    forms, detail views, alerts, and ordinary lists. AppKit owns or wraps
    high-density editable tables, precise text editing, menus/commands,
    advanced window behavior, printing, and any control whose SwiftUI version
-   cannot meet macOS 13 parity.
+   cannot meet macOS 14.4 parity.
 2. **Engine boundary:** a Qt-free C++23 engine is the sole implementation of
    product rules, migrations, and database writes. Swift view models call an
    Objective-C++ facade; they do not issue SQL.
@@ -96,7 +96,7 @@ until the native app satisfies the cutover criteria.
 5. **Compatibility:** SQLite schema/migrations, `.tps` semantics, resource-pack
    manifests/signatures, updates, and export formats are shared contracts. Use
    SQLite directly; do not migrate production data to SwiftData/Core Data.
-6. **Deployment baseline:** preserve universal Apple silicon/Intel and macOS 13
+6. **Deployment baseline:** preserve universal Apple silicon/Intel and macOS 14.4
    initially. Any move to a newer SwiftUI API requires an availability wrapper
    or a recorded decision to raise the minimum OS.
 7. **Parallel operation:** the native app uses a distinct bundle identifier,
@@ -224,7 +224,7 @@ thread sanitizer findings.
 
 **Exit gate:** users can launch, create/open a copied database, navigate a
 localized native shell, change settings, and complete a keyboard/VoiceOver
-smoke flow on macOS 13 and the newest supported macOS.
+smoke flow on macOS 14.4 and the newest supported macOS.
 
 ### Phase 5 — Create Reusable Native Desktop Components
 
@@ -268,7 +268,7 @@ and database compatibility tests. Suggested order:
 7. speaking evaluations, analytics, AI-comment workflow, and batch export;
 8. substitute-preparation and document catalog/PDF workflows.
 
-Use `ObservableObject`/`@Published` on the macOS 13 baseline, with explicit
+Use `ObservableObject`/`@Published` on the macOS 14.4 baseline, with explicit
 loading and error state machines. Do not let views retain engine handles or
 perform business validation. For large tables, request bounded snapshots or
 paged data rather than copying the entire database on every keystroke.
@@ -359,7 +359,7 @@ failure-path tests.
 - **Bridge complexity and memory bugs:** keep the facade narrow and immutable,
   document ownership/queues, catch exceptions, and run sanitizers and repeated
   lifetime tests from the first vertical slice.
-- **SwiftUI macOS 13 control limitations:** use AppKit wrappers deliberately for
+- **SwiftUI macOS 14.4 control limitations:** use AppKit wrappers deliberately for
   dense editing rather than forcing fragile SwiftUI-only implementations.
 - **Linux regressions during extraction:** migrate use cases incrementally and
   require the Linux Qt suite on every engine change.

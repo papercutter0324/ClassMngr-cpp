@@ -1,5 +1,7 @@
 #pragma once
 
+#include "classmngr/engine/speaking_evaluation.h"
+
 #include <QColor>
 #include <QList>
 #include <QString>
@@ -42,11 +44,14 @@ using SpeakingEvalRows = QList<QStringList>;
 namespace SpeakingEval
 {
 
-inline constexpr int RowCount = 25;
-inline constexpr int ColumnCount = 11;
+inline constexpr int RowCount = classmngr::engine::SpeakingEvaluationRowCount;
+inline constexpr int ColumnCount =
+    classmngr::engine::SpeakingEvaluationColumnCount;
 inline constexpr int RowHeight = 50;
-inline constexpr int CommentMinLength = 100;
-inline constexpr int CommentMaxLength = 450;
+inline constexpr int CommentMinLength =
+    classmngr::engine::SpeakingEvaluationCommentMinLength;
+inline constexpr int CommentMaxLength =
+    classmngr::engine::SpeakingEvaluationCommentMaxLength;
 
 inline int toInt(
     SpeakingEvalColumn column
@@ -64,13 +69,16 @@ inline SpeakingEvalColumn columnFromInt(
 
 inline QStringList scoreValues()
 {
-    return {
-        QStringLiteral("A+"),
-        QStringLiteral("A"),
-        QStringLiteral("B+"),
-        QStringLiteral("B"),
-        QStringLiteral("C")
-    };
+    QStringList result;
+    for (const std::string_view score
+         : classmngr::engine::SpeakingEvaluationScoreValues)
+    {
+        result.append(QString::fromUtf8(
+            score.data(),
+            static_cast<qsizetype>(score.size())
+            ));
+    }
+    return result;
 }
 
 inline bool isScoringColumn(

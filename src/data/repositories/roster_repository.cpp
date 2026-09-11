@@ -1,18 +1,246 @@
 #include "roster_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/roster_service.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QDebug>
+#include <QByteArray>
 #include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
+#include <QStringList>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+namespace
+{
+using EngineError = classmngr::engine::Error;
+using EngineRoster = classmngr::engine::Roster;
+using EngineRosterService = classmngr::engine::RosterService;
+
+std::string toUtf8(const QString& value)
+{
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
+}
+
+QString fromUtf8(std::string_view value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+EngineRoster toEngineRoster(const Roster& source)
+{
+    EngineRoster result;
+    result.columns.reserve(static_cast<std::size_t>(source.columns.size()));
+    for (const QString& column : source.columns)
+    {
+        result.columns.push_back(toUtf8(column));
+    }
+
+    result.columnWidths.reserve(
+        static_cast<std::size_t>(source.columnWidths.size())
+        );
+    for (const int width : source.columnWidths)
+    {
+        result.columnWidths.push_back(width);
+    }
+
+    result.rows.reserve(static_cast<std::size_t>(source.rows.size()));
+    for (const QStringList& sourceRow : source.rows)
+    {
+        std::vector<std::string> row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& value : sourceRow)
+        {
+            row.push_back(toUtf8(value));
+        }
+        result.rows.push_back(std::move(row));
+    }
+
+    return result;
+}
+
+Roster fromEngineRoster(const EngineRoster& source)
+{
+    Roster result;
+    result.columns.reserve(static_cast<qsizetype>(source.columns.size()));
+    for (const std::string& column : source.columns)
+    {
+        result.columns.append(fromUtf8(column));
+    }
+
+    result.columnWidths.reserve(
+        static_cast<qsizetype>(source.columnWidths.size())
+        );
+    for (const int width : source.columnWidths)
+    {
+        result.columnWidths.append(width);
+    }
+
+    result.rows.reserve(static_cast<qsizetype>(source.rows.size()));
+    for (const std::vector<std::string>& sourceRow : source.rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::string& value : sourceRow)
+        {
+            row.append(fromUtf8(value));
+        }
+        result.rows.append(std::move(row));
+    }
+
+    return result;
+}
+
+QString localizedOperation(
+    const QString& detail,
+    const QString& fallback
+    )
+{
+    struct Operation
+    {
+        const char* text;
+    };
+
+    constexpr Operation operations[] = {
+        {"Loading roster columns"},
+        {"Loading roster data"},
+        {"Deleting roster columns"},
+        {"Deleting roster data"},
+        {"Inserting roster column"},
+        {"Inserting roster data"},
+        {"Starting roster save transaction"},
+        {"Committing roster save"},
+        {"Starting roster batch save transaction"},
+        {"Committing roster batch save"},
+        {"Loading roster"},
+        {"Saving roster"}
+    };
+
+    for (const Operation& operation : operations)
+    {
+        if (detail.startsWith(QString::fromLatin1(operation.text)))
+        {
+            return QObject::tr(operation.text);
+        }
+    }
+
+    return fallback;
+}
+
+QString engineFailure(
+    const QString& fallbackOperation,
+    int classId,
+    const EngineError& error
+    )
+{
+    const QString detail = fromUtf8(error.message);
+    QString message = QObject::tr("%1 failed")
+        .arg(localizedOperation(detail, fallbackOperation));
+
+    if (!detail.contains(QStringLiteral("class id ")))
+    {
+        message += QObject::tr(" for class id %1").arg(classId);
+    }
+
+    if (!detail.isEmpty())
+    {
+        message += QStringLiteral(": ") + detail;
+    }
+
+    return message;
+}
+
+QString invalidClassIdError(
+    const QString& operation,
+    int classId
+    )
+{
+    return QObject::tr("%1 failed: invalid class id %2.")
+        .arg(operation)
+        .arg(classId);
+}
+} // namespace
+
+RosterRepository::RosterRepository(const QString& databasePath)
+    : m_databasePath(databasePath)
+{
+}
 
 RosterRepository::RosterRepository(
     QSqlDatabase& database
     )
-    : m_database(database)
+    : RosterRepository(database.databaseName())
 {
+    m_compatibilityDatabaseWasOpen = database.isValid() && database.isOpen();
+}
+
+RosterRepository::~RosterRepository() = default;
+
+Status RosterRepository::ensureEngineDatabase(
+    const QString& operation,
+    int classId
+    )
+{
+    if (!m_compatibilityDatabaseWasOpen)
+    {
+        return std::unexpected(
+            QObject::tr("%1 failed for class id %2: No Teacher Profile is open.")
+                .arg(operation)
+                .arg(classId)
+            );
+    }
+
+    const QString databasePath = m_databasePath;
+    if (databasePath.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QObject::tr("%1 failed for class id %2: No database path is available.")
+                .arg(operation)
+                .arg(classId)
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    const std::string encodedPath = toUtf8(databasePath);
+    auto opened = classmngr::engine::OpenDatabase::execute(encodedPath);
+    if (!opened || *opened == nullptr)
+    {
+        if (!opened)
+        {
+            return std::unexpected(
+                engineFailure(operation, classId, opened.error())
+                );
+        }
+
+        return std::unexpected(
+            QObject::tr("%1 failed for class id %2: The engine database could not be opened.")
+                .arg(operation)
+                .arg(classId)
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
 }
 
 Status RosterRepository::saveRoster(
@@ -20,37 +248,26 @@ Status RosterRepository::saveRoster(
     const Roster& roster
     )
 {
+    const QString operation = QObject::tr("Saving roster");
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Saving roster failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(invalidClassIdError(operation, classId));
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    const Status engineReady = ensureEngineDatabase(operation, classId);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Starting roster save transaction failed for class id %1: %2")
-                .arg(classId)
-                .arg(m_database.lastError().text())
-            );
+        return engineReady;
     }
 
-    const Status saved = writeRoster(classId, roster);
+    EngineRosterService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.save(
+        classId,
+        toEngineRoster(roster)
+        );
     if (!saved)
     {
-        return saved;
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing roster save failed for class id %1: %2")
-                .arg(classId)
-                .arg(m_database.lastError().text())
-            );
+        return std::unexpected(engineFailure(operation, classId, saved.error()));
     }
 
     return {};
@@ -65,151 +282,46 @@ Status RosterRepository::saveRosters(
         return {};
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr("Starting roster batch save transaction failed: %1")
-                .arg(m_database.lastError().text())
-            );
-    }
-
+    const QString operation = QObject::tr("Saving roster batch");
     for (const auto& roster : rosters)
     {
-        const Status saved = writeRoster(roster.first, roster.second);
-        if (!saved)
+        if (roster.first <= 0)
         {
-            return saved;
+            return std::unexpected(
+                invalidClassIdError(
+                    QObject::tr("Saving roster"),
+                    roster.first
+                    )
+                );
         }
     }
 
-    if (!transaction.commit())
+    const Status engineReady = ensureEngineDatabase(
+        operation,
+        rosters.first().first
+        );
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("Committing roster batch save failed: %1")
-                .arg(m_database.lastError().text())
+        return engineReady;
+    }
+
+    std::vector<std::pair<int, EngineRoster>> portableRosters;
+    portableRosters.reserve(static_cast<std::size_t>(rosters.size()));
+    for (const auto& roster : rosters)
+    {
+        portableRosters.emplace_back(
+            roster.first,
+            toEngineRoster(roster.second)
             );
     }
 
-    return {};
-}
-
-Status RosterRepository::writeRoster(
-    int classId,
-    const Roster& roster
-    )
-{
-    if (classId <= 0)
+    EngineRosterService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.saveBatch(portableRosters);
+    if (!saved)
     {
         return std::unexpected(
-            QObject::tr("Saving roster failed: invalid class id %1.")
-                .arg(classId)
+            engineFailure(operation, rosters.first().first, saved.error())
             );
-    }
-
-    QSqlQuery query(m_database);
-
-    query.prepare(
-        "DELETE FROM roster_columns WHERE class_id=?"
-        );
-
-    query.addBindValue(classId);
-
-    const QString identity = QObject::tr("class id %1").arg(classId);
-    auto execute = [&](const QString& action) -> Status
-    {
-        const auto result = SqlQueryUtils::executePrepared(
-            query, action, identity);
-        return result
-            ? Status{}
-            : Status(std::unexpected(result.error().userMessage()));
-    };
-
-    Status statement = execute(QObject::tr("Deleting roster columns"));
-    if (!statement)
-    {
-        return statement;
-    }
-
-    query.prepare(
-        "DELETE FROM roster_data WHERE class_id=?"
-        );
-
-    query.addBindValue(classId);
-
-    statement = execute(QObject::tr("Deleting roster data"));
-    if (!statement)
-    {
-        return statement;
-    }
-
-    for (int column = 0; column < roster.columns.size(); ++column)
-    {
-        query.prepare(R"(
-            INSERT INTO roster_columns (
-                class_id,
-                name,
-                position,
-                width
-            )
-            VALUES (?, ?, ?, ?)
-        )");
-
-        const int width =
-            column < roster.columnWidths.size()
-                ? roster.columnWidths[column]
-                : 0;
-
-        query.addBindValue(classId);
-        query.addBindValue(roster.columns[column]);
-        query.addBindValue(column);
-        query.addBindValue(width);
-
-        statement = execute(QObject::tr("Inserting roster column"));
-        if (!statement)
-        {
-            return statement;
-        }
-    }
-
-    for (int row = 0; row < roster.rows.size(); ++row)
-    {
-        const QStringList& rowValues =
-            roster.rows[row];
-
-        for (int column = 0; column < roster.columns.size(); ++column)
-        {
-            const QString value =
-                column < rowValues.size()
-                    ? rowValues[column]
-                    : QString();
-
-            if (value.isEmpty())
-            {
-                continue;
-            }
-
-            query.prepare(R"(
-                INSERT INTO roster_data (
-                    class_id,
-                    row_index,
-                    col_index,
-                    value
-                )
-                VALUES (?, ?, ?, ?)
-            )");
-
-            query.addBindValue(classId);
-            query.addBindValue(row);
-            query.addBindValue(column);
-            query.addBindValue(value);
-
-            statement = execute(QObject::tr("Inserting roster data"));
-            if (!statement)
-            {
-                return statement;
-            }
-        }
     }
 
     return {};
@@ -219,159 +331,59 @@ Result<Roster> RosterRepository::loadRoster(
     int classId
     )
 {
-    Roster roster;
-
+    const QString operation = QObject::tr("Loading roster");
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading roster failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return std::unexpected(invalidClassIdError(operation, classId));
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT
-            name,
-            width
-        FROM roster_columns
-        WHERE class_id=?
-        ORDER BY position, id
-    )");
-
-    query.addBindValue(classId);
-
-    const QString identity = QObject::tr("class id %1").arg(classId);
-    const auto loadedColumns = SqlQueryUtils::executePrepared(
-        query,
+    const Status engineReady = ensureEngineDatabase(
         QObject::tr("Loading roster columns"),
-        identity
+        classId
         );
-    if (!loadedColumns)
+    if (!engineReady)
     {
-        return std::unexpected(loadedColumns.error().userMessage());
+        return std::unexpected(engineReady.error());
     }
 
-    while (query.next())
+    EngineRosterService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineRoster> loaded = service.load(classId);
+    if (!loaded)
     {
-        roster.columns.append(
-            query.value("name").toString()
+        return std::unexpected(
+            engineFailure(
+                QObject::tr("Loading roster columns"),
+                classId,
+                loaded.error()
+                )
             );
-
-        roster.columnWidths.append(
-            query.value("width").toInt()
-            );
     }
 
-    if (roster.columns.isEmpty())
-    {
-        return roster;
-    }
-
-    query.prepare(R"(
-        SELECT
-            row_index,
-            col_index,
-            value
-        FROM roster_data
-        WHERE class_id=?
-        ORDER BY row_index, col_index
-    )");
-
-    query.addBindValue(classId);
-
-    const auto loadedData = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading roster data"),
-        identity
-        );
-    if (!loadedData)
-    {
-        return std::unexpected(loadedData.error().userMessage());
-    }
-
-    while (query.next())
-    {
-        const int row =
-            query.value("row_index").toInt();
-
-        const int column =
-            query.value("col_index").toInt();
-
-        if (
-            row < 0
-            || column < 0
-            || column >= roster.columns.size()
-            )
-        {
-            continue;
-        }
-
-        while (roster.rows.size() <= row)
-        {
-            QStringList emptyRow;
-
-            for (int index = 0; index < roster.columns.size(); ++index)
-            {
-                emptyRow.append(QString());
-            }
-
-            roster.rows.append(emptyRow);
-        }
-
-        roster.rows[row][column] =
-            query.value("value").toString();
-    }
-
-    return roster;
+    return fromEngineRoster(*loaded);
 }
 
 Result<int> RosterRepository::getRosterStudentCount(
     int classId
     )
 {
-    const Result<Roster> roster =
-        loadRoster(classId);
-    if (!roster)
+    const QString operation = QObject::tr("Loading roster columns");
+    if (classId <= 0)
     {
-        return std::unexpected(roster.error());
+        return std::unexpected(invalidClassIdError(operation, classId));
     }
 
-    const int englishColumn =
-        roster->columns.indexOf(
-            QStringLiteral("English")
-            );
-
-    const int koreanColumn =
-        roster->columns.indexOf(
-            QStringLiteral("Korean")
-            );
-
-    if (englishColumn < 0 && koreanColumn < 0)
+    const Status engineReady = ensureEngineDatabase(operation, classId);
+    if (!engineReady)
     {
-        return 0;
+        return std::unexpected(engineReady.error());
     }
 
-    int count = 0;
-
-    for (const QStringList& row : roster->rows)
+    EngineRosterService service(*m_engineDatabase);
+    const classmngr::engine::Result<int> count = service.studentCount(classId);
+    if (!count)
     {
-        const bool hasEnglish =
-            englishColumn >= 0
-            && englishColumn < row.size()
-            && !row[englishColumn].trimmed().isEmpty();
-
-        const bool hasKorean =
-            koreanColumn >= 0
-            && koreanColumn < row.size()
-            && !row[koreanColumn].trimmed().isEmpty();
-
-        if (hasEnglish || hasKorean)
-        {
-            ++count;
-        }
+        return std::unexpected(engineFailure(operation, classId, count.error()));
     }
 
-    return count;
+    return *count;
 }

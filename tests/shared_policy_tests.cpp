@@ -11,6 +11,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "domain/validation/class_info_validator.h"
+#include "domain/validation/class_time_validator.h"
 #include "domain/validation/roster_validator.h"
 #include "domain/validation/speaking_eval_validator.h"
 #include "domain/validation/teacher_validator.h"
@@ -834,6 +835,50 @@ void SharedPolicyTests::classInfoValidatorChecksCurriculumAndSchedule()
              QStringLiteral("color.invalid_hex"));
     QVERIFY(!errors.forField(QStringLiteral("classTimes[0].endTime")).isEmpty());
     QVERIFY(!errors.forField(QStringLiteral("classTimes[1].startTime")).isEmpty());
+
+    const ValidationIssues classInfoOrderIssues =
+        errors.forField(QStringLiteral("classTimes[0].endTime"));
+    const ValidationIssue& classInfoOrderIssue = classInfoOrderIssues.first();
+    QCOMPARE(classInfoOrderIssue.row, 0);
+    QCOMPARE(classInfoOrderIssue.column, 2);
+
+    const ValidationResult timeErrors = ClassTimeValidator::validate(
+        invalid.classTimes,
+        QStringLiteral("classTimes")
+        );
+    const ValidationIssues orderIssues =
+        timeErrors.forField(QStringLiteral("classTimes[0].endTime"));
+    const ValidationIssue& orderIssue = orderIssues.first();
+    QCOMPARE(orderIssue.arguments.value(QStringLiteral("start")).toString(),
+             QStringLiteral("4:00 PM"));
+    QCOMPARE(orderIssue.arguments.value(QStringLiteral("end")).toString(),
+             QStringLiteral("3:50 PM"));
+
+    const ValidationIssues duplicateIssues =
+        timeErrors.forField(QStringLiteral("classTimes[0].startTime"));
+    const ValidationIssue& duplicateIssue = duplicateIssues.first();
+    QCOMPARE(duplicateIssue.row, 0);
+    QCOMPARE(duplicateIssue.column, 1);
+    QCOMPARE(
+        duplicateIssue.arguments.value(QStringLiteral("duplicateRows")).toList(),
+        QVariantList({0, 1})
+        );
+
+    const ValidationResult malformedTime = ClassTimeValidator::validate(
+        {{QStringLiteral("Funday"), QStringLiteral("4:00 PM"),
+          QStringLiteral("not-a-time")}},
+        QStringLiteral("classTimes")
+        );
+    const ValidationIssues weekdayIssues =
+        malformedTime.forField(QStringLiteral("classTimes[0].day"));
+    const ValidationIssue& weekdayIssue = weekdayIssues.first();
+    QCOMPARE(weekdayIssue.arguments.value(QStringLiteral("value")).toString(),
+             QStringLiteral("Funday"));
+    const ValidationIssues formatIssues =
+        malformedTime.forField(QStringLiteral("classTimes[0].endTime"));
+    const ValidationIssue& formatIssue = formatIssues.first();
+    QCOMPARE(formatIssue.arguments.value(QStringLiteral("value")).toString(),
+             QStringLiteral("not-a-time"));
 }
 
 void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
@@ -842,11 +887,12 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
     QVERIFY(directory.isValid());
 
     DataService dataService;
-    QVERIFY(dataService.openDatabase(
-        directory.filePath(QStringLiteral("validation.db"))
-        ));
+    const QString path = directory.filePath(
+        QStringLiteral("validation.db")
+        );
+    QVERIFY(dataService.openDatabase(path));
 
-    TeacherService teachers(dataService.databaseSession(), &dataService);
+    TeacherService teachers(dataService.databaseSession());
     Teacher invalidTeacher;
     invalidTeacher.teacherEn = QStringLiteral("Alex2");
     const Result<int> rejectedTeacher = teachers.create(invalidTeacher);
@@ -860,21 +906,33 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
     const Result<int> createdTeacher = teachers.create(validTeacher);
     QVERIFY(createdTeacher);
 
-    QSqlQuery legacyTeacherUpdate(dataService.databaseSession()->database());
-    legacyTeacherUpdate.prepare(QStringLiteral(
-        "UPDATE teachers SET internet_type=?, projection_type=? WHERE id=?"
-        ));
-    legacyTeacherUpdate.addBindValue(QStringLiteral("Satellite"));
-    legacyTeacherUpdate.addBindValue(QStringLiteral("Laser"));
-    legacyTeacherUpdate.addBindValue(*createdTeacher);
-    QVERIFY(!legacyTeacherUpdate.exec());
+    const QString connectionName = QUuid::createUuid().toString();
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery legacyTeacherUpdate(database);
+        legacyTeacherUpdate.prepare(QStringLiteral(
+            "UPDATE teachers SET internet_type=?, projection_type=? WHERE id=?"
+            ));
+        legacyTeacherUpdate.addBindValue(QStringLiteral("Satellite"));
+        legacyTeacherUpdate.addBindValue(QStringLiteral("Laser"));
+        legacyTeacherUpdate.addBindValue(*createdTeacher);
+        QVERIFY(!legacyTeacherUpdate.exec());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
 
     const Result<Teacher> storedTeacher = teachers.teacher(*createdTeacher);
     QVERIFY(storedTeacher);
     QCOMPARE(storedTeacher->internetType, QStringLiteral("WiFi"));
     QCOMPARE(storedTeacher->projectionType, QStringLiteral("HDMI"));
 
-    ClassService classes(dataService.databaseSession(), &dataService);
+    ClassService classes(dataService.databaseSession());
     const Result<int> firstClass = classes.create(QString());
     const Result<int> secondClass = classes.create(QString());
     QVERIFY(firstClass);
@@ -1047,7 +1105,7 @@ void SharedPolicyTests::featureServicesRejectInvalidCalendarMutations()
     QVERIFY(dataService.openDatabase(
         directory.filePath(QStringLiteral("calendar-validation.db"))
         ));
-    CalendarService calendar(dataService.databaseSession(), &dataService);
+    CalendarService calendar(dataService.databaseSession());
 
     CalendarEvent invalid;
     invalid.title = QStringLiteral("Bad event");
@@ -1170,10 +1228,10 @@ void SharedPolicyTests::featureServicesRejectInvalidRosterAndSpeakingEvaluationM
         directory.filePath(QStringLiteral("roster-speaking-validation.db"))
         ));
 
-    ClassService classes(dataService.databaseSession(), &dataService);
-    RosterService rosters(dataService.databaseSession(), &dataService);
+    ClassService classes(dataService.databaseSession());
+    RosterService rosters(dataService.databaseSession());
     SpeakingEvaluationService evaluations(
-        dataService.databaseSession(), &dataService);
+        dataService.databaseSession());
     const Result<int> classId = classes.create(QStringLiteral("Validation"));
     QVERIFY(classId);
 
@@ -1249,6 +1307,8 @@ void SharedPolicyTests::documentOutputStatus_data()
     QTest::newRow("sent-alias") << int(DocumentOutputStatus::Sent) << true;
     QTest::newRow("canceled") << int(DocumentOutputStatus::Canceled) << false;
     QTest::newRow("failed") << int(DocumentOutputStatus::Failed) << false;
+    QTest::newRow("internal-renderer-failed")
+        << int(DocumentOutputStatus::InternalRendererFailed) << false;
 }
 
 void SharedPolicyTests::documentOutputStatus()
@@ -1258,6 +1318,19 @@ void SharedPolicyTests::documentOutputStatus()
     DocumentOutputResult result;
     result.status = DocumentOutputStatus(status);
     QCOMPARE(result.succeeded(), succeeded);
+
+    result.message = QString::fromUtf8("출력 결과");
+    result.savedPdfPaths = {
+        QString::fromUtf8("reports/학생-1.pdf"),
+        QString::fromUtf8("reports/학생-2.pdf")
+    };
+    result.savedArchivePath = QString::fromUtf8("reports/월말.zip");
+    const DocumentOutputResult roundTrip =
+        DocumentOutputResult::fromEngine(result.toEngine());
+    QCOMPARE(roundTrip.status, result.status);
+    QCOMPARE(roundTrip.message, result.message);
+    QCOMPARE(roundTrip.savedPdfPaths, result.savedPdfPaths);
+    QCOMPARE(roundTrip.savedArchivePath, result.savedArchivePath);
 }
 
 QTEST_MAIN(SharedPolicyTests)

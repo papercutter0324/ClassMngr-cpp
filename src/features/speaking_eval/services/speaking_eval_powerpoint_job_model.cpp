@@ -1,17 +1,60 @@
 #include "speaking_eval_powerpoint_job_model.h"
 
-#include "speaking_eval_batch_report_service.h"
-#include "speaking_eval_report_data_assembler.h"
+#include "classmngr/engine/speaking_evaluation_powerpoint_job_service.h"
+#include "classmngr/engine/speaking_evaluation_report_template.h"
 
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 
 #include <QDir>
 #include <QJsonArray>
+#include <QObject>
 
-#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 namespace SpeakingEvalPowerPointJobModel
 {
+namespace
+{
+QString localizedBuildError(
+    const classmngr::engine::Error& error
+    )
+{
+    if (error.message == "no-reports")
+    {
+        return QObject::tr("There are no student reports to export.");
+    }
+    if (error.message == "pdf-path-count-mismatch")
+    {
+        return QObject::tr(
+            "The number of PDF paths must match the number of student reports."
+            );
+    }
+    if (error.message == "completion-path-count-mismatch")
+    {
+        return QObject::tr(
+            "The number of completion paths must match the number of student reports."
+            );
+    }
+    if (error.message == "mixed-powerpoint-templates")
+    {
+        return QObject::tr(
+            "All reports in a PowerPoint batch must use the same template."
+            );
+    }
+
+    const QString detail = QString::fromUtf8(
+        error.message.data(),
+        static_cast<qsizetype>(error.message.size())
+        ).trimmed();
+    return detail.isEmpty()
+        ? QObject::tr("Unable to prepare the PowerPoint batch.")
+        : QObject::tr("Unable to prepare the PowerPoint batch: %1")
+            .arg(detail);
+}
+} // namespace
+
 QString normalizedText(
     const QString& value
     )
@@ -27,83 +70,156 @@ TemplateProfile templateProfile(
     const QString& documentsRoot
     )
 {
-    const SpeakingEvalReportTemplateLayout& layout =
-        speakingEvalReportTemplateLayout(reportTemplate);
+    const classmngr::engine::SpeakingEvaluationReportTemplatePolicy& policy =
+        classmngr::engine::SpeakingEvaluationReportTemplateService::policy(
+            reportTemplate
+            );
 
     TemplateProfile profile;
     profile.reportTemplate = reportTemplate;
     profile.resourcePath = QDir(documentsRoot).filePath(
-        layout.powerPointResourcePath
+        QString::fromUtf8(
+            policy.powerPointResourcePath.data(),
+            static_cast<qsizetype>(policy.powerPointResourcePath.size())
+            )
         );
-    profile.signatureBounds = layout.signatureBounds;
-    profile.signatureAlignsBottomLeft =
-        layout.signatureAlignsBottomLeft;
-
-    if (layout.usesAdvancedScoreTable)
-    {
-        profile.scoreTableOnMaster = false;
-        profile.scoreTableName = QStringLiteral("Report_Table");
-        profile.minimumTableColumns = 7;
-        profile.firstGradeColumn = 3;
-        profile.neutralFillRed = 229;
-        profile.neutralFillGreen = 229;
-        profile.neutralFillBlue = 231;
-    }
-    else
-    {
-        profile.scoreTableName = QStringLiteral("Grades & Scores");
-    }
+    profile.signatureBounds = QRectF(
+        policy.signatureBounds.left,
+        policy.signatureBounds.top,
+        policy.signatureBounds.width,
+        policy.signatureBounds.height
+        );
+    profile.signatureAlignsBottomLeft = policy.signatureAlignsBottomLeft;
+    profile.scoreTableOnMaster = policy.scoreTableOnMaster;
+    profile.scoreTableName = QString::fromUtf8(
+        policy.scoreTableName.data(),
+        static_cast<qsizetype>(policy.scoreTableName.size())
+        );
+    profile.minimumTableRows = policy.minimumTableRows;
+    profile.minimumTableColumns = policy.minimumTableColumns;
+    profile.firstGradeColumn = policy.firstGradeColumn;
+    profile.neutralFillRed = policy.neutralFillRed;
+    profile.neutralFillGreen = policy.neutralFillGreen;
+    profile.neutralFillBlue = policy.neutralFillBlue;
 
     return profile;
 }
 
-BatchJob build(
-    const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
-    const QStringList& pdfPaths,
-    const QString& workingDirectory,
-    const QString& documentsRoot
+std::vector<std::uint8_t> portableSignatureImage(
+    const QByteArray& signatureImage
     )
 {
-    BatchJob batch;
-    if (reports.isEmpty() || reports.size() != pdfPaths.size())
+    if (signatureImage.isEmpty())
     {
-        return batch;
+        return {};
     }
 
-    batch.templateProfile =
-        templateProfile(
-            reports.constFirst().report.reportTemplate,
-            documentsRoot
-            );
-    batch.signatureImage =
-        reports.constFirst().report.signatureImage;
-    batch.students.reserve(reports.size());
+    const auto* begin = reinterpret_cast<const std::uint8_t*>(
+        signatureImage.constData()
+        );
+    return {
+        begin,
+        begin + static_cast<std::size_t>(signatureImage.size())
+    };
+}
 
-    for (int index = 0; index < reports.size(); ++index)
+Result<BatchJob> build(
+    const std::vector<
+        classmngr::engine::SpeakingEvaluationReportContent
+        >& reports,
+    const QStringList& pdfPaths,
+    const QString& workingDirectory,
+    const QString& documentsRoot,
+    const QByteArray& signatureImage
+    )
+{
+    classmngr::engine::SpeakingEvaluationPowerPointJobRequest request;
+    request.reports = reports;
+    request.pdfPaths.reserve(static_cast<std::size_t>(pdfPaths.size()));
+    request.completionPaths.reserve(reports.size());
+    for (const QString& pdfPath : pdfPaths)
     {
-        const auto& student = reports.at(index);
-        const SpeakingEvalReportData& data = student.report;
-
-        StudentJob job;
-        job.displayName = normalizedText(student.displayName);
-        job.pdfPath = pdfPaths.at(index);
-        job.completionPath =
+        request.pdfPaths.push_back(pdfPath.toStdString());
+    }
+    for (std::size_t index = 0; index < reports.size(); ++index)
+    {
+        request.completionPaths.push_back(
             QDir(workingDirectory).filePath(
                 QStringLiteral("completed-%1")
-                    .arg(index, 6, 10, QLatin1Char('0'))
-                );
-        job.englishName = normalizedText(data.englishName);
-        job.koreanName = normalizedText(data.koreanName);
-        job.classLabel = normalizedText(data.classLabel);
-        job.nativeTeacher = normalizedText(data.nativeTeacher);
-        job.koreanTeacher = normalizedText(data.koreanTeacher);
-        job.date = normalizedText(data.date);
-        job.comments = normalizedText(data.comments);
-        const SpeakingEvalFieldAsset* commentsField =
-            speakingEvalFieldAsset(
-                data.reportTemplate,
-                QStringLiteral("comments")
-                );
+                    .arg(
+                        static_cast<int>(index),
+                        6,
+                        10,
+                        QLatin1Char('0')
+                        )
+            ).toStdString()
+            );
+    }
+    request.signatureImage = portableSignatureImage(signatureImage);
+
+    const auto portableJobResult =
+        classmngr::engine::SpeakingEvaluationPowerPointJobService::build(
+            request
+            );
+    if (!portableJobResult)
+    {
+        return std::unexpected(
+            localizedBuildError(portableJobResult.error())
+            );
+    }
+
+    BatchJob batch;
+    const classmngr::engine::SpeakingEvaluationPowerPointJob& portableJob =
+        *portableJobResult;
+    batch.templateProfile =
+        templateProfile(
+            portableJob.reportTemplate,
+            documentsRoot
+            );
+    if (!portableJob.signatureImage.empty())
+    {
+        batch.signatureImage = QByteArray(
+            reinterpret_cast<const char*>(portableJob.signatureImage.data()),
+            static_cast<qsizetype>(portableJob.signatureImage.size())
+            );
+    }
+    batch.students.reserve(static_cast<qsizetype>(portableJob.students.size()));
+
+    const SpeakingEvalFieldAsset* commentsField =
+        speakingEvalFieldAsset(
+            portableJob.reportTemplate,
+            QStringLiteral("comments")
+            );
+    for (
+        const classmngr::engine::SpeakingEvaluationPowerPointStudentJob& source :
+        portableJob.students
+        )
+    {
+        StudentJob job;
+        job.displayName = normalizedText(
+            QString::fromStdString(source.displayName)
+            );
+        job.pdfPath = QString::fromStdString(source.pdfPath);
+        job.completionPath = QString::fromStdString(source.completionPath);
+        job.englishName = normalizedText(
+            QString::fromStdString(source.englishName)
+            );
+        job.koreanName = normalizedText(
+            QString::fromStdString(source.koreanName)
+            );
+        job.classLabel = normalizedText(
+            QString::fromStdString(source.classLabel)
+            );
+        job.nativeTeacher = normalizedText(
+            QString::fromStdString(source.nativeTeacher)
+            );
+        job.koreanTeacher = normalizedText(
+            QString::fromStdString(source.koreanTeacher)
+            );
+        job.date = normalizedText(QString::fromStdString(source.date));
+        job.comments = normalizedText(
+            QString::fromStdString(source.comments)
+            );
         if (commentsField)
         {
             job.commentsFontSizePoints =
@@ -114,16 +230,13 @@ BatchJob build(
                     );
         }
         job.overallGrade = normalizedText(
-            SpeakingEvalReportDataAssembler::overallGrade(data.scores)
+            QString::fromStdString(source.overallGrade)
             );
-        for (
-            std::size_t scoreIndex = 0;
-            scoreIndex < job.scores.size();
-            ++scoreIndex
-            )
+        for (std::size_t index = 0; index < job.scores.size(); ++index)
         {
-            job.scores[scoreIndex] =
-                normalizedText(data.scores[scoreIndex]);
+            job.scores[index] = normalizedText(
+                QString::fromStdString(source.scores[index])
+                );
         }
         batch.students.append(job);
     }
@@ -219,24 +332,4 @@ QJsonObject toJson(
     };
 }
 
-bool usesSingleTemplate(
-    const QList<SpeakingEvalBatchReportService::StudentReport>& reports
-    )
-{
-    if (reports.isEmpty())
-    {
-        return true;
-    }
-
-    const SpeakingEvalReportTemplate reportTemplate =
-        reports.constFirst().report.reportTemplate;
-    return std::all_of(
-        reports.cbegin(),
-        reports.cend(),
-        [reportTemplate](const auto& report)
-        {
-            return report.report.reportTemplate == reportTemplate;
-        }
-        );
-}
 }

@@ -3,6 +3,7 @@
 #include "core/network/http_request_policy.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/updater/update_signature_verifier.h"
+#include "classmngr/engine/resource_pack_policy.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -63,7 +64,10 @@ void ResourcePackUpdateService::checkForUpdates()
     }
 
     if (
-        m_configuration.requireSignature
+        classmngr::engine::ResourcePackPolicy::signatureRequired(
+            m_configuration.requireSignature,
+            m_configuration.publicKeyPem.toUtf8().toStdString()
+            )
         && m_configuration.publicKeyPem.trimmed().isEmpty()
         )
     {
@@ -166,7 +170,10 @@ void ResourcePackUpdateService::handleFetched(
         m_manifestData =
             data;
 
-        if (m_configuration.requireSignature)
+        if (classmngr::engine::ResourcePackPolicy::signatureRequired(
+                m_configuration.requireSignature,
+                m_configuration.publicKeyPem.toUtf8().toStdString()
+                ))
         {
             const QUrl signatureUrl =
                 resolvedSignatureUrl();
@@ -197,7 +204,10 @@ void ResourcePackUpdateService::handleFetched(
 
 void ResourcePackUpdateService::prepareDownloads()
 {
-    if (m_configuration.requireSignature)
+    if (classmngr::engine::ResourcePackPolicy::signatureRequired(
+            m_configuration.requireSignature,
+            m_configuration.publicKeyPem.toUtf8().toStdString()
+            ))
     {
         if (
             const Status status =
@@ -240,7 +250,29 @@ void ResourcePackUpdateService::prepareDownloads()
             return;
         }
 
-        if (artifact->version > manager.currentVersion(packId))
+        const auto currentVersion =
+            classmngr::engine::SemanticVersion::parse(
+                manager.currentVersion(packId).toString().toUtf8().toStdString()
+                );
+        const auto artifactVersion =
+            classmngr::engine::SemanticVersion::parse(
+                artifact->version.toString().toUtf8().toStdString()
+                );
+        const classmngr::engine::ResourcePackDefinition definition{
+            packId.toUtf8().toStdString(),
+            currentVersion ? *currentVersion : classmngr::engine::SemanticVersion(),
+            true
+        };
+        const classmngr::engine::ResourcePackArtifact policyArtifact{
+            artifact->id.toUtf8().toStdString(),
+            artifactVersion ? *artifactVersion : classmngr::engine::SemanticVersion(),
+            artifact->url.toString(QUrl::FullyEncoded).toUtf8().toStdString(),
+            artifact->fileName.toUtf8().toStdString(),
+            artifact->sha256.toUtf8().toStdString(), artifact->sizeBytes
+        };
+        if (currentVersion && artifactVersion
+            && classmngr::engine::ResourcePackPolicy::shouldDownload(
+                policyArtifact, definition, *currentVersion))
         {
             m_pendingArtifacts.append(*artifact);
         }
@@ -534,5 +566,7 @@ bool ResourcePackUpdateService::isAllowedManifestUrl(
     const QUrl& url
     ) const
 {
-    return HttpRequestPolicy::isAllowedSecureUrl(url);
+    return classmngr::engine::ResourcePackPolicy::isAllowedHttpsUrl(
+        url.toString(QUrl::FullyEncoded).toUtf8().toStdString()
+        );
 }

@@ -73,6 +73,20 @@ struct YearToDatePoint
     QString classAverageLetter;
 };
 
+struct Evaluation
+{
+    QString name;
+    SpeakingEvalRows rows;
+};
+
+struct Dashboard
+{
+    Snapshot selectedSnapshot;
+    QString classShapeEvaluationName;
+    Snapshot classShapeSnapshot;
+    QList<YearToDatePoint> yearToDatePoints;
+};
+
 // Canonical stored evaluation names. An empty selection means all evaluations.
 [[nodiscard]] QStringList evaluationNames();
 
@@ -104,6 +118,12 @@ struct YearToDatePoint
 [[nodiscard]] std::optional<YearToDatePoint> yearToDatePoint(
     const QString& evaluationName,
     const Snapshot& snapshot
+);
+
+[[nodiscard]] Dashboard buildDashboard(
+    const QString& selection,
+    const Roster& roster,
+    const QList<Evaluation>& evaluations
 );
 
 } // namespace SpeakingAnalytics

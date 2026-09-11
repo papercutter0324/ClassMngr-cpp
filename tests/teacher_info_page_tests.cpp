@@ -223,7 +223,7 @@ void TeacherInfoPageTests::birthdayUsesCalendarMonthAndDayOnly()
             calendar,
             "clicked",
             Qt::DirectConnection,
-            Q_ARG(QDate, selectedDate)
+            selectedDate
             )
         );
     QVERIFY(page.hasUnsavedChanges());

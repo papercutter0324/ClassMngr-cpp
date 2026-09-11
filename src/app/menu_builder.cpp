@@ -1110,11 +1110,18 @@ void showPreferencesDialog(
     MainWindow* window
     )
 {
-    PreferencesDialog dialog(window);
-    dialog.exec();
+    auto dialog = MenuBuilder::createPreferencesDialog(window);
+    dialog->exec();
 }
 
 } // namespace
+
+std::unique_ptr<QDialog> MenuBuilder::createPreferencesDialog(
+    MainWindow* window
+    )
+{
+    return std::make_unique<PreferencesDialog>(window);
+}
 
 // Missing safety: menu duplication risk
 // Option: Store menus in MainWindow
