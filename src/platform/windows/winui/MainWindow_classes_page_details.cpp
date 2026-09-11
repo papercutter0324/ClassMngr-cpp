@@ -51,11 +51,9 @@ MainWindow::buildClassDetailsSection()
         );
     detailsRoot.Children().Append(m_classValidationText);
 
-    auto classSelectorCard = ClassMngrWinUISharedUX::buildCard({
-        L"Class directory",
-        L"Select a class or create a new class information record.",
-        L"Class directory selector"
-        });
+    // Class selection is presented by the page-level navigation controls. Keep
+    // this selector as the existing state and event bridge for navigation and
+    // diagnostic paths without adding a second selector section here.
     m_classSelector = ComboBox();
     m_classSelector.Header(box_value(hstring(L"Class")));
     m_classSelector.PlaceholderText(L"Select a class");
@@ -68,8 +66,6 @@ MainWindow::buildClassDetailsSection()
         &MainWindow::ClassSelection_SelectionChanged
         });
     setAutomationName(m_classSelector, L"Class selector");
-    classSelectorCard.content.Children().Append(m_classSelector);
-    detailsRoot.Children().Append(classSelectorCard.root);
 
     const auto makeClassTextBox = [this](
         wchar_t const* header,
@@ -106,7 +102,7 @@ MainWindow::buildClassDetailsSection()
         );
     m_classNameTextBox.InputScope(classNameInputScope);
     m_classNameTextBox.TabIndex(1);
-    classSelectorCard.content.Children().Append(m_classNameTextBox);
+    detailsCard.content.Children().Append(m_classNameTextBox);
 
     const auto appendChoice = [](ComboBox combo,
                                  std::wstring_view display,
