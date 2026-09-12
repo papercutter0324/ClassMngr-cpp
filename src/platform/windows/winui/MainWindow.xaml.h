@@ -295,12 +295,18 @@ private:
         bool testingBlockCreationEnabled
         );
     winrt::fire_and_forget openScheduleClassEditor(int classId);
+    winrt::fire_and_forget openScheduleImportDialog();
     void saveScheduleEntry();
     void clearScheduleEntry();
     void previewScheduleImport();
     void applyScheduleImport();
     void refreshTestingWorkspace();
+    void loadTestingClassVisual(int classId);
+    void updateTestingClassActions();
     void createTestingClass();
+    void beginTestingClass();
+    void saveTestingClassDetails();
+    void deleteTestingClass();
     void assignTestingClass();
     void deleteTestingAssignment();
     void populateCalendarWorkspace(
@@ -857,6 +863,8 @@ private:
     Microsoft::UI::Xaml::Controls::TextBlock m_scheduleValidationText{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleClearButton{nullptr};
+    Microsoft::UI::Xaml::Controls::ScrollViewer
+        m_scheduleImportDialogRoot{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportKindCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportUserTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportTeacherTextBox{nullptr};
@@ -876,6 +884,19 @@ private:
     std::optional<classmngr::engine::ScheduleImportPreview>
         m_scheduleImportPreview;
     bool m_scheduleImportPreviewReady{};
+    Microsoft::UI::Xaml::Controls::ListView m_testingClassList{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_testingClassTeacherCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_testingClassGradeCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox m_testingClassLevelCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::Border m_testingClassColorPreview{nullptr};
+    Microsoft::UI::Xaml::Controls::Border m_testingClassFontColorPreview{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingClassColorButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingClassFontColorButton{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox m_testingClassNotesTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingClassBackButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingClassAddButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingClassDeleteButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button m_testingClassSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_testingClassSelector{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_testingClassNameTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_testingClassGradeTextBox{nullptr};
@@ -892,6 +913,11 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_testingDeleteAssignmentButton{nullptr};
     std::vector<classmngr::engine::TestingClass> m_testingClasses;
     std::vector<classmngr::engine::TestingAssignment> m_testingAssignments;
+    int m_testingClassSelectedId{-1};
+    std::string m_testingClassColor{"#FFFFFF"};
+    std::string m_testingClassFontColor{"#000000"};
+    bool m_testingClassVisualLoading{};
+    bool m_testingClassVisualDirty{};
     bool m_testingLoading{};
     std::vector<classmngr::engine::Classroom> m_scheduleClasses;
     std::vector<classmngr::engine::ClassInfo> m_scheduleInfos;

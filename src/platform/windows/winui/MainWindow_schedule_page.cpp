@@ -97,14 +97,17 @@ void MainWindow::populateScheduleWorkspace(
     Grid::SetColumn(m_scheduleRegularModeButton, 0);
     Grid::SetColumn(m_scheduleIntensiveModeButton, 1);
     Grid::SetColumn(m_scheduleTestingModeButton, 2);
-    Grid::SetColumn(m_scheduleTestingClassesButton, 3);
+    Grid::SetColumn(m_scheduleTestingClassesButton, 4);
+    m_scheduleTestingClassesButton.HorizontalAlignment(
+        HorizontalAlignment::Right
+        );
     modeBar.Children().Append(m_scheduleRegularModeButton);
     modeBar.Children().Append(m_scheduleIntensiveModeButton);
     modeBar.Children().Append(m_scheduleTestingModeButton);
     modeBar.Children().Append(m_scheduleTestingClassesButton);
     auto modeSpacer = Border();
     modeSpacer.HorizontalAlignment(HorizontalAlignment::Stretch);
-    Grid::SetColumn(modeSpacer, 4);
+    Grid::SetColumn(modeSpacer, 3);
     modeBar.Children().Append(modeSpacer);
     Grid::SetColumn(m_scheduleImportModeButton, 5);
     modeBar.Children().Append(m_scheduleImportModeButton);
@@ -140,8 +143,6 @@ void MainWindow::populateScheduleWorkspace(
     setAutomationName(testingBannerText, L"Schedule testing banner text");
     m_scheduleTestingBanner.Child(testingBannerText);
     setAutomationName(m_scheduleTestingBanner, L"Schedule testing banner");
-    editorContent.Children().Append(m_scheduleTestingBanner);
-
     m_scheduleBoardRoot = ClassMngrWinUIScheduleBoard::create({
         [this](int classId) {
             openScheduleClassEditor(classId);
@@ -166,6 +167,7 @@ void MainWindow::populateScheduleWorkspace(
     m_scheduleBoardRoot.MinWidth(860.0);
     setAutomationName(m_scheduleBoardRoot, L"Weekly class schedule board");
     editorContent.Children().Append(m_scheduleBoardRoot);
+    editorContent.Children().Append(m_scheduleTestingBanner);
 
     m_scheduleRegularModeButton.Click(
         [this](auto const&, auto const&) {
@@ -199,16 +201,13 @@ void MainWindow::populateScheduleWorkspace(
             refreshTestingWorkspace();
             if (m_scheduleTabs)
             {
-                m_scheduleTabs.SelectedIndex(2);
+                m_scheduleTabs.SelectedIndex(1);
             }
         }
         );
     m_scheduleImportModeButton.Click(
         [this](auto const&, auto const&) {
-            if (m_scheduleTabs)
-            {
-                m_scheduleTabs.SelectedIndex(1);
-            }
+            openScheduleImportDialog();
         }
         );
     updateScheduleDisplayButtons();
@@ -651,32 +650,59 @@ void MainWindow::populateScheduleWorkspace(
     setAutomationName(m_scheduleImportValidationText, L"Schedule import validation");
     importCard.content.Children().Append(m_scheduleImportValidationText);
     importContent.Children().Append(importCard.root);
-
-    auto importItem = PivotItem();
-    importItem.Header(box_value(hstring(L"Import")));
-    importItem.Content(scrollTab(importContent));
-    setAutomationName(importItem, L"Schedule import tab");
+    m_scheduleImportDialogRoot = scrollTab(importContent);
+    m_scheduleImportDialogRoot.MaxHeight(720.0);
+    setAutomationName(m_scheduleImportDialogRoot, L"Schedule import dialog content");
 
     auto testingContent = StackPanel();
-    testingContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
+    testingContent.Padding(Thickness{24.0, 20.0, 24.0, 24.0});
     testingContent.Spacing(12.0);
     testingContent.HorizontalAlignment(HorizontalAlignment::Stretch);
-    auto testingHeading = makeText(L"Testing classes", 24.0);
-    setAutomationName(testingHeading, L"Testing classes heading");
-    testingContent.Children().Append(testingHeading);
-    auto testingDescription = makeText(
-        L"Create the special testing-class profile, then assign it to a "
-        L"strict weekday/time slot. Existing assignments stay visible so a "
-        L"replacement can be an explicit user choice."
+
+    auto testingPage = Grid();
+    testingPage.MinHeight(760.0);
+    testingPage.HorizontalAlignment(HorizontalAlignment::Stretch);
+    testingPage.VerticalAlignment(VerticalAlignment::Stretch);
+    testingPage.RowDefinitions().Append(RowDefinition());
+    testingPage.RowDefinitions().Append(RowDefinition());
+    testingPage.RowDefinitions().GetAt(0).Height(
+        GridLengthHelper::FromPixels(48.0)
         );
-    setAutomationName(testingDescription, L"Testing classes description");
-    testingContent.Children().Append(testingDescription);
-    auto testingBackButton = Button();
-    testingBackButton.Content(
+    testingPage.RowDefinitions().GetAt(1).Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+
+    auto testingHeader = Grid();
+    testingHeader.ColumnDefinitions().Append(ColumnDefinition());
+    auto headerActionColumn = ColumnDefinition();
+    headerActionColumn.Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
+    testingHeader.ColumnDefinitions().Append(headerActionColumn);
+
+    auto testingHeaderText = StackPanel();
+    testingHeaderText.Spacing(2.0);
+    auto testingTitle = TextBlock();
+    testingTitle.Text(L"Testing Classes");
+    applyResourceStyle(testingTitle, L"Phase3PageTitleTextBlockStyle");
+    setAutomationName(testingTitle, L"Testing Classes heading");
+    testingHeaderText.Children().Append(testingTitle);
+    Grid::SetColumn(testingHeaderText, 0);
+    testingHeader.Children().Append(testingHeaderText);
+
+    m_testingClassBackButton = Button();
+    m_testingClassBackButton.Content(
         box_value(hstring(L"Back to Testing Schedule"))
         );
-    testingBackButton.IsTabStop(true);
-    testingBackButton.Click(
+    applyResourceStyle(
+        m_testingClassBackButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    m_testingClassBackButton.MinWidth(280.0);
+    m_testingClassBackButton.Height(40.0);
+    m_testingClassBackButton.HorizontalAlignment(HorizontalAlignment::Right);
+    m_testingClassBackButton.VerticalAlignment(VerticalAlignment::Top);
+    m_testingClassBackButton.Click(
         [this](auto const&, auto const&) {
             if (m_scheduleTabs)
             {
@@ -684,15 +710,551 @@ void MainWindow::populateScheduleWorkspace(
             }
         }
         );
-    setAutomationName(testingBackButton, L"Back to Testing Schedule workspace");
-    testingContent.Children().Append(testingBackButton);
+    setAutomationName(
+        m_testingClassBackButton,
+        L"Back to Testing Schedule workspace"
+        );
+    Grid::SetColumn(m_testingClassBackButton, 1);
+    testingHeader.Children().Append(m_testingClassBackButton);
+    Grid::SetRow(testingHeader, 0);
+    testingPage.Children().Append(testingHeader);
 
-    auto testingCard = ClassMngrWinUISharedUX::buildCard({
-        L"Testing-class profile",
-        L"Required profile fields are validated by TestingClassService before "
-        L"the optional assignment is written.",
-        L"Testing-class profile editor"
-        });
+    auto testingBody = Grid();
+    testingBody.ColumnSpacing(8.0);
+    auto navigationColumn = ColumnDefinition();
+    navigationColumn.Width(GridLengthHelper::FromPixels(300.0));
+    testingBody.ColumnDefinitions().Append(navigationColumn);
+    auto editorColumn = ColumnDefinition();
+    editorColumn.Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    testingBody.ColumnDefinitions().Append(editorColumn);
+
+    auto testingNavigation = Grid();
+    testingNavigation.RowDefinitions().Append(RowDefinition());
+    testingNavigation.RowDefinitions().Append(RowDefinition());
+    testingNavigation.RowDefinitions().Append(RowDefinition());
+    testingNavigation.RowDefinitions().GetAt(0).Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    testingNavigation.RowDefinitions().GetAt(1).Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
+    testingNavigation.RowDefinitions().GetAt(2).Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
+
+    m_testingClassList = ListView();
+    m_testingClassList.SelectionMode(ListViewSelectionMode::Single);
+    m_testingClassList.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_testingClassList.HorizontalContentAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_testingClassList.IsTabStop(true);
+    m_testingClassList.TabIndex(0);
+    m_testingClassList.Padding(Thickness{0.0, 0.0, 0.0, 0.0});
+    setAutomationName(m_testingClassList, L"Testing classes list");
+    m_testingClassList.SelectionChanged(
+        [this](auto const&, auto const&) {
+            if (m_testingClassVisualLoading || !m_testingClassList)
+            {
+                return;
+            }
+            const auto item = m_testingClassList.SelectedItem().try_as<
+                ListViewItem>();
+            if (!item)
+            {
+                m_testingClassSelectedId = -1;
+                updateTestingClassActions();
+                return;
+            }
+            loadTestingClassVisual(boxedInt(item.Tag()));
+        }
+        );
+    auto testingListFrame = Border();
+    testingListFrame.Padding(Thickness{0.0, 0.0, 0.0, 0.0});
+    applyResourceStyle(testingListFrame, L"Phase4CardBorderStyle");
+    testingListFrame.Child(m_testingClassList);
+    Grid::SetRow(testingListFrame, 0);
+    testingNavigation.Children().Append(testingListFrame);
+
+    m_testingClassAddButton = Button();
+    m_testingClassAddButton.Content(box_value(hstring(L"Add Class")));
+    applyResourceStyle(
+        m_testingClassAddButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    m_testingClassAddButton.Height(40.0);
+    m_testingClassAddButton.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_testingClassAddButton.Margin(Thickness{0.0, 8.0, 0.0, 0.0});
+    m_testingClassAddButton.Click(
+        [this](auto const&, auto const&) { beginTestingClass(); }
+        );
+    setAutomationName(m_testingClassAddButton, L"Add testing class");
+    Grid::SetRow(m_testingClassAddButton, 1);
+    testingNavigation.Children().Append(m_testingClassAddButton);
+
+    m_testingClassDeleteButton = Button();
+    m_testingClassDeleteButton.Content(
+        box_value(hstring(L"Delete Class"))
+        );
+    applyResourceStyle(
+        m_testingClassDeleteButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    m_testingClassDeleteButton.Height(40.0);
+    m_testingClassDeleteButton.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_testingClassDeleteButton.Margin(Thickness{0.0, 8.0, 0.0, 0.0});
+    m_testingClassDeleteButton.Click(
+        [this](auto const&, auto const&) { deleteTestingClass(); }
+        );
+    setAutomationName(m_testingClassDeleteButton, L"Delete testing class");
+    Grid::SetRow(m_testingClassDeleteButton, 2);
+    testingNavigation.Children().Append(m_testingClassDeleteButton);
+    Grid::SetColumn(testingNavigation, 0);
+    testingBody.Children().Append(testingNavigation);
+
+    auto detailsPane = Border();
+    detailsPane.Padding(Thickness{16.0, 16.0, 16.0, 16.0});
+    applyResourceStyle(detailsPane, L"Phase4CardBorderStyle");
+    auto detailsGrid = Grid();
+    detailsGrid.ColumnSpacing(8.0);
+    constexpr double testingFieldHeight = 40.0;
+    auto labelColumn = ColumnDefinition();
+    labelColumn.Width(GridLengthHelper::FromPixels(120.0));
+    detailsGrid.ColumnDefinitions().Append(labelColumn);
+    auto fieldColumn = ColumnDefinition();
+    fieldColumn.Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    detailsGrid.ColumnDefinitions().Append(fieldColumn);
+    for (int row = 0; row < 6; ++row)
+    {
+        auto definition = RowDefinition();
+        definition.Height(GridLengthHelper::FromPixels(56.0));
+        detailsGrid.RowDefinitions().Append(definition);
+    }
+
+    const auto makeEditorTextBox = [this](std::wstring_view value,
+                                          std::wstring_view automationName) {
+        auto box = TextBox();
+        box.Text(hstring(value));
+        applyResourceStyle(box, L"Phase4FormFieldTextBoxStyle");
+        box.MinHeight(testingFieldHeight);
+        box.Height(testingFieldHeight);
+        box.VerticalAlignment(VerticalAlignment::Center);
+        box.VerticalContentAlignment(VerticalAlignment::Center);
+        box.HorizontalAlignment(HorizontalAlignment::Stretch);
+        box.IsTabStop(true);
+        setAutomationName(box, automationName);
+        return box;
+    };
+    const auto makeEditorCombo = [](std::wstring_view automationName) {
+        auto combo = ComboBox();
+        applyResourceStyle(combo, L"Phase4FilterComboBoxStyle");
+        combo.MinHeight(testingFieldHeight);
+        combo.Height(testingFieldHeight);
+        combo.VerticalAlignment(VerticalAlignment::Center);
+        combo.HorizontalAlignment(HorizontalAlignment::Stretch);
+        combo.IsTabStop(true);
+        setAutomationName(combo, automationName);
+        return combo;
+    };
+    const auto appendComboItem = [](ComboBox const& combo,
+                                    std::wstring_view value,
+                                    int tag = -1) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(value)));
+        if (tag >= 0)
+        {
+            item.Tag(box_value(tag));
+        }
+        else
+        {
+            item.Tag(box_value(hstring(value)));
+        }
+        combo.Items().Append(item);
+    };
+    const auto addLabel = [&detailsGrid](std::wstring_view text, int row) {
+        auto label = TextBlock();
+        label.Text(hstring(text));
+        applyResourceStyle(label, L"Phase3BodyTextBlockStyle");
+        label.VerticalAlignment(VerticalAlignment::Center);
+        label.TextTrimming(TextTrimming::None);
+        Grid::SetRow(label, row);
+        Grid::SetColumn(label, 0);
+        detailsGrid.Children().Append(label);
+    };
+
+    addLabel(L"Korean Teacher", 0);
+    m_testingClassTeacherCombo = makeEditorCombo(
+        L"Testing class Korean teacher"
+        );
+    appendComboItem(m_testingClassTeacherCombo, L"None", -1);
+    Grid::SetRow(m_testingClassTeacherCombo, 0);
+    Grid::SetColumn(m_testingClassTeacherCombo, 1);
+    detailsGrid.Children().Append(m_testingClassTeacherCombo);
+
+    addLabel(L"Room", 1);
+    m_testingClassRoomTextBox = makeEditorTextBox(
+        L"",
+        L"Testing class room"
+        );
+    Grid::SetRow(m_testingClassRoomTextBox, 1);
+    Grid::SetColumn(m_testingClassRoomTextBox, 1);
+    detailsGrid.Children().Append(m_testingClassRoomTextBox);
+
+    addLabel(L"Class Name", 2);
+    m_testingClassNameTextBox = makeEditorTextBox(
+        L"Testing Class",
+        L"Testing class name"
+        );
+    Grid::SetRow(m_testingClassNameTextBox, 2);
+    Grid::SetColumn(m_testingClassNameTextBox, 1);
+    detailsGrid.Children().Append(m_testingClassNameTextBox);
+
+    addLabel(L"Grade / Level", 3);
+    auto gradeLevelField = Grid();
+    gradeLevelField.ColumnSpacing(8.0);
+    auto gradeColumn = ColumnDefinition();
+    gradeColumn.Width(GridLengthHelper::FromPixels(176.0));
+    gradeLevelField.ColumnDefinitions().Append(gradeColumn);
+    auto levelColumn = ColumnDefinition();
+    levelColumn.Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    gradeLevelField.ColumnDefinitions().Append(levelColumn);
+    m_testingClassGradeCombo = makeEditorCombo(L"Testing class grade");
+    for (const std::string& grade : classmngr::engine::testingClassGrades())
+    {
+        appendComboItem(m_testingClassGradeCombo, asWide(grade));
+    }
+    m_testingClassGradeCombo.SelectedIndex(0);
+    m_testingClassLevelCombo = makeEditorCombo(L"Testing class level");
+    for (const std::string& grade : classmngr::engine::testingClassGrades())
+    {
+        for (const std::string& level :
+             classmngr::engine::testingClassLevelsForGrade(grade))
+        {
+            bool exists = false;
+            for (uint32_t index = 0;
+                 index < m_testingClassLevelCombo.Items().Size();
+                 ++index)
+            {
+                const auto item = m_testingClassLevelCombo.Items().GetAt(index)
+                    .try_as<ComboBoxItem>();
+                if (item && boxedString(item.Tag()) == asWide(level))
+                {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists)
+            {
+                appendComboItem(m_testingClassLevelCombo, asWide(level));
+            }
+        }
+    }
+    m_testingClassLevelCombo.SelectedIndex(0);
+    Grid::SetColumn(m_testingClassGradeCombo, 0);
+    Grid::SetColumn(m_testingClassLevelCombo, 1);
+    gradeLevelField.Children().Append(m_testingClassGradeCombo);
+    gradeLevelField.Children().Append(m_testingClassLevelCombo);
+    Grid::SetRow(gradeLevelField, 3);
+    Grid::SetColumn(gradeLevelField, 1);
+    detailsGrid.Children().Append(gradeLevelField);
+
+    addLabel(L"Class Color", 4);
+    auto classColorField = StackPanel();
+    classColorField.Orientation(Orientation::Horizontal);
+    classColorField.Spacing(8.0);
+    classColorField.VerticalAlignment(VerticalAlignment::Center);
+    m_testingClassColorPreview = Border();
+    m_testingClassColorPreview.Width(36.0);
+    m_testingClassColorPreview.Height(36.0);
+    m_testingClassColorPreview.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+    m_testingClassColorPreview.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+    m_testingClassColorPreview.BorderBrush(detailsPane.BorderBrush());
+    setAutomationName(m_testingClassColorPreview, L"Testing class color preview");
+    m_testingClassColorButton = Button();
+    m_testingClassColorButton.Content(box_value(hstring(L"Choose Color")));
+    applyResourceStyle(
+        m_testingClassColorButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    m_testingClassColorButton.Width(185.0);
+    m_testingClassColorButton.Height(testingFieldHeight);
+    setAutomationName(m_testingClassColorButton, L"Choose testing class color");
+    classColorField.Children().Append(m_testingClassColorPreview);
+    classColorField.Children().Append(m_testingClassColorButton);
+    Grid::SetRow(classColorField, 4);
+    Grid::SetColumn(classColorField, 1);
+    detailsGrid.Children().Append(classColorField);
+
+    addLabel(L"Font Color", 5);
+    auto fontColorField = StackPanel();
+    fontColorField.Orientation(Orientation::Horizontal);
+    fontColorField.Spacing(8.0);
+    fontColorField.VerticalAlignment(VerticalAlignment::Center);
+    m_testingClassFontColorPreview = Border();
+    m_testingClassFontColorPreview.Width(36.0);
+    m_testingClassFontColorPreview.Height(36.0);
+    m_testingClassFontColorPreview.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+    m_testingClassFontColorPreview.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+    m_testingClassFontColorPreview.BorderBrush(detailsPane.BorderBrush());
+    setAutomationName(
+        m_testingClassFontColorPreview,
+        L"Testing class font color preview"
+        );
+    m_testingClassFontColorButton = Button();
+    m_testingClassFontColorButton.Content(box_value(hstring(L"Choose Color")));
+    applyResourceStyle(
+        m_testingClassFontColorButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    m_testingClassFontColorButton.Width(185.0);
+    m_testingClassFontColorButton.Height(testingFieldHeight);
+    setAutomationName(
+        m_testingClassFontColorButton,
+        L"Choose testing class font color"
+        );
+    fontColorField.Children().Append(m_testingClassFontColorPreview);
+    fontColorField.Children().Append(m_testingClassFontColorButton);
+    Grid::SetRow(fontColorField, 5);
+    Grid::SetColumn(fontColorField, 1);
+    detailsGrid.Children().Append(fontColorField);
+    detailsPane.Child(detailsGrid);
+
+    auto rosterPane = Border();
+    rosterPane.Padding(Thickness{16.0, 16.0, 16.0, 16.0});
+    applyResourceStyle(rosterPane, L"Phase4CardBorderStyle");
+    auto rosterText = TextBlock();
+    rosterText.Text(L"Select a testing class to edit its roster.");
+    applyResourceStyle(rosterText, L"Phase4CardDescriptionTextBlockStyle");
+    rosterText.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(rosterText, L"Testing class roster content");
+    rosterPane.Child(rosterText);
+
+    auto notesPane = Border();
+    notesPane.Padding(Thickness{16.0, 16.0, 16.0, 16.0});
+    applyResourceStyle(notesPane, L"Phase4CardBorderStyle");
+    m_testingClassNotesTextBox = TextBox();
+    m_testingClassNotesTextBox.PlaceholderText(
+        L"Instructions, accommodations, and other notes"
+        );
+    applyResourceStyle(
+        m_testingClassNotesTextBox,
+        L"Phase4FormFieldTextBoxStyle"
+        );
+    m_testingClassNotesTextBox.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_testingClassNotesTextBox.VerticalAlignment(VerticalAlignment::Stretch);
+    m_testingClassNotesTextBox.AcceptsReturn(true);
+    m_testingClassNotesTextBox.TextWrapping(TextWrapping::Wrap);
+    m_testingClassNotesTextBox.VerticalContentAlignment(
+        VerticalAlignment::Top
+        );
+    setAutomationName(m_testingClassNotesTextBox, L"Testing class notes");
+    notesPane.Child(m_testingClassNotesTextBox);
+
+    auto testingEditorHost = Grid();
+    testingEditorHost.HorizontalAlignment(HorizontalAlignment::Stretch);
+    testingEditorHost.VerticalAlignment(VerticalAlignment::Stretch);
+    testingEditorHost.Children().Append(detailsPane);
+    testingEditorHost.Children().Append(rosterPane);
+    testingEditorHost.Children().Append(notesPane);
+    const auto testingEditorChildren = testingEditorHost.Children();
+    for (uint32_t index = 0; index < testingEditorChildren.Size(); ++index)
+    {
+        testingEditorChildren.GetAt(index).Visibility(
+            index == 0 ? Visibility::Visible : Visibility::Collapsed
+            );
+    }
+
+    auto testingEditor = Grid();
+    testingEditor.HorizontalAlignment(HorizontalAlignment::Stretch);
+    testingEditor.VerticalAlignment(VerticalAlignment::Stretch);
+    auto testingTabsRow = RowDefinition();
+    testingTabsRow.Height(GridLengthHelper::FromPixels(60.0));
+    testingEditor.RowDefinitions().Append(testingTabsRow);
+    testingEditor.RowDefinitions().Append(RowDefinition());
+
+    auto testingTabs = Pivot();
+    testingTabs.IsTabStop(true);
+    testingTabs.TabIndex(1);
+    testingTabs.HorizontalAlignment(HorizontalAlignment::Stretch);
+    applyResourceStyle(testingTabs, L"Phase3TopTabPivotStyle");
+    setAutomationName(testingTabs, L"Testing class tabs");
+    const auto makeTestingTab = [](std::wstring_view header,
+                                   std::wstring_view automationName) {
+        auto item = PivotItem();
+        item.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+            hstring(header)
+            ));
+        // Keep the visible editor host separate from the Pivot so switching
+        // sections does not recreate the form controls.
+        item.Content(Grid());
+        setAutomationName(item, automationName);
+        return item;
+    };
+    testingTabs.Items().Append(
+        makeTestingTab(L"Details", L"Testing class Details tab")
+        );
+    testingTabs.Items().Append(
+        makeTestingTab(L"Roster", L"Testing class Roster tab")
+        );
+    testingTabs.Items().Append(
+        makeTestingTab(L"Notes", L"Testing class Notes tab")
+        );
+    testingTabs.SelectedIndex(0);
+    testingTabs.SelectionChanged(
+        [testingEditorHost](auto const& sender, auto const&) {
+            const auto pivot = sender.template try_as<Pivot>();
+            if (!pivot)
+            {
+                return;
+            }
+            const int32_t selectedIndex = pivot.SelectedIndex();
+            const auto children = testingEditorHost.Children();
+            if (selectedIndex < 0
+                || selectedIndex >= static_cast<int32_t>(children.Size()))
+            {
+                return;
+            }
+            for (uint32_t index = 0; index < children.Size(); ++index)
+            {
+                children.GetAt(index).Visibility(
+                    static_cast<int32_t>(index) == selectedIndex
+                        ? Visibility::Visible
+                        : Visibility::Collapsed
+                    );
+            }
+        }
+        );
+    Grid::SetRow(testingTabs, 0);
+    testingEditor.Children().Append(testingTabs);
+    Grid::SetRow(testingEditorHost, 1);
+    testingEditor.Children().Append(testingEditorHost);
+    setAutomationName(testingEditor, L"Testing class editor");
+    Grid::SetColumn(testingEditor, 1);
+    testingBody.Children().Append(testingEditor);
+    Grid::SetRow(testingBody, 1);
+    testingPage.Children().Append(testingBody);
+    testingContent.Children().Append(testingPage);
+
+    m_testingClassSaveButton = Button();
+    m_testingClassSaveButton.Content(box_value(hstring(L"Save Changes")));
+    applyResourceStyle(
+        m_testingClassSaveButton,
+        L"Phase3PrimaryButtonStyle"
+        );
+    m_testingClassSaveButton.HorizontalAlignment(HorizontalAlignment::Right);
+    m_testingClassSaveButton.Visibility(Visibility::Collapsed);
+    m_testingClassSaveButton.Click(
+        [this](auto const&, auto const&) { saveTestingClassDetails(); }
+        );
+    setAutomationName(m_testingClassSaveButton, L"Save testing class changes");
+    testingContent.Children().Append(m_testingClassSaveButton);
+
+    const auto openTestingColorPicker = [weak = get_weak()](auto const&, auto const&)
+        -> winrt::fire_and_forget {
+        const auto self = weak.get();
+        if (!self || self->m_ownedDialog || !self->RootGrid().XamlRoot())
+        {
+            co_return;
+        }
+        auto picker = ClassMngrWinUISharedUX::buildColorPickerDialog(
+            self->RootGrid().XamlRoot(),
+            L"Select Testing Class Color",
+            uiColorFromHex(self->m_testingClassColor),
+            L"Testing class color picker"
+            );
+        self->m_ownedDialog = picker.dialog;
+        ContentDialogResult result = ContentDialogResult::None;
+        try
+        {
+            result = co_await picker.dialog.ShowAsync();
+        }
+        catch (...)
+        {
+        }
+        if (self->m_ownedDialog == picker.dialog)
+        {
+            self->m_ownedDialog = nullptr;
+        }
+        if (result == ContentDialogResult::Primary)
+        {
+            self->m_testingClassColor = uiHexFromColor(picker.picker.Color());
+            self->m_testingClassColorPreview.Background(
+                Microsoft::UI::Xaml::Media::SolidColorBrush(
+                    uiColorFromHex(self->m_testingClassColor)
+                    )
+                );
+            self->m_testingClassVisualDirty = true;
+            self->updateTestingClassActions();
+        }
+    };
+    m_testingClassColorButton.Click(openTestingColorPicker);
+    m_testingClassColorPreview.Tapped(openTestingColorPicker);
+
+    const auto openTestingFontColorPicker = [weak = get_weak()](auto const&, auto const&)
+        -> winrt::fire_and_forget {
+        const auto self = weak.get();
+        if (!self || self->m_ownedDialog || !self->RootGrid().XamlRoot())
+        {
+            co_return;
+        }
+        auto picker = ClassMngrWinUISharedUX::buildColorPickerDialog(
+            self->RootGrid().XamlRoot(),
+            L"Select Testing Class Font Color",
+            uiColorFromHex(self->m_testingClassFontColor),
+            L"Testing class font color picker"
+            );
+        self->m_ownedDialog = picker.dialog;
+        ContentDialogResult result = ContentDialogResult::None;
+        try
+        {
+            result = co_await picker.dialog.ShowAsync();
+        }
+        catch (...)
+        {
+        }
+        if (self->m_ownedDialog == picker.dialog)
+        {
+            self->m_ownedDialog = nullptr;
+        }
+        if (result == ContentDialogResult::Primary)
+        {
+            self->m_testingClassFontColor = uiHexFromColor(picker.picker.Color());
+            self->m_testingClassFontColorPreview.Background(
+                Microsoft::UI::Xaml::Media::SolidColorBrush(
+                    uiColorFromHex(self->m_testingClassFontColor)
+                    )
+                );
+            self->m_testingClassVisualDirty = true;
+            self->updateTestingClassActions();
+        }
+    };
+    m_testingClassFontColorButton.Click(openTestingFontColorPicker);
+    m_testingClassFontColorPreview.Tapped(openTestingFontColorPicker);
+
+    const auto markTestingClassVisualDirty = [this](auto const&, auto const&) {
+        if (!m_testingClassVisualLoading)
+        {
+            m_testingClassVisualDirty = true;
+            updateTestingClassActions();
+        }
+    };
+    m_testingClassNameTextBox.TextChanging(markTestingClassVisualDirty);
+    m_testingClassRoomTextBox.TextChanging(markTestingClassVisualDirty);
+    m_testingClassNotesTextBox.TextChanging(markTestingClassVisualDirty);
+    m_testingClassGradeCombo.SelectionChanged(markTestingClassVisualDirty);
+    m_testingClassLevelCombo.SelectionChanged(markTestingClassVisualDirty);
+    m_testingClassTeacherCombo.SelectionChanged(markTestingClassVisualDirty);
+
+    // The assignment editor remains available to the schedule diagnostics and
+    // engine smoke checks, but the visible page follows the Qt class editor.
+    auto legacyTestingContent = StackPanel();
+    legacyTestingContent.Visibility(Visibility::Collapsed);
     m_testingClassSelector = ComboBox();
     m_testingClassSelector.Header(box_value(hstring(L"Existing testing class")));
     m_testingClassSelector.PlaceholderText(L"Select a testing class");
@@ -723,39 +1285,9 @@ void MainWindow::populateScheduleWorkspace(
         }
         );
     setAutomationName(m_testingClassSelector, L"Testing class selector");
-    testingCard.content.Children().Append(m_testingClassSelector);
-    m_testingClassNameTextBox = makeImportBox(
-        L"Name",
-        L"e.g. Testing group A",
-        L"Testing class name"
-        );
-    m_testingClassNameTextBox.Text(L"WinUI Testing Group");
-    testingCard.content.Children().Append(m_testingClassNameTextBox);
-    m_testingClassGradeTextBox = makeImportBox(
-        L"Grade",
-        L"e.g. M1",
-        L"Testing class grade"
-        );
-    m_testingClassGradeTextBox.Text(L"M1");
-    testingCard.content.Children().Append(m_testingClassGradeTextBox);
-    m_testingClassLevelTextBox = makeImportBox(
-        L"Level",
-        L"e.g. Mixed (All)",
-        L"Testing class level"
-        );
-    m_testingClassLevelTextBox.Text(L"Mixed (All)");
-    testingCard.content.Children().Append(m_testingClassLevelTextBox);
-    m_testingClassRoomTextBox = makeImportBox(
-        L"Room",
-        L"e.g. Testing room",
-        L"Testing class room"
-        );
-    m_testingClassRoomTextBox.Text(L"Testing room");
-    testingCard.content.Children().Append(m_testingClassRoomTextBox);
-
-    auto testingActions = StackPanel();
-    testingActions.Orientation(Orientation::Horizontal);
-    testingActions.Spacing(8.0);
+    legacyTestingContent.Children().Append(m_testingClassSelector);
+    m_testingClassGradeTextBox = TextBox();
+    m_testingClassLevelTextBox = TextBox();
     m_testingCreateButton = Button();
     m_testingCreateButton.Content(box_value(hstring(L"Create testing class")));
     m_testingCreateButton.IsTabStop(true);
@@ -764,16 +1296,8 @@ void MainWindow::populateScheduleWorkspace(
         [this](auto const&, auto const&) { createTestingClass(); }
         );
     setAutomationName(m_testingCreateButton, L"Create testing class");
-    testingActions.Children().Append(m_testingCreateButton);
-    testingCard.content.Children().Append(testingActions);
-    testingContent.Children().Append(testingCard.root);
+    legacyTestingContent.Children().Append(m_testingCreateButton);
 
-    auto assignmentCard = ClassMngrWinUISharedUX::buildCard({
-        L"Testing assignment",
-        L"Assignment keys use the shared strict HH:mm contract. Enable replace "
-        L"only when the existing slot has been reviewed.",
-        L"Testing assignment editor"
-        });
     m_testingDayCombo = ComboBox();
     m_testingDayCombo.Header(box_value(hstring(L"Weekday")));
     m_testingDayCombo.MinWidth(220.0);
@@ -789,14 +1313,14 @@ void MainWindow::populateScheduleWorkspace(
     }
     m_testingDayCombo.SelectedIndex(0);
     setAutomationName(m_testingDayCombo, L"Testing assignment weekday");
-    assignmentCard.content.Children().Append(m_testingDayCombo);
+    legacyTestingContent.Children().Append(m_testingDayCombo);
     m_testingStartTextBox = makeImportBox(
         L"Start time (HH:mm)",
         L"e.g. 09:00",
         L"Testing assignment start time"
         );
     m_testingStartTextBox.Text(L"09:00");
-    assignmentCard.content.Children().Append(m_testingStartTextBox);
+    legacyTestingContent.Children().Append(m_testingStartTextBox);
     m_testingReplaceExistingCheck = CheckBox();
     m_testingReplaceExistingCheck.Content(
         box_value(hstring(L"Replace an existing assignment"))
@@ -807,7 +1331,7 @@ void MainWindow::populateScheduleWorkspace(
         m_testingReplaceExistingCheck,
         L"Replace existing testing assignment"
         );
-    assignmentCard.content.Children().Append(m_testingReplaceExistingCheck);
+    legacyTestingContent.Children().Append(m_testingReplaceExistingCheck);
     m_testingAssignButton = Button();
     m_testingAssignButton.Content(box_value(hstring(L"Assign selected class")));
     m_testingAssignButton.IsTabStop(true);
@@ -816,7 +1340,7 @@ void MainWindow::populateScheduleWorkspace(
         [this](auto const&, auto const&) { assignTestingClass(); }
         );
     setAutomationName(m_testingAssignButton, L"Assign testing class");
-    assignmentCard.content.Children().Append(m_testingAssignButton);
+    legacyTestingContent.Children().Append(m_testingAssignButton);
     m_testingAssignmentList = ListView();
     m_testingAssignmentList.Header(
         box_value(hstring(L"Current testing assignments"))
@@ -836,7 +1360,7 @@ void MainWindow::populateScheduleWorkspace(
         }
         );
     setAutomationName(m_testingAssignmentList, L"Testing assignment list");
-    assignmentCard.content.Children().Append(m_testingAssignmentList);
+    legacyTestingContent.Children().Append(m_testingAssignmentList);
     m_testingDeleteAssignmentButton = Button();
     m_testingDeleteAssignmentButton.Content(
         box_value(hstring(L"Delete selected assignment"))
@@ -850,15 +1374,15 @@ void MainWindow::populateScheduleWorkspace(
         m_testingDeleteAssignmentButton,
         L"Delete selected testing assignment"
         );
-    assignmentCard.content.Children().Append(m_testingDeleteAssignmentButton);
+    legacyTestingContent.Children().Append(m_testingDeleteAssignmentButton);
     m_testingStatusText = makeText(L"Testing-class editor is ready.");
     setAutomationName(m_testingStatusText, L"Testing classes status");
-    assignmentCard.content.Children().Append(m_testingStatusText);
+    legacyTestingContent.Children().Append(m_testingStatusText);
     m_testingValidationText = makeText(L"");
     m_testingValidationText.Visibility(Visibility::Collapsed);
     setAutomationName(m_testingValidationText, L"Testing classes validation");
-    assignmentCard.content.Children().Append(m_testingValidationText);
-    testingContent.Children().Append(assignmentCard.root);
+    legacyTestingContent.Children().Append(m_testingValidationText);
+    testingContent.Children().Append(legacyTestingContent);
 
     auto testingItem = PivotItem();
     testingItem.Header(box_value(hstring(L"Testing classes")));
@@ -867,12 +1391,11 @@ void MainWindow::populateScheduleWorkspace(
 
     m_scheduleTabs = Pivot();
     // The schedule board owns the visible Regular/Intensive/Testing mode
-    // controls. Keep the import/testing pages available to existing command
-    // and smoke-test paths, but do not expose their legacy navigation row.
+    // controls. Keep the testing page available to existing command and
+    // smoke-test paths, but host schedule import in its modal dialog.
     m_scheduleTabs.IsTabStop(false);
     m_scheduleTabs.TabIndex(0);
     m_scheduleTabs.Items().Append(scheduleItem);
-    m_scheduleTabs.Items().Append(importItem);
     m_scheduleTabs.Items().Append(testingItem);
     m_scheduleTabs.HeaderTemplate(
         winrt::Microsoft::UI::Xaml::Markup::XamlReader::Load(
