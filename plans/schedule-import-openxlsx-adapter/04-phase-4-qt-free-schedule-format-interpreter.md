@@ -10,6 +10,15 @@ Move schedule spreadsheet semantics out of the Qt-specific reader path into a
 Qt-free interpreter fed by the raw workbook layout contract, while preserving
 current Qt behavior through regression tests.
 
+## Status
+
+Implemented in Phase 4. `ScheduleWorkbookInterpreter` now owns workbook
+header/user discovery, merged-cell traversal, weekday and time interpretation,
+regular/intensive handling, Korean teacher/room/course parsing, style colors,
+meeting-pattern partitioning, and stable diagnostics. The Qt parser now only
+decodes the XLSX bytes, converts its workbook into the shared layout, invokes
+the interpreter, and converts the native result back to its retained Qt model.
+
 ## Why It Matters
 
 `src/features/schedule/import/schedule_workbook_parser.cpp` currently combines
@@ -70,7 +79,7 @@ including:
 3. Extract pure helpers first: cell text normalization, time parsing, weekday
    recognition, name/room/class parsing, color comparison, and diagnostics.
 4. Extract worksheet traversal and class aggregation next.
-5. Replace the Qt parser’s direct semantic work with the Qt-layout adapter plus
+5. Replace the Qt parser's direct semantic work with the Qt-layout adapter plus
    the shared interpreter.
 6. Compare old and new Qt parser results on the fixture catalogue. Resolve
    intentional deviations as named compatibility decisions, never as silent
@@ -108,6 +117,19 @@ this plan deliberately does not mandate a premature directory refactor.
   fixture.
 - The shared interpreter compiles without Qt linkage or Qt types in public
   headers.
+
+## Phase 4 Evidence
+
+- `src/engine/schedule_workbook_interpreter.cpp` has no Qt, OpenXLSX, ZIP,
+  XML, or WinRT dependency and is part of `ClassMngrEngine`.
+- The interpreter test covers a UTF-8 Korean teacher, merged schedule cells,
+  normalized fill color, hidden-sheet rejection, and cancellation.
+- The retained Qt parser compiles as a thin adapter and keeps the existing
+  `parseScheduleImportWorkbook` and `normalizedScheduleImportUserName` API.
+- The focused interpreter executable was compiled and linked directly with
+  MSVC and passed. The configured CMake/MSBuild target remains blocked before
+  compilation by the host's existing `Microsoft.Build.Utilities.FileTracker`
+  access-denied failure.
 
 ## Exit Criteria
 

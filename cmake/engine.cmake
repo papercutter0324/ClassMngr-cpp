@@ -112,6 +112,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/schedule_import_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/schedule_workbook_interpreter.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_workbook_interpreter.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_workbook_layout.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_workbook_reader.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_service.cpp"
@@ -712,6 +714,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineScheduleWorkbookReaderContractTests
         COMMAND ClassMngrEngineScheduleWorkbookReaderContractTests
+    )
+
+    add_executable(ClassMngrEngineScheduleWorkbookInterpreterTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/schedule_workbook_interpreter_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineScheduleWorkbookInterpreterTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineScheduleWorkbookInterpreterTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineScheduleWorkbookInterpreterTests
+        COMMAND ClassMngrEngineScheduleWorkbookInterpreterTests
     )
 
     add_executable(ClassMngrEngineClassTransferServiceTests

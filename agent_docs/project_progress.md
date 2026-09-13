@@ -65,6 +65,22 @@ after the OpenXLSX dependency chain had built. Use the documented
 Phase 2 is committed as `ed80300d`. Preserve the unrelated modification to
 `tests/fixtures/database-port/typical.tps`.
 
+### Phase 4 handoff
+
+Phase 4 is implemented: `ScheduleWorkbookInterpreter` is now the single
+Qt-free semantic path for raw workbook layouts. The retained Qt parser is a
+decode/layout-conversion/result-conversion adapter, so its existing public API
+and Qt UI model remain stable while the same logic is available to OpenXLSX.
+The interpreter covers merged cells, visible sheets, weekday aliases,
+regular/intensive time rules, UTF-8 Hangul extraction, course/room parsing,
+style colors, intensive slot states, occurrence partitioning, and diagnostics.
+
+The focused interpreter test was compiled and linked directly with MSVC and
+passed. The CMake/MSBuild target still stops before compilation on the host's
+existing FileTracker access-denied failure. Phase 5 should implement the
+OpenXLSX reader against this interpreter and retain the unrelated fixture
+modification.
+
 ### Phase 3 handoff
 
 Phase 3 adds the Qt-free `ScheduleWorkbookLayout` value model and

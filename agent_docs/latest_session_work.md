@@ -52,9 +52,19 @@ owns cells, styles, merges, sheet visibility, and diagnostics by value.
 
 The contract-test build was attempted after CMake reconfiguration; the host's
 existing MSVC `FileTracker` access-denied failure stopped the engine before
-compiling it. Continue with Phase 4's shared interpreter. Preserve
-`tests/fixtures/database-port/typical.tps`, which remains an unrelated
-unstaged modification.
+compiling it. Phase 4 is now implemented in `ClassMngrEngine`: the new
+`ScheduleWorkbookInterpreter` consumes only `ScheduleWorkbookLayout` values
+and produces the native schedule-import model. It preserves the retained Qt
+parser's rules for sheet visibility, merged headers, weekday aliases, regular
+and intensive times, Hangul teacher extraction, rooms/courses, colors,
+intensive slot states, class aggregation, and diagnostics. The Qt parser now
+only decodes bytes and converts between Qt and native value models.
+
+The focused interpreter test compiled/linked directly with MSVC and passed;
+the generated MSBuild target remains blocked before compilation by the host
+FileTracker access-denied failure. Continue with Phase 5's OpenXLSX reader and
+preserve `tests/fixtures/database-port/typical.tps`, which remains an
+unrelated unstaged modification.
 
 The required `companion` agent type was unavailable in this runtime; the work
 was completed directly with the repository's Medium-route constraints. The

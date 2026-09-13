@@ -171,6 +171,19 @@ the reader implementation is connected.
   contract-test target before compilation; this is an environment limitation,
   not evidence against the contract.
 
+## OpenXLSX Schedule Adapter — Phase 4
+
+- Schedule-format interpretation is now a Qt-free engine component. The
+  existing Qt byte reader is an adapter that maps its workbook snapshot into
+  `ScheduleWorkbookLayout`, calls the shared interpreter, and converts the
+  native result back for the retained Qt UI.
+- The interpreter deliberately uses explicit UTF-8 handling for Hangul
+  teacher names and weekday syllables, while keeping the existing template's
+  ASCII course/room/time grammar and native meeting-pattern rules.
+- The direct MSVC interpreter test passed. The CMake/MSBuild route continues to
+  fail in the host FileTracker static initializer before source compilation;
+  this remains an environment limitation to carry into later validation.
+
 ## Decisions and Lessons
 
 - For the WinUI My Workspace lifecycle bug, do not rely on late Pivot
