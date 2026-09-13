@@ -13,6 +13,8 @@ if(NOT CMAKE_GENERATOR MATCHES "Visual Studio")
     )
 endif()
 
+include(${CMAKE_CURRENT_LIST_DIR}/windows_winui_openxlsx.cmake)
+
 set(CLASSMNGR_WINUI_MIN_WINDOWS_SDK "10.0.26100.0")
 if(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION VERSION_LESS
         CLASSMNGR_WINUI_MIN_WINDOWS_SDK)
@@ -149,6 +151,8 @@ function(classmngr_add_windows_winui_target)
         "${PROJECT_SOURCE_DIR}/cmake/engine.cmake"
         "${PROJECT_SOURCE_DIR}/cmake/native_resources.cmake"
         "${PROJECT_SOURCE_DIR}/cmake/platform/windows_winui.cmake"
+        "${PROJECT_SOURCE_DIR}/cmake/platform/windows_winui_openxlsx.cmake"
+        "${PROJECT_SOURCE_DIR}/cmake/platform/windows_winui_openxlsx.props.in"
         "${PROJECT_SOURCE_DIR}/cmake/resource_catalog.cmake"
         "${CLASSMNGR_WINUI_SCRIPT}"
         "${PROJECT_SOURCE_DIR}/scripts/generate_winui_resw.ps1"
@@ -200,6 +204,7 @@ function(classmngr_add_windows_winui_target)
             "${CLASSMNGR_WINUI_MSIX_BUILD_TOOLS_VERSION}"
         -CppWinRTVersion "${CLASSMNGR_WINUI_CPPWINRT_VERSION}"
         -BuildToolsVersion "${CLASSMNGR_WINUI_BUILD_TOOLS_VERSION}"
+        -OpenXLSXPropertySheet "${CLASSMNGR_OPENXLSX_PROPERTY_SHEET}"
     )
 
     add_custom_command(
@@ -211,6 +216,7 @@ function(classmngr_add_windows_winui_target)
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         DEPENDS
             ClassMngrEngine
+            ClassMngrOpenXLSXBuild
             ${classmngr_winui_build_inputs}
         USES_TERMINAL
         VERBATIM

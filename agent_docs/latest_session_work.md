@@ -33,6 +33,19 @@ the reader to `C:\Git\openxlsx` or enable OpenXLSX automatic fetching. The
 unrelated `tests/fixtures/database-port/typical.tps` modification remains
 unstaged and must be preserved.
 
+The Phase 1 commit is `f960ab83`. Phase 2 is implemented and ready for its
+separate commit. It adds exact PugiXML, miniz, and standalone-nowide submodule
+pins, a controlled local-target CMake bridge, a generated
+`ClassMngrOpenXLSX.props` sheet, and the PowerShell/vcxproj plumbing that passes
+the sheet into the real WinUI project. The native smoke executable passed in
+x64 Debug, x64 Release, and Win32 Release. The full WinUI target was attempted;
+the new dependency chain built, but the existing engine compilation stopped on
+the host MSBuild FileTracker access error.
+
+After committing Phase 2, continue with Phase 3's public reader contract and
+raw workbook-layout model. Preserve `tests/fixtures/database-port/typical.tps`,
+which remains an unrelated unstaged modification.
+
 The required `companion` agent type was unavailable in this runtime; the work
 was completed directly with the repository's Medium-route constraints. The
 previously recorded absence of the external `medium_route.md` remains

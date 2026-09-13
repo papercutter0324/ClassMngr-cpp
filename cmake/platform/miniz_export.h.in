@@ -1,0 +1,7 @@
+#pragma once
+
+// The embedded miniz target is always static.  OpenXLSX uses MINIZ_EXPORT in
+// its public C declarations; no DLL visibility decoration is required.
+#ifndef MINIZ_EXPORT
+#define MINIZ_EXPORT
+#endif

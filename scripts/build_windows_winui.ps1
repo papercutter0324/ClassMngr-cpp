@@ -75,7 +75,11 @@ param(
     [string] $CppWinRTVersion,
 
     [Parameter(Mandatory = $true)]
-    [string] $BuildToolsVersion
+    [string] $BuildToolsVersion,
+
+    [Parameter(Mandatory = $false)]
+    [AllowEmptyString()]
+    [string] $OpenXLSXPropertySheet = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -281,6 +285,12 @@ $generatedIncludePath = Resolve-ExistingPath -Path $GeneratedIncludeDirectory -D
 $resourceFilePath = Resolve-ExistingPath -Path $ResourceFile -Description 'generated WinUI resource file'
 $resourceManifestPath = Resolve-ExistingPath -Path $ResourceManifest -Description 'native resource manifest'
 $projectRootPath = Resolve-ExistingPath -Path $ProjectRoot -Description 'project root'
+$openXlsxPropertySheetPath = $null
+if (-not [string]::IsNullOrWhiteSpace($OpenXLSXPropertySheet)) {
+    $openXlsxPropertySheetPath = Resolve-ExistingPath `
+        -Path $OpenXLSXPropertySheet `
+        -Description 'OpenXLSX MSBuild property sheet'
+}
 
 $packagesPath = Get-AbsolutePath -Path $PackagesDirectory
 $outputPath = Get-AbsolutePath -Path $OutputDirectory
@@ -520,6 +530,9 @@ $msbuildArguments = @(
     '/p:TrackFileAccess=false',
     '/p:PreferredToolArchitecture=x64'
 )
+if ($null -ne $openXlsxPropertySheetPath) {
+    $msbuildArguments += "/p:ClassMngrOpenXLSXPropertySheet=$openXlsxPropertySheetPath"
+}
 
 Write-Host "Building ClassMngrWinUI ($Platform, $Configuration)"
 Push-Location $projectDirectoryPath

@@ -49,14 +49,22 @@ downloaded. The remaining offline-build gate is intentionally handed to Phase
 2, which owns native dependency target provisioning and the real WinUI/MSBuild
 integration.
 
-### Phase 1 continuation
+### Phase 2 handoff
 
-- Commit the staged `.gitmodules`/submodule gitlink, provenance record, license
-  notices, and Phase 1 status update when the user requests the next commit.
-- Begin Phase 2 from the pinned submodule and recorded options; do not use
-  `C:\Git\openxlsx` as a build input.
-- Preserve the unrelated modification to
-  `tests/fixtures/database-port/typical.tps`.
+Phase 1 is committed as `f960ab83`. Phase 2 added pinned PugiXML, miniz, and
+standalone-nowide submodules and a controlled CMake-to-MSBuild bridge. The
+generated WinUI property sheet carries configuration-specific static library
+inputs and repository-local include paths into `ClassMngrWinUI.vcxproj`.
+
+The native OpenXLSX smoke executable passed in x64 Debug, x64 Release, and
+Win32 Release. The full WinUI target was attempted but the host's existing
+MSBuild FileTracker access failure stopped the unrelated engine compilation
+after the OpenXLSX dependency chain had built. Use the documented
+`/p:TrackFileAccess=false` override for native target validation.
+
+Phase 2 is ready to commit, followed by Phase 3's reader contract and
+Qt-free/raw workbook-layout boundary. Preserve the unrelated modification to
+`tests/fixtures/database-port/typical.tps`.
 
 ## Previous Deployment Handoff
 

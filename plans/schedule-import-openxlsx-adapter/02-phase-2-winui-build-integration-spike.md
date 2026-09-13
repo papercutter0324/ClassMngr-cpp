@@ -9,6 +9,22 @@
 Prove that the actual Windows WinUI build can compile, link, stage, and run a
 small OpenXLSX consumer in every supported configuration.
 
+## Status - 2026-09-13
+
+The dependency bridge is complete. The repository's WinUI CMake graph now
+builds the pinned OpenXLSX, PugiXML, miniz, and standalone-nowide sources as
+static configuration-specific artifacts. It generates and passes a target-local
+`ClassMngrOpenXLSX.props` sheet through the existing PowerShell wrapper into
+`ClassMngrWinUI.vcxproj`; the sheet supplies matching include directories,
+library directories, exact `.lib` inputs, and static/nowide definitions.
+
+The deterministic native smoke executable passed in x64 Debug, x64 Release,
+and Win32 Release. A full application target attempt reached the existing
+engine build but was blocked by this host's MSBuild `FileTracker` access error;
+the dependency graph itself builds and links successfully when the repository's
+documented `/p:TrackFileAccess=false` override is used. No application runtime
+DLL is introduced by the static bridge.
+
 ## Context
 
 This project is not compiled solely by the root CMake graph. The WinUI route
@@ -72,6 +88,10 @@ native codec. It must set, per configuration/platform:
 7. Remove temporary smoke-only product wiring once the durable bridge is
    established, retaining a small deterministic build check if practical.
 
+The selected route is the controlled CMake dependency build. The smoke target
+is retained as the deterministic build check; it has no import behavior or
+WinUI UI dependency.
+
 ## Files Likely to Be Investigated
 
 - `cmake/platform/windows_winui.cmake`
@@ -99,6 +119,19 @@ native codec. It must set, per configuration/platform:
   without loader errors.
 - Repeat one build from a clean dependency/artifact directory to prove include
   and library discovery are deterministic.
+
+### Completed evidence
+
+- `cmake --preset windows-x64-winui-debug` configured and the corresponding
+  `ClassMngrOpenXLSXSmoke` Debug build completed; the smoke executable exited 0.
+- The equivalent x64 Release and Win32 Release smoke builds and executions
+  exited 0.
+- The generated property sheets for x64 and x86 resolve to their respective
+  build trees and configuration subdirectories.
+- `ClassMngrWindowsWinUI` was attempted through the standard CMake target. Its
+  OpenXLSX dependencies completed, then the pre-existing MSBuild FileTracker
+  access failure stopped the unrelated `ClassMngrEngine` compilation. This is
+  an environment limitation, not a codec link or loader failure.
 
 ## Exit Criteria
 

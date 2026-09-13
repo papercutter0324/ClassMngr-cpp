@@ -1,7 +1,7 @@
 # OpenXLSX Dependency Provenance
 
-**Status:** Phase 1 in progress. The local tree is recorded for evaluation, but
-it is not yet an approved product dependency.
+**Status:** Phase 2 dependency bridge complete; workbook reader approval remains
+with Phases 3-7.
 
 ## Candidate Source
 
@@ -103,6 +103,32 @@ The local CMake source and manifest identify these dependency alternatives:
 The dependency list is an inventory, not an assertion that all alternatives
 will ship. The first three entries have exact source/license evidence; their
 build and link behavior remains subject to the Phase 2 spike.
+
+## Repository Build Materialization
+
+Phase 2 materializes the selected transitive sources as repository-owned
+submodules so a clean checkout can build without a package manager or network
+access:
+
+| Source | Repository path | Pinned commit |
+| --- | --- | --- |
+| PugiXML 1.14 | `third_party/openxlsx/dependencies/pugixml` | `db78afc2b7d8f043b4bc6b185635d949ea2ed2a8` |
+| miniz 3.0.2 | `third_party/openxlsx/dependencies/miniz` | `293d4db1b7d0ffee9756d035b9ac6f7431ef8492` |
+| standalone nowide v11.3.1-fixed | `third_party/openxlsx/dependencies/nowide` | `66617576eb15c65749cddede010258b693c9a2e7` |
+
+`cmake/platform/windows_winui_openxlsx.cmake` adds those local targets before
+configuring OpenXLSX and forces the product-safe options above. Because the
+root WinUI project is C++-only while miniz is a C library, the bridge keeps the
+miniz sources in C language mode with MSVC `/TC`; no forked source is created.
+The static archives are emitted under the active CMake build tree's
+`openxlsx/<Configuration>` directory.
+
+`cmake/platform/windows_winui_openxlsx.props.in` is configured into a generated
+MSBuild property sheet. The existing WinUI PowerShell wrapper passes that sheet
+to the project, which imports it only for the WinUI application. The sheet
+contains the OpenXLSX, PugiXML, miniz, and nowide include paths and exact
+configuration-local library inputs, so the application cannot silently resolve
+an arbitrary developer installation.
 
 ## License Record
 

@@ -1,3 +1,12 @@
 [submodule "third_party/openxlsx/source"]
 	path = third_party/openxlsx/source
 	url = https://codeberg.org/lars_uffmann/OpenXLSX.git
+[submodule "third_party/openxlsx/dependencies/pugixml"]
+	path = third_party/openxlsx/dependencies/pugixml
+	url = https://github.com/zeux/pugixml.git
+[submodule "third_party/openxlsx/dependencies/miniz"]
+	path = third_party/openxlsx/dependencies/miniz
+	url = https://github.com/richgel999/miniz.git
+[submodule "third_party/openxlsx/dependencies/nowide"]
+	path = third_party/openxlsx/dependencies/nowide
+	url = https://codeberg.org/lars_uffmann/nowide_standalone.git

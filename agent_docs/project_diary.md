@@ -28,6 +28,25 @@ OpenXLSX's dependency manager can fetch transitive libraries. The build bridge
 must provision exact native targets and preserve the no-network policy before
 the reader implementation is connected.
 
+## OpenXLSX Schedule Import Phase 2 - 2026-09-13
+
+- The WinUI route is a CMake custom target that invokes PowerShell and then a
+  separate MSBuild project. A CMake target link interface does not cross that
+  project boundary, so the durable bridge is a generated, target-local MSBuild
+  property sheet passed by the existing wrapper.
+- PugiXML, miniz, and standalone-nowide are pinned as submodules and added as
+  local CMake targets before OpenXLSX. OpenXLSX's FetchContent path remains
+  disabled. Static library outputs are placed in an architecture-specific
+  CMake build tree and split by Debug/Release configuration.
+- miniz's upstream CMake project would enable a C language probe that is
+  incompatible with this host's restricted MSBuild FileTracker environment.
+  Keeping the sources in C language mode via MSVC `/TC` avoids a source fork and
+  still produced the correct static library.
+- x64 Debug, x64 Release, and Win32 Release native smoke builds and executions
+  passed. A full WinUI target attempt reached the existing engine FileTracker
+  failure after the new dependency chain built, so no loader claim is made for
+  the application until that host issue is cleared.
+
 ## Schedule Import Qt Workflow Audit — 2026-09-13
 
 - The retained Qt flow is two-stage. `ScheduleImportDialog` is modal and

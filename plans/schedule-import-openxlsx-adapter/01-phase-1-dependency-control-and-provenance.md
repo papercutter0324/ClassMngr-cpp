@@ -23,10 +23,9 @@ include it or the WinUI build relies on it.
   notices.
 - [x] Materialized the pinned source as a repository-owned submodule at
   `third_party/openxlsx/source`.
-- [ ] Prove an offline dependency configuration/build using the selected source
-  policy.
+- [x] Prove an offline dependency configuration/build using the selected source
+  policy; the native build bridge is recorded in Phase 2.
 
-The phase remains open until the remaining offline-build gate is closed.
 The recorded evidence and current decision are in
 [`third_party/openxlsx/PROVENANCE.md`](../../third_party/openxlsx/PROVENANCE.md).
 
@@ -139,3 +138,11 @@ build is allowed to depend on an unpinned developer-local directory.
 | Version metadata mismatch hides a fork or partial copy | Treat it as untrusted evaluation material until an immutable source is selected. |
 | A convenience package manager fetches different versions on CI | Pin versions and disable network fallback in the product path. |
 | Static linking omits a required notice | Inventory enabled transitive libraries before release packaging. |
+
+## Offline Gate Closure - Phase 2
+
+The initial probe documented above correctly refused to fetch an unprovisioned
+`nowide` target. Phase 2 provisioned the selected PugiXML, miniz, and
+standalone-nowide targets from pinned repository submodules and built the
+OpenXLSX consumer successfully in x64 Debug, x64 Release, and Win32 Release.
+The no-network policy remains enabled.
