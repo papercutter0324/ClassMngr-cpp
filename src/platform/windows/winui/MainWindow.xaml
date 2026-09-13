@@ -318,29 +318,7 @@
                             Content="Campus Staff"
                             Tag="campus_staff"
                             IsEnabled="True"
-                            IsExpanded="True"
-                            AutomationProperties.Name="Campus Staff navigation root">
-                            <NavigationViewItem.MenuItems>
-                                <NavigationViewItem
-                                    x:Name="KoreanTeachersNavigationItem"
-                                    Content="Korean Teachers"
-                                    Tag="teachers_all_korean"
-                                    IsEnabled="True"
-                                    AutomationProperties.Name="Korean Teachers navigation item" />
-                                <NavigationViewItem
-                                    x:Name="NativeEnglishTeachersNavigationItem"
-                                    Content="Native English Teachers"
-                                    Tag="native_english_teachers"
-                                    IsEnabled="True"
-                                    AutomationProperties.Name="Native English Teachers navigation item" />
-                                <NavigationViewItem
-                                    x:Name="GsTeamNavigationItem"
-                                    Content="GS Team"
-                                    Tag="gs_team"
-                                    IsEnabled="True"
-                                    AutomationProperties.Name="GS Team navigation item" />
-                            </NavigationViewItem.MenuItems>
-                        </NavigationViewItem>
+                            AutomationProperties.Name="Campus Staff navigation item" />
                         <NavigationViewItem
                             x:Name="UsefulLinksNavigationItem"
                             Content="Useful Links"
@@ -361,17 +339,9 @@
                         <NavigationViewItem
                             x:Name="CampusDirectoryNavigationItem"
                             Content="Campus Directory"
-                            Tag="campus_info"
-                            IsExpanded="True"
-                            AutomationProperties.Name="Campus Directory navigation root">
-                            <NavigationViewItem.MenuItems>
-                                <NavigationViewItem x:Name="CampusInformationNavigationItem" Content="Information" Tag="campus_information" AutomationProperties.Name="Campus Information navigation item" />
-                                <NavigationViewItem x:Name="CampusDirectionsNavigationItem" Content="Directions" Tag="campus_directions" AutomationProperties.Name="Campus Directions navigation item" />
-                                <NavigationViewItem x:Name="CampusAddressNavigationItem" Content="Address" Tag="campus_address" AutomationProperties.Name="Campus Address navigation item" />
-                                <NavigationViewItem x:Name="CampusHousingNavigationItem" Content="Housing" Tag="campus_housing" AutomationProperties.Name="Campus Housing navigation item" />
-                                <NavigationViewItem x:Name="CampusMapNavigationItem" Content="Maps" Tag="campus_map" AutomationProperties.Name="Campus Maps navigation item" />
-                            </NavigationViewItem.MenuItems>
-                        </NavigationViewItem>
+                            Tag="campus_information"
+                            IsEnabled="True"
+                            AutomationProperties.Name="Campus Directory navigation item" />
                         <NavigationViewItem
                             x:Name="AboutNavigationItem"
                             Content="About"

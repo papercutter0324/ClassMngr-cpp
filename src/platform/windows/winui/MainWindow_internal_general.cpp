@@ -96,6 +96,7 @@ bool isKnownPageId(std::wstring_view pageId) noexcept
 {
     return pageId == homePageId
         || pageId == personalDetailsPageId
+        || pageId == campusStaffPageId
         || pageId == koreanTeachersPageId
         || pageId == nativeEnglishTeachersPageId
         || pageId == gsTeamPageId
@@ -107,6 +108,7 @@ bool isKnownPageId(std::wstring_view pageId) noexcept
         || pageId == classAnalyticsPageId
         || pageId == classNotesPageId
         || pageId == aboutPageId
+        || pageId == campusDirectoryPageAliasId
         || pageId == campusInformationPageId
         || pageId == campusDirectionsPageId
         || pageId == campusAddressPageId
@@ -124,6 +126,14 @@ bool isClassesPageId(std::wstring_view pageId) noexcept
         || pageId == classNotesPageId;
 }
 
+bool isCampusStaffPageId(std::wstring_view pageId) noexcept
+{
+    return pageId == campusStaffPageId
+        || pageId == koreanTeachersPageId
+        || pageId == nativeEnglishTeachersPageId
+        || pageId == gsTeamPageId;
+}
+
 bool isCampusPageId(std::wstring_view pageId) noexcept
 {
     return pageId == campusInformationPageId
@@ -131,6 +141,11 @@ bool isCampusPageId(std::wstring_view pageId) noexcept
         || pageId == campusAddressPageId
         || pageId == campusHousingPageId
         || pageId == campusMapPageId;
+}
+
+bool isCampusDirectoryPageId(std::wstring_view pageId) noexcept
+{
+    return pageId == campusDirectoryPageAliasId || isCampusPageId(pageId);
 }
 
 std::string asUtf8(std::wstring_view value)

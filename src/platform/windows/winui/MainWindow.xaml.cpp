@@ -37,29 +37,11 @@ MainWindow::MainWindow()
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_aboutNavigationItem = RootGrid().FindName(L"AboutNavigationItem").as<
         Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_campusInformationNavigationItem = RootGrid().FindName(
-        L"CampusInformationNavigationItem"
+    m_campusDirectoryNavigationItem = RootGrid().FindName(
+        L"CampusDirectoryNavigationItem"
         ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_campusDirectionsNavigationItem = RootGrid().FindName(
-        L"CampusDirectionsNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_campusAddressNavigationItem = RootGrid().FindName(
-        L"CampusAddressNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_campusHousingNavigationItem = RootGrid().FindName(
-        L"CampusHousingNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_campusMapNavigationItem = RootGrid().FindName(
-        L"CampusMapNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_koreanTeachersNavigationItem = RootGrid().FindName(
-        L"KoreanTeachersNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_nativeEnglishTeachersNavigationItem = RootGrid().FindName(
-        L"NativeEnglishTeachersNavigationItem"
-        ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
-    m_gsTeamNavigationItem = RootGrid().FindName(
-        L"GsTeamNavigationItem"
+    m_campusStaffNavigationItem = RootGrid().FindName(
+        L"CampusStaffNavigationItem"
         ).as<Microsoft::UI::Xaml::Controls::NavigationViewItem>();
     m_contentFrame = RootGrid().FindName(L"ContentFrame").as<
         Microsoft::UI::Xaml::Controls::Frame>();

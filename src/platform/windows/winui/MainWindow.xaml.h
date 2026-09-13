@@ -456,6 +456,10 @@ private:
     void presentGsTeamMember(int index);
     [[nodiscard]] classmngr::engine::GsTeamMember
         gsTeamMemberFromForm() const;
+    void populateCampusStaffPage(
+        Microsoft::UI::Xaml::Controls::Page const& page,
+        bool refresh
+        );
     void populateCampusPage(
         Microsoft::UI::Xaml::Controls::Page const& page,
         std::wstring_view pageId,
@@ -716,15 +720,9 @@ private:
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_homeNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_subPrepNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_classesNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusStaffNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::NavigationViewItem m_aboutNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusInformationNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusDirectionsNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusAddressNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusHousingNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusMapNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_koreanTeachersNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_nativeEnglishTeachersNavigationItem{nullptr};
-    Microsoft::UI::Xaml::Controls::NavigationViewItem m_gsTeamNavigationItem{nullptr};
+    Microsoft::UI::Xaml::Controls::NavigationViewItem m_campusDirectoryNavigationItem{nullptr};
     Microsoft::UI::Xaml::Controls::Frame m_contentFrame{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_shellInfoButton{nullptr};
     Microsoft::UI::Xaml::Controls::MenuFlyoutSubItem m_recentFilesMenu{nullptr};
@@ -1215,6 +1213,14 @@ private:
     std::chrono::steady_clock::time_point m_phase5FirstNavigationStart{};
     std::chrono::steady_clock::time_point m_phase5FirstNavigationReady{};
     std::function<void(bool)> m_phase5FirstNavigationCompletion;
+
+    Microsoft::UI::Xaml::Controls::Pivot m_campusStaffTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_campusStaffContent{nullptr};
+    Microsoft::UI::Xaml::Controls::Page
+        m_campusStaffKoreanTeachersPage{nullptr};
+    Microsoft::UI::Xaml::Controls::Page
+        m_campusStaffNativeEnglishTeachersPage{nullptr};
+    Microsoft::UI::Xaml::Controls::Page m_campusStaffGsTeamPage{nullptr};
 
     classmngr::engine::SemanticVersion m_engineVersion;
     WinUILocalizer m_localizer;

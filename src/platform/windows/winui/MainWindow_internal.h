@@ -82,6 +82,7 @@ namespace winrt::ClassMngrWinUI::implementation::MainWindowDetail
 
 inline constexpr std::wstring_view homePageId = L"home";
 inline constexpr std::wstring_view personalDetailsPageId = L"personal_details";
+inline constexpr std::wstring_view campusStaffPageId = L"campus_staff";
 inline constexpr std::wstring_view koreanTeachersPageId = L"teachers_all_korean";
 inline constexpr std::wstring_view nativeEnglishTeachersPageId =
     L"native_english_teachers";
@@ -108,6 +109,7 @@ inline constexpr std::array<std::wstring_view, 6> classSectionTitles{
 inline constexpr std::wstring_view aboutPageId = L"about";
 inline constexpr std::wstring_view campusInformationPageId =
     L"campus_information";
+inline constexpr std::wstring_view campusDirectoryPageAliasId = L"campus_info";
 inline constexpr std::wstring_view campusDirectionsPageId = L"campus_directions";
 inline constexpr std::wstring_view campusAddressPageId = L"campus_address";
 inline constexpr std::wstring_view campusHousingPageId = L"campus_housing";
@@ -199,7 +201,9 @@ std::string uniqueCampusResourceFileName(
     );
 [[nodiscard]] bool isKnownPageId(std::wstring_view pageId) noexcept;
 [[nodiscard]] bool isClassesPageId(std::wstring_view pageId) noexcept;
+[[nodiscard]] bool isCampusStaffPageId(std::wstring_view pageId) noexcept;
 [[nodiscard]] bool isCampusPageId(std::wstring_view pageId) noexcept;
+[[nodiscard]] bool isCampusDirectoryPageId(std::wstring_view pageId) noexcept;
 std::string asUtf8(std::wstring_view value);
 [[nodiscard]] bool isSupportedDatabasePath(std::wstring_view path) noexcept;
 [[nodiscard]] bool pathExists(std::wstring_view path) noexcept;

@@ -168,7 +168,7 @@ void MainWindow::updateFileCommandState()
         m_preferencesMenu.IsEnabled(hasDatabase);
     }
 
-    const bool pageCanBeSaved = isCampusPageId(m_currentPageId)
+    const bool pageCanBeSaved = isCampusDirectoryPageId(m_currentPageId)
         && (m_campusInformationState == L"no_database"
             || m_campusInformationState == L"empty"
             || m_campusInformationState == L"populated");
@@ -427,43 +427,18 @@ void MainWindow::restoreNavigationSelection()
     {
         selected = m_classesNavigationItem;
     }
+    else if (isCampusStaffPageId(m_currentPageId))
+    {
+        selected = m_campusStaffNavigationItem;
+    }
+    else if (isCampusDirectoryPageId(m_currentPageId))
+    {
+        selected = m_campusDirectoryNavigationItem;
+    }
     else if (m_currentPageId == aboutPageId)
     {
         selected = m_aboutNavigationItem;
     }
-    else if (m_currentPageId == campusInformationPageId)
-    {
-        selected = m_campusInformationNavigationItem;
-    }
-    else if (m_currentPageId == campusDirectionsPageId)
-    {
-        selected = m_campusDirectionsNavigationItem;
-    }
-    else if (m_currentPageId == campusAddressPageId)
-    {
-        selected = m_campusAddressNavigationItem;
-    }
-    else if (m_currentPageId == campusHousingPageId)
-    {
-        selected = m_campusHousingNavigationItem;
-    }
-    else if (m_currentPageId == campusMapPageId)
-    {
-        selected = m_campusMapNavigationItem;
-    }
-    else if (m_currentPageId == koreanTeachersPageId)
-    {
-        selected = m_koreanTeachersNavigationItem;
-    }
-    else if (m_currentPageId == nativeEnglishTeachersPageId)
-    {
-        selected = m_nativeEnglishTeachersNavigationItem;
-    }
-    else if (m_currentPageId == gsTeamPageId)
-    {
-        selected = m_gsTeamNavigationItem;
-    }
-
     if (selected)
     {
         m_selectionChanging = true;

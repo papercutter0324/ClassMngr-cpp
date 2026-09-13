@@ -359,9 +359,16 @@ bool MainWindow::runPhase6KoreanTeacherChecks()
     m_koreanTeacherDirty = false;
     m_koreanTeacherNew = false;
 
-    navigateTo(koreanTeachersPageId);
+    navigateTo(campusStaffPageId);
     const bool noDatabaseReady =
-        m_currentPageId == koreanTeachersPageId
+        m_currentPageId == campusStaffPageId
+        && m_campusStaffTabs
+        && m_campusStaffTabs.Items().Size() == 3
+        && m_campusStaffTabs.SelectedIndex() == 0
+        && m_campusStaffContent
+        && m_campusStaffContent.Children().Size() == 3
+        && m_campusStaffContent.Children().GetAt(0).Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
         && m_koreanTeacherStatusText
         && m_koreanTeacherStatusText.Text() == L"No database open."
         && m_koreanTeacherNewButton
@@ -456,9 +463,11 @@ bool MainWindow::runPhase6NativeEnglishTeacherChecks()
     m_nativeEnglishTeacherDirty = false;
     m_nativeEnglishTeacherNew = false;
 
-    navigateTo(nativeEnglishTeachersPageId);
+    navigateTo(campusStaffPageId);
     const bool noDatabaseReady =
-        m_currentPageId == nativeEnglishTeachersPageId
+        m_currentPageId == campusStaffPageId
+        && m_campusStaffTabs
+        && m_campusStaffTabs.Items().Size() == 3
         && m_nativeEnglishTeacherStatusText
         && m_nativeEnglishTeacherStatusText.Text() == L"No database open."
         && m_nativeEnglishTeacherNewButton
@@ -554,9 +563,11 @@ bool MainWindow::runPhase6GsTeamChecks()
     m_gsTeamDirty = false;
     m_gsTeamNew = false;
 
-    navigateTo(gsTeamPageId);
+    navigateTo(campusStaffPageId);
     const bool noDatabaseReady =
-        m_currentPageId == gsTeamPageId
+        m_currentPageId == campusStaffPageId
+        && m_campusStaffTabs
+        && m_campusStaffTabs.Items().Size() == 3
         && m_gsTeamStatusText
         && m_gsTeamStatusText.Text() == L"No database open."
         && m_gsTeamNewButton

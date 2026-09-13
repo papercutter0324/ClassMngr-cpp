@@ -249,6 +249,14 @@ void MainWindow::NavigationView_SelectionChanged(
     {
         pageId = std::wstring(homePageId);
     }
+    if (isCampusStaffPageId(pageId))
+    {
+        pageId = std::wstring(campusStaffPageId);
+    }
+    if (isCampusDirectoryPageId(pageId))
+    {
+        pageId = std::wstring(campusInformationPageId);
+    }
     if (pageId == homePageId)
     {
         navigateTo(homePageId);
@@ -269,10 +277,6 @@ void MainWindow::NavigationView_SelectionChanged(
     {
         navigateTo(classesPageId);
         return;
-    }
-    if (pageId == L"campus_info")
-    {
-        pageId = std::wstring(campusInformationPageId);
     }
     navigateTo(pageId);
 }
@@ -296,13 +300,17 @@ void MainWindow::ContentFrame_Navigated(
     {
         pageId = std::wstring(homePageId);
     }
+    if (isCampusStaffPageId(pageId))
+    {
+        pageId = std::wstring(campusStaffPageId);
+    }
+    if (isCampusDirectoryPageId(pageId))
+    {
+        pageId = std::wstring(campusInformationPageId);
+    }
     if (isClassesPageId(pageId))
     {
         pageId = std::wstring(classesPageId);
-    }
-    if (pageId == L"campus_info")
-    {
-        pageId = std::wstring(campusInformationPageId);
     }
     if (!isKnownPageId(pageId))
     {
@@ -319,27 +327,15 @@ void MainWindow::ContentFrame_Navigated(
     m_navigationView.SelectedItem(
         pageId == homePageId
             ? m_homeNavigationItem
-            : pageId == koreanTeachersPageId
-                ? m_koreanTeachersNavigationItem
-            : pageId == nativeEnglishTeachersPageId
-                ? m_nativeEnglishTeachersNavigationItem
-            : pageId == gsTeamPageId
-                ? m_gsTeamNavigationItem
             : pageId == subPrepPageId
                 ? m_subPrepNavigationItem
             : pageId == classesPageId
                 ? m_classesNavigationItem
-                : pageId == aboutPageId
-                ? m_aboutNavigationItem
-                : pageId == campusInformationPageId
-                    ? m_campusInformationNavigationItem
-                    : pageId == campusDirectionsPageId
-                        ? m_campusDirectionsNavigationItem
-                        : pageId == campusAddressPageId
-                            ? m_campusAddressNavigationItem
-                            : pageId == campusHousingPageId
-                                ? m_campusHousingNavigationItem
-                                : m_campusMapNavigationItem
+            : pageId == campusStaffPageId
+                ? m_campusStaffNavigationItem
+            : isCampusDirectoryPageId(pageId)
+                ? m_campusDirectoryNavigationItem
+                : m_aboutNavigationItem
         );
     m_selectionChanging = false;
     updateNavigationState();
@@ -379,6 +375,14 @@ void MainWindow::navigateTo(std::wstring_view pageId)
     if (pageId == personalDetailsPageId)
     {
         pageId = homePageId;
+    }
+    if (isCampusStaffPageId(pageId))
+    {
+        pageId = campusStaffPageId;
+    }
+    if (isCampusDirectoryPageId(pageId))
+    {
+        pageId = campusInformationPageId;
     }
     if (isClassesPageId(pageId))
     {
@@ -422,7 +426,11 @@ void MainWindow::populatePage(
         // may have been constructed before File > Open completed, so it must
         // be rehydrated whenever navigation returns to it instead of
         // retaining the previous no-database/empty state.
-        if (isCampusPageId(pageId))
+        if (pageId == campusStaffPageId)
+        {
+            populateCampusStaffPage(page, true);
+        }
+        else if (isCampusPageId(pageId))
         {
             populateCampusPage(page, pageId, true);
         }
@@ -471,6 +479,10 @@ void MainWindow::populatePage(
     else if (pageId == personalDetailsPageId)
     {
         populatePersonalDetailsPage(page, false);
+    }
+    else if (pageId == campusStaffPageId)
+    {
+        populateCampusStaffPage(page, false);
     }
     else if (pageId == koreanTeachersPageId)
     {

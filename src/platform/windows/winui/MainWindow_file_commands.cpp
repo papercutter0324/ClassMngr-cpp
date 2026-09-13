@@ -138,6 +138,9 @@ void MainWindow::CloseDatabaseMenuItem_Click(
     refreshPersonalDetailsPage();
     refreshClassesPage();
     refreshCalendarPage();
+    refreshKoreanTeachersPage();
+    refreshNativeEnglishTeachersPage();
+    refreshGsTeamPage();
     refreshScheduleWorkspace();
     updateFileCommandState();
     saveShellState();

@@ -358,6 +358,9 @@ bool MainWindow::openDatabasePath(std::wstring_view path)
         refreshSubPrepPage();
         refreshClassesPage();
         refreshCalendarPage();
+        refreshKoreanTeachersPage();
+        refreshNativeEnglishTeachersPage();
+        refreshGsTeamPage();
         refreshScheduleWorkspace();
         updateFileCommandState();
         saveShellState();
@@ -405,6 +408,9 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
     refreshSubPrepPage();
     refreshClassesPage();
     refreshCalendarPage();
+    refreshKoreanTeachersPage();
+    refreshNativeEnglishTeachersPage();
+    refreshGsTeamPage();
     refreshScheduleWorkspace();
 
     if (pathExists(candidate))
@@ -458,6 +464,9 @@ bool MainWindow::createDatabasePath(std::wstring_view path)
         refreshSubPrepPage();
         refreshClassesPage();
         refreshCalendarPage();
+        refreshKoreanTeachersPage();
+        refreshNativeEnglishTeachersPage();
+        refreshGsTeamPage();
         refreshScheduleWorkspace();
         updateFileCommandState();
         saveShellState();

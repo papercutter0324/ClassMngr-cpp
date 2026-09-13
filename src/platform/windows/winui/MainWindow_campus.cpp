@@ -43,6 +43,150 @@ void MainWindow::populateAboutPage(
     page.Content(root);
 }
 
+void MainWindow::populateCampusStaffPage(
+    Microsoft::UI::Xaml::Controls::Page const& page,
+    bool refresh
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    // Keep the staff editors together under one shell route while retaining
+    // their existing stateful controls and edit handlers in each tab. The
+    // Pivot is only the tab strip; its content is hosted separately so the
+    // selected editor remains visible when the cached page is reattached.
+    page.NavigationCacheMode(
+        Microsoft::UI::Xaml::Navigation::NavigationCacheMode::Required
+        );
+
+    if (!m_campusStaffTabs)
+    {
+        m_campusStaffTabs = Pivot();
+        m_campusStaffTabs.IsTabStop(true);
+        m_campusStaffTabs.TabIndex(0);
+        m_campusStaffTabs.HorizontalAlignment(HorizontalAlignment::Stretch);
+        applyResourceStyle(m_campusStaffTabs, L"Phase3TopTabPivotStyle");
+        setAutomationName(m_campusStaffTabs, L"Campus Staff tabs");
+
+        const auto appendTab = [](
+                                   Pivot const& tabs,
+                                   wchar_t const* header,
+                                   wchar_t const* automationName) {
+            auto item = PivotItem();
+            item.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+                hstring(header)
+                ));
+            // Keep editor content outside the Pivot, matching My Workspace
+            // and preventing cached page reattachment from hiding a tab.
+            item.Content(Grid());
+            setAutomationName(item, automationName);
+            tabs.Items().Append(item);
+        };
+
+        m_campusStaffKoreanTeachersPage = Page();
+        populateKoreanTeachersPage(m_campusStaffKoreanTeachersPage, false);
+        appendTab(
+            m_campusStaffTabs,
+            L"Korean Teachers",
+            L"Korean Teachers staff tab"
+            );
+
+        m_campusStaffNativeEnglishTeachersPage = Page();
+        populateNativeEnglishTeachersPage(
+            m_campusStaffNativeEnglishTeachersPage,
+            false
+            );
+        appendTab(
+            m_campusStaffTabs,
+            L"Native English Teachers",
+            L"Native English Teachers staff tab"
+            );
+
+        m_campusStaffGsTeamPage = Page();
+        populateGsTeamPage(m_campusStaffGsTeamPage, false);
+        appendTab(
+            m_campusStaffTabs,
+            L"GS Team",
+            L"GS Team staff tab"
+            );
+
+        m_campusStaffContent = Grid();
+        m_campusStaffContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+        m_campusStaffContent.VerticalAlignment(VerticalAlignment::Stretch);
+        setAutomationName(m_campusStaffContent, L"Campus Staff content");
+        m_campusStaffContent.Children().Append(m_campusStaffKoreanTeachersPage);
+        m_campusStaffContent.Children().Append(
+            m_campusStaffNativeEnglishTeachersPage
+            );
+        m_campusStaffContent.Children().Append(m_campusStaffGsTeamPage);
+        const auto staffChildren = m_campusStaffContent.Children();
+        for (uint32_t index = 0; index < staffChildren.Size(); ++index)
+        {
+            staffChildren.GetAt(index).Visibility(
+                index == 0 ? Visibility::Visible : Visibility::Collapsed
+                );
+        }
+
+        m_campusStaffTabs.SelectionChanged(
+            [staffContent = m_campusStaffContent](
+                auto const& sender,
+                auto const&)
+            {
+                const auto pivot = sender.template try_as<Pivot>();
+                if (!pivot)
+                {
+                    return;
+                }
+                const int32_t selectedIndex = pivot.SelectedIndex();
+                const auto children = staffContent.Children();
+                if (selectedIndex < 0
+                    || selectedIndex >= static_cast<int32_t>(children.Size()))
+                {
+                    return;
+                }
+                for (uint32_t index = 0; index < children.Size(); ++index)
+                {
+                    children.GetAt(index).Visibility(
+                        static_cast<int32_t>(index) == selectedIndex
+                            ? Visibility::Visible
+                            : Visibility::Collapsed
+                        );
+                }
+            }
+            );
+    }
+
+    if (!page.Content())
+    {
+        auto root = Grid();
+        root.Padding(Thickness{12.0, 12.0, 12.0, 0.0});
+        auto tabsRow = RowDefinition();
+        tabsRow.Height(GridLengthHelper::FromPixels(60.0));
+        root.RowDefinitions().Append(tabsRow);
+        root.RowDefinitions().Append(RowDefinition());
+        Grid::SetRow(m_campusStaffTabs, 0);
+        root.Children().Append(m_campusStaffTabs);
+        Grid::SetRow(m_campusStaffContent, 1);
+        root.Children().Append(m_campusStaffContent);
+        page.Content(root);
+    }
+
+    // Every entry into the consolidated page starts at Korean Teachers.
+    m_campusStaffTabs.SelectedIndex(0);
+
+    if (refresh)
+    {
+        // The staff page owns all three editor pages, so refresh the actual
+        // tab pages when the active database changes or is closed.
+        populateKoreanTeachersPage(m_campusStaffKoreanTeachersPage, true);
+        populateNativeEnglishTeachersPage(
+            m_campusStaffNativeEnglishTeachersPage,
+            true
+            );
+        populateGsTeamPage(m_campusStaffGsTeamPage, true);
+    }
+}
+
 void MainWindow::populateCampusPage(
     Microsoft::UI::Xaml::Controls::Page const& page,
     std::wstring_view pageId,

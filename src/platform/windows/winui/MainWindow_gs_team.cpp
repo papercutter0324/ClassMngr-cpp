@@ -24,7 +24,7 @@ void MainWindow::populateGsTeamPage(
         root.Padding(Thickness{32.0, 24.0, 32.0, 32.0});
         root.Spacing(16.0);
         root.MaxWidth(900.0);
-        root.HorizontalAlignment(HorizontalAlignment::Center);
+        root.HorizontalAlignment(HorizontalAlignment::Left);
 
         auto title = TextBlock();
         title.Text(L"GS Team");
@@ -307,7 +307,7 @@ void MainWindow::populateGsTeamPage(
 
 void MainWindow::refreshGsTeamPage()
 {
-    if (!m_contentFrame || m_currentPageId != gsTeamPageId)
+    if (!m_contentFrame || !isCampusStaffPageId(m_currentPageId))
     {
         return;
     }
