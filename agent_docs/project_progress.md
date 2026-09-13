@@ -65,6 +65,24 @@ after the OpenXLSX dependency chain had built. Use the documented
 Phase 2 is committed as `ed80300d`. Preserve the unrelated modification to
 `tests/fixtures/database-port/typical.tps`.
 
+### Phase 5 handoff
+
+Phase 5 adds `ScheduleWorkbookOpenXLSXReader` and a runtime-generated,
+copyright-safe `.xlsx` fixture catalogue. The reader uses OpenXLSX for
+worksheet traversal, PugiXML for raw OOXML style/theme/indexed-color and note
+facts, and the shared Phase 4 interpreter for schedule semantics. It preserves
+sheet visibility, existing cells, merges, Korean UTF-8 content, normal and
+intensive schedules, and stable errors for cancellation, missing, malformed,
+corrupt, and unsupported inputs. The reader test also verifies the imported
+file's size and timestamp are unchanged.
+
+Direct MSVC Debug compile/link/run of the reader test passed. The configured
+WinUI/MSBuild test target was generated but remains blocked before source
+compilation by the host's existing `Microsoft.Build.Utilities.FileTracker`
+access-denied failure. Phase 5 is committed; Phase 6
+should wire this factory into the existing dialog-owned workflow and remove
+the synthetic provider fallback. Preserve the unrelated fixture modification.
+
 ### Phase 4 handoff
 
 Phase 4 is implemented: `ScheduleWorkbookInterpreter` is now the single

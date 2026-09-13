@@ -66,6 +66,19 @@ FileTracker access-denied failure. Continue with Phase 5's OpenXLSX reader and
 preserve `tests/fixtures/database-port/typical.tps`, which remains an
 unrelated unstaged modification.
 
+Phase 5 is implemented. `ScheduleWorkbookOpenXLSXReader` maps OpenXLSX
+worksheet metadata and existing cells, PugiXML-backed OOXML styles/themes/
+indexed colors and notes, merges, and visibility into the Phase 3 layout, then
+uses the shared Phase 4 interpreter. The runtime fixture catalogue exercises a
+Unicode filename, Korean content, regular/intensive schedules, hidden sheets,
+merged/style data, unchanged file metadata, cancellation, and malformed,
+corrupt, and unsupported inputs. Direct MSVC Debug compile/link/run passed.
+
+The generated WinUI reader-test target still cannot pass the host's
+FileTracker access-denied failure before compilation. Phase 5 is ready for its
+separate commit; Phase 6 should replace the WinUI synthetic provider with the
+reader factory and preserve the existing modal source/review state machine.
+
 The required `companion` agent type was unavailable in this runtime; the work
 was completed directly with the repository's Medium-route constraints. The
 previously recorded absence of the external `medium_route.md` remains

@@ -18,6 +18,9 @@ set(CLASSMNGR_OPENXLSX_MINIZ_SOURCE_DIRECTORY
 set(CLASSMNGR_OPENXLSX_NOWIDE_SOURCE_DIRECTORY
     "${PROJECT_SOURCE_DIR}/third_party/openxlsx/dependencies/nowide"
 )
+set(CLASSMNGR_OPENXLSX_GENERATED_INCLUDE_DIRECTORY
+    "${CMAKE_CURRENT_BINARY_DIR}/openxlsx-source/OpenXLSX"
+)
 
 foreach(_classmngr_openxlsx_required_path IN ITEMS
         CLASSMNGR_OPENXLSX_SOURCE_DIRECTORY
@@ -162,6 +165,8 @@ add_dependencies(
 
 set(CLASSMNGR_OPENXLSX_CONSUMER_INCLUDE_DIRECTORIES
     "${CLASSMNGR_OPENXLSX_SOURCE_DIRECTORY}"
+    "${CLASSMNGR_OPENXLSX_SOURCE_DIRECTORY}/OpenXLSX/headers"
+    "${CLASSMNGR_OPENXLSX_GENERATED_INCLUDE_DIRECTORY}"
     "${CLASSMNGR_OPENXLSX_PUGIXML_SOURCE_DIRECTORY}/src"
     "${CLASSMNGR_OPENXLSX_MINIZ_SOURCE_DIRECTORY}"
     "${CLASSMNGR_OPENXLSX_NOWIDE_SOURCE_DIRECTORY}/include"
@@ -188,6 +193,29 @@ if(BUILD_TESTING)
     )
     target_link_libraries(ClassMngrOpenXLSXSmoke PRIVATE ClassMngrOpenXLSXConsumer)
     add_test(NAME ClassMngrOpenXLSXSmoke COMMAND ClassMngrOpenXLSXSmoke)
+
+    add_executable(ClassMngrWindowsOpenXLSXScheduleWorkbookReaderTests
+        "${PROJECT_SOURCE_DIR}/tests/openxlsx_schedule_workbook_reader_tests.cpp"
+        "${PROJECT_SOURCE_DIR}/src/platform/windows/winui/schedule_workbook_openxlsx_reader.cpp"
+    )
+    target_include_directories(ClassMngrWindowsOpenXLSXScheduleWorkbookReaderTests
+        PRIVATE
+            "${PROJECT_SOURCE_DIR}/src/platform/windows/winui"
+    )
+    target_link_libraries(ClassMngrWindowsOpenXLSXScheduleWorkbookReaderTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+            ClassMngrOpenXLSXConsumer
+    )
+    set_target_properties(ClassMngrWindowsOpenXLSXScheduleWorkbookReaderTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrWindowsOpenXLSXScheduleWorkbookReaderTests
+        COMMAND ClassMngrWindowsOpenXLSXScheduleWorkbookReaderTests
+    )
 endif()
 
 set(CLASSMNGR_OPENXLSX_PUGIXML_INCLUDE_DIRECTORY

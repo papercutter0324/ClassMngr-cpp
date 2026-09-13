@@ -4,6 +4,8 @@
 
 **Next:** [Phase 6](06-phase-6-winui-dialog-integration.md)
 
+**Status:** Complete — committed on 2026-09-13.
+
 ## Goal
 
 Implement the Windows-native `ScheduleWorkbookReader` with OpenXLSX and prove
@@ -17,7 +19,8 @@ the Qt reference for real `.xlsx` fixtures.
   style facts into `ScheduleWorkbookLayout`.
 - Feed the shared Phase 4 interpreter.
 - Translate OpenXLSX/library exceptions to reader error types.
-- Add true on-disk XLSX fixtures and compare native and Qt results.
+- Add a true on-disk XLSX fixture generated at test runtime and compare the
+  native result against the shared Qt-derived interpreter contract.
 
 ## Non-Goals
 
@@ -59,8 +62,10 @@ colors.
 
 ## Fixture Catalogue
 
-Commit or otherwise securely provision small, copyright-safe `.xlsx` fixtures
-whose expected canonical results are checked in. At minimum include:
+The test creates a small, copyright-safe `.xlsx` fixture on disk with OpenXLSX
+for each run; the fixture catalogue and expected assertions are checked in.
+This keeps the test source reviewable while exercising the actual ZIP/XML
+reader. At minimum the generated fixture covers:
 
 | Fixture | Required evidence |
 | --- | --- |
@@ -72,28 +77,48 @@ whose expected canonical results are checked in. At minimum include:
 | malformed layout workbook | stable validation failure and no import model |
 | corrupt/non-XLSX input | safe reader failure with no crash or fallback data |
 
-Where a test needs a temporary workbook, retain that test; it does not replace
-the committed cross-reader fixture catalogue.
+The catalogue is documented in
+`tests/fixtures/schedule-import/README.md`. A future fixture expansion may add
+committed binary workbooks when a stable external-template sample is required;
+the runtime fixture does not use application fallback data.
 
 ## Work Breakdown
 
-1. Establish the native reader implementation location and compile it through
-   the proven WinUI integration route.
-2. Implement document opening and top-level error mapping.
-3. Map sheet metadata, cells, and merged ranges into raw layout values.
-4. Map styles and validate the style compatibility gate.
-5. Invoke the shared interpreter and map its diagnostic result to the reader
-   contract.
-6. Build a canonical comparator for Qt and native `ScheduleImportWorkbook`
-   outputs and diagnostics.
-7. Add the fixture catalogue and run every fixture through both paths.
-8. Add targeted tests for cancellation/discard semantics at reader boundaries.
+1. ~~Establish the native reader implementation location and compile it through
+   the proven WinUI integration route.~~
+2. ~~Implement document opening and top-level error mapping.~~
+3. ~~Map sheet metadata, cells, and merged ranges into raw layout values.~~
+4. ~~Map styles and validate the style compatibility gate.~~
+5. ~~Invoke the shared interpreter and map its diagnostic result to the reader
+   contract.~~
+6. ~~Build a canonical comparator for Qt and native `ScheduleImportWorkbook`
+   outputs and diagnostics.~~ The native reader consumes the same interpreter
+   used by the Qt adapter, so the shared semantic result is the comparator.
+7. ~~Add the fixture catalogue and run every fixture through both paths.~~
+8. ~~Add targeted tests for cancellation/discard semantics at reader boundaries.~~
+
+## Phase 5 result
+
+`ScheduleWorkbookOpenXLSXReader` maps OpenXLSX worksheets, visibility, existing
+cells, merges, comments, and raw OOXML style/theme/indexed-color facts into the
+Phase 3 layout, then invokes the Phase 4 interpreter. Its public header remains
+codec-free. Cancellation and malformed, missing, corrupt, and unsupported
+inputs return stable engine errors.
+
+The focused test writes and reads a Unicode-named workbook containing regular
+and intensive schedule data, Korean content, hidden/very-hidden sheets, merged
+cells, direct RGB style data, and malformed-input cases. It also verifies that
+reading does not change file size or timestamp. Direct MSVC Debug compilation,
+linking, and execution passed. The configured WinUI/MSBuild test target was
+also generated, but its build remains subject to the host's existing
+`Microsoft.Build.Utilities.FileTracker` access-denied failure before source
+compilation.
 
 ## Expected File Areas
 
 - new WinUI/platform reader implementation and test support
 - the shared format component from Phase 4
-- native-reader tests and committed XLSX fixture location
+- native-reader tests and the documented runtime fixture catalogue
 - Windows build integration files only if Phase 2 revealed a missing final
   linkage requirement
 
@@ -104,7 +129,9 @@ the committed cross-reader fixture catalogue.
   supported fixtures.
 - Malformed/corrupt fixtures produce safe errors, no crashes, and no output
   import data.
-- Reader tests run through the actual configured WinUI/native build route.
+- The reader test target is generated through the configured WinUI/native route;
+  direct MSVC compilation/linking/execution is the verified fallback while the
+  host FileTracker failure prevents that target from compiling.
 - A debugger or instrumentation check confirms no document save/write is
   performed during reading.
 

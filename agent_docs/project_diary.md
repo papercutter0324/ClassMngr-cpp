@@ -184,6 +184,28 @@ the reader implementation is connected.
   fail in the host FileTracker static initializer before source compilation;
   this remains an environment limitation to carry into later validation.
 
+## OpenXLSX Schedule Adapter — Phase 5
+
+- OpenXLSX's public worksheet API is appropriate for read-only cell, merge, and
+  visibility traversal, but raw OOXML is still required for style/theme/indexed
+  color facts. Keep that XML detail private to the Windows reader.
+- `XLWorksheet::rows()` plus `row.findCell(column)` preserves existing sparse
+  cells without creating gaps. Avoid the convenience cell-range traversal when
+  importing because it can materialize missing cells.
+- A root OOXML node must be handled as the root: `styles.xml` is rooted at
+  `<styleSheet>`, not a child named `styleSheet`. This was caught by the native
+  fixture test and fixed before integration.
+- Cancellation must be inside the reader's exception boundary. A cancellation
+  check before the `try` block escapes as an uncaught exception instead of the
+  contract's `ErrorCode::Cancelled` result.
+- The runtime fixture uses OpenXLSX to write a real ZIP/XML workbook and the
+  native reader to read it, keeping the catalogue copyright-safe and
+  reviewable while covering Unicode paths, Korean content, hidden sheets,
+  merges, styles, normal/intensive semantics, and safe failures.
+- Direct MSVC Debug compile/link/run passed. The configured WinUI/MSBuild route
+  remains blocked before source compilation by the host FileTracker
+  access-denied failure.
+
 ## Decisions and Lessons
 
 - For the WinUI My Workspace lifecycle bug, do not rely on late Pivot
