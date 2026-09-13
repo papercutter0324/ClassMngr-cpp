@@ -253,7 +253,9 @@
     <ClCompile Include="MainWindow_schedule_board.cpp" />
     <ClCompile Include="MainWindow_schedule_editor.cpp" />
     <ClCompile Include="MainWindow_schedule_page.cpp" />
-    <ClCompile Include="schedule_workbook_openxlsx_reader.cpp" />
+    <ClCompile Include="schedule_workbook_openxlsx_reader.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="MainWindow_shell.cpp" />
     <ClCompile Include="MainWindow_speaking_ai_batch.cpp" />
     <ClCompile Include="MainWindow_speaking_ai_prompt.cpp" />

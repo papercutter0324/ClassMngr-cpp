@@ -85,25 +85,43 @@ the synthetic provider fallback. Preserve the unrelated fixture modification.
 
 ### Phase 6 handoff
 
-Phase 6 is implemented in the WinUI dialog path and is ready for its separate
-commit. `loadScheduleImportSource()` now calls the native reader factory on a
-worker thread, stores the returned `ScheduleImportWorkbook` in dialog-local
-state, and populates visible worksheet and compatible-user selectors from the
-decoded workbook. The source dialog follows the Qt sequence from file-only,
-through schedule-kind selection and workbook validation, to `Next` and the
-existing `Review & Reconcile` dialog. The synthetic normalized provider is no
-longer reachable from real file import.
+Phase 6 is committed as `ea03663d`. `loadScheduleImportSource()` calls the
+native reader factory on a worker thread, stores the returned
+`ScheduleImportWorkbook` in dialog-local state, and populates visible
+worksheet and compatible-user selectors from the decoded workbook. The source
+dialog follows the Qt sequence from file-only, through schedule-kind selection
+and workbook validation, to `Next` and the existing `Review & Reconcile`
+dialog. The synthetic normalized provider is no longer reachable from real
+file import.
 
 Generation tokens and cooperative cancellation discard stale or closed-dialog
 results. The staged x64 Debug WinUI executable built and the
-`--phase6-schedule-test` diagnostic exited 0. The configured CMake/MSBuild
-route remains blocked before source compilation by the host's existing
-FileTracker access-denied failure; direct MSVC/wrapper validation used a
-generated validation engine archive containing the current interpreter. Phase
-7 should remove the remaining collapsed legacy controls, enforce explicit
-profile-mismatch confirmation, add reader limits, and complete cutover
-verification. Preserve the unrelated modification to
-`tests/fixtures/database-port/typical.tps`.
+`--phase6-schedule-test` diagnostic exited 0. Phase 7 hardens this path and
+preserves the unrelated modification to `tests/fixtures/database-port/typical.tps`.
+
+### Phase 7 handoff
+
+Phase 7 removes the remaining collapsed normalized import controls and the
+unused legacy schedule-import state. Profile-name mismatch is an explicit
+confirmation dialog before review; changing the loaded source, worksheet, or
+user clears the confirmation. The reader enforces bounded workbook/XML,
+worksheet, cell, merge, style, notes, and text limits before or during model
+materialization and converts limit failures to the stable invalid-format
+reader error.
+
+The native reader target built and its runtime fixture test exited 0,
+including Unicode/regular/intensive/cancellation/malformed/corrupt cases and
+the oversized-workbook check. The full elevated x64 Debug WinUI wrapper build
+and staging succeeded with 0 errors, and staged `--phase6-schedule-test`
+exited 0. The reader translation unit is now self-contained for native tests;
+the WinUI project explicitly excludes it from the application PCH.
+
+The host's non-elevated CMake/MSBuild route still reports the pre-existing
+MSBuild `FileTracker` access-denied initializer failure; the elevated route
+was used for configured-target and full-application verification. No
+cross-machine performance claim was made without a representative benchmark.
+The Phase 7 completion is recorded in this handoff. Preserve the unrelated
+modification to `tests/fixtures/database-port/typical.tps`.
 
 ### Phase 4 handoff
 

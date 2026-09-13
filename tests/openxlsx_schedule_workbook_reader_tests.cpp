@@ -184,6 +184,26 @@ int main()
     assert(!corruptResult.has_value());
     assert(corruptResult.error().code == ErrorCode::InvalidFormat);
 
+    const std::filesystem::path oversized = directory / "oversized.xlsx";
+    {
+        std::ofstream output(oversized, std::ios::binary);
+    }
+    std::error_code resizeError;
+    std::filesystem::resize_file(
+        oversized,
+        64u * 1024u * 1024u + 1u,
+        resizeError
+        );
+    assert(!resizeError);
+    const auto oversizedResult = reader.read(
+        oversized,
+        ScheduleImportKind::Normal
+        );
+    assert(!oversizedResult.has_value());
+    assert(oversizedResult.error().code == ErrorCode::InvalidFormat);
+    assert(oversizedResult.error().message.find("size limit")
+        != std::string::npos);
+
     std::error_code cleanupError;
     std::filesystem::remove_all(directory, cleanupError);
     assert(!cleanupError);

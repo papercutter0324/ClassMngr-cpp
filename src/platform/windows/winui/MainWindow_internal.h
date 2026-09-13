@@ -355,7 +355,6 @@ std::wstring scheduleSelectionKey(
     std::wstring_view endTime
     );
 std::wstring scheduleTypeText(classmngr::engine::ScheduleType type);
-std::vector<std::wstring> scheduleImportDays(std::wstring_view value);
 classmngr::engine::Roster defaultRoster();
 [[nodiscard]] bool validMonthDay(std::wstring_view value) noexcept;
 winrt::Windows::Foundation::IAsyncAction phase3PresentationWork(

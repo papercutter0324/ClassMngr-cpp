@@ -104,3 +104,46 @@ Future OpenXLSX upgrades repeat Phase 1 provenance checks, the Phase 2 build
 matrix, and the Phase 5 fixture comparison before release. New spreadsheet
 template variants first receive a fixture and interpreter test, then adapter
 compatibility verification; they must not be supported by ad hoc WinUI logic.
+
+## Phase 7 Result — 2026-09-13
+
+The production cutover hardening is implemented. The WinUI schedule-import
+dialog no longer constructs or exposes the collapsed normalized-provider
+controls that previously remained as a latent import path. Real file import
+continues through `ScheduleWorkbookOpenXLSXReader`, and the reader result is
+the only workbook source used by preview and apply.
+
+Profile-name mismatch is now an explicit confirmation gate before review. The
+confirmation is separate from the source dialog, preserves the loaded
+workbook when cancelled, and records acceptance only for the current loaded
+source. Changing the file, worksheet, or user clears that acceptance.
+
+The reader now bounds input before and during materialization:
+
+- 64 MiB workbook file size;
+- 32 worksheets, 10,000 rows per sheet, 512 columns per row, and 100,000
+  cells per sheet / 250,000 cells overall;
+- 4,096 merged ranges per sheet, 4,096 styles, and 10,000 notes;
+- 1 MiB cell text, plus bounded raw workbook, relationship, style, worksheet,
+  and notes XML entries.
+
+Excessive inputs return the stable invalid-format error and cannot mutate the
+dialog's workbook or preview state. The reader source is self-contained for
+native tests; only the WinUI project uses the application precompiled header
+for this translation unit.
+
+Verification completed:
+
+- configured native reader target built with MSBuild and its executable exited
+  0, including the oversized-workbook assertion;
+- full x64 Debug WinUI wrapper build and staging succeeded with 0 errors;
+- staged `--phase6-schedule-test` exited 0;
+- `git diff --check` passed.
+
+The non-elevated CMake/MSBuild invocation on this host still fails in the
+existing MSBuild `FileTracker` initializer with access denied; the elevated
+build path succeeds and is the recorded host validation path. A separate
+cross-machine performance benchmark and Qt-versus-native timing comparison
+were not claimed from this workstation; the reader's bounded sparse traversal
+and the explicit limits remain the release baseline for future fixture-based
+measurement.

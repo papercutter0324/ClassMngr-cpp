@@ -136,40 +136,6 @@ std::wstring scheduleTypeText(classmngr::engine::ScheduleType type)
         : L"Regular";
 }
 
-std::vector<std::wstring> scheduleImportDays(std::wstring_view value)
-{
-    std::vector<std::wstring> days;
-    std::size_t start = 0;
-    while (start <= value.size())
-    {
-        const std::size_t separator = value.find(L',', start);
-        const std::size_t end = separator == std::wstring_view::npos
-            ? value.size()
-            : separator;
-        std::wstring day(value.substr(start, end - start));
-        const auto first = day.find_first_not_of(L" \t");
-        const auto last = day.find_last_not_of(L" \t");
-        if (first == std::wstring::npos)
-        {
-            day.clear();
-        }
-        else
-        {
-            day = day.substr(first, last - first + 1);
-        }
-        if (!day.empty())
-        {
-            days.push_back(std::move(day));
-        }
-        if (separator == std::wstring_view::npos)
-        {
-            break;
-        }
-        start = separator + 1;
-    }
-    return days;
-}
-
 classmngr::engine::Roster defaultRoster()
 {
     classmngr::engine::Roster roster;

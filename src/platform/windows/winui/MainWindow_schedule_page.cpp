@@ -995,126 +995,8 @@ void MainWindow::populateScheduleWorkspace(
     Grid::SetRow(reviewActions, 5);
     m_scheduleImportReviewRoot.Children().Append(reviewActions);
 
-    // Keep the normalized one-class controls alive for the existing engine
-    // provider and diagnostics paths, but keep them out of the presentation
-    // tree.  The new source/review roots above are the visible dialog UI.
-    auto legacyImportContent = StackPanel();
-    legacyImportContent.Visibility(Visibility::Collapsed);
-    setAutomationName(
-        legacyImportContent,
-        L"Schedule import normalized provider state"
-        );
-    auto importCard = ClassMngrWinUISharedUX::buildCard({
-        L"Normalized import provider state",
-        L"Retained engine-facing values for the current Windows provider.",
-        L"Schedule import normalized provider state"
-        });
-    const auto makeImportBox = [](std::wstring_view label,
-                                  std::wstring_view placeholder,
-                                  std::wstring_view automationName) {
-        auto box = TextBox();
-        box.Header(box_value(hstring(label)));
-        box.PlaceholderText(hstring(placeholder));
-        box.MinWidth(300.0);
-        box.IsTabStop(true);
-        setAutomationName(box, automationName);
-        return box;
-    };
-    m_scheduleImportKindCombo = ComboBox();
-    m_scheduleImportKindCombo.Header(box_value(hstring(L"Schedule kind")));
-    m_scheduleImportKindCombo.MinWidth(240.0);
-    m_scheduleImportKindCombo.IsTabStop(true);
-    m_scheduleImportKindCombo.TabIndex(30);
-    for (const auto& choice : {
-             std::pair{L"Normal", 0},
-             std::pair{L"Intensive", 1}})
-    {
-        auto item = ComboBoxItem();
-        item.Content(box_value(hstring(choice.first)));
-        item.Tag(box_value(choice.second));
-        setAutomationName(item, choice.first);
-        m_scheduleImportKindCombo.Items().Append(item);
-    }
-    m_scheduleImportKindCombo.SelectedIndex(0);
-    setAutomationName(m_scheduleImportKindCombo, L"Schedule import kind");
-    importCard.content.Children().Append(m_scheduleImportKindCombo);
-
-    m_scheduleImportUserTextBox = makeImportBox(
-        L"User/profile name",
-        L"e.g. Alice",
-        L"Schedule import user name"
-        );
-    m_scheduleImportUserTextBox.Text(L"WinUI User");
-    importCard.content.Children().Append(m_scheduleImportUserTextBox);
-    m_scheduleImportTeacherTextBox = makeImportBox(
-        L"Korean teacher",
-        L"Hangul-only teacher key",
-        L"Schedule import Korean teacher"
-        );
-    m_scheduleImportTeacherTextBox.Text(L"\uD64D\uAE38\uB3D9");
-    importCard.content.Children().Append(m_scheduleImportTeacherTextBox);
-    m_scheduleImportGradeTextBox = makeImportBox(
-        L"Class grade",
-        L"e.g. E5",
-        L"Schedule import class grade"
-        );
-    m_scheduleImportGradeTextBox.Text(L"E5");
-    importCard.content.Children().Append(m_scheduleImportGradeTextBox);
-    m_scheduleImportLevelTextBox = makeImportBox(
-        L"Class level",
-        L"e.g. Zeus",
-        L"Schedule import class level"
-        );
-    m_scheduleImportLevelTextBox.Text(L"Zeus");
-    importCard.content.Children().Append(m_scheduleImportLevelTextBox);
-    m_scheduleImportRoomTextBox = makeImportBox(
-        L"Room",
-        L"e.g. 413",
-        L"Schedule import room"
-        );
-    m_scheduleImportRoomTextBox.Text(L"413");
-    importCard.content.Children().Append(m_scheduleImportRoomTextBox);
-    m_scheduleImportDaysTextBox = makeImportBox(
-        L"Meeting days",
-        L"Comma-separated, e.g. Monday, Wednesday",
-        L"Schedule import meeting days"
-        );
-    m_scheduleImportDaysTextBox.Text(L"Monday, Wednesday");
-    importCard.content.Children().Append(m_scheduleImportDaysTextBox);
-    m_scheduleImportStartTextBox = makeImportBox(
-        L"Start time",
-        L"e.g. 4:00 PM",
-        L"Schedule import start time"
-        );
-    m_scheduleImportStartTextBox.Text(L"4:00 PM");
-    importCard.content.Children().Append(m_scheduleImportStartTextBox);
-    m_scheduleImportEndTextBox = makeImportBox(
-        L"End time",
-        L"e.g. 4:55 PM",
-        L"Schedule import end time"
-        );
-    m_scheduleImportEndTextBox.Text(L"4:55 PM");
-    importCard.content.Children().Append(m_scheduleImportEndTextBox);
-
-    auto importActions = StackPanel();
-    importActions.Orientation(Orientation::Horizontal);
-    importActions.Spacing(8.0);
-    m_scheduleImportPreviewButton = Button();
-    m_scheduleImportPreviewButton.Content(
-        box_value(hstring(L"Preview import"))
-        );
-    m_scheduleImportPreviewButton.IsTabStop(true);
-    m_scheduleImportPreviewButton.TabIndex(33);
-    m_scheduleImportPreviewButton.Click(
-        [this](auto const&, auto const&) { previewScheduleImport(); }
-        );
-    setAutomationName(m_scheduleImportPreviewButton, L"Preview schedule import");
-    importActions.Children().Append(m_scheduleImportPreviewButton);
-    importCard.content.Children().Append(importActions);
-    legacyImportContent.Children().Append(importCard.root);
     importContent.Children().Append(m_scheduleImportSourceRoot);
     importContent.Children().Append(m_scheduleImportReviewRoot);
-    importContent.Children().Append(legacyImportContent);
     m_scheduleImportDialogRoot = scrollTab(importContent);
     m_scheduleImportDialogRoot.MaxHeight(720.0);
     setAutomationName(m_scheduleImportDialogRoot, L"Schedule import dialog root");
@@ -1126,7 +1008,7 @@ void MainWindow::populateScheduleWorkspace(
         );
     m_scheduleImportSourceActionButton.Click(
         [this](auto const&, auto const&) {
-            if (m_scheduleImportWorkbookLoaded)
+            if (m_scheduleImportWorkbookLoaded && m_scheduleImportWorkbook)
             {
                 openScheduleImportReview();
             }
@@ -1147,6 +1029,7 @@ void MainWindow::populateScheduleWorkspace(
         m_scheduleImportSelectedWorksheet = -1;
         m_scheduleImportSelectedUser = -1;
         m_scheduleImportUser = {};
+        m_scheduleImportNameMismatchConfirmed = false;
         m_scheduleImportPreview.reset();
         m_scheduleImportPreviewReady = false;
         m_scheduleImportWorksheetCombo.Items().Clear();
@@ -1186,6 +1069,7 @@ void MainWindow::populateScheduleWorkspace(
         );
     m_scheduleImportNameConfirmation.Unchecked(
         [this](auto const&, auto const&) {
+            m_scheduleImportNameMismatchConfirmed = false;
             updateScheduleImportSourceState();
         }
         );
@@ -1880,9 +1764,13 @@ void MainWindow::populateScheduleWorkspace(
     m_testingDayCombo.SelectedIndex(0);
     setAutomationName(m_testingDayCombo, L"Testing assignment weekday");
     legacyTestingContent.Children().Append(m_testingDayCombo);
-    m_testingStartTextBox = makeImportBox(
-        L"Start time (HH:mm)",
-        L"e.g. 09:00",
+    m_testingStartTextBox = TextBox();
+    m_testingStartTextBox.Header(box_value(hstring(L"Start time (HH:mm)")));
+    m_testingStartTextBox.PlaceholderText(L"e.g. 09:00");
+    m_testingStartTextBox.MinWidth(300.0);
+    m_testingStartTextBox.IsTabStop(true);
+    setAutomationName(
+        m_testingStartTextBox,
         L"Testing assignment start time"
         );
     m_testingStartTextBox.Text(L"09:00");

@@ -309,10 +309,10 @@ private:
     void updateScheduleImportSelectedWorksheet();
     void updateScheduleImportSelectedUser();
     void cancelScheduleImportLoad();
+    [[nodiscard]] bool hasScheduleImportNameMismatch() const;
     void applyScheduleImportWorkbook(
         classmngr::engine::ScheduleImportWorkbook workbook,
-        std::wstring filePath,
-        classmngr::engine::ScheduleImportKind kind
+        std::wstring filePath
         );
     void openScheduleImportReview();
     void restoreScheduleImportSource();
@@ -933,20 +933,10 @@ private:
         m_scheduleImportReviewBackButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button
         m_scheduleImportReviewCancelButton{nullptr};
-    Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportKindCombo{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportUserTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportTeacherTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportGradeTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportLevelTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportRoomTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportDaysTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportStartTextBox{nullptr};
-    Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportEndTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportTeacherActionCombo{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportClassActionCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_scheduleImportStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock m_scheduleImportValidationText{nullptr};
-    Microsoft::UI::Xaml::Controls::Button m_scheduleImportPreviewButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleImportApplyButton{nullptr};
     classmngr::engine::ScheduleImportUserBlock m_scheduleImportUser;
     std::optional<classmngr::engine::ScheduleImportWorkbook>
@@ -960,6 +950,7 @@ private:
     bool m_scheduleImportWorkbookLoaded{};
     bool m_scheduleImportLoading{};
     bool m_scheduleImportReviewVisible{};
+    bool m_scheduleImportNameMismatchConfirmed{};
     std::uint64_t m_scheduleImportLoadRequestId{};
     std::shared_ptr<std::atomic_bool> m_scheduleImportLoadCancellation;
     std::vector<Microsoft::UI::Xaml::Controls::ComboBox>

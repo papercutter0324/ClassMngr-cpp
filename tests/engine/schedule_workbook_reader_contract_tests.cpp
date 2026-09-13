@@ -77,7 +77,9 @@ int main()
 
     FakeScheduleWorkbookReader reader;
     const std::filesystem::path path = "schedule.xlsx";
-    const auto result = reader.read(path, ScheduleImportKind::Intensive);
+    const auto& readerContract =
+        static_cast<const ScheduleWorkbookReader&>(reader);
+    const auto result = readerContract.read(path, ScheduleImportKind::Intensive);
     assert(result.has_value());
     assert(reader.lastFile == path);
     assert(reader.lastKind == ScheduleImportKind::Intensive);

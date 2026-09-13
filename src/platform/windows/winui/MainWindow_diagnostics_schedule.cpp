@@ -326,20 +326,10 @@ bool MainWindow::runPhase6ScheduleChecks()
     }
 
     const bool importControlsReady =
-        m_scheduleImportKindCombo
-        && m_scheduleImportUserTextBox
-        && m_scheduleImportTeacherTextBox
-        && m_scheduleImportGradeTextBox
-        && m_scheduleImportLevelTextBox
-        && m_scheduleImportRoomTextBox
-        && m_scheduleImportDaysTextBox
-        && m_scheduleImportStartTextBox
-        && m_scheduleImportEndTextBox
-        && m_scheduleImportTeacherActionCombo
+        m_scheduleImportTeacherActionCombo
         && m_scheduleImportClassActionCombo
         && m_scheduleImportStatusText
         && m_scheduleImportValidationText
-        && m_scheduleImportPreviewButton
         && m_scheduleImportApplyButton
         && m_scheduleImportSourceRoot
         && m_scheduleImportSourceStatusText

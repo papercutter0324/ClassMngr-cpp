@@ -632,6 +632,7 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
         co_return;
     }
 
+    using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
     resetScheduleImportSource();
     m_scheduleImportDialogRoot.Width(420.0);
@@ -646,8 +647,12 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
     dialog.IsSecondaryButtonEnabled(false);
     dialog.CloseButtonText(L"Cancel");
     dialog.DefaultButton(ContentDialogButton::Close);
+    bool requestNameMismatchConfirmation = false;
     dialog.PrimaryButtonClick(
-        [this](auto const&, auto const& arguments) {
+        [this, &dialog, &requestNameMismatchConfirmation](
+            auto const&,
+            auto const& arguments
+            ) {
             if (m_scheduleImportLoading)
             {
                 arguments.Cancel(true);
@@ -661,9 +666,22 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
                     arguments.Cancel(true);
                 }
             }
-            else if (m_scheduleImportWorkbookLoaded)
+            else if (m_scheduleImportWorkbookLoaded
+                && m_scheduleImportWorkbook)
             {
                 arguments.Cancel(true);
+                const auto checked = [](auto const& check) {
+                    const auto value = check.IsChecked();
+                    return value && value.Value();
+                };
+                if (hasScheduleImportNameMismatch()
+                    && !checked(m_scheduleImportNameConfirmation)
+                    && !m_scheduleImportNameMismatchConfirmed)
+                {
+                    requestNameMismatchConfirmation = true;
+                    dialog.Hide();
+                    return;
+                }
                 openScheduleImportReview();
             }
             else
@@ -682,15 +700,66 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
             }
         }
         );
-    m_ownedDialog = dialog;
+    for (;;)
+    {
+        m_ownedDialog = dialog;
+        ContentDialogResult result = ContentDialogResult::None;
+        try
+        {
+            result = co_await dialog.ShowAsync();
+        }
+        catch (...)
+        {
+            // Dialog cancellation during navigation or shell teardown is normal.
+            break;
+        }
 
-    try
-    {
-        static_cast<void>(co_await dialog.ShowAsync());
-    }
-    catch (...)
-    {
-        // Dialog cancellation during navigation or shell teardown is normal.
+        if (requestNameMismatchConfirmation)
+        {
+            requestNameMismatchConfirmation = false;
+            auto confirmation = ContentDialog();
+            confirmation.XamlRoot(xamlRoot);
+            confirmation.Title(box_value(hstring(L"Name Mismatch")));
+            auto message = TextBlock();
+            message.Text(
+                L"The selected name does not match the name entered on the "
+                L"My Information page. Do you want to continue anyway?"
+                );
+            message.TextWrapping(TextWrapping::Wrap);
+            confirmation.Content(message);
+            confirmation.PrimaryButtonText(L"Continue");
+            confirmation.CloseButtonText(L"Cancel");
+            confirmation.DefaultButton(ContentDialogButton::Primary);
+            m_ownedDialog = confirmation;
+            ContentDialogResult confirmationResult = ContentDialogResult::None;
+            try
+            {
+                confirmationResult = co_await confirmation.ShowAsync();
+            }
+            catch (...)
+            {
+                // Treat teardown as a cancelled confirmation.
+            }
+            m_ownedDialog = dialog;
+            if (confirmationResult == ContentDialogResult::Primary)
+            {
+                m_scheduleImportNameMismatchConfirmed = true;
+                openScheduleImportReview();
+            }
+            continue;
+        }
+
+        if (result == ContentDialogResult::Primary
+            && m_scheduleImportReviewVisible
+            && !m_scheduleImportPreviewReady)
+        {
+            // A successful Import hides the dialog after clearing the preview.
+            break;
+        }
+        if (result != ContentDialogResult::Primary)
+        {
+            break;
+        }
     }
 
     if (m_ownedDialog == dialog)
@@ -711,6 +780,19 @@ void MainWindow::cancelScheduleImportLoad()
     }
     ++m_scheduleImportLoadRequestId;
     m_scheduleImportLoadCancellation.reset();
+}
+
+bool MainWindow::hasScheduleImportNameMismatch() const
+{
+    const std::wstring profileName = asWide(m_personalDetails.name);
+    if (profileName.find_first_not_of(L" \t\r\n") == std::wstring::npos)
+    {
+        return false;
+    }
+
+    return normalizedScheduleImportUserName(
+        asWide(m_scheduleImportUser.name)
+        ) != normalizedScheduleImportUserName(profileName);
 }
 
 void MainWindow::resetScheduleImportSource()
@@ -738,6 +820,7 @@ void MainWindow::resetScheduleImportSource()
     m_scheduleImportUser = {};
     m_scheduleImportPreview.reset();
     m_scheduleImportPreviewReady = false;
+    m_scheduleImportNameMismatchConfirmed = false;
 
     m_scheduleImportFilePathTextBox.Text({});
     m_scheduleImportRegularRadioButton.IsChecked(false);
@@ -836,6 +919,7 @@ winrt::fire_and_forget MainWindow::selectScheduleImportFile()
                 m_scheduleImportSelectedWorksheet = -1;
                 m_scheduleImportSelectedUser = -1;
                 m_scheduleImportUser = {};
+                m_scheduleImportNameMismatchConfirmed = false;
                 m_scheduleImportPreview.reset();
                 m_scheduleImportPreviewReady = false;
                 m_scheduleImportWorksheetCombo.Items().Clear();
@@ -1151,13 +1235,12 @@ winrt::fire_and_forget MainWindow::loadScheduleImportSource()
         co_return;
     }
 
-    applyScheduleImportWorkbook(std::move(*loadedWorkbook), path, kind);
+    applyScheduleImportWorkbook(std::move(*loadedWorkbook), path);
 }
 
 void MainWindow::applyScheduleImportWorkbook(
     classmngr::engine::ScheduleImportWorkbook workbook,
-    std::wstring filePath,
-    classmngr::engine::ScheduleImportKind kind
+    std::wstring filePath
     )
 {
     using namespace Microsoft::UI::Xaml;
@@ -1220,9 +1303,7 @@ void MainWindow::applyScheduleImportWorkbook(
         m_scheduleImportWorksheetCombo.SelectedIndex(-1);
     }
 
-    m_scheduleImportKindCombo.SelectedIndex(
-        kind == classmngr::engine::ScheduleImportKind::Intensive ? 1 : 0
-        );
+    m_scheduleImportNameMismatchConfirmed = false;
     updateScheduleImportSelectedWorksheet();
     updateScheduleImportSourceState();
 }
@@ -1240,6 +1321,7 @@ void MainWindow::updateScheduleImportSelectedWorksheet()
     m_scheduleImportUserStatusText.Visibility(Visibility::Collapsed);
     m_scheduleImportNameConfirmation.IsChecked(false);
     m_scheduleImportNameConfirmation.Visibility(Visibility::Collapsed);
+    m_scheduleImportNameMismatchConfirmed = false;
 
     if (!m_scheduleImportWorkbookLoaded || !m_scheduleImportWorkbook
         || m_scheduleImportSelectedWorksheet < 0
@@ -1356,10 +1438,7 @@ void MainWindow::updateScheduleImportSelectedUser()
     const bool profileBlank = profileName.find_first_not_of(
         L" \t\r\n"
         ) == std::wstring::npos;
-    const bool mismatch = !profileBlank
-        && normalizedScheduleImportUserName(
-            asWide(m_scheduleImportUser.name)
-            ) != normalizedScheduleImportUserName(profileName);
+    const bool mismatch = hasScheduleImportNameMismatch();
     if (profileBlank)
     {
         m_scheduleImportUserStatusText.Text(
@@ -1385,6 +1464,7 @@ void MainWindow::openScheduleImportReview()
     using namespace Microsoft::UI::Xaml::Controls;
 
     if (!m_scheduleImportWorkbookLoaded
+        || !m_scheduleImportWorkbook
         || m_scheduleImportSelectedWorksheet < 0
         || m_scheduleImportSelectedUser < 0)
     {
@@ -1392,9 +1472,6 @@ void MainWindow::openScheduleImportReview()
         return;
     }
 
-    const auto value = m_scheduleImportIntensiveRadioButton.IsChecked();
-    const bool intensive = value && value.Value();
-    m_scheduleImportKindCombo.SelectedIndex(intensive ? 1 : 0);
     m_scheduleImportReviewVisible = false;
     previewScheduleImport();
     if (!m_scheduleImportPreviewReady)

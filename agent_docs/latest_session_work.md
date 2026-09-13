@@ -84,9 +84,9 @@ was completed directly with the repository's Medium-route constraints. The
 previously recorded absence of the external `medium_route.md` remains
 unchanged.
 
-Phase 6 is implemented and ready for its separate commit. The WinUI schedule
-source dialog now uses `makeScheduleWorkbookReader()` asynchronously, retains
-the native `ScheduleImportWorkbook` in dialog-local state, and derives visible
+Phase 6 is committed as `ea03663d`. The WinUI schedule source dialog uses
+`makeScheduleWorkbookReader()` asynchronously, retains the native
+`ScheduleImportWorkbook` in dialog-local state, and derives visible
 worksheet/user choices from that result. Its state sequence matches the Qt
 workflow: initial file selection, file-plus-kind selection, validated
 worksheet/user selection, and the existing review/reconcile dialog. Back keeps
@@ -94,15 +94,22 @@ the loaded workbook and selections; cancelled, superseded, or closed loads are
 discarded using a generation token and cooperative cancellation. No real file
 import reaches the normalized synthetic provider.
 
-Validation evidence: direct MSVC/wrapper x64 Debug compilation and linking of
-the full WinUI source set succeeded with a validation engine archive containing
-the current interpreter, and the staged `--phase6-schedule-test` exited 0.
-The configured CMake/MSBuild route still fails before source compilation on
-the host's pre-existing FileTracker access-denied error. Phase 7 is the next
-continuation: remove collapsed legacy source controls, enforce mismatch
-confirmation, add reader input limits, and perform final cutover checks. The
-unrelated `tests/fixtures/database-port/typical.tps` modification remains
-unstaged.
+Phase 7 is implemented. The collapsed legacy normalized controls and unused
+import-only state are removed. A profile-name mismatch now requires an
+explicit confirmation dialog before review, and source/worksheet/user changes
+clear the acceptance. The native reader enforces bounded file/XML, worksheet,
+row/column/cell, merge, style, notes, and cell-text limits, returning the
+stable invalid-format error for excessive workbooks. The reader source is
+self-contained for native tests, with an explicit WinUI per-file PCH exclusion.
+
+Validation evidence: the configured native reader target built and its runtime
+test exited 0; the full elevated x64 Debug WinUI wrapper build/staging
+succeeded with 0 errors; and staged `--phase6-schedule-test` exited 0. The
+non-elevated CMake/MSBuild path still hits the host's pre-existing FileTracker
+access-denied initializer, so the elevated path is the recorded configured
+build evidence. No cross-machine performance claim was made without a
+representative benchmark. The unrelated
+`tests/fixtures/database-port/typical.tps` modification remains unstaged.
 
 ## Previous Deployment Handoff: `schedule_import_qt_workflow_audit_20260913`
 

@@ -222,9 +222,33 @@ the reader implementation is connected.
   engine source change even when the WinUI sources compile; direct validation
   must include the current interpreter object or a freshly rebuilt engine
   library. This is separate from the host CMake FileTracker failure.
-- Phase 7 must remove the collapsed legacy normalized controls rather than
-  leave them as a latent production path, and must make profile mismatch a
-  real confirmation gate before review.
+- Phase 7 removed the collapsed legacy normalized controls rather than leaving
+  them as a latent production path, and made profile mismatch a real
+  confirmation gate before review.
+
+## OpenXLSX Schedule Adapter — Phase 7
+
+- The production file-import path is now native-only. Removing the collapsed
+  normalized controls and unused import-only state prevents a stale test UI
+  path from becoming a second production decoder.
+- Profile mismatch confirmation belongs between source selection and review,
+  not inside the reader. Its acceptance is scoped to the current loaded
+  workbook/worksheet/user selection and is cleared whenever that selection
+  changes.
+- Reader limits must be enforced before OpenXLSX materializes large workbook
+  structures where raw ZIP/XML sizes are available, and again while sparse
+  rows/cells/merges/styles/notes are copied into the value-owned layout. The
+  Phase 7 bounds are 64 MiB file size, 32 sheets, 10,000 rows, 512 columns,
+  100,000 cells per sheet, 250,000 total cells, 4,096 merges/styles, 10,000
+  notes, and 1 MiB cell text, with separate raw XML entry caps.
+- The reader source uses only the native contract/OpenXLSX/PugiXML and does
+  not need WinUI headers. Excluding it from the WinUI project's PCH keeps the
+  configured native reader test target independent of Windows App SDK headers
+  while preserving the application build.
+- The configured reader test and elevated full x64 Debug WinUI build passed;
+  the staged `--phase6-schedule-test` exited 0. The host's non-elevated
+  FileTracker initializer remains an environment limitation. A
+  cross-machine performance benchmark was not claimed from this workstation.
 
 ## Decisions and Lessons
 

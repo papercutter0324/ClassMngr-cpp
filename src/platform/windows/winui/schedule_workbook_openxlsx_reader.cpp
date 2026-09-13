@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "schedule_workbook_openxlsx_reader.h"
 
 #include "classmngr/engine/schedule_workbook_interpreter.h"
@@ -43,6 +42,7 @@ using classmngr::engine::ScheduleWorkbookLayoutStyle;
 
 class ReaderFormatFailure final {};
 class ReaderCancellation final {};
+class ReaderLimitFailure final {};
 
 struct RawSheetReference
 {
@@ -58,12 +58,53 @@ constexpr std::array<std::string_view, 12> ThemeNames{
     "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"
 };
 
+// These limits are intentionally well above the dimensions of supported
+// schedule templates while bounding ZIP/XML expansion and native model size.
+constexpr std::uintmax_t MaxWorkbookFileBytes = 64u * 1024u * 1024u;
+constexpr std::size_t MaxWorkbookXmlBytes = 1u * 1024u * 1024u;
+constexpr std::size_t MaxRelationshipsXmlBytes = 2u * 1024u * 1024u;
+constexpr std::size_t MaxStylesXmlBytes = 4u * 1024u * 1024u;
+constexpr std::size_t MaxWorksheetXmlBytes = 16u * 1024u * 1024u;
+constexpr std::size_t MaxNotesXmlBytes = 4u * 1024u * 1024u;
+constexpr std::size_t MaxSheetCount = 32;
+constexpr std::uint32_t MaxRowsPerSheet = 10'000;
+constexpr std::uint16_t MaxColumnsPerRow = 512;
+constexpr std::size_t MaxCellsPerSheet = 100'000;
+constexpr std::size_t MaxTotalCells = 250'000;
+constexpr std::size_t MaxMergedRangesPerSheet = 4'096;
+constexpr std::size_t MaxStyles = 4'096;
+constexpr std::size_t MaxNotes = 10'000;
+constexpr std::size_t MaxCellTextBytes = 1u * 1024u * 1024u;
+
 void requireCondition(bool condition)
 {
     if (!condition)
     {
         throw ReaderFormatFailure{};
     }
+}
+
+void requireWithinLimit(std::size_t value, std::size_t limit)
+{
+    if (value > limit)
+    {
+        throw ReaderLimitFailure{};
+    }
+}
+
+std::string readArchiveEntry(
+    const OpenXLSX::XLZipArchive& archive,
+    const std::string& name,
+    std::size_t limit
+    )
+{
+    if (!archive.hasEntry(name))
+    {
+        return {};
+    }
+    std::string data = archive.getEntry(name);
+    requireWithinLimit(data.size(), limit);
+    return data;
 }
 
 void checkCancellation(
@@ -445,6 +486,7 @@ std::vector<std::string> parseIndexedColors(const pugi::xml_node& styleSheet)
     {
         if (localName(color) == "rgbColor")
         {
+            requireWithinLimit(colors.size() + 1u, MaxStyles);
             colors.push_back(normalizedColor(attributeValue(color, "rgb")));
         }
     }
@@ -506,6 +548,7 @@ std::vector<ScheduleWorkbookLayoutStyle> parseStyles(
         {
             continue;
         }
+        requireWithinLimit(fillColors.size() + 1u, MaxStyles);
         const pugi::xml_node patternFill = childNamed(fill, "patternFill");
         const std::string pattern = attributeValue(patternFill, "patternType");
         const bool filled = !pattern.empty()
@@ -530,6 +573,7 @@ std::vector<ScheduleWorkbookLayoutStyle> parseStyles(
         {
             continue;
         }
+        requireWithinLimit(fontColors.size() + 1u, MaxStyles);
         const pugi::xml_node bold = childNamed(font, "b");
         const std::string boldValue = attributeValue(bold, "val");
         const bool isBold = !bold.empty()
@@ -553,6 +597,7 @@ std::vector<ScheduleWorkbookLayoutStyle> parseStyles(
         {
             continue;
         }
+        requireWithinLimit(styles.size() + 1u, MaxStyles);
         ScheduleWorkbookLayoutStyle style;
         const auto fill = integerAttribute(xf, "fillId");
         if (fill && *fill >= 0 && static_cast<std::size_t>(*fill) < fillColors.size())
@@ -718,6 +763,8 @@ std::vector<RawSheetReference> parseSheetReferences(
             continue;
         }
 
+        requireWithinLimit(result.size() + 1u, MaxSheetCount);
+
         const std::string path = normalizeArchivePath(
             "xl/",
             relationship->second.target
@@ -775,6 +822,7 @@ void appendNotesFromDocument(
                 text = simplifyAsciiWhitespace(text);
                 if (!text.empty())
                 {
+                    requireWithinLimit(notes->size() + 1u, MaxNotes);
                     notes->insert_or_assign(reference, std::move(text));
                 }
             }
@@ -799,7 +847,11 @@ RawNotes parseSheetNotes(
         return result;
     }
 
-    const auto relationships = parseRelationships(archive.getEntry(relationshipsPath));
+    const auto relationships = parseRelationships(readArchiveEntry(
+        archive,
+        relationshipsPath,
+        MaxRelationshipsXmlBytes
+        ));
     for (const auto& [unusedId, relationship] : relationships)
     {
         (void)unusedId;
@@ -811,10 +863,13 @@ RawNotes parseSheetNotes(
         const std::string notePath = normalizeArchivePath(
             directoryName(worksheetPath),
             relationship.target
-            );
+        );
         if (archive.hasEntry(notePath))
         {
-            appendNotesFromDocument(archive.getEntry(notePath), &result);
+            appendNotesFromDocument(
+                readArchiveEntry(archive, notePath, MaxNotesXmlBytes),
+                &result
+                );
         }
     }
     return result;
@@ -826,6 +881,10 @@ void appendMergedRanges(
     )
 {
     auto& merges = worksheet.merges();
+    requireWithinLimit(
+        static_cast<std::size_t>(merges.count()),
+        MaxMergedRangesPerSheet
+        );
     for (OpenXLSX::XLMergeIndex index = 0; index < merges.count(); ++index)
     {
         const OpenXLSX::XLCellRange range = merges.mergeAsRange(index);
@@ -850,6 +909,7 @@ void appendWorksheetCells(
     OpenXLSX::XLWorksheet& worksheet,
     const RawNotes& notes,
     const classmngr::engine::ScheduleWorkbookCancellation& isCancelled,
+    std::size_t* totalCellCount,
     ScheduleWorkbookLayoutSheet* result
     )
 {
@@ -857,6 +917,8 @@ void appendWorksheetCells(
     for (auto rowIterator = rows.begin(); rowIterator != rows.end(); ++rowIterator)
     {
         checkCancellation(isCancelled);
+        requireCondition(rowIterator.rowNumber() > 0);
+        requireWithinLimit(rowIterator.rowNumber(), MaxRowsPerSheet);
         if (!rowIterator.rowExists())
         {
             continue;
@@ -864,6 +926,7 @@ void appendWorksheetCells(
 
         auto& row = *rowIterator;
         const uint16_t cellCount = row.cellCount();
+        requireWithinLimit(cellCount, MaxColumnsPerRow);
         for (uint16_t column = 1; column <= cellCount; ++column)
         {
             checkCancellation(isCancelled);
@@ -878,6 +941,8 @@ void appendWorksheetCells(
                 reference.row() <= static_cast<uint32_t>(std::numeric_limits<int>::max())
                 && reference.column() <= static_cast<uint16_t>(std::numeric_limits<int>::max())
                 );
+            requireWithinLimit(result->cells.size() + 1u, MaxCellsPerSheet);
+            requireWithinLimit(*totalCellCount + 1u, MaxTotalCells);
             const std::string address = upperAscii(reference.address());
             const std::size_t style = cell.cellFormat();
             requireCondition(style <= static_cast<std::size_t>(
@@ -889,12 +954,15 @@ void appendWorksheetCells(
             mapped.column = static_cast<int>(reference.column());
             mapped.style = static_cast<int>(style);
             mapped.value = cell.getString();
+            requireWithinLimit(mapped.value.size(), MaxCellTextBytes);
             const auto note = notes.find(address);
             if (note != notes.end())
             {
                 mapped.note = note->second;
+                requireWithinLimit(mapped.note.size(), MaxCellTextBytes);
             }
             result->cells.push_back(std::move(mapped));
+            ++*totalCellCount;
         }
     }
 }
@@ -907,25 +975,42 @@ ScheduleWorkbookLayout mapWorkbook(
     )
 {
     ScheduleWorkbookLayout result;
-    const std::string stylesData = archive.hasEntry("xl/styles.xml")
-        ? archive.getEntry("xl/styles.xml")
-        : std::string{};
-    const std::string themeData = archive.hasEntry("xl/theme/theme1.xml")
-        ? archive.getEntry("xl/theme/theme1.xml")
-        : std::string{};
+    const std::string stylesData = readArchiveEntry(
+        archive,
+        "xl/styles.xml",
+        MaxStylesXmlBytes
+        );
+    const std::string themeData = readArchiveEntry(
+        archive,
+        "xl/theme/theme1.xml",
+        MaxStylesXmlBytes
+        );
     result.styles = parseStyles(stylesData, themeData);
     result.sheets.reserve(sheetReferences.size());
 
     auto workbook = document.workbook();
+    std::size_t totalCellCount = 0;
     for (const RawSheetReference& reference : sheetReferences)
     {
         checkCancellation(isCancelled);
+        const std::string worksheetData = readArchiveEntry(
+            archive,
+            reference.archivePath,
+            MaxWorksheetXmlBytes
+            );
+        requireCondition(!worksheetData.empty());
         ScheduleWorkbookLayoutSheet sheet;
         sheet.name = reference.name;
         sheet.visible = reference.visible;
         const RawNotes notes = parseSheetNotes(archive, reference.archivePath);
         auto worksheet = workbook.worksheet(reference.name);
-        appendWorksheetCells(worksheet, notes, isCancelled, &sheet);
+        appendWorksheetCells(
+            worksheet,
+            notes,
+            isCancelled,
+            &totalCellCount,
+            &sheet
+            );
         appendMergedRanges(worksheet, &sheet);
         result.sheets.push_back(std::move(sheet));
     }
@@ -943,14 +1028,24 @@ Result<ScheduleWorkbookLayout> readLayout(
     OpenXLSX::XLZipArchive archive;
     archive.open(utf8Path);
     requireCondition(archive.isOpen());
+    const std::string workbookData = readArchiveEntry(
+        archive,
+        "xl/workbook.xml",
+        MaxWorkbookXmlBytes
+        );
+    const std::string workbookRelationshipsData = readArchiveEntry(
+        archive,
+        "xl/_rels/workbook.xml.rels",
+        MaxRelationshipsXmlBytes
+        );
     requireCondition(
-        archive.hasEntry("xl/workbook.xml")
-        && archive.hasEntry("xl/_rels/workbook.xml.rels")
+        !workbookData.empty()
+        && !workbookRelationshipsData.empty()
         );
 
     const std::vector<RawSheetReference> sheetReferences = parseSheetReferences(
-        archive.getEntry("xl/workbook.xml"),
-        archive.getEntry("xl/_rels/workbook.xml.rels"),
+        workbookData,
+        workbookRelationshipsData,
         archive
         );
 
@@ -998,6 +1093,26 @@ Result<ScheduleImportWorkbook> ScheduleWorkbookOpenXLSXReader::read(
             ));
     }
 
+    filesystemError.clear();
+    const std::uintmax_t fileSize = std::filesystem::file_size(
+        file,
+        filesystemError
+        );
+    if (filesystemError)
+    {
+        return std::unexpected(makeError(
+            ErrorCode::Io,
+            "The selected schedule file could not be accessed."
+            ));
+    }
+    if (fileSize > MaxWorkbookFileBytes)
+    {
+        return std::unexpected(makeError(
+            ErrorCode::InvalidFormat,
+            "The selected workbook exceeds the supported import size limit."
+            ));
+    }
+
     try
     {
         checkCancellation(isCancelled);
@@ -1018,6 +1133,13 @@ Result<ScheduleImportWorkbook> ScheduleWorkbookOpenXLSXReader::read(
         return std::unexpected(makeError(
             ErrorCode::Cancelled,
             "The schedule import was cancelled."
+            ));
+    }
+    catch (const ReaderLimitFailure&)
+    {
+        return std::unexpected(makeError(
+            ErrorCode::InvalidFormat,
+            "The workbook exceeds the supported schedule import limits."
             ));
     }
     catch (const ReaderFormatFailure&)
