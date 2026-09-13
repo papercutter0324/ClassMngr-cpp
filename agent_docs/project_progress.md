@@ -32,23 +32,53 @@ current host clamps the native capture to 800x600 while the reference set is
 
 ## Active Deployment Handoff
 
-No active deployment remains after the parity-pass commit. The staged Debug
-executable is at
-`dist/ClassMngr-windows-winui-x64/Debug/ClassMngrWinUI.exe`.
+Deployment `schedule_import_qt_workflow_audit_20260913` examined the retained
+Qt schedule-import workflow and implemented its two-stage modal shape in the
+WinUI presentation layer. Import no longer navigates to an Import page: the
+source state owns file/type/worksheet/user selection, and `Next` changes the
+same modal to a `Review & Reconcile` state with preview, Classes, Korean
+Teachers, live resolution validation, and `Back`/`Import`/`Cancel` footer
+actions.
+
+The implementation preserves the engine-owned preview, resolution, validation,
+and atomic apply contracts. Intermediate ContentDialog actions cancel the
+default close behavior so Load, Next, and Back keep the workflow open while
+changing state; successful apply refreshes the schedule and closes the modal.
+
+The Qt workbook parser remains an intentionally retained adapter. The current
+WinUI source load validates the selected `.xlsx` path/readability and feeds the
+staged normalized provider into the dialog; it does not yet decode OOXML
+workbook contents. A native or bridged WinUI workbook adapter is the explicit
+follow-on required for full real-workbook parity.
 
 ## Goal
 
-Keep the Windows WinUI feature pages visually consistent with the Qt
-references, make navigation and page state resilient, and preserve existing
-engine contracts while completing this parity slice.
+Define the WinUI schedule-import dialog state machine from the retained Qt
+workflow: asynchronous workbook load and selection, user/profile resolution,
+review tabs and conflicts, confirmation, success/error handling, and refresh
+without page navigation.
 
 ## Overall Progress
 
-The requested parity slice is implemented and verified. Remaining visual work
-belongs to later product phases or requires a host with a matching capture
-size; it is not a blocker for this deployment.
+The Qt workflow is mapped to dialog-owned WinUI controls and focused
+diagnostics. The source starts at `Choose a file and schedule type.`, enables
+type selection after Browse, exposes worksheet/user selection only after the
+source is loaded, and changes Load to Next. Review builds a read-only schedule
+board plus dynamic class/teacher resolution cards while keeping errors in the
+modal. Existing normalized diagnostics continue to exercise the engine-backed
+preview/apply path.
+
+The presentation state machine is complete for the staged provider. Workbook
+decoding is intentionally not duplicated in the Qt-free engine or silently
+ported into WinUI.
 
 ## Next Milestone
 
-Continue with the next explicitly requested porting phase. Do not broaden this
-commit into unrelated encoding cleanup or Phase-7 report/PDF/Office adapters.
+Implement and integrate the explicit WinUI workbook adapter (or a supported
+bridge to the retained Qt reader), then add real multi-sheet/user mismatch and
+confirmation coverage against workbook fixtures. Keep XLSX decoding out of the
+Qt-free engine and do not broaden this work into Phase-7 adapters.
+
+Verified for this deployment: x64 Debug WinUI build/link, staged
+`--phase6-schedule-test`, focused `ClassMngrEngineScheduleImportServiceTests`
+(1/1), and `git diff --check`.

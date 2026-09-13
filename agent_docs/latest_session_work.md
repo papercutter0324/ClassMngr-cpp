@@ -2,6 +2,54 @@
 
 ## Current Deployment Handoff
 
+Deployment `schedule_import_qt_workflow_audit_20260913` completed a read-only
+audit and implementation of the retained Qt schedule-import workflow. The
+WinUI Import action now stays in an owned ContentDialog and follows the Qt
+source/review sequence without loading a page. The source starts with
+`Choose a file and schedule type.`, progresses through Browse, type selection,
+workbook/worksheet/user loading, and changes Load to Next. Review presents a
+read-only schedule preview, Classes and Korean Teachers tabs, dynamic
+resolution cards, live validation/summary, and Back/Import/Cancel footer
+actions.
+
+The ContentDialog handlers cancel automatic closing for intermediate Load,
+Next, and Back actions. Preview/apply still use the existing engine plan and
+service contracts; failures leave review open and successful apply refreshes
+the schedule before closing. Existing normalized diagnostics remain supported.
+
+Known boundary: the WinUI source loader currently validates `.xlsx`
+extension/readability and feeds a normalized staged provider. It does not yet
+decode OOXML workbook contents. The Qt workbook reader remains the explicit
+adapter boundary; a native or bridged WinUI reader is the next milestone.
+
+Changed implementation areas include `MainWindow.xaml.h`,
+`MainWindow_schedule_page.cpp`, `MainWindow_schedule_editor.cpp`, and focused
+schedule diagnostics. Unrelated existing worktree changes were preserved.
+
+Verification: x64 Debug WinUI build/link succeeded; staged
+`--phase6-schedule-test` exited 0; focused
+`ClassMngrEngineScheduleImportServiceTests` passed 1/1; `git diff --check`
+passed.
+
+## Previous Deployment Handoff: `schedule_import_dialog_20260912`
+
+Deployment `schedule_import_dialog_20260912` addresses the request that WinUI
+schedule Import use dialogs rather than page navigation. The Import Pivot item
+was removed; its existing normalized import controls are held in a scrollable
+dialog root and shown by an owned `ContentDialog` using the active XamlRoot.
+Testing Classes and testing-slot navigation now target the remaining second
+Pivot item.
+
+`git diff --check` passed. The focused
+`ClassMngrEngineScheduleImportServiceTests` test passed 1/1. An elevated x64
+Debug WinUI build compiled all sources successfully but final linking was
+blocked by the existing staged `ClassMngrWinUI.exe` being held open by a
+running process. No process was terminated. The next continuation is to rerun
+the build and `--phase6-schedule-test` after that process exits, then perform a
+focused UI check of the modal Import action.
+
+## Previous Deployment Handoff: `winui_parity_pass_20260912`
+
 Deployment `winui_parity_pass_20260912` completed the requested Medium-route
 WinUI parity slice. The implementation is committed after the verification
 listed below. No reference pictures had to be reattached: the tracked Qt set

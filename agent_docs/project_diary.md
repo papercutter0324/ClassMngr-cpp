@@ -1,5 +1,60 @@
 # Project Diary
 
+## Schedule Import Qt Workflow Audit — 2026-09-13
+
+- The retained Qt flow is two-stage. `ScheduleImportDialog` is modal and
+  owns workbook path/browse, Regular versus Intensives, visible worksheet,
+  detected-user selection, profile-name mismatch confirmation, asynchronous
+  load progress, timeout, cancellation, and source errors. Its button is
+  `Load` until a workbook is loaded, then `Next`.
+- `Next` opens a separate modal `ScheduleImportReviewDialog`. Review owns the
+  read-only schedule preview, Classes and Korean Teachers resolution tabs,
+  optional Unrecognized Cells acknowledgement, intensive update/replace
+  choice, dynamic match details/colors, conflict warnings, validation status,
+  summary, and Import confirmation. Back closes only review and returns to the
+  source state; Cancel leaves data unchanged.
+- The retained Qt parser is intentionally the workbook/OOXML adapter. WinUI
+  currently has only a normalized single-class form inside a ContentDialog;
+  matching the full Qt flow therefore requires a deliberate WinUI codec or
+  adapter boundary in addition to dialog-state work.
+- After successful Qt import, MainWindow refreshes both schedule pages and the
+  teacher/sidebar state. Import errors keep the review dialog open; success
+  shows a result message and closes the workflow.
+
+### Implementation handoff
+
+- The WinUI import action now stays in an owned `ContentDialog`; it does not
+  select or load an Import page. The source state follows the Qt progression:
+  initial file/type prompt, ready-to-read path after Browse, valid workbook and
+  worksheet state after Load, then Next into review.
+- Review is a second state of the same modal with a read-only schedule board,
+  Classes and Korean Teachers tabs, dynamic resolution cards, live validation,
+  summary text, and Back/Import/Cancel footer semantics. ContentDialog
+  intermediate button events explicitly cancel auto-close so Load, Next, and
+  Back preserve the workflow.
+- Preview and apply continue to use the existing engine service and plan
+  contracts; successful apply refreshes the schedule, while validation/apply
+  failures leave review visible.
+- The WinUI loader currently checks `.xlsx` extension/readability and supplies a
+  normalized staged provider. The retained Qt OOXML reader remains the adapter
+  boundary, so actual workbook decoding is a known follow-on rather than a new
+  Qt dependency in the engine.
+- Verification passed: x64 Debug WinUI build/link, staged
+  `--phase6-schedule-test` (exit 0), focused schedule-import engine test (1/1),
+  and `git diff --check`.
+
+## Schedule Import Dialog Follow-up
+
+- The WinUI Schedule Import action is now modal: the import control tree is
+  retained for the existing normalized engine workflow but is hosted in an
+  owned `ContentDialog`, and the Import button no longer selects a page.
+- Removing the Import Pivot item changes Testing Classes to Pivot index 1;
+  both the toolbar action and the testing-slot navigation path must use that
+  index.
+- The dialog follow-up was completed by the Qt-workflow implementation above.
+  The final elevated WinUI build linked successfully and the staged schedule
+  diagnostic exited 0; no process was terminated.
+
 ## WinUI Parity Pass
 
 - Deployment `winui_parity_pass_20260912` used the Medium route for one
