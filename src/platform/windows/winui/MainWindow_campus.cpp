@@ -208,43 +208,19 @@ void MainWindow::populateCampusPage(
     m_campusResourceRecords.clear();
     m_campusSelector = nullptr;
     m_campusTabs = nullptr;
+    m_campusDetailsHost = nullptr;
     m_campusDetailsPanel = nullptr;
+    m_campusTabPanels.clear();
     m_campusImage = nullptr;
     m_campusImages.clear();
     ++m_campusImageRequest;
     m_campusInformationState.clear();
 
-    auto pageTitle = [&]() -> std::wstring {
-        if (pageId == campusDirectionsPageId)
-        {
-            return localize(L"Directions");
-        }
-        if (pageId == campusAddressPageId)
-        {
-            return localize(L"Address");
-        }
-        if (pageId == campusHousingPageId)
-        {
-            return localize(L"Housing");
-        }
-        if (pageId == campusMapPageId)
-        {
-            return localize(L"Maps");
-        }
-        return localize(L"Campus Information");
-    };
-
-    auto root = StackPanel();
-    // Mirrors the retained Qt content layout: selector above five detail tabs.
+    auto root = Grid();
+    // Keep the directory controls in the same order as the other pivot pages:
+    // the tab strip, campus selector, then the selected detail content.
     root.Padding(Thickness{12.0, 12.0, 12.0, 0.0});
-    root.Spacing(8.0);
-    root.VerticalAlignment(VerticalAlignment::Top);
-
-    auto title = TextBlock();
-    title.Text(winrt::hstring(pageTitle()));
-    title.FontSize(28.0);
-    setAutomationName(title, pageTitle());
-    root.Children().Append(title);
+    root.VerticalAlignment(VerticalAlignment::Stretch);
 
     const auto appendState = [this, &root, &localize](
                                  winrt::hstring const& titleText,
@@ -425,13 +401,86 @@ void MainWindow::populateCampusPage(
     }
 
     m_campusInformationState = L"populated";
-    auto selectorRow = Grid();
-    selectorRow.ColumnSpacing(8.0);
-    selectorRow.ColumnDefinitions().Append(ColumnDefinition());
-    selectorRow.ColumnDefinitions().Append(ColumnDefinition());
-    selectorRow.ColumnDefinitions().GetAt(1).Width(
-        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+    m_campusTabs = Pivot();
+    m_campusTabs.IsTabStop(true);
+    m_campusTabs.TabIndex(0);
+    m_campusTabs.HorizontalAlignment(HorizontalAlignment::Stretch);
+    applyResourceStyle(m_campusTabs, L"Phase3TopTabPivotStyle");
+    setAutomationName(m_campusTabs, L"Campus detail tabs");
+
+    auto detailsHost = Grid();
+    detailsHost.HorizontalAlignment(HorizontalAlignment::Stretch);
+    detailsHost.VerticalAlignment(VerticalAlignment::Stretch);
+    m_campusDetailsHost = detailsHost;
+
+    uint32_t tabIndex = 0;
+    for (std::wstring_view const header : {
+             L"Information", L"Directions", L"Address", L"Housing", L"Maps"})
+    {
+        auto tab = PivotItem();
+        tab.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
+            winrt::hstring(localize(header))
+            ));
+        // The Pivot supplies the tab strip; the detail panels live below it
+        // so the campus selector can remain immediately under the tabs.
+        tab.Content(Grid());
+
+        auto scroll = ScrollViewer();
+        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.Visibility(
+            tabIndex == 0 ? Visibility::Visible : Visibility::Collapsed
+            );
+        auto panel = StackPanel();
+        panel.Spacing(10.0);
+        auto container = Border();
+        container.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
+        container.CornerRadius(CornerRadius{6.0, 6.0, 6.0, 6.0});
+        container.Padding(Thickness{12.0, 12.0, 12.0, 12.0});
+        container.Child(panel);
+        scroll.Content(container);
+        detailsHost.Children().Append(scroll);
+        m_campusTabPanels.emplace_back(panel);
+        if (header == L"Information")
+        {
+            m_campusDetailsPanel = panel;
+            setAutomationName(m_campusDetailsPanel, L"Selected campus details");
+        }
+        m_campusTabs.Items().Append(tab);
+        ++tabIndex;
+    }
+
+    m_campusTabs.SelectionChanged(
+        [detailsHost](auto const& sender, auto const&) {
+            const auto pivot = sender.template try_as<Pivot>();
+            if (!pivot)
+            {
+                return;
+            }
+            const int32_t selectedIndex = pivot.SelectedIndex();
+            const auto children = detailsHost.Children();
+            if (selectedIndex < 0
+                || selectedIndex >= static_cast<int32_t>(children.Size()))
+            {
+                return;
+            }
+            for (uint32_t index = 0; index < children.Size(); ++index)
+            {
+                children.GetAt(index).Visibility(
+                    static_cast<int32_t>(index) == selectedIndex
+                        ? Visibility::Visible
+                        : Visibility::Collapsed
+                    );
+            }
+        }
         );
+
+    auto selectorRow = StackPanel();
+    selectorRow.Orientation(Orientation::Horizontal);
+    selectorRow.Spacing(8.0);
+    selectorRow.HorizontalAlignment(HorizontalAlignment::Left);
+    selectorRow.VerticalAlignment(VerticalAlignment::Center);
+    selectorRow.Margin(Thickness{0.0, 8.0, 0.0, 8.0});
     auto selectorLabel = TextBlock();
     selectorLabel.Text(winrt::hstring(localize(L"Campuses")));
     selectorLabel.VerticalAlignment(VerticalAlignment::Center);
@@ -441,7 +490,8 @@ void MainWindow::populateCampusPage(
     m_campusSelector = ComboBox();
     m_campusSelector.MinWidth(190.0);
     m_campusSelector.IsTabStop(true);
-    m_campusSelector.TabIndex(0);
+    m_campusSelector.TabIndex(1);
+    m_campusSelector.HorizontalAlignment(HorizontalAlignment::Left);
     m_campusSelector.SelectionChanged({this, &MainWindow::CampusSelector_SelectionChanged});
     setAutomationName(m_campusSelector, L"Campus directory selector");
     for (const CampusResourceView& campus : m_campusResourceRecords)
@@ -459,42 +509,27 @@ void MainWindow::populateCampusPage(
         setAutomationName(item, L"Campus name " + displayName);
         m_campusSelector.Items().Append(item);
     }
-    Grid::SetColumn(m_campusSelector, 1);
     selectorRow.Children().Append(m_campusSelector);
-    root.Children().Append(selectorRow);
 
-    m_campusTabs = Pivot();
-    m_campusTabs.IsTabStop(true);
-    applyResourceStyle(m_campusTabs, L"Phase3TopTabPivotStyle");
-    setAutomationName(m_campusTabs, L"Campus detail tabs");
-    for (std::wstring_view const header : {
-             L"Information", L"Directions", L"Address", L"Housing", L"Maps"})
-    {
-        auto tab = PivotItem();
-        tab.Header(ClassMngrWinUISharedUX::buildTopTabHeader(
-            winrt::hstring(localize(header))
-            ));
-        auto scroll = ScrollViewer();
-        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
-        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
-        auto panel = StackPanel();
-        panel.Spacing(10.0);
-        auto container = Border();
-        container.BorderThickness(Thickness{1.0, 1.0, 1.0, 1.0});
-        container.CornerRadius(CornerRadius{6.0, 6.0, 6.0, 6.0});
-        container.Padding(Thickness{12.0, 12.0, 12.0, 12.0});
-        container.Child(panel);
-        scroll.Content(container);
-        tab.Content(scroll);
-        if (header == L"Information")
-        {
-            m_campusDetailsPanel = panel;
-            setAutomationName(m_campusDetailsPanel, L"Selected campus details");
-        }
-        m_campusTabs.Items().Append(tab);
-    }
+    auto tabsRowDefinition = RowDefinition();
+    tabsRowDefinition.Height(GridLengthHelper::FromPixels(60.0));
+    root.RowDefinitions().Append(tabsRowDefinition);
+    auto selectorRowDefinition = RowDefinition();
+    selectorRowDefinition.Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Auto)
+        );
+    root.RowDefinitions().Append(selectorRowDefinition);
+    root.RowDefinitions().Append(RowDefinition());
+
+    Grid::SetRow(m_campusTabs, 0);
     root.Children().Append(m_campusTabs);
+    Grid::SetRow(selectorRow, 1);
+    root.Children().Append(selectorRow);
+    Grid::SetRow(m_campusDetailsHost, 2);
+    root.Children().Append(m_campusDetailsHost);
     page.Content(root);
+
+    m_campusTabs.SelectedIndex(0);
 
     if (m_selectedCampusIndex < 0
         || static_cast<std::size_t>(m_selectedCampusIndex)
@@ -509,7 +544,7 @@ void MainWindow::populateCampusPage(
 
 void MainWindow::refreshCampusInformationPage()
 {
-    if (!isCampusPageId(m_currentPageId) || !m_contentFrame)
+    if (!isCampusDirectoryPageId(m_currentPageId) || !m_contentFrame)
     {
         return;
     }
@@ -539,7 +574,8 @@ void MainWindow::CampusSelector_SelectionChanged(
 
 void MainWindow::presentSelectedCampus(std::wstring_view pageId)
 {
-    if (!m_campusSelector || !m_campusTabs || !m_campusDetailsPanel)
+    if (!m_campusSelector || !m_campusTabs || !m_campusDetailsPanel
+        || m_campusTabPanels.size() != 5)
     {
         return;
     }
@@ -547,18 +583,10 @@ void MainWindow::presentSelectedCampus(std::wstring_view pageId)
     const std::uint64_t requestId = ++m_campusImageRequest;
     m_campusImage = nullptr;
     m_campusImages.clear();
-    std::array<Microsoft::UI::Xaml::Controls::StackPanel, 5> tabPanels{};
-    for (uint32_t index = 0; index < tabPanels.size(); ++index)
+    const auto& tabPanels = m_campusTabPanels;
+    for (const auto& panel : tabPanels)
     {
-        const auto tab = m_campusTabs.Items().GetAt(index).as<
-            Microsoft::UI::Xaml::Controls::PivotItem>();
-        const auto scroll = tab.Content().as<
-            Microsoft::UI::Xaml::Controls::ScrollViewer>();
-        const auto container = scroll.Content().as<
-            Microsoft::UI::Xaml::Controls::Border>();
-        tabPanels[index] = container.Child().as<
-            Microsoft::UI::Xaml::Controls::StackPanel>();
-        tabPanels[index].Children().Clear();
+        panel.Children().Clear();
     }
 
     const int32_t selectedIndex = m_campusSelector.SelectedIndex();
@@ -768,7 +796,11 @@ void MainWindow::presentSelectedCampus(std::wstring_view pageId)
     appendField(maps, L"Naver Maps", campus.naverMapUrl);
     appendField(maps, L"Kakao Maps", campus.kakaoMapUrl);
 
-    uint32_t selectedTab = 0;
+    int32_t selectedTab = m_campusTabs.SelectedIndex();
+    if (selectedTab < 0 || selectedTab >= static_cast<int32_t>(tabPanels.size()))
+    {
+        selectedTab = 0;
+    }
     if (pageId == campusDirectionsPageId) { selectedTab = 1; }
     else if (pageId == campusAddressPageId) { selectedTab = 2; }
     else if (pageId == campusHousingPageId) { selectedTab = 3; }

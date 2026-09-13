@@ -85,6 +85,7 @@ bool MainWindow::runPhase5CampusChecks()
     navigateTo(campusInformationPageId);
     refreshCampusInformationPage();
     const bool noDatabaseReady = m_currentPageId == campusInformationPageId
+        && m_campusDirectoryNavigationItem
         && m_campusInformationState == L"no_database"
         && static_cast<bool>(m_contentFrame.Content());
 
@@ -146,7 +147,9 @@ bool MainWindow::runPhase5CampusChecks()
     m_phase5CampusScenario = L"populated";
     refreshCampusInformationPage();
     if (!m_campusSelector || m_campusInformationState != L"populated"
-        || m_campusSelector.Items().Size() != 1)
+        || m_campusSelector.Items().Size() != 1
+        || !m_campusTabs
+        || m_campusTabs.Items().Size() != 5)
     {
         m_openDatabase.reset();
         refreshCampusInformationPage();

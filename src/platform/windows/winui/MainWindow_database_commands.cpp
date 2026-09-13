@@ -587,7 +587,7 @@ bool MainWindow::exportDatabasePath(std::wstring_view path)
 
 bool MainWindow::saveCurrentPagePath(std::wstring_view path)
 {
-    if (!isCampusPageId(m_currentPageId))
+    if (!isCampusDirectoryPageId(m_currentPageId))
     {
         reportOutputError(
             L"Save current page",
@@ -685,7 +685,7 @@ std::string MainWindow::currentPageExportJson() const
 
 bool MainWindow::exportCampusResourcesPath(std::wstring_view path)
 {
-    if (!isCampusPageId(m_currentPageId))
+    if (!isCampusDirectoryPageId(m_currentPageId))
     {
         reportOutputError(
             L"Export campus resources",

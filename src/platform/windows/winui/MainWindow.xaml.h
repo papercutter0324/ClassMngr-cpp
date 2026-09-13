@@ -1201,7 +1201,9 @@ private:
 
     Microsoft::UI::Xaml::Controls::ComboBox m_campusSelector{nullptr};
     Microsoft::UI::Xaml::Controls::Pivot m_campusTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid m_campusDetailsHost{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel m_campusDetailsPanel{nullptr};
+    std::vector<Microsoft::UI::Xaml::Controls::StackPanel> m_campusTabPanels;
     Microsoft::UI::Xaml::Controls::Image m_campusImage{nullptr};
     std::vector<Microsoft::UI::Xaml::Controls::Image> m_campusImages;
     std::vector<classmngr::engine::CampusRecord> m_campusRecords;
