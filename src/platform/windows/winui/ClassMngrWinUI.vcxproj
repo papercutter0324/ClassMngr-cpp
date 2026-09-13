@@ -49,6 +49,7 @@
     <WindowsPackageType>None</WindowsPackageType>
     <!-- The project is also built from CMake custom-build targets. Keep
          MSBuild's file tracker disabled in restricted build environments. -->
+    <ForceImportAfterCppProps>$(MSBuildThisFileDirectory)..\..\..\..\cmake\msvc_file_tracking_compat.props</ForceImportAfterCppProps>
     <TrackFileAccess>false</TrackFileAccess>
   </PropertyGroup>
 

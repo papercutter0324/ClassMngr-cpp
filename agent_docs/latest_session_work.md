@@ -1,5 +1,122 @@
 # Latest Session Work
 
+## Heavy Deployment Handoff — Schedule Import WinUI Rebuild — 2026-09-14
+
+Deployment `schedule_import_winui_rebuild_20260914` is implemented in
+`src/platform/windows/winui/MainWindow_schedule_page.cpp`,
+`MainWindow_schedule_editor.cpp`, `MainWindow_diagnostics_schedule.cpp`,
+`MainWindow.xaml.h`, and the hand-authored WinUI project file only where
+required. The broken schedule-import surface was replaced with a resettable
+XLSX source dialog and a separate `Review & Reconcile` dialog. The source flow
+validates Regular/Intensives through the native workbook reader, handles
+single- and multi-worksheet selection, requires an explicit teacher choice,
+and supports cancel, drag, and horizontal resize. The review flow renders the
+shared schedule board, exposes Pivot resolution panes with vertical scrolling,
+conditionally shows `Unrecognized`, supports shared color picking, validates
+all resolutions before enabling Import, and presents proposal counts in a
+confirmation dialog with six distinct rows.
+
+Evidence: x64 Debug WinUI build and staged `--phase6-schedule-test` passed;
+focused schedule reader/import tests passed 4/4; final presentation checks
+passed 14/14; `git diff --check` passed. The verification host exposed no
+launchable native UI, so live visual sizing, picker interaction, drag/resize,
+dialog replacement, and focus restoration were not exercised. Existing
+unrelated worktree changes remain intentionally preserved and no commit was
+requested.
+
+## Current Review Dialog Repair
+
+The WinUI Schedule Import `Review & Reconcile` dialog repair is implemented in
+the existing dialog surfaces (`MainWindow.xaml.h`,
+`MainWindow_schedule_page.cpp`, `MainWindow_schedule_editor.cpp`, and the
+phase-6 diagnostic). The prior blank-space cause was six default `1*` Grid
+rows, including an empty row and rows with collapsed children; the previous
+size request also never enabled `ContentDialog.FullSizeDesired`. The dialog
+now uses `Auto` rows except for the single preview/resolution `Star` row,
+explicit stretch alignment, and `FullSizeDesired(true)` only in review.
+
+`ContentDialog` is an overlay without a native non-client frame, so the main
+window's `SetTitleBar` cannot move or resize it. Review now provides a
+transparent top drag surface that captures popup-local pointer positions and
+applies a viewport-clamped `RenderTransform`, plus eight transparent edge and
+corner resize zones with pointer capture, system cursors, and 520--1800 by
+480--1080 bounds. Back/reset/cancel release captures, clear movement, hide the
+zones, and restore the compact source state.
+
+Verification: x64 Debug WinUI build/link/staging passed with 0 errors; staged
+`--phase6-schedule-test` exited 0; focused static checks and `git diff --check`
+passed. Existing OpenXLSX conversion warnings and the offline NuGet warning
+remain non-blocking. The computer-use inventory had no launchable native app,
+so live visual click-drag/resize behavior remains unverified. Preserve the
+unrelated `tests/fixtures/database-port/typical.tps` modification; no commit
+was requested.
+
+## Current Build-error Follow-up
+
+The non-elevated CMake Tools/MSBuild build error is fixed. Visual Studio 2026's
+tracked C++ tasks were initializing `Microsoft.Build.Utilities.FileTracker` and
+throwing `E_ACCESSDENIED`, including in the hand-authored WinUI project's
+manifest resource compile. `CMakeLists.txt` now defaults
+`CLASSMNGR_ENABLE_MSVC_FILE_TRACKING` to `OFF`, sets the matching environment
+and Visual Studio global before generated projects are built, and imports
+`cmake/msvc_file_tracking_compat.props`. The compatibility file disables
+per-item `MinimalRebuildFromTracking` metadata while tracking is off and
+updates the generated `ManifestResourceCompile` item immediately before its
+target runs. `src/platform/windows/winui/ClassMngrWinUI.vcxproj` imports the
+same file for the nested MSBuild invocation.
+
+Validation completed in the ordinary, non-elevated route:
+
+- CMake reconfiguration generated `TrackFileAccess=false` and the compatibility
+  import in the generated projects.
+- The full x64 Debug `ClassMngrWindowsWinUI` target passed with 0 errors.
+- A second incremental build passed with 0 errors.
+- `git diff --check` passed. OpenXLSX compiler warnings, CMake deprecation
+  warnings, and the offline NuGet vulnerability lookup warning are unchanged.
+
+The build created only temporary manifest intermediates under the source tree;
+those artifacts were removed. No commit was requested, and unrelated worktree
+changes remain preserved.
+
+## Current Follow-up Handoff
+
+The review dialog now uses the per-dialog WinUI theme overrides and a
+1240x780 initial review surface. Its preview column is 540 DIPs wide and is
+rendered through the same `ScheduleBuilderService`, `ScheduleReportService`,
+and `ClassMngrWinUIScheduleBoard` path as the schedule page. The source state
+remains compact at 420 pixels wide.
+
+The review root is a plain stretchable Grid. The Classes and Korean Teachers
+Pivot items each own their vertical Auto/horizontal Disabled ScrollViewer, so
+the modal body does not add a competing full-dialog scrollbar. The duplicate
+review heading was removed: the ContentDialog title is `Review & Reconcile`
+and the body contains the Qt-aligned 14-DIP review description. Class and
+teacher match explanations and the `Color` label use the smaller review text
+size.
+
+The visible resize arrow was removed. Review-only transparent edge and corner
+hit zones use the standard WinUI system resize cursors and support dragging
+the dialog surface from any edge or corner, bounded to 520--1800 pixels wide
+and 480--1080 pixels high and clamped to the host viewport. The source state
+hides the zones and restores the compact layout on Back, cancel, or reset.
+
+The cancel/reopen regression is fixed: reset now recomputes the source control
+state after it clears the loading flag, so Browse is enabled again instead of
+retaining the disabled loading appearance. Existing request-generation
+cancellation prevents a late background read from changing the fresh dialog
+session. Phase 6 explicitly exercises loading-disabled state followed by reset
+and verifies the first-step source state.
+
+Validation for this follow-up: elevated x64 Debug WinUI build/link/staging
+succeeded with 0 errors; staged `--phase6-schedule-test` exited 0; static
+checks found no old root-scrollbar or resize-grip references; and
+`git diff --check` passed. Existing OpenXLSX conversion warnings are unchanged.
+The CUA surface inventory had no launchable native app, so no manual visual
+click-drag check was claimed. The unrelated
+`tests/fixtures/database-port/typical.tps` modification remains unstaged. No
+commit was requested, so the source and handoff-note changes remain
+uncommitted.
+
 ## Current Deployment Handoff
 
 Deployment `schedule_import_openxlsx_phase1_20260913` began Phase 1 of the

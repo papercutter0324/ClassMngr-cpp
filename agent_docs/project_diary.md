@@ -1,5 +1,29 @@
 # Project Diary
 
+## Heavy Schedule Import WinUI Rebuild — 2026-09-14
+
+- Replaced the prior WinUI schedule-import presentation in the existing
+  `MainWindow` surfaces with a source dialog followed by a separate review
+  dialog. The source state is reset on cancel/close and uses a request id plus
+  cancellation token so stale workbook reads cannot repopulate the UI.
+- Kept workbook parsing and import semantics in the native reader and engine
+  service. The UI explicitly validates the selected schedule kind, handles
+  one visible worksheet versus multiple visible worksheets, and keeps the
+  teacher placeholder selected until the user chooses a name.
+- Used a WinUI `Pivot` for the review panes, conditional `Unrecognized`
+  diagnostics, pane-owned vertical scrolling, the shared schedule-board
+  renderer, and the shared color picker. Resolution controls are created per
+  imported item; generic duplicate controls are retained only as non-visible
+  compatibility members. Proposed counts appear only in the confirmation
+  dialog as six separate readable rows.
+- Because `ContentDialog` template caps constrained the custom surface, the
+  source and review dialogs receive per-dialog width/height resource overrides
+  in addition to full-size/stretch layout settings.
+- Verification passed: x64 Debug WinUI build (0 errors), staged schedule
+  diagnostic, focused reader/import tests (4/4), final presentation checks
+  (14/14), and `git diff --check`. The host had no launchable native UI, so
+  live visual interaction remains an explicit residual risk.
+
 ## OpenXLSX Schedule Import Phase 1 - 2026-09-13
 
 - The local `C:\Git\openxlsx` tree is content-identical to Codeberg's
@@ -274,3 +298,105 @@ the reader implementation is connected.
   the active visual tree; review the visible control path as well as the prompt
   service input. Editable review rows must update their displayed validity and
   apply eligibility in the same text-change path as their backing model.
+
+## Review Dialog Resizing — 2026-09-13
+
+- `ContentDialog` does not provide a native non-client resize affordance in this
+  workflow. The final implementation uses review-only transparent edge/corner
+  hit zones with standard WinUI system cursors inside a stretchable content
+  frame. This preserves the modal state machine and keeps the file-selection
+  step compact.
+- The default WinUI template separately caps its inner `BackgroundElement` with
+  `ContentDialogMaxWidth=548` and `ContentDialogMaxHeight=756`; changing the
+  control's `Width`/`MaxWidth` alone does not override those theme resources.
+  Per-dialog resource overrides are required before the larger surface can be
+  rendered.
+- Resize bounds are explicit (520--1800 wide, 480--1080 high, additionally
+  clamped to the host viewport), and reset/Back/cancel paths restore the compact
+  source layout and release pointer captures.
+- Pointer positions must be read in the popup-local/null frame. Passing an
+  element outside the ContentDialog visual tree makes `GetCurrentPoint` an
+  invalid relative-coordinate request for this overlay; the final repair uses
+  popup-local points plus pointer capture and a reversible `RenderTransform`.
+
+## Import Dialog Reopen Reset — 2026-09-13
+
+- A cancelled asynchronous workbook load leaves Browse disabled because the
+  loading-state branch intentionally disables all source controls. Resetting
+  the model fields is not enough; the reset must finish by running the same
+  source-state recomputation used by normal load completion.
+- The phase-6 diagnostic now forces the loading-disabled state, invokes the
+  reset path, and verifies the first-step source state including an enabled
+  Browse button. This covers the cancel/reopen regression without opening a
+  native file picker.
+
+## Review Dialog Interaction/Layout Repair — 2026-09-13
+
+- The remaining blank vertical bands came from default `1*` Grid rows for an
+  empty row and rows whose children were collapsed. The review now uses
+  `Auto` for those rows and one `Star` row for the preview/resolution host,
+  with explicit stretch alignment through the dialog content Grid.
+- Setting the ContentDialog width and child dimensions alone did not enlarge
+  the desktop template's content-sized surface. Review now enables
+  `FullSizeDesired`; source/reset disables it and restores the compact size.
+- `ContentDialog` is an overlay, not a native HWND/non-client window, so
+  `SetTitleBar` on the main window cannot make it draggable or resizable.
+  The supported in-app behavior is a transparent review drag surface using
+  popup-local pointer capture and `RenderTransform`, plus eight transparent
+  edge/corner resize zones with system cursors and viewport-clamped bounds.
+- The x64 Debug WinUI build, staged `--phase6-schedule-test`, focused static
+  checks, and `git diff --check` passed. Native pointer/layout automation was
+  unavailable because the CUA inventory exposed no launchable app.
+
+## Review Dialog Layout Follow-up — 2026-09-13
+
+- The review preview now builds imported candidates into the same schedule
+  report model and native WinUI board used by the schedule page. This keeps
+  time rows, weekday columns, empty `Essay` cells, class colors, and teacher/
+  room lines on one renderer path instead of maintaining a preview-specific
+  grid.
+- The dialog root must be a plain Grid with finite review dimensions for the
+  two resolution panes' ScrollViewers to receive a bounded viewport. The
+  Classes and Korean Teachers Pivot items therefore own the only vertical
+  scrolling, with horizontal scrolling disabled.
+- A WinUI `ContentDialog` is an overlay inside the existing app window and does
+  not expose a separate native non-client resize frame. Per-dialog
+  `OverlappedPresenter` resizing would resize the main window, so the review
+  uses transparent edge/corner hit zones with standard WinUI system cursors.
+  This gives ordinary edge/corner click-drag behavior without a visible arrow
+  grip and keeps the source dialog compact.
+- The ContentDialog title owns `Review & Reconcile`; the body owns the 14-DIP
+  Qt description. Match explanations on both tabs and the `Color` label use
+  the same smaller text size.
+- The source tree and diagnostic now assert the eight resize zones and the
+  tab-local scrollbar ownership. The elevated x64 Debug WinUI build and
+  staged phase-6 diagnostic passed; OpenXLSX's existing conversion warnings
+  remain.
+
+## CMake/MSBuild FileTracker Build Fix — 2026-09-13
+
+- The CMake Tools build failure was caused by Visual Studio 2026 MSBuild's
+  `FileTracker` initializer throwing `E_ACCESSDENIED` in a normal, non-elevated
+  process. Setting only the global `TrackFileAccess=false` property was not
+  sufficient because tracked C++ tasks still received per-item
+  `MinimalRebuildFromTracking=true` defaults.
+- `CMakeLists.txt` now makes MSVC file tracking opt-in through
+  `CLASSMNGR_ENABLE_MSVC_FILE_TRACKING`, sets the environment value before
+  `project()`, and passes the global property to generated Visual Studio
+  projects. The repository-owned compatibility props file disables the
+  per-item minimal-rebuild tracking metadata while tracking is off.
+- The hand-authored WinUI project imports the same file. It also needs a
+  `BeforeTargets="ManifestResourceCompile"` update because
+  `Microsoft.CppCommon.targets` explicitly creates the generated manifest
+  resource item with tracking enabled after item definitions are evaluated.
+- Both the complete ordinary x64 Debug WinUI build and a second incremental
+  build passed with 0 errors. The fix deliberately trades MSBuild tlog-based
+  header dependency tracking for reliable non-elevated builds; hosts that need
+  the old behavior can opt in and validate their environment first.
+
+### Build-fix lesson
+
+When disabling Visual Studio C++ file tracking, inspect both global properties
+and item metadata. A property-level switch can appear in diagnostic output while
+the tracked task still constructs `FileTracker` from an item-level minimal
+rebuild setting.

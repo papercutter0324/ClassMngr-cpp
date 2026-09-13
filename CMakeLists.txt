@@ -11,12 +11,22 @@ if(POLICY CMP0219)
     cmake_policy(SET CMP0219 NEW)
 endif()
 
-# CMake's Visual Studio compiler probe runs MSBuild before the project has
-# declared its normal VS globals.  Enable MSBuild file tracking early enough
-# for that probe as well as later targets so unchanged projects can remain
-# incremental.
+# MSBuild's file tracker can be unavailable to a normal CMake Tools process on
+# restricted Windows hosts.  Set the environment value before project() so
+# CMake's Visual Studio compiler probe follows the same default as generated
+# projects.  File tracking remains an opt-in for hosts where it is usable.
+option(CLASSMNGR_ENABLE_MSVC_FILE_TRACKING
+    "Enable MSBuild file tracking for Visual Studio builds"
+    OFF
+)
+
+set(_classmngr_track_file_access "false")
+if(CLASSMNGR_ENABLE_MSVC_FILE_TRACKING)
+    set(_classmngr_track_file_access "true")
+endif()
+
 if(WIN32 AND CMAKE_GENERATOR MATCHES "^Visual Studio")
-    set(ENV{TrackFileAccess} "true")
+    set(ENV{TrackFileAccess} "${_classmngr_track_file_access}")
 endif()
 
 project(ClassMngr
@@ -95,10 +105,21 @@ option(CLASSMNGR_ENABLE_MSVC_PARALLEL_COMPILE
 )
 
 if(WIN32 AND CMAKE_GENERATOR MATCHES "^Visual Studio")
-    # Keep FileTracker enabled so MSBuild can skip unchanged translation units.
-    # /FS serializes PDB writes, while /MP remains opt-in for hosts where the
-    # FileTracker and parallel compiler combination is known to be stable.
-    list(APPEND CMAKE_VS_GLOBALS "TrackFileAccess=true")
+    # FileTracker is disabled by default because its initialization can fail
+    # with E_ACCESSDENIED in a non-elevated CMake Tools/MSBuild process.  Hosts
+    # that support it can opt in with CLASSMNGR_ENABLE_MSVC_FILE_TRACKING=ON.
+    list(APPEND CMAKE_VS_GLOBALS
+        "TrackFileAccess=${_classmngr_track_file_access}"
+    )
+    if(NOT CLASSMNGR_ENABLE_MSVC_FILE_TRACKING)
+        # Visual Studio's C++ tracked tasks still construct FileTracker during
+        # out-of-date checks unless their per-item minimal-rebuild metadata is
+        # disabled as well.  Apply that compatibility property to every
+        # CMake-generated C++ project, including dependency targets.
+        list(APPEND CMAKE_VS_GLOBALS
+            "ForceImportAfterCppProps=${CMAKE_CURRENT_LIST_DIR}/cmake/msvc_file_tracking_compat.props"
+        )
+    endif()
 endif()
 
 add_compile_options(

@@ -2,6 +2,8 @@
 #include "MainWindow.xaml.h"
 #include "MainWindow_internal.h"
 
+#include <algorithm>
+
 namespace winrt::ClassMngrWinUI::implementation
 {
 using namespace MainWindowDetail;
@@ -325,6 +327,95 @@ bool MainWindow::runPhase6ScheduleChecks()
         return fail(512);
     }
 
+    const auto classResolutionTab = m_scheduleImportReviewTabs
+        && m_scheduleImportReviewTabs.Items().Size() > 0
+        ? m_scheduleImportReviewTabs.Items().GetAt(0).try_as<
+            Microsoft::UI::Xaml::Controls::PivotItem>()
+        : nullptr;
+    const auto teacherResolutionTab = m_scheduleImportReviewTabs
+        && m_scheduleImportReviewTabs.Items().Size() > 1
+        ? m_scheduleImportReviewTabs.Items().GetAt(1).try_as<
+            Microsoft::UI::Xaml::Controls::PivotItem>()
+        : nullptr;
+    const auto classResolutionScroll = classResolutionTab
+        ? classResolutionTab.Content().try_as<
+            Microsoft::UI::Xaml::Controls::ScrollViewer>()
+        : nullptr;
+    const auto teacherResolutionScroll = teacherResolutionTab
+        ? teacherResolutionTab.Content().try_as<
+            Microsoft::UI::Xaml::Controls::ScrollViewer>()
+        : nullptr;
+    const bool reviewScrollOwnershipReady =
+        classResolutionScroll
+        && teacherResolutionScroll
+        && classResolutionTab.HorizontalContentAlignment()
+            == Microsoft::UI::Xaml::HorizontalAlignment::Stretch
+        && classResolutionTab.VerticalContentAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && teacherResolutionTab.HorizontalContentAlignment()
+            == Microsoft::UI::Xaml::HorizontalAlignment::Stretch
+        && teacherResolutionTab.VerticalContentAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && classResolutionScroll.HorizontalContentAlignment()
+            == Microsoft::UI::Xaml::HorizontalAlignment::Stretch
+        && classResolutionScroll.VerticalContentAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && teacherResolutionScroll.HorizontalContentAlignment()
+            == Microsoft::UI::Xaml::HorizontalAlignment::Stretch
+        && teacherResolutionScroll.VerticalContentAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && classResolutionScroll.VerticalScrollBarVisibility()
+            == Microsoft::UI::Xaml::Controls::ScrollBarVisibility::Auto
+        && teacherResolutionScroll.VerticalScrollBarVisibility()
+            == Microsoft::UI::Xaml::Controls::ScrollBarVisibility::Auto
+        && classResolutionScroll.HorizontalScrollBarVisibility()
+            == Microsoft::UI::Xaml::Controls::ScrollBarVisibility::Disabled
+        && teacherResolutionScroll.HorizontalScrollBarVisibility()
+            == Microsoft::UI::Xaml::Controls::ScrollBarVisibility::Disabled;
+    const bool importResizeHandlesReady =
+        m_scheduleImportDialogResizeHandles.size() == 8
+        && std::all_of(
+            m_scheduleImportDialogResizeHandles.cbegin(),
+            m_scheduleImportDialogResizeHandles.cend(),
+            [](const auto& resizeHandle) {
+                return resizeHandle.IsHitTestVisible();
+            }
+            );
+    const bool reviewRowsReady =
+        m_scheduleImportReviewRoot
+        && m_scheduleImportReviewRoot.RowDefinitions().Size() == 6
+        && m_scheduleImportReviewRoot.RowDefinitions().GetAt(0)
+            .Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_scheduleImportReviewRoot.RowDefinitions().GetAt(1)
+            .Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_scheduleImportReviewRoot.RowDefinitions().GetAt(2)
+            .Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Star
+        && m_scheduleImportReviewRoot.RowDefinitions().GetAt(3)
+            .Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_scheduleImportReviewRoot.RowDefinitions().GetAt(4)
+            .Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto
+        && m_scheduleImportReviewRoot.RowDefinitions().GetAt(5)
+            .Height().GridUnitType
+            == Microsoft::UI::Xaml::GridUnitType::Auto;
+    const bool reviewStretchReady =
+        m_scheduleImportReviewRoot
+        && m_scheduleImportReviewHost
+        && m_scheduleImportReviewTabs
+        && m_scheduleImportReviewRoot.VerticalAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && m_scheduleImportReviewHost.VerticalAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && m_scheduleImportReviewTabs.VerticalAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && m_scheduleImportReviewTabs.VerticalContentAlignment()
+            == Microsoft::UI::Xaml::VerticalAlignment::Stretch
+        && m_scheduleImportDialogDragSurface
+        && m_scheduleImportDialogDragSurface.IsHitTestVisible();
     const bool importControlsReady =
         m_scheduleImportTeacherActionCombo
         && m_scheduleImportClassActionCombo
@@ -356,14 +447,32 @@ bool MainWindow::runPhase6ScheduleChecks()
         && m_scheduleImportReviewBackButton
         && m_scheduleImportReviewCancelButton
         && m_scheduleImportDialogRoot
-        && m_scheduleImportDialogRoot.Content()
-        && m_scheduleImportDialogRoot.VerticalScrollBarVisibility()
-            == Microsoft::UI::Xaml::Controls::ScrollBarVisibility::Auto;
+        && m_scheduleImportDialogFrame
+        && reviewRowsReady
+        && reviewStretchReady
+        && importResizeHandlesReady
+        && m_scheduleImportDialogRoot.Children().Size() > 0
+        && reviewScrollOwnershipReady;
     if (!importControlsReady)
     {
         return fail(2048);
     }
+
+    // Reproduce the state left by closing the dialog while a workbook load
+    // is active.  Resetting for the next dialog session must re-enable Browse
+    // and restore the first-step controls.
+    m_scheduleImportLoading = true;
+    updateScheduleImportSourceState();
+    resetScheduleImportSource();
     const auto sourceStatus = m_scheduleImportSourceStatusText.Text();
+    const bool importResizeHandlesCollapsed = std::all_of(
+        m_scheduleImportDialogResizeHandles.cbegin(),
+        m_scheduleImportDialogResizeHandles.cend(),
+        [](const auto& resizeHandle) {
+            return resizeHandle.Visibility()
+                == Microsoft::UI::Xaml::Visibility::Collapsed;
+        }
+        );
     const bool importSourceInitialStateReady =
         m_scheduleImportSourceRoot.Visibility()
             == Microsoft::UI::Xaml::Visibility::Visible
@@ -371,7 +480,9 @@ bool MainWindow::runPhase6ScheduleChecks()
             == Microsoft::UI::Xaml::Visibility::Collapsed
         && m_scheduleImportScheduleTypeSection.Visibility()
             == Microsoft::UI::Xaml::Visibility::Collapsed
+        && m_scheduleImportBrowseButton.IsEnabled()
         && !m_scheduleImportSourceActionButton.IsEnabled()
+        && importResizeHandlesCollapsed
         && std::wstring_view(sourceStatus.c_str(), sourceStatus.size())
             == L"Choose a file and schedule type.";
     if (!importSourceInitialStateReady)
@@ -402,11 +513,31 @@ bool MainWindow::runPhase6ScheduleChecks()
     diagnosticUser.classes.push_back(std::move(diagnosticClass));
     diagnosticSheet.users.push_back(std::move(diagnosticUser));
     diagnosticWorkbook.sheets.push_back(std::move(diagnosticSheet));
-    m_scheduleImportWorkbook = std::move(diagnosticWorkbook);
-    m_scheduleImportWorkbookLoaded = true;
-    m_scheduleImportSelectedWorksheet = 0;
-    m_scheduleImportSelectedUser = 0;
-    m_scheduleImportUser = m_scheduleImportWorkbook->sheets.front().users.front();
+    applyScheduleImportWorkbook(
+        std::move(diagnosticWorkbook),
+        L"diagnostic.xlsx"
+        );
+    const auto namePlaceholder = m_scheduleImportUserCombo.SelectedItem()
+        .try_as<Microsoft::UI::Xaml::Controls::ComboBoxItem>();
+    const bool explicitNameChoiceReady =
+        m_scheduleImportSelectedWorksheet == 0
+        && m_scheduleImportSelectedUser == -1
+        && namePlaceholder
+        && boxedInt(namePlaceholder.Tag()) == -1
+        && std::wstring_view(
+            unbox_value<winrt::hstring>(namePlaceholder.Content()).c_str()
+            ) == L"Select a name..."
+        && !m_scheduleImportSourceActionButton.IsEnabled();
+    if (!explicitNameChoiceReady)
+    {
+        return fail(2048);
+    }
+    m_scheduleImportUserCombo.SelectedIndex(1);
+    if (m_scheduleImportSelectedUser != 0
+        || !m_scheduleImportSourceActionButton.IsEnabled())
+    {
+        return fail(2048);
+    }
     m_scheduleImportTeacherActionCombo.SelectedIndex(1);
     m_scheduleImportClassActionCombo.SelectedIndex(1);
     previewScheduleImport();
@@ -425,6 +556,32 @@ bool MainWindow::runPhase6ScheduleChecks()
     {
         return fail(2048);
     }
+
+    // Enter the real review presentation without showing a modal.  This
+    // validates the owned ContentDialog content tree, visible resize zones,
+    // and Back/reset transition that pointer automation cannot cover here.
+    openScheduleImportReview();
+    const bool reviewPresentationReady =
+        m_scheduleImportReviewVisible
+        && m_scheduleImportSourceRoot.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
+        && m_scheduleImportReviewRoot.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && m_scheduleImportDialogRoot.Width() > 0.0
+        && m_scheduleImportDialogRoot.Height() > 0.0
+        && std::all_of(
+            m_scheduleImportDialogResizeHandles.cbegin(),
+            m_scheduleImportDialogResizeHandles.cend(),
+            [](const auto& resizeHandle) {
+                return resizeHandle.Visibility()
+                    == Microsoft::UI::Xaml::Visibility::Visible;
+            }
+            );
+    if (!reviewPresentationReady)
+    {
+        return fail(524288);
+    }
+    restoreScheduleImportSource();
 
     applyScheduleImport();
     const auto importedClassrooms = repository.list();

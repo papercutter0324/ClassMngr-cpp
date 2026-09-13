@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSBuild 18 can initialize FileTracker from the C++ tracked tasks even when
+  TrackFileAccess is false.  The corresponding item metadata must also opt
+  out of minimal-rebuild tracking to keep the task from constructing tlogs.
+  This file is imported through ForceImportAfterCppProps by CMake-generated
+  Visual Studio projects.  TrackFileAccess=ON deliberately leaves the normal
+  Visual Studio defaults intact.
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup Condition="'$(TrackFileAccess)' == 'false'">
+    <ClCompile>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </ClCompile>
+    <CustomBuild>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </CustomBuild>
+    <Lib>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </Lib>
+    <Midl>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </Midl>
+    <FxCompile>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </FxCompile>
+    <ResourceCompile>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </ResourceCompile>
+    <Manifest>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </Manifest>
+    <ManifestResourceCompile>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </ManifestResourceCompile>
+    <XdcMake>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </XdcMake>
+    <BscMake>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </BscMake>
+    <XSD>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </XSD>
+    <Link>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </Link>
+    <ImpLib>
+      <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+    </ImpLib>
+  </ItemDefinitionGroup>
+
+  <!-- Microsoft.CppCommon.targets creates the generated manifest resource
+       item with explicit tracking metadata after the item definitions above
+       have been evaluated. Reset that item immediately before the target
+       runs so RC does not initialize FileTracker on restricted hosts. -->
+  <Target Name="ClassMngrDisableManifestResourceFileTracking"
+          BeforeTargets="ManifestResourceCompile"
+          Condition="'$(TrackFileAccess)' == 'false'">
+    <ItemGroup>
+      <ManifestResourceCompile>
+        <MinimalRebuildFromTracking>false</MinimalRebuildFromTracking>
+      </ManifestResourceCompile>
+    </ItemGroup>
+  </Target>
+</Project>

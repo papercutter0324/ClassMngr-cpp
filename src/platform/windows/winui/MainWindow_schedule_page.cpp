@@ -2,6 +2,10 @@
 #include "MainWindow.xaml.h"
 #include "MainWindow_internal.h"
 
+#include <algorithm>
+#include <limits>
+#include <winrt/Microsoft.UI.Input.h>
+
 namespace winrt::ClassMngrWinUI::implementation
 {
 using namespace MainWindowDetail;
@@ -12,6 +16,7 @@ void MainWindow::populateScheduleWorkspace(
 {
     using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
+    using namespace Microsoft::UI::Xaml::Media;
     using winrt::Windows::UI::Color;
 
     if (m_scheduleTabs)
@@ -460,10 +465,10 @@ void MainWindow::populateScheduleWorkspace(
     scheduleItem.Content(scrollTab(editorContent, true));
     setAutomationName(scheduleItem, L"Schedule editor tab");
 
-    auto importContent = StackPanel();
+    auto importContent = Grid();
     importContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
-    importContent.Spacing(12.0);
     importContent.HorizontalAlignment(HorizontalAlignment::Stretch);
+    importContent.VerticalAlignment(VerticalAlignment::Stretch);
     importContent.MinWidth(420.0);
 
     // Keep the source workflow as a dialog-owned presentation tree.  The
@@ -474,6 +479,9 @@ void MainWindow::populateScheduleWorkspace(
     m_scheduleImportSourceRoot.MinHeight(440.0);
     m_scheduleImportSourceRoot.HorizontalAlignment(
         HorizontalAlignment::Stretch
+        );
+    m_scheduleImportSourceRoot.VerticalAlignment(
+        VerticalAlignment::Stretch
         );
     setAutomationName(
         m_scheduleImportSourceRoot,
@@ -638,7 +646,7 @@ void MainWindow::populateScheduleWorkspace(
         );
     m_scheduleImportUserCombo = ComboBox();
     m_scheduleImportUserCombo.PlaceholderText(
-        L"Select a detected name..."
+        L"Select a name..."
         );
     m_scheduleImportUserCombo.MinWidth(300.0);
     m_scheduleImportUserCombo.IsTabStop(true);
@@ -713,37 +721,41 @@ void MainWindow::populateScheduleWorkspace(
     // parent can replace their placeholder children with provider results.
     m_scheduleImportReviewRoot = Grid();
     m_scheduleImportReviewRoot.Visibility(Visibility::Collapsed);
-    m_scheduleImportReviewRoot.MinHeight(680.0);
-    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
-    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
-    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
-    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
-    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
-    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
-    m_scheduleImportReviewRoot.RowDefinitions().GetAt(2).Height(
-        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+    m_scheduleImportReviewRoot.MinHeight(720.0);
+    for (std::size_t rowIndex = 0; rowIndex < 6; ++rowIndex)
+    {
+        auto row = RowDefinition();
+        row.Height(GridLengthHelper::FromValueAndType(
+            1.0,
+            rowIndex == 2 ? GridUnitType::Star : GridUnitType::Auto
+            ));
+        m_scheduleImportReviewRoot.RowDefinitions().Append(row);
+    }
+    m_scheduleImportReviewRoot.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_scheduleImportReviewRoot.VerticalAlignment(
+        VerticalAlignment::Stretch
         );
     setAutomationName(
         m_scheduleImportReviewRoot,
         L"Schedule import review root"
         );
 
-    m_scheduleImportReviewTitle = makeText(L"Review & Reconcile", 24.0);
+    m_scheduleImportReviewTitle = makeText(
+        L"",
+        14.0
+        );
+    m_scheduleImportReviewTitle.Visibility(Visibility::Collapsed);
     setAutomationName(
         m_scheduleImportReviewTitle,
-        L"Schedule import review title"
+        L"Schedule import review description"
+        );
+    m_scheduleImportReviewTitle.HorizontalAlignment(
+        HorizontalAlignment::Stretch
         );
     Grid::SetRow(m_scheduleImportReviewTitle, 0);
     m_scheduleImportReviewRoot.Children().Append(m_scheduleImportReviewTitle);
-    auto reviewDescription = makeText(
-        L"Review imported classes and resolve any conflicts before continuing."
-        );
-    setAutomationName(
-        reviewDescription,
-        L"Schedule import review description"
-        );
-    Grid::SetRow(reviewDescription, 1);
-    m_scheduleImportReviewRoot.Children().Append(reviewDescription);
 
     m_scheduleImportReviewHost = Grid();
     m_scheduleImportReviewHost.ColumnSpacing(12.0);
@@ -751,13 +763,16 @@ void MainWindow::populateScheduleWorkspace(
     m_scheduleImportReviewHost.HorizontalAlignment(
         HorizontalAlignment::Stretch
         );
+    m_scheduleImportReviewHost.VerticalAlignment(
+        VerticalAlignment::Stretch
+        );
     setAutomationName(
         m_scheduleImportReviewHost,
         L"Schedule import review host"
         );
     auto reviewPreviewColumn = ColumnDefinition();
     reviewPreviewColumn.Width(
-        GridLengthHelper::FromValueAndType(340.0, GridUnitType::Pixel)
+        GridLengthHelper::FromValueAndType(540.0, GridUnitType::Pixel)
         );
     m_scheduleImportReviewHost.ColumnDefinitions().Append(reviewPreviewColumn);
     auto reviewResolutionColumn = ColumnDefinition();
@@ -770,13 +785,16 @@ void MainWindow::populateScheduleWorkspace(
 
     auto previewCard = ClassMngrWinUISharedUX::buildCard({
         L"Schedule Preview",
-        L"The imported schedule preview will appear here.",
+        L"",
         L"Schedule import preview"
         });
     m_scheduleImportReviewPreviewHost = Grid();
     m_scheduleImportReviewPreviewHost.MinHeight(280.0);
     m_scheduleImportReviewPreviewHost.HorizontalAlignment(
         HorizontalAlignment::Stretch
+        );
+    m_scheduleImportReviewPreviewHost.VerticalAlignment(
+        VerticalAlignment::Stretch
         );
     auto previewPlaceholder = makeText(
         L"Schedule preview will appear after the workbook is loaded."
@@ -799,6 +817,13 @@ void MainWindow::populateScheduleWorkspace(
     m_scheduleImportReviewTabs.IsTabStop(true);
     m_scheduleImportReviewTabs.TabIndex(35);
     m_scheduleImportReviewTabs.HorizontalAlignment(HorizontalAlignment::Stretch);
+    m_scheduleImportReviewTabs.VerticalAlignment(VerticalAlignment::Stretch);
+    m_scheduleImportReviewTabs.HorizontalContentAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_scheduleImportReviewTabs.VerticalContentAlignment(
+        VerticalAlignment::Stretch
+        );
     applyResourceStyle(
         m_scheduleImportReviewTabs,
         L"Phase3TopTabPivotStyle"
@@ -820,11 +845,6 @@ void MainWindow::populateScheduleWorkspace(
         m_scheduleImportReviewClassesHost,
         L"Schedule import classes group"
         );
-    auto classResolutionCard = ClassMngrWinUISharedUX::buildCard({
-        L"Class resolution",
-        L"Choose how each imported class should be reconciled.",
-        L"Schedule import class resolution"
-        });
     m_scheduleImportClassActionCombo = ComboBox();
     m_scheduleImportClassActionCombo.Header(
         box_value(hstring(L"Class resolution"))
@@ -848,18 +868,20 @@ void MainWindow::populateScheduleWorkspace(
         m_scheduleImportClassActionCombo,
         L"Schedule import class resolution"
         );
-    classResolutionCard.content.Children().Append(
-        m_scheduleImportClassActionCombo
-        );
-    m_scheduleImportReviewClassesHost.Children().Append(
-        classResolutionCard.root
-        );
     auto classScroll = ScrollViewer();
+    classScroll.HorizontalAlignment(HorizontalAlignment::Stretch);
+    classScroll.VerticalAlignment(VerticalAlignment::Stretch);
+    classScroll.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+    classScroll.VerticalContentAlignment(VerticalAlignment::Stretch);
     classScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
     classScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
     classScroll.Content(m_scheduleImportReviewClassesHost);
     setAutomationName(classScroll, L"Schedule import classes scroll area");
     auto classItem = PivotItem();
+    classItem.HorizontalAlignment(HorizontalAlignment::Stretch);
+    classItem.VerticalAlignment(VerticalAlignment::Stretch);
+    classItem.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+    classItem.VerticalContentAlignment(VerticalAlignment::Stretch);
     classItem.Header(box_value(hstring(L"Classes")));
     classItem.Content(classScroll);
     setAutomationName(classItem, L"Schedule import Classes tab");
@@ -877,11 +899,6 @@ void MainWindow::populateScheduleWorkspace(
         m_scheduleImportReviewTeachersHost,
         L"Schedule import Korean teachers group"
         );
-    auto teacherResolutionCard = ClassMngrWinUISharedUX::buildCard({
-        L"Korean teacher resolution",
-        L"Choose how each imported Korean teacher should be reconciled.",
-        L"Schedule import Korean teacher resolution"
-        });
     m_scheduleImportTeacherActionCombo = ComboBox();
     m_scheduleImportTeacherActionCombo.Header(
         box_value(hstring(L"Teacher resolution"))
@@ -904,18 +921,20 @@ void MainWindow::populateScheduleWorkspace(
         m_scheduleImportTeacherActionCombo,
         L"Schedule import teacher resolution"
         );
-    teacherResolutionCard.content.Children().Append(
-        m_scheduleImportTeacherActionCombo
-        );
-    m_scheduleImportReviewTeachersHost.Children().Append(
-        teacherResolutionCard.root
-        );
     auto teacherScroll = ScrollViewer();
+    teacherScroll.HorizontalAlignment(HorizontalAlignment::Stretch);
+    teacherScroll.VerticalAlignment(VerticalAlignment::Stretch);
+    teacherScroll.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+    teacherScroll.VerticalContentAlignment(VerticalAlignment::Stretch);
     teacherScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
     teacherScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
     teacherScroll.Content(m_scheduleImportReviewTeachersHost);
     setAutomationName(teacherScroll, L"Schedule import Korean teachers scroll area");
     auto teacherItem = PivotItem();
+    teacherItem.HorizontalAlignment(HorizontalAlignment::Stretch);
+    teacherItem.VerticalAlignment(VerticalAlignment::Stretch);
+    teacherItem.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+    teacherItem.VerticalContentAlignment(VerticalAlignment::Stretch);
     teacherItem.Header(box_value(hstring(L"Korean Teachers")));
     teacherItem.Content(teacherScroll);
     setAutomationName(teacherItem, L"Schedule import Korean Teachers tab");
@@ -997,9 +1016,383 @@ void MainWindow::populateScheduleWorkspace(
 
     importContent.Children().Append(m_scheduleImportSourceRoot);
     importContent.Children().Append(m_scheduleImportReviewRoot);
-    m_scheduleImportDialogRoot = scrollTab(importContent);
-    m_scheduleImportDialogRoot.MaxHeight(720.0);
+    // The resolution panes own the only vertical scroll viewers in the
+    // review.  Keeping the dialog root as a plain grid gives the modal a
+    // stable frame while the Classes and Korean Teachers tabs can scroll
+    // independently.
+    m_scheduleImportDialogRoot = Grid();
+    m_scheduleImportDialogRoot.Children().Append(importContent);
+    m_scheduleImportDialogRoot.MaxHeight(1080.0);
+    m_scheduleImportDialogRoot.MaxWidth(1800.0);
+    m_scheduleImportDialogRoot.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_scheduleImportDialogRoot.VerticalAlignment(
+        VerticalAlignment::Stretch
+        );
     setAutomationName(m_scheduleImportDialogRoot, L"Schedule import dialog root");
+
+    // ContentDialog has no native non-client frame of its own. Keep its
+    // content in a stretchable frame and provide transparent edge/corner hit
+    // zones for the standard resize interaction without adding a visible
+    // button or changing the modal state machine.
+    m_scheduleImportDialogFrame = Grid();
+    m_scheduleImportDialogFrame.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_scheduleImportDialogFrame.VerticalAlignment(
+        VerticalAlignment::Stretch
+    );
+    m_scheduleImportDialogFrame.Background(
+        SolidColorBrush(Color{1, 0, 0, 0})
+        );
+    m_scheduleImportDialogFrame.Children().Append(m_scheduleImportDialogRoot);
+
+    // ContentDialog is hosted in the XamlRoot popup rather than a native
+    // window, so it has no title-bar/non-client drag affordance.  A small
+    // transparent surface keeps drag input out of the Pivot and its controls.
+    m_scheduleImportDialogDragSurface = Border();
+    m_scheduleImportDialogDragSurface.Height(24.0);
+    m_scheduleImportDialogDragSurface.Margin(
+        Thickness{14.0, 0.0, 14.0, 0.0}
+        );
+    m_scheduleImportDialogDragSurface.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    m_scheduleImportDialogDragSurface.VerticalAlignment(
+        VerticalAlignment::Top
+        );
+    m_scheduleImportDialogDragSurface.Background(
+        SolidColorBrush(Color{1, 0, 0, 0})
+        );
+    m_scheduleImportDialogDragSurface.IsHitTestVisible(true);
+    setAutomationName(
+        m_scheduleImportDialogDragSurface,
+        L"Schedule import dialog drag surface"
+        );
+    m_scheduleImportDialogFrame.Children().Append(
+        m_scheduleImportDialogDragSurface
+        );
+
+    m_scheduleImportDialogDragSurface.PointerPressed(
+        [this](auto const& sender, auto const& arguments) {
+            if (!m_ownedDialog
+                || m_scheduleImportDialogResizing
+                || m_scheduleImportDialogDragging
+                || !arguments.GetCurrentPoint(nullptr)
+                    .Properties().IsLeftButtonPressed())
+            {
+                return;
+            }
+
+            const auto point = arguments.GetCurrentPoint(nullptr).Position();
+            m_scheduleImportDialogDragging = true;
+            m_scheduleImportDragStartPoint = point;
+            m_scheduleImportDragStartOffsetX =
+                m_scheduleImportDialogOffsetX;
+            m_scheduleImportDragStartOffsetY =
+                m_scheduleImportDialogOffsetY;
+            const auto dragSurface = sender.template try_as<Border>();
+            if (dragSurface)
+            {
+                dragSurface.CapturePointer(arguments.Pointer());
+            }
+            arguments.Handled(true);
+        }
+        );
+    m_scheduleImportDialogDragSurface.PointerMoved(
+        [this](auto const&, auto const& arguments) {
+            if (!m_scheduleImportDialogDragging || !m_ownedDialog)
+            {
+                return;
+            }
+
+            const auto point = arguments.GetCurrentPoint(nullptr).Position();
+            const double deltaX = static_cast<double>(point.X)
+                - static_cast<double>(m_scheduleImportDragStartPoint.X);
+            const double deltaY = static_cast<double>(point.Y)
+                - static_cast<double>(m_scheduleImportDragStartPoint.Y);
+            setScheduleImportDialogPosition(
+                m_scheduleImportDragStartOffsetX + deltaX,
+                m_scheduleImportDragStartOffsetY + deltaY
+                );
+            arguments.Handled(true);
+        }
+        );
+    const auto stopDialogDrag = [this](
+        auto const&,
+        auto const& arguments
+        ) {
+        if (!m_scheduleImportDialogDragging)
+        {
+            return;
+        }
+        m_scheduleImportDialogDragging = false;
+        m_scheduleImportDialogDragSurface.ReleasePointerCaptures();
+        arguments.Handled(true);
+    };
+    m_scheduleImportDialogDragSurface.PointerReleased(stopDialogDrag);
+    m_scheduleImportDialogDragSurface.PointerCanceled(stopDialogDrag);
+    m_scheduleImportDialogDragSurface.PointerCaptureLost(stopDialogDrag);
+
+    enum ResizeEdge : std::uint8_t
+    {
+        ResizeLeft = 1,
+        ResizeTop = 2,
+        ResizeRight = 4,
+        ResizeBottom = 8
+    };
+    struct ResizeHandleDefinition
+    {
+        std::uint8_t edges;
+        HorizontalAlignment horizontalAlignment;
+        VerticalAlignment verticalAlignment;
+        double width;
+        double height;
+        Thickness margin;
+        Microsoft::UI::Input::InputSystemCursorShape cursor;
+        std::wstring_view automationName;
+    };
+    const std::array<ResizeHandleDefinition, 8> resizeDefinitions{
+        ResizeHandleDefinition{
+            ResizeLeft,
+            HorizontalAlignment::Left,
+            VerticalAlignment::Stretch,
+            8.0,
+            std::numeric_limits<double>::quiet_NaN(),
+            Thickness{0.0, 12.0, 0.0, 12.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeWestEast,
+            L"Schedule import review left resize edge"
+        },
+        ResizeHandleDefinition{
+            ResizeTop,
+            HorizontalAlignment::Stretch,
+            VerticalAlignment::Top,
+            std::numeric_limits<double>::quiet_NaN(),
+            8.0,
+            Thickness{12.0, 0.0, 12.0, 0.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeNorthSouth,
+            L"Schedule import review top resize edge"
+        },
+        ResizeHandleDefinition{
+            ResizeRight,
+            HorizontalAlignment::Right,
+            VerticalAlignment::Stretch,
+            8.0,
+            std::numeric_limits<double>::quiet_NaN(),
+            Thickness{0.0, 12.0, 0.0, 12.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeWestEast,
+            L"Schedule import review right resize edge"
+        },
+        ResizeHandleDefinition{
+            ResizeBottom,
+            HorizontalAlignment::Stretch,
+            VerticalAlignment::Bottom,
+            std::numeric_limits<double>::quiet_NaN(),
+            8.0,
+            Thickness{12.0, 0.0, 12.0, 0.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeNorthSouth,
+            L"Schedule import review bottom resize edge"
+        },
+        ResizeHandleDefinition{
+            ResizeLeft | ResizeTop,
+            HorizontalAlignment::Left,
+            VerticalAlignment::Top,
+            14.0,
+            14.0,
+            Thickness{0.0, 0.0, 0.0, 0.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeNorthwestSoutheast,
+            L"Schedule import review top-left resize corner"
+        },
+        ResizeHandleDefinition{
+            ResizeRight | ResizeTop,
+            HorizontalAlignment::Right,
+            VerticalAlignment::Top,
+            14.0,
+            14.0,
+            Thickness{0.0, 0.0, 0.0, 0.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeNortheastSouthwest,
+            L"Schedule import review top-right resize corner"
+        },
+        ResizeHandleDefinition{
+            ResizeLeft | ResizeBottom,
+            HorizontalAlignment::Left,
+            VerticalAlignment::Bottom,
+            14.0,
+            14.0,
+            Thickness{0.0, 0.0, 0.0, 0.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeNortheastSouthwest,
+            L"Schedule import review bottom-left resize corner"
+        },
+        ResizeHandleDefinition{
+            ResizeRight | ResizeBottom,
+            HorizontalAlignment::Right,
+            VerticalAlignment::Bottom,
+            14.0,
+            14.0,
+            Thickness{0.0, 0.0, 0.0, 0.0},
+            Microsoft::UI::Input::InputSystemCursorShape::SizeNorthwestSoutheast,
+            L"Schedule import review bottom-right resize corner"
+        }
+    };
+    m_scheduleImportDialogResizeHandles.clear();
+    for (const auto& definition : resizeDefinitions)
+    {
+        auto handle = Border();
+        handle.Width(definition.width);
+        handle.Height(definition.height);
+        handle.Margin(definition.margin);
+        handle.HorizontalAlignment(definition.horizontalAlignment);
+        handle.VerticalAlignment(definition.verticalAlignment);
+        // A nearly transparent brush keeps the zone hit-testable without
+        // drawing an affordance over the dialog surface.
+        handle.Background(SolidColorBrush(Color{1, 255, 255, 255}));
+        handle.Visibility(Visibility::Collapsed);
+        handle.IsHitTestVisible(true);
+        handle.as<Microsoft::UI::Xaml::IUIElementProtected>().ProtectedCursor(
+            Microsoft::UI::Input::InputSystemCursor::Create(definition.cursor)
+            );
+        setAutomationName(handle, definition.automationName);
+
+        const std::uint8_t edges = definition.edges;
+        handle.PointerPressed(
+            [this, edges](auto const& sender, auto const& arguments) {
+                const bool horizontalSourceResize =
+                    !m_scheduleImportReviewVisible
+                    && (edges == ResizeLeft || edges == ResizeRight);
+                if ((!m_scheduleImportReviewVisible && !horizontalSourceResize)
+                    || !m_scheduleImportDialogFrame
+                    || !m_scheduleImportDialogRoot
+                    || m_scheduleImportDialogDragging
+                    || !arguments.GetCurrentPoint(nullptr)
+                        .Properties().IsLeftButtonPressed())
+                {
+                    return;
+                }
+
+                m_scheduleImportDialogDragging = false;
+                m_scheduleImportDialogResizing = true;
+                m_scheduleImportResizeEdges = edges;
+                m_scheduleImportResizeStartPoint =
+                    arguments.GetCurrentPoint(nullptr).Position();
+                const double currentWidth = m_scheduleImportDialogRoot.Width();
+                const double currentHeight = m_scheduleImportDialogRoot.Height();
+                m_scheduleImportResizeStartWidth = currentWidth > 0.0
+                    ? currentWidth
+                    : m_scheduleImportDialogFrame.ActualWidth();
+                m_scheduleImportResizeStartHeight = currentHeight > 0.0
+                    ? currentHeight
+                    : m_scheduleImportDialogFrame.ActualHeight();
+                m_scheduleImportDragStartOffsetX =
+                    m_scheduleImportDialogOffsetX;
+                m_scheduleImportDragStartOffsetY =
+                    m_scheduleImportDialogOffsetY;
+                const auto handle = sender.template try_as<Border>();
+                if (handle)
+                {
+                    handle.CapturePointer(arguments.Pointer());
+                }
+                arguments.Handled(true);
+            }
+            );
+        handle.PointerMoved(
+            [this](auto const&, auto const& arguments) {
+                if (!m_scheduleImportDialogResizing
+                    || !m_scheduleImportDialogFrame
+                    || !m_scheduleImportDialogRoot)
+                {
+                    return;
+                }
+
+                const double minimumWidth = m_scheduleImportReviewVisible
+                    ? 760.0
+                    : 420.0;
+                constexpr double maximumWidth = 1800.0;
+                constexpr double minimumHeight = 480.0;
+                constexpr double maximumHeight = 1080.0;
+                const auto point = arguments.GetCurrentPoint(nullptr).Position();
+                const double deltaX = static_cast<double>(point.X)
+                    - static_cast<double>(m_scheduleImportResizeStartPoint.X);
+                const double deltaY = static_cast<double>(point.Y)
+                    - static_cast<double>(m_scheduleImportResizeStartPoint.Y);
+                double width = m_scheduleImportResizeStartWidth;
+                double height = m_scheduleImportResizeStartHeight;
+                if ((m_scheduleImportResizeEdges & ResizeLeft) != 0)
+                {
+                    width -= deltaX;
+                }
+                if ((m_scheduleImportResizeEdges & ResizeRight) != 0)
+                {
+                    width += deltaX;
+                }
+                if ((m_scheduleImportResizeEdges & ResizeTop) != 0)
+                {
+                    height -= deltaY;
+                }
+                if ((m_scheduleImportResizeEdges & ResizeBottom) != 0)
+                {
+                    height += deltaY;
+                }
+                const double appliedWidth = std::clamp(
+                    width,
+                    minimumWidth,
+                    maximumWidth
+                    );
+                const double appliedHeight = m_scheduleImportReviewVisible
+                    ? std::clamp(height, minimumHeight, maximumHeight)
+                    : std::numeric_limits<double>::quiet_NaN();
+                setScheduleImportDialogSize(appliedWidth, appliedHeight);
+                const double resolvedWidth = m_scheduleImportDialogRoot.Width();
+                const double resolvedHeight = m_scheduleImportDialogRoot.Height();
+                double offsetX = m_scheduleImportDragStartOffsetX;
+                double offsetY = m_scheduleImportDragStartOffsetY;
+                if ((m_scheduleImportResizeEdges & ResizeLeft) != 0)
+                {
+                    offsetX += (m_scheduleImportResizeStartWidth
+                        - resolvedWidth) / 2.0;
+                }
+                else if ((m_scheduleImportResizeEdges & ResizeRight) != 0)
+                {
+                    offsetX -= (resolvedWidth
+                        - m_scheduleImportResizeStartWidth) / 2.0;
+                }
+                if ((m_scheduleImportResizeEdges & ResizeTop) != 0)
+                {
+                    offsetY += (m_scheduleImportResizeStartHeight
+                        - resolvedHeight) / 2.0;
+                }
+                else if ((m_scheduleImportResizeEdges & ResizeBottom) != 0)
+                {
+                    offsetY -= (resolvedHeight
+                        - m_scheduleImportResizeStartHeight) / 2.0;
+                }
+                setScheduleImportDialogPosition(offsetX, offsetY);
+                arguments.Handled(true);
+            }
+            );
+        const auto stopDialogResize = [this](
+            auto const&,
+            auto const& arguments
+            ) {
+            if (!m_scheduleImportDialogResizing)
+            {
+                return;
+            }
+            m_scheduleImportDialogResizing = false;
+            m_scheduleImportResizeEdges = 0;
+            for (const auto& resizeHandle :
+                 m_scheduleImportDialogResizeHandles)
+            {
+                resizeHandle.ReleasePointerCaptures();
+            }
+            arguments.Handled(true);
+        };
+        handle.PointerReleased(stopDialogResize);
+        handle.PointerCanceled(stopDialogResize);
+        handle.PointerCaptureLost(stopDialogResize);
+        m_scheduleImportDialogFrame.Children().Append(handle);
+        m_scheduleImportDialogResizeHandles.push_back(handle);
+    }
 
     m_scheduleImportBrowseButton.Click(
         [this](auto const&, auto const&) {
@@ -1037,6 +1430,10 @@ void MainWindow::populateScheduleWorkspace(
         m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
         m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
         updateScheduleImportSourceState();
+        if (!m_scheduleImportFilePath.empty())
+        {
+            loadScheduleImportSource();
+        }
     };
     m_scheduleImportRegularRadioButton.Checked(invalidateLoadedSource);
     m_scheduleImportIntensiveRadioButton.Checked(invalidateLoadedSource);

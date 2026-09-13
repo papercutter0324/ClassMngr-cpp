@@ -314,6 +314,8 @@ private:
         classmngr::engine::ScheduleImportWorkbook workbook,
         std::wstring filePath
         );
+    void setScheduleImportDialogSize(double width, double height);
+    void setScheduleImportDialogPosition(double x, double y);
     void openScheduleImportReview();
     void restoreScheduleImportSource();
     void rebuildScheduleImportReview();
@@ -881,8 +883,14 @@ private:
     Microsoft::UI::Xaml::Controls::TextBlock m_scheduleValidationText{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleSaveButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleClearButton{nullptr};
-    Microsoft::UI::Xaml::Controls::ScrollViewer
+    Microsoft::UI::Xaml::Controls::Grid
         m_scheduleImportDialogRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid
+        m_scheduleImportDialogFrame{nullptr};
+    Microsoft::UI::Xaml::Controls::Border
+        m_scheduleImportDialogDragSurface{nullptr};
+    std::vector<Microsoft::UI::Xaml::Controls::Border>
+        m_scheduleImportDialogResizeHandles;
     Microsoft::UI::Xaml::Controls::StackPanel
         m_scheduleImportSourceRoot{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock
@@ -951,6 +959,17 @@ private:
     bool m_scheduleImportLoading{};
     bool m_scheduleImportReviewVisible{};
     bool m_scheduleImportNameMismatchConfirmed{};
+    bool m_scheduleImportDialogResizing{};
+    std::uint8_t m_scheduleImportResizeEdges{};
+    Windows::Foundation::Point m_scheduleImportResizeStartPoint{};
+    double m_scheduleImportResizeStartWidth{};
+    double m_scheduleImportResizeStartHeight{};
+    bool m_scheduleImportDialogDragging{};
+    Windows::Foundation::Point m_scheduleImportDragStartPoint{};
+    double m_scheduleImportDragStartOffsetX{};
+    double m_scheduleImportDragStartOffsetY{};
+    double m_scheduleImportDialogOffsetX{};
+    double m_scheduleImportDialogOffsetY{};
     std::uint64_t m_scheduleImportLoadRequestId{};
     std::shared_ptr<std::atomic_bool> m_scheduleImportLoadCancellation;
     std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
@@ -959,8 +978,13 @@ private:
         m_scheduleImportReviewTeacherRoomCombos;
     std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
         m_scheduleImportReviewClassActionCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::Border>
+        m_scheduleImportReviewClassColorPreviews;
     std::vector<std::string> m_scheduleImportReviewClassColors;
     std::vector<std::string> m_scheduleImportReviewFontColors;
+    Microsoft::UI::Xaml::Controls::CheckBox
+        m_scheduleImportUnknownAcknowledgement{nullptr};
+    int m_scheduleImportRequestedColor{-1};
     Microsoft::UI::Xaml::Controls::ListView m_testingClassList{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_testingClassTeacherCombo{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_testingClassGradeCombo{nullptr};

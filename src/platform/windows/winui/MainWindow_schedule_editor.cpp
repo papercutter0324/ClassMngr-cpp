@@ -3,7 +3,9 @@
 #include "MainWindow_internal.h"
 #include "schedule_workbook_openxlsx_reader.h"
 
+#include <algorithm>
 #include <cwctype>
+#include <limits>
 
 namespace winrt::ClassMngrWinUI::implementation
 {
@@ -623,6 +625,108 @@ winrt::fire_and_forget MainWindow::openScheduleClassEditor(int classId)
     }
 }
 
+void MainWindow::setScheduleImportDialogPosition(double x, double y)
+{
+    m_scheduleImportDialogOffsetX = x;
+    m_scheduleImportDialogOffsetY = y;
+
+    if (!m_ownedDialog)
+    {
+        return;
+    }
+
+    // ContentDialog is a XamlRoot popup, not an HWND with a native window
+    // origin.  RenderTransform is therefore the only owned, reversible way
+    // to move this surface while keeping the modal state machine intact.
+    const double hostWidth = RootGrid().ActualWidth();
+    const double hostHeight = RootGrid().ActualHeight();
+    const double surfaceWidth = m_ownedDialog.ActualWidth() > 0.0
+        ? m_ownedDialog.ActualWidth()
+        : m_scheduleImportDialogFrame.ActualWidth();
+    const double surfaceHeight = m_ownedDialog.ActualHeight() > 0.0
+        ? m_ownedDialog.ActualHeight()
+        : m_scheduleImportDialogFrame.ActualHeight();
+    constexpr double viewportMargin = 12.0;
+    if (hostWidth > 0.0 && surfaceWidth > 0.0)
+    {
+        const double horizontalTravel = std::max(
+            0.0,
+            (hostWidth - surfaceWidth) / 2.0 - viewportMargin
+            );
+        m_scheduleImportDialogOffsetX = std::clamp(
+            m_scheduleImportDialogOffsetX,
+            -horizontalTravel,
+            horizontalTravel
+            );
+    }
+    if (hostHeight > 0.0 && surfaceHeight > 0.0)
+    {
+        const double verticalTravel = std::max(
+            0.0,
+            (hostHeight - surfaceHeight) / 2.0 - viewportMargin
+            );
+        m_scheduleImportDialogOffsetY = std::clamp(
+            m_scheduleImportDialogOffsetY,
+            -verticalTravel,
+            verticalTravel
+            );
+    }
+
+    using namespace Microsoft::UI::Xaml::Media;
+    auto translation = m_ownedDialog.RenderTransform().try_as<
+        TranslateTransform>();
+    if (!translation)
+    {
+        translation = TranslateTransform();
+        m_ownedDialog.RenderTransform(translation);
+    }
+    translation.X(m_scheduleImportDialogOffsetX);
+    translation.Y(m_scheduleImportDialogOffsetY);
+}
+
+void MainWindow::setScheduleImportDialogSize(double width, double height)
+{
+    // The default WinUI ContentDialog template constrains its inner
+    // BackgroundElement unless the desktop full-size mode is requested.
+    // Keep the custom review surface inside the current XamlRoot as well, so
+    // a narrow host cannot leave the right pane and resize zones clipped.
+    const double hostWidth = RootGrid().ActualWidth();
+    const double hostHeight = RootGrid().ActualHeight();
+    const double availableWidth = hostWidth > 0.0
+        ? std::max(1.0, hostWidth - 32.0)
+        : width;
+    const double resolvedWidth = std::min(width, availableWidth);
+    double resolvedHeight = height;
+    if (height > 0.0 && hostHeight > 0.0)
+    {
+        resolvedHeight = std::min(
+            height,
+            std::max(1.0, hostHeight - 160.0)
+            );
+    }
+
+    if (m_scheduleImportDialogRoot)
+    {
+        m_scheduleImportDialogRoot.Width(resolvedWidth);
+        m_scheduleImportDialogRoot.Height(resolvedHeight);
+    }
+    if (m_scheduleImportDialogFrame)
+    {
+        m_scheduleImportDialogFrame.Width(resolvedWidth);
+        m_scheduleImportDialogFrame.Height(resolvedHeight);
+    }
+    if (m_ownedDialog)
+    {
+        // Leave the height content-driven so ContentDialog can account for
+        // its title and footer while the review content grows or shrinks.
+        m_ownedDialog.Width(resolvedWidth);
+        setScheduleImportDialogPosition(
+            m_scheduleImportDialogOffsetX,
+            m_scheduleImportDialogOffsetY
+            );
+    }
+}
+
 winrt::fire_and_forget MainWindow::openScheduleImportDialog()
 {
     auto lifetime = get_strong();
@@ -634,85 +738,92 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
 
     using namespace Microsoft::UI::Xaml;
     using namespace Microsoft::UI::Xaml::Controls;
+    const auto overrideDialogSizeCaps = [](
+        ContentDialog const& dialog,
+        bool allowReviewHeight
+        ) {
+        dialog.Resources().Insert(
+            box_value(hstring(L"ContentDialogMaxWidth")),
+            box_value(1800.0)
+            );
+        if (allowReviewHeight)
+        {
+            dialog.Resources().Insert(
+                box_value(hstring(L"ContentDialogMaxHeight")),
+                box_value(1080.0)
+                );
+        }
+    };
     resetScheduleImportSource();
-    m_scheduleImportDialogRoot.Width(420.0);
+    setScheduleImportDialogSize(
+        420.0,
+        std::numeric_limits<double>::quiet_NaN()
+        );
 
-    auto dialog = ContentDialog();
-    dialog.XamlRoot(xamlRoot);
-    dialog.Title(box_value(hstring(L"Import Schedule")));
-    dialog.Content(m_scheduleImportDialogRoot);
-    dialog.PrimaryButtonText(L"Load");
-    dialog.IsPrimaryButtonEnabled(false);
-    dialog.SecondaryButtonText({});
-    dialog.IsSecondaryButtonEnabled(false);
-    dialog.CloseButtonText(L"Cancel");
-    dialog.DefaultButton(ContentDialogButton::Close);
+    auto sourceDialog = ContentDialog();
+    overrideDialogSizeCaps(sourceDialog, false);
+    sourceDialog.XamlRoot(xamlRoot);
+    sourceDialog.Title(box_value(hstring(L"Import Schedule")));
+    sourceDialog.Content(m_scheduleImportDialogFrame);
+    sourceDialog.Width(m_scheduleImportDialogRoot.Width());
+    sourceDialog.MaxHeight(1080.0);
+    sourceDialog.MaxWidth(1800.0);
+    sourceDialog.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+    sourceDialog.VerticalContentAlignment(VerticalAlignment::Stretch);
+    sourceDialog.PrimaryButtonText(L"Load");
+    sourceDialog.IsPrimaryButtonEnabled(false);
+    sourceDialog.CloseButtonText(L"Cancel");
+    sourceDialog.DefaultButton(ContentDialogButton::Close);
+
+    bool requestReview = false;
     bool requestNameMismatchConfirmation = false;
-    dialog.PrimaryButtonClick(
-        [this, &dialog, &requestNameMismatchConfirmation](
-            auto const&,
-            auto const& arguments
-            ) {
+    sourceDialog.PrimaryButtonClick(
+        [this, &sourceDialog, &requestReview,
+         &requestNameMismatchConfirmation](auto const&, auto const& arguments) {
+            arguments.Cancel(true);
             if (m_scheduleImportLoading)
             {
-                arguments.Cancel(true);
                 return;
             }
-            if (m_scheduleImportReviewVisible)
+            if (!m_scheduleImportWorkbookLoaded || !m_scheduleImportWorkbook)
             {
-                applyScheduleImport();
-                if (m_scheduleImportPreviewReady)
-                {
-                    arguments.Cancel(true);
-                }
+                loadScheduleImportSource();
+                return;
             }
-            else if (m_scheduleImportWorkbookLoaded
-                && m_scheduleImportWorkbook)
+            const auto checked = [](auto const& check) {
+                const auto value = check.IsChecked();
+                return value && value.Value();
+            };
+            if (hasScheduleImportNameMismatch()
+                && !checked(m_scheduleImportNameConfirmation)
+                && !m_scheduleImportNameMismatchConfirmed)
             {
-                arguments.Cancel(true);
-                const auto checked = [](auto const& check) {
-                    const auto value = check.IsChecked();
-                    return value && value.Value();
-                };
-                if (hasScheduleImportNameMismatch()
-                    && !checked(m_scheduleImportNameConfirmation)
-                    && !m_scheduleImportNameMismatchConfirmed)
-                {
-                    requestNameMismatchConfirmation = true;
-                    dialog.Hide();
-                    return;
-                }
-                openScheduleImportReview();
+                requestNameMismatchConfirmation = true;
             }
             else
             {
-                arguments.Cancel(true);
-                loadScheduleImportSource();
+                requestReview = true;
             }
-        }
-        );
-    dialog.SecondaryButtonClick(
-        [this](auto const&, auto const& arguments) {
-            if (m_scheduleImportReviewVisible)
-            {
-                arguments.Cancel(true);
-                restoreScheduleImportSource();
-            }
-        }
-        );
-    for (;;)
+            sourceDialog.Hide();
+        });
+
+    bool finished = false;
+    while (!finished)
     {
-        m_ownedDialog = dialog;
-        ContentDialogResult result = ContentDialogResult::None;
+        restoreScheduleImportSource();
+        sourceDialog.Content(m_scheduleImportDialogFrame);
+        m_ownedDialog = sourceDialog;
+        updateScheduleImportSourceState();
+        ContentDialogResult sourceResult = ContentDialogResult::None;
         try
         {
-            result = co_await dialog.ShowAsync();
+            sourceResult = co_await sourceDialog.ShowAsync();
         }
         catch (...)
         {
-            // Dialog cancellation during navigation or shell teardown is normal.
             break;
         }
+        sourceDialog.Content(nullptr);
 
         if (requestNameMismatchConfirmation)
         {
@@ -738,34 +849,224 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
             }
             catch (...)
             {
-                // Treat teardown as a cancelled confirmation.
             }
-            m_ownedDialog = dialog;
-            if (confirmationResult == ContentDialogResult::Primary)
+            if (confirmationResult != ContentDialogResult::Primary)
             {
-                m_scheduleImportNameMismatchConfirmed = true;
-                openScheduleImportReview();
+                continue;
+            }
+            m_scheduleImportNameMismatchConfirmed = true;
+            requestReview = true;
+        }
+
+        if (!requestReview)
+        {
+            if (sourceResult != ContentDialogResult::Primary)
+            {
+                break;
             }
             continue;
         }
-
-        if (result == ContentDialogResult::Primary
-            && m_scheduleImportReviewVisible
-            && !m_scheduleImportPreviewReady)
+        requestReview = false;
+        openScheduleImportReview();
+        if (!m_scheduleImportReviewVisible)
         {
-            // A successful Import hides the dialog after clearing the preview.
+            continue;
+        }
+
+        auto reviewDialog = ContentDialog();
+        overrideDialogSizeCaps(reviewDialog, true);
+        reviewDialog.XamlRoot(xamlRoot);
+        reviewDialog.Title(box_value(hstring(L"Review & Reconcile")));
+        reviewDialog.Content(m_scheduleImportDialogFrame);
+        reviewDialog.FullSizeDesired(true);
+        reviewDialog.Width(m_scheduleImportDialogRoot.Width());
+        reviewDialog.MaxHeight(1080.0);
+        reviewDialog.MaxWidth(1800.0);
+        reviewDialog.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+        reviewDialog.VerticalContentAlignment(VerticalAlignment::Stretch);
+        reviewDialog.PrimaryButtonText(L"Import");
+        reviewDialog.SecondaryButtonText(L"Back");
+        reviewDialog.CloseButtonText(L"Cancel");
+        reviewDialog.DefaultButton(ContentDialogButton::Primary);
+        bool requestConfirmation = false;
+        bool requestBack = false;
+        reviewDialog.PrimaryButtonClick(
+            [&reviewDialog, &requestConfirmation](auto const&, auto const& args) {
+                args.Cancel(true);
+                requestConfirmation = true;
+                reviewDialog.Hide();
+            });
+        reviewDialog.SecondaryButtonClick(
+            [&reviewDialog, &requestBack](auto const&, auto const& args) {
+                args.Cancel(true);
+                requestBack = true;
+                reviewDialog.Hide();
+            });
+
+        bool returnToSource = false;
+        for (;;)
+        {
+            m_ownedDialog = reviewDialog;
+            updateScheduleImportReviewState();
+            ContentDialogResult reviewResult = ContentDialogResult::None;
+            try
+            {
+                reviewResult = co_await reviewDialog.ShowAsync();
+            }
+            catch (...)
+            {
+                finished = true;
+                break;
+            }
+
+            if (m_scheduleImportRequestedColor >= 0)
+            {
+                const int colorIndex = m_scheduleImportRequestedColor;
+                m_scheduleImportRequestedColor = -1;
+                if (static_cast<std::size_t>(colorIndex)
+                    < m_scheduleImportReviewClassColors.size())
+                {
+                    auto picker = ClassMngrWinUISharedUX::buildColorPickerDialog(
+                        xamlRoot,
+                        L"Select Class Color",
+                        uiColorFromHex(m_scheduleImportReviewClassColors[
+                            static_cast<std::size_t>(colorIndex)]),
+                        L"Schedule import class color picker"
+                        );
+                    m_ownedDialog = picker.dialog;
+                    ContentDialogResult pickerResult = ContentDialogResult::None;
+                    try
+                    {
+                        pickerResult = co_await picker.dialog.ShowAsync();
+                    }
+                    catch (...)
+                    {
+                    }
+                    if (pickerResult == ContentDialogResult::Primary)
+                    {
+                        const std::string selected = uiHexFromColor(
+                            picker.picker.Color());
+                        m_scheduleImportReviewClassColors[
+                            static_cast<std::size_t>(colorIndex)] = selected;
+                        if (static_cast<std::size_t>(colorIndex)
+                            < m_scheduleImportReviewClassColorPreviews.size())
+                        {
+                            m_scheduleImportReviewClassColorPreviews[
+                                static_cast<std::size_t>(colorIndex)].Background(
+                                    Media::SolidColorBrush(uiColorFromHex(selected))
+                                    );
+                        }
+                    }
+                    updateScheduleImportReviewState();
+                }
+                continue;
+            }
+
+            if (requestConfirmation)
+            {
+                requestConfirmation = false;
+                const auto plan = currentScheduleImportPlan();
+                if (!plan)
+                {
+                    continue;
+                }
+                int teacherCreates = 0;
+                int teacherUpdates = 0;
+                int teacherSkips = 0;
+                for (const auto& item : plan->teachers)
+                {
+                    using Action = classmngr::engine::ScheduleImportTeacherAction;
+                    teacherCreates += item.action == Action::Create;
+                    teacherUpdates += item.action == Action::UpdateRoom;
+                    teacherSkips += item.action == Action::Skip;
+                }
+                int classCreates = 0;
+                int classUpdates = 0;
+                int classSkips = 0;
+                for (const auto& item : plan->classes)
+                {
+                    using Action = classmngr::engine::ScheduleImportClassAction;
+                    classCreates += item.action == Action::CreateNew;
+                    classUpdates += item.action == Action::UpdateExisting;
+                    classSkips += item.action == Action::Skip;
+                }
+                auto proposed = StackPanel();
+                proposed.Spacing(8.0);
+                auto proposedTitle = TextBlock();
+                proposedTitle.Text(L"Proposed import:");
+                proposedTitle.FontWeight(
+                    Windows::UI::Text::FontWeights::SemiBold()
+                    );
+                proposed.Children().Append(proposedTitle);
+                const auto appendProposal = [&proposed](
+                    std::wstring_view label,
+                    int count
+                    ) {
+                    auto row = TextBlock();
+                    row.Text(winrt::hstring(
+                        L"\u2022 " + std::wstring(label) + L": "
+                        + std::to_wstring(count)
+                        ));
+                    row.TextWrapping(TextWrapping::Wrap);
+                    proposed.Children().Append(row);
+                };
+                appendProposal(L"Create Korean teachers", teacherCreates);
+                appendProposal(L"Update teacher rooms", teacherUpdates);
+                appendProposal(L"Skip Korean teachers", teacherSkips);
+                appendProposal(L"Create classes", classCreates);
+                appendProposal(L"Update classes", classUpdates);
+                appendProposal(L"Skip classes", classSkips);
+                auto confirmation = ContentDialog();
+                confirmation.XamlRoot(xamlRoot);
+                confirmation.Title(box_value(hstring(L"Confirm Schedule Import")));
+                confirmation.Content(proposed);
+                confirmation.PrimaryButtonText(L"Import");
+                confirmation.CloseButtonText(L"Cancel");
+                confirmation.DefaultButton(ContentDialogButton::Primary);
+                m_ownedDialog = confirmation;
+                ContentDialogResult confirmationResult = ContentDialogResult::None;
+                try
+                {
+                    confirmationResult = co_await confirmation.ShowAsync();
+                }
+                catch (...)
+                {
+                }
+                if (confirmationResult != ContentDialogResult::Primary)
+                {
+                    continue;
+                }
+                m_ownedDialog = reviewDialog;
+                applyScheduleImport();
+                if (m_scheduleImportPreviewReady)
+                {
+                    continue;
+                }
+                finished = true;
+                break;
+            }
+
+            if (requestBack
+                || reviewResult == ContentDialogResult::Secondary)
+            {
+                requestBack = false;
+                returnToSource = true;
+            }
+            else
+            {
+                finished = true;
+            }
             break;
         }
-        if (result != ContentDialogResult::Primary)
+        reviewDialog.Content(nullptr);
+        if (returnToSource)
         {
-            break;
+            restoreScheduleImportSource();
+            continue;
         }
     }
 
-    if (m_ownedDialog == dialog)
-    {
-        m_ownedDialog = nullptr;
-    }
+    m_ownedDialog = nullptr;
     resetScheduleImportSource();
 }
 
@@ -821,6 +1122,27 @@ void MainWindow::resetScheduleImportSource()
     m_scheduleImportPreview.reset();
     m_scheduleImportPreviewReady = false;
     m_scheduleImportNameMismatchConfirmed = false;
+    m_scheduleImportDialogResizing = false;
+    m_scheduleImportResizeEdges = 0;
+    m_scheduleImportDialogDragging = false;
+    m_scheduleImportDialogOffsetX = 0.0;
+    m_scheduleImportDialogOffsetY = 0.0;
+    m_scheduleImportDragStartOffsetX = 0.0;
+    m_scheduleImportDragStartOffsetY = 0.0;
+    m_scheduleImportDragStartPoint = {};
+    if (m_scheduleImportDialogDragSurface)
+    {
+        m_scheduleImportDialogDragSurface.ReleasePointerCaptures();
+    }
+    for (const auto& resizeHandle : m_scheduleImportDialogResizeHandles)
+    {
+        resizeHandle.ReleasePointerCaptures();
+        resizeHandle.Visibility(Visibility::Collapsed);
+    }
+    setScheduleImportDialogSize(
+        420.0,
+        std::numeric_limits<double>::quiet_NaN()
+        );
 
     m_scheduleImportFilePathTextBox.Text({});
     m_scheduleImportRegularRadioButton.IsChecked(false);
@@ -869,6 +1191,10 @@ void MainWindow::resetScheduleImportSource()
         m_scheduleImportReviewTeachersHost.Children().Clear();
     }
     m_scheduleImportLoading = false;
+    // A cancelled load may have disabled Browse and the other source
+    // controls.  Recompute the complete first-step state so a later dialog
+    // session starts interactive instead of inheriting the loading state.
+    updateScheduleImportSourceState();
 
     if (m_ownedDialog)
     {
@@ -1339,33 +1665,14 @@ void MainWindow::updateScheduleImportSelectedWorksheet()
         return;
     }
 
-    const std::wstring profileName = asWide(m_personalDetails.name);
-    const std::wstring normalizedProfile =
-        normalizedScheduleImportUserName(profileName);
-    int exactIndex = -1;
-    int exactCount = 0;
-    for (int index = 0; index < static_cast<int>(sheet.users.size()); ++index)
-    {
-        if (!normalizedProfile.empty()
-            && normalizedScheduleImportUserName(
-                asWide(sheet.users.at(static_cast<std::size_t>(index)).name)
-                ) == normalizedProfile)
-        {
-            exactIndex = index;
-            ++exactCount;
-        }
-    }
-
-    const bool requireExplicit = normalizedProfile.empty() || exactCount != 1;
-    if ((requireExplicit && sheet.users.size() != 1)
-        || (requireExplicit && normalizedProfile.empty()))
-    {
-        auto placeholder = ComboBoxItem();
-        placeholder.Content(box_value(hstring(L"Select a detected name...")));
-        placeholder.Tag(box_value(-1));
-        setAutomationName(placeholder, L"Select a detected name");
-        m_scheduleImportUserCombo.Items().Append(placeholder);
-    }
+    // Name choice is always explicit, even when the workbook contains one
+    // user or exactly matches My Information.  Re-selecting the placeholder
+    // therefore reliably invalidates Next.
+    auto placeholder = ComboBoxItem();
+    placeholder.Content(box_value(hstring(L"Select a name...")));
+    placeholder.Tag(box_value(-1));
+    setAutomationName(placeholder, L"Select a name");
+    m_scheduleImportUserCombo.Items().Append(placeholder);
     for (int index = 0; index < static_cast<int>(sheet.users.size()); ++index)
     {
         auto item = ComboBoxItem();
@@ -1376,28 +1683,7 @@ void MainWindow::updateScheduleImportSelectedWorksheet()
         m_scheduleImportUserCombo.Items().Append(item);
     }
 
-    const auto selectUserIndex = [this](int userIndex) {
-        for (int index = 0;
-             index < static_cast<int>(m_scheduleImportUserCombo.Items().Size());
-             ++index)
-        {
-            const auto item = m_scheduleImportUserCombo.Items().GetAt(index)
-                .try_as<ComboBoxItem>();
-            if (item && boxedInt(item.Tag()) == userIndex)
-            {
-                m_scheduleImportUserCombo.SelectedIndex(index);
-                return;
-            }
-        }
-    };
-    if (exactCount == 1)
-    {
-        selectUserIndex(exactIndex);
-    }
-    else if (sheet.users.size() == 1 && !normalizedProfile.empty())
-    {
-        selectUserIndex(0);
-    }
+    m_scheduleImportUserCombo.SelectedIndex(0);
     updateScheduleImportSelectedUser();
 }
 
@@ -1482,9 +1768,16 @@ void MainWindow::openScheduleImportReview()
     m_scheduleImportReviewVisible = true;
     m_scheduleImportSourceRoot.Visibility(Visibility::Collapsed);
     m_scheduleImportReviewRoot.Visibility(Visibility::Visible);
-    m_scheduleImportDialogRoot.Width(1120.0);
+    m_scheduleImportDialogDragging = false;
+    m_scheduleImportDialogOffsetX = 0.0;
+    m_scheduleImportDialogOffsetY = 0.0;
+    for (const auto& resizeHandle : m_scheduleImportDialogResizeHandles)
+    {
+        resizeHandle.Visibility(Visibility::Visible);
+    }
     if (m_ownedDialog)
     {
+        m_ownedDialog.FullSizeDesired(true);
         m_ownedDialog.Title(box_value(hstring(L"Review & Reconcile")));
         m_ownedDialog.PrimaryButtonText(L"Import");
         m_ownedDialog.SecondaryButtonText(L"Back");
@@ -1492,6 +1785,7 @@ void MainWindow::openScheduleImportReview()
         m_ownedDialog.CloseButtonText(L"Cancel");
         m_ownedDialog.DefaultButton(ContentDialogButton::Primary);
     }
+    setScheduleImportDialogSize(1240.0, 780.0);
     rebuildScheduleImportReview();
     updateScheduleImportReviewState();
 }
@@ -1504,15 +1798,40 @@ void MainWindow::restoreScheduleImportSource()
     m_scheduleImportReviewVisible = false;
     m_scheduleImportReviewRoot.Visibility(Visibility::Collapsed);
     m_scheduleImportSourceRoot.Visibility(Visibility::Visible);
-    m_scheduleImportDialogRoot.Width(420.0);
+    m_scheduleImportDialogResizing = false;
+    m_scheduleImportResizeEdges = 0;
+    m_scheduleImportDialogDragging = false;
+    m_scheduleImportDialogOffsetX = 0.0;
+    m_scheduleImportDialogOffsetY = 0.0;
+    if (m_scheduleImportDialogDragSurface)
+    {
+        m_scheduleImportDialogDragSurface.ReleasePointerCaptures();
+    }
+    for (std::size_t index = 0;
+         index < m_scheduleImportDialogResizeHandles.size();
+         ++index)
+    {
+        const auto& resizeHandle = m_scheduleImportDialogResizeHandles[index];
+        resizeHandle.ReleasePointerCaptures();
+        resizeHandle.Visibility(
+            index == 0 || index == 2
+                ? Visibility::Visible
+                : Visibility::Collapsed
+            );
+    }
     if (m_ownedDialog)
     {
+        m_ownedDialog.FullSizeDesired(false);
         m_ownedDialog.Title(box_value(hstring(L"Import Schedule")));
         m_ownedDialog.SecondaryButtonText({});
         m_ownedDialog.IsSecondaryButtonEnabled(false);
         m_ownedDialog.CloseButtonText(L"Cancel");
         m_ownedDialog.DefaultButton(ContentDialogButton::Close);
     }
+    setScheduleImportDialogSize(
+        420.0,
+        std::numeric_limits<double>::quiet_NaN()
+        );
     updateScheduleImportSourceState();
 }
 
@@ -1544,7 +1863,9 @@ MainWindow::currentScheduleImportPlan() const
     plan.selectedUserName = m_scheduleImportPreview->user.name;
     plan.saveProfileNameIfBlank = true;
     plan.updateProfileName = checked(m_scheduleImportNameConfirmation);
-    plan.unknownCellsAcknowledged = true;
+    plan.unknownCellsAcknowledged =
+        m_scheduleImportPreview->user.diagnostics.empty()
+        || checked(m_scheduleImportUnknownAcknowledgement);
     plan.candidates = m_scheduleImportPreview->user.classes;
     plan.intensiveSlotStates = m_scheduleImportPreview->user.intensiveSlotStates;
     plan.diagnostics = m_scheduleImportPreview->user.diagnostics;
@@ -1729,8 +2050,15 @@ void MainWindow::rebuildScheduleImportReview()
     m_scheduleImportReviewTeacherActionCombos.clear();
     m_scheduleImportReviewTeacherRoomCombos.clear();
     m_scheduleImportReviewClassActionCombos.clear();
+    m_scheduleImportReviewClassColorPreviews.clear();
     m_scheduleImportReviewClassColors.clear();
     m_scheduleImportReviewFontColors.clear();
+    m_scheduleImportUnknownAcknowledgement = nullptr;
+    while (m_scheduleImportReviewTabs.Items().Size() > 2)
+    {
+        m_scheduleImportReviewTabs.Items().RemoveAt(
+            m_scheduleImportReviewTabs.Items().Size() - 1);
+    }
     m_scheduleImportReviewPreviewHost.Children().Clear();
     m_scheduleImportReviewClassesHost.Children().Clear();
     m_scheduleImportReviewTeachersHost.Children().Clear();
@@ -1769,153 +2097,105 @@ void MainWindow::rebuildScheduleImportReview()
         m_scheduleImportReviewFontColors.push_back("#000000");
     }
 
-    // Build a compact read-only schedule board before the resolution cards.
-    // It deliberately follows the Qt preview's five-weekday shape while
-    // remaining renderer-neutral and bounded by the imported time slots.
-    std::vector<std::wstring> timeRows;
-    for (const auto& candidate : m_scheduleImportPreview->user.classes)
-    {
-        for (const auto& time : candidate.times)
+    // Use the same renderer-neutral model and native board as the schedule
+    // page.  This keeps time rows, day columns, Essay cells, class colors,
+    // and teacher/room lines in one rendering path instead of maintaining a
+    // second hand-built preview grid.
+    const bool useIntensive =
+        m_scheduleImportPreview->kind
+            == classmngr::engine::ScheduleImportKind::Intensive;
+    const auto visibleDays = classmngr::engine::ScheduleReportService::visibleDays(
+        false
+        );
+    const auto colorForCandidate = [this, &palette](std::size_t candidateIndex) {
+        if (m_scheduleImportPreview)
         {
-            const std::wstring label = asWide(time.startTime) + L"\n"
-                + asWide(time.endTime);
-            if (std::find(timeRows.begin(), timeRows.end(), label)
-                == timeRows.end())
+            for (std::size_t previewIndex = 0;
+                 previewIndex < m_scheduleImportPreview->classes.size();
+                 ++previewIndex)
             {
-                timeRows.push_back(label);
+                if (m_scheduleImportPreview->classes[previewIndex].candidateIndex
+                    == static_cast<int>(candidateIndex)
+                    && previewIndex < m_scheduleImportReviewClassColors.size())
+                {
+                    return m_scheduleImportReviewClassColors[previewIndex];
+                }
             }
         }
-    }
-    if (timeRows.empty())
-    {
-        timeRows.push_back(L"No time\nassigned");
-    }
-    auto board = Grid();
-    board.ColumnSpacing(2.0);
-    board.RowSpacing(2.0);
-    board.HorizontalAlignment(HorizontalAlignment::Stretch);
-    board.MinHeight(280.0);
-    auto timeColumn = ColumnDefinition();
-    timeColumn.Width(GridLengthHelper::FromValueAndType(
-        72.0,
-        GridUnitType::Pixel
-        ));
-    board.ColumnDefinitions().Append(timeColumn);
-    for (int column = 0; column < 5; ++column)
-    {
-        auto definition = ColumnDefinition();
-        definition.Width(GridLengthHelper::FromValueAndType(
-            1.0,
-            GridUnitType::Star
-            ));
-        board.ColumnDefinitions().Append(definition);
-    }
-    for (std::size_t row = 0; row <= timeRows.size(); ++row)
-    {
-        auto definition = RowDefinition();
-        definition.Height(GridLengthHelper::FromValueAndType(
-            row == 0 ? 32.0 : 52.0,
-            GridUnitType::Pixel
-            ));
-        board.RowDefinitions().Append(definition);
-    }
-    const std::array<std::wstring_view, 6> headers{
-        L"Time", L"Monday", L"Tuesday", L"Wednesday", L"Thursday", L"Friday"
+        return palette[candidateIndex % palette.size()];
     };
-    const auto addBoardCell = [&board](std::wstring text,
-                                       int row,
-                                       int column,
-                                       std::string color) {
-        auto cell = Border();
-        cell.Padding(Thickness{4.0, 3.0, 4.0, 3.0});
-        cell.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
-        cell.Background(SolidColorBrush(uiColorFromHex(color)));
-        auto label = TextBlock();
-        label.Text(winrt::hstring(text));
-        label.TextWrapping(TextWrapping::Wrap);
-        label.TextAlignment(TextAlignment::Center);
-        cell.Child(label);
-        Grid::SetRow(cell, row);
-        Grid::SetColumn(cell, column);
-        board.Children().Append(cell);
-    };
-    for (int column = 0; column < 6; ++column)
-    {
-        addBoardCell(std::wstring(headers[static_cast<std::size_t>(column)]),
-                     0,
-                     column,
-                     "#30343B");
-    }
-    const auto dayColumn = [](std::string_view day) {
-        if (day == "Monday" || day == "Mon") return 1;
-        if (day == "Tuesday" || day == "Tue") return 2;
-        if (day == "Wednesday" || day == "Wed") return 3;
-        if (day == "Thursday" || day == "Thurs" || day == "Thu") return 4;
-        if (day == "Friday" || day == "Fri") return 5;
-        return -1;
-    };
-    std::vector<std::wstring> boardTexts(
-        (timeRows.size() + 1) * 6
-        );
-    for (std::size_t row = 0; row < timeRows.size(); ++row)
-    {
-        addBoardCell(timeRows[row], static_cast<int>(row + 1), 0, "#20242A");
-    }
+    std::vector<classmngr::engine::ClassInfo> previewClasses;
+    previewClasses.reserve(m_scheduleImportPreview->user.classes.size());
     for (std::size_t candidateIndex = 0;
          candidateIndex < m_scheduleImportPreview->user.classes.size();
          ++candidateIndex)
     {
         const auto& candidate = m_scheduleImportPreview->user.classes[candidateIndex];
-        const std::wstring text = asWide(candidate.classGrade) + L" "
-            + asWide(candidate.classLevel) + L"\n"
-            + asWide(candidate.teacherKr) + L" - "
-            + (candidate.rooms.empty() ? L"" : asWide(candidate.rooms.front()));
-        std::string color = palette[candidateIndex % palette.size()];
-        for (std::size_t previewIndex = 0;
-             previewIndex < m_scheduleImportPreview->classes.size();
-             ++previewIndex)
+        classmngr::engine::ClassInfo info;
+        info.classId = -1;
+        info.teacherKr = candidate.teacherKr;
+        info.roomNumber = candidate.rooms.empty()
+            ? std::string{}
+            : candidate.rooms.front();
+        info.classGrade = candidate.classGrade;
+        info.classLevel = candidate.classLevel;
+        info.classColor = colorForCandidate(candidateIndex);
+        info.fontColor = "#000000";
+        if (useIntensive)
         {
-            if (m_scheduleImportPreview->classes[previewIndex].candidateIndex
-                == static_cast<int>(candidateIndex))
-            {
-                color = m_scheduleImportReviewClassColors[previewIndex];
-                break;
-            }
+            info.intensiveTimes = candidate.times;
         }
-        for (const auto& time : candidate.times)
+        else
         {
-            const int column = dayColumn(time.day);
-            const std::wstring rowLabel = asWide(time.startTime) + L"\n"
-                + asWide(time.endTime);
-            const auto rowIt = std::find(timeRows.begin(), timeRows.end(), rowLabel);
-            if (column < 1 || rowIt == timeRows.end())
-            {
-                continue;
-            }
-            const std::size_t boardIndex =
-                (static_cast<std::size_t>(std::distance(timeRows.begin(), rowIt)) + 1)
-                * 6 + static_cast<std::size_t>(column);
-            if (!boardTexts[boardIndex].empty())
-            {
-                boardTexts[boardIndex] += L"\n";
-            }
-            boardTexts[boardIndex] += text;
+            info.classTimes = candidate.times;
         }
+        previewClasses.push_back(std::move(info));
     }
-    for (std::size_t row = 0; row < timeRows.size(); ++row)
+
+    const auto build = classmngr::engine::ScheduleBuilderService::build(
+        previewClasses,
+        useIntensive,
+        visibleDays
+        );
+    classmngr::engine::ScheduleReportRequest request;
+    request.days = visibleDays;
+    request.displayMode = useIntensive
+        ? classmngr::engine::ScheduleReportDisplayMode::Intensive
+        : classmngr::engine::ScheduleReportDisplayMode::Regular;
+    request.rowFilter = useIntensive
+        ? classmngr::engine::ScheduleReportRowFilter::TrimEmptyOuterRows
+        : classmngr::engine::ScheduleReportRowFilter::None;
+    if (useIntensive)
     {
-        for (int column = 1; column < 6; ++column)
+        for (const auto& state : m_scheduleImportPreview->user.intensiveSlotStates)
         {
-            const std::size_t boardIndex = (row + 1) * 6
-                + static_cast<std::size_t>(column);
-            addBoardCell(
-                boardTexts[boardIndex].empty() ? L"Essay" : boardTexts[boardIndex],
-                static_cast<int>(row + 1),
-                column,
-                boardTexts[boardIndex].empty() ? "#F5F5F5" : "#FFFF99"
+            request.slotStateOverrides.emplace(
+                classmngr::engine::ScheduleReportService::slotKey(
+                    state.day,
+                    state.startTime
+                    ),
+                state.state
                 );
         }
     }
+    const auto model = classmngr::engine::ScheduleReportService::build(
+        build,
+        request
+        );
+    auto board = ClassMngrWinUIScheduleBoard::create();
+    board.HorizontalAlignment(HorizontalAlignment::Stretch);
+    board.VerticalAlignment(VerticalAlignment::Stretch);
+    ClassMngrWinUIScheduleBoard::render(
+        board,
+        model,
+        ClassMngrWinUIScheduleBoard::RenderOptions{
+            false,
+            false,
+            false,
+            request.displayMode,
+            "#D39B25"
+        }
+        );
     m_scheduleImportReviewPreviewHost.Children().Append(board);
 
     for (std::size_t index = 0;
@@ -1934,14 +2214,6 @@ void MainWindow::rebuildScheduleImportReview()
             hstring{},
             hstring(L"Schedule import class resolution")
         });
-        auto explanation = makeText(
-            classPreview.matchExplanation.empty()
-                ? (classPreview.suggestedClassId > 0
-                    ? L"One existing class matches the imported schedule."
-                    : L"No existing class matches the imported schedule.")
-                : asWide(classPreview.matchExplanation)
-            );
-        card.content.Children().Append(explanation);
         auto action = ComboBox();
         action.Header(box_value(hstring(L"Import Action")));
         action.MinWidth(300.0);
@@ -1984,7 +2256,17 @@ void MainWindow::rebuildScheduleImportReview()
         color.Background(SolidColorBrush(uiColorFromHex(
             m_scheduleImportReviewClassColors[index]
             )));
-        colorRow.Children().Append(makeText(L"Color"));
+        color.IsTapEnabled(true);
+        setAutomationName(color, L"Choose imported class color");
+        color.Tapped([this, index](auto const&, auto const&) {
+            m_scheduleImportRequestedColor = static_cast<int>(index);
+            if (m_ownedDialog)
+            {
+                m_ownedDialog.Hide();
+            }
+        });
+        m_scheduleImportReviewClassColorPreviews.push_back(color);
+        colorRow.Children().Append(makeText(L"Color", 14.0));
         colorRow.Children().Append(color);
         card.content.Children().Append(colorRow);
         m_scheduleImportReviewClassesHost.Children().Append(card.root);
@@ -2005,11 +2287,6 @@ void MainWindow::rebuildScheduleImportReview()
             hstring{},
             hstring(L"Schedule import Korean teacher resolution")
         });
-        card.content.Children().Append(makeText(
-            teacher.matchingTeacherIds.empty()
-                ? L"No existing Korean teacher matches the imported name."
-                : L"An existing Korean teacher matches the imported name."
-            ));
         auto action = ComboBox();
         action.Header(box_value(hstring(L"Import Action")));
         action.MinWidth(300.0);
@@ -2059,6 +2336,58 @@ void MainWindow::rebuildScheduleImportReview()
         card.content.Children().Append(room);
         m_scheduleImportReviewTeacherRoomCombos.push_back(room);
         m_scheduleImportReviewTeachersHost.Children().Append(card.root);
+    }
+
+    if (!m_scheduleImportPreview->user.diagnostics.empty())
+    {
+        auto diagnostics = StackPanel();
+        diagnostics.Spacing(8.0);
+        diagnostics.Padding(Thickness{4.0, 8.0, 12.0, 8.0});
+        diagnostics.HorizontalAlignment(HorizontalAlignment::Stretch);
+        for (const auto& item : m_scheduleImportPreview->user.diagnostics)
+        {
+            diagnostics.Children().Append(makeText(
+                asWide(item.cellReference) + L": " + asWide(item.value)
+                + (item.message.empty()
+                    ? std::wstring{}
+                    : L" — " + asWide(item.message)),
+                14.0
+                ));
+        }
+        m_scheduleImportUnknownAcknowledgement = CheckBox();
+        m_scheduleImportUnknownAcknowledgement.Content(box_value(hstring(
+            L"Acknowledge and ignore these unrecognized cells"
+            )));
+        m_scheduleImportUnknownAcknowledgement.IsChecked(false);
+        m_scheduleImportUnknownAcknowledgement.Checked(
+            [this](auto const&, auto const&) {
+                updateScheduleImportReviewState();
+            });
+        m_scheduleImportUnknownAcknowledgement.Unchecked(
+            [this](auto const&, auto const&) {
+                updateScheduleImportReviewState();
+            });
+        setAutomationName(
+            m_scheduleImportUnknownAcknowledgement,
+            L"Acknowledge unrecognized schedule cells"
+            );
+        diagnostics.Children().Append(m_scheduleImportUnknownAcknowledgement);
+
+        auto scroll = ScrollViewer();
+        scroll.HorizontalAlignment(HorizontalAlignment::Stretch);
+        scroll.VerticalAlignment(VerticalAlignment::Stretch);
+        scroll.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+        scroll.VerticalContentAlignment(VerticalAlignment::Stretch);
+        scroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+        scroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+        scroll.Content(diagnostics);
+        auto item = PivotItem();
+        item.Header(box_value(hstring(L"Unrecognized")));
+        item.HorizontalContentAlignment(HorizontalAlignment::Stretch);
+        item.VerticalContentAlignment(VerticalAlignment::Stretch);
+        item.Content(scroll);
+        setAutomationName(item, L"Schedule import Unrecognized tab");
+        m_scheduleImportReviewTabs.Items().Append(item);
     }
 
     if (!m_scheduleImportReviewClassActionCombos.empty())
@@ -2117,26 +2446,6 @@ void MainWindow::updateScheduleImportReviewState()
         return;
     }
 
-    int teachersCreated = 0;
-    int teachersUpdated = 0;
-    int teachersSkipped = 0;
-    for (const auto& teacher : plan->teachers)
-    {
-        using Action = classmngr::engine::ScheduleImportTeacherAction;
-        if (teacher.action == Action::Create) ++teachersCreated;
-        if (teacher.action == Action::UpdateRoom) ++teachersUpdated;
-        if (teacher.action == Action::Skip) ++teachersSkipped;
-    }
-    int classesCreated = 0;
-    int classesUpdated = 0;
-    int classesSkipped = 0;
-    for (const auto& classResolution : plan->classes)
-    {
-        using Action = classmngr::engine::ScheduleImportClassAction;
-        if (classResolution.action == Action::CreateNew) ++classesCreated;
-        if (classResolution.action == Action::UpdateExisting) ++classesUpdated;
-        if (classResolution.action == Action::Skip) ++classesSkipped;
-    }
     if (m_scheduleImportReviewVisible)
     {
         m_scheduleImportStatusText.Text(
@@ -2145,23 +2454,11 @@ void MainWindow::updateScheduleImportReviewState()
     }
     if (m_scheduleImportValidationText)
     {
-        m_scheduleImportValidationText.Text(winrt::hstring(
-            L"Proposed import: "
-            + std::to_wstring(teachersCreated)
-            + L" teacher(s) created, "
-            + std::to_wstring(teachersUpdated)
-            + L" room update(s), "
-            + std::to_wstring(teachersSkipped)
-            + L" teacher(s) skipped; "
-            + std::to_wstring(classesCreated)
-            + L" class(es) created, "
-            + std::to_wstring(classesUpdated)
-            + L" updated, "
-            + std::to_wstring(classesSkipped)
-            + L" skipped; 0 existing schedule(s) cleared; 0 occupied cell(s) "
-              L"acknowledged and ignored."
-            ));
-        m_scheduleImportValidationText.Visibility(Visibility::Visible);
+        // The proposal is intentionally shown only by the confirmation
+        // dialog reached from Import.  This surface remains dedicated to
+        // live validity and error feedback.
+        m_scheduleImportValidationText.Text({});
+        m_scheduleImportValidationText.Visibility(Visibility::Collapsed);
     }
     m_scheduleImportApplyButton.IsEnabled(true);
     if (m_ownedDialog && m_scheduleImportReviewVisible)
