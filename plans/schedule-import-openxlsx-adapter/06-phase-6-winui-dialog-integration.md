@@ -116,3 +116,33 @@ started.
 The WinUI dialogs use real native workbook data end to end. The old fallback is
 removed from normal import paths, except for a deliberately isolated test fake
 where needed.
+
+## Phase 6 Result
+
+Completed on 2026-09-13. The WinUI source dialog now loads
+`ScheduleImportWorkbook` through `makeScheduleWorkbookReader()` on a worker
+thread and keeps the decoded workbook in dialog-local state. The source state
+uses the Qt-shaped sequence: file-only initial state, file-plus-kind ready
+state, workbook/worksheet/user selection, and `Next` into the existing
+`Review & Reconcile` dialog. The old normalized provider is no longer a
+production fallback for file imports.
+
+The load request carries a generation and cooperative cancellation flag.
+Results from a cancelled, superseded, or closed dialog are discarded before
+they can update controls. Visible worksheet and compatible-user choices are
+populated from the native reader result, reader failures remain in the source
+dialog with a retry path, and Back retains the decoded selection.
+
+Verification completed:
+
+- Direct MSVC Debug compile/link of the current WinUI sources succeeded using
+  a validation engine archive containing the current Phase 4 interpreter.
+- The staged executable's `--phase6-schedule-test` diagnostic exited 0.
+- `git diff --check` passed.
+- The configured CMake/MSBuild route still hits the host's pre-existing
+  `Microsoft.Build.Utilities.FileTracker` access-denied failure before source
+  compilation; the direct wrapper build was used to validate this phase.
+
+Phase 7 owns removal of the remaining collapsed legacy controls, explicit
+profile-mismatch confirmation before review, input limits, and final release
+hardening.

@@ -1,10 +1,44 @@
 #include "pch.h"
 #include "MainWindow.xaml.h"
 #include "MainWindow_internal.h"
+#include "schedule_workbook_openxlsx_reader.h"
+
+#include <cwctype>
 
 namespace winrt::ClassMngrWinUI::implementation
 {
 using namespace MainWindowDetail;
+
+namespace
+{
+std::wstring normalizedScheduleImportUserName(std::wstring_view value)
+{
+    std::wstring result;
+    bool pendingSpace = false;
+    for (const wchar_t character : value)
+    {
+        const bool letterOrNumber =
+            (character >= L'0' && character <= L'9')
+            || (character >= L'A' && character <= L'Z')
+            || (character >= L'a' && character <= L'z')
+            || character >= 0x80;
+        if (letterOrNumber)
+        {
+            if (pendingSpace && !result.empty())
+            {
+                result.push_back(L' ');
+            }
+            result.push_back(std::towlower(character));
+            pendingSpace = false;
+        }
+        else if (std::iswspace(character) != 0)
+        {
+            pendingSpace = !result.empty();
+        }
+    }
+    return result;
+}
+}
 
 void MainWindow::refreshScheduleWorkspace()
 {
@@ -666,6 +700,19 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
     resetScheduleImportSource();
 }
 
+void MainWindow::cancelScheduleImportLoad()
+{
+    if (m_scheduleImportLoadCancellation)
+    {
+        m_scheduleImportLoadCancellation->store(
+            true,
+            std::memory_order_relaxed
+            );
+    }
+    ++m_scheduleImportLoadRequestId;
+    m_scheduleImportLoadCancellation.reset();
+}
+
 void MainWindow::resetScheduleImportSource()
 {
     using namespace Microsoft::UI::Xaml;
@@ -676,6 +723,8 @@ void MainWindow::resetScheduleImportSource()
         return;
     }
 
+    cancelScheduleImportLoad();
+
     // RadioButton and ComboBox notifications are deliberately muted while
     // the source state is being rebuilt.  This keeps a cancelled or reopened
     // dialog at the same first step as the Qt dialog.
@@ -684,6 +733,7 @@ void MainWindow::resetScheduleImportSource()
     m_scheduleImportSelectedWorksheet = -1;
     m_scheduleImportSelectedUser = -1;
     m_scheduleImportWorkbookLoaded = false;
+    m_scheduleImportWorkbook.reset();
     m_scheduleImportReviewVisible = false;
     m_scheduleImportUser = {};
     m_scheduleImportPreview.reset();
@@ -698,10 +748,13 @@ void MainWindow::resetScheduleImportSource()
     m_scheduleImportUserCombo.SelectedIndex(-1);
     m_scheduleImportNameConfirmation.IsChecked(false);
     m_scheduleImportNameConfirmation.Visibility(Visibility::Collapsed);
+    m_scheduleImportUserStatusText.Text({});
+    m_scheduleImportUserStatusText.Visibility(Visibility::Collapsed);
     m_scheduleImportScheduleTypeSection.Visibility(Visibility::Collapsed);
     m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
     m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
     m_scheduleImportProgressBar.Visibility(Visibility::Collapsed);
+    m_scheduleImportContinuationHint.Visibility(Visibility::Collapsed);
     m_scheduleImportSourceRoot.Visibility(Visibility::Visible);
     m_scheduleImportReviewRoot.Visibility(Visibility::Collapsed);
     m_scheduleImportSourceStatusText.Text(
@@ -779,6 +832,7 @@ winrt::fire_and_forget MainWindow::selectScheduleImportFile()
                     winrt::hstring(m_scheduleImportFilePath)
                     );
                 m_scheduleImportWorkbookLoaded = false;
+                m_scheduleImportWorkbook.reset();
                 m_scheduleImportSelectedWorksheet = -1;
                 m_scheduleImportSelectedUser = -1;
                 m_scheduleImportUser = {};
@@ -786,6 +840,13 @@ winrt::fire_and_forget MainWindow::selectScheduleImportFile()
                 m_scheduleImportPreviewReady = false;
                 m_scheduleImportWorksheetCombo.Items().Clear();
                 m_scheduleImportUserCombo.Items().Clear();
+                m_scheduleImportUserStatusText.Text({});
+                m_scheduleImportUserStatusText.Visibility(
+                    Microsoft::UI::Xaml::Visibility::Collapsed
+                    );
+                m_scheduleImportContinuationHint.Visibility(
+                    Microsoft::UI::Xaml::Visibility::Collapsed
+                    );
                 m_scheduleImportRegularRadioButton.IsChecked(false);
                 m_scheduleImportIntensiveRadioButton.IsChecked(false);
                 m_scheduleImportWorksheetSection.Visibility(
@@ -853,6 +914,7 @@ void MainWindow::updateScheduleImportSourceState()
         m_scheduleImportWorksheetCombo.IsEnabled(false);
         m_scheduleImportUserCombo.IsEnabled(false);
         m_scheduleImportSourceActionButton.IsEnabled(false);
+        m_scheduleImportContinuationHint.Visibility(Visibility::Collapsed);
         if (m_ownedDialog)
         {
             m_ownedDialog.IsPrimaryButtonEnabled(false);
@@ -872,6 +934,7 @@ void MainWindow::updateScheduleImportSourceState()
         m_scheduleImportScheduleTypeSection.Visibility(Visibility::Collapsed);
         m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
         m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportContinuationHint.Visibility(Visibility::Collapsed);
         m_scheduleImportSourceStatusText.Text(
             L"Choose a file and schedule type."
             );
@@ -888,10 +951,11 @@ void MainWindow::updateScheduleImportSourceState()
     }
 
     m_scheduleImportScheduleTypeSection.Visibility(Visibility::Visible);
-    if (!m_scheduleImportWorkbookLoaded)
+    if (!m_scheduleImportWorkbookLoaded || !m_scheduleImportWorkbook)
     {
         m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
         m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportContinuationHint.Visibility(Visibility::Collapsed);
         m_scheduleImportSourceStatusText.Text(
             L"Ready to read the spreadsheet."
             );
@@ -907,8 +971,77 @@ void MainWindow::updateScheduleImportSourceState()
         return;
     }
 
-    const bool worksheetReady = m_scheduleImportSelectedWorksheet >= 0;
-    const bool userReady = m_scheduleImportSelectedUser >= 0;
+    std::size_t visibleSheetCount = 0;
+    for (const auto& sheet : m_scheduleImportWorkbook->sheets)
+    {
+        visibleSheetCount += sheet.visible ? 1u : 0u;
+    }
+
+    const auto selectedSheet =
+        m_scheduleImportSelectedWorksheet >= 0
+        && static_cast<std::size_t>(m_scheduleImportSelectedWorksheet)
+            < m_scheduleImportWorkbook->sheets.size()
+        ? &m_scheduleImportWorkbook->sheets.at(
+            static_cast<std::size_t>(m_scheduleImportSelectedWorksheet)
+            )
+        : nullptr;
+    const bool worksheetReady = selectedSheet && selectedSheet->visible;
+    if (!worksheetReady)
+    {
+        m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportContinuationHint.Visibility(Visibility::Collapsed);
+        m_scheduleImportSourceStatusText.Text(
+            visibleSheetCount > 1
+                ? L"Choose the worksheet to import."
+                : L"The workbook contains no visible schedule worksheet."
+            );
+        m_scheduleImportSourceActionButton.Content(
+            box_value(hstring(L"Next"))
+            );
+        m_scheduleImportSourceActionButton.IsEnabled(false);
+        if (m_ownedDialog)
+        {
+            m_ownedDialog.PrimaryButtonText(L"Next");
+            m_ownedDialog.IsPrimaryButtonEnabled(false);
+        }
+        return;
+    }
+
+    if (selectedSheet->users.empty())
+    {
+        std::wstring diagnostics;
+        for (const auto& diagnostic : selectedSheet->diagnostics)
+        {
+            if (!diagnostics.empty())
+            {
+                diagnostics.append(L"\n");
+            }
+            diagnostics.append(asWide(diagnostic.cellReference));
+            diagnostics.append(L": ");
+            diagnostics.append(asWide(diagnostic.message));
+        }
+        m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportContinuationHint.Visibility(Visibility::Collapsed);
+        m_scheduleImportSourceStatusText.Text(
+            diagnostics.empty()
+                ? L"The selected worksheet contains no supported user schedules."
+                : hstring(diagnostics)
+            );
+        m_scheduleImportSourceActionButton.Content(
+            box_value(hstring(L"Next"))
+            );
+        m_scheduleImportSourceActionButton.IsEnabled(false);
+        if (m_ownedDialog)
+        {
+            m_ownedDialog.PrimaryButtonText(L"Next");
+            m_ownedDialog.IsPrimaryButtonEnabled(false);
+        }
+        return;
+    }
+
+    const bool userReady = m_scheduleImportSelectedUser >= 0
+        && static_cast<std::size_t>(m_scheduleImportSelectedUser)
+            < selectedSheet->users.size();
     m_scheduleImportSourceStatusText.Text(
         L"Workbook and worksheet are valid."
         );
@@ -918,6 +1051,9 @@ void MainWindow::updateScheduleImportSourceState()
             : Visibility::Collapsed
         );
     m_scheduleImportUserSection.Visibility(Visibility::Visible);
+    m_scheduleImportContinuationHint.Visibility(
+        userReady ? Visibility::Visible : Visibility::Collapsed
+        );
     m_scheduleImportSourceActionButton.Content(
         box_value(hstring(L"Next"))
         );
@@ -932,8 +1068,6 @@ void MainWindow::updateScheduleImportSourceState()
 
 winrt::fire_and_forget MainWindow::loadScheduleImportSource()
 {
-    using namespace Microsoft::UI::Xaml::Controls;
-
     auto lifetime = get_strong();
     if (m_scheduleImportLoading || m_scheduleImportWorkbookLoaded)
     {
@@ -952,48 +1086,38 @@ winrt::fire_and_forget MainWindow::loadScheduleImportSource()
         co_return;
     }
 
+    const auto kind = intensive
+        ? classmngr::engine::ScheduleImportKind::Intensive
+        : classmngr::engine::ScheduleImportKind::Normal;
     const std::wstring path = m_scheduleImportFilePath;
-    const std::wstring providerUser = m_scheduleImportUserTextBox.Text().c_str();
-    const std::wstring providerTeacher = m_scheduleImportTeacherTextBox.Text().c_str();
-    const std::wstring providerGrade = m_scheduleImportGradeTextBox.Text().c_str();
-    const std::wstring providerLevel = m_scheduleImportLevelTextBox.Text().c_str();
-    const std::wstring providerRoom = m_scheduleImportRoomTextBox.Text().c_str();
-    const std::wstring providerStart = m_scheduleImportStartTextBox.Text().c_str();
-    const std::wstring providerEnd = m_scheduleImportEndTextBox.Text().c_str();
-    const std::vector<std::wstring> providerDays = scheduleImportDays(
-        m_scheduleImportDaysTextBox.Text().c_str()
-        );
+    const std::uint64_t requestId = ++m_scheduleImportLoadRequestId;
+    const auto cancellation = std::make_shared<std::atomic_bool>(false);
+    m_scheduleImportLoadCancellation = cancellation;
 
     m_scheduleImportLoading = true;
     m_scheduleImportSourceStatusText.Text(L"Loading workbook...");
     updateScheduleImportSourceState();
 
-    bool readable = false;
+    std::optional<classmngr::engine::ScheduleImportWorkbook> loadedWorkbook;
     std::wstring readError;
     try
     {
         co_await winrt::resume_background();
-        const std::filesystem::path filePath(path);
-        const auto extension = filePath.extension().wstring();
-        std::wstring normalizedExtension = extension;
-        std::transform(
-            normalizedExtension.begin(),
-            normalizedExtension.end(),
-            normalizedExtension.begin(),
-            [](wchar_t value) { return static_cast<wchar_t>(std::towlower(value)); }
+        auto reader = classmngr::winui::makeScheduleWorkbookReader();
+        const auto result = reader->read(
+            std::filesystem::path(path),
+            kind,
+            [cancellation]() {
+                return cancellation->load(std::memory_order_relaxed);
+            }
             );
-        if (normalizedExtension != L".xlsx")
+        if (result)
         {
-            readError = L"Choose an XLSX schedule workbook.";
+            loadedWorkbook = std::move(*result);
         }
         else
         {
-            std::ifstream input(filePath, std::ios::binary);
-            readable = input.good();
-            if (!readable)
-            {
-                readError = L"The selected workbook could not be opened.";
-            }
+            readError = asWide(result.error().message);
         }
     }
     catch (...)
@@ -1005,92 +1129,254 @@ winrt::fire_and_forget MainWindow::loadScheduleImportSource()
         DispatcherQueue(),
         Microsoft::UI::Dispatching::DispatcherQueuePriority::Normal
     };
-    m_scheduleImportLoading = false;
-    if (!readable)
+
+    if (requestId != m_scheduleImportLoadRequestId
+        || cancellation->load(std::memory_order_relaxed))
     {
+        co_return;
+    }
+    m_scheduleImportLoading = false;
+    if (m_scheduleImportLoadCancellation == cancellation)
+    {
+        m_scheduleImportLoadCancellation.reset();
+    }
+    if (!loadedWorkbook)
+    {
+        updateScheduleImportSourceState();
         m_scheduleImportSourceStatusText.Text(
             winrt::hstring(readError.empty()
                 ? L"The selected workbook could not be read."
                 : readError)
             );
-        updateScheduleImportSourceState();
         co_return;
     }
 
-    // The Qt workbook/OOXML codec intentionally remains behind the Qt
-    // adapter boundary.  Until the native WinUI adapter is supplied, keep
-    // this presentation flow fed by the existing normalized provider values;
-    // the engine still owns preview, validation, and atomic application.
-    const auto fallbackValue = [](std::wstring value,
-                                  std::wstring_view fallback) {
-        return value.empty() ? std::wstring(fallback) : std::move(value);
-    };
-    const std::wstring userName = fallbackValue(providerUser, L"WinUI User");
-    const std::wstring teacher = fallbackValue(
-        providerTeacher,
-        L"\uD64D\uAE38\uB3D9"
-        );
-    const std::wstring grade = fallbackValue(providerGrade, L"E5");
-    const std::wstring level = fallbackValue(providerLevel, L"Zeus");
-    const std::wstring room = fallbackValue(providerRoom, L"413");
-    const std::wstring start = fallbackValue(providerStart, L"4:00 PM");
-    const std::wstring end = fallbackValue(providerEnd, L"4:55 PM");
-    const std::vector<std::wstring> days = providerDays.empty()
-        ? std::vector<std::wstring>{L"Monday"}
-        : providerDays;
+    applyScheduleImportWorkbook(std::move(*loadedWorkbook), path, kind);
+}
 
-    classmngr::engine::ScheduleImportClassCandidate candidate;
-    candidate.teacherKey = asUtf8(teacher);
-    candidate.teacherKr = candidate.teacherKey;
-    candidate.rooms.push_back(asUtf8(room));
-    candidate.importedColors.push_back("#FFFF99");
-    candidate.classGrade = asUtf8(grade);
-    candidate.classLevel = asUtf8(level);
-    candidate.sourceCells.push_back(asUtf8(path));
-    for (const std::wstring& day : days)
-    {
-        candidate.times.push_back({
-            asUtf8(day),
-            asUtf8(start),
-            asUtf8(end)
-        });
-    }
-    m_scheduleImportUser = {};
-    m_scheduleImportUser.name = asUtf8(userName);
-    m_scheduleImportUser.headerCell = "WinUI normalized provider";
-    m_scheduleImportUser.classes.push_back(std::move(candidate));
+void MainWindow::applyScheduleImportWorkbook(
+    classmngr::engine::ScheduleImportWorkbook workbook,
+    std::wstring filePath,
+    classmngr::engine::ScheduleImportKind kind
+    )
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
 
-    auto worksheet = ComboBoxItem();
-    worksheet.Content(box_value(hstring(L"Schedule")));
-    worksheet.Tag(box_value(0));
-    setAutomationName(worksheet, L"Schedule worksheet");
-    m_scheduleImportWorksheetCombo.Items().Clear();
-    m_scheduleImportWorksheetCombo.Items().Append(worksheet);
-    m_scheduleImportWorksheetCombo.SelectedIndex(0);
-    m_scheduleImportSelectedWorksheet = 0;
-    m_scheduleImportWorksheetSection.Visibility(
-        Microsoft::UI::Xaml::Visibility::Collapsed
-        );
-
-    auto user = ComboBoxItem();
-    user.Content(box_value(hstring(userName)));
-    user.Tag(box_value(0));
-    setAutomationName(user, userName);
-    m_scheduleImportUserCombo.Items().Clear();
-    m_scheduleImportUserCombo.Items().Append(user);
-    m_scheduleImportUserCombo.SelectedIndex(0);
-    m_scheduleImportSelectedUser = 0;
-    m_scheduleImportUserSection.Visibility(
-        Microsoft::UI::Xaml::Visibility::Visible
-        );
-    m_scheduleImportNameConfirmation.Visibility(
-        Microsoft::UI::Xaml::Visibility::Collapsed
+    m_scheduleImportWorkbook = std::move(workbook);
+    m_scheduleImportFilePath = std::move(filePath);
+    m_scheduleImportFilePathTextBox.Text(
+        winrt::hstring(m_scheduleImportFilePath)
         );
     m_scheduleImportWorkbookLoaded = true;
-    m_scheduleImportSourceStatusText.Text(
-        L"Workbook and worksheet are valid."
+    m_scheduleImportSelectedWorksheet = -1;
+    m_scheduleImportSelectedUser = -1;
+    m_scheduleImportUser = {};
+    m_scheduleImportPreview.reset();
+    m_scheduleImportPreviewReady = false;
+
+    m_scheduleImportWorksheetCombo.Items().Clear();
+    m_scheduleImportUserCombo.Items().Clear();
+    std::vector<int> visibleSheetIndexes;
+    visibleSheetIndexes.reserve(m_scheduleImportWorkbook->sheets.size());
+    for (int index = 0;
+         index < static_cast<int>(m_scheduleImportWorkbook->sheets.size());
+         ++index)
+    {
+        if (m_scheduleImportWorkbook->sheets.at(
+                static_cast<std::size_t>(index)).visible)
+        {
+            visibleSheetIndexes.push_back(index);
+        }
+    }
+
+    if (visibleSheetIndexes.size() > 1)
+    {
+        auto placeholder = ComboBoxItem();
+        placeholder.Content(box_value(hstring(L"Select a worksheet...")));
+        placeholder.Tag(box_value(-1));
+        setAutomationName(placeholder, L"Select a worksheet");
+        m_scheduleImportWorksheetCombo.Items().Append(placeholder);
+    }
+    for (const int index : visibleSheetIndexes)
+    {
+        auto item = ComboBoxItem();
+        const auto& sheet = m_scheduleImportWorkbook->sheets.at(
+            static_cast<std::size_t>(index)
+            );
+        item.Content(box_value(hstring(asWide(sheet.name))));
+        item.Tag(box_value(index));
+        setAutomationName(item, asWide(sheet.name));
+        m_scheduleImportWorksheetCombo.Items().Append(item);
+    }
+
+    if (visibleSheetIndexes.size() == 1)
+    {
+        m_scheduleImportWorksheetCombo.SelectedIndex(0);
+        m_scheduleImportSelectedWorksheet = visibleSheetIndexes.front();
+    }
+    else
+    {
+        m_scheduleImportWorksheetCombo.SelectedIndex(-1);
+    }
+
+    m_scheduleImportKindCombo.SelectedIndex(
+        kind == classmngr::engine::ScheduleImportKind::Intensive ? 1 : 0
         );
+    updateScheduleImportSelectedWorksheet();
     updateScheduleImportSourceState();
+}
+
+void MainWindow::updateScheduleImportSelectedWorksheet()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    m_scheduleImportSelectedUser = -1;
+    m_scheduleImportUser = {};
+    m_scheduleImportUserCombo.Items().Clear();
+    m_scheduleImportUserCombo.SelectedIndex(-1);
+    m_scheduleImportUserStatusText.Text({});
+    m_scheduleImportUserStatusText.Visibility(Visibility::Collapsed);
+    m_scheduleImportNameConfirmation.IsChecked(false);
+    m_scheduleImportNameConfirmation.Visibility(Visibility::Collapsed);
+
+    if (!m_scheduleImportWorkbookLoaded || !m_scheduleImportWorkbook
+        || m_scheduleImportSelectedWorksheet < 0
+        || static_cast<std::size_t>(m_scheduleImportSelectedWorksheet)
+            >= m_scheduleImportWorkbook->sheets.size())
+    {
+        return;
+    }
+
+    const auto& sheet = m_scheduleImportWorkbook->sheets.at(
+        static_cast<std::size_t>(m_scheduleImportSelectedWorksheet)
+        );
+    if (!sheet.visible || sheet.users.empty())
+    {
+        return;
+    }
+
+    const std::wstring profileName = asWide(m_personalDetails.name);
+    const std::wstring normalizedProfile =
+        normalizedScheduleImportUserName(profileName);
+    int exactIndex = -1;
+    int exactCount = 0;
+    for (int index = 0; index < static_cast<int>(sheet.users.size()); ++index)
+    {
+        if (!normalizedProfile.empty()
+            && normalizedScheduleImportUserName(
+                asWide(sheet.users.at(static_cast<std::size_t>(index)).name)
+                ) == normalizedProfile)
+        {
+            exactIndex = index;
+            ++exactCount;
+        }
+    }
+
+    const bool requireExplicit = normalizedProfile.empty() || exactCount != 1;
+    if ((requireExplicit && sheet.users.size() != 1)
+        || (requireExplicit && normalizedProfile.empty()))
+    {
+        auto placeholder = ComboBoxItem();
+        placeholder.Content(box_value(hstring(L"Select a detected name...")));
+        placeholder.Tag(box_value(-1));
+        setAutomationName(placeholder, L"Select a detected name");
+        m_scheduleImportUserCombo.Items().Append(placeholder);
+    }
+    for (int index = 0; index < static_cast<int>(sheet.users.size()); ++index)
+    {
+        auto item = ComboBoxItem();
+        const auto& user = sheet.users.at(static_cast<std::size_t>(index));
+        item.Content(box_value(hstring(asWide(user.name))));
+        item.Tag(box_value(index));
+        setAutomationName(item, asWide(user.name));
+        m_scheduleImportUserCombo.Items().Append(item);
+    }
+
+    const auto selectUserIndex = [this](int userIndex) {
+        for (int index = 0;
+             index < static_cast<int>(m_scheduleImportUserCombo.Items().Size());
+             ++index)
+        {
+            const auto item = m_scheduleImportUserCombo.Items().GetAt(index)
+                .try_as<ComboBoxItem>();
+            if (item && boxedInt(item.Tag()) == userIndex)
+            {
+                m_scheduleImportUserCombo.SelectedIndex(index);
+                return;
+            }
+        }
+    };
+    if (exactCount == 1)
+    {
+        selectUserIndex(exactIndex);
+    }
+    else if (sheet.users.size() == 1 && !normalizedProfile.empty())
+    {
+        selectUserIndex(0);
+    }
+    updateScheduleImportSelectedUser();
+}
+
+void MainWindow::updateScheduleImportSelectedUser()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    m_scheduleImportUser = {};
+    m_scheduleImportUserStatusText.Text({});
+    m_scheduleImportUserStatusText.Visibility(Visibility::Collapsed);
+    m_scheduleImportNameConfirmation.Visibility(Visibility::Collapsed);
+    m_scheduleImportNameConfirmation.IsChecked(false);
+
+    if (!m_scheduleImportWorkbookLoaded || !m_scheduleImportWorkbook
+        || m_scheduleImportSelectedWorksheet < 0
+        || static_cast<std::size_t>(m_scheduleImportSelectedWorksheet)
+            >= m_scheduleImportWorkbook->sheets.size())
+    {
+        m_scheduleImportSelectedUser = -1;
+        return;
+    }
+    const auto& sheet = m_scheduleImportWorkbook->sheets.at(
+        static_cast<std::size_t>(m_scheduleImportSelectedWorksheet)
+        );
+    if (m_scheduleImportSelectedUser < 0
+        || static_cast<std::size_t>(m_scheduleImportSelectedUser)
+            >= sheet.users.size())
+    {
+        m_scheduleImportSelectedUser = -1;
+        return;
+    }
+
+    m_scheduleImportUser = sheet.users.at(
+        static_cast<std::size_t>(m_scheduleImportSelectedUser)
+        );
+    const std::wstring profileName = asWide(m_personalDetails.name);
+    const bool profileBlank = profileName.find_first_not_of(
+        L" \t\r\n"
+        ) == std::wstring::npos;
+    const bool mismatch = !profileBlank
+        && normalizedScheduleImportUserName(
+            asWide(m_scheduleImportUser.name)
+            ) != normalizedScheduleImportUserName(profileName);
+    if (profileBlank)
+    {
+        m_scheduleImportUserStatusText.Text(
+            L"My Information has no name. The selected spreadsheet name will "
+            L"be saved after a successful import."
+            );
+        m_scheduleImportUserStatusText.Visibility(Visibility::Visible);
+    }
+    else if (mismatch)
+    {
+        m_scheduleImportUserStatusText.Text(
+            winrt::hstring(L"Entered name on the My Information page: "
+                + profileName)
+            );
+        m_scheduleImportUserStatusText.Visibility(Visibility::Visible);
+        m_scheduleImportNameConfirmation.Visibility(Visibility::Visible);
+    }
 }
 
 void MainWindow::openScheduleImportReview()
@@ -1977,56 +2263,18 @@ void MainWindow::previewScheduleImport()
     };
 
     const bool sourceLoaded = m_scheduleImportWorkbookLoaded
+        && m_scheduleImportWorkbook
+        && m_scheduleImportSelectedWorksheet >= 0
         && m_scheduleImportSelectedUser >= 0
         && !m_scheduleImportUser.classes.empty();
     if (!sourceLoaded)
     {
-        const std::wstring userName = m_scheduleImportUserTextBox.Text().c_str();
-        const std::wstring teacher = m_scheduleImportTeacherTextBox.Text().c_str();
-        const std::wstring grade = m_scheduleImportGradeTextBox.Text().c_str();
-        const std::wstring level = m_scheduleImportLevelTextBox.Text().c_str();
-        const std::wstring room = m_scheduleImportRoomTextBox.Text().c_str();
-        const std::wstring start = m_scheduleImportStartTextBox.Text().c_str();
-        const std::wstring end = m_scheduleImportEndTextBox.Text().c_str();
-        const std::vector<std::wstring> days = scheduleImportDays(
-            m_scheduleImportDaysTextBox.Text().c_str()
-            );
-        if (userName.empty() || teacher.empty() || grade.empty() || level.empty()
-            || room.empty() || start.empty() || end.empty() || days.empty())
-        {
-            showValidation(
-                L"Enter a profile, Korean teacher, grade, level, room, meeting "
-                L"days, start time, and end time before previewing."
-                );
-            return;
-        }
-
-        classmngr::engine::ScheduleImportClassCandidate candidate;
-        candidate.teacherKey = asUtf8(teacher);
-        candidate.teacherKr = candidate.teacherKey;
-        candidate.rooms.push_back(asUtf8(room));
-        candidate.classGrade = asUtf8(grade);
-        candidate.classLevel = asUtf8(level);
-        candidate.sourceCells.push_back("WinUI schedule import");
-        for (const std::wstring& day : days)
-        {
-            candidate.times.push_back({
-                asUtf8(day),
-                asUtf8(start),
-                asUtf8(end)
-            });
-        }
-
-        m_scheduleImportUser = {};
-        m_scheduleImportUser.name = asUtf8(userName);
-        m_scheduleImportUser.headerCell = "WinUI";
-        m_scheduleImportUser.classes.push_back(std::move(candidate));
+        showValidation(L"Load and select a workbook schedule before previewing.");
+        return;
     }
 
-    const auto kind = (sourceLoaded
-        ? (m_scheduleImportIntensiveRadioButton.IsChecked()
-            && m_scheduleImportIntensiveRadioButton.IsChecked().Value())
-        : m_scheduleImportKindCombo.SelectedIndex() == 1)
+    const auto kind = (m_scheduleImportIntensiveRadioButton.IsChecked()
+        && m_scheduleImportIntensiveRadioButton.IsChecked().Value())
         ? classmngr::engine::ScheduleImportKind::Intensive
         : classmngr::engine::ScheduleImportKind::Normal;
     classmngr::engine::ScheduleImportService service(*m_openDatabase);

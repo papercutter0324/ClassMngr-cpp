@@ -627,6 +627,15 @@ void MainWindow::populateScheduleWorkspace(
     auto userLabel = makeText(L"Select the schedule to import", 16.0);
     setAutomationName(userLabel, L"Import Schedule user label");
     m_scheduleImportUserSection.Children().Append(userLabel);
+    m_scheduleImportUserStatusText = makeText(L"", 14.0);
+    m_scheduleImportUserStatusText.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_scheduleImportUserStatusText,
+        L"Import Schedule user status"
+        );
+    m_scheduleImportUserSection.Children().Append(
+        m_scheduleImportUserStatusText
+        );
     m_scheduleImportUserCombo = ComboBox();
     m_scheduleImportUserCombo.PlaceholderText(
         L"Select a detected name..."
@@ -650,6 +659,20 @@ void MainWindow::populateScheduleWorkspace(
         m_scheduleImportNameConfirmation
         );
     m_scheduleImportSourceRoot.Children().Append(m_scheduleImportUserSection);
+
+    m_scheduleImportContinuationHint = makeText(
+        L"Click Next to continue.",
+        16.0
+        );
+    m_scheduleImportContinuationHint.TextAlignment(TextAlignment::Center);
+    m_scheduleImportContinuationHint.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_scheduleImportContinuationHint,
+        L"Import Schedule continuation hint"
+        );
+    m_scheduleImportSourceRoot.Children().Append(
+        m_scheduleImportContinuationHint
+        );
 
     m_scheduleImportProgressBar = ProgressBar();
     m_scheduleImportProgressBar.IsIndeterminate(true);
@@ -1118,9 +1141,14 @@ void MainWindow::populateScheduleWorkspace(
         {
             return;
         }
+        cancelScheduleImportLoad();
         m_scheduleImportWorkbookLoaded = false;
+        m_scheduleImportWorkbook.reset();
         m_scheduleImportSelectedWorksheet = -1;
         m_scheduleImportSelectedUser = -1;
+        m_scheduleImportUser = {};
+        m_scheduleImportPreview.reset();
+        m_scheduleImportPreviewReady = false;
         m_scheduleImportWorksheetCombo.Items().Clear();
         m_scheduleImportUserCombo.Items().Clear();
         m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
@@ -1136,6 +1164,7 @@ void MainWindow::populateScheduleWorkspace(
             m_scheduleImportSelectedWorksheet = selected
                 ? boxedInt(selected.Tag())
                 : -1;
+            updateScheduleImportSelectedWorksheet();
             updateScheduleImportSourceState();
         }
         );
@@ -1146,6 +1175,7 @@ void MainWindow::populateScheduleWorkspace(
             m_scheduleImportSelectedUser = selected
                 ? boxedInt(selected.Tag())
                 : -1;
+            updateScheduleImportSelectedUser();
             updateScheduleImportSourceState();
         }
         );

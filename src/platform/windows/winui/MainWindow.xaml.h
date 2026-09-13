@@ -12,6 +12,7 @@
 #include "classmngr/engine/class_schedule.h"
 #include "classmngr/engine/class_tab_navigation.h"
 #include "classmngr/engine/schedule_import.h"
+#include "classmngr/engine/schedule_workbook_reader.h"
 #include "classmngr/engine/speaking_analytics.h"
 #include "classmngr/engine/speaking_evaluation_batch_report_policy.h"
 #include "classmngr/engine/speaking_evaluation_ai_prompt.h"
@@ -40,6 +41,7 @@
 #include <chrono>
 #include <cstdint>
 #include <array>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -304,6 +306,14 @@ private:
     winrt::fire_and_forget selectScheduleImportFile();
     void updateScheduleImportSourceState();
     winrt::fire_and_forget loadScheduleImportSource();
+    void updateScheduleImportSelectedWorksheet();
+    void updateScheduleImportSelectedUser();
+    void cancelScheduleImportLoad();
+    void applyScheduleImportWorkbook(
+        classmngr::engine::ScheduleImportWorkbook workbook,
+        std::wstring filePath,
+        classmngr::engine::ScheduleImportKind kind
+        );
     void openScheduleImportReview();
     void restoreScheduleImportSource();
     void rebuildScheduleImportReview();
@@ -877,6 +887,8 @@ private:
         m_scheduleImportSourceRoot{nullptr};
     Microsoft::UI::Xaml::Controls::TextBlock
         m_scheduleImportSourceStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_scheduleImportContinuationHint{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox
         m_scheduleImportFilePathTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::Button
@@ -893,6 +905,8 @@ private:
         m_scheduleImportWorksheetCombo{nullptr};
     Microsoft::UI::Xaml::Controls::StackPanel
         m_scheduleImportUserSection{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_scheduleImportUserStatusText{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox
         m_scheduleImportUserCombo{nullptr};
     Microsoft::UI::Xaml::Controls::CheckBox
@@ -935,6 +949,8 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_scheduleImportPreviewButton{nullptr};
     Microsoft::UI::Xaml::Controls::Button m_scheduleImportApplyButton{nullptr};
     classmngr::engine::ScheduleImportUserBlock m_scheduleImportUser;
+    std::optional<classmngr::engine::ScheduleImportWorkbook>
+        m_scheduleImportWorkbook;
     std::optional<classmngr::engine::ScheduleImportPreview>
         m_scheduleImportPreview;
     bool m_scheduleImportPreviewReady{};
@@ -944,6 +960,8 @@ private:
     bool m_scheduleImportWorkbookLoaded{};
     bool m_scheduleImportLoading{};
     bool m_scheduleImportReviewVisible{};
+    std::uint64_t m_scheduleImportLoadRequestId{};
+    std::shared_ptr<std::atomic_bool> m_scheduleImportLoadCancellation;
     std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
         m_scheduleImportReviewTeacherActionCombos;
     std::vector<Microsoft::UI::Xaml::Controls::ComboBox>

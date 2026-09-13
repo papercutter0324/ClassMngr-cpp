@@ -83,6 +83,28 @@ access-denied failure. Phase 5 is committed; Phase 6
 should wire this factory into the existing dialog-owned workflow and remove
 the synthetic provider fallback. Preserve the unrelated fixture modification.
 
+### Phase 6 handoff
+
+Phase 6 is implemented in the WinUI dialog path and is ready for its separate
+commit. `loadScheduleImportSource()` now calls the native reader factory on a
+worker thread, stores the returned `ScheduleImportWorkbook` in dialog-local
+state, and populates visible worksheet and compatible-user selectors from the
+decoded workbook. The source dialog follows the Qt sequence from file-only,
+through schedule-kind selection and workbook validation, to `Next` and the
+existing `Review & Reconcile` dialog. The synthetic normalized provider is no
+longer reachable from real file import.
+
+Generation tokens and cooperative cancellation discard stale or closed-dialog
+results. The staged x64 Debug WinUI executable built and the
+`--phase6-schedule-test` diagnostic exited 0. The configured CMake/MSBuild
+route remains blocked before source compilation by the host's existing
+FileTracker access-denied failure; direct MSVC/wrapper validation used a
+generated validation engine archive containing the current interpreter. Phase
+7 should remove the remaining collapsed legacy controls, enforce explicit
+profile-mismatch confirmation, add reader limits, and complete cutover
+verification. Preserve the unrelated modification to
+`tests/fixtures/database-port/typical.tps`.
+
 ### Phase 4 handoff
 
 Phase 4 is implemented: `ScheduleWorkbookInterpreter` is now the single

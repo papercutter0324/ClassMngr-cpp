@@ -84,6 +84,26 @@ was completed directly with the repository's Medium-route constraints. The
 previously recorded absence of the external `medium_route.md` remains
 unchanged.
 
+Phase 6 is implemented and ready for its separate commit. The WinUI schedule
+source dialog now uses `makeScheduleWorkbookReader()` asynchronously, retains
+the native `ScheduleImportWorkbook` in dialog-local state, and derives visible
+worksheet/user choices from that result. Its state sequence matches the Qt
+workflow: initial file selection, file-plus-kind selection, validated
+worksheet/user selection, and the existing review/reconcile dialog. Back keeps
+the loaded workbook and selections; cancelled, superseded, or closed loads are
+discarded using a generation token and cooperative cancellation. No real file
+import reaches the normalized synthetic provider.
+
+Validation evidence: direct MSVC/wrapper x64 Debug compilation and linking of
+the full WinUI source set succeeded with a validation engine archive containing
+the current interpreter, and the staged `--phase6-schedule-test` exited 0.
+The configured CMake/MSBuild route still fails before source compilation on
+the host's pre-existing FileTracker access-denied error. Phase 7 is the next
+continuation: remove collapsed legacy source controls, enforce mismatch
+confirmation, add reader input limits, and perform final cutover checks. The
+unrelated `tests/fixtures/database-port/typical.tps` modification remains
+unstaged.
+
 ## Previous Deployment Handoff: `schedule_import_qt_workflow_audit_20260913`
 
 Deployment `schedule_import_qt_workflow_audit_20260913` completed a read-only

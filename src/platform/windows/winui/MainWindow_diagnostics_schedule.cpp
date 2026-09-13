@@ -351,8 +351,10 @@ bool MainWindow::runPhase6ScheduleChecks()
         && m_scheduleImportWorksheetSection
         && m_scheduleImportWorksheetCombo
         && m_scheduleImportUserSection
+        && m_scheduleImportUserStatusText
         && m_scheduleImportUserCombo
         && m_scheduleImportProgressBar
+        && m_scheduleImportContinuationHint
         && m_scheduleImportSourceActionButton
         && m_scheduleImportReviewRoot
         && m_scheduleImportReviewTitle
@@ -387,15 +389,34 @@ bool MainWindow::runPhase6ScheduleChecks()
         return fail(8192);
     }
 
-    m_scheduleImportKindCombo.SelectedIndex(0);
-    m_scheduleImportUserTextBox.Text(L"WinUI Import User");
-    m_scheduleImportTeacherTextBox.Text(L"\uD64D\uAE38\uB3D9");
-    m_scheduleImportGradeTextBox.Text(L"E5");
-    m_scheduleImportLevelTextBox.Text(L"Zeus");
-    m_scheduleImportRoomTextBox.Text(L"413");
-    m_scheduleImportDaysTextBox.Text(L"Monday, Wednesday");
-    m_scheduleImportStartTextBox.Text(L"4:00 PM");
-    m_scheduleImportEndTextBox.Text(L"4:55 PM");
+    // Exercise the same engine-facing path as the native workbook reader.
+    // This diagnostic does not open a picker, so it injects a small owned
+    // workbook snapshot instead of relying on the removed synthetic provider.
+    m_scheduleImportRegularRadioButton.IsChecked(true);
+    classmngr::engine::ScheduleImportWorkbook diagnosticWorkbook;
+    classmngr::engine::ScheduleImportSheet diagnosticSheet;
+    diagnosticSheet.name = "Diagnostic";
+    diagnosticSheet.visible = true;
+    classmngr::engine::ScheduleImportUserBlock diagnosticUser;
+    diagnosticUser.name = "WinUI Import User";
+    diagnosticUser.headerCell = "Diagnostic!A1";
+    classmngr::engine::ScheduleImportClassCandidate diagnosticClass;
+    diagnosticClass.teacherKey = "홍길동";
+    diagnosticClass.teacherKr = "홍길동";
+    diagnosticClass.rooms.push_back("413");
+    diagnosticClass.classGrade = "E5";
+    diagnosticClass.classLevel = "Zeus";
+    diagnosticClass.sourceCells.push_back("Diagnostic!A2");
+    diagnosticClass.times.push_back({"Monday", "4:00 PM", "4:55 PM"});
+    diagnosticClass.times.push_back({"Wednesday", "4:00 PM", "4:55 PM"});
+    diagnosticUser.classes.push_back(std::move(diagnosticClass));
+    diagnosticSheet.users.push_back(std::move(diagnosticUser));
+    diagnosticWorkbook.sheets.push_back(std::move(diagnosticSheet));
+    m_scheduleImportWorkbook = std::move(diagnosticWorkbook);
+    m_scheduleImportWorkbookLoaded = true;
+    m_scheduleImportSelectedWorksheet = 0;
+    m_scheduleImportSelectedUser = 0;
+    m_scheduleImportUser = m_scheduleImportWorkbook->sheets.front().users.front();
     m_scheduleImportTeacherActionCombo.SelectedIndex(1);
     m_scheduleImportClassActionCombo.SelectedIndex(1);
     previewScheduleImport();

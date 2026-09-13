@@ -206,6 +206,26 @@ the reader implementation is connected.
   remains blocked before source compilation by the host FileTracker
   access-denied failure.
 
+## OpenXLSX Schedule Adapter — Phase 6
+
+- The native reader factory can be integrated without exposing OpenXLSX or
+  codec types through `MainWindow.xaml.h`; only the native reader contract and
+  value-owned workbook are retained by the dialog.
+- A generation token plus an atomic cancellation flag is sufficient to make
+  asynchronous reader results safe for the dialog lifecycle: cancellation is
+  cooperative while parsing, and stale results are rejected again on the UI
+  thread before any control mutation.
+- The WinUI source dialog can mirror the Qt workflow without page navigation by
+  switching roots inside one ContentDialog and preserving workbook/selection
+  state across Back.
+- The existing engine archive in the build directory may be stale after an
+  engine source change even when the WinUI sources compile; direct validation
+  must include the current interpreter object or a freshly rebuilt engine
+  library. This is separate from the host CMake FileTracker failure.
+- Phase 7 must remove the collapsed legacy normalized controls rather than
+  leave them as a latent production path, and must make profile mismatch a
+  real confirmation gate before review.
+
 ## Decisions and Lessons
 
 - For the WinUI My Workspace lifecycle bug, do not rely on late Pivot

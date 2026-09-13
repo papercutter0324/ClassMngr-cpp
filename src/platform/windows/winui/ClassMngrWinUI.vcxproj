@@ -167,6 +167,7 @@
     <ClInclude Include="winui_platform_services.h" />
     <ClInclude Include="winui_shared_ux.h" />
     <ClInclude Include="winui_schedule_board.h" />
+    <ClInclude Include="schedule_workbook_openxlsx_reader.h" />
     <ClInclude Include="winui_large_data_diagnostics.h" />
   </ItemGroup>
 
@@ -252,6 +253,7 @@
     <ClCompile Include="MainWindow_schedule_board.cpp" />
     <ClCompile Include="MainWindow_schedule_editor.cpp" />
     <ClCompile Include="MainWindow_schedule_page.cpp" />
+    <ClCompile Include="schedule_workbook_openxlsx_reader.cpp" />
     <ClCompile Include="MainWindow_shell.cpp" />
     <ClCompile Include="MainWindow_speaking_ai_batch.cpp" />
     <ClCompile Include="MainWindow_speaking_ai_prompt.cpp" />

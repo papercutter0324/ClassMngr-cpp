@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "schedule_workbook_openxlsx_reader.h"
 
 #include "classmngr/engine/schedule_workbook_interpreter.h"
