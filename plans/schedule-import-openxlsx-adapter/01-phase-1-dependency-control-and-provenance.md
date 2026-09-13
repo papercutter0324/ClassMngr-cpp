@@ -9,6 +9,37 @@
 Make OpenXLSX a reproducible, auditable dependency before product source files
 include it or the WinUI build relies on it.
 
+## Status — 2026-09-13
+
+- [x] Audited the repository’s current dependency, license, and build-layout
+  conventions.
+- [x] Fingerprinted the local OpenXLSX evaluation tree without treating its
+  developer-local path as a product dependency.
+- [x] Matched the local tree to the immutable upstream
+  `development-aral` commit.
+- [x] Added the primary OpenXLSX BSD-3-Clause license text to the repository’s
+  established `licenses/` area.
+- [x] Resolved the selected transitive dependency refs and copied their license
+  notices.
+- [x] Materialized the pinned source as a repository-owned submodule at
+  `third_party/openxlsx/source`.
+- [ ] Prove an offline dependency configuration/build using the selected source
+  policy.
+
+The phase remains open until the remaining offline-build gate is closed.
+The recorded evidence and current decision are in
+[`third_party/openxlsx/PROVENANCE.md`](../../third_party/openxlsx/PROVENANCE.md).
+
+## Offline Configuration Probe — 2026-09-13
+
+The selected options were exercised with MSVC through a temporary Ninja build
+directory and with network fetching disabled. CMake detected MSVC successfully,
+then stopped at OpenXLSX’s `nowide` dependency because no local `nowide` target
+is provisioned yet. This is a useful safety result—the configuration did not
+download a dependency—but it is not an offline-build pass. Phase 2 must provide
+the pinned native dependency targets and repeat the probe through the real
+WinUI/MSBuild route.
+
 ## Why This Is a Separate Phase
 
 `C:\Git\openxlsx` is useful for evaluation, but it is not sufficient release

@@ -32,6 +32,34 @@ current host clamps the native capture to 800x600 while the reference set is
 
 ## Active Deployment Handoff
 
+Deployment `schedule_import_openxlsx_phase1_20260913` began Phase 1 of the
+OpenXLSX schedule-workbook adapter plan. The local source at
+`C:\Git\openxlsx` was verified against Codeberg commit
+`ece329af84b370a8b77f5a3ee0e30509ad0f0bf9` and materialized as the pinned
+submodule `third_party/openxlsx/source`.
+
+Phase 1 also recorded the OpenXLSX, PugiXML 1.14, miniz 3.0.2, and standalone
+nowide v11.3.1 provenance/license evidence under `third_party/openxlsx/` and
+`licenses/openxlsx/`. The product-safe policy disables OpenXLSX samples,
+documentation, tests, benchmarks, automatic fetching, and network fallback.
+
+The no-network MSVC configuration probe detected the compiler and then stopped
+because the local `nowide` target is not provisioned. No dependency was
+downloaded. The remaining offline-build gate is intentionally handed to Phase
+2, which owns native dependency target provisioning and the real WinUI/MSBuild
+integration.
+
+### Phase 1 continuation
+
+- Commit the staged `.gitmodules`/submodule gitlink, provenance record, license
+  notices, and Phase 1 status update when the user requests the next commit.
+- Begin Phase 2 from the pinned submodule and recorded options; do not use
+  `C:\Git\openxlsx` as a build input.
+- Preserve the unrelated modification to
+  `tests/fixtures/database-port/typical.tps`.
+
+## Previous Deployment Handoff
+
 Deployment `schedule_import_qt_workflow_audit_20260913` examined the retained
 Qt schedule-import workflow and implemented its two-stage modal shape in the
 WinUI presentation layer. Import no longer navigates to an Import page: the
@@ -51,14 +79,14 @@ staged normalized provider into the dialog; it does not yet decode OOXML
 workbook contents. A native or bridged WinUI workbook adapter is the explicit
 follow-on required for full real-workbook parity.
 
-## Goal
+## Previous Goal
 
 Define the WinUI schedule-import dialog state machine from the retained Qt
 workflow: asynchronous workbook load and selection, user/profile resolution,
 review tabs and conflicts, confirmation, success/error handling, and refresh
 without page navigation.
 
-## Overall Progress
+## Previous Overall Progress
 
 The Qt workflow is mapped to dialog-owned WinUI controls and focused
 diagnostics. The source starts at `Choose a file and schedule type.`, enables
@@ -72,7 +100,7 @@ The presentation state machine is complete for the staged provider. Workbook
 decoding is intentionally not duplicated in the Qt-free engine or silently
 ported into WinUI.
 
-## Next Milestone
+## Previous Next Milestone
 
 Implement and integrate the explicit WinUI workbook adapter (or a supported
 bridge to the retained Qt reader), then add real multi-sheet/user mismatch and

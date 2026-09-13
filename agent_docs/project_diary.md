@@ -1,5 +1,33 @@
 # Project Diary
 
+## OpenXLSX Schedule Import Phase 1 - 2026-09-13
+
+- The local `C:\Git\openxlsx` tree is content-identical to Codeberg's
+  `development-aral` commit `ece329af84b370a8b77f5a3ee0e30509ad0f0bf9`; its
+  local CMake version is 0.5.2 development work, while its vcpkg manifest says
+  0.5.1. Pin the commit, not a moving branch or ambiguous version label.
+- OpenXLSX is now represented by a repository-owned submodule at
+  `third_party/openxlsx/source`. The developer-local source path remains audit
+  evidence only.
+- The initial dependency policy is static OpenXLSX with docs, samples, sample
+  source installation, tests, benchmarks, libzip, automatic fetching, and
+  forced fetching disabled. The initial ZIP path is miniz/Zippy and Windows
+  Unicode support is the standalone nowide archive declared by OpenXLSX's CMake.
+- Exact refs and notices were recorded for PugiXML 1.14, miniz 3.0.2, and
+  standalone nowide v11.3.1 under `licenses/openxlsx/`; switching to Boost.Nowide
+  or libzip later requires a new provenance/license entry.
+- The offline MSVC configuration probe confirmed that network fetching is
+  disabled, then failed on the intentionally unprovisioned local `nowide`
+  target. Treat this as a Phase 2 build-integration dependency, not as evidence
+  that the offline build passes.
+
+### Phase 1 lesson
+
+A pinned top-level source is insufficient for reproducible native builds when
+OpenXLSX's dependency manager can fetch transitive libraries. The build bridge
+must provision exact native targets and preserve the no-network policy before
+the reader implementation is connected.
+
 ## Schedule Import Qt Workflow Audit — 2026-09-13
 
 - The retained Qt flow is two-stage. `ScheduleImportDialog` is modal and

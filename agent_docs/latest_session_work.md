@@ -2,6 +2,44 @@
 
 ## Current Deployment Handoff
 
+Deployment `schedule_import_openxlsx_phase1_20260913` began Phase 1 of the
+OpenXLSX adapter plan. It audited the repository dependency conventions and the
+local OpenXLSX tree, then verified that the local content exactly matches
+Codeberg commit `ece329af84b370a8b77f5a3ee0e30509ad0f0bf9`. That commit is now
+registered as the detached gitlink at `third_party/openxlsx/source` in
+`.gitmodules`.
+
+The phase recorded the OpenXLSX BSD-3-Clause notice plus exact provenance and
+license evidence for PugiXML v1.14, miniz 3.0.2, and the standalone nowide
+v11.3.1 archive. The initial product configuration policy is static, disables
+documentation/samples/tests/benchmarks/libzip and all automatic fetching, and
+requires local dependency targets.
+
+Verification performed:
+
+- upstream `development-aral` ref lookup resolved to
+  `ece329af84b370a8b77f5a3ee0e30509ad0f0bf9`;
+- local and upstream trees matched at 154 files and 2,848,369 bytes;
+- the standalone-nowide archive matched the declared SHA-256
+  `eaec4d331e3961f5eeb10c46a11691d62047900a7a40765b0f23cdd3181e6ca6`;
+- no-network MSVC/Ninja configuration reached compiler detection and stopped
+  at the missing local `nowide` target without downloading anything;
+- provenance/license files contain no trailing whitespace and the staged Git
+  diff passes `git diff --cached --check`.
+
+Continuation: provision and link the pinned native dependency targets through
+the actual WinUI CMake-to-PowerShell-to-MSBuild route in Phase 2. Do not wire
+the reader to `C:\Git\openxlsx` or enable OpenXLSX automatic fetching. The
+unrelated `tests/fixtures/database-port/typical.tps` modification remains
+unstaged and must be preserved.
+
+The required `companion` agent type was unavailable in this runtime; the work
+was completed directly with the repository's Medium-route constraints. The
+previously recorded absence of the external `medium_route.md` remains
+unchanged.
+
+## Previous Deployment Handoff: `schedule_import_qt_workflow_audit_20260913`
+
 Deployment `schedule_import_qt_workflow_audit_20260913` completed a read-only
 audit and implementation of the retained Qt schedule-import workflow. The
 WinUI Import action now stays in an owned ContentDialog and follows the Qt
