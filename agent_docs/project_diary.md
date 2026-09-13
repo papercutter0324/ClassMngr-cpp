@@ -154,6 +154,23 @@ the reader implementation is connected.
   stacked-page area creates an uneven gap and makes the navigation rows appear
   to shift.
 
+## OpenXLSX Schedule Adapter — Phase 3
+
+- The existing native `classmngr::engine::ScheduleImportWorkbook` and
+  `classmngr::engine::Result` types are the correct reader result boundary;
+  introducing a second Qt-free domain model would create an unnecessary
+  conversion seam.
+- `ScheduleWorkbookLayout` is a value-owned intermediate model containing
+  sheet visibility, cells, merged ranges, normalized style facts, and
+  diagnostics. Reader adapters must finish this mapping while their workbook
+  document is alive.
+- `ScheduleWorkbookReader` is a virtual, codec-neutral substitution point in
+  the Qt-free engine include boundary. It carries `std::filesystem::path`,
+  `ScheduleImportKind`, and a cooperative cancellation callback only.
+- The host MSVC `FileTracker` access-denied failure also blocks the new
+  contract-test target before compilation; this is an environment limitation,
+  not evidence against the contract.
+
 ## Decisions and Lessons
 
 - For the WinUI My Workspace lifecycle bug, do not rely on late Pivot

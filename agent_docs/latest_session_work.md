@@ -42,9 +42,19 @@ x64 Debug, x64 Release, and Win32 Release. The full WinUI target was attempted;
 the new dependency chain built, but the existing engine compilation stopped on
 the host MSBuild FileTracker access error.
 
-After committing Phase 2, continue with Phase 3's public reader contract and
-raw workbook-layout model. Preserve `tests/fixtures/database-port/typical.tps`,
-which remains an unrelated unstaged modification.
+Phase 2 is committed as `ed80300d`. Phase 3 then added
+`classmngr/engine/schedule_workbook_layout.h` and
+`classmngr/engine/schedule_workbook_reader.h`, plus the Qt-free
+`ClassMngrEngineScheduleWorkbookReaderContractTests` seam. The public contract
+returns the existing native schedule-import model, uses `std::filesystem` and
+cooperative cancellation, and exposes no codec or UI types. The layout model
+owns cells, styles, merges, sheet visibility, and diagnostics by value.
+
+The contract-test build was attempted after CMake reconfiguration; the host's
+existing MSVC `FileTracker` access-denied failure stopped the engine before
+compiling it. Continue with Phase 4's shared interpreter. Preserve
+`tests/fixtures/database-port/typical.tps`, which remains an unrelated
+unstaged modification.
 
 The required `companion` agent type was unavailable in this runtime; the work
 was completed directly with the repository's Medium-route constraints. The

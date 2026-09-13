@@ -10,6 +10,14 @@ Define a stable, testable boundary between workbook decoding and schedule
 interpretation so that OpenXLSX and Qt are interchangeable adapters rather
 than leaking into import domain code.
 
+## Status
+
+Implemented in Phase 3. The Qt-free engine now publishes a value-owned layout
+model and a `ScheduleWorkbookReader` interface returning the existing native
+`ScheduleImportWorkbook`/`Result` types. A contract test exercises fake-reader
+substitution, cancellation, worksheet visibility/layout values, and the
+standard-library-only boundary.
+
 ## Scope
 
 - Specify `ScheduleWorkbookReader` and its result/error/cancellation behavior.
@@ -83,13 +91,12 @@ cheap to construct, movable, and safe to use after its decoder document closes.
    source/review dialog fields.
 2. Catalogue every Qt parser dependency on workbook cell, style, merge, and
    worksheet metadata.
-3. Draft the raw layout model and reader result/error types near the platform
-   and shared-format boundary selected for the project.
+3. Draft the raw layout model and reader result/error types in the Qt-free
+   engine include boundary selected for the project.
 4. Decide whether the reader returns a final `ScheduleImportWorkbook` directly
    or an internal layout plus an interpreter. The preferred public result is the
    final engine model; raw layout stays implementation/internal-test scope.
-5. Add a fake/in-memory reader implementation or factory seam usable by WinUI
-   dialog tests.
+5. Add a fake/in-memory reader implementation usable by WinUI dialog tests.
 6. Document error-to-dialog-state mapping: failed Load retains source controls
    and disables Next; a successful compatible workbook enables schedule
    selection; only a selected compatible schedule enables Next.
@@ -109,3 +116,11 @@ cheap to construct, movable, and safe to use after its decoder document closes.
 The team can write the shared interpreter and an OpenXLSX adapter against an
 explicit contract, and the WinUI dialog can depend on a fake reader in tests.
 No later phase needs to decide where third-party types are allowed.
+
+Phase 3 evidence: `classmngr/engine/schedule_workbook_layout.h` and
+`classmngr/engine/schedule_workbook_reader.h` contain no Qt/OpenXLSX/WinRT
+types; `ClassMngrEngineScheduleWorkbookReaderContractTests` builds as a
+Qt-free engine test when the host compiler is available. The configured MSVC
+test build was attempted, but the host's existing `Microsoft.Build.Utilities`
+`FileTracker` access-denied failure stopped `ClassMngrEngine` before compiling
+the test.

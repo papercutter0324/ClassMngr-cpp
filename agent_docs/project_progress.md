@@ -62,9 +62,23 @@ MSBuild FileTracker access failure stopped the unrelated engine compilation
 after the OpenXLSX dependency chain had built. Use the documented
 `/p:TrackFileAccess=false` override for native target validation.
 
-Phase 2 is ready to commit, followed by Phase 3's reader contract and
-Qt-free/raw workbook-layout boundary. Preserve the unrelated modification to
+Phase 2 is committed as `ed80300d`. Preserve the unrelated modification to
 `tests/fixtures/database-port/typical.tps`.
+
+### Phase 3 handoff
+
+Phase 3 adds the Qt-free `ScheduleWorkbookLayout` value model and
+`ScheduleWorkbookReader` substitution contract under the native engine include
+boundary. The contract returns the existing engine import workbook and result
+types, carries cooperative cancellation, and keeps all codec/UI types out of
+the public surface. A fake-reader contract test covers replacement,
+cancellation, worksheet visibility, cells, styles, and merges.
+
+The MSVC contract-test build was attempted after reconfiguration, but the
+host's existing `Microsoft.Build.Utilities.FileTracker` access-denied failure
+stopped `ClassMngrEngine` compilation before the test source was compiled.
+Phase 4 should implement the shared Qt-free schedule interpreter against this
+layout and preserve the unrelated fixture modification.
 
 ## Previous Deployment Handoff
 
