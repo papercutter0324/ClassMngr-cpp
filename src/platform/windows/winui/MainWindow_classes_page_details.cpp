@@ -146,7 +146,13 @@ MainWindow::buildClassDetailsSection()
         wchar_t const* automationName,
         int tabIndex
         ) {
-        combo.Header(box_value(hstring(header)));
+        auto headerText = TextBlock();
+        headerText.Text(header);
+        headerText.TextWrapping(TextWrapping::NoWrap);
+        headerText.TextTrimming(TextTrimming::None);
+        headerText.Margin(Thickness{4.0, 0.0, 0.0, 0.0});
+        applyResourceStyle(headerText, L"Phase3BodyTextBlockStyle");
+        combo.Header(headerText);
         combo.MinWidth(320.0);
         combo.HorizontalAlignment(HorizontalAlignment::Stretch);
         combo.IsTabStop(true);
@@ -162,8 +168,8 @@ MainWindow::buildClassDetailsSection()
         L"Class grade",
         2
         );
-    m_classGradeCombo.MinWidth(130.0);
-    m_classGradeCombo.Width(130.0);
+    m_classGradeCombo.Width(115.0);
+    m_classGradeCombo.MinWidth(115.0);
     appendChoice(m_classGradeCombo, L"Not set", L"");
     for (const std::string& value :
          classmngr::engine::ClassInfoConfig::grades())
@@ -179,8 +185,8 @@ MainWindow::buildClassDetailsSection()
         L"Class level",
         3
         );
-    m_classLevelCombo.MinWidth(180.0);
-    m_classLevelCombo.Width(180.0);
+    m_classLevelCombo.MinWidth(195.0);
+    m_classLevelCombo.Width(195.0);
 
     m_classReadingBookCombo = ComboBox();
     configureClassCombo(
@@ -189,7 +195,8 @@ MainWindow::buildClassDetailsSection()
         L"Class reading book",
         4
         );
-    m_classReadingBookCombo.MinWidth(300.0);
+    m_classReadingBookCombo.MinWidth(347.0);
+    m_classReadingBookCombo.Width(347.0);
 
     m_classEssayBookCombo = ComboBox();
     configureClassCombo(
@@ -198,8 +205,8 @@ MainWindow::buildClassDetailsSection()
         L"Class essay book",
         5
         );
-    m_classEssayBookCombo.MinWidth(120.0);
-    m_classEssayBookCombo.Width(120.0);
+    m_classEssayBookCombo.MinWidth(122.0);
+    m_classEssayBookCombo.Width(122.0);
 
     m_classColorTextBox = makeClassTextBox(
         L"Color backing value",
@@ -235,9 +242,11 @@ MainWindow::buildClassDetailsSection()
     studentCountHeader.Text(L"# of Students");
     studentCountHeader.TextWrapping(TextWrapping::NoWrap);
     studentCountHeader.TextTrimming(TextTrimming::None);
+    studentCountHeader.Margin(Thickness{4.0, 0.0, 0.0, 0.0});
+    applyResourceStyle(studentCountHeader, L"Phase3BodyTextBlockStyle");
     m_classStudentCountTextBox.Header(studentCountHeader);
-    m_classStudentCountTextBox.MinWidth(136.0);
-    m_classStudentCountTextBox.Width(136.0);
+    m_classStudentCountTextBox.MinWidth(64.0);
+    m_classStudentCountTextBox.Width(64.0);
     m_classStudentCountTextBox.IsReadOnly(true);
     m_classStudentCountTextBox.IsTabStop(false);
     setAutomationName(m_classStudentCountTextBox, L"Class student count");
@@ -250,6 +259,7 @@ MainWindow::buildClassDetailsSection()
     colorField.Spacing(4.0);
     auto colorLabel = TextBlock();
     colorLabel.Text(L"Color");
+    colorLabel.Margin(Thickness{4.0, 0.0, 0.0, 0.0});
     applyResourceStyle(colorLabel, L"Phase3BodyTextBlockStyle");
     auto colorControls = StackPanel();
     colorControls.Orientation(Orientation::Horizontal);
@@ -305,24 +315,22 @@ MainWindow::buildClassDetailsSection()
     m_classColorChooseButton.Click(openClassColorPicker);
     m_classColorPreview.Tapped(openClassColorPicker);
 
-    auto detailsGrid = Grid();
-    detailsGrid.ColumnSpacing(16.0);
-    detailsGrid.RowSpacing(8.0);
-    const std::array<double, 4> detailWidths{
-        200.0, 130.0, 180.0, 136.0
-    };
-    for (const double width : detailWidths)
+    m_classColorChooseButton.MinWidth(159.0);
+    m_classColorChooseButton.Width(159.0);
+
+    auto topDetailsGrid = Grid();
+    topDetailsGrid.ColumnSpacing(16.0);
+    const std::array<double, 4> topDetailWidths{
+        204.0, 115.0, 195.0, 64.0
+        };
+    for (const double width : topDetailWidths)
     {
         auto definition = ColumnDefinition();
         definition.Width(GridLengthHelper::FromValueAndType(
             width,
             GridUnitType::Pixel
             ));
-        detailsGrid.ColumnDefinitions().Append(definition);
-    }
-    for (int row = 0; row < 2; ++row)
-    {
-        detailsGrid.RowDefinitions().Append(RowDefinition());
+        topDetailsGrid.ColumnDefinitions().Append(definition);
     }
     Grid::SetRow(colorField, 0);
     Grid::SetColumn(colorField, 0);
@@ -332,18 +340,34 @@ MainWindow::buildClassDetailsSection()
     Grid::SetColumn(m_classLevelCombo, 2);
     Grid::SetRow(m_classStudentCountTextBox, 0);
     Grid::SetColumn(m_classStudentCountTextBox, 3);
-    Grid::SetRow(m_classReadingBookCombo, 1);
+    topDetailsGrid.Children().Append(colorField);
+    topDetailsGrid.Children().Append(m_classGradeCombo);
+    topDetailsGrid.Children().Append(m_classLevelCombo);
+    topDetailsGrid.Children().Append(m_classStudentCountTextBox);
+
+    auto booksGrid = Grid();
+    booksGrid.ColumnSpacing(16.0);
+    const std::array<double, 2> bookWidths{347.0, 122.0};
+    for (const double width : bookWidths)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            width,
+            GridUnitType::Pixel
+            ));
+        booksGrid.ColumnDefinitions().Append(definition);
+    }
     Grid::SetColumn(m_classReadingBookCombo, 0);
-    Grid::SetColumnSpan(m_classReadingBookCombo, 2);
-    Grid::SetRow(m_classEssayBookCombo, 1);
-    Grid::SetColumn(m_classEssayBookCombo, 2);
-    detailsGrid.Children().Append(colorField);
-    detailsGrid.Children().Append(m_classGradeCombo);
-    detailsGrid.Children().Append(m_classLevelCombo);
-    detailsGrid.Children().Append(m_classStudentCountTextBox);
-    detailsGrid.Children().Append(m_classReadingBookCombo);
-    detailsGrid.Children().Append(m_classEssayBookCombo);
-    detailsCard.content.Children().Append(detailsGrid);
+    Grid::SetColumn(m_classEssayBookCombo, 1);
+    booksGrid.Children().Append(m_classReadingBookCombo);
+    booksGrid.Children().Append(m_classEssayBookCombo);
+
+    auto detailsFields = StackPanel();
+    detailsFields.Spacing(12.0);
+    detailsFields.HorizontalAlignment(HorizontalAlignment::Left);
+    detailsFields.Children().Append(topDetailsGrid);
+    detailsFields.Children().Append(booksGrid);
+    detailsCard.content.Children().Append(detailsFields);
     detailsRoot.Children().Append(detailsCard.root);
 
     auto detailsActions = StackPanel();
