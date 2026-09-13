@@ -131,7 +131,7 @@
 
     <x:Double x:Key="Phase6ScheduleNormalTimeColumnWidth">90</x:Double>
     <x:Double x:Key="Phase6ScheduleNormalHeaderHeight">42</x:Double>
-    <x:Double x:Key="Phase6ScheduleNormalRowHeight">48</x:Double>
+    <x:Double x:Key="Phase6ScheduleNormalRowHeight">62</x:Double>
     <x:Double x:Key="Phase6ScheduleCompactTimeColumnWidth">84</x:Double>
     <x:Double x:Key="Phase6ScheduleCompactHeaderHeight">36</x:Double>
     <x:Double x:Key="Phase6ScheduleCompactRowHeight">40</x:Double>

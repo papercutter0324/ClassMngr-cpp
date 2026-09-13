@@ -391,7 +391,7 @@ void MainWindow::handleScheduleSlotClick(
     {
         if (m_scheduleTabs)
         {
-            m_scheduleTabs.SelectedIndex(2);
+            m_scheduleTabs.SelectedIndex(1);
         }
         if (m_testingDayCombo)
         {

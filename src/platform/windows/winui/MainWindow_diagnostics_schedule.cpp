@@ -165,10 +165,18 @@ bool MainWindow::runPhase6ScheduleChecks()
 
     const auto testingClassesButton = m_scheduleTestingClassesButton;
     const auto testingBanner = m_scheduleTestingBanner;
-    const auto scheduleScroll = m_scheduleTabs.Items().GetAt(0)
+    const bool scheduleTabsReady =
+        m_scheduleTabs && m_scheduleTabs.Items().Size() == 2
+        && m_scheduleTabs.Items().GetAt(0).try_as<
+            Microsoft::UI::Xaml::Controls::PivotItem>()
+        && m_scheduleTabs.Items().GetAt(1).try_as<
+            Microsoft::UI::Xaml::Controls::PivotItem>();
+    const auto scheduleScroll = scheduleTabsReady
+        ? m_scheduleTabs.Items().GetAt(0)
         .try_as<Microsoft::UI::Xaml::Controls::PivotItem>()
         .Content()
-        .try_as<Microsoft::UI::Xaml::Controls::ScrollViewer>();
+        .try_as<Microsoft::UI::Xaml::Controls::ScrollViewer>()
+        : Microsoft::UI::Xaml::Controls::ScrollViewer{nullptr};
     bool fixedRowsReady = true;
     if (!m_scheduleBoardRoot || m_scheduleBoardRoot.RowDefinitions().Size() < 2)
     {
@@ -183,7 +191,7 @@ bool MainWindow::runPhase6ScheduleChecks()
             const auto height = m_scheduleBoardRoot.RowDefinitions().GetAt(row)
                 .Height();
             if (height.GridUnitType != Microsoft::UI::Xaml::GridUnitType::Pixel
-                || height.Value != 48.0)
+                || height.Value != 62.0)
             {
                 fixedRowsReady = false;
                 break;
@@ -202,7 +210,7 @@ bool MainWindow::runPhase6ScheduleChecks()
         testingClassesButton
         && Microsoft::UI::Xaml::Controls::Grid::GetColumn(
             testingClassesButton
-            ) == 3;
+            ) == 4;
     const uint32_t testingClassesColumnValue = testingClassesButton
         ? Microsoft::UI::Xaml::Controls::Grid::GetColumn(testingClassesButton)
         : 15u;
@@ -223,7 +231,8 @@ bool MainWindow::runPhase6ScheduleChecks()
         | (!importButtonReady ? 8u : 0u)
         | (!scheduleScrollFound ? 16u : 0u)
         | (!scheduleScrollHorizontalReady ? 64u : 0u)
-        | (!fixedRowsReady ? 32u : 0u);
+        | (!fixedRowsReady ? 32u : 0u)
+        | (!scheduleTabsReady ? 128u : 0u);
     const bool regularChromeReady = regularChromeFailureMask == 0;
     if (!regularChromeReady)
     {
@@ -331,10 +340,51 @@ bool MainWindow::runPhase6ScheduleChecks()
         && m_scheduleImportStatusText
         && m_scheduleImportValidationText
         && m_scheduleImportPreviewButton
-        && m_scheduleImportApplyButton;
+        && m_scheduleImportApplyButton
+        && m_scheduleImportSourceRoot
+        && m_scheduleImportSourceStatusText
+        && m_scheduleImportFilePathTextBox
+        && m_scheduleImportBrowseButton
+        && m_scheduleImportScheduleTypeSection
+        && m_scheduleImportRegularRadioButton
+        && m_scheduleImportIntensiveRadioButton
+        && m_scheduleImportWorksheetSection
+        && m_scheduleImportWorksheetCombo
+        && m_scheduleImportUserSection
+        && m_scheduleImportUserCombo
+        && m_scheduleImportProgressBar
+        && m_scheduleImportSourceActionButton
+        && m_scheduleImportReviewRoot
+        && m_scheduleImportReviewTitle
+        && m_scheduleImportReviewHost
+        && m_scheduleImportReviewPreviewHost
+        && m_scheduleImportReviewTabs
+        && m_scheduleImportReviewClassesHost
+        && m_scheduleImportReviewTeachersHost
+        && m_scheduleImportReviewBackButton
+        && m_scheduleImportReviewCancelButton
+        && m_scheduleImportDialogRoot
+        && m_scheduleImportDialogRoot.Content()
+        && m_scheduleImportDialogRoot.VerticalScrollBarVisibility()
+            == Microsoft::UI::Xaml::Controls::ScrollBarVisibility::Auto;
     if (!importControlsReady)
     {
         return fail(2048);
+    }
+    const auto sourceStatus = m_scheduleImportSourceStatusText.Text();
+    const bool importSourceInitialStateReady =
+        m_scheduleImportSourceRoot.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Visible
+        && m_scheduleImportReviewRoot.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
+        && m_scheduleImportScheduleTypeSection.Visibility()
+            == Microsoft::UI::Xaml::Visibility::Collapsed
+        && !m_scheduleImportSourceActionButton.IsEnabled()
+        && std::wstring_view(sourceStatus.c_str(), sourceStatus.size())
+            == L"Choose a file and schedule type.";
+    if (!importSourceInitialStateReady)
+    {
+        return fail(8192);
     }
 
     m_scheduleImportKindCombo.SelectedIndex(0);

@@ -27,7 +27,7 @@ constexpr double TimeColumnWidth = 90.0;
 constexpr double CompactTimeColumnWidth = 84.0;
 constexpr double HeaderHeight = 42.0;
 constexpr double CompactHeaderHeight = 36.0;
-constexpr double RowHeight = 48.0;
+constexpr double RowHeight = 62.0;
 constexpr double CompactRowHeight = 40.0;
 constexpr double BoardSpacing = 8.0;
 constexpr double CardCornerRadius = 7.0;
@@ -646,14 +646,26 @@ void appendEntryCell(
     ClassMngrWinUIScheduleBoard::RenderOptions const& options
     )
 {
-    auto content = StackPanel();
-    content.Spacing(options.compactPreview ? 3.0 : 4.0);
+    auto content = Grid();
+    content.RowSpacing(options.compactPreview ? 3.0 : 4.0);
     content.HorizontalAlignment(HorizontalAlignment::Stretch);
     content.VerticalAlignment(VerticalAlignment::Stretch);
+    auto contentColumn = ColumnDefinition();
+    contentColumn.Width(GridLengthHelper::FromValueAndType(
+        1.0,
+        GridUnitType::Star
+        ));
+    content.ColumnDefinitions().Append(contentColumn);
     const std::size_t entryCount = cell.entries.size();
     for (std::size_t entryIndex = 0; entryIndex < entryCount; ++entryIndex)
     {
         const ScheduleReportEntry& entry = cell.entries[entryIndex];
+        auto contentRow = RowDefinition();
+        contentRow.Height(GridLengthHelper::FromValueAndType(
+            1.0,
+            GridUnitType::Star
+            ));
+        content.RowDefinitions().Append(contentRow);
         const bool isTestingAssignment = cell.testingClassAssignment
             || entry.kind
                 == classmngr::engine::ScheduleReportEntryKind::TestingClass;
@@ -707,6 +719,11 @@ void appendEntryCell(
                 }
                 );
         }
+        setGridPosition(
+            classButton,
+            static_cast<int>(entryIndex),
+            0
+            );
         content.Children().Append(classButton);
     }
     setGridPosition(content, row, column);

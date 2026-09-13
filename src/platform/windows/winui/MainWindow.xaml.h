@@ -300,6 +300,16 @@ private:
     void clearScheduleEntry();
     void previewScheduleImport();
     void applyScheduleImport();
+    void resetScheduleImportSource();
+    winrt::fire_and_forget selectScheduleImportFile();
+    void updateScheduleImportSourceState();
+    winrt::fire_and_forget loadScheduleImportSource();
+    void openScheduleImportReview();
+    void restoreScheduleImportSource();
+    void rebuildScheduleImportReview();
+    void updateScheduleImportReviewState();
+    std::optional<classmngr::engine::ScheduleImportPlan>
+        currentScheduleImportPlan() const;
     void refreshTestingWorkspace();
     void loadTestingClassVisual(int classId);
     void updateTestingClassActions();
@@ -863,6 +873,52 @@ private:
     Microsoft::UI::Xaml::Controls::Button m_scheduleClearButton{nullptr};
     Microsoft::UI::Xaml::Controls::ScrollViewer
         m_scheduleImportDialogRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_scheduleImportSourceRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_scheduleImportSourceStatusText{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBox
+        m_scheduleImportFilePathTextBox{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_scheduleImportBrowseButton{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_scheduleImportScheduleTypeSection{nullptr};
+    Microsoft::UI::Xaml::Controls::RadioButton
+        m_scheduleImportRegularRadioButton{nullptr};
+    Microsoft::UI::Xaml::Controls::RadioButton
+        m_scheduleImportIntensiveRadioButton{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_scheduleImportWorksheetSection{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox
+        m_scheduleImportWorksheetCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_scheduleImportUserSection{nullptr};
+    Microsoft::UI::Xaml::Controls::ComboBox
+        m_scheduleImportUserCombo{nullptr};
+    Microsoft::UI::Xaml::Controls::CheckBox
+        m_scheduleImportNameConfirmation{nullptr};
+    Microsoft::UI::Xaml::Controls::ProgressBar
+        m_scheduleImportProgressBar{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_scheduleImportSourceActionButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid
+        m_scheduleImportReviewRoot{nullptr};
+    Microsoft::UI::Xaml::Controls::TextBlock
+        m_scheduleImportReviewTitle{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid
+        m_scheduleImportReviewHost{nullptr};
+    Microsoft::UI::Xaml::Controls::Grid
+        m_scheduleImportReviewPreviewHost{nullptr};
+    Microsoft::UI::Xaml::Controls::Pivot
+        m_scheduleImportReviewTabs{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_scheduleImportReviewClassesHost{nullptr};
+    Microsoft::UI::Xaml::Controls::StackPanel
+        m_scheduleImportReviewTeachersHost{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_scheduleImportReviewBackButton{nullptr};
+    Microsoft::UI::Xaml::Controls::Button
+        m_scheduleImportReviewCancelButton{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_scheduleImportKindCombo{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportUserTextBox{nullptr};
     Microsoft::UI::Xaml::Controls::TextBox m_scheduleImportTeacherTextBox{nullptr};
@@ -882,6 +938,20 @@ private:
     std::optional<classmngr::engine::ScheduleImportPreview>
         m_scheduleImportPreview;
     bool m_scheduleImportPreviewReady{};
+    std::wstring m_scheduleImportFilePath;
+    int m_scheduleImportSelectedWorksheet{-1};
+    int m_scheduleImportSelectedUser{-1};
+    bool m_scheduleImportWorkbookLoaded{};
+    bool m_scheduleImportLoading{};
+    bool m_scheduleImportReviewVisible{};
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_scheduleImportReviewTeacherActionCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_scheduleImportReviewTeacherRoomCombos;
+    std::vector<Microsoft::UI::Xaml::Controls::ComboBox>
+        m_scheduleImportReviewClassActionCombos;
+    std::vector<std::string> m_scheduleImportReviewClassColors;
+    std::vector<std::string> m_scheduleImportReviewFontColors;
     Microsoft::UI::Xaml::Controls::ListView m_testingClassList{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_testingClassTeacherCombo{nullptr};
     Microsoft::UI::Xaml::Controls::ComboBox m_testingClassGradeCombo{nullptr};

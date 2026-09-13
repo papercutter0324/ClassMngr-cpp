@@ -464,22 +464,527 @@ void MainWindow::populateScheduleWorkspace(
     importContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
     importContent.Spacing(12.0);
     importContent.HorizontalAlignment(HorizontalAlignment::Stretch);
-    auto importHeading = makeText(L"Schedule import", 24.0);
-    setAutomationName(importHeading, L"Schedule import heading");
-    importContent.Children().Append(importHeading);
-    auto importDescription = makeText(
-        L"Review one structured user block before applying it. Preview uses "
-        L"the shared match and weekday rules; Apply validates the complete "
-        L"plan and commits it atomically."
-        );
-    setAutomationName(importDescription, L"Schedule import description");
-    importContent.Children().Append(importDescription);
+    importContent.MinWidth(420.0);
 
+    // Keep the source workflow as a dialog-owned presentation tree.  The
+    // parent owns file loading and state transitions; these controls only
+    // provide the stable surface that those transitions update.
+    m_scheduleImportSourceRoot = StackPanel();
+    m_scheduleImportSourceRoot.Spacing(12.0);
+    m_scheduleImportSourceRoot.MinHeight(440.0);
+    m_scheduleImportSourceRoot.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    setAutomationName(
+        m_scheduleImportSourceRoot,
+        L"Import Schedule source"
+        );
+
+    m_scheduleImportSourceStatusText = makeText(
+        L"Choose a file and schedule type.",
+        16.0
+        );
+    m_scheduleImportSourceStatusText.TextAlignment(TextAlignment::Center);
+    setAutomationName(
+        m_scheduleImportSourceStatusText,
+        L"Import Schedule source status"
+        );
+    m_scheduleImportSourceRoot.Children().Append(
+        m_scheduleImportSourceStatusText
+        );
+
+    auto sourceFileCard = ClassMngrWinUISharedUX::buildCard({
+        L"Choose a spreadsheet",
+        L"Select an XLSX schedule workbook to begin.",
+        L"Import Schedule file section"
+        });
+    auto sourceFileRow = Grid();
+    sourceFileRow.ColumnSpacing(8.0);
+    auto sourceFilePathColumn = ColumnDefinition();
+    sourceFilePathColumn.Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    sourceFileRow.ColumnDefinitions().Append(sourceFilePathColumn);
+    auto sourceBrowseColumn = ColumnDefinition();
+    sourceBrowseColumn.Width(
+        GridLengthHelper::FromValueAndType(96.0, GridUnitType::Pixel)
+        );
+    sourceFileRow.ColumnDefinitions().Append(sourceBrowseColumn);
+    m_scheduleImportFilePathTextBox = TextBox();
+    m_scheduleImportFilePathTextBox.PlaceholderText(
+        L"Select an XLSX schedule..."
+        );
+    m_scheduleImportFilePathTextBox.IsReadOnly(true);
+    m_scheduleImportFilePathTextBox.IsTabStop(false);
+    m_scheduleImportFilePathTextBox.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    setAutomationName(
+        m_scheduleImportFilePathTextBox,
+        L"Import Schedule file path"
+        );
+    Grid::SetColumn(m_scheduleImportFilePathTextBox, 0);
+    sourceFileRow.Children().Append(m_scheduleImportFilePathTextBox);
+    m_scheduleImportBrowseButton = Button();
+    m_scheduleImportBrowseButton.Content(box_value(hstring(L"Browse")));
+    m_scheduleImportBrowseButton.MinWidth(96.0);
+    m_scheduleImportBrowseButton.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    applyResourceStyle(
+        m_scheduleImportBrowseButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    setAutomationName(
+        m_scheduleImportBrowseButton,
+        L"Import Schedule Browse"
+        );
+    Grid::SetColumn(m_scheduleImportBrowseButton, 1);
+    sourceFileRow.Children().Append(m_scheduleImportBrowseButton);
+    sourceFileCard.content.Children().Append(sourceFileRow);
+    m_scheduleImportSourceRoot.Children().Append(sourceFileCard.root);
+
+    m_scheduleImportScheduleTypeSection = StackPanel();
+    m_scheduleImportScheduleTypeSection.Spacing(8.0);
+    m_scheduleImportScheduleTypeSection.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_scheduleImportScheduleTypeSection,
+        L"Import Schedule schedule type section"
+        );
+    auto scheduleTypeLabel = makeText(L"Schedule type", 16.0);
+    setAutomationName(scheduleTypeLabel, L"Import Schedule schedule type");
+    m_scheduleImportScheduleTypeSection.Children().Append(scheduleTypeLabel);
+    auto scheduleTypeButtons = StackPanel();
+    scheduleTypeButtons.Orientation(Orientation::Horizontal);
+    scheduleTypeButtons.Spacing(16.0);
+    m_scheduleImportRegularRadioButton = RadioButton();
+    m_scheduleImportRegularRadioButton.Content(
+        box_value(hstring(L"Regular"))
+        );
+    m_scheduleImportRegularRadioButton.GroupName(
+        L"ScheduleImportType"
+        );
+    m_scheduleImportRegularRadioButton.IsChecked(false);
+    m_scheduleImportRegularRadioButton.IsTabStop(true);
+    setAutomationName(
+        m_scheduleImportRegularRadioButton,
+        L"Import Schedule Regular"
+        );
+    scheduleTypeButtons.Children().Append(m_scheduleImportRegularRadioButton);
+    m_scheduleImportIntensiveRadioButton = RadioButton();
+    m_scheduleImportIntensiveRadioButton.Content(
+        box_value(hstring(L"Intensives"))
+        );
+    m_scheduleImportIntensiveRadioButton.GroupName(
+        L"ScheduleImportType"
+        );
+    m_scheduleImportIntensiveRadioButton.IsChecked(false);
+    m_scheduleImportIntensiveRadioButton.IsTabStop(true);
+    setAutomationName(
+        m_scheduleImportIntensiveRadioButton,
+        L"Import Schedule Intensives"
+        );
+    scheduleTypeButtons.Children().Append(m_scheduleImportIntensiveRadioButton);
+    m_scheduleImportScheduleTypeSection.Children().Append(scheduleTypeButtons);
+    m_scheduleImportSourceRoot.Children().Append(
+        m_scheduleImportScheduleTypeSection
+        );
+
+    m_scheduleImportWorksheetSection = StackPanel();
+    m_scheduleImportWorksheetSection.Spacing(8.0);
+    m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_scheduleImportWorksheetSection,
+        L"Import Schedule worksheet section"
+        );
+    auto worksheetLabel = makeText(L"Worksheet", 16.0);
+    setAutomationName(worksheetLabel, L"Import Schedule worksheet label");
+    m_scheduleImportWorksheetSection.Children().Append(worksheetLabel);
+    m_scheduleImportWorksheetCombo = ComboBox();
+    m_scheduleImportWorksheetCombo.PlaceholderText(
+        L"Select a worksheet..."
+        );
+    m_scheduleImportWorksheetCombo.MinWidth(300.0);
+    m_scheduleImportWorksheetCombo.IsTabStop(true);
+    setAutomationName(
+        m_scheduleImportWorksheetCombo,
+        L"Import Schedule worksheet"
+        );
+    m_scheduleImportWorksheetSection.Children().Append(
+        m_scheduleImportWorksheetCombo
+        );
+    m_scheduleImportSourceRoot.Children().Append(
+        m_scheduleImportWorksheetSection
+        );
+
+    m_scheduleImportUserSection = StackPanel();
+    m_scheduleImportUserSection.Spacing(8.0);
+    m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_scheduleImportUserSection,
+        L"Import Schedule user section"
+        );
+    auto userLabel = makeText(L"Select the schedule to import", 16.0);
+    setAutomationName(userLabel, L"Import Schedule user label");
+    m_scheduleImportUserSection.Children().Append(userLabel);
+    m_scheduleImportUserCombo = ComboBox();
+    m_scheduleImportUserCombo.PlaceholderText(
+        L"Select a detected name..."
+        );
+    m_scheduleImportUserCombo.MinWidth(300.0);
+    m_scheduleImportUserCombo.IsTabStop(true);
+    setAutomationName(m_scheduleImportUserCombo, L"Import Schedule user");
+    m_scheduleImportUserSection.Children().Append(m_scheduleImportUserCombo);
+    m_scheduleImportNameConfirmation = CheckBox();
+    m_scheduleImportNameConfirmation.Content(box_value(hstring(
+        L"Update my name on the My Information page to match the selected "
+        L"name."
+        )));
+    m_scheduleImportNameConfirmation.IsChecked(false);
+    m_scheduleImportNameConfirmation.IsTabStop(true);
+    setAutomationName(
+        m_scheduleImportNameConfirmation,
+        L"Import Schedule profile name confirmation"
+        );
+    m_scheduleImportUserSection.Children().Append(
+        m_scheduleImportNameConfirmation
+        );
+    m_scheduleImportSourceRoot.Children().Append(m_scheduleImportUserSection);
+
+    m_scheduleImportProgressBar = ProgressBar();
+    m_scheduleImportProgressBar.IsIndeterminate(true);
+    m_scheduleImportProgressBar.Visibility(Visibility::Collapsed);
+    m_scheduleImportProgressBar.Height(6.0);
+    setAutomationName(
+        m_scheduleImportProgressBar,
+        L"Import Schedule progress"
+        );
+    m_scheduleImportSourceRoot.Children().Append(m_scheduleImportProgressBar);
+
+    auto sourceActionRow = StackPanel();
+    sourceActionRow.Orientation(Orientation::Horizontal);
+    sourceActionRow.HorizontalAlignment(HorizontalAlignment::Right);
+    sourceActionRow.Spacing(8.0);
+    m_scheduleImportSourceActionButton = Button();
+    m_scheduleImportSourceActionButton.Content(box_value(hstring(L"Load")));
+    m_scheduleImportSourceActionButton.MinWidth(120.0);
+    m_scheduleImportSourceActionButton.IsEnabled(false);
+    m_scheduleImportSourceActionButton.IsTabStop(true);
+    applyResourceStyle(
+        m_scheduleImportSourceActionButton,
+        L"Phase3PrimaryButtonStyle"
+        );
+    setAutomationName(
+        m_scheduleImportSourceActionButton,
+        L"Import Schedule source action"
+        );
+    sourceActionRow.Children().Append(m_scheduleImportSourceActionButton);
+    // The source action is hosted by the modal ContentDialog footer.  Keep
+    // this member-owned button available for diagnostics and provider tests,
+    // but do not render a second action row inside the dialog body.
+    sourceActionRow.Visibility(Visibility::Collapsed);
+    m_scheduleImportSourceRoot.Children().Append(sourceActionRow);
+
+    // The review surface is a second root in the same dialog content.  Its
+    // preview and resolution hosts are intentionally member-owned so the
+    // parent can replace their placeholder children with provider results.
+    m_scheduleImportReviewRoot = Grid();
+    m_scheduleImportReviewRoot.Visibility(Visibility::Collapsed);
+    m_scheduleImportReviewRoot.MinHeight(680.0);
+    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
+    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
+    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
+    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
+    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
+    m_scheduleImportReviewRoot.RowDefinitions().Append(RowDefinition());
+    m_scheduleImportReviewRoot.RowDefinitions().GetAt(2).Height(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    setAutomationName(
+        m_scheduleImportReviewRoot,
+        L"Schedule import review root"
+        );
+
+    m_scheduleImportReviewTitle = makeText(L"Review & Reconcile", 24.0);
+    setAutomationName(
+        m_scheduleImportReviewTitle,
+        L"Schedule import review title"
+        );
+    Grid::SetRow(m_scheduleImportReviewTitle, 0);
+    m_scheduleImportReviewRoot.Children().Append(m_scheduleImportReviewTitle);
+    auto reviewDescription = makeText(
+        L"Review imported classes and resolve any conflicts before continuing."
+        );
+    setAutomationName(
+        reviewDescription,
+        L"Schedule import review description"
+        );
+    Grid::SetRow(reviewDescription, 1);
+    m_scheduleImportReviewRoot.Children().Append(reviewDescription);
+
+    m_scheduleImportReviewHost = Grid();
+    m_scheduleImportReviewHost.ColumnSpacing(12.0);
+    m_scheduleImportReviewHost.MinHeight(360.0);
+    m_scheduleImportReviewHost.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    setAutomationName(
+        m_scheduleImportReviewHost,
+        L"Schedule import review host"
+        );
+    auto reviewPreviewColumn = ColumnDefinition();
+    reviewPreviewColumn.Width(
+        GridLengthHelper::FromValueAndType(340.0, GridUnitType::Pixel)
+        );
+    m_scheduleImportReviewHost.ColumnDefinitions().Append(reviewPreviewColumn);
+    auto reviewResolutionColumn = ColumnDefinition();
+    reviewResolutionColumn.Width(
+        GridLengthHelper::FromValueAndType(1.0, GridUnitType::Star)
+        );
+    m_scheduleImportReviewHost.ColumnDefinitions().Append(
+        reviewResolutionColumn
+        );
+
+    auto previewCard = ClassMngrWinUISharedUX::buildCard({
+        L"Schedule Preview",
+        L"The imported schedule preview will appear here.",
+        L"Schedule import preview"
+        });
+    m_scheduleImportReviewPreviewHost = Grid();
+    m_scheduleImportReviewPreviewHost.MinHeight(280.0);
+    m_scheduleImportReviewPreviewHost.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    auto previewPlaceholder = makeText(
+        L"Schedule preview will appear after the workbook is loaded."
+        );
+    previewPlaceholder.TextWrapping(TextWrapping::Wrap);
+    setAutomationName(
+        previewPlaceholder,
+        L"Schedule import preview placeholder"
+        );
+    m_scheduleImportReviewPreviewHost.Children().Append(previewPlaceholder);
+    setAutomationName(
+        m_scheduleImportReviewPreviewHost,
+        L"Schedule import preview host"
+        );
+    previewCard.content.Children().Append(m_scheduleImportReviewPreviewHost);
+    Grid::SetColumn(previewCard.root, 0);
+    m_scheduleImportReviewHost.Children().Append(previewCard.root);
+
+    m_scheduleImportReviewTabs = Pivot();
+    m_scheduleImportReviewTabs.IsTabStop(true);
+    m_scheduleImportReviewTabs.TabIndex(35);
+    m_scheduleImportReviewTabs.HorizontalAlignment(HorizontalAlignment::Stretch);
+    applyResourceStyle(
+        m_scheduleImportReviewTabs,
+        L"Phase3TopTabPivotStyle"
+        );
+    setAutomationName(
+        m_scheduleImportReviewTabs,
+        L"Schedule import resolution tabs"
+        );
+
+    m_scheduleImportReviewClassesHost = StackPanel();
+    m_scheduleImportReviewClassesHost.Spacing(12.0);
+    m_scheduleImportReviewClassesHost.Padding(
+        Thickness{4.0, 8.0, 12.0, 8.0}
+        );
+    m_scheduleImportReviewClassesHost.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    setAutomationName(
+        m_scheduleImportReviewClassesHost,
+        L"Schedule import classes group"
+        );
+    auto classResolutionCard = ClassMngrWinUISharedUX::buildCard({
+        L"Class resolution",
+        L"Choose how each imported class should be reconciled.",
+        L"Schedule import class resolution"
+        });
+    m_scheduleImportClassActionCombo = ComboBox();
+    m_scheduleImportClassActionCombo.Header(
+        box_value(hstring(L"Class resolution"))
+        );
+    m_scheduleImportClassActionCombo.MinWidth(280.0);
+    m_scheduleImportClassActionCombo.IsTabStop(true);
+    m_scheduleImportClassActionCombo.TabIndex(32);
+    for (const auto& choice : {
+             std::pair{L"Update suggested class", 0},
+             std::pair{L"Create new class", 1},
+             std::pair{L"Skip class", 2}})
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(choice.first)));
+        item.Tag(box_value(choice.second));
+        setAutomationName(item, choice.first);
+        m_scheduleImportClassActionCombo.Items().Append(item);
+    }
+    m_scheduleImportClassActionCombo.SelectedIndex(1);
+    setAutomationName(
+        m_scheduleImportClassActionCombo,
+        L"Schedule import class resolution"
+        );
+    classResolutionCard.content.Children().Append(
+        m_scheduleImportClassActionCombo
+        );
+    m_scheduleImportReviewClassesHost.Children().Append(
+        classResolutionCard.root
+        );
+    auto classScroll = ScrollViewer();
+    classScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+    classScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+    classScroll.Content(m_scheduleImportReviewClassesHost);
+    setAutomationName(classScroll, L"Schedule import classes scroll area");
+    auto classItem = PivotItem();
+    classItem.Header(box_value(hstring(L"Classes")));
+    classItem.Content(classScroll);
+    setAutomationName(classItem, L"Schedule import Classes tab");
+    m_scheduleImportReviewTabs.Items().Append(classItem);
+
+    m_scheduleImportReviewTeachersHost = StackPanel();
+    m_scheduleImportReviewTeachersHost.Spacing(12.0);
+    m_scheduleImportReviewTeachersHost.Padding(
+        Thickness{4.0, 8.0, 12.0, 8.0}
+        );
+    m_scheduleImportReviewTeachersHost.HorizontalAlignment(
+        HorizontalAlignment::Stretch
+        );
+    setAutomationName(
+        m_scheduleImportReviewTeachersHost,
+        L"Schedule import Korean teachers group"
+        );
+    auto teacherResolutionCard = ClassMngrWinUISharedUX::buildCard({
+        L"Korean teacher resolution",
+        L"Choose how each imported Korean teacher should be reconciled.",
+        L"Schedule import Korean teacher resolution"
+        });
+    m_scheduleImportTeacherActionCombo = ComboBox();
+    m_scheduleImportTeacherActionCombo.Header(
+        box_value(hstring(L"Teacher resolution"))
+        );
+    m_scheduleImportTeacherActionCombo.MinWidth(280.0);
+    m_scheduleImportTeacherActionCombo.IsTabStop(true);
+    m_scheduleImportTeacherActionCombo.TabIndex(31);
+    for (const auto& choice : {
+             std::pair{L"Reuse matching teacher", 0},
+             std::pair{L"Create new teacher", 2}})
+    {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(choice.first)));
+        item.Tag(box_value(choice.second));
+        setAutomationName(item, choice.first);
+        m_scheduleImportTeacherActionCombo.Items().Append(item);
+    }
+    m_scheduleImportTeacherActionCombo.SelectedIndex(0);
+    setAutomationName(
+        m_scheduleImportTeacherActionCombo,
+        L"Schedule import teacher resolution"
+        );
+    teacherResolutionCard.content.Children().Append(
+        m_scheduleImportTeacherActionCombo
+        );
+    m_scheduleImportReviewTeachersHost.Children().Append(
+        teacherResolutionCard.root
+        );
+    auto teacherScroll = ScrollViewer();
+    teacherScroll.VerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+    teacherScroll.HorizontalScrollBarVisibility(ScrollBarVisibility::Disabled);
+    teacherScroll.Content(m_scheduleImportReviewTeachersHost);
+    setAutomationName(teacherScroll, L"Schedule import Korean teachers scroll area");
+    auto teacherItem = PivotItem();
+    teacherItem.Header(box_value(hstring(L"Korean Teachers")));
+    teacherItem.Content(teacherScroll);
+    setAutomationName(teacherItem, L"Schedule import Korean Teachers tab");
+    m_scheduleImportReviewTabs.Items().Append(teacherItem);
+    m_scheduleImportReviewTabs.SelectedIndex(0);
+    Grid::SetColumn(m_scheduleImportReviewTabs, 1);
+    m_scheduleImportReviewHost.Children().Append(m_scheduleImportReviewTabs);
+    Grid::SetRow(m_scheduleImportReviewHost, 2);
+    m_scheduleImportReviewRoot.Children().Append(m_scheduleImportReviewHost);
+
+    m_scheduleImportStatusText = makeText(L"Review is ready.");
+    setAutomationName(
+        m_scheduleImportStatusText,
+        L"Schedule import review status"
+        );
+    Grid::SetRow(m_scheduleImportStatusText, 3);
+    m_scheduleImportReviewRoot.Children().Append(m_scheduleImportStatusText);
+    m_scheduleImportValidationText = makeText(L"");
+    m_scheduleImportValidationText.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        m_scheduleImportValidationText,
+        L"Schedule import review summary"
+        );
+    Grid::SetRow(m_scheduleImportValidationText, 4);
+    m_scheduleImportReviewRoot.Children().Append(
+        m_scheduleImportValidationText
+        );
+
+    auto reviewActions = StackPanel();
+    reviewActions.Orientation(Orientation::Horizontal);
+    reviewActions.Spacing(8.0);
+    reviewActions.HorizontalAlignment(HorizontalAlignment::Right);
+    m_scheduleImportReviewBackButton = Button();
+    m_scheduleImportReviewBackButton.Content(box_value(hstring(L"Back")));
+    m_scheduleImportReviewBackButton.IsTabStop(true);
+    applyResourceStyle(
+        m_scheduleImportReviewBackButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    setAutomationName(
+        m_scheduleImportReviewBackButton,
+        L"Schedule import review back"
+        );
+    reviewActions.Children().Append(m_scheduleImportReviewBackButton);
+    m_scheduleImportReviewCancelButton = Button();
+    m_scheduleImportReviewCancelButton.Content(box_value(hstring(L"Cancel")));
+    m_scheduleImportReviewCancelButton.IsTabStop(true);
+    applyResourceStyle(
+        m_scheduleImportReviewCancelButton,
+        L"Phase3SecondaryButtonStyle"
+        );
+    setAutomationName(
+        m_scheduleImportReviewCancelButton,
+        L"Schedule import review cancel"
+        );
+    reviewActions.Children().Append(m_scheduleImportReviewCancelButton);
+    m_scheduleImportApplyButton = Button();
+    m_scheduleImportApplyButton.Content(box_value(hstring(L"Import")));
+    m_scheduleImportApplyButton.IsTabStop(true);
+    m_scheduleImportApplyButton.TabIndex(34);
+    m_scheduleImportApplyButton.IsEnabled(false);
+    applyResourceStyle(
+        m_scheduleImportApplyButton,
+        L"Phase3PrimaryButtonStyle"
+        );
+    m_scheduleImportApplyButton.Click(
+        [this](auto const&, auto const&) { applyScheduleImport(); }
+        );
+    setAutomationName(
+        m_scheduleImportApplyButton,
+        L"Schedule import review import"
+        );
+    reviewActions.Children().Append(m_scheduleImportApplyButton);
+    // Back, Cancel, and Import are supplied by the ContentDialog footer so
+    // the modal follows the Qt workflow's action placement.
+    reviewActions.Visibility(Visibility::Collapsed);
+    Grid::SetRow(reviewActions, 5);
+    m_scheduleImportReviewRoot.Children().Append(reviewActions);
+
+    // Keep the normalized one-class controls alive for the existing engine
+    // provider and diagnostics paths, but keep them out of the presentation
+    // tree.  The new source/review roots above are the visible dialog UI.
+    auto legacyImportContent = StackPanel();
+    legacyImportContent.Visibility(Visibility::Collapsed);
+    setAutomationName(
+        legacyImportContent,
+        L"Schedule import normalized provider state"
+        );
     auto importCard = ClassMngrWinUISharedUX::buildCard({
-        L"Import review",
-        L"The form represents the normalized data produced by a workbook "
-        L"adapter. It keeps the review/apply boundary visible on Windows.",
-        L"Schedule import review"
+        L"Normalized import provider state",
+        L"Retained engine-facing values for the current Windows provider.",
+        L"Schedule import normalized provider state"
         });
     const auto makeImportBox = [](std::wstring_view label,
                                   std::wstring_view placeholder,
@@ -568,55 +1073,6 @@ void MainWindow::populateScheduleWorkspace(
     m_scheduleImportEndTextBox.Text(L"4:55 PM");
     importCard.content.Children().Append(m_scheduleImportEndTextBox);
 
-    m_scheduleImportTeacherActionCombo = ComboBox();
-    m_scheduleImportTeacherActionCombo.Header(
-        box_value(hstring(L"Teacher resolution"))
-        );
-    m_scheduleImportTeacherActionCombo.MinWidth(280.0);
-    m_scheduleImportTeacherActionCombo.IsTabStop(true);
-    m_scheduleImportTeacherActionCombo.TabIndex(31);
-    for (const auto& choice : {
-             std::pair{L"Reuse matching teacher", 0},
-             std::pair{L"Create new teacher", 2}})
-    {
-        auto item = ComboBoxItem();
-        item.Content(box_value(hstring(choice.first)));
-        item.Tag(box_value(choice.second));
-        setAutomationName(item, choice.first);
-        m_scheduleImportTeacherActionCombo.Items().Append(item);
-    }
-    m_scheduleImportTeacherActionCombo.SelectedIndex(0);
-    setAutomationName(
-        m_scheduleImportTeacherActionCombo,
-        L"Schedule import teacher resolution"
-        );
-    importCard.content.Children().Append(m_scheduleImportTeacherActionCombo);
-
-    m_scheduleImportClassActionCombo = ComboBox();
-    m_scheduleImportClassActionCombo.Header(
-        box_value(hstring(L"Class resolution"))
-        );
-    m_scheduleImportClassActionCombo.MinWidth(280.0);
-    m_scheduleImportClassActionCombo.IsTabStop(true);
-    m_scheduleImportClassActionCombo.TabIndex(32);
-    for (const auto& choice : {
-             std::pair{L"Update suggested class", 0},
-             std::pair{L"Create new class", 1},
-             std::pair{L"Skip class", 2}})
-    {
-        auto item = ComboBoxItem();
-        item.Content(box_value(hstring(choice.first)));
-        item.Tag(box_value(choice.second));
-        setAutomationName(item, choice.first);
-        m_scheduleImportClassActionCombo.Items().Append(item);
-    }
-    m_scheduleImportClassActionCombo.SelectedIndex(1);
-    setAutomationName(
-        m_scheduleImportClassActionCombo,
-        L"Schedule import class resolution"
-        );
-    importCard.content.Children().Append(m_scheduleImportClassActionCombo);
-
     auto importActions = StackPanel();
     importActions.Orientation(Orientation::Horizontal);
     importActions.Spacing(8.0);
@@ -631,28 +1087,108 @@ void MainWindow::populateScheduleWorkspace(
         );
     setAutomationName(m_scheduleImportPreviewButton, L"Preview schedule import");
     importActions.Children().Append(m_scheduleImportPreviewButton);
-    m_scheduleImportApplyButton = Button();
-    m_scheduleImportApplyButton.Content(box_value(hstring(L"Apply import")));
-    m_scheduleImportApplyButton.IsTabStop(true);
-    m_scheduleImportApplyButton.TabIndex(34);
-    m_scheduleImportApplyButton.IsEnabled(false);
-    m_scheduleImportApplyButton.Click(
-        [this](auto const&, auto const&) { applyScheduleImport(); }
-        );
-    setAutomationName(m_scheduleImportApplyButton, L"Apply schedule import");
-    importActions.Children().Append(m_scheduleImportApplyButton);
     importCard.content.Children().Append(importActions);
-    m_scheduleImportStatusText = makeText(L"Preview an import block to begin.");
-    setAutomationName(m_scheduleImportStatusText, L"Schedule import status");
-    importCard.content.Children().Append(m_scheduleImportStatusText);
-    m_scheduleImportValidationText = makeText(L"");
-    m_scheduleImportValidationText.Visibility(Visibility::Collapsed);
-    setAutomationName(m_scheduleImportValidationText, L"Schedule import validation");
-    importCard.content.Children().Append(m_scheduleImportValidationText);
-    importContent.Children().Append(importCard.root);
+    legacyImportContent.Children().Append(importCard.root);
+    importContent.Children().Append(m_scheduleImportSourceRoot);
+    importContent.Children().Append(m_scheduleImportReviewRoot);
+    importContent.Children().Append(legacyImportContent);
     m_scheduleImportDialogRoot = scrollTab(importContent);
     m_scheduleImportDialogRoot.MaxHeight(720.0);
-    setAutomationName(m_scheduleImportDialogRoot, L"Schedule import dialog content");
+    setAutomationName(m_scheduleImportDialogRoot, L"Schedule import dialog root");
+
+    m_scheduleImportBrowseButton.Click(
+        [this](auto const&, auto const&) {
+            selectScheduleImportFile();
+        }
+        );
+    m_scheduleImportSourceActionButton.Click(
+        [this](auto const&, auto const&) {
+            if (m_scheduleImportWorkbookLoaded)
+            {
+                openScheduleImportReview();
+            }
+            else
+            {
+                loadScheduleImportSource();
+            }
+        }
+        );
+    const auto invalidateLoadedSource = [this](auto const&, auto const&) {
+        if (m_scheduleImportLoading)
+        {
+            return;
+        }
+        m_scheduleImportWorkbookLoaded = false;
+        m_scheduleImportSelectedWorksheet = -1;
+        m_scheduleImportSelectedUser = -1;
+        m_scheduleImportWorksheetCombo.Items().Clear();
+        m_scheduleImportUserCombo.Items().Clear();
+        m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+        updateScheduleImportSourceState();
+    };
+    m_scheduleImportRegularRadioButton.Checked(invalidateLoadedSource);
+    m_scheduleImportIntensiveRadioButton.Checked(invalidateLoadedSource);
+    m_scheduleImportWorksheetCombo.SelectionChanged(
+        [this](auto const&, auto const&) {
+            const auto selected = m_scheduleImportWorksheetCombo.SelectedItem()
+                .try_as<ComboBoxItem>();
+            m_scheduleImportSelectedWorksheet = selected
+                ? boxedInt(selected.Tag())
+                : -1;
+            updateScheduleImportSourceState();
+        }
+        );
+    m_scheduleImportUserCombo.SelectionChanged(
+        [this](auto const&, auto const&) {
+            const auto selected = m_scheduleImportUserCombo.SelectedItem()
+                .try_as<ComboBoxItem>();
+            m_scheduleImportSelectedUser = selected
+                ? boxedInt(selected.Tag())
+                : -1;
+            updateScheduleImportSourceState();
+        }
+        );
+    m_scheduleImportNameConfirmation.Checked(
+        [this](auto const&, auto const&) {
+            updateScheduleImportSourceState();
+        }
+        );
+    m_scheduleImportNameConfirmation.Unchecked(
+        [this](auto const&, auto const&) {
+            updateScheduleImportSourceState();
+        }
+        );
+    m_scheduleImportReviewBackButton.Click(
+        [this](auto const&, auto const&) {
+            restoreScheduleImportSource();
+        }
+        );
+    m_scheduleImportReviewCancelButton.Click(
+        [this](auto const&, auto const&) {
+            if (m_ownedDialog)
+            {
+                try
+                {
+                    m_ownedDialog.Hide();
+                }
+                catch (...)
+                {
+                }
+            }
+        }
+        );
+    m_scheduleImportTeacherActionCombo.SelectionChanged(
+        [this](auto const&, auto const&) {
+            updateScheduleImportReviewState();
+        }
+        );
+    m_scheduleImportClassActionCombo.SelectionChanged(
+        [this](auto const&, auto const&) {
+            updateScheduleImportReviewState();
+        }
+        );
+    updateScheduleImportSourceState();
 
     auto testingContent = StackPanel();
     testingContent.Padding(Thickness{24.0, 20.0, 24.0, 24.0});

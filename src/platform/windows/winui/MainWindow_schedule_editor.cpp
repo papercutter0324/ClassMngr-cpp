@@ -589,6 +589,1224 @@ winrt::fire_and_forget MainWindow::openScheduleClassEditor(int classId)
     }
 }
 
+winrt::fire_and_forget MainWindow::openScheduleImportDialog()
+{
+    auto lifetime = get_strong();
+    const auto xamlRoot = RootGrid().XamlRoot();
+    if (!m_scheduleImportDialogRoot || m_ownedDialog || !xamlRoot)
+    {
+        co_return;
+    }
+
+    using namespace Microsoft::UI::Xaml::Controls;
+    resetScheduleImportSource();
+    m_scheduleImportDialogRoot.Width(420.0);
+
+    auto dialog = ContentDialog();
+    dialog.XamlRoot(xamlRoot);
+    dialog.Title(box_value(hstring(L"Import Schedule")));
+    dialog.Content(m_scheduleImportDialogRoot);
+    dialog.PrimaryButtonText(L"Load");
+    dialog.IsPrimaryButtonEnabled(false);
+    dialog.SecondaryButtonText({});
+    dialog.IsSecondaryButtonEnabled(false);
+    dialog.CloseButtonText(L"Cancel");
+    dialog.DefaultButton(ContentDialogButton::Close);
+    dialog.PrimaryButtonClick(
+        [this](auto const&, auto const& arguments) {
+            if (m_scheduleImportLoading)
+            {
+                arguments.Cancel(true);
+                return;
+            }
+            if (m_scheduleImportReviewVisible)
+            {
+                applyScheduleImport();
+                if (m_scheduleImportPreviewReady)
+                {
+                    arguments.Cancel(true);
+                }
+            }
+            else if (m_scheduleImportWorkbookLoaded)
+            {
+                arguments.Cancel(true);
+                openScheduleImportReview();
+            }
+            else
+            {
+                arguments.Cancel(true);
+                loadScheduleImportSource();
+            }
+        }
+        );
+    dialog.SecondaryButtonClick(
+        [this](auto const&, auto const& arguments) {
+            if (m_scheduleImportReviewVisible)
+            {
+                arguments.Cancel(true);
+                restoreScheduleImportSource();
+            }
+        }
+        );
+    m_ownedDialog = dialog;
+
+    try
+    {
+        static_cast<void>(co_await dialog.ShowAsync());
+    }
+    catch (...)
+    {
+        // Dialog cancellation during navigation or shell teardown is normal.
+    }
+
+    if (m_ownedDialog == dialog)
+    {
+        m_ownedDialog = nullptr;
+    }
+    resetScheduleImportSource();
+}
+
+void MainWindow::resetScheduleImportSource()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_scheduleImportSourceRoot)
+    {
+        return;
+    }
+
+    // RadioButton and ComboBox notifications are deliberately muted while
+    // the source state is being rebuilt.  This keeps a cancelled or reopened
+    // dialog at the same first step as the Qt dialog.
+    m_scheduleImportLoading = true;
+    m_scheduleImportFilePath.clear();
+    m_scheduleImportSelectedWorksheet = -1;
+    m_scheduleImportSelectedUser = -1;
+    m_scheduleImportWorkbookLoaded = false;
+    m_scheduleImportReviewVisible = false;
+    m_scheduleImportUser = {};
+    m_scheduleImportPreview.reset();
+    m_scheduleImportPreviewReady = false;
+
+    m_scheduleImportFilePathTextBox.Text({});
+    m_scheduleImportRegularRadioButton.IsChecked(false);
+    m_scheduleImportIntensiveRadioButton.IsChecked(false);
+    m_scheduleImportWorksheetCombo.Items().Clear();
+    m_scheduleImportWorksheetCombo.SelectedIndex(-1);
+    m_scheduleImportUserCombo.Items().Clear();
+    m_scheduleImportUserCombo.SelectedIndex(-1);
+    m_scheduleImportNameConfirmation.IsChecked(false);
+    m_scheduleImportNameConfirmation.Visibility(Visibility::Collapsed);
+    m_scheduleImportScheduleTypeSection.Visibility(Visibility::Collapsed);
+    m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
+    m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+    m_scheduleImportProgressBar.Visibility(Visibility::Collapsed);
+    m_scheduleImportSourceRoot.Visibility(Visibility::Visible);
+    m_scheduleImportReviewRoot.Visibility(Visibility::Collapsed);
+    m_scheduleImportSourceStatusText.Text(
+        L"Choose a file and schedule type."
+        );
+    m_scheduleImportStatusText.Text(L"Review is ready.");
+    m_scheduleImportValidationText.Text({});
+    m_scheduleImportValidationText.Visibility(Visibility::Collapsed);
+    m_scheduleImportSourceActionButton.Content(
+        box_value(hstring(L"Load"))
+        );
+    m_scheduleImportSourceActionButton.IsEnabled(false);
+    m_scheduleImportApplyButton.IsEnabled(false);
+    m_scheduleImportReviewTeacherActionCombos.clear();
+    m_scheduleImportReviewTeacherRoomCombos.clear();
+    m_scheduleImportReviewClassActionCombos.clear();
+    m_scheduleImportReviewClassColors.clear();
+    m_scheduleImportReviewFontColors.clear();
+    if (m_scheduleImportReviewPreviewHost)
+    {
+        m_scheduleImportReviewPreviewHost.Children().Clear();
+    }
+    if (m_scheduleImportReviewClassesHost)
+    {
+        m_scheduleImportReviewClassesHost.Children().Clear();
+    }
+    if (m_scheduleImportReviewTeachersHost)
+    {
+        m_scheduleImportReviewTeachersHost.Children().Clear();
+    }
+    m_scheduleImportLoading = false;
+
+    if (m_ownedDialog)
+    {
+        m_ownedDialog.Title(box_value(hstring(L"Import Schedule")));
+        m_ownedDialog.PrimaryButtonText(L"Load");
+        m_ownedDialog.IsPrimaryButtonEnabled(false);
+        m_ownedDialog.SecondaryButtonText({});
+        m_ownedDialog.IsSecondaryButtonEnabled(false);
+        m_ownedDialog.CloseButtonText(L"Cancel");
+        m_ownedDialog.DefaultButton(ContentDialogButton::Close);
+    }
+}
+
+winrt::fire_and_forget MainWindow::selectScheduleImportFile()
+{
+    auto lifetime = get_strong();
+    if (m_filePickerActive || m_scheduleImportLoading)
+    {
+        co_return;
+    }
+    m_filePickerActive = true;
+
+    try
+    {
+        auto picker = winrt::Windows::Storage::Pickers::FileOpenPicker();
+        const HWND handle = windowHandle(this);
+        if (!handle)
+        {
+            m_scheduleImportSourceStatusText.Text(
+                L"The spreadsheet file picker is not available."
+                );
+        }
+        else
+        {
+            const auto initializer = picker.as<::IInitializeWithWindow>();
+            winrt::check_hresult(initializer->Initialize(handle));
+            picker.FileTypeFilter().Append(L".xlsx");
+            const auto file = co_await picker.PickSingleFileAsync();
+            if (file)
+            {
+                m_scheduleImportLoading = true;
+                m_scheduleImportFilePath = asWString(file.Path());
+                m_scheduleImportFilePathTextBox.Text(
+                    winrt::hstring(m_scheduleImportFilePath)
+                    );
+                m_scheduleImportWorkbookLoaded = false;
+                m_scheduleImportSelectedWorksheet = -1;
+                m_scheduleImportSelectedUser = -1;
+                m_scheduleImportUser = {};
+                m_scheduleImportPreview.reset();
+                m_scheduleImportPreviewReady = false;
+                m_scheduleImportWorksheetCombo.Items().Clear();
+                m_scheduleImportUserCombo.Items().Clear();
+                m_scheduleImportRegularRadioButton.IsChecked(false);
+                m_scheduleImportIntensiveRadioButton.IsChecked(false);
+                m_scheduleImportWorksheetSection.Visibility(
+                    Microsoft::UI::Xaml::Visibility::Collapsed
+                    );
+                m_scheduleImportUserSection.Visibility(
+                    Microsoft::UI::Xaml::Visibility::Collapsed
+                    );
+                m_scheduleImportNameConfirmation.IsChecked(false);
+                m_scheduleImportNameConfirmation.Visibility(
+                    Microsoft::UI::Xaml::Visibility::Collapsed
+                    );
+                m_scheduleImportSourceStatusText.Text(
+                    L"Ready to read the spreadsheet."
+                    );
+                m_scheduleImportLoading = false;
+                updateScheduleImportSourceState();
+            }
+        }
+    }
+    catch (winrt::hresult_error const& error)
+    {
+        m_scheduleImportSourceStatusText.Text(winrt::hstring(
+            L"The spreadsheet picker could not be opened: "
+            + asWide(winrt::to_string(error.message()))
+            ));
+        m_scheduleImportLoading = false;
+        updateScheduleImportSourceState();
+    }
+    catch (...)
+    {
+        m_scheduleImportSourceStatusText.Text(
+            L"The spreadsheet picker could not be opened."
+            );
+        m_scheduleImportLoading = false;
+        updateScheduleImportSourceState();
+    }
+
+    m_filePickerActive = false;
+}
+
+void MainWindow::updateScheduleImportSourceState()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_scheduleImportSourceRoot)
+    {
+        return;
+    }
+    const auto checked = [](auto const& radio) {
+        const auto value = radio.IsChecked();
+        return value && value.Value();
+    };
+    const bool hasPath = !m_scheduleImportFilePath.empty();
+    const bool hasKind = checked(m_scheduleImportRegularRadioButton)
+        || checked(m_scheduleImportIntensiveRadioButton);
+
+    if (m_scheduleImportLoading)
+    {
+        m_scheduleImportProgressBar.Visibility(Visibility::Visible);
+        m_scheduleImportBrowseButton.IsEnabled(false);
+        m_scheduleImportRegularRadioButton.IsEnabled(false);
+        m_scheduleImportIntensiveRadioButton.IsEnabled(false);
+        m_scheduleImportWorksheetCombo.IsEnabled(false);
+        m_scheduleImportUserCombo.IsEnabled(false);
+        m_scheduleImportSourceActionButton.IsEnabled(false);
+        if (m_ownedDialog)
+        {
+            m_ownedDialog.IsPrimaryButtonEnabled(false);
+        }
+        return;
+    }
+
+    m_scheduleImportProgressBar.Visibility(Visibility::Collapsed);
+    m_scheduleImportBrowseButton.IsEnabled(true);
+    m_scheduleImportRegularRadioButton.IsEnabled(hasPath);
+    m_scheduleImportIntensiveRadioButton.IsEnabled(hasPath);
+    m_scheduleImportWorksheetCombo.IsEnabled(true);
+    m_scheduleImportUserCombo.IsEnabled(true);
+
+    if (!hasPath)
+    {
+        m_scheduleImportScheduleTypeSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportSourceStatusText.Text(
+            L"Choose a file and schedule type."
+            );
+        m_scheduleImportSourceActionButton.Content(
+            box_value(hstring(L"Load"))
+            );
+        m_scheduleImportSourceActionButton.IsEnabled(false);
+        if (m_ownedDialog)
+        {
+            m_ownedDialog.PrimaryButtonText(L"Load");
+            m_ownedDialog.IsPrimaryButtonEnabled(false);
+        }
+        return;
+    }
+
+    m_scheduleImportScheduleTypeSection.Visibility(Visibility::Visible);
+    if (!m_scheduleImportWorkbookLoaded)
+    {
+        m_scheduleImportWorksheetSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportUserSection.Visibility(Visibility::Collapsed);
+        m_scheduleImportSourceStatusText.Text(
+            L"Ready to read the spreadsheet."
+            );
+        m_scheduleImportSourceActionButton.Content(
+            box_value(hstring(L"Load"))
+            );
+        m_scheduleImportSourceActionButton.IsEnabled(hasKind);
+        if (m_ownedDialog)
+        {
+            m_ownedDialog.PrimaryButtonText(L"Load");
+            m_ownedDialog.IsPrimaryButtonEnabled(hasKind);
+        }
+        return;
+    }
+
+    const bool worksheetReady = m_scheduleImportSelectedWorksheet >= 0;
+    const bool userReady = m_scheduleImportSelectedUser >= 0;
+    m_scheduleImportSourceStatusText.Text(
+        L"Workbook and worksheet are valid."
+        );
+    m_scheduleImportWorksheetSection.Visibility(
+        m_scheduleImportWorksheetCombo.Items().Size() > 1
+            ? Visibility::Visible
+            : Visibility::Collapsed
+        );
+    m_scheduleImportUserSection.Visibility(Visibility::Visible);
+    m_scheduleImportSourceActionButton.Content(
+        box_value(hstring(L"Next"))
+        );
+    const bool ready = hasKind && worksheetReady && userReady;
+    m_scheduleImportSourceActionButton.IsEnabled(ready);
+    if (m_ownedDialog)
+    {
+        m_ownedDialog.PrimaryButtonText(L"Next");
+        m_ownedDialog.IsPrimaryButtonEnabled(ready);
+    }
+}
+
+winrt::fire_and_forget MainWindow::loadScheduleImportSource()
+{
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    auto lifetime = get_strong();
+    if (m_scheduleImportLoading || m_scheduleImportWorkbookLoaded)
+    {
+        co_return;
+    }
+
+    const auto checked = [](auto const& radio) {
+        const auto value = radio.IsChecked();
+        return value && value.Value();
+    };
+    const bool intensive = checked(m_scheduleImportIntensiveRadioButton);
+    if (m_scheduleImportFilePath.empty()
+        || (!intensive && !checked(m_scheduleImportRegularRadioButton)))
+    {
+        updateScheduleImportSourceState();
+        co_return;
+    }
+
+    const std::wstring path = m_scheduleImportFilePath;
+    const std::wstring providerUser = m_scheduleImportUserTextBox.Text().c_str();
+    const std::wstring providerTeacher = m_scheduleImportTeacherTextBox.Text().c_str();
+    const std::wstring providerGrade = m_scheduleImportGradeTextBox.Text().c_str();
+    const std::wstring providerLevel = m_scheduleImportLevelTextBox.Text().c_str();
+    const std::wstring providerRoom = m_scheduleImportRoomTextBox.Text().c_str();
+    const std::wstring providerStart = m_scheduleImportStartTextBox.Text().c_str();
+    const std::wstring providerEnd = m_scheduleImportEndTextBox.Text().c_str();
+    const std::vector<std::wstring> providerDays = scheduleImportDays(
+        m_scheduleImportDaysTextBox.Text().c_str()
+        );
+
+    m_scheduleImportLoading = true;
+    m_scheduleImportSourceStatusText.Text(L"Loading workbook...");
+    updateScheduleImportSourceState();
+
+    bool readable = false;
+    std::wstring readError;
+    try
+    {
+        co_await winrt::resume_background();
+        const std::filesystem::path filePath(path);
+        const auto extension = filePath.extension().wstring();
+        std::wstring normalizedExtension = extension;
+        std::transform(
+            normalizedExtension.begin(),
+            normalizedExtension.end(),
+            normalizedExtension.begin(),
+            [](wchar_t value) { return static_cast<wchar_t>(std::towlower(value)); }
+            );
+        if (normalizedExtension != L".xlsx")
+        {
+            readError = L"Choose an XLSX schedule workbook.";
+        }
+        else
+        {
+            std::ifstream input(filePath, std::ios::binary);
+            readable = input.good();
+            if (!readable)
+            {
+                readError = L"The selected workbook could not be opened.";
+            }
+        }
+    }
+    catch (...)
+    {
+        readError = L"The selected workbook could not be read.";
+    }
+
+    co_await ResumeOnDispatcherQueue{
+        DispatcherQueue(),
+        Microsoft::UI::Dispatching::DispatcherQueuePriority::Normal
+    };
+    m_scheduleImportLoading = false;
+    if (!readable)
+    {
+        m_scheduleImportSourceStatusText.Text(
+            winrt::hstring(readError.empty()
+                ? L"The selected workbook could not be read."
+                : readError)
+            );
+        updateScheduleImportSourceState();
+        co_return;
+    }
+
+    // The Qt workbook/OOXML codec intentionally remains behind the Qt
+    // adapter boundary.  Until the native WinUI adapter is supplied, keep
+    // this presentation flow fed by the existing normalized provider values;
+    // the engine still owns preview, validation, and atomic application.
+    const auto fallbackValue = [](std::wstring value,
+                                  std::wstring_view fallback) {
+        return value.empty() ? std::wstring(fallback) : std::move(value);
+    };
+    const std::wstring userName = fallbackValue(providerUser, L"WinUI User");
+    const std::wstring teacher = fallbackValue(
+        providerTeacher,
+        L"\uD64D\uAE38\uB3D9"
+        );
+    const std::wstring grade = fallbackValue(providerGrade, L"E5");
+    const std::wstring level = fallbackValue(providerLevel, L"Zeus");
+    const std::wstring room = fallbackValue(providerRoom, L"413");
+    const std::wstring start = fallbackValue(providerStart, L"4:00 PM");
+    const std::wstring end = fallbackValue(providerEnd, L"4:55 PM");
+    const std::vector<std::wstring> days = providerDays.empty()
+        ? std::vector<std::wstring>{L"Monday"}
+        : providerDays;
+
+    classmngr::engine::ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = asUtf8(teacher);
+    candidate.teacherKr = candidate.teacherKey;
+    candidate.rooms.push_back(asUtf8(room));
+    candidate.importedColors.push_back("#FFFF99");
+    candidate.classGrade = asUtf8(grade);
+    candidate.classLevel = asUtf8(level);
+    candidate.sourceCells.push_back(asUtf8(path));
+    for (const std::wstring& day : days)
+    {
+        candidate.times.push_back({
+            asUtf8(day),
+            asUtf8(start),
+            asUtf8(end)
+        });
+    }
+    m_scheduleImportUser = {};
+    m_scheduleImportUser.name = asUtf8(userName);
+    m_scheduleImportUser.headerCell = "WinUI normalized provider";
+    m_scheduleImportUser.classes.push_back(std::move(candidate));
+
+    auto worksheet = ComboBoxItem();
+    worksheet.Content(box_value(hstring(L"Schedule")));
+    worksheet.Tag(box_value(0));
+    setAutomationName(worksheet, L"Schedule worksheet");
+    m_scheduleImportWorksheetCombo.Items().Clear();
+    m_scheduleImportWorksheetCombo.Items().Append(worksheet);
+    m_scheduleImportWorksheetCombo.SelectedIndex(0);
+    m_scheduleImportSelectedWorksheet = 0;
+    m_scheduleImportWorksheetSection.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+
+    auto user = ComboBoxItem();
+    user.Content(box_value(hstring(userName)));
+    user.Tag(box_value(0));
+    setAutomationName(user, userName);
+    m_scheduleImportUserCombo.Items().Clear();
+    m_scheduleImportUserCombo.Items().Append(user);
+    m_scheduleImportUserCombo.SelectedIndex(0);
+    m_scheduleImportSelectedUser = 0;
+    m_scheduleImportUserSection.Visibility(
+        Microsoft::UI::Xaml::Visibility::Visible
+        );
+    m_scheduleImportNameConfirmation.Visibility(
+        Microsoft::UI::Xaml::Visibility::Collapsed
+        );
+    m_scheduleImportWorkbookLoaded = true;
+    m_scheduleImportSourceStatusText.Text(
+        L"Workbook and worksheet are valid."
+        );
+    updateScheduleImportSourceState();
+}
+
+void MainWindow::openScheduleImportReview()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    if (!m_scheduleImportWorkbookLoaded
+        || m_scheduleImportSelectedWorksheet < 0
+        || m_scheduleImportSelectedUser < 0)
+    {
+        updateScheduleImportSourceState();
+        return;
+    }
+
+    const auto value = m_scheduleImportIntensiveRadioButton.IsChecked();
+    const bool intensive = value && value.Value();
+    m_scheduleImportKindCombo.SelectedIndex(intensive ? 1 : 0);
+    m_scheduleImportReviewVisible = false;
+    previewScheduleImport();
+    if (!m_scheduleImportPreviewReady)
+    {
+        return;
+    }
+
+    m_scheduleImportReviewVisible = true;
+    m_scheduleImportSourceRoot.Visibility(Visibility::Collapsed);
+    m_scheduleImportReviewRoot.Visibility(Visibility::Visible);
+    m_scheduleImportDialogRoot.Width(1120.0);
+    if (m_ownedDialog)
+    {
+        m_ownedDialog.Title(box_value(hstring(L"Review & Reconcile")));
+        m_ownedDialog.PrimaryButtonText(L"Import");
+        m_ownedDialog.SecondaryButtonText(L"Back");
+        m_ownedDialog.IsSecondaryButtonEnabled(true);
+        m_ownedDialog.CloseButtonText(L"Cancel");
+        m_ownedDialog.DefaultButton(ContentDialogButton::Primary);
+    }
+    rebuildScheduleImportReview();
+    updateScheduleImportReviewState();
+}
+
+void MainWindow::restoreScheduleImportSource()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+
+    m_scheduleImportReviewVisible = false;
+    m_scheduleImportReviewRoot.Visibility(Visibility::Collapsed);
+    m_scheduleImportSourceRoot.Visibility(Visibility::Visible);
+    m_scheduleImportDialogRoot.Width(420.0);
+    if (m_ownedDialog)
+    {
+        m_ownedDialog.Title(box_value(hstring(L"Import Schedule")));
+        m_ownedDialog.SecondaryButtonText({});
+        m_ownedDialog.IsSecondaryButtonEnabled(false);
+        m_ownedDialog.CloseButtonText(L"Cancel");
+        m_ownedDialog.DefaultButton(ContentDialogButton::Close);
+    }
+    updateScheduleImportSourceState();
+}
+
+std::optional<classmngr::engine::ScheduleImportPlan>
+MainWindow::currentScheduleImportPlan() const
+{
+    using namespace Microsoft::UI::Xaml::Controls;
+    using classmngr::engine::ScheduleImportClassAction;
+    using classmngr::engine::ScheduleImportTeacherAction;
+
+    if (!m_scheduleImportPreviewReady || !m_scheduleImportPreview)
+    {
+        return std::nullopt;
+    }
+
+    const auto checked = [](auto const& check) {
+        const auto value = check.IsChecked();
+        return value && value.Value();
+    };
+    const auto selectedTag = [](ComboBox const& combo, int fallback) {
+        const auto selected = combo.SelectedItem().try_as<ComboBoxItem>();
+        return selected ? boxedInt(selected.Tag()) : fallback;
+    };
+
+    classmngr::engine::ScheduleImportPlan plan;
+    plan.kind = m_scheduleImportPreview->kind;
+    plan.intensiveMode =
+        classmngr::engine::ScheduleImportIntensiveMode::UpdateExisting;
+    plan.selectedUserName = m_scheduleImportPreview->user.name;
+    plan.saveProfileNameIfBlank = true;
+    plan.updateProfileName = checked(m_scheduleImportNameConfirmation);
+    plan.unknownCellsAcknowledged = true;
+    plan.candidates = m_scheduleImportPreview->user.classes;
+    plan.intensiveSlotStates = m_scheduleImportPreview->user.intensiveSlotStates;
+    plan.diagnostics = m_scheduleImportPreview->user.diagnostics;
+
+    for (std::size_t index = 0;
+         index < m_scheduleImportPreview->teachers.size();
+         ++index)
+    {
+        const auto& teacher = m_scheduleImportPreview->teachers[index];
+        int actionValue =
+            static_cast<int>(ScheduleImportTeacherAction::Create);
+        if (index < m_scheduleImportReviewTeacherActionCombos.size())
+        {
+            actionValue = selectedTag(
+                m_scheduleImportReviewTeacherActionCombos[index],
+                actionValue
+                );
+        }
+        else if (index == 0)
+        {
+            actionValue = selectedTag(
+                m_scheduleImportTeacherActionCombo,
+                actionValue
+                );
+        }
+        if (actionValue < static_cast<int>(ScheduleImportTeacherAction::Reuse)
+            || actionValue > static_cast<int>(ScheduleImportTeacherAction::Skip))
+        {
+            actionValue = static_cast<int>(ScheduleImportTeacherAction::Create);
+        }
+        const auto action = static_cast<ScheduleImportTeacherAction>(actionValue);
+        int targetTeacherId = -1;
+        if ((action == ScheduleImportTeacherAction::Reuse
+             || action == ScheduleImportTeacherAction::UpdateRoom)
+            && !teacher.matchingTeacherIds.empty())
+        {
+            targetTeacherId = teacher.matchingTeacherIds.front();
+        }
+        std::string selectedRoom;
+        if (index < m_scheduleImportReviewTeacherRoomCombos.size())
+        {
+            selectedRoom = asUtf8(selectedComboValue(
+                m_scheduleImportReviewTeacherRoomCombos[index]
+                ));
+        }
+        if (selectedRoom.empty() && !teacher.importedRooms.empty())
+        {
+            selectedRoom = teacher.importedRooms.front();
+        }
+        plan.teachers.push_back({
+            teacher.teacherKey,
+            action,
+            targetTeacherId,
+            std::move(selectedRoom)
+        });
+    }
+
+    for (std::size_t index = 0;
+         index < m_scheduleImportPreview->classes.size();
+         ++index)
+    {
+        const auto& classPreview = m_scheduleImportPreview->classes[index];
+        int actionValue = static_cast<int>(ScheduleImportClassAction::CreateNew);
+        if (index < m_scheduleImportReviewClassActionCombos.size())
+        {
+            actionValue = selectedTag(
+                m_scheduleImportReviewClassActionCombos[index],
+                actionValue
+                );
+        }
+        else if (index == 0)
+        {
+            actionValue = selectedTag(m_scheduleImportClassActionCombo, actionValue);
+        }
+        if (actionValue < static_cast<int>(ScheduleImportClassAction::UpdateExisting)
+            || actionValue > static_cast<int>(ScheduleImportClassAction::Skip))
+        {
+            actionValue = static_cast<int>(ScheduleImportClassAction::CreateNew);
+        }
+        const auto action = static_cast<ScheduleImportClassAction>(actionValue);
+        std::string classColor = "#FFFFFF";
+        std::string fontColor = "#000000";
+        if (index < m_scheduleImportReviewClassColors.size())
+        {
+            classColor = m_scheduleImportReviewClassColors[index];
+        }
+        else if (classPreview.candidateIndex >= 0
+            && static_cast<std::size_t>(classPreview.candidateIndex)
+                < m_scheduleImportPreview->user.classes.size())
+        {
+            const auto& candidate = m_scheduleImportPreview->user.classes.at(
+                static_cast<std::size_t>(classPreview.candidateIndex)
+                );
+            if (!candidate.importedColors.empty())
+            {
+                classColor = candidate.importedColors.front();
+            }
+        }
+        if (index < m_scheduleImportReviewFontColors.size())
+        {
+            fontColor = m_scheduleImportReviewFontColors[index];
+        }
+        plan.classes.push_back({
+            classPreview.candidateIndex,
+            action,
+            action == ScheduleImportClassAction::UpdateExisting
+                ? classPreview.suggestedClassId
+                : -1,
+            std::move(classColor),
+            std::move(fontColor)
+        });
+    }
+    return plan;
+}
+
+void MainWindow::rebuildScheduleImportReview()
+{
+    using namespace Microsoft::UI::Xaml;
+    using namespace Microsoft::UI::Xaml::Controls;
+    using namespace Microsoft::UI::Xaml::Media;
+
+    if (!m_scheduleImportPreview
+        || !m_scheduleImportReviewPreviewHost
+        || !m_scheduleImportReviewClassesHost
+        || !m_scheduleImportReviewTeachersHost)
+    {
+        return;
+    }
+
+    const auto makeText = [](std::wstring_view text, double fontSize = 0.0) {
+        auto value = TextBlock();
+        value.Text(winrt::hstring(text));
+        value.TextWrapping(TextWrapping::Wrap);
+        if (fontSize > 0.0)
+        {
+            value.FontSize(fontSize);
+        }
+        return value;
+    };
+    const auto appendChoice = [](ComboBox const& combo,
+                                 std::wstring_view text,
+                                 int tag) {
+        auto item = ComboBoxItem();
+        item.Content(box_value(hstring(text)));
+        item.Tag(box_value(tag));
+        setAutomationName(item, text);
+        combo.Items().Append(item);
+    };
+    const auto timeText = [](classmngr::engine::ClassTime const& time) {
+        return asWide(time.day) + L" "
+            + asWide(time.startTime) + L" - " + asWide(time.endTime);
+    };
+    const auto candidateFor = [this](int index)
+        -> classmngr::engine::ScheduleImportClassCandidate const* {
+        if (!m_scheduleImportPreview || index < 0
+            || static_cast<std::size_t>(index)
+                >= m_scheduleImportPreview->user.classes.size())
+        {
+            return nullptr;
+        }
+        return &m_scheduleImportPreview->user.classes.at(
+            static_cast<std::size_t>(index)
+            );
+    };
+    const auto candidateTitle = [&candidateFor, &timeText](
+                                    int candidateIndex) {
+        const auto* candidate = candidateFor(candidateIndex);
+        if (!candidate)
+        {
+            return std::wstring(L"Imported class");
+        }
+        std::wstring title = asWide(candidate->classGrade) + L" "
+            + asWide(candidate->classLevel) + L" — "
+            + asWide(candidate->teacherKr);
+        if (!candidate->times.empty())
+        {
+            title += L" (" + timeText(candidate->times.front()) + L")";
+        }
+        return title;
+    };
+
+    m_scheduleImportReviewTeacherActionCombos.clear();
+    m_scheduleImportReviewTeacherRoomCombos.clear();
+    m_scheduleImportReviewClassActionCombos.clear();
+    m_scheduleImportReviewClassColors.clear();
+    m_scheduleImportReviewFontColors.clear();
+    m_scheduleImportReviewPreviewHost.Children().Clear();
+    m_scheduleImportReviewClassesHost.Children().Clear();
+    m_scheduleImportReviewTeachersHost.Children().Clear();
+
+    const std::array<std::string, 6> palette{
+        "#FFFF99", "#C6E0B4", "#9FE2BF", "#F4B183", "#D9EAD3", "#D9D2E9"
+    };
+    const auto colorForClassPreview = [this, &palette](std::size_t index) {
+        if (!m_scheduleImportPreview
+            || index >= m_scheduleImportPreview->classes.size())
+        {
+            return std::string("#FFFFFF");
+        }
+        const auto& classPreview = m_scheduleImportPreview->classes[index];
+        if (classPreview.candidateIndex >= 0
+            && static_cast<std::size_t>(classPreview.candidateIndex)
+                < m_scheduleImportPreview->user.classes.size())
+        {
+            const auto& candidate = m_scheduleImportPreview->user.classes.at(
+                static_cast<std::size_t>(classPreview.candidateIndex)
+                );
+            if (!candidate.importedColors.empty())
+            {
+                return candidate.importedColors.front();
+            }
+        }
+        return palette[index % palette.size()];
+    };
+    for (std::size_t index = 0;
+         index < m_scheduleImportPreview->classes.size();
+         ++index)
+    {
+        m_scheduleImportReviewClassColors.push_back(
+            colorForClassPreview(index)
+            );
+        m_scheduleImportReviewFontColors.push_back("#000000");
+    }
+
+    // Build a compact read-only schedule board before the resolution cards.
+    // It deliberately follows the Qt preview's five-weekday shape while
+    // remaining renderer-neutral and bounded by the imported time slots.
+    std::vector<std::wstring> timeRows;
+    for (const auto& candidate : m_scheduleImportPreview->user.classes)
+    {
+        for (const auto& time : candidate.times)
+        {
+            const std::wstring label = asWide(time.startTime) + L"\n"
+                + asWide(time.endTime);
+            if (std::find(timeRows.begin(), timeRows.end(), label)
+                == timeRows.end())
+            {
+                timeRows.push_back(label);
+            }
+        }
+    }
+    if (timeRows.empty())
+    {
+        timeRows.push_back(L"No time\nassigned");
+    }
+    auto board = Grid();
+    board.ColumnSpacing(2.0);
+    board.RowSpacing(2.0);
+    board.HorizontalAlignment(HorizontalAlignment::Stretch);
+    board.MinHeight(280.0);
+    auto timeColumn = ColumnDefinition();
+    timeColumn.Width(GridLengthHelper::FromValueAndType(
+        72.0,
+        GridUnitType::Pixel
+        ));
+    board.ColumnDefinitions().Append(timeColumn);
+    for (int column = 0; column < 5; ++column)
+    {
+        auto definition = ColumnDefinition();
+        definition.Width(GridLengthHelper::FromValueAndType(
+            1.0,
+            GridUnitType::Star
+            ));
+        board.ColumnDefinitions().Append(definition);
+    }
+    for (std::size_t row = 0; row <= timeRows.size(); ++row)
+    {
+        auto definition = RowDefinition();
+        definition.Height(GridLengthHelper::FromValueAndType(
+            row == 0 ? 32.0 : 52.0,
+            GridUnitType::Pixel
+            ));
+        board.RowDefinitions().Append(definition);
+    }
+    const std::array<std::wstring_view, 6> headers{
+        L"Time", L"Monday", L"Tuesday", L"Wednesday", L"Thursday", L"Friday"
+    };
+    const auto addBoardCell = [&board](std::wstring text,
+                                       int row,
+                                       int column,
+                                       std::string color) {
+        auto cell = Border();
+        cell.Padding(Thickness{4.0, 3.0, 4.0, 3.0});
+        cell.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+        cell.Background(SolidColorBrush(uiColorFromHex(color)));
+        auto label = TextBlock();
+        label.Text(winrt::hstring(text));
+        label.TextWrapping(TextWrapping::Wrap);
+        label.TextAlignment(TextAlignment::Center);
+        cell.Child(label);
+        Grid::SetRow(cell, row);
+        Grid::SetColumn(cell, column);
+        board.Children().Append(cell);
+    };
+    for (int column = 0; column < 6; ++column)
+    {
+        addBoardCell(std::wstring(headers[static_cast<std::size_t>(column)]),
+                     0,
+                     column,
+                     "#30343B");
+    }
+    const auto dayColumn = [](std::string_view day) {
+        if (day == "Monday" || day == "Mon") return 1;
+        if (day == "Tuesday" || day == "Tue") return 2;
+        if (day == "Wednesday" || day == "Wed") return 3;
+        if (day == "Thursday" || day == "Thurs" || day == "Thu") return 4;
+        if (day == "Friday" || day == "Fri") return 5;
+        return -1;
+    };
+    std::vector<std::wstring> boardTexts(
+        (timeRows.size() + 1) * 6
+        );
+    for (std::size_t row = 0; row < timeRows.size(); ++row)
+    {
+        addBoardCell(timeRows[row], static_cast<int>(row + 1), 0, "#20242A");
+    }
+    for (std::size_t candidateIndex = 0;
+         candidateIndex < m_scheduleImportPreview->user.classes.size();
+         ++candidateIndex)
+    {
+        const auto& candidate = m_scheduleImportPreview->user.classes[candidateIndex];
+        const std::wstring text = asWide(candidate.classGrade) + L" "
+            + asWide(candidate.classLevel) + L"\n"
+            + asWide(candidate.teacherKr) + L" - "
+            + (candidate.rooms.empty() ? L"" : asWide(candidate.rooms.front()));
+        std::string color = palette[candidateIndex % palette.size()];
+        for (std::size_t previewIndex = 0;
+             previewIndex < m_scheduleImportPreview->classes.size();
+             ++previewIndex)
+        {
+            if (m_scheduleImportPreview->classes[previewIndex].candidateIndex
+                == static_cast<int>(candidateIndex))
+            {
+                color = m_scheduleImportReviewClassColors[previewIndex];
+                break;
+            }
+        }
+        for (const auto& time : candidate.times)
+        {
+            const int column = dayColumn(time.day);
+            const std::wstring rowLabel = asWide(time.startTime) + L"\n"
+                + asWide(time.endTime);
+            const auto rowIt = std::find(timeRows.begin(), timeRows.end(), rowLabel);
+            if (column < 1 || rowIt == timeRows.end())
+            {
+                continue;
+            }
+            const std::size_t boardIndex =
+                (static_cast<std::size_t>(std::distance(timeRows.begin(), rowIt)) + 1)
+                * 6 + static_cast<std::size_t>(column);
+            if (!boardTexts[boardIndex].empty())
+            {
+                boardTexts[boardIndex] += L"\n";
+            }
+            boardTexts[boardIndex] += text;
+        }
+    }
+    for (std::size_t row = 0; row < timeRows.size(); ++row)
+    {
+        for (int column = 1; column < 6; ++column)
+        {
+            const std::size_t boardIndex = (row + 1) * 6
+                + static_cast<std::size_t>(column);
+            addBoardCell(
+                boardTexts[boardIndex].empty() ? L"Essay" : boardTexts[boardIndex],
+                static_cast<int>(row + 1),
+                column,
+                boardTexts[boardIndex].empty() ? "#F5F5F5" : "#FFFF99"
+                );
+        }
+    }
+    m_scheduleImportReviewPreviewHost.Children().Append(board);
+
+    for (std::size_t index = 0;
+         index < m_scheduleImportPreview->classes.size();
+         ++index)
+    {
+        const auto& classPreview = m_scheduleImportPreview->classes[index];
+        const auto* candidate = candidateFor(classPreview.candidateIndex);
+        if (!candidate)
+        {
+            continue;
+        }
+        const std::wstring title = candidateTitle(classPreview.candidateIndex);
+        auto card = ClassMngrWinUISharedUX::buildCard({
+            hstring(title),
+            hstring{},
+            hstring(L"Schedule import class resolution")
+        });
+        auto explanation = makeText(
+            classPreview.matchExplanation.empty()
+                ? (classPreview.suggestedClassId > 0
+                    ? L"One existing class matches the imported schedule."
+                    : L"No existing class matches the imported schedule.")
+                : asWide(classPreview.matchExplanation)
+            );
+        card.content.Children().Append(explanation);
+        auto action = ComboBox();
+        action.Header(box_value(hstring(L"Import Action")));
+        action.MinWidth(300.0);
+        action.IsTabStop(true);
+        if (classPreview.suggestedClassId > 0)
+        {
+            appendChoice(
+                action,
+                L"Update suggested: " + title,
+                static_cast<int>(classmngr::engine::ScheduleImportClassAction::UpdateExisting)
+                );
+        }
+        appendChoice(
+            action,
+            L"Create new class",
+            static_cast<int>(classmngr::engine::ScheduleImportClassAction::CreateNew)
+            );
+        appendChoice(
+            action,
+            L"Skip class",
+            static_cast<int>(classmngr::engine::ScheduleImportClassAction::Skip)
+            );
+        action.SelectedIndex(0);
+        action.SelectionChanged(
+            [this](auto const&, auto const&) {
+                updateScheduleImportReviewState();
+            }
+            );
+        setAutomationName(action, L"Schedule import class action");
+        card.content.Children().Append(action);
+        m_scheduleImportReviewClassActionCombos.push_back(action);
+
+        auto colorRow = StackPanel();
+        colorRow.Orientation(Orientation::Horizontal);
+        colorRow.Spacing(8.0);
+        auto color = Border();
+        color.Width(26.0);
+        color.Height(26.0);
+        color.CornerRadius(CornerRadius{4.0, 4.0, 4.0, 4.0});
+        color.Background(SolidColorBrush(uiColorFromHex(
+            m_scheduleImportReviewClassColors[index]
+            )));
+        colorRow.Children().Append(makeText(L"Color"));
+        colorRow.Children().Append(color);
+        card.content.Children().Append(colorRow);
+        m_scheduleImportReviewClassesHost.Children().Append(card.root);
+    }
+
+    for (std::size_t index = 0;
+         index < m_scheduleImportPreview->teachers.size();
+         ++index)
+    {
+        const auto& teacher = m_scheduleImportPreview->teachers[index];
+        std::wstring title = asWide(teacher.teacherKr);
+        if (!teacher.importedRooms.empty())
+        {
+            title += L" (" + asWide(teacher.importedRooms.front()) + L")";
+        }
+        auto card = ClassMngrWinUISharedUX::buildCard({
+            hstring(title),
+            hstring{},
+            hstring(L"Schedule import Korean teacher resolution")
+        });
+        card.content.Children().Append(makeText(
+            teacher.matchingTeacherIds.empty()
+                ? L"No existing Korean teacher matches the imported name."
+                : L"An existing Korean teacher matches the imported name."
+            ));
+        auto action = ComboBox();
+        action.Header(box_value(hstring(L"Import Action")));
+        action.MinWidth(300.0);
+        appendChoice(action, L"Reuse existing teacher", 0);
+        appendChoice(action, L"Update room", 1);
+        appendChoice(action, L"Create new teacher", 2);
+        appendChoice(action, L"Skip teacher", 3);
+        action.SelectedIndex(
+            teacher.matchingTeacherIds.empty() ? 2 : 0
+            );
+        action.SelectionChanged(
+            [this](auto const&, auto const&) {
+                updateScheduleImportReviewState();
+            }
+            );
+        setAutomationName(action, L"Schedule import teacher action");
+        card.content.Children().Append(action);
+        m_scheduleImportReviewTeacherActionCombos.push_back(action);
+
+        auto room = ComboBox();
+        room.Header(box_value(hstring(L"Imported Room")));
+        room.MinWidth(220.0);
+        if (teacher.importedRooms.empty())
+        {
+            auto item = ComboBoxItem();
+            item.Content(box_value(hstring(L"No room imported")));
+            item.Tag(box_value(hstring(L"")));
+            room.Items().Append(item);
+        }
+        else
+        {
+            for (const std::string& importedRoom : teacher.importedRooms)
+            {
+                auto item = ComboBoxItem();
+                item.Content(box_value(hstring(asWide(importedRoom))));
+                item.Tag(box_value(hstring(asWide(importedRoom))));
+                room.Items().Append(item);
+            }
+        }
+        room.SelectedIndex(0);
+        room.SelectionChanged(
+            [this](auto const&, auto const&) {
+                updateScheduleImportReviewState();
+            }
+            );
+        setAutomationName(room, L"Schedule import imported room");
+        card.content.Children().Append(room);
+        m_scheduleImportReviewTeacherRoomCombos.push_back(room);
+        m_scheduleImportReviewTeachersHost.Children().Append(card.root);
+    }
+
+    if (!m_scheduleImportReviewClassActionCombos.empty())
+    {
+        m_scheduleImportClassActionCombo.SelectedIndex(
+            m_scheduleImportPreview->classes.front().suggestedClassId > 0
+                ? 0
+                : 1
+            );
+    }
+    if (!m_scheduleImportReviewTeacherActionCombos.empty())
+    {
+        m_scheduleImportTeacherActionCombo.SelectedIndex(
+            m_scheduleImportPreview->teachers.front().matchingTeacherIds.empty()
+                ? 1
+                : 0
+            );
+    }
+}
+
+void MainWindow::updateScheduleImportReviewState()
+{
+    using namespace Microsoft::UI::Xaml;
+
+    const auto plan = currentScheduleImportPlan();
+    if (!plan || !m_openDatabase || !m_scheduleImportStatusText)
+    {
+        if (m_scheduleImportApplyButton)
+        {
+            m_scheduleImportApplyButton.IsEnabled(false);
+        }
+        if (m_ownedDialog && m_scheduleImportReviewVisible)
+        {
+            m_ownedDialog.IsPrimaryButtonEnabled(false);
+        }
+        return;
+    }
+
+    classmngr::engine::ScheduleImportService service(*m_openDatabase);
+    const auto valid = service.validateImport(*plan);
+    if (!valid)
+    {
+        if (m_scheduleImportValidationText)
+        {
+            m_scheduleImportValidationText.Text(winrt::hstring(
+                L"Import validation failed: " + asWide(valid.error().message)
+                ));
+            m_scheduleImportValidationText.Visibility(Visibility::Visible);
+        }
+        m_scheduleImportStatusText.Text(L"Resolve the highlighted import actions.");
+        m_scheduleImportApplyButton.IsEnabled(false);
+        if (m_ownedDialog && m_scheduleImportReviewVisible)
+        {
+            m_ownedDialog.IsPrimaryButtonEnabled(false);
+        }
+        return;
+    }
+
+    int teachersCreated = 0;
+    int teachersUpdated = 0;
+    int teachersSkipped = 0;
+    for (const auto& teacher : plan->teachers)
+    {
+        using Action = classmngr::engine::ScheduleImportTeacherAction;
+        if (teacher.action == Action::Create) ++teachersCreated;
+        if (teacher.action == Action::UpdateRoom) ++teachersUpdated;
+        if (teacher.action == Action::Skip) ++teachersSkipped;
+    }
+    int classesCreated = 0;
+    int classesUpdated = 0;
+    int classesSkipped = 0;
+    for (const auto& classResolution : plan->classes)
+    {
+        using Action = classmngr::engine::ScheduleImportClassAction;
+        if (classResolution.action == Action::CreateNew) ++classesCreated;
+        if (classResolution.action == Action::UpdateExisting) ++classesUpdated;
+        if (classResolution.action == Action::Skip) ++classesSkipped;
+    }
+    if (m_scheduleImportReviewVisible)
+    {
+        m_scheduleImportStatusText.Text(
+            L"All required resolutions are complete."
+            );
+    }
+    if (m_scheduleImportValidationText)
+    {
+        m_scheduleImportValidationText.Text(winrt::hstring(
+            L"Proposed import: "
+            + std::to_wstring(teachersCreated)
+            + L" teacher(s) created, "
+            + std::to_wstring(teachersUpdated)
+            + L" room update(s), "
+            + std::to_wstring(teachersSkipped)
+            + L" teacher(s) skipped; "
+            + std::to_wstring(classesCreated)
+            + L" class(es) created, "
+            + std::to_wstring(classesUpdated)
+            + L" updated, "
+            + std::to_wstring(classesSkipped)
+            + L" skipped; 0 existing schedule(s) cleared; 0 occupied cell(s) "
+              L"acknowledged and ignored."
+            ));
+        m_scheduleImportValidationText.Visibility(Visibility::Visible);
+    }
+    m_scheduleImportApplyButton.IsEnabled(true);
+    if (m_ownedDialog && m_scheduleImportReviewVisible)
+    {
+        m_ownedDialog.IsPrimaryButtonEnabled(true);
+    }
+}
+
 void MainWindow::saveScheduleEntry()
 {
     using namespace Microsoft::UI::Xaml;
@@ -758,47 +1976,57 @@ void MainWindow::previewScheduleImport()
         }
     };
 
-    const std::wstring userName = m_scheduleImportUserTextBox.Text().c_str();
-    const std::wstring teacher = m_scheduleImportTeacherTextBox.Text().c_str();
-    const std::wstring grade = m_scheduleImportGradeTextBox.Text().c_str();
-    const std::wstring level = m_scheduleImportLevelTextBox.Text().c_str();
-    const std::wstring room = m_scheduleImportRoomTextBox.Text().c_str();
-    const std::wstring start = m_scheduleImportStartTextBox.Text().c_str();
-    const std::wstring end = m_scheduleImportEndTextBox.Text().c_str();
-    const std::vector<std::wstring> days = scheduleImportDays(
-        m_scheduleImportDaysTextBox.Text().c_str()
-        );
-    if (userName.empty() || teacher.empty() || grade.empty() || level.empty()
-        || room.empty() || start.empty() || end.empty() || days.empty())
+    const bool sourceLoaded = m_scheduleImportWorkbookLoaded
+        && m_scheduleImportSelectedUser >= 0
+        && !m_scheduleImportUser.classes.empty();
+    if (!sourceLoaded)
     {
-        showValidation(
-            L"Enter a profile, Korean teacher, grade, level, room, meeting "
-            L"days, start time, and end time before previewing."
+        const std::wstring userName = m_scheduleImportUserTextBox.Text().c_str();
+        const std::wstring teacher = m_scheduleImportTeacherTextBox.Text().c_str();
+        const std::wstring grade = m_scheduleImportGradeTextBox.Text().c_str();
+        const std::wstring level = m_scheduleImportLevelTextBox.Text().c_str();
+        const std::wstring room = m_scheduleImportRoomTextBox.Text().c_str();
+        const std::wstring start = m_scheduleImportStartTextBox.Text().c_str();
+        const std::wstring end = m_scheduleImportEndTextBox.Text().c_str();
+        const std::vector<std::wstring> days = scheduleImportDays(
+            m_scheduleImportDaysTextBox.Text().c_str()
             );
-        return;
+        if (userName.empty() || teacher.empty() || grade.empty() || level.empty()
+            || room.empty() || start.empty() || end.empty() || days.empty())
+        {
+            showValidation(
+                L"Enter a profile, Korean teacher, grade, level, room, meeting "
+                L"days, start time, and end time before previewing."
+                );
+            return;
+        }
+
+        classmngr::engine::ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = asUtf8(teacher);
+        candidate.teacherKr = candidate.teacherKey;
+        candidate.rooms.push_back(asUtf8(room));
+        candidate.classGrade = asUtf8(grade);
+        candidate.classLevel = asUtf8(level);
+        candidate.sourceCells.push_back("WinUI schedule import");
+        for (const std::wstring& day : days)
+        {
+            candidate.times.push_back({
+                asUtf8(day),
+                asUtf8(start),
+                asUtf8(end)
+            });
+        }
+
+        m_scheduleImportUser = {};
+        m_scheduleImportUser.name = asUtf8(userName);
+        m_scheduleImportUser.headerCell = "WinUI";
+        m_scheduleImportUser.classes.push_back(std::move(candidate));
     }
 
-    classmngr::engine::ScheduleImportClassCandidate candidate;
-    candidate.teacherKey = asUtf8(teacher);
-    candidate.teacherKr = candidate.teacherKey;
-    candidate.rooms.push_back(asUtf8(room));
-    candidate.classGrade = asUtf8(grade);
-    candidate.classLevel = asUtf8(level);
-    candidate.sourceCells.push_back("WinUI schedule import");
-    for (const std::wstring& day : days)
-    {
-        candidate.times.push_back({
-            asUtf8(day),
-            asUtf8(start),
-            asUtf8(end)
-        });
-    }
-
-    m_scheduleImportUser = {};
-    m_scheduleImportUser.name = asUtf8(userName);
-    m_scheduleImportUser.headerCell = "WinUI";
-    m_scheduleImportUser.classes.push_back(std::move(candidate));
-    const auto kind = m_scheduleImportKindCombo.SelectedIndex() == 1
+    const auto kind = (sourceLoaded
+        ? (m_scheduleImportIntensiveRadioButton.IsChecked()
+            && m_scheduleImportIntensiveRadioButton.IsChecked().Value())
+        : m_scheduleImportKindCombo.SelectedIndex() == 1)
         ? classmngr::engine::ScheduleImportKind::Intensive
         : classmngr::engine::ScheduleImportKind::Normal;
     classmngr::engine::ScheduleImportService service(*m_openDatabase);
@@ -838,12 +2066,16 @@ void MainWindow::previewScheduleImport()
         + (hasSuggestedClass ? L"suggested existing class" : L"new class suggested")
         + L"."
         ));
+    if (m_scheduleImportReviewVisible)
+    {
+        rebuildScheduleImportReview();
+    }
+    updateScheduleImportReviewState();
 }
 
 void MainWindow::applyScheduleImport()
 {
     using namespace Microsoft::UI::Xaml;
-    using namespace Microsoft::UI::Xaml::Controls;
 
     if (!m_openDatabase || !m_scheduleImportPreviewReady
         || !m_scheduleImportPreview || !m_scheduleImportStatusText)
@@ -868,70 +2100,22 @@ void MainWindow::applyScheduleImport()
             m_scheduleImportStatusText.Text(L"Import could not be applied.");
         }
     };
-    const auto teacherItem = m_scheduleImportTeacherActionCombo.SelectedItem()
-        .try_as<ComboBoxItem>();
-    const auto classItem = m_scheduleImportClassActionCombo.SelectedItem()
-        .try_as<ComboBoxItem>();
-    const auto teacherAction = teacherItem
-        ? static_cast<classmngr::engine::ScheduleImportTeacherAction>(
-            boxedInt(teacherItem.Tag())
-            )
-        : classmngr::engine::ScheduleImportTeacherAction::Create;
-    const auto classAction = classItem
-        ? static_cast<classmngr::engine::ScheduleImportClassAction>(
-            boxedInt(classItem.Tag())
-            )
-        : classmngr::engine::ScheduleImportClassAction::CreateNew;
-    const auto& teacherPreview = m_scheduleImportPreview->teachers.front();
-    const auto& classPreview = m_scheduleImportPreview->classes.front();
-    if (teacherAction == classmngr::engine::ScheduleImportTeacherAction::Reuse
-        && teacherPreview.matchingTeacherIds.empty())
+    const auto plan = currentScheduleImportPlan();
+    if (!plan)
     {
-        showValidation(L"Reuse is unavailable because no matching teacher was found.");
+        showValidation(L"The import review is no longer available.");
         return;
     }
-    if (classAction == classmngr::engine::ScheduleImportClassAction::UpdateExisting
-        && classPreview.suggestedClassId <= 0)
-    {
-        showValidation(L"Update existing is unavailable because the preview found no target.");
-        return;
-    }
-
-    classmngr::engine::ScheduleImportPlan plan;
-    plan.kind = m_scheduleImportPreview->kind;
-    plan.selectedUserName = m_scheduleImportPreview->user.name;
-    plan.saveProfileNameIfBlank = true;
-    plan.unknownCellsAcknowledged = true;
-    plan.candidates = m_scheduleImportPreview->user.classes;
-    plan.teachers.push_back({
-        plan.candidates.front().teacherKey,
-        teacherAction,
-        teacherAction == classmngr::engine::ScheduleImportTeacherAction::Reuse
-            ? teacherPreview.matchingTeacherIds.front()
-            : -1,
-        plan.candidates.front().rooms.empty()
-            ? std::string{}
-            : plan.candidates.front().rooms.front()
-    });
-    plan.classes.push_back({
-        0,
-        classAction,
-        classAction == classmngr::engine::ScheduleImportClassAction::UpdateExisting
-            ? classPreview.suggestedClassId
-            : -1,
-        "#FFFFFF",
-        "#000000"
-    });
 
     classmngr::engine::ScheduleImportService service(*m_openDatabase);
-    const auto valid = service.validateImport(plan);
+    const auto valid = service.validateImport(*plan);
     if (!valid)
     {
         showValidation(L"Import validation failed: "
             + asWide(valid.error().message));
         return;
     }
-    const auto imported = service.importSchedule(plan);
+    const auto imported = service.importSchedule(*plan);
     if (!imported)
     {
         showValidation(L"Import failed and was rolled back: "
@@ -956,7 +2140,20 @@ void MainWindow::applyScheduleImport()
         + std::to_wstring(imported->teachersCreated)
         + L" teachers created."
         ));
+    m_dirtyState.markDirty();
+    updateFileCommandState();
     refreshScheduleWorkspace();
+    if (m_ownedDialog)
+    {
+        try
+        {
+            m_ownedDialog.Hide();
+        }
+        catch (...)
+        {
+            // Dialog teardown is cancellation, not an import failure.
+        }
+    }
 }
 
 } // namespace winrt::ClassMngrWinUI::implementation
