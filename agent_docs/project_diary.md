@@ -1,5 +1,38 @@
 # Project Diary
 
+## Review layout follow-up — 2026-09-14
+
+- The review ContentDialog now leaves height content-driven and aligns its
+  content to the top; the review board uses compact rendering for smaller
+  fonts, rows, and fixed day columns.
+- The Schedule-page mode bar is left-sized to the same 860-DIP scaffold as the
+  board, so the Import control's right edge follows the table rather than the
+  page.
+- The prior candidate's color-preserving disabled resources, white Essay
+  cells, imported fills, review message, centered heading, compact footer
+  resource, action spacing, and right-aligned Color row were preserved.
+- Static diff checking passed. Build and phase-6 runtime verification remain
+  blocked by NuGet/MSBuild access/long-running host state, and no native UI
+  surface was available for visual confirmation.
+
+## Review & Reconcile UI polish — 2026-09-14
+
+- The candidate keeps the existing native workbook, preview, and import
+  contracts and limits production changes to the review/page scaffolding and
+  shared WinUI board renderer.
+- Equal fixed day widths were chosen for full and compact board modes so the
+  `Wednesday` header is not squeezed into a wrapped label. Essay and imported
+  class fills are explicitly preserved through disabled Button resources.
+- The review body now carries the requested left-aligned message, centers the
+  preview heading, gives action controls a 12px trailing margin, and places
+  the class Color label/preview in a right-aligned title row. Dialog padding
+  and minimum sizes were reduced while source-state insets remain scoped to
+  the source root.
+- Static diff checking passed, but the candidate was not compiled or run in
+  this deployment. A native UI host was unavailable, so footer sizing,
+  whitespace, header wrapping, and runtime disabled-state colors remain
+  explicit follow-up checks.
+
 ## Heavy Schedule Import WinUI Rebuild — 2026-09-14
 
 - Replaced the prior WinUI schedule-import presentation in the existing

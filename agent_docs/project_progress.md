@@ -1,5 +1,51 @@
 # Project Progress
 
+## Current Heavy Deployment — Review layout follow-up — 2026-09-14
+
+Deployment `review_reconcile_layout_20260914_02` is paused after landing the
+follow-up candidate in the existing three WinUI production files. The review
+dialog now uses content-driven height and top vertical alignment, the review
+board renders with compact fonts/rows/columns, and the Schedule-page mode bar
+is constrained to the 860-DIP schedule-board scaffold so Import ends at the
+table edge. The prior message, card/color, weekday-width, Essay, and disabled
+fill fixes remain intact.
+
+Verification: `git diff --check` passed with only LF-to-CRLF notices, and static
+inspection covered all requested hunks. The non-elevated configured build
+failed at `nuget.exe` with Access Denied; an elevated retry remained active
+and was stopped while compiling unrelated `MainWindow_speaking_*` sources.
+No successful candidate build, staged `--phase6-schedule-test`, or native
+visual check is available. Do not claim completion until those checks succeed.
+
+Continuation: rerun the x64 Debug WinUI build after the NuGet/MSBuild
+environment is usable, run the staged schedule diagnostic, then manually
+inspect dialog top/bottom alignment, compact preview sizing, and Schedule-page
+Import alignment in a native UI host.
+
+## Current Heavy Deployment — Review & Reconcile UI polish — 2026-09-14
+
+Deployment `review_reconcile_ui_20260914_01` is paused with a three-file
+production candidate in the WinUI schedule-import review surface:
+`MainWindow_schedule_page.cpp`, `MainWindow_schedule_editor.cpp`, and
+`winui_schedule_board.cpp`. The candidate adds fixed equal weekday widths,
+white Essay cells, disabled-state color preservation, the review message and
+centered preview heading, 12px action trailing margins, same-line right-aligned
+class color previews, reduced dialog insets/minimums, and natural-width dialog
+buttons through a local `ContentDialogButtonMinWidth` override.
+
+Verified handoff: `git diff --check` passed (with only LF-to-CRLF notices),
+static inspection found the requested renderer and dialog structures, and only
+the three scoped files are modified. The configured x64 Debug build did not
+complete against the candidate and the staged `--phase6-schedule-test`
+diagnostic was not run. No native UI host was available for live visual
+verification. Do not claim compile, runtime, or pixel/layout completion until
+the build, diagnostic, and a native visual check are rerun.
+
+Continuation: build `ClassMngrWindowsWinUI` in
+`build\\windows-x64-winui-debug`, run the staged phase-6 schedule diagnostic,
+then manually inspect footer natural sizing, dialog whitespace, colors, and
+weekday header wrapping at a supported native window size.
+
 ## Latest Heavy Deployment — Schedule Import WinUI Rebuild — 2026-09-14
 
 Deployment `schedule_import_winui_rebuild_20260914` replaced the failed WinUI

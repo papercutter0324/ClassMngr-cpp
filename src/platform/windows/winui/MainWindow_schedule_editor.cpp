@@ -752,6 +752,10 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
                 box_value(hstring(L"ContentDialogMaxHeight")),
                 box_value(1080.0)
                 );
+            dialog.Resources().Insert(
+                box_value(hstring(L"ContentDialogButtonMinWidth")),
+                box_value(0.0)
+                );
         }
     };
     resetScheduleImportSource();
@@ -880,10 +884,11 @@ winrt::fire_and_forget MainWindow::openScheduleImportDialog()
         reviewDialog.Content(m_scheduleImportDialogFrame);
         reviewDialog.FullSizeDesired(true);
         reviewDialog.Width(m_scheduleImportDialogRoot.Width());
+        reviewDialog.Height(std::numeric_limits<double>::quiet_NaN());
         reviewDialog.MaxHeight(1080.0);
         reviewDialog.MaxWidth(1800.0);
         reviewDialog.HorizontalContentAlignment(HorizontalAlignment::Stretch);
-        reviewDialog.VerticalContentAlignment(VerticalAlignment::Stretch);
+        reviewDialog.VerticalContentAlignment(VerticalAlignment::Top);
         reviewDialog.PrimaryButtonText(L"Import");
         reviewDialog.SecondaryButtonText(L"Back");
         reviewDialog.CloseButtonText(L"Cancel");
@@ -1785,7 +1790,10 @@ void MainWindow::openScheduleImportReview()
         m_ownedDialog.CloseButtonText(L"Cancel");
         m_ownedDialog.DefaultButton(ContentDialogButton::Primary);
     }
-    setScheduleImportDialogSize(1240.0, 780.0);
+    setScheduleImportDialogSize(
+        1240.0,
+        std::numeric_limits<double>::quiet_NaN()
+        );
     rebuildScheduleImportReview();
     updateScheduleImportReviewState();
 }
@@ -2191,7 +2199,7 @@ void MainWindow::rebuildScheduleImportReview()
         ClassMngrWinUIScheduleBoard::RenderOptions{
             false,
             false,
-            false,
+            true,
             request.displayMode,
             "#D39B25"
         }
@@ -2217,6 +2225,7 @@ void MainWindow::rebuildScheduleImportReview()
         auto action = ComboBox();
         action.Header(box_value(hstring(L"Import Action")));
         action.MinWidth(300.0);
+        action.Margin(Thickness{0.0, 0.0, 12.0, 0.0});
         action.IsTabStop(true);
         if (classPreview.suggestedClassId > 0)
         {
@@ -2249,6 +2258,7 @@ void MainWindow::rebuildScheduleImportReview()
         auto colorRow = StackPanel();
         colorRow.Orientation(Orientation::Horizontal);
         colorRow.Spacing(8.0);
+        colorRow.HorizontalAlignment(HorizontalAlignment::Right);
         auto color = Border();
         color.Width(26.0);
         color.Height(26.0);
@@ -2266,9 +2276,48 @@ void MainWindow::rebuildScheduleImportReview()
             }
         });
         m_scheduleImportReviewClassColorPreviews.push_back(color);
-        colorRow.Children().Append(makeText(L"Color", 14.0));
+        auto colorLabel = makeText(L"Color", 14.0);
+        colorLabel.VerticalAlignment(VerticalAlignment::Center);
+        colorRow.Children().Append(colorLabel);
         colorRow.Children().Append(color);
-        card.content.Children().Append(colorRow);
+        if (card.content.Children().Size() > 0)
+        {
+            const auto title = card.content.Children().GetAt(0)
+                .try_as<TextBlock>();
+            if (title)
+            {
+                card.content.Children().RemoveAt(0);
+                auto titleRow = Grid();
+                titleRow.ColumnSpacing(8.0);
+                titleRow.HorizontalAlignment(HorizontalAlignment::Stretch);
+                auto titleColumn = ColumnDefinition();
+                titleColumn.Width(GridLengthHelper::FromValueAndType(
+                    1.0,
+                    GridUnitType::Star
+                    ));
+                titleRow.ColumnDefinitions().Append(titleColumn);
+                auto colorColumn = ColumnDefinition();
+                colorColumn.Width(GridLengthHelper::FromValueAndType(
+                    1.0,
+                    GridUnitType::Auto
+                    ));
+                titleRow.ColumnDefinitions().Append(colorColumn);
+                title.VerticalAlignment(VerticalAlignment::Center);
+                Grid::SetColumn(title, 0);
+                titleRow.Children().Append(title);
+                Grid::SetColumn(colorRow, 1);
+                titleRow.Children().Append(colorRow);
+                card.content.Children().InsertAt(0, titleRow);
+            }
+            else
+            {
+                card.content.Children().Append(colorRow);
+            }
+        }
+        else
+        {
+            card.content.Children().Append(colorRow);
+        }
         m_scheduleImportReviewClassesHost.Children().Append(card.root);
     }
 
@@ -2290,6 +2339,7 @@ void MainWindow::rebuildScheduleImportReview()
         auto action = ComboBox();
         action.Header(box_value(hstring(L"Import Action")));
         action.MinWidth(300.0);
+        action.Margin(Thickness{0.0, 0.0, 12.0, 0.0});
         appendChoice(action, L"Reuse existing teacher", 0);
         appendChoice(action, L"Update room", 1);
         appendChoice(action, L"Create new teacher", 2);

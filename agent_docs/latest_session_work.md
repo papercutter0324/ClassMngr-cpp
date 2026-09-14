@@ -1,5 +1,70 @@
 # Latest Session Work
 
+## Paused Heavy Handoff — Review layout follow-up — 2026-09-14
+
+Deployment `review_reconcile_layout_20260914_02` landed these additional
+production changes:
+
+- `MainWindow_schedule_editor.cpp`: review ContentDialog height is automatic,
+  review content is top-aligned, and review board rendering uses
+  `compactPreview=true`.
+- `MainWindow_schedule_page.cpp`: the Schedule mode bar is 860 DIPs wide and
+  left-aligned to match the schedule board; existing review scaffold changes
+  remain in place.
+
+Together with the prior candidate in `winui_schedule_board.cpp`, the current
+production scope is still exactly three WinUI files. The intended result is a
+top-aligned, content-sized dialog with a smaller preview and an Import button
+ending at the table edge, while preserving the earlier color/Essay/weekday and
+resolution-card behavior.
+
+Evidence: `git diff --check` exited 0 with only LF-to-CRLF notices. Static
+inspection found the requested follow-up and preserved hunks. The first
+configured build failed at `nuget.exe` with Access Denied. The elevated retry
+was still compiling when its window ended and was later stopped while in
+unrelated `MainWindow_speaking_*` compilation; no successful build exit was
+obtained. The staged phase-6 diagnostic and native visual inspection were not
+run. This is a paused, uncompiled candidate.
+
+Next action: rerun
+`cmake --build build\\windows-x64-winui-debug --config Debug --target
+ClassMngrWindowsWinUI -- /m:1` after the environment issue is cleared, then
+run `dist\\ClassMngr-windows-winui-x64\\Debug\\ClassMngrWinUI.exe
+--phase6-schedule-test` and perform a native visual check.
+
+## Paused Heavy Handoff — Review & Reconcile UI polish — 2026-09-14
+
+Deployment `review_reconcile_ui_20260914_01` landed the requested UI candidate
+in exactly these files:
+
+- `src/platform/windows/winui/MainWindow_schedule_page.cpp`
+- `src/platform/windows/winui/MainWindow_schedule_editor.cpp`
+- `src/platform/windows/winui/winui_schedule_board.cpp`
+
+The review scaffold now uses zero review minimum height/insets, retains source
+insets, displays the exact left-aligned review instruction, centers
+`Schedule Preview`, and sets the local dialog button minimum width to zero.
+Class and teacher Import Action controls have a 12px trailing margin. Class
+cards put a right-aligned `Color` label and preview on the same title row.
+The board uses fixed 142-DIP full and 100-DIP compact day columns, white Essay
+fills, and local disabled-state brushes so imported class colors are not washed
+out by the WinUI Button template.
+
+Evidence: `git diff --check` passed with only line-ending notices; static
+inspection found request coverage and the expected WinUI resource keys. The
+configured build was attempted by a Tester but did not complete against the
+candidate, and no staged schedule diagnostic or native visual check was run.
+The current worktree must therefore be treated as an uncompiled, unverified
+candidate, not a completed release-quality change.
+
+Next action: run
+`cmake --build build\\windows-x64-winui-debug --config Debug --target
+ClassMngrWindowsWinUI -- /m:1`, then run
+`dist\\ClassMngr-windows-winui-x64\\Debug\\ClassMngrWinUI.exe
+--phase6-schedule-test`. Resolve any compile/test failures before claiming
+completion; manually inspect the dialog footer and colors when a native host
+is available.
+
 ## Heavy Deployment Handoff — Schedule Import WinUI Rebuild — 2026-09-14
 
 Deployment `schedule_import_winui_rebuild_20260914` is implemented in

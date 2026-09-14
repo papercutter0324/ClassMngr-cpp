@@ -25,6 +25,8 @@ using winrt::Windows::UI::Text::FontWeights;
 
 constexpr double TimeColumnWidth = 90.0;
 constexpr double CompactTimeColumnWidth = 84.0;
+constexpr double DayColumnWidth = 142.0;
+constexpr double CompactDayColumnWidth = 100.0;
 constexpr double HeaderHeight = 42.0;
 constexpr double CompactHeaderHeight = 36.0;
 constexpr double RowHeight = 62.0;
@@ -60,6 +62,28 @@ struct CallbackState : winrt::implements<
 winrt::Microsoft::UI::Xaml::Media::SolidColorBrush brush(Color color)
 {
     return winrt::Microsoft::UI::Xaml::Media::SolidColorBrush(color);
+}
+
+void preserveCellVisualsWhenDisabled(
+    Button const& button,
+    Color backgroundColor,
+    Color foregroundColor,
+    Color borderColor
+    )
+{
+    auto resources = button.Resources();
+    resources.Insert(
+        winrt::box_value(winrt::hstring(L"ButtonBackgroundDisabled")),
+        brush(backgroundColor)
+        );
+    resources.Insert(
+        winrt::box_value(winrt::hstring(L"ButtonForegroundDisabled")),
+        brush(foregroundColor)
+        );
+    resources.Insert(
+        winrt::box_value(winrt::hstring(L"ButtonBorderBrushDisabled")),
+        brush(borderColor)
+        );
 }
 
 void installCellPointerVisuals(
@@ -370,6 +394,16 @@ Button makeClassButton(
         && entry.kind == classmngr::engine::ScheduleReportEntryKind::RegularClass
         && entry.classId > 0
         && callbacks.classClicked;
+    preserveCellVisualsWhenDisabled(
+        button,
+        classColor,
+        fontColor,
+        TransparentColor
+        );
+    // Install the local disabled-state resources before disabling the button.
+    // The default WinUI template resolves these ThemeResources while entering
+    // its Disabled state; doing this first keeps imported preview fills and
+    // font colors stable even when the board is rendered read-only.
     button.IsEnabled(options.enabled);
     button.IsHitTestVisible(options.enabled);
     if (canClick)
@@ -419,6 +453,7 @@ Button makeSlotButton(
     setAutomationName(button, automationName);
 
     Color slotBackground = TransparentColor;
+    Color slotForeground = DefaultFontColor;
     Color slotBorder = TransparentColor;
     const Thickness slotBorderThickness{1.0, 1.0, 1.0, 1.0};
     const auto& state = cell.slotState;
@@ -477,6 +512,7 @@ Button makeSlotButton(
     else if (state == ScheduleReportService::testingSlotState())
     {
         slotBackground = TestingColor;
+        slotForeground = TestingTextColor;
         slotBorder = TestingBorderColor;
         button.Background(brush(TestingColor));
         button.Foreground(brush(TestingTextColor));
@@ -528,10 +564,12 @@ Button makeSlotButton(
         || existingTestingAssignment;
     const bool canClick =
         !regularEssay && metadataAllowsInteraction && callbacks.slotClicked;
-    // Keep non-interactive Regular-mode cells enabled visually. A disabled
-    // WinUI Button applies its disabled visual state over the local
-    // background, which makes Essay cells lose their white fill. Hit testing
-    // and keyboard focus still stay disabled when the slot is not editable.
+    preserveCellVisualsWhenDisabled(
+        button,
+        slotBackground,
+        slotForeground,
+        slotBorder
+        );
     button.IsEnabled(options.enabled);
     button.IsTabStop(canClick && options.enabled);
     button.IsHitTestVisible(canClick && options.enabled);
@@ -801,9 +839,10 @@ void render(
     for (std::size_t index = 0; index < model.days.size(); ++index)
     {
         auto dayColumn = ColumnDefinition();
-        dayColumn.Width(GridLengthHelper::FromValueAndType(
-            1.0,
-            GridUnitType::Star
+        dayColumn.Width(GridLengthHelper::FromPixels(
+            options.compactPreview
+                ? CompactDayColumnWidth
+                : DayColumnWidth
             ));
         root.ColumnDefinitions().Append(dayColumn);
     }

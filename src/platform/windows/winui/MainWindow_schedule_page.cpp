@@ -51,7 +51,8 @@ void MainWindow::populateScheduleWorkspace(
 
     auto modeBar = Grid();
     modeBar.ColumnSpacing(8.0);
-    modeBar.HorizontalAlignment(HorizontalAlignment::Stretch);
+    modeBar.HorizontalAlignment(HorizontalAlignment::Left);
+    modeBar.Width(860.0);
     for (int column = 0; column < 6; ++column)
     {
         auto definition = ColumnDefinition();
@@ -466,7 +467,7 @@ void MainWindow::populateScheduleWorkspace(
     setAutomationName(scheduleItem, L"Schedule editor tab");
 
     auto importContent = Grid();
-    importContent.Padding(Thickness{16.0, 16.0, 16.0, 24.0});
+    importContent.Padding(Thickness{16.0, 0.0, 16.0, 0.0});
     importContent.HorizontalAlignment(HorizontalAlignment::Stretch);
     importContent.VerticalAlignment(VerticalAlignment::Stretch);
     importContent.MinWidth(420.0);
@@ -482,6 +483,11 @@ void MainWindow::populateScheduleWorkspace(
         );
     m_scheduleImportSourceRoot.VerticalAlignment(
         VerticalAlignment::Stretch
+        );
+    // Keep the source dialog's existing vertical insets while allowing the
+    // review surface to use the full dialog content height.
+    m_scheduleImportSourceRoot.Margin(
+        Thickness{0.0, 16.0, 0.0, 24.0}
         );
     setAutomationName(
         m_scheduleImportSourceRoot,
@@ -721,7 +727,7 @@ void MainWindow::populateScheduleWorkspace(
     // parent can replace their placeholder children with provider results.
     m_scheduleImportReviewRoot = Grid();
     m_scheduleImportReviewRoot.Visibility(Visibility::Collapsed);
-    m_scheduleImportReviewRoot.MinHeight(720.0);
+    m_scheduleImportReviewRoot.MinHeight(0.0);
     for (std::size_t rowIndex = 0; rowIndex < 6; ++rowIndex)
     {
         auto row = RowDefinition();
@@ -743,10 +749,9 @@ void MainWindow::populateScheduleWorkspace(
         );
 
     m_scheduleImportReviewTitle = makeText(
-        L"",
+        L"Review imported classes and resolve any conflicts before continuing.",
         14.0
         );
-    m_scheduleImportReviewTitle.Visibility(Visibility::Collapsed);
     setAutomationName(
         m_scheduleImportReviewTitle,
         L"Schedule import review description"
@@ -754,12 +759,13 @@ void MainWindow::populateScheduleWorkspace(
     m_scheduleImportReviewTitle.HorizontalAlignment(
         HorizontalAlignment::Stretch
         );
+    m_scheduleImportReviewTitle.TextAlignment(TextAlignment::Left);
     Grid::SetRow(m_scheduleImportReviewTitle, 0);
     m_scheduleImportReviewRoot.Children().Append(m_scheduleImportReviewTitle);
 
     m_scheduleImportReviewHost = Grid();
     m_scheduleImportReviewHost.ColumnSpacing(12.0);
-    m_scheduleImportReviewHost.MinHeight(360.0);
+    m_scheduleImportReviewHost.MinHeight(0.0);
     m_scheduleImportReviewHost.HorizontalAlignment(
         HorizontalAlignment::Stretch
         );
@@ -788,6 +794,16 @@ void MainWindow::populateScheduleWorkspace(
         L"",
         L"Schedule import preview"
         });
+    if (previewCard.content.Children().Size() > 0)
+    {
+        const auto previewTitle = previewCard.content.Children().GetAt(0)
+            .try_as<TextBlock>();
+        if (previewTitle)
+        {
+            previewTitle.HorizontalAlignment(HorizontalAlignment::Stretch);
+            previewTitle.TextAlignment(TextAlignment::Center);
+        }
+    }
     m_scheduleImportReviewPreviewHost = Grid();
     m_scheduleImportReviewPreviewHost.MinHeight(280.0);
     m_scheduleImportReviewPreviewHost.HorizontalAlignment(
