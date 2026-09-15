@@ -30,6 +30,12 @@ A feature is not migrated when its page compiles. It is migrated only when:
 - Memory behavior is measured.
 - Old call paths are removed.
 
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) is the cross-cutting memory
+acceptance companion for these vertical slices. Apply its compact-projection,
+model/view, operation-scope, and release rules within the owning feature; do
+not defer all memory work to Phase 9.
+
 ## Migration order
 
 ### 7A — Setup and workspace/file workflows
@@ -67,6 +73,11 @@ Migrate:
 
 Load only the initial workspace data required for the visible page. Calendar and schedule detail must not be fully materialized just because the workspace exists.
 
+My Classes must use compact class summaries and one reusable selected-class
+detail view rather than one rich widget tree per class. Workspace child pages
+must be created on activation and released on suspension according to the
+[memory hotspot remediation plan](memory-hotspot-remediation-plan.md).
+
 ### 7C — Teachers and staff
 
 Migrate:
@@ -79,6 +90,10 @@ Migrate:
 - Birthday views.
 
 Use compact models and shared records. Do not keep duplicate teacher datasets in repository, service, page, and table layers.
+
+The Staff Directory slice must replace per-cell table-item allocation with a
+model/view table and active-cell editors, as specified in the [memory hotspot
+remediation plan](memory-hotspot-remediation-plan.md).
 
 ### 7D — Classes
 
@@ -94,6 +109,11 @@ Migrate:
 - Class-transfer behavior.
 
 Split the current large class page into section presenters sharing explicit class application state.
+
+Class navigation must remain lightweight: create detail and editor content for
+the selected class or active section, and release it when the class context or
+page lifecycle requires it. Do not materialize one full detail page per class.
+See the [memory hotspot remediation plan](memory-hotspot-remediation-plan.md).
 
 ### 7E — Schedule and import workflows
 
@@ -113,6 +133,11 @@ Use streaming or bounded workbook processing. Release parser workbooks, import p
 
 This is a priority memory feature. The schedule view must not recreate a cell-widget-per-entry architecture.
 
+The [memory hotspot remediation plan](memory-hotspot-remediation-plan.md)
+also owns the import-review boundary: stage workbook data, build matching
+indexes once, use model-backed review rows, and release raw workbook and
+temporary preview data as soon as each stage completes.
+
 ### 7F — Calendar
 
 Migrate:
@@ -125,6 +150,11 @@ Migrate:
 - Month-grid display.
 
 Keep the current QML month grid behind an adapter initially if required for visual parity. Measure its memory cost before choosing a QWidget replacement.
+
+Calendar import must not retain raw, decoded, compatibility-cell, and derived
+event representations unnecessarily. Construct and release the calendar view
+through the shared lifecycle defined in the [memory hotspot remediation
+plan](memory-hotspot-remediation-plan.md).
 
 ### 7G — Rosters
 
@@ -159,6 +189,11 @@ Migrate:
 Preserve the current behavior of opening the configured external AI website. Do not introduce a hosted AI API as part of this rewrite.
 
 Report images, PowerPoint objects, PDF documents, and temporary workspaces require explicit lifetime and cleanup tests.
+
+Speaking evaluation navigation and batch review must use lightweight summary
+navigation, model/view tables, bounded report batches, and operation-scoped
+output data. Apply the [memory hotspot remediation
+plan](memory-hotspot-remediation-plan.md) before accepting the 7H slice.
 
 ### 7I — Campus and documents
 
@@ -211,6 +246,11 @@ Plan](sub-prep-class-information-memory-plan.md):
 The bounded fixture may prove route semantics quickly, but the 96-class
 large-workspace fixture remains the required scalability test. Phase 9 owns the
 packaged Release memory gate; it does not replace this Phase 7J migration.
+
+The broader [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) coordinates 7J with the other
+feature slices and requires the same distinction between compact resident
+page state and operation-scoped package/PDF state.
 
 ## Per-feature deliverables
 

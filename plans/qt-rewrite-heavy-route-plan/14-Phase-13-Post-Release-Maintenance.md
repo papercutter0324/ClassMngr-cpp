@@ -46,6 +46,10 @@ Make the rewritten architecture durable after release.
 - Document viewer open/close/reopen tests must detect retained QtPdf documents
   or unbounded rendered-page caches.
 - Windows packaged Release memory tests run continuously.
+- The [Qt Rewrite Memory Hotspot Remediation
+  Plan](memory-hotspot-remediation-plan.md) remains the reference for
+  ownership, projection, model/view, operation-scope, and release-review
+  requirements; new feature work must not reintroduce its retired patterns.
 
 ### Compatibility
 

@@ -101,6 +101,12 @@ Do not construct:
 - All optional fonts.
 - All large table models.
 
+Apply the [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) to the startup boundary: My
+Workspace must create only the visible child page, class and schedule
+features must not materialize all records for registration, and feature
+resources must be acquired on activation rather than during bootstrap.
+
 ### 5.5 Deferred application updates
 
 Retain normal application update support, but start checking only after the main window is interactive.
@@ -119,6 +125,14 @@ Create an explicit shutdown coordinator that:
 - Releases resource scopes.
 - Closes external automation objects.
 - Produces shutdown diagnostics in development builds.
+
+### 5.7 Memory-remediation lifecycle handoff
+
+Bootstrap must pass explicit page and resource scopes to PageHost and the
+feature application services. It must not become a permanent owner of class
+details, schedule/import workbooks, report data, PDF documents, or hidden child
+pages. The lifecycle and release obligations are defined in the [Qt Rewrite
+Memory Hotspot Remediation Plan](memory-hotspot-remediation-plan.md).
 
 ## Deliverables
 

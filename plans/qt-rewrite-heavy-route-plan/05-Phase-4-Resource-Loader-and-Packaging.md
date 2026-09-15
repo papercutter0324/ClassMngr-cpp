@@ -150,6 +150,12 @@ Operation resources:
 
 Optional decorative fonts must be loaded only when a feature uses them.
 
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) governs the resident-resource
+consequences of these tiers. Large resources, decoded images, document
+content, report assets, and operation buffers must have one named owner,
+explicit release behavior, and a byte or item budget where they are cached.
+
 ### 4.6 Build and deployment removal
 
 Remove production code, tests, options, and deployment behavior for:

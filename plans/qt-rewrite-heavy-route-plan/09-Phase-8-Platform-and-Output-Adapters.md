@@ -78,6 +78,13 @@ Plan](sub-prep-class-information-memory-plan.md). The adapter boundary must
 not require the page to materialize class widgets or retain the page's rich UI
 model while output is being generated.
 
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) extends this rule to speaking
+reports and other large output workflows. Output adapters must consume
+bounded application projections, render in chunks when necessary, and release
+source records, HTML, rendered pages, and final buffers at explicit stage
+boundaries.
+
 ### 8.3 PowerPoint automation
 
 Preserve the current speaking-evaluation PowerPoint workflow.
@@ -119,6 +126,23 @@ The adapter must:
 - Avoid creating QML objects during startup.
 - Release the QML view when appropriate.
 - Expose calendar data through a compact model.
+
+### 8.6 Transfer and package memory
+
+Class-transfer and package operations must follow the [Qt Rewrite Memory
+Hotspot Remediation Plan](memory-hotspot-remediation-plan.md):
+
+- write and read transfer data in bounded stages or through a streaming
+  device where the format permits;
+- avoid retaining raw JSON, parsed documents, domain packages, and preview
+  copies simultaneously without a documented reason;
+- preview compact summaries before loading full roster/evaluation details;
+- transfer operation ownership explicitly into the dialog or job;
+- release all temporary data on success, cancellation, validation failure, and
+  output failure.
+
+The existing transfer format and user-visible validation behavior remain the
+parity contract.
 
 ## Deliverables
 

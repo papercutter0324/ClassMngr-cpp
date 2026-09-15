@@ -106,6 +106,23 @@ Any removal of old application-owned resource-pack directories must:
 - Be logged.
 - Be reversible where practical.
 
+### 12.7 Memory-path cleanup
+
+After the [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) passes its Phase 9 and Phase 11
+gates, remove the obsolete allocation paths:
+
+- per-class widget-tree and all-class tab builders;
+- QTableWidget and cell-widget implementations replaced by model/view;
+- broad workbook, compatibility-cell, and duplicate import representations;
+- full-package transfer previews and duplicate dialog ownership;
+- indefinite page retention and temporary release shims;
+- feature-specific compatibility adapters with no remaining consumers.
+
+Keep the large-fixture traces and accepted memory budgets in the cutover
+report. Do not remove user files or compatibility formats while removing old
+application-owned code paths.
+
 ## Deliverables
 
 - Beta packages.

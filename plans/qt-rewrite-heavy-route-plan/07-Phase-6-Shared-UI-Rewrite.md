@@ -132,6 +132,13 @@ navigation must remain lightweight, and class details must be presented in a
 reusable selected-class view rather than one widget tree per class. See [Sub
 Prep Class Information and Output Memory Plan](sub-prep-class-information-memory-plan.md).
 
+The broader [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) extends the same presentation rule
+to My Classes, Classes, Speaking Evaluation, schedule import review, Staff
+Directory, and AI batch review. Shared primitives must support lazy row/page
+creation, active-item editors, bounded review windows, and in-place model
+refresh without retaining the previous widget tree.
+
 ### 6.8 Appearance preservation
 
 Retain the current:

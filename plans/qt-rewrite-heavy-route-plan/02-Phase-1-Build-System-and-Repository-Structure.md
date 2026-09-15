@@ -52,6 +52,12 @@ The intended direction is:
 
 Remove unused Qt modules only after include and link usage has been measured.
 
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) is the allocation and ownership
+companion to these target boundaries. The build must make it possible to keep
+compact projections in non-UI targets, isolate model/view code in UI targets,
+and keep import, report, and transfer operations behind testable boundaries.
+
 ### 1.4 Source ownership
 
 Replace recursive source discovery with explicit source ownership.
@@ -97,6 +103,8 @@ The packaged Release configuration must use the same deployment process that wil
 - New caches require an explicit budget and release policy.
 - New large structures require an ownership explanation.
 - New platform code is isolated behind an interface.
+- Memory instrumentation and large-data fixtures must have explicit test-target
+  ownership and must not be deployed as production resources.
 
 ## Deliverables
 

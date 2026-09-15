@@ -113,6 +113,24 @@ Build a test system that can prove data compatibility, visual parity, resource b
 - Large report.
 - Feature resource release.
 
+### 11.9 Memory hotspot remediation gates
+
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) supplies the required regression
+matrix. Add deterministic coverage for:
+
+- compact summary queries and selected-detail invalidation;
+- lazy My Classes, Classes, and Speaking Evaluation navigation;
+- model/view schedule, Staff Directory, and AI batch tables;
+- staged schedule/calendar import and release of raw workbook data;
+- class-transfer ownership, cancellation, and cleanup;
+- Sub Prep large-fixture entry, refresh, output, leave, and re-entry;
+- PDF/report chunk cleanup and return toward pre-operation memory;
+- page suspension, release, and recreation without retained widget growth.
+
+The large fixtures are mandatory for memory gates. Bounded fixtures may cover
+fast semantics but cannot substitute for scalability acceptance.
+
 ## Failure injection
 
 Test:

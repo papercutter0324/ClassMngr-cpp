@@ -130,6 +130,26 @@ Define ownership for:
 
 The persistence layer must not load the complete application dataset by default.
 
+### 3.7 Hotspot-specific persistence boundaries
+
+Implement the [Qt Rewrite Memory Hotspot
+Remediation Plan](memory-hotspot-remediation-plan.md) at the persistence
+boundary:
+
+- provide visible-ID-filtered class summaries, shared teacher summaries,
+  aggregated roster counts, and selected-class detail queries;
+- process schedule and calendar workbooks in staged or bounded batches, and
+  release raw bytes, worksheet buffers, and parsed compatibility structures
+  when their stage completes;
+- replace broad import-review lookups with one operation-scoped matching index;
+- preserve class-transfer compatibility while avoiding simultaneous raw JSON,
+  parsed document, domain package, and dialog copies where the format allows;
+- expose query/result sizes and large-buffer lifetimes for memory diagnostics.
+
+The v2 persistence layer must not use the current compatibility cell view or
+full-workbook retention as an implicit application contract. Any temporary
+adapter requires a named consumer and removal point.
+
 ## Deliverables
 
 - WorkspaceStore.

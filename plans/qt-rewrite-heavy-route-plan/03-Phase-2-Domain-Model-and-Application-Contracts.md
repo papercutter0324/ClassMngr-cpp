@@ -99,6 +99,23 @@ Define:
 
 Background work must return results through application interfaces. Worker code must not mutate widgets directly.
 
+### 2.6 Memory-safe projections and operation contracts
+
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) defines the compact contracts needed
+by the large-data slices. Add application-facing projections equivalent to:
+
+- compact class and teacher summaries plus selected class details;
+- a compact schedule view projection;
+- an import review session containing matching indexes and compact decisions,
+  not the original workbook and every derived UI object;
+- staged transfer-reader and transfer-writer records;
+- operation-scoped report and PDF render sources.
+
+Every contract must state which layer owns the data, when raw or derived
+representations may overlap, and when they are released. Contracts must not
+return widget trees, page pointers, or broad compatibility-service snapshots.
+
 ## Deliverables
 
 - Domain model library.

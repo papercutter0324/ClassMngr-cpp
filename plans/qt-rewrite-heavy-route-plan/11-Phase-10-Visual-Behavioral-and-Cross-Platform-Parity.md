@@ -14,6 +14,20 @@
 
 Demonstrate that v2 preserves the current user experience and output across supported platforms while meeting the Windows memory target.
 
+## Memory-safe parity validation
+
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) changes ownership and allocation,
+not the product surface. Parity review must therefore include the large-data
+workspace and confirm that model/view delegates, lazy class content, bounded
+import review, and chunked output preserve the same visible controls,
+ordering, typography, localized text, and generated content.
+
+Do not relax visual comparisons by reducing the large fixture, hiding
+records, removing output states, or replacing required assets. Any memory
+tradeoff that changes the user-visible result is a parity defect requiring an
+owning feature decision.
+
 ## Visual parity
 
 For every migrated page and dialog, compare:

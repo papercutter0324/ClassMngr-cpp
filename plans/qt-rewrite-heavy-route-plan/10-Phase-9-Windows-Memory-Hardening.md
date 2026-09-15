@@ -14,6 +14,17 @@
 
 Reduce and control resident memory through explicit ownership, lazy loading, bounded caches, compact models, and release verification.
 
+## Remediation-plan ownership
+
+The [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) is the implementation sequence for
+the allocation sources and required fixes below. Phase 9 owns the common
+instrumentation, budgets, packaged Release qualification, and rejection of
+partial fixes; the feature phases own the underlying data and UI changes.
+
+Every hotspot must show both a bounded peak and cleanup after its owning page
+or operation ends. Successful process termination alone is not sufficient.
+
 ## Measurement contract
 
 Primary metric:
@@ -42,6 +53,10 @@ Measure:
 - Document catalog startup with no loaded PDF body.
 - QtPdf document open, render, close, release, and reopen.
 - Speaking report generation.
+- My Classes and Classes navigation.
+- Large calendar import.
+- Staff directory and AI batch review.
+- Class-transfer export and import.
 - PDF preview and close.
 - Repeated workspace open and close.
 - Repeated language and theme changes.
