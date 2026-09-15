@@ -7,11 +7,12 @@
 - Depends on: None
 - Blocks: Every implementation phase
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Static archaeology is recorded for commit `75755460`; runtime,
   visual, fixture, and packaged-release evidence is still being collected. A
-  clean Windows x64 Debug/Ninja build and startup test now pass; the packaged
-  Release baseline and the remaining fixture/platform evidence are still open.
+  clean Windows x64 Debug/Ninja build and startup test now pass, and the
+  packaged Windows x64 Release startup baseline is recorded; the remaining
+  fixture, workflow, and platform evidence is still open.
 
 ## Progress update - 2026-09-15
 
@@ -108,6 +109,24 @@
   retained matrix is under `docs/qt-rewrite/visual-baseline/representative`.
 - What remains: cover editing, read-only, dialog, loading/error, print-preview,
   and generated-output states.
+
+## Progress update - 2026-09-16 (packaged Windows x64 Release baseline)
+
+- What changed: built and installed a fresh Windows x64 Ninja Release tree,
+  then ran the installed executable through empty and representative startup
+  scenarios with five-second settled captures. The representative fixture can
+  now be retained from the test for repeatable packaged runs.
+- Evidence: the Release build completed all `347` steps, installation
+  succeeded, and both packaged startup runs exited `0`. Release JSON traces
+  and `startup-complete`/`settled-final` PNGs are retained under
+  `docs/qt-rewrite/visual-baseline/release/`.
+- Measurements: empty startup-complete/settled-5s were `2,974`/`8,028 ms`
+  with `138,178,560` bytes peak working set; representative startup-complete/
+  settled-5s were `3,037`/`8,103 ms` with `169,287,680` bytes peak working set
+  and `150,745,088` bytes peak private usage.
+- What remains: collect packaged per-workflow memory traces, cross-platform
+  Release baselines, conflict/import-review coverage, and generated-output
+  references.
 
 ## Evidence files
 

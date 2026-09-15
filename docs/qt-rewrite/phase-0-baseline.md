@@ -1,7 +1,7 @@
 # Qt Rewrite Phase 0 - Baseline and Evidence Log
 
 Status: In progress
-Snapshot: `75755460`
+Snapshot: `892d51c` (application snapshot used for the current packaged run)
 Date started: `2026-09-15`
 
 ## Evidence policy
@@ -14,7 +14,7 @@ does not recreate or rely on them.
 
 ## Initial static evidence
 
-- Source snapshot: `75755460`.
+- Historical source snapshot: `75755460`.
 - Raw assets: 226 files, 65,729,685 bytes.
 - Current source inventory: 58 core, 42 data, 43 domain, 115 shared UI, 283
   feature, and 34 app files; 73 test files.
@@ -42,7 +42,8 @@ does not recreate or rely on them.
 
 ### Current clean fixture run
 
-- Source state: `bfb80585` plus the Phase 0 fixture changes in the worktree.
+- Source state: `892d51c` plus the test-only fixture-retention hook in this
+  evidence slice.
 - Build directory: `build/qt-rewrite-phase0-startup-ninja`.
 - Configuration: clean Ninja Debug, Windows x64, Qt `6.12.0`, MSVC
   `19.51.36256.0`, `BUILD_TESTING=ON`, and startup update checks disabled.
@@ -51,8 +52,8 @@ does not recreate or rely on them.
 - The focused target build completed all `352` steps, including
   `src/features/my_info/ui/my_classes_page_content.cpp`, the application, and
   `ClassMngrStartupPerformanceTests.exe`.
-- `ClassMngrStartupPerformanceTests.exe -v1` passed both tests with exit code
-  `0`. The representative profile was materialized from
+- `ClassMngrStartupPerformanceTests.exe -v1` passed all eight test slots with
+  exit code `0`. The representative profile was materialized from
   `tests/fixtures/workspaces/representative_startup.sql` through the current
   schema manager.
 - Representative checkpoints reported `202,162,176` bytes peak working set at
@@ -62,6 +63,40 @@ does not recreate or rely on them.
   Release gate.
 - The existing Visual Studio build directory still has a Qt QML metadata
   regeneration loop and remains excluded from acceptance evidence.
+
+### Current packaged Windows x64 Release run
+
+- Application snapshot: `892d51c`. Build directory:
+  `build/qt-rewrite-phase0-windows-x64-release`. Install prefix:
+  `dist/qt-rewrite-phase0-windows-x64`.
+- A clean Ninja Release configure succeeded with Qt `6.12.0`, MSVC
+  `19.51.36256.0`, and CMake `4.4.2`. The application build completed all
+  `347` steps, and `cmake --install` produced the packaged executable,
+  resource packs, QML modules, Qt plugins, and SQLite driver.
+- The installed `ClassMngr.exe` launched successfully with
+  `QT_QPA_PLATFORM=offscreen`, startup update checks disabled at configure
+  time, and exit code `0` for both the empty and representative scenarios.
+  The Debug focused suite remains the fixture/compatibility test authority;
+  this Release configuration intentionally omits test binaries.
+- Empty Release startup (`minimal-startup`, five-second settle):
+  `startup-complete` at `2,974 ms`, `settled-5s` at `8,028 ms`, peak working
+  set `138,178,560` bytes, peak private usage `111,345,664` bytes, 20
+  checkpoints, 14 progress updates, and final progress `100`.
+- Representative Release startup (`representative-startup`, the retained
+  `representative-startup.tps` fixture, five-second settle):
+  `database-opened` at `718 ms`, `startup-complete` at `3,037 ms`, and
+  `settled-5s` at `8,103 ms`. Peak working set was `169,287,680` bytes and
+  peak private usage was `150,745,088` bytes; the trace contains 20
+  checkpoints, 14 progress updates, and final progress `100`. At
+  `startup-complete` the trace reported 224 widgets, one instantiated page,
+  11 registered pages, one live schedule widget, and one schedule render.
+- Reviewable Release artifacts are retained at
+  `docs/qt-rewrite/visual-baseline/release/empty/` and
+  `docs/qt-rewrite/visual-baseline/release/representative/`. Each directory
+  contains `startup-complete.png`, `settled-final.png`, and
+  `startup-metrics.json`. The populated frame shows the expected workspace
+  schedule grid; the four-language/theme matrices remain available in the
+  Debug/offscreen reference directories.
 
 ## Fixture added in this pass
 
@@ -116,7 +151,9 @@ cmake -S . -B build/qt-rewrite-phase0-windows-x64-release `
   -G Ninja `
   -DQt6_DIR=C:/Qt/6.12.0/msvc2022_64/lib/cmake/Qt6 `
   -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release `
-  -DCMAKE_INSTALL_PREFIX=dist/qt-rewrite-phase0-windows-x64
+  -DCMAKE_INSTALL_PREFIX=dist/qt-rewrite-phase0-windows-x64 `
+  -DCLASSMNGR_UPDATE_CHECK_ON_STARTUP=OFF `
+  -DCLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP=OFF
 cmake --build build/qt-rewrite-phase0-windows-x64-release --config Release --parallel 2
 cmake --install build/qt-rewrite-phase0-windows-x64-release --config Release
 ```
@@ -150,7 +187,13 @@ providing a repeatable capture command for permanent evidence.
 The current representative startup matrix is retained under
 `docs/qt-rewrite/visual-baseline/representative/`, alongside the empty-workspace
 matrix. These are Debug/offscreen reference frames from the current source
-snapshot; packaged Release captures remain a separate acceptance requirement.
+snapshot; packaged Release captures are retained separately under
+`docs/qt-rewrite/visual-baseline/release/`.
+
+To retain the canonical representative fixture for a packaged run, set
+`CLASSMNGR_STARTUP_FIXTURE_OUTPUT_PATH` while running the representative
+fixture test. With the variable unset, the test continues to use a temporary
+fixture and ordinary CTest remains non-mutating.
 
 For an empty workspace:
 
@@ -180,10 +223,14 @@ store the JSON startup trace beside the PNG files.
 
 ## Evidence currently missing
 
-- Clean packaged Release build/test result from the current source snapshot.
-- Packaged Release startup and per-workflow memory reports.
-- English/Korean and light/dark screenshot set.
-- Empty, normal, large, legacy, conflict, corrupt, and locked fixtures.
+- Packaged Release per-workflow memory reports, five-minute idle data, and
+  retained-memory measurements after leaving large features.
+- Windows ARM64, macOS universal, and Linux Release baselines.
+- Packaged Release language/theme variants and visual references for editing,
+  read-only, dialogs, loading, errors, and import conflict resolution.
+- A permanent conflict/import-review fixture plus retained binary runs for the
+  large and legacy workflows; corrupt and locked behavior is currently covered
+  by transient focused-test scenarios.
 - Golden generated PDFs, reports, rosters, substitute documents, and
   PowerPoint output.
 - Per-resource decoded/resident sizes and page/object lifecycle traces.

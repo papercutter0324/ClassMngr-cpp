@@ -1,6 +1,7 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QFileInfo>
 #include <QHash>
 #include <QImage>
 #include <QJsonDocument>
@@ -369,8 +370,24 @@ void StartupPerformanceTests
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
+    const QString configuredFixturePath =
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_FIXTURE_OUTPUT_PATH"
+            ).trimmed();
     const QString fixturePath =
-        directory.filePath(QStringLiteral("representative-startup.tps"));
+        configuredFixturePath.isEmpty()
+            ? directory.filePath(QStringLiteral("representative-startup.tps"))
+            : configuredFixturePath;
+    if (!configuredFixturePath.isEmpty())
+    {
+        QVERIFY2(
+            QDir().mkpath(QFileInfo(fixturePath).absolutePath()),
+            qPrintable(
+                QStringLiteral("Could not create fixture output directory for %1")
+                    .arg(fixturePath)
+                )
+            );
+    }
     QString fixtureError;
     QVERIFY2(
         createRepresentativeStartupFixture(fixturePath, &fixtureError),
