@@ -128,6 +128,22 @@
   Release baselines, conflict/import-review coverage, and generated-output
   references.
 
+## Progress update - 2026-09-16 (large workspace Release baseline)
+
+- What changed: retained the generated `large_startup.sql` fixture as a
+  repeatable `.tps` input and ran it through the installed Windows x64 Release
+  executable with the same startup and settled checkpoints as the normal
+  representative run.
+- Evidence: the `622,592`-byte large fixture launched successfully and exited
+  `0`; its Release JSON trace and startup/settled PNGs are retained under
+  `docs/qt-rewrite/visual-baseline/release/large/`.
+- Measurement: `database-opened`/`startup-complete`/`settled-5s` were
+  `748`/`2,942`/`8,000 ms`; peak working set was `175,370,240` bytes and peak
+  private usage was `156,618,752` bytes. The startup-complete snapshot had 231
+  widgets and 49 schedule cell widgets, with a 118 ms full schedule render.
+- What remains: run the legacy compatibility workspace through packaged
+  Release startup, then cover large-feature entry/exit and generated outputs.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

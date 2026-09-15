@@ -90,11 +90,19 @@ does not recreate or rely on them.
   checkpoints, 14 progress updates, and final progress `100`. At
   `startup-complete` the trace reported 224 widgets, one instantiated page,
   11 registered pages, one live schedule widget, and one schedule render.
+- Large-workspace Release startup (`representative-startup`, the retained
+  `large-startup.tps` fixture, five-second settle): `database-opened` at
+  `748 ms`, `startup-complete` at `2,942 ms`, and `settled-5s` at `8,000 ms`.
+  Peak working set was `175,370,240` bytes and peak private usage was
+  `156,618,752` bytes. The startup-complete trace reported 231 widgets, one
+  instantiated page, 11 registered pages, 49 schedule cell widgets, and a
+  118 ms full schedule render.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
-  `docs/qt-rewrite/visual-baseline/release/representative/`. Each directory
+  `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
+  run in `docs/qt-rewrite/visual-baseline/release/large/`. Each directory
   contains `startup-complete.png`, `settled-final.png`, and
-  `startup-metrics.json`. The populated frame shows the expected workspace
+  `startup-metrics.json`. The populated frames show the expected workspace
   schedule grid; the four-language/theme matrices remain available in the
   Debug/offscreen reference directories.
 
@@ -190,10 +198,11 @@ matrix. These are Debug/offscreen reference frames from the current source
 snapshot; packaged Release captures are retained separately under
 `docs/qt-rewrite/visual-baseline/release/`.
 
-To retain the canonical representative fixture for a packaged run, set
-`CLASSMNGR_STARTUP_FIXTURE_OUTPUT_PATH` while running the representative
-fixture test. With the variable unset, the test continues to use a temporary
-fixture and ordinary CTest remains non-mutating.
+To retain a canonical fixture for a packaged run, set
+`CLASSMNGR_STARTUP_FIXTURE_OUTPUT_PATH` for the representative fixture or
+`CLASSMNGR_LARGE_STARTUP_FIXTURE_OUTPUT_PATH` for the large fixture while
+running the corresponding test. With the variables unset, the tests continue
+to use temporary fixtures and ordinary CTest remains non-mutating.
 
 For an empty workspace:
 
@@ -228,9 +237,9 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- A permanent conflict/import-review fixture plus retained binary runs for the
-  large and legacy workflows; corrupt and locked behavior is currently covered
-  by transient focused-test scenarios.
+- A permanent conflict/import-review fixture plus a retained binary run for the
+  legacy workflow; corrupt and locked behavior is currently covered by
+  transient focused-test scenarios.
 - Golden generated PDFs, reports, rosters, substitute documents, and
   PowerPoint output.
 - Per-resource decoded/resident sizes and page/object lifecycle traces.
