@@ -60,3 +60,6 @@ data/app.tps
 .DS_Store
 .continue/
 artifacts/
+.agents/
+.codex/
+.codex_workflow_hidden_resources/
