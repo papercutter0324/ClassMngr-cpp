@@ -1,5 +1,7 @@
 #include "pdf_viewer_page_p.h"
 
+#include "core/startup_profiler.h"
+
 #include <utility>
 
 PdfViewerPage::PdfViewerPage(
@@ -44,6 +46,13 @@ PdfViewerPage::~PdfViewerPage()
 
     if (m_document)
     {
+        if (m_pdfLoadRecorded)
+        {
+            StartupProfiler::recordPdfDocumentReleased(
+                m_currentFilePath
+                );
+            m_pdfLoadRecorded = false;
+        }
         m_document->close();
         delete m_document;
         m_document =
@@ -168,6 +177,7 @@ bool PdfViewerPage::loadPdf(
     }
 
     m_documentReleased = false;
+    m_pdfLoadRecorded = false;
     m_currentFilePath = filePath;
     m_documentDescriptor = std::move(descriptor);
     m_view->setDocument(m_document);
@@ -205,7 +215,13 @@ void PdfViewerPage::releaseDocument()
         return;
     }
 
+    const bool documentWasLoaded =
+        m_pdfLoadRecorded;
+    const QString releasedFilePath =
+        m_currentFilePath;
+
     m_documentReleased = true;
+    m_pdfLoadRecorded = false;
 
     // Keep the view attached to the document while closing it. Qt 6.12's
     // QPdfView tears down its internal bookmark model from setDocument(nullptr)
@@ -213,6 +229,13 @@ void PdfViewerPage::releaseDocument()
     // the document releases the loaded PDF pages while retaining the stable
     // view/document pairing needed for a later reopen.
     m_document->close();
+
+    if (documentWasLoaded)
+    {
+        StartupProfiler::recordPdfDocumentReleased(
+            releasedFilePath
+            );
+    }
     m_currentFilePath.clear();
     m_documentDescriptor = {};
     m_currentZoom = 1.0;

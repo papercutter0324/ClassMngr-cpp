@@ -422,8 +422,32 @@ No v2 feature work begins without a fixture and an acceptance check.
   information cards and terminate before a stable profile is written. The
   bounded representative workflow proves route semantics; the large fixture
   remains the stress input for the v2 resource/virtualization slice.
+
+## Progress update - 2026-09-16 (QtPdf session lifecycle trace)
+
+- What changed: the same all-route workflow now uses the existing Documents
+  resource-pack lease to open and render the 38-page Lesson Planning Guide,
+  closes/releases it, reopens and renders it, and closes/releases it again.
+  `StartupProfiler` records PDF load, render, and release events plus live
+  document counts; the harness can retain the two PDF frames through
+  `CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR`.
+- Evidence: the focused Debug workflow test and the full focused Phase 0 test
+  set pass. The Release artifact is retained under
+  `docs/qt-rewrite/visual-baseline/release/workflow/` with
+  `pdf-opened.png`, `pdf-reopened.png`, `workflow-trace.txt`, and the updated
+  metrics report.
+- Measurement: startup has zero loaded PDF documents; `pdf-opened` reports
+  one live document/one render, `pdf-released` reports zero live/one release,
+  `pdf-reopened` reports one live/two renders, and the final release reports
+  zero live/two releases. The route completed at `7,596 ms`; the five-second
+  sample was `12,638 ms`; peak working set was `259,440,640` bytes and peak
+  private usage was `298,278,912` bytes.
+- Heavy-route implication: the PDF body remains session-scoped and the
+  resource lease is released between opens. The added peak is now a measured
+  regression boundary for the v2 viewer/resource owner; future implementation
+  slices must carry this full route and preserve the explicit release gap.
 - What remains: five-minute idle and per-feature retained-memory evidence,
-  generated-output references, on-demand QtPdf open/close traces, and the
-  remaining packaged/cross-platform visual baselines. Future implementation
-  slices must follow the heavy route by introducing the parallel v2 ownership
-  and resource boundaries rather than extending the legacy composition root.
+  generated-output references, and the remaining packaged/cross-platform
+  visual baselines. Future implementation slices must follow the heavy route
+  by introducing the parallel v2 ownership and resource boundaries rather than
+  extending the legacy composition root.

@@ -16,6 +16,7 @@
 #include "ui/shared/state/option_state_keys.h"
 #include "core/utils/platform.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
 
 #if !defined(Q_OS_MACOS)
@@ -92,6 +93,8 @@ QString startupScenarioName(
 }
 
 constexpr int StartupWorkflowStepDelayMilliseconds = 150;
+constexpr auto StartupPdfWorkflowRelativePath =
+    "Guides/DYB Lesson Planning Guide.pdf";
 
 const QList<PageType>& startupWorkflowPageTypes()
 {
@@ -129,6 +132,369 @@ void appendStartupWorkflowTrace(const QString& message)
         file.write((message + QLatin1Char('\n')).toUtf8());
         file.flush();
     }
+}
+
+bool saveStartupPdfCapture(
+    const QPixmap& image,
+    const QString& fileName
+    )
+{
+    const QString outputDirectoryPath =
+        qEnvironmentVariable("CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR")
+            .trimmed();
+    if (outputDirectoryPath.isEmpty())
+    {
+        return true;
+    }
+
+    QDir outputDirectory(outputDirectoryPath);
+    if (!outputDirectory.mkpath(QStringLiteral(".")))
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to create startup PDF capture directory %1."
+                ).arg(outputDirectoryPath);
+        return false;
+    }
+
+    const QString outputPath =
+        outputDirectory.filePath(fileName);
+    if (!image.save(outputPath, "PNG"))
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to write startup PDF capture to %1."
+                ).arg(outputPath);
+        return false;
+    }
+
+    return true;
+}
+
+void scheduleStartupPerformancePdfLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    const auto phase = std::make_shared<int>(0);
+    const auto pdfPath = std::make_shared<QString>();
+    const auto runPhase =
+        std::make_shared<std::function<void()>>();
+
+    *runPhase =
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            pdfPath,
+            phase,
+            runPhase,
+            completion
+        ]()
+    {
+        PageManager* pages = window.pageManager();
+        PdfViewerPage* viewer =
+            pages ? pages->pdfViewerPage() : nullptr;
+
+        const auto fail =
+            [
+                &profiler,
+                workflowSucceeded,
+                completion
+            ](const QString& detail)
+        {
+            *workflowSucceeded = false;
+            profiler.checkpoint(
+                QStringLiteral("pdf-workflow-failed"),
+                detail
+                );
+            completion();
+        };
+
+        if (!viewer)
+        {
+            fail(QStringLiteral("viewer-unavailable"));
+            return;
+        }
+
+        if (*phase == 0)
+        {
+            profiler.checkpoint(
+                QStringLiteral("pdf-workflow-start"),
+                QString::fromUtf8(StartupPdfWorkflowRelativePath)
+                );
+
+            auto lease = ResourcePaths::Documents::acquire();
+            if (!lease)
+            {
+                fail(
+                    QStringLiteral("documents-pack-unavailable: %1")
+                        .arg(lease.error())
+                    );
+                return;
+            }
+
+            *pdfPath =
+                ResourcePaths::Documents::filePath(
+                    *lease,
+                    QString::fromUtf8(StartupPdfWorkflowRelativePath)
+                    );
+            if (!QFile::exists(*pdfPath))
+            {
+                fail(
+                    QStringLiteral("pdf-not-found: %1")
+                        .arg(QString::fromUtf8(StartupPdfWorkflowRelativePath))
+                    );
+                return;
+            }
+
+            PdfViewerDocumentDescriptor descriptor;
+            descriptor.pdfFilePath = *pdfPath;
+            descriptor.printEnabled = true;
+            descriptor.exportEnabled = true;
+            descriptor.exportFilePath = *pdfPath;
+            descriptor.exportFileName =
+                QStringLiteral("DYB Lesson Planning Guide.pdf");
+            descriptor.resourceLease = std::move(*lease);
+
+            profiler.checkpoint(
+                QStringLiteral("pdf-open-start"),
+                QString::fromUtf8(StartupPdfWorkflowRelativePath)
+                );
+            if (!viewer->loadPdf(std::move(descriptor)))
+            {
+                fail(QStringLiteral("initial-open-rejected"));
+                return;
+            }
+
+            *phase = 1;
+            QTimer::singleShot(
+                StartupWorkflowStepDelayMilliseconds,
+                &app,
+                [runPhase]()
+                {
+                    (*runPhase)();
+                }
+                );
+            return;
+        }
+
+        if (*phase == 1)
+        {
+            app.processEvents();
+            if (!viewer->hasLoadedDocument())
+            {
+                fail(QStringLiteral("initial-open-not-ready"));
+                return;
+            }
+
+            const QPixmap renderedImage = viewer->grab();
+            if (
+                renderedImage.isNull()
+                || renderedImage.size().isEmpty()
+                )
+            {
+                fail(QStringLiteral("initial-render-empty"));
+                return;
+            }
+
+            if (
+                !saveStartupPdfCapture(
+                    renderedImage,
+                    QStringLiteral("pdf-opened.png")
+                    )
+                )
+            {
+                fail(QStringLiteral("initial-render-capture-failed"));
+                return;
+            }
+
+            StartupProfiler::recordPdfDocumentRendered(
+                *pdfPath,
+                renderedImage.width(),
+                renderedImage.height()
+                );
+            profiler.checkpoint(
+                QStringLiteral("pdf-opened"),
+                QStringLiteral("%1; rendered=%2x%3")
+                    .arg(
+                        QString::fromUtf8(StartupPdfWorkflowRelativePath),
+                        QString::number(renderedImage.width()),
+                        QString::number(renderedImage.height())
+                        )
+                );
+            profiler.checkpoint(
+                QStringLiteral("pdf-rendered"),
+                QStringLiteral("%1x%2")
+                    .arg(
+                        renderedImage.width(),
+                        renderedImage.height()
+                        )
+                );
+
+            viewer->releaseDocument();
+            *phase = 2;
+            QTimer::singleShot(
+                StartupWorkflowStepDelayMilliseconds,
+                &app,
+                [runPhase]()
+                {
+                    (*runPhase)();
+                }
+                );
+            return;
+        }
+
+        if (*phase == 2)
+        {
+            app.processEvents();
+            if (
+                viewer->hasLoadedDocument()
+                || !viewer->currentFilePath().isEmpty()
+                )
+            {
+                fail(QStringLiteral("initial-release-incomplete"));
+                return;
+            }
+
+            profiler.checkpoint(
+                QStringLiteral("pdf-released"),
+                QString::fromUtf8(StartupPdfWorkflowRelativePath)
+                );
+
+            auto lease = ResourcePaths::Documents::acquire();
+            if (!lease)
+            {
+                fail(
+                    QStringLiteral("documents-pack-unavailable-on-reopen: %1")
+                        .arg(lease.error())
+                    );
+                return;
+            }
+
+            PdfViewerDocumentDescriptor descriptor;
+            descriptor.pdfFilePath = *pdfPath;
+            descriptor.printEnabled = true;
+            descriptor.exportEnabled = true;
+            descriptor.exportFilePath = *pdfPath;
+            descriptor.exportFileName =
+                QStringLiteral("DYB Lesson Planning Guide.pdf");
+            descriptor.resourceLease = std::move(*lease);
+
+            profiler.checkpoint(
+                QStringLiteral("pdf-reopen-start"),
+                QString::fromUtf8(StartupPdfWorkflowRelativePath)
+                );
+            if (!viewer->loadPdf(std::move(descriptor)))
+            {
+                fail(QStringLiteral("reopen-rejected"));
+                return;
+            }
+
+            *phase = 3;
+            QTimer::singleShot(
+                StartupWorkflowStepDelayMilliseconds,
+                &app,
+                [runPhase]()
+                {
+                    (*runPhase)();
+                }
+                );
+            return;
+        }
+
+        if (*phase == 3)
+        {
+            app.processEvents();
+            if (!viewer->hasLoadedDocument())
+            {
+                fail(QStringLiteral("reopen-not-ready"));
+                return;
+            }
+
+            const QPixmap renderedImage = viewer->grab();
+            if (
+                renderedImage.isNull()
+                || renderedImage.size().isEmpty()
+                )
+            {
+                fail(QStringLiteral("reopen-render-empty"));
+                return;
+            }
+
+            if (
+                !saveStartupPdfCapture(
+                    renderedImage,
+                    QStringLiteral("pdf-reopened.png")
+                    )
+                )
+            {
+                fail(QStringLiteral("reopen-render-capture-failed"));
+                return;
+            }
+
+            StartupProfiler::recordPdfDocumentRendered(
+                *pdfPath,
+                renderedImage.width(),
+                renderedImage.height()
+                );
+            profiler.checkpoint(
+                QStringLiteral("pdf-reopened"),
+                QStringLiteral("%1; rendered=%2x%3")
+                    .arg(
+                        QString::fromUtf8(StartupPdfWorkflowRelativePath),
+                        QString::number(renderedImage.width()),
+                        QString::number(renderedImage.height())
+                        )
+                );
+            profiler.checkpoint(
+                QStringLiteral("pdf-reopened-rendered"),
+                QStringLiteral("%1x%2")
+                    .arg(
+                        renderedImage.width(),
+                        renderedImage.height()
+                        )
+                );
+
+            viewer->releaseDocument();
+            *phase = 4;
+            QTimer::singleShot(
+                StartupWorkflowStepDelayMilliseconds,
+                &app,
+                [runPhase]()
+                {
+                    (*runPhase)();
+                }
+                );
+            return;
+        }
+
+        app.processEvents();
+        if (
+            viewer->hasLoadedDocument()
+            || !viewer->currentFilePath().isEmpty()
+            )
+        {
+            fail(QStringLiteral("reopen-release-incomplete"));
+            return;
+        }
+
+        profiler.checkpoint(
+            QStringLiteral("pdf-released-after-reopen"),
+            QString::fromUtf8(StartupPdfWorkflowRelativePath)
+            );
+        profiler.checkpoint(
+            QStringLiteral("pdf-workflow-complete"),
+            QStringLiteral("opened=2; rendered=2; released=2")
+            );
+        completion();
+    };
+
+    (*runPhase)();
 }
 
 StartupPerformanceMode startupPerformanceMode(
@@ -484,6 +850,33 @@ void scheduleStartupPerformanceWorkflow(
                 QStringLiteral("workflow-child-released"),
                 QStringLiteral("calendar")
                 );
+        }
+
+        if (pageReady && pageType == PageType::PdfViewer)
+        {
+            scheduleStartupPerformancePdfLifecycle(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
         }
 
         ++*pageIndex;

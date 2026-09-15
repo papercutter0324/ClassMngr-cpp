@@ -17,12 +17,16 @@ struct StartupApplicationMetrics
     int instantiatedPageCount = 0;
     int registeredPageCount = 0;
     int liveScheduleWidgetCount = 0;
+    int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
     quint64 scheduleRenderCount = 0;
     quint64 scheduleTableItemsCreated = 0;
     quint64 scheduleCellWidgetsCreated = 0;
     quint64 scheduleCellWidgetsRemoved = 0;
     quint64 scheduleCellWidgetsQueuedForDeletion = 0;
+    quint64 pdfDocumentsLoaded = 0;
+    quint64 pdfDocumentsReleased = 0;
+    quint64 pdfRenderCount = 0;
 };
 
 struct StartupCheckpoint
@@ -75,6 +79,16 @@ public:
     static void recordPageInstantiated(const QString& pageIdentifier);
     static void recordPageEntered(const QString& pageIdentifier);
     static void recordPageLeft(const QString& pageIdentifier);
+    static void recordPdfDocumentLoaded(
+        const QString& filePath,
+        int pageCount
+        );
+    static void recordPdfDocumentReleased(const QString& filePath);
+    static void recordPdfDocumentRendered(
+        const QString& filePath,
+        int width,
+        int height
+        );
     static void recordScheduleWidgetCreated(const QString& owner);
     static void recordScheduleWidgetDestroyed();
     static void recordStartupCompleteScheduleWidgetDiagnostic();

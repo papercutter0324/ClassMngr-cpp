@@ -1,6 +1,7 @@
 #include "startup_profiler.h"
 
 #include <QApplication>
+#include <QFileInfo>
 #include <QJsonArray>
 
 #include <utility>
@@ -37,6 +38,7 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {QStringLiteral("instantiatedPageCount"), metrics.instantiatedPageCount},
         {QStringLiteral("registeredPageCount"), metrics.registeredPageCount},
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
+        {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
         {QStringLiteral("scheduleWidgetsCreated"), static_cast<double>(metrics.scheduleWidgetsCreated)},
         {QStringLiteral("scheduleRenderCount"), static_cast<double>(metrics.scheduleRenderCount)},
         {QStringLiteral("scheduleTableItemsCreated"), static_cast<double>(metrics.scheduleTableItemsCreated)},
@@ -45,7 +47,10 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("scheduleCellWidgetsQueuedForDeletion"),
             static_cast<double>(metrics.scheduleCellWidgetsQueuedForDeletion)
-        }
+        },
+        {QStringLiteral("pdfDocumentsLoaded"), static_cast<double>(metrics.pdfDocumentsLoaded)},
+        {QStringLiteral("pdfDocumentsReleased"), static_cast<double>(metrics.pdfDocumentsReleased)},
+        {QStringLiteral("pdfRenderCount"), static_cast<double>(metrics.pdfRenderCount)}
     };
 }
 
@@ -239,6 +244,63 @@ void StartupProfiler::recordPageLeft(const QString& pageIdentifier)
         profiler->recordEvent(
             QStringLiteral("page-leave"),
             pageIdentifier
+            );
+    }
+}
+
+void StartupProfiler::recordPdfDocumentLoaded(
+    const QString& filePath,
+    int pageCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.livePdfDocumentCount;
+        ++profiler->m_scheduleMetrics.pdfDocumentsLoaded;
+        profiler->recordEvent(
+            QStringLiteral("pdf-document-loaded"),
+            QStringLiteral("%1; pages=%2")
+                .arg(
+                    QFileInfo(filePath).fileName(),
+                    QString::number(pageCount)
+                    )
+            );
+    }
+}
+
+void StartupProfiler::recordPdfDocumentReleased(const QString& filePath)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->m_scheduleMetrics.livePdfDocumentCount = qMax(
+            0,
+            profiler->m_scheduleMetrics.livePdfDocumentCount - 1
+            );
+        ++profiler->m_scheduleMetrics.pdfDocumentsReleased;
+        profiler->recordEvent(
+            QStringLiteral("pdf-document-released"),
+            QFileInfo(filePath).fileName()
+            );
+    }
+}
+
+void StartupProfiler::recordPdfDocumentRendered(
+    const QString& filePath,
+    int width,
+    int height
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.pdfRenderCount;
+        profiler->recordEvent(
+            QStringLiteral("pdf-document-rendered"),
+            QStringLiteral("%1; size=%2x%3")
+                .arg(
+                    QFileInfo(filePath).fileName(),
+                    QString::number(width),
+                    QString::number(height)
+                    )
             );
     }
 }

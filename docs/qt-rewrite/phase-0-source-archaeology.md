@@ -62,7 +62,11 @@ document. When the viewer page is left, `PageManager` calls
 `PdfViewerPage::releaseDocument()`, which closes the active QtPdf document and
 clears its descriptor. The v2 contract keeps this on-demand behavior explicit
 and requires the same release boundary for replacement, suspension, and page
-release.
+release. The representative Release workflow now exercises that boundary by
+opening/rendering the 38-page guide, releasing it, reopening/rendering it, and
+releasing it again; profiler metrics show two loads, two renders, two releases,
+and zero live documents at route completion. The retained frames and trace
+are under `docs/qt-rewrite/visual-baseline/release/workflow/`.
 
 ## Static inventory
 

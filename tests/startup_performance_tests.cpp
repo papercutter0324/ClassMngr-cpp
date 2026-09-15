@@ -1536,6 +1536,12 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
         QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
         directory.filePath(QStringLiteral("settings"))
         );
+    const QString pdfCaptureDirectory =
+        directory.filePath(QStringLiteral("pdf-captures"));
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR"),
+        pdfCaptureDirectory
+        );
     if (!environment.contains(QStringLiteral("QT_QPA_PLATFORM")))
     {
         environment.insert(
@@ -1650,6 +1656,7 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
             name == QStringLiteral("workflow-complete")
             || name == QStringLiteral("startup-complete")
             || name == QStringLiteral("settled-1s")
+            || name.startsWith(QStringLiteral("pdf-"))
             )
         {
             checkpoints.insert(name, checkpoint);
@@ -1661,7 +1668,17 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
              QStringLiteral("workflow-child-ready"),
              QStringLiteral("workflow-child-released"),
              QStringLiteral("workflow-complete"),
-             QStringLiteral("settled-1s")
+             QStringLiteral("settled-1s"),
+             QStringLiteral("pdf-workflow-start"),
+             QStringLiteral("pdf-open-start"),
+             QStringLiteral("pdf-opened"),
+             QStringLiteral("pdf-rendered"),
+             QStringLiteral("pdf-released"),
+             QStringLiteral("pdf-reopen-start"),
+             QStringLiteral("pdf-reopened"),
+             QStringLiteral("pdf-reopened-rendered"),
+             QStringLiteral("pdf-released-after-reopen"),
+             QStringLiteral("pdf-workflow-complete")
          })
     {
         QVERIFY2(
@@ -1689,6 +1706,22 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
 
     QCOMPARE(startupMetrics.value(QStringLiteral("instantiatedPageCount"))
                  .toInt(), 1);
+    QCOMPARE(
+        startupMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        0
+        );
+    QCOMPARE(
+        startupMetrics.value(QStringLiteral("pdfDocumentsLoaded")).toDouble(),
+        0.0
+        );
+    QCOMPARE(
+        startupMetrics.value(QStringLiteral("pdfDocumentsReleased")).toDouble(),
+        0.0
+        );
+    QCOMPARE(
+        startupMetrics.value(QStringLiteral("pdfRenderCount")).toDouble(),
+        0.0
+        );
     QCOMPARE(workflowMetrics.value(QStringLiteral("instantiatedPageCount"))
                  .toInt(), 11);
     QCOMPARE(workflowMetrics.value(QStringLiteral("registeredPageCount"))
@@ -1703,6 +1736,22 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
             >= 3.0
         );
     QCOMPARE(
+        workflowMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        0
+        );
+    QCOMPARE(
+        workflowMetrics.value(QStringLiteral("pdfDocumentsLoaded")).toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        workflowMetrics.value(QStringLiteral("pdfDocumentsReleased")).toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        workflowMetrics.value(QStringLiteral("pdfRenderCount")).toDouble(),
+        2.0
+        );
+    QCOMPARE(
         settledMetrics.value(QStringLiteral("instantiatedPageCount")).toInt(),
         workflowMetrics.value(QStringLiteral("instantiatedPageCount")).toInt()
         );
@@ -1710,9 +1759,96 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
         settledMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt(),
         workflowMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt()
         );
+    QCOMPARE(
+        settledMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        0
+        );
+    QCOMPARE(
+        settledMetrics.value(QStringLiteral("pdfDocumentsLoaded")).toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        settledMetrics.value(QStringLiteral("pdfDocumentsReleased")).toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        settledMetrics.value(QStringLiteral("pdfRenderCount")).toDouble(),
+        2.0
+        );
+
+    const QJsonObject pdfOpenedMetrics =
+        checkpoints.value(QStringLiteral("pdf-opened"))
+            .value(QStringLiteral("metrics"))
+            .toObject();
+    const QJsonObject pdfReleasedMetrics =
+        checkpoints.value(QStringLiteral("pdf-released"))
+            .value(QStringLiteral("metrics"))
+            .toObject();
+    const QJsonObject pdfReopenedMetrics =
+        checkpoints.value(QStringLiteral("pdf-reopened"))
+            .value(QStringLiteral("metrics"))
+            .toObject();
+    const QJsonObject pdfReleasedAfterReopenMetrics =
+        checkpoints.value(QStringLiteral("pdf-released-after-reopen"))
+            .value(QStringLiteral("metrics"))
+            .toObject();
+
+    QCOMPARE(
+        pdfOpenedMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        1
+        );
+    QCOMPARE(
+        pdfOpenedMetrics.value(QStringLiteral("pdfDocumentsLoaded")).toDouble(),
+        1.0
+        );
+    QCOMPARE(
+        pdfOpenedMetrics.value(QStringLiteral("pdfDocumentsReleased")).toDouble(),
+        0.0
+        );
+    QCOMPARE(
+        pdfOpenedMetrics.value(QStringLiteral("pdfRenderCount")).toDouble(),
+        1.0
+        );
+    QCOMPARE(
+        pdfReleasedMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        0
+        );
+    QCOMPARE(
+        pdfReleasedMetrics.value(QStringLiteral("pdfDocumentsReleased")).toDouble(),
+        1.0
+        );
+    QCOMPARE(
+        pdfReopenedMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        1
+        );
+    QCOMPARE(
+        pdfReopenedMetrics.value(QStringLiteral("pdfDocumentsLoaded")).toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        pdfReopenedMetrics.value(QStringLiteral("pdfDocumentsReleased")).toDouble(),
+        1.0
+        );
+    QCOMPARE(
+        pdfReopenedMetrics.value(QStringLiteral("pdfRenderCount")).toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        pdfReleasedAfterReopenMetrics.value(QStringLiteral("livePdfDocumentCount"))
+            .toInt(),
+        0
+        );
+    QCOMPARE(
+        pdfReleasedAfterReopenMetrics.value(QStringLiteral("pdfDocumentsReleased"))
+            .toDouble(),
+        2.0
+        );
 
     QSet<QString> enteredPages;
     QSet<QString> leftPages;
+    int pdfDocumentsLoaded = 0;
+    int pdfDocumentsReleased = 0;
+    int pdfDocumentsRendered = 0;
     for (const QJsonValue& value : report
              .value(QStringLiteral("events"))
              .toArray())
@@ -1730,6 +1866,30 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
         {
             leftPages.insert(pageIdentifier);
         }
+        else if (eventName == QStringLiteral("pdf-document-loaded"))
+        {
+            ++pdfDocumentsLoaded;
+            QVERIFY(
+                event.value(QStringLiteral("detail")).toString()
+                    .startsWith(QStringLiteral("DYB Lesson Planning Guide.pdf; pages="))
+                );
+        }
+        else if (eventName == QStringLiteral("pdf-document-released"))
+        {
+            ++pdfDocumentsReleased;
+            QCOMPARE(
+                event.value(QStringLiteral("detail")).toString(),
+                QStringLiteral("DYB Lesson Planning Guide.pdf")
+                );
+        }
+        else if (eventName == QStringLiteral("pdf-document-rendered"))
+        {
+            ++pdfDocumentsRendered;
+            QVERIFY(
+                event.value(QStringLiteral("detail")).toString()
+                    .startsWith(QStringLiteral("DYB Lesson Planning Guide.pdf; size="))
+                );
+        }
     }
     for (const QString& pageIdentifier : expectedPageSequence)
     {
@@ -1741,6 +1901,25 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
              ))
     {
         QVERIFY(leftPages.contains(pageIdentifier));
+    }
+    QCOMPARE(pdfDocumentsLoaded, 2);
+    QCOMPARE(pdfDocumentsReleased, 2);
+    QCOMPARE(pdfDocumentsRendered, 2);
+    for (const QString& fileName : {
+             QStringLiteral("pdf-opened.png"),
+             QStringLiteral("pdf-reopened.png")
+         })
+    {
+        const QImage image(
+            QDir(pdfCaptureDirectory).filePath(fileName)
+            );
+        QVERIFY2(
+            !image.isNull() && image.width() > 0 && image.height() > 0,
+            qPrintable(
+                QStringLiteral("Missing PDF lifecycle capture: %1")
+                    .arg(fileName)
+                )
+            );
     }
 
     const double workflowElapsed =

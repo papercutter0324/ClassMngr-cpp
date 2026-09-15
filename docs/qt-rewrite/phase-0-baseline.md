@@ -113,15 +113,18 @@ does not recreate or rely on them.
   pre-constraint backup sidecar required by the compatibility test.
 - Packaged Release lifecycle workflow (representative workspace): the new
   `--startup-performance-workflow` harness visited all 11 registered top-level
-  routes, opened the deferred Calendar tab, returned to My Workspace, and
-  retained the final route state through the one- and five-second samples.
-  `startup-complete` was `2,926 ms`; `workflow-complete` was `6,249 ms`; the
-  one- and five-second samples were `7,283` and `11,267 ms`. The workflow
-  reached 11/11 instantiated pages, 2,530 widgets, three live ScheduleWidgets,
-  and three full schedule renders. Working set was `243,912,704` bytes with a
-  `244,961,280`-byte peak; private usage was `236,060,672` bytes. This is
-  below the 250 MiB Windows working-set target but is intentionally retained
-  as a near-limit regression boundary.
+  routes, opened the deferred Calendar tab, exercised the PDF viewer, returned
+  to My Workspace, and retained the final route state through the one- and
+  five-second samples. `startup-complete` was `2,897 ms`;
+  `workflow-complete` was `7,596 ms`; the one- and five-second samples were
+  `8,635` and `12,638 ms`. The workflow reached 11/11 instantiated pages,
+  2,530 widgets, three live ScheduleWidgets, and three full schedule renders.
+  The PDF trace opened and rendered the 38-page Lesson Planning Guide twice,
+  released it between opens, and ended with zero live PDF documents. Working
+  set was `258,318,336` bytes with a `259,440,640`-byte peak; peak private
+  usage was `298,278,912` bytes. This remains below the 250 MiB Windows
+  working-set target but is a tighter regression boundary than the route-only
+  run.
 - The same workflow against `large_startup.sql` reaches the Sub Prep route but
   does not complete: its 96 classes and eight regular slots expand into
   hundreds of class-information cards. The Debug run exceeded 400 MiB before
@@ -132,10 +135,12 @@ does not recreate or rely on them.
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
   and legacy runs in their matching subdirectories. The representative
-  `release/workflow/` directory contains the packaged lifecycle trace and its
-  startup/settled frames. Each directory contains `startup-complete.png`,
-  `settled-final.png`, and `startup-metrics.json`. The populated frames show
-  the expected workspace schedule grid; the
+  `release/workflow/` directory contains the packaged lifecycle trace, PDF
+  open/reopen frames, and startup/settled frames. Each directory contains
+  `startup-complete.png`, `settled-final.png`, and `startup-metrics.json`; the
+  workflow directory additionally contains `pdf-opened.png`,
+  `pdf-reopened.png`, and `workflow-trace.txt`. The populated frames show the
+  expected workspace schedule grid; the
   four-language/theme matrices remain available in the Debug/offscreen
   reference directories.
 
@@ -327,6 +332,4 @@ store the JSON startup trace beside the PNG files.
   is reserved as a v2 heavy-route stress case.
 - Golden generated PDFs, reports, rosters, substitute documents, and
   PowerPoint output.
-- QtPdf on-demand open/close traces proving that startup has no loaded PDF and
-  that the document resource is released after the viewer session ends.
 - Per-resource decoded/resident sizes and page/object lifecycle traces.

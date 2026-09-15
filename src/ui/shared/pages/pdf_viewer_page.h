@@ -103,6 +103,7 @@ private:
 private:
     bool m_tearingDown = false;
     bool m_documentReleased = true;
+    bool m_pdfLoadRecorded = false;
     QPdfDocument* m_document = nullptr;
     QPdfView* m_view = nullptr;
     QLabel* m_statusLabel = nullptr;
