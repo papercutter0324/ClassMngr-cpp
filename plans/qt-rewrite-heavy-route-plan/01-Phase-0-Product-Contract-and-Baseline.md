@@ -205,6 +205,20 @@
 - What remains: add a large schedule-workbook/conflict fixture, measure
   large-feature entry/exit and idle retention, and capture generated outputs.
 
+## Progress update - 2026-09-16 (larger schedule-workbook conflict fixture)
+
+- What changed: added a permanent multi-class schedule workbook with two
+  imported classes that resolve to the same existing class, plus a test-only
+  output hook and offscreen conflict-state capture.
+- Evidence: the normal file-selection path reaches review, presents the
+  duplicate-target warning, disables Import, and the test passes after the
+  warning is acknowledged. The fixture and reference are retained at
+  `tests/fixtures/imports/schedule_large_conflict.xlsx` and
+  `docs/qt-rewrite/visual-baseline/schedule/schedule-conflict-review.png`.
+- What remains: measure large-feature entry/exit and idle retention, then
+  capture generated outputs and the remaining cross-platform/packaged visual
+  references.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

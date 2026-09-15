@@ -162,6 +162,13 @@ its teacher/class controls and imported color choices, and can retain a
 readable offscreen reference at
 `docs/qt-rewrite/visual-baseline/schedule/schedule-import-review.png`.
 
+`tests/fixtures/imports/schedule_large_conflict.xlsx` exercises the same
+normal file-selection flow with a larger set of paired schedule entries and
+two imported classes that both resolve to one existing class. The focused
+dialog test confirms the duplicate-target warning is presented and Import
+remains disabled; its conflict-state reference is retained at
+`docs/qt-rewrite/visual-baseline/schedule/schedule-conflict-review.png`.
+
 ## Reproduction commands
 
 Windows x64 clean Phase 0 build (Qt 6.12.0 installed at the path below).
@@ -243,6 +250,11 @@ Set `CLASSMNGR_SCHEDULE_IMPORT_FIXTURE_OUTPUT_PATH` while running
 `compactFlowAndReviewPresentation` to regenerate the permanent schedule
 workbook. Set `CLASSMNGR_SCHEDULE_REVIEW_OUTPUT_PATH` while running
 `suppliedWorkbookBuildsStagedReview` to retain the staged-review dialog PNG.
+Set `CLASSMNGR_SCHEDULE_CONFLICT_FIXTURE_OUTPUT_PATH` while running
+`permanentConflictWorkbookPresentsReviewWarning` to regenerate the larger
+schedule conflict workbook. Set
+`CLASSMNGR_SCHEDULE_CONFLICT_REVIEW_OUTPUT_PATH` during the same test to retain
+its conflict-state dialog PNG.
 
 For an empty workspace:
 
@@ -279,8 +291,8 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- A large schedule-workbook/conflict fixture; the class-transfer conflict and
-  schedule-workbook staged-review fixtures are now permanent.
+- Golden large schedule-workbook/conflict output; the class-transfer conflict
+  and schedule-workbook review fixtures are now permanent.
 - Golden generated PDFs, reports, rosters, substitute documents, and
   PowerPoint output.
 - QtPdf on-demand open/close traces proving that startup has no loaded PDF and

@@ -79,6 +79,7 @@ private slots:
     void reviewPreviewUsesSavedScheduleDisplaySettings();
     void intensivePreviewPreservesEssayAndLunchBlocks();
     void suppliedWorkbookBuildsStagedReview();
+    void permanentConflictWorkbookPresentsReviewWarning();
 };
 
 namespace
@@ -227,7 +228,10 @@ QByteArray storedZip(
     return result;
 }
 
-QByteArray dialogWorkbookData()
+QByteArray scheduleWorkbookPackage(
+    const QByteArray& sheet1,
+    const QByteArray& sheet2
+    )
 {
     const QByteArray workbook = QByteArrayLiteral(
         R"(<?xml version="1.0" encoding="UTF-8"?>
@@ -258,6 +262,17 @@ QByteArray dialogWorkbookData()
             <xf fontId="0" fillId="2"/>
           </cellXfs>
         </styleSheet>)");
+    return storedZip({
+        {QByteArrayLiteral("xl/workbook.xml"), workbook},
+        {QByteArrayLiteral("xl/_rels/workbook.xml.rels"), relationships},
+        {QByteArrayLiteral("xl/styles.xml"), styles},
+        {QByteArrayLiteral("xl/worksheets/sheet1.xml"), sheet1},
+        {QByteArrayLiteral("xl/worksheets/sheet2.xml"), sheet2}
+    });
+}
+
+QByteArray dialogWorkbookData()
+{
     const QByteArray sheet1 = QByteArrayLiteral(
         R"(<?xml version="1.0" encoding="UTF-8"?>
         <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
@@ -306,13 +321,183 @@ QByteArray dialogWorkbookData()
           </sheetData>
         </worksheet>)");
 
-    return storedZip({
-        {QByteArrayLiteral("xl/workbook.xml"), workbook},
-        {QByteArrayLiteral("xl/_rels/workbook.xml.rels"), relationships},
-        {QByteArrayLiteral("xl/styles.xml"), styles},
-        {QByteArrayLiteral("xl/worksheets/sheet1.xml"), sheet1},
-        {QByteArrayLiteral("xl/worksheets/sheet2.xml"), sheet2}
-    });
+    return scheduleWorkbookPackage(sheet1, sheet2);
+}
+
+QByteArray scheduleConflictWorkbookData()
+{
+    const QByteArray sheet1 = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <sheetData>
+            <row r="1">
+              <c r="A1" t="inlineStr"><is><t>Alice</t></is></c>
+              <c r="B1" t="inlineStr"><is><t>MON</t></is></c>
+              <c r="C1" t="inlineStr"><is><t>TUE</t></is></c>
+              <c r="D1" t="inlineStr"><is><t>WED</t></is></c>
+              <c r="E1" t="inlineStr"><is><t>THU</t></is></c>
+              <c r="F1" t="inlineStr"><is><t>FRI</t></is></c>
+            </row>
+            <row r="2">
+              <c r="A2" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="B2" s="1" t="inlineStr"><is><t>ê¹€ì„ ìƒ (413)&#10;E4-Hercules</t></is></c>
+              <c r="D2" s="1" t="inlineStr"><is><t>ê¹€ì„ ìƒ (413)&#10;E4-Hercules</t></is></c>
+            </row>
+            <row r="3">
+              <c r="A3" t="inlineStr"><is><t>5:00~5:55</t></is></c>
+              <c r="C3" s="1" t="inlineStr"><is><t>ì´ì„ ìƒ (512)&#10;E4-Hercules</t></is></c>
+              <c r="E3" s="1" t="inlineStr"><is><t>ì´ì„ ìƒ (512)&#10;E4-Hercules</t></is></c>
+            </row>
+            <row r="4">
+              <c r="A4" t="inlineStr"><is><t>6:00~6:55</t></is></c>
+              <c r="B4" t="inlineStr"><is><t>ë°•ì„ ìƒ (415)&#10;M3-Song's</t></is></c>
+              <c r="F4" t="inlineStr"><is><t>ë°•ì„ ìƒ (415)&#10;M3-Song's</t></is></c>
+            </row>
+            <row r="5">
+              <c r="A5" t="inlineStr"><is><t>7:00~7:55</t></is></c>
+              <c r="C5" s="1" t="inlineStr"><is><t>ìµœì„ ìƒ (416)&#10;E5-Apollo</t></is></c>
+              <c r="E5" s="1" t="inlineStr"><is><t>ìµœì„ ìƒ (416)&#10;E5-Apollo</t></is></c>
+            </row>
+            <row r="6">
+              <c r="A6" t="inlineStr"><is><t>8:00~8:55</t></is></c>
+              <c r="B6" t="inlineStr"><is><t>ê¹€ì„ ìƒ (413)&#10;E4-Athena</t></is></c>
+              <c r="F6" t="inlineStr"><is><t>ê¹€ì„ ìƒ (413)&#10;E4-Athena</t></is></c>
+            </row>
+            <row r="7">
+              <c r="A7" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="C7" t="inlineStr"><is><t>ë°•ì„ ìƒ (415)&#10;M2-Zeus</t></is></c>
+              <c r="E7" t="inlineStr"><is><t>ë°•ì„ ìƒ (415)&#10;M2-Zeus</t></is></c>
+            </row>
+            <row r="8">
+              <c r="A8" t="inlineStr"><is><t>5:00~5:55</t></is></c>
+              <c r="B8" t="inlineStr"><is><t>ì´ì„ ìƒ (512)&#10;E5-Poseidon</t></is></c>
+              <c r="D8" t="inlineStr"><is><t>ì´ì„ ìƒ (512)&#10;E5-Poseidon</t></is></c>
+            </row>
+            <row r="9">
+              <c r="A9" t="inlineStr"><is><t>6:00~6:55</t></is></c>
+              <c r="C9" t="inlineStr"><is><t>ìµœì„ ìƒ (416)&#10;M3-Odyssey</t></is></c>
+              <c r="E9" t="inlineStr"><is><t>ìµœì„ ìƒ (416)&#10;M3-Odyssey</t></is></c>
+            </row>
+            <row r="10">
+              <c r="A10" t="inlineStr"><is><t>7:00~7:55</t></is></c>
+              <c r="B10" t="inlineStr"><is><t>ê¹€ì„ ìƒ (413)&#10;E4-Theseus</t></is></c>
+              <c r="F10" t="inlineStr"><is><t>ê¹€ì„ ìƒ (413)&#10;E4-Theseus</t></is></c>
+            </row>
+            <row r="11">
+              <c r="A11" t="inlineStr"><is><t>8:00~8:55</t></is></c>
+              <c r="C11" t="inlineStr"><is><t>ë°•ì„ ìƒ (415)&#10;E5-Hera</t></is></c>
+              <c r="E11" t="inlineStr"><is><t>ë°•ì„ ìƒ (415)&#10;E5-Hera</t></is></c>
+            </row>
+          </sheetData>
+        </worksheet>)");
+    const QByteArray sheet2 = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <sheetData>
+            <row r="1">
+              <c r="A1" t="inlineStr"><is><t>Charlie</t></is></c>
+              <c r="B1" t="inlineStr"><is><t>MON</t></is></c>
+              <c r="C1" t="inlineStr"><is><t>TUE</t></is></c>
+              <c r="D1" t="inlineStr"><is><t>WED</t></is></c>
+              <c r="E1" t="inlineStr"><is><t>THU</t></is></c>
+              <c r="F1" t="inlineStr"><is><t>FRI</t></is></c>
+            </row>
+            <row r="2">
+              <c r="A2" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="B2" t="inlineStr"><is><t>ì´ì„ ìƒ (512)&#10;E5-Athena</t></is></c>
+            </row>
+          </sheetData>
+        </worksheet>)");
+
+    return scheduleWorkbookPackage(sheet1, sheet2);
+}
+
+QByteArray scheduleConflictWorkbookDataFixed()
+{
+    const QByteArray sheet1 = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <sheetData>
+            <row r="1">
+              <c r="A1" t="inlineStr"><is><t>Alice</t></is></c>
+              <c r="B1" t="inlineStr"><is><t>MON</t></is></c>
+              <c r="C1" t="inlineStr"><is><t>TUE</t></is></c>
+              <c r="D1" t="inlineStr"><is><t>WED</t></is></c>
+              <c r="E1" t="inlineStr"><is><t>THU</t></is></c>
+              <c r="F1" t="inlineStr"><is><t>FRI</t></is></c>
+            </row>
+            <row r="2">
+              <c r="A2" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="B2" s="1" t="inlineStr"><is><t>&#xAE40;&#xC120;&#xC0DD; (413)&#10;E4-Hercules</t></is></c>
+              <c r="D2" s="1" t="inlineStr"><is><t>&#xAE40;&#xC120;&#xC0DD; (413)&#10;E4-Hercules</t></is></c>
+            </row>
+            <row r="3">
+              <c r="A3" t="inlineStr"><is><t>5:00~5:55</t></is></c>
+              <c r="C3" s="1" t="inlineStr"><is><t>&#xC774;&#xC120;&#xC0DD; (512)&#10;E4-Hercules</t></is></c>
+              <c r="E3" s="1" t="inlineStr"><is><t>&#xC774;&#xC120;&#xC0DD; (512)&#10;E4-Hercules</t></is></c>
+            </row>
+            <row r="4">
+              <c r="A4" t="inlineStr"><is><t>6:00~6:55</t></is></c>
+              <c r="B4" t="inlineStr"><is><t>&#xBC15;&#xC120;&#xC0DD; (415)&#10;M3-Song's</t></is></c>
+              <c r="F4" t="inlineStr"><is><t>&#xBC15;&#xC120;&#xC0DD; (415)&#10;M3-Song's</t></is></c>
+            </row>
+            <row r="5">
+              <c r="A5" t="inlineStr"><is><t>7:00~7:55</t></is></c>
+              <c r="C5" s="1" t="inlineStr"><is><t>&#xCD5C;&#xC120;&#xC0DD; (416)&#10;E5-Apollo</t></is></c>
+              <c r="E5" s="1" t="inlineStr"><is><t>&#xCD5C;&#xC120;&#xC0DD; (416)&#10;E5-Apollo</t></is></c>
+            </row>
+            <row r="6">
+              <c r="A6" t="inlineStr"><is><t>8:00~8:55</t></is></c>
+              <c r="B6" t="inlineStr"><is><t>&#xAE40;&#xC120;&#xC0DD; (413)&#10;E4-Athena</t></is></c>
+              <c r="F6" t="inlineStr"><is><t>&#xAE40;&#xC120;&#xC0DD; (413)&#10;E4-Athena</t></is></c>
+            </row>
+            <row r="7">
+              <c r="A7" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="C7" t="inlineStr"><is><t>&#xBC15;&#xC120;&#xC0DD; (415)&#10;M2-Zeus</t></is></c>
+              <c r="E7" t="inlineStr"><is><t>&#xBC15;&#xC120;&#xC0DD; (415)&#10;M2-Zeus</t></is></c>
+            </row>
+            <row r="8">
+              <c r="A8" t="inlineStr"><is><t>5:00~5:55</t></is></c>
+              <c r="B8" t="inlineStr"><is><t>&#xC774;&#xC120;&#xC0DD; (512)&#10;E5-Poseidon</t></is></c>
+              <c r="D8" t="inlineStr"><is><t>&#xC774;&#xC120;&#xC0DD; (512)&#10;E5-Poseidon</t></is></c>
+            </row>
+            <row r="9">
+              <c r="A9" t="inlineStr"><is><t>6:00~6:55</t></is></c>
+              <c r="C9" t="inlineStr"><is><t>&#xCD5C;&#xC120;&#xC0DD; (416)&#10;M3-Odyssey</t></is></c>
+              <c r="E9" t="inlineStr"><is><t>&#xCD5C;&#xC120;&#xC0DD; (416)&#10;M3-Odyssey</t></is></c>
+            </row>
+            <row r="10">
+              <c r="A10" t="inlineStr"><is><t>7:00~7:55</t></is></c>
+              <c r="B10" t="inlineStr"><is><t>&#xAE40;&#xC120;&#xC0DD; (413)&#10;E4-Theseus</t></is></c>
+              <c r="F10" t="inlineStr"><is><t>&#xAE40;&#xC120;&#xC0DD; (413)&#10;E4-Theseus</t></is></c>
+            </row>
+            <row r="11">
+              <c r="A11" t="inlineStr"><is><t>8:00~8:55</t></is></c>
+              <c r="C11" t="inlineStr"><is><t>&#xBC15;&#xC120;&#xC0DD; (415)&#10;E5-Hera</t></is></c>
+              <c r="E11" t="inlineStr"><is><t>&#xBC15;&#xC120;&#xC0DD; (415)&#10;E5-Hera</t></is></c>
+            </row>
+          </sheetData>
+        </worksheet>)");
+    const QByteArray sheet2 = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <sheetData>
+            <row r="1">
+              <c r="A1" t="inlineStr"><is><t>Charlie</t></is></c>
+              <c r="B1" t="inlineStr"><is><t>MON</t></is></c>
+              <c r="C1" t="inlineStr"><is><t>TUE</t></is></c>
+              <c r="D1" t="inlineStr"><is><t>WED</t></is></c>
+              <c r="E1" t="inlineStr"><is><t>THU</t></is></c>
+              <c r="F1" t="inlineStr"><is><t>FRI</t></is></c>
+            </row>
+            <row r="2">
+              <c r="A2" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="B2" t="inlineStr"><is><t>&#xC774;&#xC120;&#xC0DD; (512)&#10;E5-Athena</t></is></c>
+            </row>
+          </sheetData>
+        </worksheet>)");
+
+    return scheduleWorkbookPackage(sheet1, sheet2);
 }
 
 QString writeDialogWorkbook(
@@ -338,6 +523,33 @@ QString writeDialogWorkbook(
         return {};
     }
     file.write(dialogWorkbookData());
+    file.close();
+    return path;
+}
+
+QString writeScheduleConflictWorkbook(
+    QTemporaryDir* directory
+    )
+{
+    const QString configuredFixturePath =
+        qEnvironmentVariable(
+            "CLASSMNGR_SCHEDULE_CONFLICT_FIXTURE_OUTPUT_PATH"
+            ).trimmed();
+    const QString path =
+        configuredFixturePath.isEmpty()
+            ? directory->filePath(QStringLiteral("schedule-conflict.xlsx"))
+            : configuredFixturePath;
+    if (!configuredFixturePath.isEmpty()
+        && !QDir().mkpath(QFileInfo(path).absolutePath()))
+    {
+        return {};
+    }
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        return {};
+    }
+    file.write(scheduleConflictWorkbookDataFixed());
     file.close();
     return path;
 }
@@ -2402,6 +2614,146 @@ void ScheduleImportDialogTests
         import->isEnabled(),
         qPrintable(failureDetails)
         );
+}
+
+void ScheduleImportDialogTests
+    ::permanentConflictWorkbookPresentsReviewWarning()
+{
+    const QString configuredPath =
+        qEnvironmentVariable(
+            "CLASSMNGR_SCHEDULE_CONFLICT_SAMPLE"
+            ).trimmed();
+    const QString configuredOutputPath =
+        qEnvironmentVariable(
+            "CLASSMNGR_SCHEDULE_CONFLICT_FIXTURE_OUTPUT_PATH"
+            ).trimmed();
+    QTemporaryDir generatedFixtureDirectory;
+    QString path = configuredPath;
+    if (path.isEmpty() && !configuredOutputPath.isEmpty())
+    {
+        QVERIFY(generatedFixtureDirectory.isValid());
+        path = writeScheduleConflictWorkbook(&generatedFixtureDirectory);
+    }
+    if (path.isEmpty())
+    {
+        path = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+            QStringLiteral(
+                "tests/fixtures/imports/schedule_large_conflict.xlsx"
+                )
+            );
+    }
+    if (!QFile::exists(path))
+    {
+        QSKIP(
+            "The permanent schedule conflict fixture is missing; set CLASSMNGR_SCHEDULE_CONFLICT_SAMPLE to validate another workbook."
+            );
+    }
+
+    ScheduleWidgetTestStubs::setMatchImportedClasses(true);
+    ApplicationServices services;
+    saveSettingOrFail(services.dataService(),
+        QStringLiteral("myInfo/name"),
+        QStringLiteral("Alice")
+        );
+    const QString reviewFontFamily = loadReviewFontFamily();
+    if (!reviewFontFamily.isEmpty())
+    {
+        QApplication::setFont(QFont(reviewFontFamily));
+    }
+
+    ScheduleImportDialog dialog(&services);
+    dialog.setFilePath(path);
+    dialog.show();
+    QCoreApplication::processEvents();
+    auto* next =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportNextButton")
+            );
+    QVERIFY(next);
+    QVERIFY(loadSourceSelections(&dialog));
+
+    auto* users =
+        dialog.findChild<QComboBox*>(
+            QStringLiteral("scheduleImportUserCombo")
+            );
+    QVERIFY(users);
+    int selectedUser = -1;
+    for (int index = 0; index < users->count(); ++index)
+    {
+        if (users->itemData(index).toInt() >= 0)
+        {
+            selectedUser = index;
+            break;
+        }
+    }
+    QVERIFY(selectedUser >= 0);
+    users->setCurrentIndex(selectedUser);
+    QVERIFY(next->isEnabled());
+    next->click();
+    QCoreApplication::processEvents();
+
+    auto* review =
+        dialog.findChild<ScheduleImportReviewDialog*>();
+    QVERIFY(review);
+    auto* import =
+        review->findChild<QPushButton*>(
+            QStringLiteral("scheduleImportAcceptButton")
+            );
+    QVERIFY(import);
+    QTRY_VERIFY(
+        review->findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+    auto* warning =
+        review->findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            );
+    QVERIFY(warning);
+    QVERIFY(
+        warning->text().contains(
+            QStringLiteral("Multiple imported classes are assigned")
+            )
+        );
+    QVERIFY(
+        warning->text().contains(QStringLiteral("E4 Hercules"))
+        );
+    QVERIFY(!import->isEnabled());
+
+    warning->accept();
+    QTRY_VERIFY(
+        !review->findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+
+    const QString screenshotPath =
+        qEnvironmentVariable(
+            "CLASSMNGR_SCHEDULE_CONFLICT_REVIEW_OUTPUT_PATH"
+            ).trimmed();
+    if (!screenshotPath.isEmpty())
+    {
+        QVERIFY2(
+            QDir().mkpath(QFileInfo(screenshotPath).absolutePath()),
+            qPrintable(
+                QStringLiteral(
+                    "Could not create schedule conflict screenshot directory for %1"
+                    ).arg(screenshotPath)
+                )
+            );
+        review->show();
+        QCoreApplication::processEvents();
+        const QPixmap screenshot = review->grab();
+        QVERIFY(!screenshot.isNull());
+        QVERIFY2(
+            screenshot.save(screenshotPath, "PNG"),
+            qPrintable(
+                QStringLiteral(
+                    "Could not save schedule conflict screenshot: %1"
+                    ).arg(screenshotPath)
+                )
+            );
+    }
 }
 
 QTEST_MAIN(ScheduleImportDialogTests)
