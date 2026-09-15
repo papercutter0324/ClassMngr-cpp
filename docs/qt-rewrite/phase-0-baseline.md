@@ -227,6 +227,25 @@ does not recreate or rely on them.
   `docs/qt-rewrite/visual-baseline/release/large-calendar-import-boundary/`.
   This is the current-product Calendar import before-state, not a v2 operation
   budget.
+- The packaged Release heavy-route Class Transfer run uses the same 96-class
+  workspace and a generated 1,716,291-byte JSON package containing 12 teachers,
+  48 classes, 8,640 roster cells, 96 speaking evaluations with 26,400 cells,
+  and 48 schedule rows. It reaches package load, preview, a 12-teacher/
+  48-class review dialog, transaction commit, dialog release, operation release,
+  and Classes refresh. The apply creates 12 teachers and 48 classes, taking the
+  destination from 24/96 teachers/classes to 36/144; the refreshed Classes page
+  reports 144 visible classes. Raw JSON bytes and the decoded document are not
+  retained after load, and package/preview/dialog/operation ownership is false
+  at post-release. Transfer operation memory rises from `231,911,424` working/
+  `220,925,952` private bytes at start to a `250,601,472`/
+  `237,604,864` review peak, then is `242,741,248`/
+  `234,180,608` at post-release; the page refresh is `262,430,720`/
+  `251,817,984`. The full heavy route reached `workflow-complete` at
+  `15,423 ms` and `settled-1s` at `16,458 ms`, with route-wide peak working
+  set/private usage of `476,622,848`/`519,741,440` bytes. The retained package,
+  review capture, trace, manifest, process logs, and profiler report are under
+  `docs/qt-rewrite/visual-baseline/release/large-class-transfer-boundary/`.
+  This is the current-product transfer before-state, not a v2 operation budget.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
@@ -328,6 +347,14 @@ alongside the source/review captures, process trace, manifest, and lifecycle
 report. The variant preserves the 96-class stress scale while using valid,
 non-overlapping meeting patterns so the actual transaction commit and
 post-commit Schedule refresh can be measured.
+
+The heavy-route Class Transfer boundary uses a generated JSON package retained
+at
+`docs/qt-rewrite/visual-baseline/release/large-class-transfer-boundary/generated-large-class-transfer.json`
+alongside the review capture, process trace, manifest, and lifecycle report.
+The package is intentionally larger than the compact compatibility fixture so
+JSON decoding, matching, review controls, transaction apply, and release can
+be measured at a multi-class scale without changing the product file format.
 
 ## Reproduction commands
 
@@ -456,6 +483,14 @@ of the generated workbook, retains the source/review PNGs, `manifest.json`,
 profiler JSON, process logs, and flushed workflow trace, and remains opt-in
 because it intentionally drives the large import/apply memory boundary.
 
+Set `CLASSMNGR_LARGE_CLASS_TRANSFER_BOUNDARY_REFERENCE_DIR` while running
+`capturesLargeClassTransferBoundaryWhenConfigured` to run the generated
+multi-class transfer package through the packaged Release workflow. The test
+retains the package, review PNG, `manifest.json`, profiler JSON, process logs,
+and flushed workflow trace under the configured directory. The test is opt-in
+because it intentionally drives the large transfer review/apply memory
+boundary.
+
 For an empty workspace:
 
 ```powershell
@@ -477,7 +512,8 @@ store the JSON startup trace beside the PNG files.
 3. First page render.
 4. Five minutes idle.
 5. Navigation through all normal pages.
-6. Large schedule, roster, campus, document, and speaking-evaluation flows.
+6. Large schedule, roster, campus, document, speaking-evaluation, and class
+   transfer flows.
 7. Open a representative PDF in QtPdf, exercise the required viewer actions,
    close or navigate away, and reopen it.
 8. Leave each large feature and observe retained memory, including the viewer.
@@ -495,8 +531,9 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- Large speaking-evaluation batch, class-transfer, staff-directory, and
-  PDF/report operation measurements. The Schedule Import parse/review/cancel,
+- Large speaking-evaluation batch, staff-directory, and PDF/report operation
+  measurements. The Class Transfer package review/commit/release, Schedule
+  Import parse/review/cancel,
   apply/commit, and cleanup artifacts plus the Calendar workbook/import
   lifecycle are now retained; the class-transfer conflict and compact
   schedule-workbook review fixtures are permanent.

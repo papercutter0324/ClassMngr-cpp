@@ -329,6 +329,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
+        src/features/classes/services/class_transfer_json_codec.cpp
         src/data/database/database_schema_manager.cpp
         src/data/database/database_transaction.cpp
         src/data/database/sql_query_utils.cpp

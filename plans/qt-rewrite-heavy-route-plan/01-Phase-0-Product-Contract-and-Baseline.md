@@ -782,3 +782,49 @@ No v2 feature work begins without a fixture and an acceptance check.
   generated-output coverage, and cross-platform evidence. Continue with the
   next heavy operation while retaining all prior artifacts; do not begin v2
   remediation yet.
+
+## Progress update - 2026-09-16 (large Class Transfer lifecycle retention)
+
+- What changed: the heavy-route harness now runs the packaged Windows x64
+  Release executable against the 96-class workspace and a generated
+  1,716,291-byte multi-class transfer package. It reaches JSON load, preview,
+  the actual Class Import review dialog, transaction apply, dialog cleanup,
+  operation release, and Classes refresh while recording package counts,
+  matching/query sizes, resolution counts, destination before/after counts,
+  memory, and representation lifetimes. The route also exposed and fixed a
+  real file-import boundary defect: transfer JSON intentionally omits local
+  class IDs, so the application service now validates a decoded `-1` identity
+  with a non-persisted placeholder before the repository assigns the new
+  destination ID.
+- Evidence: the child completed normally. The package contains 12 teachers,
+  48 classes, 288 roster columns, 1,440 roster rows, 8,640 roster cells, 96
+  speaking evaluations, 2,400 evaluation rows, 26,400 evaluation cells, and
+  48 schedule rows. Review prepared 12 teacher controls and 48 class controls
+  with zero inferred class or teacher matches. Apply created 12 teachers and
+  48 classes, moving the destination from 24/96 teachers/classes to 36/144;
+  the refreshed Classes page showed 144 visible classes. Raw JSON bytes and
+  the decoded JSON document were released after package load; package,
+  preview, dialog, and operation ownership were all false at post-release.
+- Timing and memory: transfer operation start/review/post-release/page-refresh
+  checkpoints were `4,723`/`5,500`/`6,431`/`9,618 ms`. The operation rose from
+  `231,911,424` working/`220,925,952` private bytes at start to a
+  `250,601,472`/`237,604,864` review peak, then measured
+  `242,741,248`/`234,180,608` at post-release and
+  `262,430,720`/`251,817,984` after the Classes refresh. The full heavy route
+  reached `workflow-complete` at `15,423 ms` and `settled-1s` at `16,458 ms`,
+  with route-wide peak working/private usage of
+  `476,622,848`/`519,741,440` bytes. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-class-transfer-boundary/`.
+- Evaluation impact: this closes the multi-class Class Transfer
+  review/commit/release/refresh before-state required by the Memory Hotspot
+  Remediation Plan and proves that the real file path can complete with the
+  current ownership boundaries. It does not establish a v2 operation budget
+  or prove that the package, dialog copy, matching results, and transaction
+  staging are bounded in the eventual streaming/compact design.
+- Decision and next heavy slice: retain this package and lifecycle report as
+  the Class Transfer before-state oracle. Phase 0 remains open for the large
+  speaking-evaluation batch, staff directory, PDF/report operation
+  measurements, Sub Prep visual states, explicit Release thresholds,
+  generated-output coverage, and cross-platform evidence. Continue with the
+  next heavy operation while retaining all prior artifacts; do not begin v2
+  remediation yet.

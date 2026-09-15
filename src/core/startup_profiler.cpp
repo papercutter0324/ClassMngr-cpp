@@ -420,6 +420,126 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.calendarImportSavedEventCount
         },
         {
+            QStringLiteral("classTransferPackageTeacherCount"),
+            metrics.classTransferPackageTeacherCount
+        },
+        {
+            QStringLiteral("classTransferPackageClassCount"),
+            metrics.classTransferPackageClassCount
+        },
+        {
+            QStringLiteral("classTransferPackageRosterColumnCount"),
+            metrics.classTransferPackageRosterColumnCount
+        },
+        {
+            QStringLiteral("classTransferPackageRosterRowCount"),
+            metrics.classTransferPackageRosterRowCount
+        },
+        {
+            QStringLiteral("classTransferPackageRosterCellCount"),
+            metrics.classTransferPackageRosterCellCount
+        },
+        {
+            QStringLiteral("classTransferPackageEvaluationCount"),
+            metrics.classTransferPackageEvaluationCount
+        },
+        {
+            QStringLiteral("classTransferPackageEvaluationRowCount"),
+            metrics.classTransferPackageEvaluationRowCount
+        },
+        {
+            QStringLiteral("classTransferPackageEvaluationCellCount"),
+            metrics.classTransferPackageEvaluationCellCount
+        },
+        {
+            QStringLiteral("classTransferPackageScheduleRowCount"),
+            metrics.classTransferPackageScheduleRowCount
+        },
+        {
+            QStringLiteral("classTransferPreviewTeacherCount"),
+            metrics.classTransferPreviewTeacherCount
+        },
+        {
+            QStringLiteral("classTransferPreviewClassCount"),
+            metrics.classTransferPreviewClassCount
+        },
+        {
+            QStringLiteral("classTransferMatchingTeacherCount"),
+            metrics.classTransferMatchingTeacherCount
+        },
+        {
+            QStringLiteral("classTransferMatchingClassCount"),
+            metrics.classTransferMatchingClassCount
+        },
+        {
+            QStringLiteral("classTransferDestinationTeacherCount"),
+            metrics.classTransferDestinationTeacherCount
+        },
+        {
+            QStringLiteral("classTransferDestinationClassCount"),
+            metrics.classTransferDestinationClassCount
+        },
+        {
+            QStringLiteral("classTransferDestinationClassInfoResultCount"),
+            metrics.classTransferDestinationClassInfoResultCount
+        },
+        {
+            QStringLiteral("classTransferDialogTeacherControlCount"),
+            metrics.classTransferDialogTeacherControlCount
+        },
+        {
+            QStringLiteral("classTransferDialogClassControlCount"),
+            metrics.classTransferDialogClassControlCount
+        },
+        {
+            QStringLiteral("classTransferPlanTeacherResolutionCount"),
+            metrics.classTransferPlanTeacherResolutionCount
+        },
+        {
+            QStringLiteral("classTransferPlanClassResolutionCount"),
+            metrics.classTransferPlanClassResolutionCount
+        },
+        {
+            QStringLiteral("classTransferTeachersCreated"),
+            metrics.classTransferTeachersCreated
+        },
+        {
+            QStringLiteral("classTransferTeachersKept"),
+            metrics.classTransferTeachersKept
+        },
+        {
+            QStringLiteral("classTransferTeachersReplaced"),
+            metrics.classTransferTeachersReplaced
+        },
+        {
+            QStringLiteral("classTransferClassesCreated"),
+            metrics.classTransferClassesCreated
+        },
+        {
+            QStringLiteral("classTransferClassesReplaced"),
+            metrics.classTransferClassesReplaced
+        },
+        {
+            QStringLiteral("classTransferClassesSkipped"),
+            metrics.classTransferClassesSkipped
+        },
+        {
+            QStringLiteral("classTransferDestinationClassesBefore"),
+            metrics.classTransferDestinationClassesBefore
+        },
+        {
+            QStringLiteral("classTransferDestinationClassesAfter"),
+            metrics.classTransferDestinationClassesAfter
+        },
+        {
+            QStringLiteral("classTransferDestinationTeachersBefore"),
+            metrics.classTransferDestinationTeachersBefore
+        },
+        {
+            QStringLiteral("classTransferDestinationTeachersAfter"),
+            metrics.classTransferDestinationTeachersAfter
+        },
+        {
             QStringLiteral("scheduleImportRawBytesRetained"),
             metrics.scheduleImportRawBytesRetained
         },
@@ -436,6 +556,10 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             static_cast<double>(metrics.calendarImportRawWorkbookBytes)
         },
         {
+            QStringLiteral("classTransferRawJsonBytes"),
+            static_cast<double>(metrics.classTransferRawJsonBytes)
+        },
+        {
             QStringLiteral("calendarImportRawBytesRetained"),
             metrics.calendarImportRawBytesRetained
         },
@@ -450,6 +574,30 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("calendarImportOperationRetained"),
             metrics.calendarImportOperationRetained
+        },
+        {
+            QStringLiteral("classTransferRawBytesRetained"),
+            metrics.classTransferRawBytesRetained
+        },
+        {
+            QStringLiteral("classTransferJsonDocumentRetained"),
+            metrics.classTransferJsonDocumentRetained
+        },
+        {
+            QStringLiteral("classTransferPackageRetained"),
+            metrics.classTransferPackageRetained
+        },
+        {
+            QStringLiteral("classTransferPreviewRetained"),
+            metrics.classTransferPreviewRetained
+        },
+        {
+            QStringLiteral("classTransferDialogRetained"),
+            metrics.classTransferDialogRetained
+        },
+        {
+            QStringLiteral("classTransferOperationRetained"),
+            metrics.classTransferOperationRetained
         },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
@@ -513,6 +661,30 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("calendarImportOperationsReleased"),
             static_cast<double>(metrics.calendarImportOperationsReleased)
+        },
+        {
+            QStringLiteral("classTransferOperationsStarted"),
+            static_cast<double>(metrics.classTransferOperationsStarted)
+        },
+        {
+            QStringLiteral("classTransferPackagesLoaded"),
+            static_cast<double>(metrics.classTransferPackagesLoaded)
+        },
+        {
+            QStringLiteral("classTransferPreviewsPrepared"),
+            static_cast<double>(metrics.classTransferPreviewsPrepared)
+        },
+        {
+            QStringLiteral("classTransferOperationsApplied"),
+            static_cast<double>(metrics.classTransferOperationsApplied)
+        },
+        {
+            QStringLiteral("classTransferOperationsFailed"),
+            static_cast<double>(metrics.classTransferOperationsFailed)
+        },
+        {
+            QStringLiteral("classTransferOperationsReleased"),
+            static_cast<double>(metrics.classTransferOperationsReleased)
         },
         {QStringLiteral("pdfDocumentsLoaded"), static_cast<double>(metrics.pdfDocumentsLoaded)},
         {QStringLiteral("pdfDocumentsReleased"), static_cast<double>(metrics.pdfDocumentsReleased)},
@@ -1514,6 +1686,309 @@ void StartupProfiler::recordCalendarImportOperationReleased()
             );
         profiler->checkpoint(
             QStringLiteral("calendar-import-operation-released")
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferStarted(
+    const QString& filePath,
+    qint64 rawJsonBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.classTransferOperationsStarted;
+        metrics.classTransferRawJsonBytes = qMax<qint64>(0, rawJsonBytes);
+        metrics.classTransferRawBytesRetained = true;
+        metrics.classTransferJsonDocumentRetained = true;
+        metrics.classTransferPackageRetained = false;
+        metrics.classTransferPreviewRetained = false;
+        metrics.classTransferDialogRetained = false;
+        metrics.classTransferOperationRetained = true;
+
+        const QString detail =
+            QStringLiteral(
+                "path=%1; rawJsonBytes=%2; rawBytesRetained=true; jsonDocumentRetained=true"
+                )
+                .arg(filePath)
+                .arg(metrics.classTransferRawJsonBytes);
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-operation-start"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-operation-start %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-operation-start"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferPackageLoaded(
+    int teacherCount,
+    int classCount,
+    int rosterColumnCount,
+    int rosterRowCount,
+    int rosterCellCount,
+    int evaluationCount,
+    int evaluationRowCount,
+    int evaluationCellCount,
+    int scheduleRowCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.classTransferPackagesLoaded;
+        metrics.classTransferRawBytesRetained = false;
+        metrics.classTransferJsonDocumentRetained = false;
+        metrics.classTransferPackageRetained = true;
+        metrics.classTransferPackageTeacherCount = qMax(0, teacherCount);
+        metrics.classTransferPackageClassCount = qMax(0, classCount);
+        metrics.classTransferPackageRosterColumnCount = qMax(0, rosterColumnCount);
+        metrics.classTransferPackageRosterRowCount = qMax(0, rosterRowCount);
+        metrics.classTransferPackageRosterCellCount = qMax(0, rosterCellCount);
+        metrics.classTransferPackageEvaluationCount = qMax(0, evaluationCount);
+        metrics.classTransferPackageEvaluationRowCount = qMax(0, evaluationRowCount);
+        metrics.classTransferPackageEvaluationCellCount = qMax(0, evaluationCellCount);
+        metrics.classTransferPackageScheduleRowCount = qMax(0, scheduleRowCount);
+
+        const QString detail =
+            QStringLiteral(
+                "teachers=%1; classes=%2; rosterColumns=%3; rosterRows=%4; rosterCells=%5; evaluations=%6; evaluationRows=%7; evaluationCells=%8; scheduleRows=%9; rawBytesRetained=false; jsonDocumentRetained=false; packageRetained=true"
+                )
+                .arg(metrics.classTransferPackageTeacherCount)
+                .arg(metrics.classTransferPackageClassCount)
+                .arg(metrics.classTransferPackageRosterColumnCount)
+                .arg(metrics.classTransferPackageRosterRowCount)
+                .arg(metrics.classTransferPackageRosterCellCount)
+                .arg(metrics.classTransferPackageEvaluationCount)
+                .arg(metrics.classTransferPackageEvaluationRowCount)
+                .arg(metrics.classTransferPackageEvaluationCellCount)
+                .arg(metrics.classTransferPackageScheduleRowCount);
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-package-loaded"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-package-loaded %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-package-loaded"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferPreviewPrepared(
+    int previewTeacherCount,
+    int previewClassCount,
+    int matchingTeacherCount,
+    int matchingClassCount,
+    int destinationTeacherCount,
+    int destinationClassCount,
+    int destinationClassInfoResultCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.classTransferPreviewsPrepared;
+        metrics.classTransferPreviewRetained = true;
+        metrics.classTransferPreviewTeacherCount = qMax(0, previewTeacherCount);
+        metrics.classTransferPreviewClassCount = qMax(0, previewClassCount);
+        metrics.classTransferMatchingTeacherCount = qMax(0, matchingTeacherCount);
+        metrics.classTransferMatchingClassCount = qMax(0, matchingClassCount);
+        metrics.classTransferDestinationTeacherCount = qMax(0, destinationTeacherCount);
+        metrics.classTransferDestinationClassCount = qMax(0, destinationClassCount);
+        metrics.classTransferDestinationClassInfoResultCount =
+            qMax(0, destinationClassInfoResultCount);
+
+        const QString detail =
+            QStringLiteral(
+                "previewTeachers=%1; previewClasses=%2; matchingTeachers=%3; matchingClasses=%4; destinationTeachers=%5; destinationClasses=%6; destinationClassInfoResults=%7; previewRetained=true"
+                )
+                .arg(metrics.classTransferPreviewTeacherCount)
+                .arg(metrics.classTransferPreviewClassCount)
+                .arg(metrics.classTransferMatchingTeacherCount)
+                .arg(metrics.classTransferMatchingClassCount)
+                .arg(metrics.classTransferDestinationTeacherCount)
+                .arg(metrics.classTransferDestinationClassCount)
+                .arg(metrics.classTransferDestinationClassInfoResultCount);
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-preview-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-preview-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-preview-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferDialogPrepared(
+    int teacherControlCount,
+    int classControlCount,
+    int teacherResolutionCount,
+    int classResolutionCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.classTransferDialogRetained = true;
+        metrics.classTransferDialogTeacherControlCount = qMax(0, teacherControlCount);
+        metrics.classTransferDialogClassControlCount = qMax(0, classControlCount);
+        metrics.classTransferPlanTeacherResolutionCount = qMax(0, teacherResolutionCount);
+        metrics.classTransferPlanClassResolutionCount = qMax(0, classResolutionCount);
+
+        const QString detail =
+            QStringLiteral(
+                "teacherControls=%1; classControls=%2; teacherResolutions=%3; classResolutions=%4; dialogRetained=true"
+                )
+                .arg(metrics.classTransferDialogTeacherControlCount)
+                .arg(metrics.classTransferDialogClassControlCount)
+                .arg(metrics.classTransferPlanTeacherResolutionCount)
+                .arg(metrics.classTransferPlanClassResolutionCount);
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-dialog-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-dialog-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-dialog-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferApplied(
+    int teachersCreated,
+    int teachersKept,
+    int teachersReplaced,
+    int classesCreated,
+    int classesReplaced,
+    int classesSkipped,
+    int destinationClassesBefore,
+    int destinationClassesAfter,
+    int destinationTeachersBefore,
+    int destinationTeachersAfter
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.classTransferOperationsApplied;
+        metrics.classTransferTeachersCreated = qMax(0, teachersCreated);
+        metrics.classTransferTeachersKept = qMax(0, teachersKept);
+        metrics.classTransferTeachersReplaced = qMax(0, teachersReplaced);
+        metrics.classTransferClassesCreated = qMax(0, classesCreated);
+        metrics.classTransferClassesReplaced = qMax(0, classesReplaced);
+        metrics.classTransferClassesSkipped = qMax(0, classesSkipped);
+        metrics.classTransferDestinationClassesBefore = qMax(0, destinationClassesBefore);
+        metrics.classTransferDestinationClassesAfter = qMax(0, destinationClassesAfter);
+        metrics.classTransferDestinationTeachersBefore = qMax(0, destinationTeachersBefore);
+        metrics.classTransferDestinationTeachersAfter = qMax(0, destinationTeachersAfter);
+
+        const QString detail =
+            QStringLiteral(
+                "committed=true; teachersCreated=%1; teachersKept=%2; teachersReplaced=%3; classesCreated=%4; classesReplaced=%5; classesSkipped=%6; destinationClassesBefore=%7; destinationClassesAfter=%8; destinationTeachersBefore=%9; destinationTeachersAfter=%10"
+                )
+                .arg(metrics.classTransferTeachersCreated)
+                .arg(metrics.classTransferTeachersKept)
+                .arg(metrics.classTransferTeachersReplaced)
+                .arg(metrics.classTransferClassesCreated)
+                .arg(metrics.classTransferClassesReplaced)
+                .arg(metrics.classTransferClassesSkipped)
+                .arg(metrics.classTransferDestinationClassesBefore)
+                .arg(metrics.classTransferDestinationClassesAfter)
+                .arg(metrics.classTransferDestinationTeachersBefore)
+                .arg(metrics.classTransferDestinationTeachersAfter);
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-operation-applied"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-operation-applied %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-operation-applied"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferDialogReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->m_scheduleMetrics.classTransferDialogRetained = false;
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-dialog-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-dialog-released")
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-dialog-released")
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferFailed(const QString& detail)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.classTransferOperationsFailed;
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-operation-failed"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-operation-failed %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-operation-failed"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordClassTransferOperationReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.classTransferOperationsReleased;
+        metrics.classTransferRawBytesRetained = false;
+        metrics.classTransferJsonDocumentRetained = false;
+        metrics.classTransferPackageRetained = false;
+        metrics.classTransferPreviewRetained = false;
+        metrics.classTransferDialogRetained = false;
+        metrics.classTransferOperationRetained = false;
+
+        profiler->recordEvent(
+            QStringLiteral("class-transfer-operation-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("class-transfer-operation-released")
+            );
+        profiler->checkpoint(
+            QStringLiteral("class-transfer-operation-released")
             );
     }
 }

@@ -28,10 +28,18 @@
 #include <utility>
 
 #include "data/database/database_schema_manager.h"
+#include "domain/models/class_transfer.h"
+#include "domain/models/speaking_evaluation.h"
+#include "features/classes/services/class_transfer_json_codec.h"
 
 namespace
 {
 constexpr int StartupTimeoutMs = 60000;
+constexpr int LargeClassTransferTeacherCount = 12;
+constexpr int LargeClassTransferClassCount = 48;
+constexpr int LargeClassTransferRosterColumnCount = 6;
+constexpr int LargeClassTransferRosterRowCount = 30;
+constexpr int LargeClassTransferEvaluationCount = 2;
 
 struct FixtureTableExpectation
 {
@@ -610,6 +618,228 @@ bool thresholdExceeded(
     return true;
 }
 
+ClassTransferPackage largeClassTransferPackage()
+{
+    ClassTransferPackage package;
+    package.exportedAtUtc = QDateTime::fromString(
+        QStringLiteral("2026-09-16T00:00:00.000Z"),
+        Qt::ISODateWithMs
+        );
+
+    const QStringList teacherKoreanNames{
+        QStringLiteral("김민수"),
+        QStringLiteral("이서준"),
+        QStringLiteral("박지훈"),
+        QStringLiteral("최도윤"),
+        QStringLiteral("정하준"),
+        QStringLiteral("강예준"),
+        QStringLiteral("윤지호"),
+        QStringLiteral("장현우"),
+        QStringLiteral("임서연"),
+        QStringLiteral("한유진"),
+        QStringLiteral("오지민"),
+        QStringLiteral("서하은")
+    };
+    const QStringList teacherEnglishNames{
+        QStringLiteral("Alex Kim"),
+        QStringLiteral("Brian Lee"),
+        QStringLiteral("Chris Park"),
+        QStringLiteral("David Choi"),
+        QStringLiteral("Evan Jung"),
+        QStringLiteral("Frank Kang"),
+        QStringLiteral("Grace Yoon"),
+        QStringLiteral("Henry Jang"),
+        QStringLiteral("Irene Lim"),
+        QStringLiteral("Jason Han"),
+        QStringLiteral("Kevin Oh"),
+        QStringLiteral("Laura Seo")
+    };
+    const QStringList teacherRomanizations{
+        QStringLiteral("Kim Min Su"),
+        QStringLiteral("Lee Seo Jun"),
+        QStringLiteral("Park Ji Hun"),
+        QStringLiteral("Choi Do Yun"),
+        QStringLiteral("Jung Ha Jun"),
+        QStringLiteral("Kang Ye Jun"),
+        QStringLiteral("Yoon Ji Ho"),
+        QStringLiteral("Jang Hyun Woo"),
+        QStringLiteral("Im Seo Yeon"),
+        QStringLiteral("Han Yu Jin"),
+        QStringLiteral("Oh Ji Min"),
+        QStringLiteral("Seo Ha Eun")
+    };
+
+    for (int index = 0;
+         index < LargeClassTransferTeacherCount;
+         ++index)
+    {
+        const QString ordinal =
+            QStringLiteral("%1").arg(index + 1, 2, 10, QChar('0'));
+        Teacher teacher;
+        teacher.teacherKr = teacherKoreanNames.at(index);
+        teacher.teacherEn = teacherEnglishNames.at(index);
+        teacher.preferredRomanization = teacherRomanizations.at(index);
+        teacher.preferredName = teacher.teacherEn;
+        teacher.roomNumber = QStringLiteral("T-%1").arg(ordinal);
+        teacher.birthday = QStringLiteral("02-29");
+        teacher.phoneNumber = QStringLiteral("010-7000-%1").arg(ordinal);
+        teacher.wifiName = QStringLiteral("Transfer WiFi %1").arg(ordinal);
+        teacher.wifiPassword = QStringLiteral("transfer-password-%1").arg(ordinal);
+        teacher.internetType = QStringLiteral("Both");
+        teacher.zoomId = QStringLiteral("transfer-%1").arg(ordinal);
+        teacher.zoomPassword = QStringLiteral("transfer-zoom-%1").arg(ordinal);
+        teacher.projectionType = QStringLiteral("Any");
+        teacher.notes = QStringLiteral(
+            "Deterministic transfer teacher %1 with a complete profile."
+            ).arg(ordinal);
+        package.teachers.append({
+            QStringLiteral("transfer-teacher-%1").arg(index + 1),
+            teacher
+        });
+    }
+
+    const QStringList rosterColumns{
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Memo"),
+        QStringLiteral("Reading"),
+        QStringLiteral("Writing"),
+        QStringLiteral("Attendance")
+    };
+    const QVector<int> rosterWidths{180, 190, 260, 160, 160, 140};
+    const QStringList courseGrades{
+        QStringLiteral("E4"),
+        QStringLiteral("E5"),
+        QStringLiteral("E6"),
+        QStringLiteral("M1")
+    };
+    const QStringList courseLevels{
+        QStringLiteral("Theseus"),
+        QStringLiteral("Artemis"),
+        QStringLiteral("Helios"),
+        QStringLiteral("Elephantus")
+    };
+
+    for (int index = 0;
+         index < LargeClassTransferClassCount;
+         ++index)
+    {
+        const int ordinal = index + 1;
+        ClassTransferClass transferClass;
+        transferClass.key = QStringLiteral("transfer-class-%1").arg(ordinal);
+        transferClass.name = QStringLiteral("Transferred Class %1").arg(ordinal, 2, 10, QChar('0'));
+        transferClass.teacherKey = QStringLiteral(
+            "transfer-teacher-%1"
+            ).arg((index % LargeClassTransferTeacherCount) + 1);
+        transferClass.info.classId = 1000 + ordinal;
+        const int courseIndex = index % 4;
+        transferClass.info.classGrade = courseGrades.at(courseIndex);
+        transferClass.info.classLevel = courseLevels.at(courseIndex);
+        transferClass.info.readingBook.clear();
+        transferClass.info.essayBook = courseIndex == 3
+            ? QStringLiteral("N/A")
+            : QString();
+        transferClass.info.classColor =
+            index % 2 == 0
+                ? QStringLiteral("#DDEBFF")
+                : QStringLiteral("#E3F5E5");
+        transferClass.info.fontColor = QStringLiteral("#172B4D");
+        transferClass.info.notes = QStringLiteral(
+            "Deterministic multi-class transfer notes for class %1."
+            ).arg(ordinal);
+        transferClass.info.timeFillerActivities =
+            QStringLiteral("Transfer activity %1").arg(ordinal);
+
+        const int slot = index % 24;
+        const int hour = (slot % 12) + 1;
+        const QString period = slot < 12
+            ? QStringLiteral("AM")
+            : QStringLiteral("PM");
+        const QString startTime = QStringLiteral("%1:00 %2")
+            .arg(hour)
+            .arg(period);
+        const QString endTime = QStringLiteral("%1:50 %2")
+            .arg(hour)
+            .arg(period);
+        transferClass.info.classTimes.append({
+            index < 24 ? QStringLiteral("Saturday")
+                       : QStringLiteral("Sunday"),
+            startTime,
+            endTime
+        });
+
+        transferClass.roster.columns = rosterColumns;
+        transferClass.roster.columnWidths = rosterWidths;
+        for (int row = 0; row < LargeClassTransferRosterRowCount; ++row)
+        {
+            const QString studentOrdinal =
+                QStringLiteral("%1").arg(row + 1, 2, 10, QChar('0'));
+            transferClass.roster.rows.append({
+                QStringLiteral("Transfer Student %1-%2")
+                    .arg(ordinal, 2, 10, QChar('0'))
+                    .arg(studentOrdinal),
+                QStringLiteral("학생 %1-%2")
+                    .arg(ordinal, 2, 10, QChar('0'))
+                    .arg(studentOrdinal),
+                QStringLiteral("Transfer memo %1-%2")
+                    .arg(ordinal, 2, 10, QChar('0'))
+                    .arg(studentOrdinal),
+                QStringLiteral("Book %1").arg((row % 5) + 1),
+                QStringLiteral("Essay %1").arg((row % 4) + 1),
+                row % 3 == 0
+                    ? QStringLiteral("Present")
+                    : QStringLiteral("Recorded")
+            });
+        }
+
+        for (int evaluationIndex = 0;
+             evaluationIndex < LargeClassTransferEvaluationCount;
+             ++evaluationIndex)
+        {
+            ClassTransferEvaluation evaluation;
+            evaluation.name = QStringLiteral("Transfer Evaluation %1")
+                .arg(evaluationIndex + 1);
+            evaluation.rows = SpeakingEval::emptyRows();
+            for (int row = 0; row < evaluation.rows.size(); ++row)
+            {
+                evaluation.rows[row][SpeakingEval::toInt(
+                    SpeakingEvalColumn::EnglishName)] =
+                    transferClass.roster.rows[row % transferClass.roster.rows.size()]
+                        .value(0);
+                evaluation.rows[row][SpeakingEval::toInt(
+                    SpeakingEvalColumn::KoreanName)] =
+                    transferClass.roster.rows[row % transferClass.roster.rows.size()]
+                        .value(1);
+                evaluation.rows[row][SpeakingEval::toInt(
+                    SpeakingEvalColumn::Grammar)] =
+                    row % 2 == 0
+                        ? QStringLiteral("A")
+                        : QStringLiteral("B+");
+                evaluation.rows[row][SpeakingEval::toInt(
+                    SpeakingEvalColumn::Comments)] =
+                    QStringLiteral("Deterministic transfer evaluation comment %1-%2.")
+                        .arg(ordinal)
+                        .arg(row + 1);
+            }
+            transferClass.evaluations.append(evaluation);
+        }
+
+        package.classes.append(transferClass);
+    }
+
+    return package;
+}
+
+bool writeLargeClassTransferPackage(
+    const QString& path
+    )
+{
+    return ClassTransferJsonCodec::saveFile(
+        path,
+        largeClassTransferPackage()
+        ).has_value();
+}
+
 bool writeRepresentativeStartupSettings(
     const QString& settingsRoot
     )
@@ -903,6 +1133,7 @@ private slots:
     void capturesLargeScheduleImportBoundaryWhenConfigured();
     void capturesLargeScheduleImportApplyBoundaryWhenConfigured();
     void capturesLargeCalendarImportBoundaryWhenConfigured();
+    void capturesLargeClassTransferBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -4436,6 +4667,502 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
 void StartupPerformanceTests::capturesLargeScheduleImportApplyBoundaryWhenConfigured()
 {
     capturesLargeScheduleImportBoundaryWhenConfigured();
+}
+
+void StartupPerformanceTests::capturesLargeClassTransferBoundaryWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_CLASS_TRANSFER_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_CLASS_TRANSFER_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral(
+                "ClassMngr executable does not exist: %1"
+                ).arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString packagePath =
+        directory.filePath(QStringLiteral("large-class-transfer.json"));
+    QVERIFY2(
+        writeLargeClassTransferPackage(packagePath),
+        "Unable to write the deterministic large class-transfer package."
+        );
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-class-transfer.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large Class Transfer reference root: %1"
+                ).arg(outputRoot)
+            )
+        );
+    const QString retainedPackagePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-class-transfer.json")
+            );
+    if (QFileInfo::exists(retainedPackagePath))
+    {
+        QVERIFY(QFile::remove(retainedPackagePath));
+    }
+    QVERIFY(QFile::copy(packagePath, retainedPackagePath));
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-class-transfer-workflow.json")
+            );
+    const QString tracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    if (QFileInfo::exists(metricsPath))
+    {
+        QVERIFY(QFile::remove(metricsPath));
+    }
+    QFile traceOutput(tracePath);
+    QVERIFY2(
+        traceOutput.open(
+            QIODevice::WriteOnly
+            | QIODevice::Truncate
+            | QIODevice::Text
+            ),
+        qPrintable(traceOutput.errorString())
+        );
+    traceOutput.close();
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        tracePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_CLASS_TRANSFER_PATH"),
+        packagePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_CLASS_TRANSFER_OUTPUT_DIR"),
+        outputRoot
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral(
+                "--startup-performance-class-transfer-lifecycle"
+                ),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+
+    QByteArray traceContents;
+    QFile traceFile(tracePath);
+    if (traceFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        traceContents = traceFile.readAll();
+    }
+    const QStringList traceLines =
+        QString::fromUtf8(traceContents)
+            .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start classes")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the Classes transition. "
+                "stdout/stderr were retained under %1."
+                ).arg(outputRoot)
+            )
+        );
+    for (const QString& expectedTrace : {
+             QStringLiteral("class-transfer-source-opened"),
+             QStringLiteral("class-transfer-operation-start"),
+             QStringLiteral("class-transfer-package-loaded"),
+             QStringLiteral("class-transfer-preview-prepared"),
+             QStringLiteral("class-transfer-preview-ready"),
+             QStringLiteral("class-transfer-dialog-opened"),
+             QStringLiteral("class-transfer-apply-start"),
+             QStringLiteral("class-transfer-operation-applied"),
+             QStringLiteral("class-transfer-dialog-released"),
+             QStringLiteral("class-transfer-operation-released"),
+             QStringLiteral("class-transfer-post-release"),
+             QStringLiteral("class-transfer-page-refreshed"),
+             QStringLiteral("class-transfer-operation-end committed=true")
+         })
+    {
+        bool foundTrace = false;
+        for (const QString& line : traceLines)
+        {
+            if (line.startsWith(expectedTrace))
+            {
+                foundTrace = true;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundTrace,
+            qPrintable(
+                QStringLiteral(
+                    "The heavy Class Transfer lifecycle did not record '%1'. "
+                    "stdout/stderr were retained under %2."
+                    )
+                    .arg(expectedTrace, outputRoot)
+                )
+            );
+    }
+
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly | QIODevice::Text),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError parseError;
+    const QJsonDocument metricsDocument =
+        QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+    QVERIFY2(
+        parseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject(),
+        qPrintable(parseError.errorString())
+        );
+    const QJsonObject report = metricsDocument.object();
+    const auto checkpointNamed =
+        [&report](const QString& name)
+        {
+            for (const QJsonValue& value :
+                 report.value(QStringLiteral("checkpoints")).toArray())
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (checkpoint.value(QStringLiteral("name")).toString() == name)
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+
+    const QJsonObject packageCheckpoint =
+        checkpointNamed(QStringLiteral("class-transfer-package-loaded"));
+    const QJsonObject previewCheckpoint =
+        checkpointNamed(QStringLiteral("class-transfer-preview-prepared"));
+    const QJsonObject dialogCheckpoint =
+        checkpointNamed(QStringLiteral("class-transfer-dialog-opened"));
+    const QJsonObject appliedCheckpoint =
+        checkpointNamed(QStringLiteral("class-transfer-operation-applied"));
+    const QJsonObject releasedCheckpoint =
+        checkpointNamed(QStringLiteral("class-transfer-operation-released"));
+    const QJsonObject pageCheckpoint =
+        checkpointNamed(QStringLiteral("class-transfer-page-refreshed"));
+    const QJsonObject workflowCheckpoint =
+        checkpointNamed(QStringLiteral("workflow-complete"));
+
+    QVERIFY(!packageCheckpoint.isEmpty());
+    QVERIFY(!previewCheckpoint.isEmpty());
+    QVERIFY(!dialogCheckpoint.isEmpty());
+    QVERIFY(!appliedCheckpoint.isEmpty());
+    QVERIFY(!releasedCheckpoint.isEmpty());
+    QVERIFY(!pageCheckpoint.isEmpty());
+    QVERIFY(!workflowCheckpoint.isEmpty());
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+
+    const QJsonObject packageMetrics =
+        packageCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        packageMetrics.value(QStringLiteral("classTransferPackageTeacherCount"))
+            .toInt(),
+        LargeClassTransferTeacherCount
+        );
+    QCOMPARE(
+        packageMetrics.value(QStringLiteral("classTransferPackageClassCount"))
+            .toInt(),
+        LargeClassTransferClassCount
+        );
+    QCOMPARE(
+        packageMetrics.value(QStringLiteral("classTransferPackageRosterCellCount"))
+            .toInt(),
+        LargeClassTransferClassCount
+            * LargeClassTransferRosterColumnCount
+            * LargeClassTransferRosterRowCount
+        );
+    QCOMPARE(
+        packageMetrics.value(QStringLiteral("classTransferPackageEvaluationCount"))
+            .toInt(),
+        LargeClassTransferClassCount * LargeClassTransferEvaluationCount
+        );
+    QVERIFY(
+        packageMetrics.value(QStringLiteral("classTransferPackageEvaluationCellCount"))
+            .toInt() > 20000
+        );
+    QVERIFY(
+        !packageMetrics.value(QStringLiteral("classTransferRawBytesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        packageMetrics.value(QStringLiteral("classTransferPackageRetained"))
+            .toBool()
+        );
+
+    const QJsonObject previewMetrics =
+        previewCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        previewMetrics.value(QStringLiteral("classTransferPreviewTeacherCount"))
+            .toInt(),
+        LargeClassTransferTeacherCount
+        );
+    QCOMPARE(
+        previewMetrics.value(QStringLiteral("classTransferPreviewClassCount"))
+            .toInt(),
+        LargeClassTransferClassCount
+        );
+    QCOMPARE(
+        previewMetrics.value(QStringLiteral("classTransferDestinationClassCount"))
+            .toInt(),
+        96
+        );
+    QCOMPARE(
+        previewMetrics.value(QStringLiteral("classTransferMatchingClassCount"))
+            .toInt(),
+        0
+        );
+    QVERIFY(
+        previewMetrics.value(QStringLiteral("classTransferPreviewRetained"))
+            .toBool()
+        );
+
+    const QJsonObject dialogMetrics =
+        dialogCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        dialogMetrics.value(QStringLiteral("classTransferDialogTeacherControlCount"))
+            .toInt(),
+        LargeClassTransferTeacherCount
+        );
+    QCOMPARE(
+        dialogMetrics.value(QStringLiteral("classTransferDialogClassControlCount"))
+            .toInt(),
+        LargeClassTransferClassCount
+        );
+    QVERIFY(
+        dialogMetrics.value(QStringLiteral("classTransferDialogRetained"))
+            .toBool()
+        );
+
+    const QJsonObject appliedMetrics =
+        appliedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        appliedMetrics.value(QStringLiteral("classTransferClassesCreated"))
+            .toInt(),
+        LargeClassTransferClassCount
+        );
+    QCOMPARE(
+        appliedMetrics.value(QStringLiteral("classTransferTeachersCreated"))
+            .toInt(),
+        LargeClassTransferTeacherCount
+        );
+    QCOMPARE(
+        appliedMetrics.value(QStringLiteral("classTransferDestinationClassesBefore"))
+            .toInt(),
+        96
+        );
+    QCOMPARE(
+        appliedMetrics.value(QStringLiteral("classTransferDestinationClassesAfter"))
+            .toInt(),
+        96 + LargeClassTransferClassCount
+        );
+
+    const QJsonObject releasedMetrics =
+        releasedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        !releasedMetrics.value(QStringLiteral("classTransferRawBytesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(QStringLiteral("classTransferJsonDocumentRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(QStringLiteral("classTransferPackageRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(QStringLiteral("classTransferPreviewRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(QStringLiteral("classTransferDialogRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(QStringLiteral("classTransferOperationRetained"))
+            .toBool()
+        );
+
+    const QJsonObject pageMetrics =
+        pageCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("classesSourceClassCount")).toInt(),
+        144
+        );
+    QVERIFY(
+        pageMetrics.value(QStringLiteral("classTransferOperationRetained"))
+            .toBool() == false
+        );
+
+    QJsonObject manifest{
+        {QStringLiteral("fixture"), QStringLiteral("large_startup.sql")},
+        {
+            QStringLiteral("fixtureScale"),
+            QStringLiteral("large_class_transfer_package")
+        },
+        {
+            QStringLiteral("scenario"),
+            QStringLiteral(
+                "Classes entry, multi-class package review, transaction commit, release, and refresh"
+                )
+        },
+        {QStringLiteral("teacherCount"), LargeClassTransferTeacherCount},
+        {QStringLiteral("classCount"), LargeClassTransferClassCount},
+        {
+            QStringLiteral("rosterCellCount"),
+            LargeClassTransferClassCount
+                * LargeClassTransferRosterColumnCount
+                * LargeClassTransferRosterRowCount
+        },
+        {
+            QStringLiteral("evaluationCount"),
+            LargeClassTransferClassCount * LargeClassTransferEvaluationCount
+        },
+        {QStringLiteral("processFinished"), finished},
+        {
+            QStringLiteral("exitStatus"),
+            process.exitStatus() == QProcess::NormalExit
+                ? QStringLiteral("normal")
+                : QStringLiteral("crash")
+        },
+        {QStringLiteral("exitCode"), process.exitCode()},
+        {QStringLiteral("timedOut"), !finished},
+        {QStringLiteral("traceLineCount"), traceLines.size()},
+        {QStringLiteral("tracePath"), QStringLiteral("workflow-trace.txt")},
+        {
+            QStringLiteral("metricsPath"),
+            QStringLiteral("large-class-transfer-workflow.json")
+        },
+        {QStringLiteral("stdoutPath"), QStringLiteral("process-stdout.txt")},
+        {QStringLiteral("stderrPath"), QStringLiteral("process-stderr.txt")},
+        {
+            QStringLiteral("peakMemory"),
+            report.value(QStringLiteral("peakMemory"))
+        },
+        {
+            QStringLiteral("lastCheckpoint"),
+            report.value(QStringLiteral("checkpoints")).toArray().isEmpty()
+                ? QJsonObject{}
+                : report.value(QStringLiteral("checkpoints"))
+                    .toArray().last().toObject()
+        }
+    };
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
+        );
+    QVERIFY(
+        QFileInfo::exists(
+            QDir(outputRoot).filePath(
+                QStringLiteral("class-transfer-review.png")
+                )
+            )
+        );
 }
 
 void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured()

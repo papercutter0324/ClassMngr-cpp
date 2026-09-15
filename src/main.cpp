@@ -1,6 +1,8 @@
 #include "app/mainwindow.h"
+#include "app/services/feature_services.h"
 #include "app/controllers/update_controller.h"
 #include "app/startup_database_path.h"
+#include "core/application_services.h"
 #include "core/appsettings.h"
 #include "core/build_info.h"
 #include "core/fontmanager.h"
@@ -16,6 +18,8 @@
 #include "ui/shared/state/option_state_keys.h"
 #include "core/utils/platform.h"
 #include "features/calendar/ui/calendar_page.h"
+#include "features/classes/services/class_transfer_json_codec.h"
+#include "features/classes/ui/class_import_dialog.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
@@ -97,6 +101,7 @@ struct StartupPerformanceMode
     bool scheduleImportApplyLifecycleEnabled = false;
     bool calendarImportLifecycleEnabled = false;
     bool classesLifecycleEnabled = false;
+    bool classTransferLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
     enum class Scenario
     {
@@ -559,6 +564,10 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-classes-lifecycle")
             );
+    mode.classTransferLifecycleEnabled =
+        args.contains(
+            QStringLiteral("--startup-performance-class-transfer-lifecycle")
+            );
     mode.subPrepLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-sub-prep-lifecycle")
@@ -571,6 +580,7 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.scheduleImportApplyLifecycleEnabled
         || mode.calendarImportLifecycleEnabled
         || mode.classesLifecycleEnabled
+        || mode.classTransferLifecycleEnabled
         || mode.subPrepLifecycleEnabled;
 
     const int outputIndex =
@@ -1146,6 +1156,447 @@ void scheduleStartupPerformanceClassesLifecycle(
             {
                 *workflowSucceeded = false;
             }
+            completion();
+        }
+        );
+}
+
+void scheduleStartupPerformanceClassTransferLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            ClassesPage* page = pages ? pages->classesPage() : nullptr;
+            ApplicationServices* services = window.services();
+            ClassService* classService = services
+                ? services->classService()
+                : nullptr;
+            TeacherService* teacherService = services
+                ? services->teacherService()
+                : nullptr;
+            const QString filePath =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_CLASS_TRANSFER_PATH"
+                    ).trimmed();
+
+            const auto fail =
+                [
+                    &completion,
+                    &workflowSucceeded
+                ](const QString& detail)
+                {
+                    *workflowSucceeded = false;
+                    StartupProfiler::recordClassTransferFailed(detail);
+                    StartupProfiler::recordClassTransferOperationReleased();
+                    completion();
+                };
+
+            if (
+                !pages
+                || !page
+                || !classService
+                || !teacherService
+                || !classService->isAvailable()
+                || !teacherService->isAvailable()
+                || !pages->isCurrentPage(PageType::Classes)
+                || filePath.isEmpty()
+                || !QFileInfo::exists(filePath)
+                )
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("class-transfer-lifecycle-failed"),
+                    QStringLiteral(
+                        "classes-page-current=%1; file-exists=%2"
+                        )
+                        .arg(
+                            pages && pages->isCurrentPage(PageType::Classes)
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                        .arg(
+                            QFileInfo::exists(filePath)
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                    );
+                completion();
+                return;
+            }
+
+            StartupProfiler::recordClassTransferStarted(
+                filePath,
+                QFileInfo(filePath).size()
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("class-transfer-source-opened")
+                );
+
+            const auto packageResult =
+                ClassTransferJsonCodec::loadFile(filePath);
+            if (!packageResult)
+            {
+                fail(packageResult.error());
+                return;
+            }
+
+            ClassTransferPackage package = std::move(*packageResult);
+            int rosterColumnCount = 0;
+            int rosterRowCount = 0;
+            int rosterCellCount = 0;
+            int evaluationCount = 0;
+            int evaluationRowCount = 0;
+            int evaluationCellCount = 0;
+            int scheduleRowCount = 0;
+
+            for (const ClassTransferClass& transferClass : package.classes)
+            {
+                rosterColumnCount += transferClass.roster.columns.size();
+                rosterRowCount += transferClass.roster.rows.size();
+                for (const QStringList& row : transferClass.roster.rows)
+                {
+                    rosterCellCount += row.size();
+                }
+
+                evaluationCount += transferClass.evaluations.size();
+                for (const ClassTransferEvaluation& evaluation
+                     : transferClass.evaluations)
+                {
+                    evaluationRowCount += evaluation.rows.size();
+                    for (const QStringList& row : evaluation.rows)
+                    {
+                        evaluationCellCount += row.size();
+                    }
+                }
+
+                scheduleRowCount += transferClass.info.classTimes.size();
+                scheduleRowCount += transferClass.info.intensiveTimes.size();
+            }
+
+            StartupProfiler::recordClassTransferPackageLoaded(
+                package.teachers.size(),
+                package.classes.size(),
+                rosterColumnCount,
+                rosterRowCount,
+                rosterCellCount,
+                evaluationCount,
+                evaluationRowCount,
+                evaluationCellCount,
+                scheduleRowCount
+                );
+
+            const auto destinationTeachers = teacherService->teachers();
+            const auto destinationClasses = classService->classes();
+            if (!destinationTeachers || !destinationClasses)
+            {
+                fail(
+                    !destinationTeachers
+                        ? destinationTeachers.error()
+                        : destinationClasses.error()
+                    );
+                return;
+            }
+
+            const auto previewResult = classService->previewImport(package);
+            if (!previewResult)
+            {
+                fail(previewResult.error());
+                return;
+            }
+
+            ClassImportPreview preview = std::move(*previewResult);
+            int matchingTeacherCount = 0;
+            int matchingClassCount = 0;
+            for (const ClassImportTeacherPreview& teacherPreview
+                 : preview.teachers)
+            {
+                matchingTeacherCount += teacherPreview.matchingTeacherIds.size();
+            }
+            for (const ClassImportClassPreview& classPreview : preview.classes)
+            {
+                matchingClassCount += classPreview.matchingClassIds.size();
+            }
+
+            StartupProfiler::recordClassTransferPreviewPrepared(
+                preview.teachers.size(),
+                preview.classes.size(),
+                matchingTeacherCount,
+                matchingClassCount,
+                destinationTeachers->size(),
+                destinationClasses->size(),
+                destinationClasses->size()
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("class-transfer-preview-ready")
+                );
+
+            auto* dialog = new ClassImportDialog(
+                classService,
+                teacherService,
+                package,
+                preview,
+                page
+                );
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            QPointer<ClassImportDialog> dialogGuard(dialog);
+            dialog->show();
+            app.processEvents();
+
+            const QString outputRoot =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_CLASS_TRANSFER_OUTPUT_DIR"
+                    ).trimmed();
+            if (!outputRoot.isEmpty())
+            {
+                QDir().mkpath(outputRoot);
+                dialog->grab().save(
+                    QDir(outputRoot).filePath(
+                        QStringLiteral("class-transfer-review.png")
+                        ),
+                    "PNG"
+                    );
+            }
+
+            int teacherControlCount = 0;
+            int classControlCount = 0;
+            for (QComboBox* combo : dialog->findChildren<QComboBox*>())
+            {
+                if (combo->objectName().startsWith(
+                        QStringLiteral("teacherImportChoice_")))
+                {
+                    ++teacherControlCount;
+                }
+                else if (combo->objectName().startsWith(
+                             QStringLiteral("classImportChoice_")))
+                {
+                    ++classControlCount;
+                }
+            }
+
+            auto* importButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("importClassesButton")
+                );
+            if (!importButton)
+            {
+                if (dialogGuard)
+                {
+                    dialogGuard->reject();
+                    app.processEvents();
+                    QCoreApplication::sendPostedEvents(
+                        nullptr,
+                        QEvent::DeferredDelete
+                        );
+                    app.processEvents();
+                }
+                StartupProfiler::recordClassTransferDialogReleased();
+                fail(QStringLiteral("import-button-missing"));
+                return;
+            }
+
+            ClassImportPlan plan = dialog->importPlan();
+            int teachersCreated = 0;
+            int teachersKept = 0;
+            int teachersReplaced = 0;
+            for (const TeacherImportResolution& resolution : plan.teachers)
+            {
+                switch (resolution.action)
+                {
+                case TeacherImportAction::Create:
+                    ++teachersCreated;
+                    break;
+                case TeacherImportAction::KeepExisting:
+                    ++teachersKept;
+                    break;
+                case TeacherImportAction::ReplaceExisting:
+                    ++teachersReplaced;
+                    break;
+                }
+            }
+
+            int classesCreated = 0;
+            int classesReplaced = 0;
+            int classesSkipped = 0;
+            for (const ClassImportResolution& resolution : plan.classes)
+            {
+                switch (resolution.action)
+                {
+                case ClassImportAction::Create:
+                    ++classesCreated;
+                    break;
+                case ClassImportAction::Replace:
+                    ++classesReplaced;
+                    break;
+                case ClassImportAction::Skip:
+                    ++classesSkipped;
+                    break;
+                }
+            }
+
+            StartupProfiler::recordClassTransferDialogPrepared(
+                teacherControlCount,
+                classControlCount,
+                plan.teachers.size(),
+                plan.classes.size()
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("class-transfer-dialog-opened")
+                );
+            profiler.checkpoint(
+                QStringLiteral("class-transfer-dialog-opened"),
+                QStringLiteral(
+                    "teacherControls=%1; classControls=%2; importEnabled=%3"
+                    )
+                    .arg(teacherControlCount)
+                    .arg(classControlCount)
+                    .arg(
+                        importButton->isEnabled()
+                            ? QStringLiteral("true")
+                            : QStringLiteral("false")
+                        )
+                );
+
+            if (!importButton->isEnabled())
+            {
+                if (dialogGuard)
+                {
+                    dialogGuard->reject();
+                    app.processEvents();
+                    QCoreApplication::sendPostedEvents(
+                        nullptr,
+                        QEvent::DeferredDelete
+                        );
+                    app.processEvents();
+                }
+                StartupProfiler::recordClassTransferDialogReleased();
+                fail(QStringLiteral("import-transition-disabled"));
+                return;
+            }
+
+            profiler.checkpoint(
+                QStringLiteral("class-transfer-apply-start"),
+                QStringLiteral(
+                    "teachers=%1; classes=%2; action=create"
+                    )
+                    .arg(teachersCreated)
+                    .arg(classesCreated)
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("class-transfer-apply-start")
+                );
+
+            if (dialogGuard)
+            {
+                dialogGuard->accept();
+                app.processEvents();
+                QCoreApplication::sendPostedEvents(
+                    nullptr,
+                    QEvent::DeferredDelete
+                    );
+                app.processEvents();
+            }
+            StartupProfiler::recordClassTransferDialogReleased();
+
+            const auto summary = classService->importClasses(package, plan);
+            if (!summary)
+            {
+                package = {};
+                preview = {};
+                plan = {};
+                fail(summary.error());
+                return;
+            }
+
+            const auto destinationTeachersAfter = teacherService->teachers();
+            const auto destinationClassesAfter = classService->classes();
+            if (!destinationTeachersAfter || !destinationClassesAfter)
+            {
+                package = {};
+                preview = {};
+                plan = {};
+                fail(
+                    !destinationTeachersAfter
+                        ? destinationTeachersAfter.error()
+                        : destinationClassesAfter.error()
+                    );
+                return;
+            }
+
+            const int firstAffectedClassId =
+                !summary->createdClassIds.isEmpty()
+                    ? summary->createdClassIds.first()
+                    : !summary->replacedClassIds.isEmpty()
+                        ? summary->replacedClassIds.first()
+                        : -1;
+            StartupProfiler::recordClassTransferApplied(
+                teachersCreated,
+                teachersKept,
+                teachersReplaced,
+                summary->createdClassIds.size(),
+                summary->replacedClassIds.size(),
+                summary->skippedClassCount,
+                destinationClasses->size(),
+                destinationClassesAfter->size(),
+                destinationTeachers->size(),
+                destinationTeachersAfter->size()
+                );
+
+            package = {};
+            preview = {};
+            plan = {};
+            StartupProfiler::recordClassTransferOperationReleased();
+            profiler.checkpoint(
+                QStringLiteral("class-transfer-post-release"),
+                QStringLiteral(
+                    "rawBytesRetained=false; jsonDocumentRetained=false; packageRetained=false; previewRetained=false; dialogRetained=false"
+                    )
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("class-transfer-post-release")
+                );
+
+            pages->refreshAll();
+            app.processEvents();
+            if (firstAffectedClassId > 0)
+            {
+                page->openClass(
+                    firstAffectedClassId,
+                    ClassesSection::Details
+                    );
+                app.processEvents();
+            }
+            profiler.checkpoint(
+                QStringLiteral("class-transfer-page-refreshed"),
+                QStringLiteral(
+                    "visibleClasses=%1; selectedClassId=%2"
+                    )
+                    .arg(page->runtimeMetrics().visibleClassCount)
+                    .arg(page->runtimeMetrics().selectedClassId)
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("class-transfer-page-refreshed")
+                );
+            profiler.checkpoint(
+                QStringLiteral("class-transfer-operation-end"),
+                QStringLiteral("committed=true")
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("class-transfer-operation-end committed=true")
+                );
             completion();
         }
         );
@@ -2320,6 +2771,7 @@ void scheduleStartupPerformanceWorkflow(
     bool scheduleImportApplyLifecycleEnabled,
     bool calendarImportLifecycleEnabled,
     bool classesLifecycleEnabled,
+    bool classTransferLifecycleEnabled,
     bool subPrepLifecycleEnabled,
     std::function<void()> completion
     )
@@ -2341,6 +2793,7 @@ void scheduleStartupPerformanceWorkflow(
             scheduleImportApplyLifecycleEnabled,
             calendarImportLifecycleEnabled,
             classesLifecycleEnabled,
+            classTransferLifecycleEnabled,
             subPrepLifecycleEnabled,
             pageTypes,
             pageIndex,
@@ -2593,6 +3046,37 @@ void scheduleStartupPerformanceWorkflow(
 
         if (
             pageReady
+            && classTransferLifecycleEnabled
+            && pageType == PageType::Classes
+            )
+        {
+            scheduleStartupPerformanceClassTransferLifecycle(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
+        }
+
+        if (
+            pageReady
             && classesLifecycleEnabled
             && pageType == PageType::Classes
             )
@@ -2773,6 +3257,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "exercise large Classes selection, refresh, leave, and repeated re-entry"
+                )
+            );
+    }
+    if (mode.classTransferLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise large multi-class transfer package review, transaction commit, cleanup, and Classes refresh"
                 )
             );
     }
@@ -3316,6 +3808,7 @@ int main(int argc, char *argv[])
                 startupPerformance.scheduleImportApplyLifecycleEnabled,
                 startupPerformance.calendarImportLifecycleEnabled,
                 startupPerformance.classesLifecycleEnabled,
+                startupPerformance.classTransferLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
                 scheduleSettledCompletion
                 );

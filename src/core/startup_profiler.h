@@ -106,8 +106,39 @@ struct StartupApplicationMetrics
     int calendarImportExistingEventCount = 0;
     int calendarImportEventsToSaveCount = 0;
     int calendarImportSavedEventCount = 0;
+    int classTransferPackageTeacherCount = 0;
+    int classTransferPackageClassCount = 0;
+    int classTransferPackageRosterColumnCount = 0;
+    int classTransferPackageRosterRowCount = 0;
+    int classTransferPackageRosterCellCount = 0;
+    int classTransferPackageEvaluationCount = 0;
+    int classTransferPackageEvaluationRowCount = 0;
+    int classTransferPackageEvaluationCellCount = 0;
+    int classTransferPackageScheduleRowCount = 0;
+    int classTransferPreviewTeacherCount = 0;
+    int classTransferPreviewClassCount = 0;
+    int classTransferMatchingTeacherCount = 0;
+    int classTransferMatchingClassCount = 0;
+    int classTransferDestinationTeacherCount = 0;
+    int classTransferDestinationClassCount = 0;
+    int classTransferDestinationClassInfoResultCount = 0;
+    int classTransferDialogTeacherControlCount = 0;
+    int classTransferDialogClassControlCount = 0;
+    int classTransferPlanTeacherResolutionCount = 0;
+    int classTransferPlanClassResolutionCount = 0;
+    int classTransferTeachersCreated = 0;
+    int classTransferTeachersKept = 0;
+    int classTransferTeachersReplaced = 0;
+    int classTransferClassesCreated = 0;
+    int classTransferClassesReplaced = 0;
+    int classTransferClassesSkipped = 0;
+    int classTransferDestinationClassesBefore = 0;
+    int classTransferDestinationClassesAfter = 0;
+    int classTransferDestinationTeachersBefore = 0;
+    int classTransferDestinationTeachersAfter = 0;
     qint64 scheduleImportRawWorkbookBytes = 0;
     qint64 calendarImportRawWorkbookBytes = 0;
+    qint64 classTransferRawJsonBytes = 0;
     bool scheduleImportRawBytesRetained = false;
     bool scheduleImportWorkbookRetained = false;
     bool scheduleImportReviewRetained = false;
@@ -115,6 +146,12 @@ struct StartupApplicationMetrics
     bool calendarImportWorkbookRetained = false;
     bool calendarImportEventsRetained = false;
     bool calendarImportOperationRetained = false;
+    bool classTransferRawBytesRetained = false;
+    bool classTransferJsonDocumentRetained = false;
+    bool classTransferPackageRetained = false;
+    bool classTransferPreviewRetained = false;
+    bool classTransferDialogRetained = false;
+    bool classTransferOperationRetained = false;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -136,6 +173,12 @@ struct StartupApplicationMetrics
     quint64 calendarImportOperationsApplied = 0;
     quint64 calendarImportOperationsFailed = 0;
     quint64 calendarImportOperationsReleased = 0;
+    quint64 classTransferOperationsStarted = 0;
+    quint64 classTransferPackagesLoaded = 0;
+    quint64 classTransferPreviewsPrepared = 0;
+    quint64 classTransferOperationsApplied = 0;
+    quint64 classTransferOperationsFailed = 0;
+    quint64 classTransferOperationsReleased = 0;
     quint64 pdfDocumentsLoaded = 0;
     quint64 pdfDocumentsReleased = 0;
     quint64 pdfRenderCount = 0;
@@ -299,6 +342,51 @@ public:
         const QString& detail
         );
     static void recordCalendarImportOperationReleased();
+    static void recordClassTransferStarted(
+        const QString& filePath,
+        qint64 rawJsonBytes
+        );
+    static void recordClassTransferPackageLoaded(
+        int teacherCount,
+        int classCount,
+        int rosterColumnCount,
+        int rosterRowCount,
+        int rosterCellCount,
+        int evaluationCount,
+        int evaluationRowCount,
+        int evaluationCellCount,
+        int scheduleRowCount
+        );
+    static void recordClassTransferPreviewPrepared(
+        int previewTeacherCount,
+        int previewClassCount,
+        int matchingTeacherCount,
+        int matchingClassCount,
+        int destinationTeacherCount,
+        int destinationClassCount,
+        int destinationClassInfoResultCount
+        );
+    static void recordClassTransferDialogPrepared(
+        int teacherControlCount,
+        int classControlCount,
+        int teacherResolutionCount,
+        int classResolutionCount
+        );
+    static void recordClassTransferApplied(
+        int teachersCreated,
+        int teachersKept,
+        int teachersReplaced,
+        int classesCreated,
+        int classesReplaced,
+        int classesSkipped,
+        int destinationClassesBefore,
+        int destinationClassesAfter,
+        int destinationTeachersBefore,
+        int destinationTeachersAfter
+        );
+    static void recordClassTransferDialogReleased();
+    static void recordClassTransferFailed(const QString& detail);
+    static void recordClassTransferOperationReleased();
 
 private:
     void recordEvent(

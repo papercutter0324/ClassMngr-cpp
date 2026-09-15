@@ -637,6 +637,14 @@ Result<ClassImportSummary> ClassService::importClasses(
         transferredClass.info = ClassInfoValidator::normalized(
             transferredClass.info
             );
+
+        // Class-transfer JSON deliberately omits the local class identity.
+        // Validate that payload with a non-persisted placeholder; the import
+        // repository assigns the destination ID when it creates the class.
+        if (transferredClass.info.classId == -1)
+        {
+            transferredClass.info.classId = 1;
+        }
         appendImportedValidation(
             validation,
             ClassInfoValidator::validate(transferredClass.info),
