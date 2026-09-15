@@ -108,7 +108,8 @@ bool writeRepresentativeStartupSettings(
     return settings.status() == QSettings::NoError;
 }
 
-bool createRepresentativeStartupFixture(
+bool createStartupFixture(
+    const QString& fixtureName,
     const QString& fixturePath,
     QString* errorMessage
     )
@@ -116,8 +117,8 @@ bool createRepresentativeStartupFixture(
     const QString sqlPath =
         QStringLiteral(CLASSMNGR_SOURCE_DIR)
         + QStringLiteral(
-            "/tests/fixtures/workspaces/representative_startup.sql"
-            );
+            "/tests/fixtures/workspaces/%1.sql"
+            ).arg(fixtureName);
     QFile sqlFile(sqlPath);
     if (!sqlFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -180,6 +181,30 @@ bool createRepresentativeStartupFixture(
     return success;
 }
 
+bool createRepresentativeStartupFixture(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    return createStartupFixture(
+        QStringLiteral("representative_startup"),
+        fixturePath,
+        errorMessage
+        );
+}
+
+bool createLargeStartupFixture(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    return createStartupFixture(
+        QStringLiteral("large_startup"),
+        fixturePath,
+        errorMessage
+        );
+}
+
 void printRepresentativeCheckpoint(
     const QJsonObject& checkpoint
     )
@@ -218,6 +243,7 @@ class StartupPerformanceTests : public QObject
 
 private slots:
     void representativeStartupFixtureIsCompleteAndDeterministic();
+    void largeStartupFixtureIsCompleteAndDeterministic();
     void reportsStartupMetricsAndHonorsThresholds();
     void capturesVisualLanguageAndThemeVariants();
 };
@@ -308,6 +334,85 @@ void StartupPerformanceTests
     QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toString(), QStringLiteral("true"));
+
+    database.close();
+    database = QSqlDatabase();
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void StartupPerformanceTests::largeStartupFixtureIsCompleteAndDeterministic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-startup.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
+    const QString connectionName =
+        QStringLiteral("startup-large-fixture-validation");
+    QSqlDatabase database =
+        QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+    database.setDatabaseName(fixturePath);
+    QVERIFY2(
+        database.open(),
+        qPrintable(database.lastError().text())
+        );
+
+    QSqlQuery query(database);
+    QVERIFY2(
+        query.exec(QStringLiteral("PRAGMA integrity_check")),
+        qPrintable(query.lastError().text())
+        );
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("ok"));
+
+    for (const FixtureTableExpectation& expected : {
+             FixtureTableExpectation{"teachers", 24},
+             FixtureTableExpectation{"classes", 96},
+             FixtureTableExpectation{"class_times", 768},
+             FixtureTableExpectation{"class_intensive_times", 24},
+             FixtureTableExpectation{"intensive_slot_states", 5},
+             FixtureTableExpectation{"roster_columns", 288},
+             FixtureTableExpectation{"roster_data", 7200},
+             FixtureTableExpectation{"speaking_evaluations", 20},
+             FixtureTableExpectation{"speaking_eval_data", 600},
+             FixtureTableExpectation{"campuses", 3},
+             FixtureTableExpectation{"calendar_events", 180},
+             FixtureTableExpectation{"app_settings", 12}
+         })
+    {
+        QVERIFY2(
+            query.exec(
+                QStringLiteral("SELECT COUNT(*) FROM %1")
+                    .arg(QString::fromLatin1(expected.name))
+                ),
+            qPrintable(query.lastError().text())
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), expected.expectedRows);
+    }
+
+    QVERIFY(query.exec(QStringLiteral(R"(
+        SELECT COUNT(DISTINCT teacher_id)
+        FROM class_info
+        WHERE teacher_id IS NOT NULL
+    )")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 24);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT COUNT(DISTINCT class_id) FROM roster_data"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 96);
 
     database.close();
     database = QSqlDatabase();

@@ -62,6 +62,19 @@
   and generated-output references; packaged Release and cross-platform evidence
   remain open.
 
+## Progress update - 2026-09-16 (large workspace fixture)
+
+- What changed: added the generated `large_startup.sql` workspace fixture and
+  generalized the startup fixture materializer so tests can build named SQL
+  fixtures into temporary `.tps` files.
+- Evidence: the focused `ClassMngrStartupPerformanceTests` run passed all four
+  tests, including integrity and exact row-count checks for the large fixture.
+- Fixture contract: 24 teachers, 96 classes, 768 regular schedule rows, 24
+  intensive rows, 5 intensive slot states, 7,200 roster cells, 20 speaking
+  evaluations with 600 data rows, 3 campuses, and 180 calendar events.
+- What remains: add legacy/corrupt/locked compatibility fixtures and use the
+  large workspace in packaged Release workflow and memory measurements.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

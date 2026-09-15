@@ -73,6 +73,13 @@ classes, schedules, roster rows, and saved schedule settings. This removes the
 dependency on the deleted startup-optimization plan and makes the fixture
 reproducible on a clean checkout.
 
+`tests/fixtures/workspaces/large_startup.sql` adds a generated heavy-route
+workspace without checking in a binary database. Its deterministic contract is
+24 teachers, 96 classes, 768 regular schedule rows, 24 intensive rows, five
+intensive slot states, 7,200 roster cells, 20 speaking evaluations with 600
+evaluation rows, three campuses, and 180 calendar events. The focused startup
+test validates its integrity and row counts after materialization.
+
 ## Reproduction commands
 
 Windows x64 clean Phase 0 build (Qt 6.12.0 installed at the path below).
