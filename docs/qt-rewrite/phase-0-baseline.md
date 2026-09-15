@@ -111,12 +111,31 @@ does not recreate or rely on them.
   instantiated page, 11 registered pages, 30 schedule cell widgets, and a
   5 ms full schedule render. The fixture migration also preserved the
   pre-constraint backup sidecar required by the compatibility test.
+- Packaged Release lifecycle workflow (representative workspace): the new
+  `--startup-performance-workflow` harness visited all 11 registered top-level
+  routes, opened the deferred Calendar tab, returned to My Workspace, and
+  retained the final route state through the one- and five-second samples.
+  `startup-complete` was `2,926 ms`; `workflow-complete` was `6,249 ms`; the
+  one- and five-second samples were `7,283` and `11,267 ms`. The workflow
+  reached 11/11 instantiated pages, 2,530 widgets, three live ScheduleWidgets,
+  and three full schedule renders. Working set was `243,912,704` bytes with a
+  `244,961,280`-byte peak; private usage was `236,060,672` bytes. This is
+  below the 250 MiB Windows working-set target but is intentionally retained
+  as a near-limit regression boundary.
+- The same workflow against `large_startup.sql` reaches the Sub Prep route but
+  does not complete: its 96 classes and eight regular slots expand into
+  hundreds of class-information cards. The Debug run exceeded 400 MiB before
+  terminating, and the packaged Release run also terminated before producing
+  a profile. This is a current-product heavy-route finding for the v2
+  virtualization/resource-ownership slice, not an accepted baseline.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
-  and legacy runs in their matching subdirectories. Each directory contains
-  `startup-complete.png`, `settled-final.png`, and `startup-metrics.json`. The
-  populated frames show the expected workspace schedule grid; the
+  and legacy runs in their matching subdirectories. The representative
+  `release/workflow/` directory contains the packaged lifecycle trace and its
+  startup/settled frames. Each directory contains `startup-complete.png`,
+  `settled-final.png`, and `startup-metrics.json`. The populated frames show
+  the expected workspace schedule grid; the
   four-language/theme matrices remain available in the Debug/offscreen
   reference directories.
 
@@ -233,6 +252,15 @@ matrix. These are Debug/offscreen reference frames from the current source
 snapshot; packaged Release captures are retained separately under
 `docs/qt-rewrite/visual-baseline/release/`.
 
+For an in-process lifecycle trace, add
+`--startup-performance-workflow` to a representative startup run. It drives
+every registered top-level route, opens the deferred Calendar child once,
+returns to My Workspace, and then starts the requested settled checkpoints.
+The trace records `workflow-page-*` checkpoints plus `page-enter` and
+`page-leave` events. Set `CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH` when a
+step-by-step diagnostic trace is needed while investigating a child-process
+failure.
+
 To retain a canonical fixture for a packaged run, set
 `CLASSMNGR_STARTUP_FIXTURE_OUTPUT_PATH` for the representative fixture,
 `CLASSMNGR_LARGE_STARTUP_FIXTURE_OUTPUT_PATH` for the large fixture, or
@@ -286,13 +314,17 @@ store the JSON startup trace beside the PNG files.
 
 ## Evidence currently missing
 
-- Packaged Release per-workflow memory reports, five-minute idle data, and
-  retained-memory measurements after leaving large features.
+- Packaged Release five-minute idle data and retained-memory measurements
+  after leaving each large feature; the representative all-route workflow is
+  retained under `visual-baseline/release/workflow/`.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
 - Golden large schedule-workbook/conflict output; the class-transfer conflict
   and schedule-workbook review fixtures are now permanent.
+- A completed large-workspace Sub Prep route: the current 96-class fixture
+  expands too many class-information cards for a stable packaged workflow and
+  is reserved as a v2 heavy-route stress case.
 - Golden generated PDFs, reports, rosters, substitute documents, and
   PowerPoint output.
 - QtPdf on-demand open/close traces proving that startup has no loaded PDF and

@@ -221,6 +221,28 @@ void StartupProfiler::recordPageInstantiated(const QString& pageIdentifier)
     }
 }
 
+void StartupProfiler::recordPageEntered(const QString& pageIdentifier)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->recordEvent(
+            QStringLiteral("page-enter"),
+            pageIdentifier
+            );
+    }
+}
+
+void StartupProfiler::recordPageLeft(const QString& pageIdentifier)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->recordEvent(
+            QStringLiteral("page-leave"),
+            pageIdentifier
+            );
+    }
+}
+
 void StartupProfiler::recordScheduleWidgetCreated(const QString& owner)
 {
     if (StartupProfiler* profiler = activeProfiler())

@@ -133,6 +133,11 @@ ApplicationServices* MainWindow::services() const
     return m_services.get();
 }
 
+PageManager* MainWindow::pageManager() const
+{
+    return m_pages;
+}
+
 CalendarPage* MainWindow::calendarPage() const
 {
     return m_pages

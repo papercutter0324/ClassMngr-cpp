@@ -127,6 +127,7 @@ void DatabaseFileFormatTests::startupDatabasePathIgnoresOptionValues()
                 QStringLiteral("korean.tps"),
                 QStringLiteral("--startup-visual-capture-theme"),
                 QStringLiteral("dark.tps"),
+                QStringLiteral("--startup-performance-workflow"),
                 QStringLiteral("current.tps")
             }
             ),

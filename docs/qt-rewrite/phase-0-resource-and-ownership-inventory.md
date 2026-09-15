@@ -50,5 +50,6 @@ resource availability while deleting the independent pack mount/update path.
 - Font registration/removal and family names.
 - PDF load/status/page-render/open and close/release events, document size, and active loaded-document count.
 - Document catalog entry count and content opens.
-- Page creation/destruction and retained widget counts.
+- Page creation/destruction, enter/leave transitions, and retained widget
+  counts.
 - Cache hits, misses, evictions, and explicit byte/item budgets.

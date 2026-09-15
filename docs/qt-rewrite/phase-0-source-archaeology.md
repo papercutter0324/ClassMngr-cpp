@@ -48,7 +48,11 @@ registers all factories during initialization but initially creates the
 `MyWorkspace` page. `MyWorkspacePage` eagerly creates My Details and My
 Schedule and creates the Calendar page when the Calendar tab is first opened.
 Other page factories are lazy, but instantiated pages remain owned by the
-stacked widget until the application exits.
+stacked widget until the application exits. The explicit
+`--startup-performance-workflow` harness drives all registered routes and
+records page-enter/page-leave events plus memory checkpoints. It completes on
+the representative fixture; the 96-class large fixture currently fails while
+Sub Prep expands its schedule-derived class-information cards.
 
 The document path is separate from startup catalog parsing. `DocumentCatalog`
 retains document metadata and localized names without retaining resolved PDF

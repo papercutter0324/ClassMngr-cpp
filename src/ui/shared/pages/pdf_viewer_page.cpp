@@ -207,11 +207,11 @@ void PdfViewerPage::releaseDocument()
 
     m_documentReleased = true;
 
-    if (m_view && m_view->document() == m_document)
-    {
-        m_view->setDocument(nullptr);
-    }
-
+    // Keep the view attached to the document while closing it. Qt 6.12's
+    // QPdfView tears down its internal bookmark model from setDocument(nullptr)
+    // and can dereference that model during the next event-loop turn. Closing
+    // the document releases the loaded PDF pages while retaining the stable
+    // view/document pairing needed for a later reopen.
     m_document->close();
     m_currentFilePath.clear();
     m_documentDescriptor = {};

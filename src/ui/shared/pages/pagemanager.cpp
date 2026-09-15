@@ -354,6 +354,13 @@ void PageManager::showPage(
 
     if (pageChanged)
     {
+        if (leavingPage)
+        {
+            StartupProfiler::recordPageLeft(
+                pageTypeIdentifierForWidget(m_pages, leavingPage)
+                );
+        }
+
         releaseLeavingPageResources(leavingPage, type);
     }
 
@@ -365,6 +372,8 @@ void PageManager::showPage(
     {
         page->activate();
     }
+
+    StartupProfiler::recordPageEntered(pageTypeIdentifier(type));
 
     emit outputCapabilitiesChanged();
 }

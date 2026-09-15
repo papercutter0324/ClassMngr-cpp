@@ -360,6 +360,7 @@ private slots:
     void rejectsCorruptWorkspaceFile();
     void rejectsLockedLegacyWorkspaceDuringMigration();
     void reportsStartupMetricsAndHonorsThresholds();
+    void runsRepresentativeWorkspaceLifecycleWorkflow();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -1488,6 +1489,269 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 
         QFAIL(message.constData());
     }
+}
+
+void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
+{
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("representative-workspace-workflow.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createRepresentativeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+            "Unable to write deterministic representative-workspace settings."
+        );
+
+    const QString metricsPath =
+        directory.filePath(
+            QStringLiteral("representative-workspace-workflow.json")
+            );
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    if (!environment.contains(QStringLiteral("QT_QPA_PLATFORM")))
+    {
+        environment.insert(
+            QStringLiteral("QT_QPA_PLATFORM"),
+            QStringLiteral("offscreen")
+            );
+    }
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    QVERIFY2(
+        process.waitForFinished(StartupTimeoutMs),
+        qPrintable(processOutput(process))
+        );
+    QVERIFY2(
+        process.exitStatus() == QProcess::NormalExit,
+        qPrintable(
+            QStringLiteral(
+                "Representative workspace lifecycle workflow terminated abnormally.\n%1"
+                )
+                .arg(processOutput(process))
+            )
+        );
+    QVERIFY2(
+        process.exitCode() == 0,
+        qPrintable(
+            QStringLiteral(
+                "Representative workspace lifecycle workflow exited with code %1.\n%2"
+                )
+                .arg(process.exitCode())
+                .arg(processOutput(process))
+            )
+        );
+
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError parseError;
+    const QJsonDocument document =
+        QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+    QVERIFY2(
+        parseError.error == QJsonParseError::NoError,
+        qPrintable(parseError.errorString())
+        );
+    QVERIFY(document.isObject());
+
+    const QJsonObject report = document.object();
+    const QJsonObject workflow =
+        report.value(QStringLiteral("workflow")).toObject();
+    QVERIFY(workflow.value(QStringLiteral("enabled")).toBool());
+    QCOMPARE(
+        workflow.value(QStringLiteral("stepDelayMilliseconds")).toInt(),
+        150
+        );
+    QCOMPARE(
+        workflow.value(QStringLiteral("pages")).toArray().size(),
+        12
+        );
+
+    const QList<QString> expectedPageSequence{
+        QStringLiteral("my-workspace"),
+        QStringLiteral("schedule"),
+        QStringLiteral("classes"),
+        QStringLiteral("testing-classes"),
+        QStringLiteral("teacher-info"),
+        QStringLiteral("native-english-teachers"),
+        QStringLiteral("gs-team"),
+        QStringLiteral("campus-dashboard"),
+        QStringLiteral("sub-prep"),
+        QStringLiteral("my-classes"),
+        QStringLiteral("pdf-viewer"),
+        QStringLiteral("my-workspace")
+    };
+
+    QList<QString> readyPageSequence;
+    QHash<QString, QJsonObject> checkpoints;
+    QSet<QString> checkpointNames;
+    for (const QJsonValue& value : report
+             .value(QStringLiteral("checkpoints"))
+             .toArray())
+    {
+        const QJsonObject checkpoint = value.toObject();
+        const QString name = checkpoint.value(QStringLiteral("name"))
+            .toString();
+        checkpointNames.insert(name);
+        if (name == QStringLiteral("workflow-page-ready"))
+        {
+            readyPageSequence.append(
+                checkpoint.value(QStringLiteral("detail")).toString()
+                );
+        }
+        if (
+            name == QStringLiteral("workflow-complete")
+            || name == QStringLiteral("startup-complete")
+            || name == QStringLiteral("settled-1s")
+            )
+        {
+            checkpoints.insert(name, checkpoint);
+        }
+    }
+
+    QCOMPARE(readyPageSequence, expectedPageSequence);
+    for (const QString& name : {
+             QStringLiteral("workflow-child-ready"),
+             QStringLiteral("workflow-child-released"),
+             QStringLiteral("workflow-complete"),
+             QStringLiteral("settled-1s")
+         })
+    {
+        QVERIFY2(
+            checkpointNames.contains(name),
+            qPrintable(
+                QStringLiteral("Missing lifecycle checkpoint: %1").arg(name)
+                )
+            );
+    }
+    QVERIFY(!checkpointNames.contains(QStringLiteral("workflow-page-failed")));
+    QVERIFY(!checkpointNames.contains(QStringLiteral("workflow-child-failed")));
+
+    const QJsonObject startupMetrics =
+        checkpoints.value(QStringLiteral("startup-complete"))
+            .value(QStringLiteral("metrics"))
+            .toObject();
+    const QJsonObject workflowMetrics =
+        checkpoints.value(QStringLiteral("workflow-complete"))
+            .value(QStringLiteral("metrics"))
+            .toObject();
+    const QJsonObject settledMetrics =
+        checkpoints.value(QStringLiteral("settled-1s"))
+            .value(QStringLiteral("metrics"))
+            .toObject();
+
+    QCOMPARE(startupMetrics.value(QStringLiteral("instantiatedPageCount"))
+                 .toInt(), 1);
+    QCOMPARE(workflowMetrics.value(QStringLiteral("instantiatedPageCount"))
+                 .toInt(), 11);
+    QCOMPARE(workflowMetrics.value(QStringLiteral("registeredPageCount"))
+                 .toInt(), 11);
+    QVERIFY(
+        workflowMetrics.value(QStringLiteral("widgetCount")).toInt()
+            > startupMetrics.value(QStringLiteral("widgetCount")).toInt()
+        );
+    QVERIFY(
+        workflowMetrics.value(QStringLiteral("scheduleWidgetsCreated"))
+            .toDouble()
+            >= 3.0
+        );
+    QCOMPARE(
+        settledMetrics.value(QStringLiteral("instantiatedPageCount")).toInt(),
+        workflowMetrics.value(QStringLiteral("instantiatedPageCount")).toInt()
+        );
+    QCOMPARE(
+        settledMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt(),
+        workflowMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt()
+        );
+
+    QSet<QString> enteredPages;
+    QSet<QString> leftPages;
+    for (const QJsonValue& value : report
+             .value(QStringLiteral("events"))
+             .toArray())
+    {
+        const QJsonObject event = value.toObject();
+        const QString eventName =
+            event.value(QStringLiteral("name")).toString();
+        const QString pageIdentifier =
+            event.value(QStringLiteral("detail")).toString();
+        if (eventName == QStringLiteral("page-enter"))
+        {
+            enteredPages.insert(pageIdentifier);
+        }
+        else if (eventName == QStringLiteral("page-leave"))
+        {
+            leftPages.insert(pageIdentifier);
+        }
+    }
+    for (const QString& pageIdentifier : expectedPageSequence)
+    {
+        QVERIFY(enteredPages.contains(pageIdentifier));
+    }
+    for (const QString& pageIdentifier : expectedPageSequence.mid(
+             0,
+             expectedPageSequence.size() - 1
+             ))
+    {
+        QVERIFY(leftPages.contains(pageIdentifier));
+    }
+
+    const double workflowElapsed =
+        checkpoints.value(QStringLiteral("workflow-complete"))
+            .value(QStringLiteral("elapsedMs"))
+            .toDouble();
+    const double settledElapsed =
+        checkpoints.value(QStringLiteral("settled-1s"))
+            .value(QStringLiteral("elapsedMs"))
+            .toDouble();
+    QVERIFY(settledElapsed > workflowElapsed);
 }
 
 void StartupPerformanceTests::capturesVisualLanguageAndThemeVariants()

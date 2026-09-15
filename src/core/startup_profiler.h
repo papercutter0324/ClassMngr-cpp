@@ -73,6 +73,8 @@ public:
     [[nodiscard]] QJsonObject reportJson() const;
 
     static void recordPageInstantiated(const QString& pageIdentifier);
+    static void recordPageEntered(const QString& pageIdentifier);
+    static void recordPageLeft(const QString& pageIdentifier);
     static void recordScheduleWidgetCreated(const QString& owner);
     static void recordScheduleWidgetDestroyed();
     static void recordStartupCompleteScheduleWidgetDiagnostic();

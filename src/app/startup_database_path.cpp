@@ -14,6 +14,16 @@ QString startupDatabasePath(
         if (
             argument
                 == QStringLiteral(
+                    "--startup-performance-workflow"
+                    )
+            )
+        {
+            continue;
+        }
+
+        if (
+            argument
+                == QStringLiteral(
                     "--startup-performance-output"
                     )
             || argument
@@ -36,7 +46,7 @@ QString startupDatabasePath(
                 == QStringLiteral(
                     "--startup-visual-capture-theme"
                     )
-            )
+        )
         {
             ++index;
             continue;

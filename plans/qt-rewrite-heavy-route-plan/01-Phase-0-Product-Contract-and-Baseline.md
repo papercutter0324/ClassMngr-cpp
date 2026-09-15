@@ -402,3 +402,28 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Treat PDF viewer content as session-scoped; do not preload or retain full
   document bodies merely to populate the catalog.
 - Do not rely on prior plan documents or stale build-tree test inventories.
+
+## Progress update - 2026-09-16 (in-process page lifecycle workflow)
+
+- What changed: added the explicit `--startup-performance-workflow` harness
+  and page-enter/page-leave profiler events. The workflow drives all 11
+  registered top-level routes, opens the deferred Calendar child once,
+  returns to My Workspace, and then records settled memory checkpoints.
+- Evidence: the focused startup test passes the representative full-route
+  process workflow. A packaged Windows x64 Release run is retained under
+  `docs/qt-rewrite/visual-baseline/release/workflow/` with its trace, JSON
+  report, startup frame, and settled frame.
+- Measurement: startup-complete/workflow-complete/settled-1s/settled-5s were
+  `2,926`/`6,249`/`7,283`/`11,267 ms`. The workflow settled at 2,530 widgets,
+  11/11 instantiated pages, three live ScheduleWidgets, and a
+  `244,961,280`-byte peak working set (`236,060,672` bytes private).
+- Heavy-route finding: the existing 96-class large fixture cannot complete the
+  Sub Prep route because its 768 schedule entries expand hundreds of class
+  information cards and terminate before a stable profile is written. The
+  bounded representative workflow proves route semantics; the large fixture
+  remains the stress input for the v2 resource/virtualization slice.
+- What remains: five-minute idle and per-feature retained-memory evidence,
+  generated-output references, on-demand QtPdf open/close traces, and the
+  remaining packaged/cross-platform visual baselines. Future implementation
+  slices must follow the heavy route by introducing the parallel v2 ownership
+  and resource boundaries rather than extending the legacy composition root.
