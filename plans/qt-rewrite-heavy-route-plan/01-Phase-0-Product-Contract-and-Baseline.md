@@ -97,6 +97,18 @@
 - What remains: package the Release executable, measure the large and legacy
   workspaces through startup and workflows, and add generated-output fixtures.
 
+## Progress update - 2026-09-16 (representative visual matrix)
+
+- What changed: extended the visual capture suite to launch the reproducible
+  representative workspace in all four English/Korean and light/dark variants.
+  `CLASSMNGR_VISUAL_BASELINE_OUTPUT_DIR` can retain those generated PNGs for
+  reviewable evidence; default tests continue to use temporary output.
+- Evidence: the focused startup suite remains green after adding the four
+  populated launches, each producing a valid startup-complete image; the
+  retained matrix is under `docs/qt-rewrite/visual-baseline/representative`.
+- What remains: cover editing, read-only, dialog, loading/error, print-preview,
+  and generated-output states.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

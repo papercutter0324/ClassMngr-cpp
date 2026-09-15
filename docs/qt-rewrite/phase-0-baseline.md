@@ -141,6 +141,17 @@ explicit. The focused startup test exercises all four combinations in an
 offscreen Qt process. The generated empty-workspace reference set is under
 `docs/qt-rewrite/visual-baseline/empty/` in the four variant directories.
 
+The representative capture test uses the same four variants with the
+reproducible startup workspace. Set `CLASSMNGR_VISUAL_BASELINE_OUTPUT_DIR` when
+running that test to retain the generated populated PNGs; otherwise it uses a
+temporary output directory. This keeps ordinary CTest runs non-mutating while
+providing a repeatable capture command for permanent evidence.
+
+The current representative startup matrix is retained under
+`docs/qt-rewrite/visual-baseline/representative/`, alongside the empty-workspace
+matrix. These are Debug/offscreen reference frames from the current source
+snapshot; packaged Release captures remain a separate acceptance requirement.
+
 For an empty workspace:
 
 ```powershell
