@@ -2,6 +2,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QHash>
+#include <QImage>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -571,6 +572,10 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         directory.filePath(
             QStringLiteral("representative-startup-metrics.json")
             );
+    const QString representativeVisualDirectory =
+        directory.filePath(
+            QStringLiteral("representative-startup-visual")
+            );
     QProcess representativeProcess;
     representativeProcess.setProcessEnvironment(environment);
     representativeProcess.start(
@@ -583,6 +588,8 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             QStringLiteral("5000"),
             QStringLiteral("--startup-performance-output"),
             representativeMetricsPath,
+            QStringLiteral("--startup-visual-capture-output"),
+            representativeVisualDirectory,
             representativeDatabasePath
         }
         );
@@ -613,6 +620,25 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         qPrintable(representativeParseError.errorString())
         );
     QVERIFY(representativeDocument.isObject());
+
+    for (const QString& captureName : {
+             QStringLiteral("startup-complete.png"),
+             QStringLiteral("settled-final.png")
+         })
+    {
+        const QString capturePath =
+            QDir(representativeVisualDirectory).filePath(captureName);
+        const QImage image(capturePath);
+        QVERIFY2(
+            !image.isNull(),
+            qPrintable(
+                QStringLiteral("Unable to read visual capture: %1")
+                    .arg(capturePath)
+                )
+            );
+        QVERIFY(image.width() > 0);
+        QVERIFY(image.height() > 0);
+    }
 
     const QJsonObject representativeReport = representativeDocument.object();
     QCOMPARE(

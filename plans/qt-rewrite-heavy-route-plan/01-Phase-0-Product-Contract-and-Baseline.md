@@ -46,6 +46,19 @@
 - Risk: Qt 6.12 QML import scanning makes clean configuration slow, and the
   older Visual Studio build directory still loops during regeneration.
 
+## Progress update - 2026-09-16 (visual capture harness)
+
+- What changed: added the in-process `--startup-visual-capture-output` mode.
+  It captures the visible main window at `startup-complete` and, when a settle
+  interval is requested, at `settled-final`; the startup test now validates
+  both PNG outputs for the representative fixture.
+- Why: native desktop automation is unavailable in the current environment, and
+  this keeps visual evidence on the real Qt startup path without changing the
+  normal application flow.
+- What remains: capture the required English/Korean, light/dark, empty,
+  populated, editing, read-only, dialog, loading, error, and generated-output
+  reference set; packaged Release and cross-platform evidence remain open.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

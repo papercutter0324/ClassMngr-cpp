@@ -22,11 +22,13 @@
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
 #include <QIcon>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QPixmap>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QDebug>
@@ -61,6 +63,8 @@ struct StartupPerformanceMode
 {
     bool enabled = false;
     QString outputPath;
+    bool visualCaptureEnabled = false;
+    QString visualCaptureOutputPath;
     enum class Scenario
     {
         Minimal,
@@ -105,6 +109,22 @@ StartupPerformanceMode startupPerformanceMode(
             args.at(outputIndex + 1);
     }
 
+    const int visualCaptureIndex =
+        args.indexOf(
+            QStringLiteral("--startup-visual-capture-output")
+            );
+    if (visualCaptureIndex >= 0)
+    {
+        mode.enabled = true;
+        mode.visualCaptureEnabled = true;
+
+        if (visualCaptureIndex + 1 < args.size())
+        {
+            mode.visualCaptureOutputPath =
+                args.at(visualCaptureIndex + 1);
+        }
+    }
+
     const int scenarioIndex =
         args.indexOf(
             QStringLiteral("--startup-performance-scenario")
@@ -124,6 +144,18 @@ StartupPerformanceMode startupPerformanceMode(
                     "Unknown startup profiling scenario '%1'; using minimal."
                     ).arg(scenario);
         }
+    }
+
+    // A supplied database makes a visual capture representative unless the
+    // caller explicitly requested the minimal scenario.
+    if (
+        mode.visualCaptureEnabled
+        && scenarioIndex < 0
+        && !startupDatabasePath(args).trimmed().isEmpty()
+        )
+    {
+        mode.scenario = StartupPerformanceMode::Scenario::Representative;
+        mode.settleMilliseconds = 30000;
     }
 
     const int settleIndex =
@@ -148,6 +180,62 @@ StartupPerformanceMode startupPerformanceMode(
     }
 
     return mode;
+}
+
+bool captureStartupVisual(
+    const QString& outputDirectoryPath,
+    QWidget& window,
+    const QString& checkpointName
+    )
+{
+    if (outputDirectoryPath.trimmed().isEmpty())
+    {
+        qWarning()
+            << "Startup visual capture output directory was not provided.";
+        return false;
+    }
+
+    QDir outputDirectory(outputDirectoryPath);
+    if (!outputDirectory.mkpath(QStringLiteral(".")))
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to create startup visual capture directory %1."
+                ).arg(outputDirectoryPath);
+        return false;
+    }
+
+    const QPixmap screenshot = window.grab();
+    if (screenshot.isNull() || screenshot.size().isEmpty())
+    {
+        qWarning()
+            << "Startup visual capture returned an empty window image.";
+        return false;
+    }
+
+    const QString outputPath =
+        outputDirectory.filePath(
+            QStringLiteral("%1.png").arg(checkpointName)
+            );
+    if (!screenshot.save(outputPath, "PNG"))
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to write startup visual capture to %1."
+                ).arg(outputPath);
+        return false;
+    }
+
+    qInfo().noquote()
+        << QStringLiteral(
+            "Wrote startup visual capture %1 (%2x%3)."
+            )
+            .arg(
+                outputPath,
+                QString::number(screenshot.width()),
+                QString::number(screenshot.height())
+                );
+    return true;
 }
 
 bool writeStartupPerformanceMetrics(
@@ -262,6 +350,7 @@ int main(int argc, char *argv[])
 
     const QString initialDatabasePath =
         startupPerformance.enabled
+            && !startupPerformance.visualCaptureEnabled
             && startupPerformance.scenario
                 == StartupPerformanceMode::Scenario::Minimal
             ? QString()
@@ -395,6 +484,7 @@ int main(int argc, char *argv[])
     int completedStartupSteps = 2;
     int progressUpdates = 0;
     int progress = 0;
+    bool visualCaptureSucceeded = true;
 
     auto updateProgress =
         [&](const QString &message)
@@ -512,6 +602,7 @@ int main(int argc, char *argv[])
             &updateController,
             &startupPerformance,
             &startupProfiler,
+            &visualCaptureSucceeded,
             progressUpdates,
             progress
         ]()
@@ -535,21 +626,45 @@ int main(int argc, char *argv[])
         const auto finishPerformanceRun =
             [
                 &app,
+                &window,
                 &startupProfiler,
                 &startupPerformance,
+                &visualCaptureSucceeded,
                 progressUpdates,
                 progress
             ]()
         {
+            if (
+                startupPerformance.visualCaptureEnabled
+                && startupPerformance.settleMilliseconds > 0
+                )
+            {
+                app.processEvents();
+                visualCaptureSucceeded =
+                    captureStartupVisual(
+                        startupPerformance.visualCaptureOutputPath,
+                        window,
+                        QStringLiteral("settled-final")
+                        )
+                    && visualCaptureSucceeded;
+            }
+
             const bool metricsWritten =
-                writeStartupPerformanceMetrics(
-                    startupPerformance.outputPath,
-                    startupProfiler,
-                    startupPerformance,
-                    progressUpdates,
-                    progress
-                    );
-            app.exit(metricsWritten ? 0 : 2);
+                startupPerformance.visualCaptureEnabled
+                && startupPerformance.outputPath.trimmed().isEmpty()
+                ? true
+                : writeStartupPerformanceMetrics(
+                      startupPerformance.outputPath,
+                      startupProfiler,
+                      startupPerformance,
+                      progressUpdates,
+                      progress
+                      );
+            app.exit(
+                metricsWritten && visualCaptureSucceeded
+                    ? 0
+                    : 2
+                );
         };
 
         const int settleMilliseconds =
@@ -629,6 +744,7 @@ int main(int argc, char *argv[])
             &splashLease,
             &startupPerformance,
             &startupProfiler,
+            &visualCaptureSucceeded,
             runPostStartupTasks
         ]()
     {
@@ -647,6 +763,18 @@ int main(int argc, char *argv[])
         {
             startupProfiler.checkpoint(QStringLiteral("startup-complete"));
             StartupProfiler::recordStartupCompleteScheduleWidgetDiagnostic();
+        }
+
+        if (startupPerformance.visualCaptureEnabled)
+        {
+            app.processEvents();
+            visualCaptureSucceeded =
+                captureStartupVisual(
+                    startupPerformance.visualCaptureOutputPath,
+                    window,
+                    QStringLiteral("startup-complete")
+                    )
+                && visualCaptureSucceeded;
         }
 
         QTimer::singleShot(

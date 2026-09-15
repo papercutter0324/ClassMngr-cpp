@@ -108,6 +108,29 @@ and Linux. Runtime memory reports must record commit, private bytes, working
 set/Resident Set Size, peak working set, handles, threads, and the exact
 scenario/fixture.
 
+### Visual capture harness
+
+The application now supports an in-process visual capture mode for Phase 0
+when native desktop automation is unavailable. Pass an output directory with
+`--startup-visual-capture-output`. The harness captures the visible main window
+to `startup-complete.png`; when a positive settle interval is requested it also
+writes `settled-final.png`. It uses the same startup path as the performance
+instrumentation and exits nonzero if the image cannot be rendered or written.
+
+For an empty workspace:
+
+```powershell
+ClassMngr.exe `
+  --startup-visual-capture-output docs/qt-rewrite/visual-baseline/empty
+```
+
+For a populated workspace, pass a `.tps` or legacy `.db` path. A supplied
+database selects the representative scenario automatically unless an explicit
+`--startup-performance-scenario minimal` is provided. Use
+`--startup-performance-settle-ms 5000` when a settled reference is needed.
+The capture option can be combined with `--startup-performance-output` to
+store the JSON startup trace beside the PNG files.
+
 ## Required runtime scenarios
 
 1. Empty workspace startup.

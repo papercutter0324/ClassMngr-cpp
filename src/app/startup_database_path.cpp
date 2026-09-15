@@ -24,6 +24,10 @@ QString startupDatabasePath(
                 == QStringLiteral(
                     "--startup-performance-settle-ms"
                     )
+            || argument
+                == QStringLiteral(
+                    "--startup-visual-capture-output"
+                    )
             )
         {
             ++index;
