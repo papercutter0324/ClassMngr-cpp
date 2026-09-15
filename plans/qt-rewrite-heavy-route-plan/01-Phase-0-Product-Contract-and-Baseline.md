@@ -9,9 +9,9 @@
 - Owner: Unassigned
 - Last updated: 2026-09-15
 - Current note: Static archaeology is recorded for commit `75755460`; runtime,
-  visual, fixture, and packaged-release evidence is still being collected. The
-  clean Windows Release compile is currently blocked by a silent MSVC
-  `0xFFFFFFFF` exit in a feature source.
+  visual, fixture, and packaged-release evidence is still being collected. A
+  clean Windows x64 Debug/Ninja build and startup test now pass; the packaged
+  Release baseline and the remaining fixture/platform evidence are still open.
 
 ## Progress update - 2026-09-15
 
@@ -26,8 +26,25 @@
   enumeration are recorded in the evidence documents.
 - Risk: existing build directories include stale configuration from an earlier
   tree, so they are excluded from acceptance evidence until reconfigured.
-- Blocker: the isolated Ninja Release build reaches feature compilation but
-  currently exits from MSVC with `0xFFFFFFFF` and no diagnostic output.
+
+## Progress update - 2026-09-15 (fixture and clean build)
+
+- What changed: replaced the deleted historical `Testing-copy.tps` dependency
+  with the reproducible fixture `tests/fixtures/workspaces/representative_startup.sql`;
+  the startup test now materializes it through `DatabaseSchemaManager`.
+- Evidence: clean Windows x64 Ninja Debug configuration and a 352-step focused
+  target build passed; `ClassMngrStartupPerformanceTests -v1` passed both tests
+  with exit code `0`.
+- Preliminary measurement: the representative run reported a peak working set
+  of `202,162,176` bytes at startup-complete and `221,011,968` bytes at the
+  five-second settled checkpoint in a Debug/offscreen process. The exact byte
+  values and scenario are recorded in `docs/qt-rewrite/phase-0-baseline.md`;
+  this is not packaged Release acceptance evidence.
+- What remains: add the other Phase 0 fixtures, capture visual and generated
+  output references, trace startup/resource ownership, and run packaged Release
+  baselines on every target platform.
+- Risk: Qt 6.12 QML import scanning makes clean configuration slow, and the
+  older Visual Studio build directory still loops during regeneration.
 
 ## Evidence files
 

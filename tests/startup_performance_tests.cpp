@@ -14,8 +14,11 @@
 #include <QSet>
 #include <QTemporaryDir>
 #include <QtTest>
+#include <QUuid>
 
 #include <cstdio>
+
+#include "data/database/database_schema_manager.h"
 
 namespace
 {
@@ -103,6 +106,78 @@ bool writeRepresentativeStartupSettings(
     return settings.status() == QSettings::NoError;
 }
 
+bool createRepresentativeStartupFixture(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    const QString sqlPath =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral(
+            "/tests/fixtures/workspaces/representative_startup.sql"
+            );
+    QFile sqlFile(sqlPath);
+    if (!sqlFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        *errorMessage =
+            QStringLiteral("Unable to open startup fixture SQL: %1")
+                .arg(sqlFile.errorString());
+        return false;
+    }
+
+    const QString connectionName =
+        QStringLiteral("startup-representative-fixture-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(fixturePath);
+
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else
+        {
+            const Status schemaStatus =
+                DatabaseSchemaManager::ensureSchema(database);
+            if (!schemaStatus)
+            {
+                *errorMessage = schemaStatus.error();
+            }
+            else
+            {
+                QSqlQuery query(database);
+                const QStringList statements =
+                    QString::fromUtf8(sqlFile.readAll())
+                        .split(QChar(';'), Qt::SkipEmptyParts);
+
+                success = true;
+                for (const QString& rawStatement : statements)
+                {
+                    const QString statement = rawStatement.trimmed();
+                    if (!statement.isEmpty() && !query.exec(statement))
+                    {
+                        *errorMessage = query.lastError().text();
+                        success = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
+
 void printRepresentativeCheckpoint(
     const QJsonObject& checkpoint
     )
@@ -147,17 +222,15 @@ private slots:
 void StartupPerformanceTests
     ::representativeStartupFixtureIsCompleteAndDeterministic()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
     const QString fixturePath =
-        QStringLiteral(CLASSMNGR_SOURCE_DIR)
-        + QStringLiteral(
-            "/plans/startup-sequence-optimization-plan/Testing-copy.tps"
-            );
+        directory.filePath(QStringLiteral("representative-startup.tps"));
+    QString fixtureError;
     QVERIFY2(
-        QFile::exists(fixturePath),
-        qPrintable(
-            QStringLiteral("Representative database does not exist: %1")
-                .arg(fixturePath)
-            )
+        createRepresentativeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
         );
 
     const QString connectionName =
@@ -477,30 +550,15 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     QVERIFY(!eventNames.contains(QStringLiteral("schedule-render-end")));
     QVERIFY(startupScheduleDiagnosticPassed);
 
-    const QString representativeFixturePath =
-        QStringLiteral(CLASSMNGR_SOURCE_DIR)
-        + QStringLiteral(
-            "/plans/startup-sequence-optimization-plan/Testing-copy.tps"
-            );
-    QVERIFY2(
-        QFile::exists(representativeFixturePath),
-        qPrintable(
-            QStringLiteral("Representative database does not exist: %1")
-                .arg(representativeFixturePath)
-            )
-        );
-
     const QString representativeDatabasePath =
         directory.filePath(QStringLiteral("representative-startup.tps"));
+    QString representativeFixtureError;
     QVERIFY2(
-        QFile::copy(
-            representativeFixturePath,
-            representativeDatabasePath
+        createRepresentativeStartupFixture(
+            representativeDatabasePath,
+            &representativeFixtureError
             ),
-        qPrintable(
-            QStringLiteral("Unable to copy representative database to %1")
-                .arg(representativeDatabasePath)
-            )
+        qPrintable(representativeFixtureError)
         );
     QVERIFY2(
         writeRepresentativeStartupSettings(

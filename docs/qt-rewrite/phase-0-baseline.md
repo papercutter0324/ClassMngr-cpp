@@ -26,7 +26,7 @@ does not recreate or rely on them.
 
 ## Windows x64 toolchain run log
 
-- Snapshot: `75755460`.
+- Earlier run snapshot: `75755460`.
 - Environment: Visual Studio 2026 Developer Command Prompt, MSVC
   `19.51.36256.0`, Qt `6.12.0`, CMake `4.4.2`.
 - Clean application-only Ninja configure succeeded: configure `38.5 s`,
@@ -39,6 +39,39 @@ does not recreate or rely on them.
 - No Release executable, install tree, or memory measurements are accepted
   from this run. The next diagnostic is an isolated single-file MSVC compile or
   a toolchain/resource check; this is a baseline blocker, not a rewrite result.
+
+### Current clean fixture run
+
+- Source state: `bfb80585` plus the Phase 0 fixture changes in the worktree.
+- Build directory: `build/qt-rewrite-phase0-startup-ninja`.
+- Configuration: clean Ninja Debug, Windows x64, Qt `6.12.0`, MSVC
+  `19.51.36256.0`, `BUILD_TESTING=ON`, and startup update checks disabled.
+- Configure and generation succeeded; configure took `398.8 s` because the
+  current Qt setup scans the repository's many test targets.
+- The focused target build completed all `352` steps, including
+  `src/features/my_info/ui/my_classes_page_content.cpp`, the application, and
+  `ClassMngrStartupPerformanceTests.exe`.
+- `ClassMngrStartupPerformanceTests.exe -v1` passed both tests with exit code
+  `0`. The representative profile was materialized from
+  `tests/fixtures/workspaces/representative_startup.sql` through the current
+  schema manager.
+- Representative checkpoints reported `202,162,176` bytes peak working set at
+  `startup-complete` and `221,011,968` bytes at the five-second settled
+  checkpoint, with `153,092,096` bytes private usage at the latter checkpoint.
+  These are Debug/offscreen measurements and are preliminary, not the packaged
+  Release gate.
+- The existing Visual Studio build directory still has a Qt QML metadata
+  regeneration loop and remains excluded from acceptance evidence.
+
+## Fixture added in this pass
+
+`tests/fixtures/workspaces/representative_startup.sql` is the permanent,
+reviewable source for the representative startup profile. The startup test
+creates a temporary `.tps` database, applies the latest schema, executes the
+fixture statements, and then validates integrity plus the expected teachers,
+classes, schedules, roster rows, and saved schedule settings. This removes the
+dependency on the deleted startup-optimization plan and makes the fixture
+reproducible on a clean checkout.
 
 ## Reproduction commands
 
@@ -89,7 +122,7 @@ scenario/fixture.
 
 ## Evidence currently missing
 
-- Fresh clean build/test result from the current source snapshot.
+- Clean packaged Release build/test result from the current source snapshot.
 - Packaged Release startup and per-workflow memory reports.
 - English/Korean and light/dark screenshot set.
 - Empty, normal, large, legacy, conflict, corrupt, and locked fixtures.

@@ -329,6 +329,9 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
+        src/data/database/database_schema_manager.cpp
+        src/data/database/database_transaction.cpp
+        src/data/database/sql_query_utils.cpp
     )
 
     add_dependencies(
@@ -341,9 +344,15 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             cxx_std_23
     )
 
+    target_include_directories(ClassMngrStartupPerformanceTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
     target_link_libraries(ClassMngrStartupPerformanceTests
         PRIVATE
             Qt6::Core
+            Qt6::Sql
             Qt6::Test
     )
 
