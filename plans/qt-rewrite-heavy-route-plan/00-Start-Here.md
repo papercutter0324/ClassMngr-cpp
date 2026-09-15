@@ -7,9 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-09-16
 - Current milestone: Phase 0 — product contract, source archaeology, and baseline
-- Current blocker: Clean Windows Release compilation currently exits from MSVC
-  with `0xFFFFFFFF` and no diagnostic on a feature source; static Phase 0 work
-  continues while the toolchain issue is isolated.
+- Current blocker: No external blocker. Phase 0 evidence collection continues
+  for large-feature workflows, generated outputs, and cross-platform Release
+  baselines.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status

@@ -15,6 +15,9 @@
 #include <QDialogButtonBox>
 #include <QEvent>
 #include <QFile>
+#include <QFileInfo>
+#include <QFont>
+#include <QFontDatabase>
 #include <QFrame>
 #include <QGroupBox>
 #include <QHeaderView>
@@ -22,6 +25,8 @@
 #include <QMessageBox>
 #include <QPalette>
 #include <QProgressBar>
+#include <QDir>
+#include <QPixmap>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QRegularExpression>
@@ -268,6 +273,7 @@ QByteArray dialogWorkbookData()
             <row r="2">
               <c r="A2" t="inlineStr"><is><t>4:00~4:55</t></is></c>
               <c r="B2" t="inlineStr"><is><t>박선생 (415)&#10;M3-Song's</t></is></c>
+              <c r="F2" t="inlineStr"><is><t>박선생 (415)&#10;M3-Song's</t></is></c>
             </row>
             <row r="3">
               <c r="A3" t="inlineStr"><is><t>5:00~5:55</t></is></c>
@@ -276,6 +282,7 @@ QByteArray dialogWorkbookData()
             </row>
             <row r="4">
               <c r="A4" t="inlineStr"><is><t>6:00~6:55</t></is></c>
+              <c r="B4" t="inlineStr"><is><t>김선생 (413)&#10;E4-Theseus</t></is></c>
               <c r="D4" t="inlineStr"><is><t>김선생 (413)&#10;E4-Theseus</t></is></c>
             </row>
           </sheetData>
@@ -312,8 +319,19 @@ QString writeDialogWorkbook(
     QTemporaryDir* directory
     )
 {
+    const QString configuredFixturePath =
+        qEnvironmentVariable(
+            "CLASSMNGR_SCHEDULE_IMPORT_FIXTURE_OUTPUT_PATH"
+            ).trimmed();
     const QString path =
-        directory->filePath(QStringLiteral("schedule.xlsx"));
+        configuredFixturePath.isEmpty()
+            ? directory->filePath(QStringLiteral("schedule.xlsx"))
+            : configuredFixturePath;
+    if (!configuredFixturePath.isEmpty()
+        && !QDir().mkpath(QFileInfo(path).absolutePath()))
+    {
+        return {};
+    }
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly))
     {
@@ -322,6 +340,33 @@ QString writeDialogWorkbook(
     file.write(dialogWorkbookData());
     file.close();
     return path;
+}
+
+QString loadReviewFontFamily()
+{
+    QString interFamily;
+    const QString sourceDirectory =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR);
+    for (const QString& relativePath : {
+             QStringLiteral("resources/assets/fonts/Inter.ttc"),
+             QStringLiteral("resources/assets/fonts/PretendardVariable.ttf")
+         })
+    {
+        const int fontId = QFontDatabase::addApplicationFont(
+            QDir(sourceDirectory).filePath(relativePath));
+        if (fontId < 0)
+        {
+            continue;
+        }
+
+        const QStringList families =
+            QFontDatabase::applicationFontFamilies(fontId);
+        if (interFamily.isEmpty() && !families.isEmpty())
+        {
+            interFamily = families.first();
+        }
+    }
+    return interFamily;
 }
 
 bool loadSourceSelections(
@@ -2141,14 +2186,19 @@ void ScheduleImportDialogTests
 void ScheduleImportDialogTests
     ::suppliedWorkbookBuildsStagedReview()
 {
-    const QString path =
+    const QString configuredPath =
         qEnvironmentVariable(
             "CLASSMNGR_SCHEDULE_IMPORT_SAMPLE"
-            );
-    if (path.isEmpty())
+            ).trimmed();
+    const QString path =
+        configuredPath.isEmpty()
+            ? QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+                  QStringLiteral("tests/fixtures/imports/schedule_review.xlsx"))
+            : configuredPath;
+    if (!QFile::exists(path))
     {
         QSKIP(
-            "Set CLASSMNGR_SCHEDULE_IMPORT_SAMPLE to validate the staged dialog with an external workbook."
+            "The permanent schedule review fixture is missing; set CLASSMNGR_SCHEDULE_IMPORT_SAMPLE to validate another workbook."
             );
     }
 
@@ -2157,8 +2207,15 @@ void ScheduleImportDialogTests
         QStringLiteral("myInfo/name"),
         QString()
         );
+    const QString reviewFontFamily = loadReviewFontFamily();
+    if (!reviewFontFamily.isEmpty())
+    {
+        QApplication::setFont(QFont(reviewFontFamily));
+    }
     ScheduleImportDialog dialog(&services);
     dialog.setFilePath(path);
+    dialog.show();
+    QCoreApplication::processEvents();
     auto* next =
         dialog.findChild<QPushButton*>(
             QStringLiteral("scheduleImportNextButton")
@@ -2251,6 +2308,30 @@ void ScheduleImportDialogTests
     QVERIFY(reviewStatus);
     QVERIFY(import);
     QVERIFY(!colorButtons.isEmpty());
+
+    const QString screenshotPath =
+        qEnvironmentVariable(
+            "CLASSMNGR_SCHEDULE_REVIEW_OUTPUT_PATH"
+            ).trimmed();
+    if (!screenshotPath.isEmpty())
+    {
+        QVERIFY2(
+            QDir().mkpath(QFileInfo(screenshotPath).absolutePath()),
+            qPrintable(
+                QStringLiteral("Could not create schedule review screenshot directory for %1")
+                    .arg(screenshotPath)
+                )
+            );
+        review->show();
+        QCoreApplication::processEvents();
+        const QPixmap screenshot = review->grab();
+        QVERIFY(!screenshot.isNull());
+        QVERIFY2(
+            screenshot.save(screenshotPath, "PNG"),
+            qPrintable(QStringLiteral("Could not save schedule review screenshot: %1")
+                           .arg(screenshotPath))
+            );
+    }
     bool foundSpreadsheetColor = false;
     for (const QPushButton* colorButton : colorButtons)
     {

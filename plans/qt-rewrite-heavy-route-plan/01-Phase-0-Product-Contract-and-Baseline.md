@@ -190,6 +190,21 @@
 - What remains: add schedule-workbook/import-review fixtures, then measure
   large-feature entry/exit and idle retention and capture generated outputs.
 
+## Progress update - 2026-09-16 (schedule workbook staged-review fixture)
+
+- What changed: added the permanent `schedule_review.xlsx` workbook and
+  deterministic retention hooks for the existing schedule-import dialog test.
+  The test now exercises the normal workbook/source-selection path, builds the
+  staged review, and can retain a readable offscreen dialog reference.
+- Evidence: `ClassMngrScheduleImportDialogTests` passed all 17 test functions;
+  the workbook and review image are retained at
+  `tests/fixtures/imports/schedule_review.xlsx` and
+  `docs/qt-rewrite/visual-baseline/schedule/schedule-import-review.png`.
+  Review preparation also now loads saved schedule display preferences before
+  rendering the preview, covering the existing saved-settings assertion.
+- What remains: add a large schedule-workbook/conflict fixture, measure
+  large-feature entry/exit and idle retention, and capture generated outputs.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

@@ -155,6 +155,13 @@ schedule, verifies the review choices, and confirms the import rolls back
 without changing the destination. Its readable offscreen dialog reference is
 retained at `docs/qt-rewrite/visual-baseline/conflict/class-import-review.png`.
 
+`tests/fixtures/imports/schedule_review.xlsx` is the permanent schedule
+workbook used for staged import review. The dialog test loads the workbook
+through the normal source-selection path, verifies that the review stage builds
+its teacher/class controls and imported color choices, and can retain a
+readable offscreen reference at
+`docs/qt-rewrite/visual-baseline/schedule/schedule-import-review.png`.
+
 ## Reproduction commands
 
 Windows x64 clean Phase 0 build (Qt 6.12.0 installed at the path below).
@@ -232,6 +239,11 @@ Set `CLASSMNGR_CONFLICT_REVIEW_OUTPUT_PATH` while running
 `permanentConflictFixturePresentsReviewAndRejectsScheduleCollision` to retain
 the offscreen dialog PNG.
 
+Set `CLASSMNGR_SCHEDULE_IMPORT_FIXTURE_OUTPUT_PATH` while running
+`compactFlowAndReviewPresentation` to regenerate the permanent schedule
+workbook. Set `CLASSMNGR_SCHEDULE_REVIEW_OUTPUT_PATH` while running
+`suppliedWorkbookBuildsStagedReview` to retain the staged-review dialog PNG.
+
 For an empty workspace:
 
 ```powershell
@@ -267,8 +279,8 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- A permanent conflict/import-review fixture; corrupt and locked behavior is
-  currently covered by transient focused-test scenarios.
+- A large schedule-workbook/conflict fixture; the class-transfer conflict and
+  schedule-workbook staged-review fixtures are now permanent.
 - Golden generated PDFs, reports, rosters, substitute documents, and
   PowerPoint output.
 - QtPdf on-demand open/close traces proving that startup has no loaded PDF and

@@ -363,6 +363,10 @@ bool ScheduleImportReviewDialog::prepare()
         && m_preview.inventory.hasIntensiveHours
         );
     m_updateIntensiveRadio->setChecked(true);
+    // The preview widget is created before the import is prepared, so its
+    // normal page-entry refresh has not run yet. Load the current display
+    // preferences before building the imported schedule model.
+    m_previewWidget->refreshSchedule();
     m_previewWidget->setPreviewModel(
         previewModel(
             m_preview.user,

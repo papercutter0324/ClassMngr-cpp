@@ -196,6 +196,11 @@ qt_add_executable(ClassMngrClassesPageTests
             ${PROJECT_SOURCE_DIR}/src
     )
 
+    target_compile_definitions(ClassMngrScheduleImportDialogTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
     target_link_libraries(ClassMngrScheduleImportDialogTests
         PRIVATE
             Qt6::Concurrent
