@@ -7,7 +7,7 @@
 - Depends on: Phases 0 through 10
 - Blocks: Beta, cutover, and legacy removal
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Convert the current test collection into permanent parity and regression gates.
 
 ## Objective
@@ -60,6 +60,8 @@ Build a test system that can prove data compatibility, visual parity, resource b
 - Font loading.
 - Image decoding.
 - Stream loading.
+- Document catalog metadata-only initialization and on-demand QtPdf content.
+- QtPdf document close/release and viewer-session ownership.
 - Cache budgets.
 - Scope release.
 - No resource update fallback.
@@ -72,6 +74,7 @@ Build a test system that can prove data compatibility, visual parity, resource b
 - Dialog behavior.
 - Theme and language switching.
 - Page creation and release.
+- Document viewer loading, error, close, release, and reopen behavior.
 - Large-table model behavior.
 
 ### 11.6 Integration and output
@@ -81,6 +84,7 @@ Build a test system that can prove data compatibility, visual parity, resource b
 - Teacher import.
 - Roster import.
 - Report generation.
+- PDF viewer open/copy/save/print behavior.
 - PDF generation.
 - Printing.
 - PowerPoint automation.
@@ -104,6 +108,8 @@ Build a test system that can prove data compatibility, visual parity, resource b
 - Large schedule.
 - Large roster.
 - Large document.
+- Startup with a document catalog but no loaded PDF.
+- Repeated QtPdf viewer open/close/release/reopen.
 - Large report.
 - Feature resource release.
 
@@ -119,6 +125,7 @@ Test:
 - Interrupted saves.
 - Failed imports.
 - Failed PDF generation.
+- Missing or corrupt PDF when opened on demand.
 - Missing PowerPoint.
 - Network failure during application update checking.
 - Cancellation during large operations.
@@ -140,6 +147,7 @@ The release candidate must pass:
 - Packaged deployment tests.
 - Windows memory gates.
 - Repeated-operation leak-growth gates.
+- Startup PDF non-loading and viewer-session document-release gates.
 
 ## Deliverables
 

@@ -7,7 +7,7 @@
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Migrate complete vertical slices, not isolated UI files.
 
 ## Objective
@@ -173,7 +173,13 @@ Migrate:
 - Document catalog.
 - Document viewer.
 
-Load catalog metadata initially. Load campus maps, campus JSON, and document bodies only when opened. Decode images at a bounded display resolution.
+Load catalog metadata and localized names initially. Do not load PDF bodies or
+render QtPdf pages while building the catalog or starting the application.
+When the user opens a document, load only the selected PDF into the active
+viewer session; close and release it when the document is replaced, the viewer
+is closed, or the page is left, suspended, or released. Reopening may load the
+document again. Load campus maps and campus JSON only when opened, and decode
+images at a bounded display resolution.
 
 ### 7J — Substitute preparation and output
 
@@ -197,6 +203,7 @@ Every subphase must produce:
 - New presenter/view model.
 - New Qt view.
 - Resource policy.
+- On-demand document-load and viewer-release trace for document features.
 - Output adapter usage.
 - Localization updates.
 - Unit and integration tests.

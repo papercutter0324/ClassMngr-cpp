@@ -7,7 +7,7 @@
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts.
 
 ## Objective
@@ -28,7 +28,7 @@ Create explicit value types for:
 - Campuses and locations.
 - Calendar events.
 - Speaking evaluations and criteria.
-- Documents and templates.
+- Document catalog entries, document-content references, and templates.
 - Import matches and conflicts.
 - User preferences.
 
@@ -57,7 +57,8 @@ Create use cases for:
 - Importing teachers, schedules, calendars, rosters, and class transfers.
 - Editing teachers, classes, schedules, calendar events, rosters, and evaluations.
 - Generating reports and substitute documents.
-- Loading campus and document data.
+- Listing campus and document metadata.
+- Opening document content on demand for a viewer or output operation.
 - Performing backups and recovery.
 - Checking for application updates after startup.
 
@@ -87,6 +88,7 @@ Define:
 - Current selection state.
 - Import-job state.
 - Report/export-job state.
+- Document-content session state: requested, loading, ready, failed, and released.
 - Cancellation behavior.
 - Thread ownership.
 
@@ -115,5 +117,7 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Convert core contracts rather than wrapping every old Qt type indefinitely.
 - Keep Qt conversion at the UI, filesystem, or platform boundary.
 - Prefer explicit immutable snapshots for read models.
+- Keep document-content contracts independent of QtPdf; the viewer/platform
+  adapter owns the active document session and its release boundary.
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.

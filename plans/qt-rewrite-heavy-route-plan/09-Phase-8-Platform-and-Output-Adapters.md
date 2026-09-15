@@ -7,7 +7,7 @@
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Keep feature code platform-neutral and isolate external integrations.
 
 ## Objective
@@ -52,6 +52,12 @@ Keep the current user-visible behavior while moving implementation behind adapte
 
 Initially retain Qt PDF and printing to preserve output.
 
+The QtPdf viewer is a separate on-demand path. Catalog initialization must not
+load a PDF document or render pages. The adapter owns the loaded
+`QPdfDocument` for the active viewer session and must close/release it when
+the document is replaced, the viewer is closed, or the page is left or
+released. Generated and print-output PDFs remain operation-scoped.
+
 Isolate:
 
 - Page layout.
@@ -59,6 +65,7 @@ Isolate:
 - Font embedding.
 - Image loading.
 - PDF page creation.
+- QtPdf document load, status, page rendering, close, and release.
 - Print preview.
 - Printer selection.
 - Output file handling.
@@ -126,6 +133,7 @@ Generated output matches the baseline on every supported platform.
 ## Heavy-route requirements
 
 - Do not duplicate business rules in platform implementations.
-- Do not leave PowerPoint or PDF objects owned by widgets indefinitely.
+- Do not leave PowerPoint, QtPdf, or PDF output objects owned by widgets
+  indefinitely; active viewer documents are session-scoped.
 - Do not make resource updates a hidden part of application updates.
 - Do not rewrite output formats and UI behavior simultaneously without parity fixtures.

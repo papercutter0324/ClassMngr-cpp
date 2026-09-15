@@ -7,7 +7,7 @@
 - Depends on: Phase 12
 - Blocks: Long-term architecture stability
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Prevent another accumulation of compatibility layers, global state, and unbounded memory.
 
 ## Objective
@@ -31,6 +31,9 @@ Make the rewritten architecture durable after release.
 - Every cache requires a byte or item budget.
 - Every resource scope requires a release test.
 - Every startup resource must justify its startup classification.
+- Document catalogs may load metadata at startup, but PDF content must remain
+  in an active viewer/operation session and its QtPdf document must be closed
+  and released when that session ends.
 - No runtime resource download may be added without an explicit product decision.
 - Application updates must include all required resources.
 
@@ -40,6 +43,8 @@ Make the rewritten architecture durable after release.
 - Every new large table uses model/view unless an exception is documented.
 - Large images must have a bounded decode policy.
 - Export workflows must release temporary objects.
+- Document viewer open/close/reopen tests must detect retained QtPdf documents
+  or unbounded rendered-page caches.
 - Windows packaged Release memory tests run continuously.
 
 ### Compatibility
@@ -66,6 +71,7 @@ Track after every significant release:
 - Peak memory.
 - Repeated-navigation growth.
 - Resource cache size.
+- Active document sessions and retained PDF/rendered-page bytes.
 - Startup duration.
 - Page creation time.
 - Large import duration.

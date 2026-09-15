@@ -7,7 +7,7 @@
 - Depends on: Phases 7 through 9
 - Blocks: Final release qualification
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Prove that the rewrite preserved the product, not merely that it compiles.
 
 ## Objective
@@ -68,6 +68,8 @@ Verify:
 - Backup behavior.
 - External URL behavior.
 - Application updates.
+- Document catalog metadata-only startup, on-demand QtPdf open/loading/error
+  behavior, close/release, and reopen behavior.
 
 ## Output parity
 

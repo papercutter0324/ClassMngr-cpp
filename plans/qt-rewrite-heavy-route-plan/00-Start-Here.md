@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current milestone: Phase 0 — product contract, source archaeology, and baseline
 - Current blocker: Clean Windows Release compilation currently exits from MSVC
   with `0xFFFFFFFF` and no diagnostic on a feature source; static Phase 0 work
@@ -50,6 +50,16 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
   as authoritative. A clean Phase 0 build directory is being established.
 - Risk: historical baseline artifacts describe an older source snapshot and
   must not be used as the rewrite's acceptance baseline.
+
+## Product contract update - 2026-09-16
+
+- The document catalog may load startup metadata, but PDFs displayed through
+  QtPdf are loaded only when the user requests them.
+- The active viewer session owns the loaded document and must close/release it
+  when the document is replaced, the viewer is closed, or the page is left or
+  released. Generated and print-output PDFs remain operation-scoped.
+- Phase 0 records the startup-negative, on-demand-open, and release-memory
+  evidence still required; later phases now carry the same lifecycle contract.
 
 ## Important context
 
@@ -170,6 +180,16 @@ The new loader classifies resources as:
 - Operation: loaded only for a print, export, import, or report operation.
 
 Large documents, maps, report artwork, templates, optional fonts, and PDF content must not be resident merely because the application opened.
+
+### Document viewer lifecycle
+
+The document catalog is startup metadata, not document content. Startup may
+load catalog schema, localized names, and validated asset references, but a
+PDF displayed through QtPdf is loaded only after the user requests it. The
+active viewer session owns that loaded document; closing the viewer, replacing
+the document, leaving the viewer, or releasing the page must close the QtPdf
+document and release its resource. Reopening may load it again. Generated and
+print-output PDFs remain separate operation-scoped resources.
 
 ## Memory policy
 

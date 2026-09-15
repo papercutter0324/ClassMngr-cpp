@@ -7,7 +7,7 @@
 - Depends on: Phase 1
 - Blocks: Bootstrap, feature migration, packaging, and memory gates
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Replace dynamic resource packs with deterministic installed resources and explicit lifetimes.
 
 ## Objective
@@ -40,6 +40,7 @@ Inventory all current resources:
 - Translations.
 - Fonts.
 - Documents.
+- Document catalog metadata separately from PDF/PPTX document bodies.
 - Campus data.
 - Campus maps.
 - Templates.
@@ -105,6 +106,8 @@ Create:
 - ResourceCatalog: generated inventory of installed resources.
 - ResourceLoader: text, JSON, image, font, stylesheet, translation, and stream loading.
 - ResourceScope: startup, page, feature, and operation lifetime.
+- DocumentContentHandle (or equivalent): explicit open/close ownership for a
+  requested PDF/PPTX body, separate from catalog metadata.
 - ResourceCache: explicit byte budget and LRU eviction.
 - ResourceDiagnostics: load time, decoded size, cache residency, and owner.
 
@@ -125,15 +128,21 @@ Core startup resources:
 Feature resources:
 
 - Campus details and maps.
-- Document bodies.
+- Document viewer chrome and selected-entry state.
 - Roster designs.
 - Speaking report artwork.
 - Calendar QML assets.
 - Feature-specific templates.
 
+Viewer/session resources:
+
+- PDF content loaded into QtPdf only for the active requested document.
+- Any rendered-page or decoded-content cache, only with an explicit byte/item
+  budget and release policy.
+
 Operation resources:
 
-- PDF source content.
+- PDF source content for print, export, or other document operations.
 - Print-only assets.
 - Report export images.
 - PowerPoint workspaces.
@@ -185,10 +194,17 @@ The application starts without mounting a resource pack, performs no resource up
 
 Large resources are not loaded or decoded until their owning feature or operation requests them.
 
+Document catalog initialization must not load PDF bodies or call
+`QPdfDocument::load()`. A viewer/session request opens one selected document;
+ending that session closes the QtPdf document and releases its content handle.
+
 ## Heavy-route requirements
 
 - Do not replace resource packs with another hidden network-backed pack format.
 - Do not preload all documents, templates, maps, or fonts.
+- Do not load PDF content while building the catalog or starting the
+  application, and do not retain a QtPdf document after its viewer session
+  ends.
 - Do not keep both raw bytes and decoded objects beyond the required lifetime.
 - Do not use source-directory fallback in a packaged build.
 - Do not remove visual assets merely to meet the memory target.

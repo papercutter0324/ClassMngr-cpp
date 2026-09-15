@@ -7,7 +7,7 @@
 - Depends on: Phases 4 through 8
 - Blocks: Release qualification and cutover
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: The less-than-250-MiB Windows target is a hard release gate.
 
 ## Objective
@@ -39,7 +39,8 @@ Measure:
 - Large schedule import.
 - Large roster editing.
 - Campus map open and close.
-- Document open and close.
+- Document catalog startup with no loaded PDF body.
+- QtPdf document open, render, close, release, and reopen.
 - Speaking report generation.
 - PDF preview and close.
 - Repeated workspace open and close.
@@ -54,7 +55,8 @@ The final normal-use gate is less than 250 MiB working set at startup-ready and 
 - Large embedded resource data.
 - Duplicate raw and decoded resources.
 - Loading all fonts at startup.
-- Full document bodies loaded for the catalog.
+- Full document bodies or rendered QtPdf pages loaded for the catalog or a
+  hidden viewer.
 - Full-resolution campus maps.
 - Report artwork retained after export.
 - QML assets constructed before calendar entry.
@@ -101,7 +103,7 @@ ResourceDiagnostics and application diagnostics must report:
 - Image dimensions and decoded bytes.
 - Font load events.
 - Resource-cache size and owners.
-- PDF and export object lifetimes.
+- QtPdf load/status/page/render/close/release and PDF/export object lifetimes.
 - Database result sizes.
 - Repeated-navigation growth.
 
@@ -115,7 +117,8 @@ Use Windows-native allocation and process tools to validate application-level me
 4. Prevent hidden page construction.
 5. Replace large table widgets with model/view and delegates.
 6. Remove duplicate service and UI collections.
-7. Bound image, document, map, report, and template caches.
+7. Keep catalog metadata resident without caching full PDF bodies; bound image,
+   rendered-page, document, map, report, and template caches.
 8. Release feature resources on page suspension or release.
 9. Decode images at bounded display resolution.
 10. Stream large documents and exports where possible.
@@ -139,7 +142,8 @@ Add automated tests for:
 - Speaking report generation.
 - PDF preview and close.
 - Campus map open and close.
-- Document open and close.
+- Startup with a populated document catalog and no loaded PDF.
+- Repeated QtPdf document open, close, release, and reopen.
 
 Each repeated test must specify:
 
@@ -163,7 +167,9 @@ Each repeated test must specify:
 
 Windows packaged Release startup-ready memory is below 250 MiB working set for both the empty and representative workspaces.
 
-Normal feature navigation does not create unbounded growth and large features release their resources after leaving.
+Normal feature navigation does not create unbounded growth; startup has no
+loaded catalog PDF, and large features release their resources after leaving,
+including the active QtPdf document.
 
 ## Heavy-route requirements
 

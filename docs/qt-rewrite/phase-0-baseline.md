@@ -23,6 +23,12 @@ does not recreate or rely on them.
 - Current startup code still includes a splash screen and resource-pack
   initialization; these are explicit v2 removal/replacement acceptance items,
   not changes made in Phase 0.
+- Document-catalog startup parsing is metadata-only in the current source.
+  The document route resolves the selected asset and calls
+  `PdfViewerPage::loadPdf()` only after navigation to a document; leaving the
+  viewer calls `releaseDocument()`. This is the source baseline for the v2
+  contract, while startup-negative and repeated open/close memory evidence
+  remain open.
 
 ## Windows x64 toolchain run log
 
@@ -235,9 +241,11 @@ store the JSON startup trace beside the PNG files.
 4. Five minutes idle.
 5. Navigation through all normal pages.
 6. Large schedule, roster, campus, document, and speaking-evaluation flows.
-7. Leave each large feature and observe retained memory.
-8. Repeated open/close plus language/theme changes.
-9. Heavy PDF/report/sub-prep/PowerPoint output.
+7. Open a representative PDF in QtPdf, exercise the required viewer actions,
+   close or navigate away, and reopen it.
+8. Leave each large feature and observe retained memory, including the viewer.
+9. Repeated document open/close plus language/theme changes.
+10. Heavy PDF/report/sub-prep/PowerPoint output.
 
 ## Evidence currently missing
 
@@ -250,4 +258,6 @@ store the JSON startup trace beside the PNG files.
   currently covered by transient focused-test scenarios.
 - Golden generated PDFs, reports, rosters, substitute documents, and
   PowerPoint output.
+- QtPdf on-demand open/close traces proving that startup has no loaded PDF and
+  that the document resource is released after the viewer session ends.
 - Per-resource decoded/resident sizes and page/object lifecycle traces.

@@ -9,7 +9,7 @@ The table is a source inventory, not a decoded-memory measurement.
 | Asset root | Files | Installed bytes | Current owner/path | Initial v2 classification |
 | --- | ---: | ---: | --- | --- |
 | `campuses` | 17 | 5,121,304 | `ResourcePackManager`, `ResourcePaths::Campuses`, campus pages/maps | Feature; load on campus entry |
-| `documents` | 53 | 34,484,918 | `DocumentCatalog`, `ResourcePaths::Documents`, PDF/document workflows | Feature/operation; catalog early, content on demand |
+| `documents` | 53 | 34,484,918 | `DocumentCatalog`, `ResourcePaths::Documents`, PDF/document workflows | Startup metadata only; PDF/PPTX bodies on viewer/operation request, with explicit release |
 | `files` | 3 | 38,903 | `ResourcePaths::Files` and feature workflows | Operation; load only for owning workflow |
 | `fonts` | 6 | 21,098,232 | `FontManager`, typed signatures, speaking reports | Core/startup only for required family; report fonts operation-scoped |
 | `icons` | 83 | 313,958 | Qt resources, themed actions, file-dialog style | Core/startup |
@@ -29,9 +29,9 @@ The table is a source inventory, not a decoded-memory measurement.
 | `PageManager` pages | Instantiated pages remain under `QStackedWidget` | Release/recreate large feature trees without losing state |
 | `FontManager`/`QFontDatabase` | Global application fonts | Avoid loading optional report/signature fonts at startup |
 | Campus `QPixmap` maps | Campus page/map-preview ownership | Bound decoded image size and release on leaving feature |
-| `QPdfDocument`/PDF viewer | PDF page/document lifetime | Do not retain operation documents after leaving viewer/output |
+| `QPdfDocument`/PDF viewer | Active viewer/operation document lifetime | Never load catalog PDF bodies at startup; load on explicit viewer request and close/release on close, replacement, leave, or page release |
 | Calendar event cache/QML objects | Calendar feature lifetime/cache | Keep cache budget and QML object count observable |
-| Document catalog | Sidebar/application service lifetime | Keep metadata resident; defer large PDF/PPTX content |
+| Document catalog | Sidebar/application service lifetime | Keep localized metadata and validated references resident; defer PDF/PPTX bodies and do not cache them without an explicit bounded policy |
 | `DataService` and repositories | Open-database/application-service lifetime | Replace broad compatibility facade with explicit workspace store/repositories |
 
 ## Current pack/build coupling
@@ -48,7 +48,7 @@ resource availability while deleting the independent pack mount/update path.
 - Resource catalog initialization and per-classification load time.
 - Decoded image dimensions and retained bytes.
 - Font registration/removal and family names.
-- PDF open/release and document size.
+- PDF load/status/page-render/open and close/release events, document size, and active loaded-document count.
 - Document catalog entry count and content opens.
 - Page creation/destruction and retained widget counts.
 - Cache hits, misses, evictions, and explicit byte/item budgets.

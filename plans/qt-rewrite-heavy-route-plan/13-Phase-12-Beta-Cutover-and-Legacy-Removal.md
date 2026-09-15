@@ -7,7 +7,7 @@
 - Depends on: Phases 10 and 11
 - Blocks: Post-release maintenance
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Cut over only after parity, compatibility, packaging, and memory gates pass.
 
 ## Objective
@@ -43,6 +43,8 @@ Run v1 and v2 against the same fixtures and compare:
 - Screenshots.
 - Startup timing.
 - Memory measurements.
+- Document-catalog startup, on-demand QtPdf open/close/reopen, and release
+  behavior.
 
 ### 12.3 Upgrade testing
 

@@ -315,6 +315,7 @@ Create a risk register for:
 - Database migration.
 - File-format compatibility.
 - Print and PDF differences.
+- PDF viewer on-demand loading and release.
 - PowerPoint automation.
 - Korean input and localization.
 - Font metrics.
@@ -332,6 +333,7 @@ Create a risk register for:
 - Per-platform memory report.
 - Resource inventory.
 - Ownership and cache inventory.
+- Document viewer loading and release contract with runtime evidence.
 - Compatibility-path inventory.
 - Risk register.
 - Baseline test commands and expected results.
@@ -339,6 +341,10 @@ Create a risk register for:
 ## Exit gate
 
 The team can answer what every user-facing feature does, which resources it needs, which files it reads and writes, and how much memory each major workflow consumes.
+
+The evidence must also prove that opening the application does not load a PDF
+into QtPdf, while an explicitly requested document loads successfully and is
+released when its viewer session ends.
 
 No v2 feature work begins without a fixture and an acceptance check.
 
@@ -348,4 +354,6 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Capture the worst representative workspace, not only an empty database.
 - Measure actual Windows Task Manager-visible memory and private allocation.
 - Keep screenshots and output files as permanent parity artifacts.
+- Treat PDF viewer content as session-scoped; do not preload or retain full
+  document bodies merely to populate the catalog.
 - Do not rely on prior plan documents or stale build-tree test inventories.

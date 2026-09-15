@@ -50,6 +50,16 @@ Schedule and creates the Calendar page when the Calendar tab is first opened.
 Other page factories are lazy, but instantiated pages remain owned by the
 stacked widget until the application exits.
 
+The document path is separate from startup catalog parsing. `DocumentCatalog`
+retains document metadata and localized names without retaining resolved PDF
+content. `NavigationController` resolves the selected document resource and
+passes it to `PdfViewerPage::loadPdf()` only after the user navigates to that
+document. When the viewer page is left, `PageManager` calls
+`PdfViewerPage::releaseDocument()`, which closes the active QtPdf document and
+clears its descriptor. The v2 contract keeps this on-demand behavior explicit
+and requires the same release boundary for replacement, suspension, and page
+release.
+
 ## Static inventory
 
 Counts include `.cpp`, `.h`, `.ui`, and `.qml` files in each source area.
@@ -91,7 +101,7 @@ Counts include `.cpp`, `.h`, `.ui`, and `.qml` files in each source area.
 | `GsTeam` | GS team directory table | Factory-created from sidebar |
 | `CampusDashboard` | Information, Directions, Address, Housing, Maps | Used for no-database state and admin management |
 | `SubPrep` | Substitute preparation sections, class information, output | Factory-created on demand |
-| `PdfViewer` | PDF viewing/copy/save/zoom/navigation | Operation/page-owned and loaded when a PDF is opened |
+| `PdfViewer` | PDF viewing/copy/save/zoom/navigation | Viewer/session-owned; no PDF body at startup, load only on explicit request, release on close/replacement/leave |
 
 ### Nested and feature-owned pages
 

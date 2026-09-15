@@ -7,7 +7,7 @@
 - Depends on: Phases 2, 3, and 4
 - Blocks: Shared UI and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Replace monolithic startup and eliminate the splash screen from every path.
 
 ## Objective
@@ -95,6 +95,7 @@ Do not construct:
 - All top-level pages.
 - All nested class sections.
 - All document bodies.
+- Any PDF loaded into QtPdf or any rendered document pages.
 - All campus maps.
 - All report assets.
 - All optional fonts.
@@ -127,6 +128,8 @@ Create an explicit shutdown coordinator that:
 - ShutdownCoordinator.
 - Splash-free startup.
 - Startup diagnostics.
+- Startup-negative test proving the document catalog does not load QtPdf
+  content.
 - Startup integration tests.
 - Deferred application-update initialization.
 
@@ -136,10 +139,16 @@ Startup has no progress callback, splash lease, minimum splash duration, or reso
 
 The main window appears with the correct theme, language, and initial page. Every startup allocation is attributable to a named stage.
 
+Startup-ready includes document-catalog metadata only: no PDF body is loaded,
+no QtPdf page is rendered, and no active viewer document exists until the user
+requests one.
+
 ## Heavy-route requirements
 
 - Do not hide legacy startup work behind a new bootstrap class.
 - Do not construct pages simply to register them.
 - Do not perform network activity before the application is interactive.
 - Do not trade the splash for an equally expensive replacement.
+- Do not call `QPdfDocument::load()` as part of catalog initialization or
+  startup page construction.
 - Do not declare startup complete until the initial page is actually usable.

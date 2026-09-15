@@ -7,7 +7,7 @@
 - Depends on: Phase 5
 - Blocks: Feature migration and visual parity
 - Owner: Unassigned
-- Last updated: 2026-09-15
+- Last updated: 2026-09-16
 - Current note: Replace page/controller ownership with explicit presentation lifecycles.
 
 ## Objective
@@ -48,6 +48,9 @@ Rules:
 - Creation does not load the complete database.
 - Activation loads only required page state and resources.
 - Suspension releases transient images, documents, editors, and large models.
+- A document viewer may retain catalog selection state, but its loaded QtPdf
+  document is released when the viewer is closed, replaced, suspended, or
+  released.
 - Release destroys page-owned resources.
 - Persistent state is stored in application state or persistence, not only in widgets.
 - A released page can be recreated correctly.

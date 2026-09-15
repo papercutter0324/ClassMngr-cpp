@@ -17,7 +17,7 @@ and failure behavior must be covered together.
 | Calendar | `CalendarPage`, embedded QML `EventCalendar` | Month navigation, event CRUD/import, upcoming events, theme/language behavior, deferred QML construction | `academic_calendar_tests`, `calendar_event_repository_tests`, `calendar_event_cache_tests`, `calendar_import_tests` | Inventory complete; cross-platform capture pending |
 | Rosters | `RosterEditorWidget`, `RosterModel` | Dynamic columns/widths, names and validation, duplicate-name handling, row transfer, score import, print/template output | `roster_model_tests`, `roster_template_print_service_tests`, `sub_prep_print_pdf_tests`; representative startup fixture | Inventory complete; two-roster fixture added; large roster fixture pending |
 | Speaking evaluations | `SpeakingEvalPage` and report dialogs/services | Evaluation tables, undo/redo, notes, name matching, analytics, AI prompt workflows, batch reports, PowerPoint/PDF output | `speaking_evaluation_service_tests`, `speaking_analytics_tests`, `speaking_eval_report_widget_tests`, `speaking_eval_batch_report_service_tests`, `powerpoint_data_access_notice_tests` | Inventory complete; output references pending |
-| Campus and documents | `CampusDashboardPage`, `DocumentCatalog`, PDF viewer | Campus information/address/directions/housing/maps, admin editing, document catalog, PDF open/copy/save, localized names | `campus_map_tests`, `campus_dashboard_page_tests`, `document_catalog_tests` | Inventory complete; document/catalog fixture pending |
+| Campus and documents | `CampusDashboardPage`, `DocumentCatalog`, PDF viewer | Campus information/address/directions/housing/maps, admin editing, metadata-only document catalog startup, on-demand QtPdf open/copy/save/zoom/navigation, release on close or leave, localized names | `campus_map_tests`, `campus_dashboard_page_tests`, `document_catalog_tests` | Inventory complete; document/catalog fixture and viewer lifecycle evidence pending |
 | Substitute preparation and output | `SubPrepPage`, package/print services | Substitute settings, class information, materials, grading, package generation, roster/sub-prep PDFs | `sub_prep_page_tests`, `sub_prep_class_information_model_tests`, `sub_prep_package_service_tests`, `sub_prep_print_pdf_tests` | Inventory complete; large-workspace fixture pending |
 | Shell, preferences, permissions, updates | `MainWindow`, `MenuBuilder`, `ActionRegistry`, controllers | Menus/actions, shortcuts, language/theme/font settings, admin gates, updater | `sidebar_structure_tests`, `navigation_tab_widget_tests`, `startup_visual_settings_tests`, `language_service_tests`, `fontmanager_tests`, `updater_tests` | Inventory complete; screenshot/state snapshots pending |
 
@@ -39,6 +39,7 @@ available to the engineering test harness.
 - Admin-only and developer-only actions.
 - Keyboard shortcuts, context menus, table editing behavior, and focus order.
 - Printed and generated PDF, roster, report, substitute, and PowerPoint output.
+- Document viewer loading, ready/error, close, release, and reopen behavior.
 - Startup with no database, a normal database, and a large representative
   database.
 
