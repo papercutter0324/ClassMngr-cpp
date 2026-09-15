@@ -1,5 +1,6 @@
 #include "roster_repository.h"
 
+#include "core/startup_profiler.h"
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 
@@ -348,8 +349,21 @@ Result<int> RosterRepository::getRosterStudentCount(
             QStringLiteral("Korean")
             );
 
+    int cellCount = 0;
+    for (const QStringList& row : roster->rows)
+    {
+        cellCount += row.size();
+    }
+
     if (englishColumn < 0 && koreanColumn < 0)
     {
+        StartupProfiler::recordSubPrepRosterQuery(
+            classId,
+            roster->columns.size(),
+            roster->rows.size(),
+            cellCount,
+            0
+            );
         return 0;
     }
 
@@ -372,6 +386,14 @@ Result<int> RosterRepository::getRosterStudentCount(
             ++count;
         }
     }
+
+    StartupProfiler::recordSubPrepRosterQuery(
+        classId,
+        roster->columns.size(),
+        roster->rows.size(),
+        cellCount,
+        count
+        );
 
     return count;
 }

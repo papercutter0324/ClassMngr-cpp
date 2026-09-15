@@ -13,7 +13,10 @@ QString runtimeMetricsDetail(
     return QStringLiteral(
         "widgets=%1; textEdits=%2; navigationRows=%3; sourceClasses=%4; "
         "visibleClasses=%5; groups=%6; classInfoLookups=%7; "
-        "teacherLookups=%8; rosterLookups=%9; rebuilds=%10; selectedClassId=%11"
+        "teacherLookups=%8; rosterLookups=%9; "
+        "queryCounts=classes:%10,classInfo:%11,teachers:%12,rosterCounts:%13; "
+        "resultRows=classes:%14,classInfo:%15,classInfoSchedule:%16,teachers:%17,"
+        "rosterCounts:%18; returnedStudents=%19; rebuilds=%20; selectedClassId=%21"
         )
         .arg(metrics.classInformationWidgetCount)
         .arg(metrics.classInformationTextEditCount)
@@ -24,6 +27,16 @@ QString runtimeMetricsDetail(
         .arg(metrics.classInformationClassInfoLookupCount)
         .arg(metrics.classInformationTeacherLookupCount)
         .arg(metrics.classInformationRosterLookupCount)
+        .arg(metrics.classInformationClassQueryCount)
+        .arg(metrics.classInformationClassInfoQueryCount)
+        .arg(metrics.classInformationTeacherQueryCount)
+        .arg(metrics.classInformationRosterQueryCount)
+        .arg(metrics.classInformationClassResultRowCount)
+        .arg(metrics.classInformationClassInfoResultRowCount)
+        .arg(metrics.classInformationClassInfoScheduleRowCount)
+        .arg(metrics.classInformationTeacherResultRowCount)
+        .arg(metrics.classInformationRosterResultRowCount)
+        .arg(metrics.classInformationRosterStudentResultCount)
         .arg(metrics.classInformationRebuildCount)
         .arg(metrics.selectedClassId);
 }
@@ -49,6 +62,16 @@ void SubPrepPage::rebuildClassInformation()
     m_classInformationClassInfoLookupCount = 0;
     m_classInformationTeacherLookupCount = 0;
     m_classInformationRosterLookupCount = 0;
+    m_classInformationClassQueryCount = 0;
+    m_classInformationClassResultRowCount = 0;
+    m_classInformationClassInfoQueryCount = 0;
+    m_classInformationClassInfoResultRowCount = 0;
+    m_classInformationClassInfoScheduleRowCount = 0;
+    m_classInformationTeacherQueryCount = 0;
+    m_classInformationTeacherResultRowCount = 0;
+    m_classInformationRosterQueryCount = 0;
+    m_classInformationRosterResultRowCount = 0;
+    m_classInformationRosterStudentResultCount = 0;
 
     StartupProfiler::recordSubPrepClassInformationLifecycle(
         QStringLiteral("rebuild-start"),
@@ -545,6 +568,53 @@ int SubPrepPage::currentClassInformationId() const
         .toInt();
 }
 
+bool SubPrepPage::selectClassForStartupDiagnostics(int classId)
+{
+    if (classId <= 0 || !m_classInformationTabs)
+    {
+        return false;
+    }
+
+    for (int gradeIndex = 0;
+         gradeIndex < m_classInformationTabs->count();
+         ++gradeIndex)
+    {
+        QWidget* gradePage = m_classInformationTabs->widget(gradeIndex);
+        auto* levelTabs =
+            gradePage
+                ? gradePage->findChild<NavigationTabWidget*>(
+                    QStringLiteral("subPrepLevelTabs"),
+                    Qt::FindDirectChildrenOnly
+                    )
+                : nullptr;
+        if (!levelTabs)
+        {
+            continue;
+        }
+
+        for (int levelIndex = 0;
+             levelIndex < levelTabs->count();
+             ++levelIndex)
+        {
+            QWidget* classPage = levelTabs->widget(levelIndex);
+            if (
+                !classPage
+                || classPage->property("classId").toInt() != classId
+                )
+            {
+                continue;
+            }
+
+            m_classInformationTabs->setCurrentIndex(gradeIndex);
+            levelTabs->setCurrentIndex(levelIndex);
+            m_selectedClassId = currentClassInformationId();
+            return m_selectedClassId == classId;
+        }
+    }
+
+    return false;
+}
+
 SubPrepPageRuntimeMetrics SubPrepPage::runtimeMetrics() const
 {
     SubPrepPageRuntimeMetrics metrics;
@@ -562,6 +632,26 @@ SubPrepPageRuntimeMetrics SubPrepPage::runtimeMetrics() const
         m_classInformationTeacherLookupCount;
     metrics.classInformationRosterLookupCount =
         m_classInformationRosterLookupCount;
+    metrics.classInformationClassQueryCount =
+        m_classInformationClassQueryCount;
+    metrics.classInformationClassResultRowCount =
+        m_classInformationClassResultRowCount;
+    metrics.classInformationClassInfoQueryCount =
+        m_classInformationClassInfoQueryCount;
+    metrics.classInformationClassInfoResultRowCount =
+        m_classInformationClassInfoResultRowCount;
+    metrics.classInformationClassInfoScheduleRowCount =
+        m_classInformationClassInfoScheduleRowCount;
+    metrics.classInformationTeacherQueryCount =
+        m_classInformationTeacherQueryCount;
+    metrics.classInformationTeacherResultRowCount =
+        m_classInformationTeacherResultRowCount;
+    metrics.classInformationRosterQueryCount =
+        m_classInformationRosterQueryCount;
+    metrics.classInformationRosterResultRowCount =
+        m_classInformationRosterResultRowCount;
+    metrics.classInformationRosterStudentResultCount =
+        m_classInformationRosterStudentResultCount;
     metrics.classInformationRebuildCount =
         m_classInformationRebuildCount;
     metrics.selectedClassId = m_selectedClassId;
@@ -614,6 +704,7 @@ SubPrepPage::buildClassInformation(
     }
 
     QList<SubPrepClassInformation::SourceClass> sources;
+    ++m_classInformationClassQueryCount;
     const Result<QList<Classroom>> classes = classService->classes();
     if (!classes)
     {
@@ -627,27 +718,47 @@ SubPrepPage::buildClassInformation(
     }
 
     m_classInformationSourceClassCount = classes->size();
+    m_classInformationClassResultRowCount = classes->size();
 
     for (const Classroom& classroom : *classes)
     {
         SubPrepClassInformation::SourceClass source;
         source.classroom = classroom;
         ++m_classInformationClassInfoLookupCount;
-        source.info =
-            classService->classInfo(
-                classroom.id
-                ).value_or(ClassInfo{});
+        ++m_classInformationClassInfoQueryCount;
+        const Result<ClassInfo> classInfo =
+            classService->classInfo(classroom.id);
+        if (classInfo)
+        {
+            ++m_classInformationClassInfoResultRowCount;
+            source.info = *classInfo;
+            m_classInformationClassInfoScheduleRowCount +=
+                classInfo->classTimes.size()
+                + classInfo->intensiveTimes.size();
+        }
         ++m_classInformationRosterLookupCount;
-        source.studentCount =
-            rosterService->studentCount(
-                classroom.id
-                ).value_or(0);
+        ++m_classInformationRosterQueryCount;
+        const Result<int> studentCount =
+            rosterService->studentCount(classroom.id);
+        if (studentCount)
+        {
+            ++m_classInformationRosterResultRowCount;
+            source.studentCount = qMax(0, *studentCount);
+            m_classInformationRosterStudentResultCount +=
+                source.studentCount;
+        }
 
         if (source.info.teacherId > 0)
         {
             ++m_classInformationTeacherLookupCount;
-            source.teacher = teacherService->teacher(source.info.teacherId)
-                .value_or(Teacher{});
+            ++m_classInformationTeacherQueryCount;
+            const Result<Teacher> teacher =
+                teacherService->teacher(source.info.teacherId);
+            if (teacher)
+            {
+                ++m_classInformationTeacherResultRowCount;
+                source.teacher = *teacher;
+            }
         }
 
         sources.append(source);

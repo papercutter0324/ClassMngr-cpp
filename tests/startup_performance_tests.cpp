@@ -2072,6 +2072,7 @@ void StartupPerformanceTests
         {
             QStringLiteral("--startup-performance-test"),
             QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-sub-prep-lifecycle"),
             QStringLiteral("--startup-performance-scenario"),
             QStringLiteral("representative"),
             QStringLiteral("--startup-performance-settle-ms"),
@@ -2136,8 +2137,41 @@ void StartupPerformanceTests
                 "stdout/stderr were retained under %1."
                 )
                 .arg(outputRoot)
-            )
+        )
         );
+    for (const QString& expectedTrace : {
+             QStringLiteral("sub-prep-lifecycle-start"),
+             QStringLiteral("sub-prep-refresh-1-start"),
+             QStringLiteral("sub-prep-refresh-1-complete"),
+             QStringLiteral("sub-prep-left-1"),
+             QStringLiteral("sub-prep-reentry-1"),
+             QStringLiteral("sub-prep-refresh-2-start"),
+             QStringLiteral("sub-prep-refresh-2-complete"),
+             QStringLiteral("sub-prep-left-2"),
+             QStringLiteral("sub-prep-reentry-2"),
+             QStringLiteral("sub-prep-lifecycle-complete")
+         })
+    {
+        bool foundTrace = false;
+        for (const QString& line : traceLines)
+        {
+            if (line.startsWith(expectedTrace))
+            {
+                foundTrace = true;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundTrace,
+            qPrintable(
+                QStringLiteral(
+                    "The heavy Sub Prep lifecycle did not record '%1'.\n"
+                    "stdout/stderr were retained under %2."
+                    )
+                    .arg(expectedTrace, outputRoot)
+                )
+            );
+    }
 
     QString lastTraceLine;
     QString lastSubPrepLifecycleEvent;
@@ -2154,7 +2188,16 @@ void StartupPerformanceTests
 
     QJsonObject manifest;
     manifest.insert(QStringLiteral("fixture"), QStringLiteral("large_startup.sql"));
-    manifest.insert(QStringLiteral("fixtureScale"), QStringLiteral("large_startup"));
+    manifest.insert(
+        QStringLiteral("fixtureScale"),
+        QStringLiteral("large_startup_sub_prep_lifecycle")
+        );
+    manifest.insert(
+        QStringLiteral("scenario"),
+        QStringLiteral(
+            "Sub Prep entry, selection, refresh, leave, repeated re-entry"
+            )
+        );
     manifest.insert(QStringLiteral("teacherCount"), 24);
     manifest.insert(QStringLiteral("classCount"), 96);
     manifest.insert(QStringLiteral("rosterCellCount"), 7200);
@@ -2192,7 +2235,32 @@ void StartupPerformanceTests
 
     QJsonObject lastCheckpoint;
     bool workflowCompleted = false;
+    bool lifecycleCompleted = false;
     QString lastLifecycleEventFromMetrics;
+    QJsonArray lifecycleCheckpoints;
+    int subPrepRosterQueryCount = 0;
+    int subPrepRosterResultRowCount = 0;
+    int subPrepRosterCellCount = 0;
+    int subPrepReturnedStudentCount = 0;
+    const auto detailValue =
+        [](const QString& detail, const QString& key)
+        {
+            for (const QString& field :
+                 detail.split(QStringLiteral("; "), Qt::SkipEmptyParts))
+            {
+                const QString prefix = key + QChar('=');
+                if (!field.startsWith(prefix))
+                {
+                    continue;
+                }
+
+                bool converted = false;
+                const int value =
+                    field.mid(prefix.size()).toInt(&converted);
+                return converted ? value : 0;
+            }
+            return 0;
+        };
     QFile metricsFile(metricsPath);
     if (metricsFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -2234,6 +2302,24 @@ void StartupPerformanceTests
                 const QJsonObject event = value.toObject();
                 if (
                     event.value(QStringLiteral("name")).toString()
+                        == QStringLiteral("sub-prep-roster-query")
+                    )
+                {
+                    const QString detail =
+                        event.value(QStringLiteral("detail")).toString();
+                    ++subPrepRosterQueryCount;
+                    subPrepRosterResultRowCount +=
+                        detailValue(detail, QStringLiteral("rows"));
+                    subPrepRosterCellCount +=
+                        detailValue(detail, QStringLiteral("cells"));
+                    subPrepReturnedStudentCount +=
+                        detailValue(
+                            detail,
+                            QStringLiteral("returnedStudents")
+                            );
+                }
+                if (
+                    event.value(QStringLiteral("name")).toString()
                         == QStringLiteral("sub-prep-class-information")
                     )
                 {
@@ -2247,6 +2333,10 @@ void StartupPerformanceTests
                 const QJsonObject checkpoint = value.toObject();
                 const QString checkpointName =
                     checkpoint.value(QStringLiteral("name")).toString();
+                if (checkpointName.startsWith(QStringLiteral("sub-prep-")))
+                {
+                    lifecycleCheckpoints.append(checkpoint);
+                }
                 if (checkpointName == QStringLiteral("workflow-complete"))
                 {
                     manifest.insert(
@@ -2268,6 +2358,16 @@ void StartupPerformanceTests
                 {
                     workflowCompleted = true;
                 }
+                if (
+                    checkpointName
+                        == QStringLiteral("sub-prep-lifecycle-complete")
+                    && checkpoint.value(QStringLiteral("detail"))
+                           .toString()
+                           .contains(QStringLiteral("passed=true"))
+                    )
+                {
+                    lifecycleCompleted = true;
+                }
             }
         }
     }
@@ -2277,6 +2377,27 @@ void StartupPerformanceTests
         !lastCheckpoint.isEmpty()
         );
     manifest.insert(QStringLiteral("workflowCompleted"), workflowCompleted);
+    manifest.insert(QStringLiteral("lifecycleCompleted"), lifecycleCompleted);
+    manifest.insert(
+        QStringLiteral("subPrepRosterQueryCount"),
+        subPrepRosterQueryCount
+        );
+    manifest.insert(
+        QStringLiteral("subPrepRosterResultRowCount"),
+        subPrepRosterResultRowCount
+        );
+    manifest.insert(
+        QStringLiteral("subPrepRosterCellCount"),
+        subPrepRosterCellCount
+        );
+    manifest.insert(
+        QStringLiteral("subPrepReturnedStudentCount"),
+        subPrepReturnedStudentCount
+        );
+    manifest.insert(
+        QStringLiteral("subPrepLifecycleCheckpoints"),
+        lifecycleCheckpoints
+        );
     manifest.insert(
         QStringLiteral("lastSubPrepLifecycleEventFromMetrics"),
         lastLifecycleEventFromMetrics

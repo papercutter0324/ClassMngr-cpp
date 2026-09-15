@@ -146,6 +146,16 @@ does not recreate or rely on them.
   `docs/qt-rewrite/visual-baseline/release/large-sub-prep-boundary/`; this is
   the current-product heavy-route boundary for the v2
   virtualization/resource-ownership slice, not an accepted v2 result.
+- The follow-up heavy lifecycle run drives the same packaged Release fixture
+  through selection, two refreshes, two leaves, and two re-entries. It
+  completed normally (`workflow-complete` `12,161 ms`, `settled-1s`
+  `13,197 ms`) with peak working set `447,959,040` bytes and peak private
+  usage `477,900,800` bytes. Class-information descendants/text editors grew
+  from `2,948`/`192` after the first load to `5,896`/`384` after refresh one
+  and `8,844`/`576` after refresh two; neither leave nor re-entry released the
+  graph. The trace records `288` roster queries, `7,200` result rows, and
+  `21,600` cells across the three loads. These are the legacy before-state
+  inputs for the v2 release/reuse boundary, not an accepted v2 budget result.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
@@ -363,21 +373,23 @@ store the JSON startup trace beside the PNG files.
 
 ## Evidence currently missing
 
-- Feature-specific retained-memory measurements beyond the route-level
-  `workflow-page-left` checkpoints; the representative five-minute all-route
-  workflow is retained under `visual-baseline/release/workflow-five-minute/`.
+- Feature-specific retained-memory measurements for the remaining large
+  workflows beyond the route-level `workflow-page-left` checkpoints; the
+  representative five-minute all-route workflow is retained under
+  `visual-baseline/release/workflow-five-minute/`, and the Sub Prep lifecycle
+  boundary is retained under its large-fixture directory.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
 - Golden large schedule-workbook/conflict output; the class-transfer conflict
   and schedule-workbook review fixtures are now permanent.
-- A completed large-workspace Sub Prep route: the current 96-class fixture
 - A v2 large-workspace Sub Prep route within its eventual memory budget; the
   current route completes but exceeds the representative working-set target
-  with a 2,948-widget/192-editor class-information graph.
-- Feature-specific Sub Prep measurements beyond this retained Release
-  boundary, including refresh/re-entry/release behavior, actual database
-  query/result sizes, and the final v2 budget thresholds.
+  and grows from a 2,948-widget/192-editor class-information graph to
+  8,844/576 after two refreshes.
+- Sub Prep visual references for the selected, changed-selection, empty, both
+  language/theme, and generated-output states, plus an explicit packaged
+  Release memory budget for the v2 acceptance gate.
 - Sub Prep visual references for the selected, changed-selection, empty, both
   language/theme, and generated-output states, plus an explicit packaged
   Release memory budget for the v2 acceptance gate.

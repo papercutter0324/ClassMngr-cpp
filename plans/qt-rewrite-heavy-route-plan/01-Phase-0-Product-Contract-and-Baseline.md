@@ -567,3 +567,42 @@ No v2 feature work begins without a fixture and an acceptance check.
   selection, leave, and repeated re-entry against the same large fixture so
   deferred deletion and retained detail state are measured before the v2
   vertical migration begins.
+
+## Progress update - 2026-09-16 (large Sub Prep lifecycle retention)
+
+- What changed: the heavy-route harness now drives the actual packaged Release
+  `large_startup.sql` workspace through class selection, two refreshes, two
+  leaves, and two re-entries. It records lifecycle checkpoints, process memory,
+  class-information graph counts, and the database result shape. The harness
+  remains opt-in because this is an intentionally high-memory legacy boundary.
+- Evidence: the Release child completed normally with
+  `workflow-complete` at `12,161 ms` and `settled-1s` at `13,197 ms`.
+  Peak working set was `447,959,040` bytes and peak private usage was
+  `477,900,800` bytes. At the final lifecycle checkpoint the process retained
+  `447,959,040` working-set bytes and `445,661,184` private-usage bytes; the
+  later settled checkpoint retained `415,027,200` working-set bytes and
+  `450,199,552` private-usage bytes. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-sub-prep-boundary/`.
+- Retention finding: the first load created 2,948 class-information
+  descendants and 192 text editors. Refresh one increased those counts to
+  5,896 and 384; refresh two increased them to 8,844 and 576. Total process
+  widgets at those checkpoints grew from 5,387 to 8,335 to 11,283. Both leave
+  checkpoints and both re-entry checkpoints preserved the post-refresh graph
+  without a release boundary. This is direct before-state evidence for the
+  memory plan's deferred-deletion and page-leave requirements.
+- Query boundary: each rebuild performed one class query returning 96 rows,
+  96 class-information queries returning 96 rows and 792 schedule rows,
+  96 teacher queries returning 96 rows, and 96 roster queries. The flushed
+  roster trace across the three loads records 288 queries, 7,200 result rows,
+  and 21,600 cells. The fixture uses a `Student` roster column while the
+  current count API recognizes only `English`/`Korean`, so its returned-student
+  count is zero; this is recorded as a data-contract compatibility finding,
+  not treated as a failed load.
+- Evaluation impact: this closes the Sub Prep refresh/re-entry/query-size
+  portion of the Phase 0 before-state audit and confirms that the eventual v2
+  slice must release or reuse the class-information tree on refresh and page
+  leave. It does not set the v2 budget or prove remediation. Phase 0 still
+  needs the other memory-hotspot workflows, Sub Prep visual states, explicit
+  Release thresholds, generated-output references, and cross-platform
+  evidence. The next heavy slice should measure another large workflow while
+  retaining this Sub Prep artifact as its comparison oracle.

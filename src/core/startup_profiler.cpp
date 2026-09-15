@@ -92,6 +92,46 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.subPrepClassInformationRosterLookupCount
         },
         {
+            QStringLiteral("subPrepClassInformationClassQueryCount"),
+            metrics.subPrepClassInformationClassQueryCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationClassResultRowCount"),
+            metrics.subPrepClassInformationClassResultRowCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationClassInfoQueryCount"),
+            metrics.subPrepClassInformationClassInfoQueryCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationClassInfoResultRowCount"),
+            metrics.subPrepClassInformationClassInfoResultRowCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationClassInfoScheduleRowCount"),
+            metrics.subPrepClassInformationClassInfoScheduleRowCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationTeacherQueryCount"),
+            metrics.subPrepClassInformationTeacherQueryCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationTeacherResultRowCount"),
+            metrics.subPrepClassInformationTeacherResultRowCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationRosterQueryCount"),
+            metrics.subPrepClassInformationRosterQueryCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationRosterResultRowCount"),
+            metrics.subPrepClassInformationRosterResultRowCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationRosterStudentResultCount"),
+            metrics.subPrepClassInformationRosterStudentResultCount
+        },
+        {
             QStringLiteral("subPrepClassInformationRebuildCount"),
             metrics.subPrepClassInformationRebuildCount
         },
@@ -332,6 +372,49 @@ void StartupProfiler::recordSubPrepClassInformationLifecycle(
     }
 }
 
+void StartupProfiler::recordSubPrepRosterQuery(
+    int classId,
+    int columnCount,
+    int rowCount,
+    int cellCount,
+    int returnedStudentCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        if (!profiler->m_subPrepDiagnosticsActive)
+        {
+            return;
+        }
+
+        const QString detail =
+            QStringLiteral(
+                "classId=%1; columns=%2; rows=%3; cells=%4; returnedStudents=%5"
+                )
+                .arg(classId)
+                .arg(columnCount)
+                .arg(rowCount)
+                .arg(cellCount)
+                .arg(returnedStudentCount);
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-roster-query"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-roster-query %1")
+                .arg(detail)
+            );
+    }
+}
+
+void StartupProfiler::setSubPrepDiagnosticsActive(bool active)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->m_subPrepDiagnosticsActive = active;
+    }
+}
+
 void StartupProfiler::recordPdfDocumentLoaded(
     const QString& filePath,
     int pageCount
@@ -530,6 +613,26 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.subPrepClassInformationTeacherLookupCount;
         metrics.subPrepClassInformationRosterLookupCount =
             supplied.subPrepClassInformationRosterLookupCount;
+        metrics.subPrepClassInformationClassQueryCount =
+            supplied.subPrepClassInformationClassQueryCount;
+        metrics.subPrepClassInformationClassResultRowCount =
+            supplied.subPrepClassInformationClassResultRowCount;
+        metrics.subPrepClassInformationClassInfoQueryCount =
+            supplied.subPrepClassInformationClassInfoQueryCount;
+        metrics.subPrepClassInformationClassInfoResultRowCount =
+            supplied.subPrepClassInformationClassInfoResultRowCount;
+        metrics.subPrepClassInformationClassInfoScheduleRowCount =
+            supplied.subPrepClassInformationClassInfoScheduleRowCount;
+        metrics.subPrepClassInformationTeacherQueryCount =
+            supplied.subPrepClassInformationTeacherQueryCount;
+        metrics.subPrepClassInformationTeacherResultRowCount =
+            supplied.subPrepClassInformationTeacherResultRowCount;
+        metrics.subPrepClassInformationRosterQueryCount =
+            supplied.subPrepClassInformationRosterQueryCount;
+        metrics.subPrepClassInformationRosterResultRowCount =
+            supplied.subPrepClassInformationRosterResultRowCount;
+        metrics.subPrepClassInformationRosterStudentResultCount =
+            supplied.subPrepClassInformationRosterStudentResultCount;
         metrics.subPrepClassInformationRebuildCount =
             supplied.subPrepClassInformationRebuildCount;
         metrics.subPrepSelectedClassId =

@@ -38,6 +38,16 @@ struct SubPrepPageRuntimeMetrics
     int classInformationClassInfoLookupCount = 0;
     int classInformationTeacherLookupCount = 0;
     int classInformationRosterLookupCount = 0;
+    int classInformationClassQueryCount = 0;
+    int classInformationClassResultRowCount = 0;
+    int classInformationClassInfoQueryCount = 0;
+    int classInformationClassInfoResultRowCount = 0;
+    int classInformationClassInfoScheduleRowCount = 0;
+    int classInformationTeacherQueryCount = 0;
+    int classInformationTeacherResultRowCount = 0;
+    int classInformationRosterQueryCount = 0;
+    int classInformationRosterResultRowCount = 0;
+    int classInformationRosterStudentResultCount = 0;
     int classInformationRebuildCount = 0;
     int selectedClassId = -1;
 };
@@ -67,6 +77,10 @@ public:
     QString currentSectionName() const;
     QString currentSectionKey() const;
     [[nodiscard]] SubPrepPageRuntimeMetrics runtimeMetrics() const;
+
+    // Used by the opt-in heavy startup diagnostics to exercise a real class
+    // selection without relying on native desktop automation.
+    [[nodiscard]] bool selectClassForStartupDiagnostics(int classId);
 
 protected:
     bool eventFilter(
@@ -182,6 +196,16 @@ private:
     int m_classInformationClassInfoLookupCount = 0;
     int m_classInformationTeacherLookupCount = 0;
     int m_classInformationRosterLookupCount = 0;
+    int m_classInformationClassQueryCount = 0;
+    int m_classInformationClassResultRowCount = 0;
+    int m_classInformationClassInfoQueryCount = 0;
+    int m_classInformationClassInfoResultRowCount = 0;
+    int m_classInformationClassInfoScheduleRowCount = 0;
+    int m_classInformationTeacherQueryCount = 0;
+    int m_classInformationTeacherResultRowCount = 0;
+    int m_classInformationRosterQueryCount = 0;
+    int m_classInformationRosterResultRowCount = 0;
+    int m_classInformationRosterStudentResultCount = 0;
     int m_classInformationRebuildCount = 0;
 
     QTimer* m_autosaveTimer = nullptr;

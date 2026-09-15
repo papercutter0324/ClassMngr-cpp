@@ -16,6 +16,7 @@
 #include "ui/shared/state/option_state_keys.h"
 #include "core/utils/platform.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "features/sub_prep/ui/sub_prep_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
 
@@ -73,6 +74,7 @@ struct StartupPerformanceMode
     std::optional<Language> visualLanguageOverride;
     std::optional<Theme> visualThemeOverride;
     bool workflowEnabled = false;
+    bool subPrepLifecycleEnabled = false;
     enum class Scenario
     {
         Minimal,
@@ -512,7 +514,14 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-workflow")
             );
-    mode.enabled = mode.enabled || mode.workflowEnabled;
+    mode.subPrepLifecycleEnabled =
+        args.contains(
+            QStringLiteral("--startup-performance-sub-prep-lifecycle")
+            );
+    mode.enabled =
+        mode.enabled
+        || mode.workflowEnabled
+        || mode.subPrepLifecycleEnabled;
 
     const int outputIndex =
         args.indexOf(
@@ -717,11 +726,220 @@ bool captureStartupVisual(
     return true;
 }
 
+void scheduleStartupPerformanceSubPrepLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            SubPrepPage* page = pages ? pages->subPrepPage() : nullptr;
+
+            if (
+                !pages
+                || !page
+                || !pages->isCurrentPage(PageType::SubPrep)
+                )
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("sub-prep-lifecycle-failed"),
+                    QStringLiteral("sub-prep-page-not-current")
+                    );
+                StartupProfiler::setSubPrepDiagnosticsActive(false);
+                completion();
+                return;
+            }
+
+            bool lifecycleSucceeded = true;
+            const auto checkpoint =
+                [&profiler](
+                    const QString& name,
+                    const QString& detail = QString()
+                    )
+                {
+                    profiler.checkpoint(name, detail);
+                };
+
+            const auto selectClass =
+                [
+                    &app,
+                    &page,
+                    &lifecycleSucceeded,
+                    checkpoint
+                ](int classId)
+                {
+                    const bool selected =
+                        page->selectClassForStartupDiagnostics(classId);
+                    app.processEvents();
+                    appendStartupWorkflowTrace(
+                        QStringLiteral(
+                            "sub-prep-select classId=%1 returned=%2"
+                            )
+                            .arg(classId)
+                            .arg(selected ? QStringLiteral("true")
+                                          : QStringLiteral("false"))
+                        );
+                    if (!selected)
+                    {
+                        lifecycleSucceeded = false;
+                    }
+                    checkpoint(
+                        QStringLiteral("sub-prep-selection-%1").arg(classId),
+                        QStringLiteral(
+                            "requestedClassId=%1; selectedClassId=%2; passed=%3"
+                            )
+                            .arg(classId)
+                            .arg(page->runtimeMetrics().selectedClassId)
+                            .arg(selected ? QStringLiteral("true")
+                                          : QStringLiteral("false"))
+                        );
+                };
+
+            const auto refresh =
+                [
+                    &app,
+                    &page,
+                    checkpoint
+                ](int ordinal)
+                {
+                    const QString startName =
+                        QStringLiteral("sub-prep-refresh-%1-start")
+                            .arg(ordinal);
+                    const QString completeName =
+                        QStringLiteral("sub-prep-refresh-%1-complete")
+                            .arg(ordinal);
+                    appendStartupWorkflowTrace(
+                        startName
+                        );
+                    checkpoint(
+                        startName,
+                        QStringLiteral("selectedClassId=%1")
+                            .arg(page->runtimeMetrics().selectedClassId)
+                        );
+                    page->refresh();
+                    app.processEvents();
+                    appendStartupWorkflowTrace(
+                        completeName
+                        );
+                    checkpoint(
+                        completeName,
+                        QStringLiteral("selectedClassId=%1")
+                            .arg(page->runtimeMetrics().selectedClassId)
+                        );
+                };
+
+            const auto navigate =
+                [
+                    &app,
+                    &pages,
+                    &page,
+                    &lifecycleSucceeded,
+                    checkpoint
+                ](
+                    PageType destination,
+                    const QString& operation
+                    )
+                {
+                    pages->showPage(destination);
+                    app.processEvents();
+                    const bool reached = pages->isCurrentPage(destination);
+                    appendStartupWorkflowTrace(
+                        QStringLiteral("%1 returned=%2")
+                            .arg(
+                                operation,
+                                reached ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                )
+                        );
+                    if (!reached)
+                    {
+                        lifecycleSucceeded = false;
+                    }
+                    checkpoint(
+                        operation,
+                        QStringLiteral(
+                            "currentPage=%1; selectedClassId=%2; passed=%3"
+                            )
+                            .arg(pages->currentPageIdentifier())
+                            .arg(page->runtimeMetrics().selectedClassId)
+                            .arg(reached ? QStringLiteral("true")
+                                         : QStringLiteral("false"))
+                        );
+                };
+
+            appendStartupWorkflowTrace(
+                QStringLiteral("sub-prep-lifecycle-start")
+                );
+            checkpoint(
+                QStringLiteral("sub-prep-lifecycle-entry"),
+                QStringLiteral("selectedClassId=%1")
+                    .arg(page->runtimeMetrics().selectedClassId)
+                );
+
+            selectClass(96);
+            refresh(1);
+            navigate(
+                PageType::MyWorkspace,
+                QStringLiteral("sub-prep-left-1")
+                );
+            navigate(
+                PageType::SubPrep,
+                QStringLiteral("sub-prep-reentry-1")
+                );
+            selectClass(1);
+            refresh(2);
+            navigate(
+                PageType::MyWorkspace,
+                QStringLiteral("sub-prep-left-2")
+                );
+            navigate(
+                PageType::SubPrep,
+                QStringLiteral("sub-prep-reentry-2")
+                );
+
+            appendStartupWorkflowTrace(
+                QStringLiteral("sub-prep-lifecycle-complete")
+                );
+            checkpoint(
+                QStringLiteral("sub-prep-lifecycle-complete"),
+                QStringLiteral("passed=%1; selectedClassId=%2")
+                    .arg(
+                        lifecycleSucceeded
+                            ? QStringLiteral("true")
+                            : QStringLiteral("false")
+                        )
+                    .arg(page->runtimeMetrics().selectedClassId)
+                );
+            if (!lifecycleSucceeded)
+            {
+                *workflowSucceeded = false;
+            }
+            StartupProfiler::setSubPrepDiagnosticsActive(false);
+            completion();
+        }
+        );
+}
+
 void scheduleStartupPerformanceWorkflow(
     QApplication& app,
     MainWindow& window,
     StartupProfiler& profiler,
     const std::shared_ptr<bool>& workflowSucceeded,
+    bool subPrepLifecycleEnabled,
     std::function<void()> completion
     )
 {
@@ -737,6 +955,7 @@ void scheduleStartupPerformanceWorkflow(
             &window,
             &profiler,
             workflowSucceeded,
+            subPrepLifecycleEnabled,
             pageTypes,
             pageIndex,
             runNextPage,
@@ -783,6 +1002,13 @@ void scheduleStartupPerformanceWorkflow(
             appendStartupWorkflowTrace(
                 QStringLiteral("showPage %1").arg(pageIdentifier)
                 );
+            if (
+                subPrepLifecycleEnabled
+                && pageType == PageType::SubPrep
+                )
+            {
+                StartupProfiler::setSubPrepDiagnosticsActive(true);
+            }
             pages->showPage(pageType);
             appendStartupWorkflowTrace(
                 QStringLiteral("showPage-returned %1").arg(pageIdentifier)
@@ -865,6 +1091,37 @@ void scheduleStartupPerformanceWorkflow(
                 QStringLiteral("workflow-child-released"),
                 QStringLiteral("calendar")
                 );
+        }
+
+        if (
+            pageReady
+            && subPrepLifecycleEnabled
+            && pageType == PageType::SubPrep
+            )
+        {
+            scheduleStartupPerformanceSubPrepLifecycle(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
         }
 
         if (pageReady && pageType == PageType::PdfViewer)
@@ -971,6 +1228,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "navigate through all registered page routes and return to My Workspace"
+                )
+            );
+    }
+    if (mode.subPrepLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise large Sub Prep selection, refresh, leave, and repeated re-entry"
                 )
             );
     }
@@ -1485,6 +1750,7 @@ int main(int argc, char *argv[])
                 window,
                 startupProfiler,
                 workflowSucceeded,
+                startupPerformance.subPrepLifecycleEnabled,
                 scheduleSettledCompletion
                 );
             return;

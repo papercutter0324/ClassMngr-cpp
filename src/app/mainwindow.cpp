@@ -289,6 +289,26 @@ void MainWindow::initializePages()
                         subPrepMetrics.classInformationTeacherLookupCount;
                     metrics.subPrepClassInformationRosterLookupCount =
                         subPrepMetrics.classInformationRosterLookupCount;
+                    metrics.subPrepClassInformationClassQueryCount =
+                        subPrepMetrics.classInformationClassQueryCount;
+                    metrics.subPrepClassInformationClassResultRowCount =
+                        subPrepMetrics.classInformationClassResultRowCount;
+                    metrics.subPrepClassInformationClassInfoQueryCount =
+                        subPrepMetrics.classInformationClassInfoQueryCount;
+                    metrics.subPrepClassInformationClassInfoResultRowCount =
+                        subPrepMetrics.classInformationClassInfoResultRowCount;
+                    metrics.subPrepClassInformationClassInfoScheduleRowCount =
+                        subPrepMetrics.classInformationClassInfoScheduleRowCount;
+                    metrics.subPrepClassInformationTeacherQueryCount =
+                        subPrepMetrics.classInformationTeacherQueryCount;
+                    metrics.subPrepClassInformationTeacherResultRowCount =
+                        subPrepMetrics.classInformationTeacherResultRowCount;
+                    metrics.subPrepClassInformationRosterQueryCount =
+                        subPrepMetrics.classInformationRosterQueryCount;
+                    metrics.subPrepClassInformationRosterResultRowCount =
+                        subPrepMetrics.classInformationRosterResultRowCount;
+                    metrics.subPrepClassInformationRosterStudentResultCount =
+                        subPrepMetrics.classInformationRosterStudentResultCount;
                     metrics.subPrepClassInformationRebuildCount =
                         subPrepMetrics.classInformationRebuildCount;
                     metrics.subPrepSelectedClassId =

@@ -25,6 +25,16 @@ struct StartupApplicationMetrics
     int subPrepClassInformationClassInfoLookupCount = 0;
     int subPrepClassInformationTeacherLookupCount = 0;
     int subPrepClassInformationRosterLookupCount = 0;
+    int subPrepClassInformationClassQueryCount = 0;
+    int subPrepClassInformationClassResultRowCount = 0;
+    int subPrepClassInformationClassInfoQueryCount = 0;
+    int subPrepClassInformationClassInfoResultRowCount = 0;
+    int subPrepClassInformationClassInfoScheduleRowCount = 0;
+    int subPrepClassInformationTeacherQueryCount = 0;
+    int subPrepClassInformationTeacherResultRowCount = 0;
+    int subPrepClassInformationRosterQueryCount = 0;
+    int subPrepClassInformationRosterResultRowCount = 0;
+    int subPrepClassInformationRosterStudentResultCount = 0;
     int subPrepClassInformationRebuildCount = 0;
     int subPrepSelectedClassId = -1;
     int liveScheduleWidgetCount = 0;
@@ -94,6 +104,14 @@ public:
         const QString& phase,
         const QString& detail = QString()
         );
+    static void recordSubPrepRosterQuery(
+        int classId,
+        int columnCount,
+        int rowCount,
+        int cellCount,
+        int returnedStudentCount
+        );
+    static void setSubPrepDiagnosticsActive(bool active);
     static void recordPdfDocumentLoaded(
         const QString& filePath,
         int pageCount
@@ -132,4 +150,5 @@ private:
     QList<StartupProfilingEvent> m_events;
     StartupApplicationMetrics m_scheduleMetrics;
     PlatformProcessMemorySnapshotProvider m_platformMemoryProvider;
+    bool m_subPrepDiagnosticsActive = false;
 };
