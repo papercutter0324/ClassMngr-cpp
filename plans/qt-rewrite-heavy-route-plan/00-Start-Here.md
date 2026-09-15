@@ -33,6 +33,15 @@
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
 
+## Cross-cutting memory remediation
+
+The audit of large-data and widget-heavy paths is tracked in the
+[Qt Rewrite Memory Hotspot Remediation Plan](memory-hotspot-remediation-plan.md).
+It is an execution plan across the numbered phases, not a new phase. Phase 0
+owns the measurements, Phases 2–8 own the data and lifecycle fixes, Phase 9
+owns the packaged Release memory gate, and Phases 11–13 own permanent
+regression coverage and removal of temporary paths.
+
 ## Commit message convention
 
 Use the standardized prefix `Phase# - ` for commits related to this rewrite, replacing `#` with the primary phase number. For example: `Phase0 - Add the initial baseline evidence`. For changes spanning multiple phases, use the phase that owns the primary deliverable.
