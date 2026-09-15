@@ -80,6 +80,12 @@ intensive slot states, 7,200 roster cells, 20 speaking evaluations with 600
 evaluation rows, three campuses, and 180 calendar events. The focused startup
 test validates its integrity and row counts after materialization.
 
+`tests/fixtures/workspaces/legacy_startup.sql` is a partial schema-version-zero
+`.db` source. The startup test materializes it, runs the current schema manager,
+and verifies migration to the latest schema, foreign-key integrity, preservation
+of the legacy class and schedule, repair of its non-positive teacher reference,
+and creation of the pre-constraint migration backup.
+
 ## Reproduction commands
 
 Windows x64 clean Phase 0 build (Qt 6.12.0 installed at the path below).

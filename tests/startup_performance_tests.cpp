@@ -108,6 +108,44 @@ bool writeRepresentativeStartupSettings(
     return settings.status() == QSettings::NoError;
 }
 
+bool executeStartupFixtureSql(
+    QSqlDatabase& database,
+    const QString& sqlPath,
+    QString* errorMessage
+    )
+{
+    QFile sqlFile(sqlPath);
+    if (!sqlFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        *errorMessage =
+            QStringLiteral("Unable to open startup fixture SQL: %1")
+                .arg(sqlFile.errorString());
+        return false;
+    }
+
+    QSqlQuery query(database);
+    const QStringList statements =
+        QString::fromUtf8(sqlFile.readAll())
+            .split(QChar(';'), Qt::SkipEmptyParts);
+
+    for (const QString& rawStatement : statements)
+    {
+        const QString statement = rawStatement.trimmed();
+        if (!statement.isEmpty() && !query.exec(statement))
+        {
+            *errorMessage =
+                QStringLiteral("Fixture statement failed: %1 (%2)")
+                    .arg(
+                        statement.simplified().left(160),
+                        query.lastError().text()
+                        );
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool createStartupFixture(
     const QString& fixtureName,
     const QString& fixturePath,
@@ -119,17 +157,9 @@ bool createStartupFixture(
         + QStringLiteral(
             "/tests/fixtures/workspaces/%1.sql"
             ).arg(fixtureName);
-    QFile sqlFile(sqlPath);
-    if (!sqlFile.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        *errorMessage =
-            QStringLiteral("Unable to open startup fixture SQL: %1")
-                .arg(sqlFile.errorString());
-        return false;
-    }
 
     const QString connectionName =
-        QStringLiteral("startup-representative-fixture-%1")
+        QStringLiteral("startup-fixture-%1")
             .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
 
     bool success = false;
@@ -154,22 +184,11 @@ bool createStartupFixture(
             }
             else
             {
-                QSqlQuery query(database);
-                const QStringList statements =
-                    QString::fromUtf8(sqlFile.readAll())
-                        .split(QChar(';'), Qt::SkipEmptyParts);
-
-                success = true;
-                for (const QString& rawStatement : statements)
-                {
-                    const QString statement = rawStatement.trimmed();
-                    if (!statement.isEmpty() && !query.exec(statement))
-                    {
-                        *errorMessage = query.lastError().text();
-                        success = false;
-                        break;
-                    }
-                }
+                success = executeStartupFixtureSql(
+                    database,
+                    sqlPath,
+                    errorMessage
+                    );
             }
         }
 
@@ -203,6 +222,59 @@ bool createLargeStartupFixture(
         fixturePath,
         errorMessage
         );
+}
+
+bool createLegacyStartupFixture(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    const QString sqlPath =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral(
+            "/tests/fixtures/workspaces/legacy_startup.sql"
+            );
+
+    const QString connectionName =
+        QStringLiteral("startup-legacy-fixture-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(fixturePath);
+
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else if (!executeStartupFixtureSql(database, sqlPath, errorMessage))
+        {
+            // The SQL fixture failed before migration began.
+        }
+        else
+        {
+            const Status schemaStatus =
+                DatabaseSchemaManager::ensureSchema(database);
+            if (!schemaStatus)
+            {
+                *errorMessage = schemaStatus.error();
+            }
+            else
+            {
+                success = true;
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
 }
 
 void printRepresentativeCheckpoint(
@@ -244,6 +316,7 @@ class StartupPerformanceTests : public QObject
 private slots:
     void representativeStartupFixtureIsCompleteAndDeterministic();
     void largeStartupFixtureIsCompleteAndDeterministic();
+    void legacyStartupFixtureMigratesAndRemainsReadable();
     void reportsStartupMetricsAndHonorsThresholds();
     void capturesVisualLanguageAndThemeVariants();
 };
@@ -417,6 +490,76 @@ void StartupPerformanceTests::largeStartupFixtureIsCompleteAndDeterministic()
     database.close();
     database = QSqlDatabase();
     QSqlDatabase::removeDatabase(connectionName);
+}
+
+void StartupPerformanceTests::legacyStartupFixtureMigratesAndRemainsReadable()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("legacy-startup.db"));
+    QString fixtureError;
+    QVERIFY2(
+        createLegacyStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
+    const QString connectionName =
+        QStringLiteral("startup-legacy-fixture-validation");
+    QSqlDatabase database =
+        QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+    database.setDatabaseName(fixturePath);
+    QVERIFY2(
+        database.open(),
+        qPrintable(database.lastError().text())
+        );
+    QVERIFY(DatabaseSchemaManager::ensureSchema(database));
+
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral("PRAGMA user_version")));
+    QVERIFY(query.next());
+    QCOMPARE(
+        query.value(0).toInt(),
+        DatabaseSchemaManager::LatestSchemaVersion
+        );
+
+    QVERIFY(query.exec(QStringLiteral("PRAGMA foreign_keys")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+
+    QVERIFY(query.exec(QStringLiteral("PRAGMA integrity_check")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("ok"));
+
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT name FROM classes WHERE id=1"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("Legacy E4"));
+
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT teacher_id IS NULL FROM class_info WHERE class_id=1"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM class_times WHERE class_id=1"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+
+    database.close();
+    database = QSqlDatabase();
+    QSqlDatabase::removeDatabase(connectionName);
+
+    QVERIFY(QFile::exists(
+        fixturePath + QStringLiteral(".pre-schema-v4-backup")
+        ));
 }
 
 void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()

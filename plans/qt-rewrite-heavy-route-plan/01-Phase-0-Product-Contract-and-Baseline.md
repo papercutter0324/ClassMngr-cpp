@@ -75,6 +75,18 @@
 - What remains: add legacy/corrupt/locked compatibility fixtures and use the
   large workspace in packaged Release workflow and memory measurements.
 
+## Progress update - 2026-09-16 (legacy compatibility fixture)
+
+- What changed: added `legacy_startup.sql`, a permanent partial schema-version
+  zero `.db` source, and an end-to-end migration check in the focused startup
+  fixture suite.
+- Evidence: the migrated database reaches the latest schema, passes SQLite
+  integrity and foreign-key checks, preserves its class and schedule, repairs
+  the invalid teacher reference, and writes the pre-schema-v4 backup.
+- What remains: add generated corrupt and locked-file scenarios, then run the
+  large and legacy workspaces through packaged Release startup and workflow
+  measurements.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)
