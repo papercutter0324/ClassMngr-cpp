@@ -87,6 +87,16 @@
   large and legacy workspaces through packaged Release startup and workflow
   measurements.
 
+## Progress update - 2026-09-16 (corrupt and locked workspace checks)
+
+- What changed: added transient corrupt-file and exclusive-lock scenarios to
+  the focused fixture suite; no lock artifact is checked in.
+- Evidence: malformed input is rejected without changing its bytes; locked
+  legacy migration is rejected, and the same file reaches the latest schema
+  after the lock is released.
+- What remains: package the Release executable, measure the large and legacy
+  workspaces through startup and workflows, and add generated-output fixtures.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

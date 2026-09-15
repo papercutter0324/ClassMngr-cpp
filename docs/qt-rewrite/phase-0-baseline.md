@@ -86,6 +86,11 @@ and verifies migration to the latest schema, foreign-key integrity, preservation
 of the legacy class and schedule, repair of its non-positive teacher reference,
 and creation of the pre-constraint migration backup.
 
+The same focused suite generates two non-persistent failure scenarios: a
+malformed `.db` whose bytes must remain unchanged after rejection, and an
+exclusive lock held during legacy migration. The lock case must fail cleanly,
+then migrate successfully after the lock is released.
+
 ## Reproduction commands
 
 Windows x64 clean Phase 0 build (Qt 6.12.0 installed at the path below).

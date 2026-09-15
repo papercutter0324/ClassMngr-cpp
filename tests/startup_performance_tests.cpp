@@ -224,7 +224,7 @@ bool createLargeStartupFixture(
         );
 }
 
-bool createLegacyStartupFixture(
+bool createLegacyStartupSource(
     const QString& fixturePath,
     QString* errorMessage
     )
@@ -254,6 +254,45 @@ bool createLegacyStartupFixture(
         else if (!executeStartupFixtureSql(database, sqlPath, errorMessage))
         {
             // The SQL fixture failed before migration began.
+        }
+        else
+        {
+            success = true;
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
+
+bool createLegacyStartupFixture(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    if (!createLegacyStartupSource(fixturePath, errorMessage))
+    {
+        return false;
+    }
+
+    const QString connectionName =
+        QStringLiteral("startup-legacy-migration-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(fixturePath);
+
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
         }
         else
         {
@@ -317,6 +356,8 @@ private slots:
     void representativeStartupFixtureIsCompleteAndDeterministic();
     void largeStartupFixtureIsCompleteAndDeterministic();
     void legacyStartupFixtureMigratesAndRemainsReadable();
+    void rejectsCorruptWorkspaceFile();
+    void rejectsLockedLegacyWorkspaceDuringMigration();
     void reportsStartupMetricsAndHonorsThresholds();
     void capturesVisualLanguageAndThemeVariants();
 };
@@ -560,6 +601,147 @@ void StartupPerformanceTests::legacyStartupFixtureMigratesAndRemainsReadable()
     QVERIFY(QFile::exists(
         fixturePath + QStringLiteral(".pre-schema-v4-backup")
         ));
+}
+
+void StartupPerformanceTests::rejectsCorruptWorkspaceFile()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("corrupt-startup.db"));
+    const QByteArray corruptContents =
+        QByteArrayLiteral("ClassMngr corrupt workspace fixture\n");
+    QFile corruptFile(fixturePath);
+    QVERIFY(corruptFile.open(QIODevice::WriteOnly));
+    QCOMPARE(
+        corruptFile.write(corruptContents),
+        static_cast<qint64>(corruptContents.size())
+        );
+    corruptFile.close();
+
+    const QString connectionName =
+        QStringLiteral("startup-corrupt-fixture-validation");
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(fixturePath);
+
+        if (database.open())
+        {
+            const Status status =
+                DatabaseSchemaManager::ensureSchema(database);
+            QVERIFY2(
+                !status,
+                "A corrupt workspace must be rejected by schema validation."
+                );
+            database.close();
+        }
+
+        database = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    QFile unchangedFile(fixturePath);
+    QVERIFY(unchangedFile.open(QIODevice::ReadOnly));
+    QCOMPARE(unchangedFile.readAll(), corruptContents);
+}
+
+void StartupPerformanceTests::rejectsLockedLegacyWorkspaceDuringMigration()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("locked-startup.db"));
+    QString fixtureError;
+    QVERIFY2(
+        createLegacyStartupSource(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
+    const QString lockConnectionName =
+        QStringLiteral("startup-locked-fixture-lock");
+    QSqlDatabase lockDatabase =
+        QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            lockConnectionName
+            );
+    lockDatabase.setDatabaseName(fixturePath);
+    QVERIFY2(
+        lockDatabase.open(),
+        qPrintable(lockDatabase.lastError().text())
+        );
+
+    QSqlQuery lockQuery(lockDatabase);
+    QVERIFY2(
+        lockQuery.exec(QStringLiteral("BEGIN EXCLUSIVE")),
+        qPrintable(lockQuery.lastError().text())
+        );
+
+    const QString migrationConnectionName =
+        QStringLiteral("startup-locked-fixture-migration");
+    {
+        QSqlDatabase migrationDatabase =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                migrationConnectionName
+                );
+        migrationDatabase.setDatabaseName(fixturePath);
+
+        if (migrationDatabase.open())
+        {
+            const Status status =
+                DatabaseSchemaManager::ensureSchema(migrationDatabase);
+            QVERIFY2(
+                !status,
+                "A locked workspace must reject a write migration."
+                );
+            migrationDatabase.close();
+        }
+
+        migrationDatabase = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(migrationConnectionName);
+
+    QVERIFY2(
+        lockQuery.exec(QStringLiteral("ROLLBACK")),
+        qPrintable(lockQuery.lastError().text())
+        );
+    lockDatabase.close();
+    lockDatabase = QSqlDatabase();
+    QSqlDatabase::removeDatabase(lockConnectionName);
+
+    const QString recoveryConnectionName =
+        QStringLiteral("startup-locked-fixture-recovery");
+    {
+        QSqlDatabase recoveryDatabase =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                recoveryConnectionName
+                );
+        recoveryDatabase.setDatabaseName(fixturePath);
+        QVERIFY2(
+            recoveryDatabase.open(),
+            qPrintable(recoveryDatabase.lastError().text())
+            );
+        QVERIFY(DatabaseSchemaManager::ensureSchema(recoveryDatabase));
+
+        QSqlQuery versionQuery(recoveryDatabase);
+        QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version")));
+        QVERIFY(versionQuery.next());
+        QCOMPARE(
+            versionQuery.value(0).toInt(),
+            DatabaseSchemaManager::LatestSchemaVersion
+            );
+
+        recoveryDatabase.close();
+        recoveryDatabase = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(recoveryConnectionName);
 }
 
 void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
