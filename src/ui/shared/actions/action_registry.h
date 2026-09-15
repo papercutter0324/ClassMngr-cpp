@@ -96,12 +96,6 @@ public:
 
     QAction* manageCampuses = nullptr;
 
-    // =====================================================
-    // Developer (available only in developer-enabled builds)
-    // =====================================================
-
-    QAction* showMemoryUsageMonitor = nullptr;
-
 private:
     QAction* createAction(
         const QString& text,
@@ -124,5 +118,4 @@ private:
     void createOptionActions();
     void createHelpActions();
     void createAdminActions();
-    void createDeveloperActions();
 };

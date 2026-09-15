@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core/memory_usage_diagnostics.h"
-
 #include <QWidget>
 
 #include <QList>
@@ -13,7 +11,7 @@ class QGridLayout;
 class QFrame;
 class QResizeEvent;
 
-class CampusMapPreview : public QWidget, public MemoryBreakdownProvider
+class CampusMapPreview : public QWidget
 {
     Q_OBJECT
 
@@ -42,8 +40,6 @@ public:
         ) const;
     [[nodiscard]] bool isHorizontal() const;
     [[nodiscard]] bool hasImages() const;
-    [[nodiscard]] QList<MemoryBreakdownEntry>
-        memoryBreakdown() const override;
 
     [[nodiscard]] bool hasHeightForWidth() const override;
     [[nodiscard]] int heightForWidth(
@@ -91,7 +87,6 @@ private:
     QWidget* m_mapControls = nullptr;
     QList<QLabel*> m_imageLabels;
     QList<QSize> m_decodedImageSizes;
-    quint64 m_decodedImageBytes = 0;
     QList<QLabel*> m_titleLabels;
     bool m_horizontal = false;
 };

@@ -1,7 +1,5 @@
 #include "resource_pack_manager.h"
 
-#include "core/memory_usage_diagnostics.h"
-
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
@@ -443,11 +441,6 @@ Status ResourcePackManager::mount(const Definition& packDefinition)
         return std::unexpected(QStringLiteral("Resource pack '%1' has the wrong root.").arg(packDefinition.id));
     }
     m_mountedPacks.insert(packDefinition.id, {QFileInfo(filePath).absoluteFilePath(), root, version, 0});
-    MemoryUsageDiagnostics::recordEvent(
-        QStringLiteral("resource-pack-mounted"),
-        QStringLiteral("%1 (%2)")
-            .arg(packDefinition.id, version.toString())
-        );
     return {};
 }
 
@@ -483,10 +476,6 @@ void ResourcePackManager::release(const QString& packId)
     const QString filePath = mounted->filePath;
     m_mountedPacks.erase(mounted);
     QResource::unregisterResource(filePath);
-    MemoryUsageDiagnostics::recordEvent(
-        QStringLiteral("resource-pack-unmounted"),
-        packId
-        );
 }
 
 void ResourcePackManager::removeStalePackFiles() const

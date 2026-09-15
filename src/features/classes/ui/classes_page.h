@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/memory_usage_diagnostics.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "domain/models/classroom.h"
 #include "features/classes/models/class_tab_navigation_model.h"
@@ -38,7 +37,7 @@ enum class ClassesSection
     Notes
 };
 
-class ClassesPage : public BasePage, public MemoryBreakdownProvider
+class ClassesPage : public BasePage
 {
     Q_OBJECT
 
@@ -65,8 +64,6 @@ public:
     [[nodiscard]] bool isEditorInstantiated(
         ClassesSection section
         ) const;
-    [[nodiscard]] QList<MemoryBreakdownEntry>
-        memoryBreakdown() const override;
 
     void setScheduleDisplayMode(
         ScheduleDisplayMode mode

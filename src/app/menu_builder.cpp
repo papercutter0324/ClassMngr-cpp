@@ -1134,11 +1134,6 @@ void MenuBuilder::build(MainWindow* window)
     {
         buildAdminMenu(window);
     }
-
-    if (window->actions().showMemoryUsageMonitor)
-    {
-        buildDeveloperMenu(window);
-    }
 }
 
 void MenuBuilder::buildPrintExportMenu(
@@ -1293,15 +1288,4 @@ void MenuBuilder::buildAdminMenu(MainWindow* window)
     );
 
     menu->addAction(a.manageCampuses);
-}
-
-void MenuBuilder::buildDeveloperMenu(MainWindow* window)
-{
-    auto& actions = window->actions();
-
-    QMenu* menu =
-        window->menuBar()->addMenu(
-            QCoreApplication::translate("MenuBuilder", "Developer")
-            );
-    menu->addAction(actions.showMemoryUsageMonitor);
 }

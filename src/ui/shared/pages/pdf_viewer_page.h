@@ -1,10 +1,8 @@
 #pragma once
 
-#include "core/memory_usage_diagnostics.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "ui/shared/pages/basepage.h"
 
-#include <QElapsedTimer>
 #include <QString>
 
 class QLabel;
@@ -25,7 +23,7 @@ struct PdfViewerDocumentDescriptor
     ResourcePackLease resourceLease;
 };
 
-class PdfViewerPage : public BasePage, public MemoryBreakdownProvider
+class PdfViewerPage : public BasePage
 {
     Q_OBJECT
 
@@ -49,8 +47,6 @@ public:
 
     [[nodiscard]] QString currentFilePath() const;
     [[nodiscard]] bool hasLoadedDocument() const;
-    [[nodiscard]] QList<MemoryBreakdownEntry>
-        memoryBreakdown() const override;
 
     void setDocumentPageSpacing(
         DocumentPageSpacing spacing
@@ -59,12 +55,6 @@ public:
     void setDocumentViewerBackground(
         DocumentViewerBackground background
         );
-
-signals:
-    // The byte count is safe to include in diagnostics; no document path is
-    // emitted or exported.
-    void documentLoaded(quint64 byteCount);
-    void documentReleased();
 
 public slots:
     void zoomIn();
@@ -109,15 +99,10 @@ private:
     [[nodiscard]] QString documentErrorText(
         int error
         ) const;
-    void notifyDocumentLoaded();
 
 private:
     bool m_tearingDown = false;
     bool m_documentReleased = true;
-    bool m_documentLoadRecorded = false;
-    bool m_documentLoadTimed = false;
-    quint64 m_documentByteCount = 0;
-    QElapsedTimer m_documentLoadTimer;
     QPdfDocument* m_document = nullptr;
     QPdfView* m_view = nullptr;
     QLabel* m_statusLabel = nullptr;

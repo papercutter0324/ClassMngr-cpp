@@ -26,7 +26,6 @@
 #include "ui/shared/pages/pagemanager.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "ui/shared/dialogs/about_dialog.h"
-#include "ui/shared/dialogs/memory_usage_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QDialog>
@@ -435,11 +434,6 @@ void MainWindow::retranslateUi()
     if (m_pages)
     {
         m_pages->retranslatePages();
-    }
-
-    if (m_memoryUsageDialog)
-    {
-        m_memoryUsageDialog->retranslateUi();
     }
 }
 
@@ -934,34 +928,6 @@ void MainWindow::connectSignals()
             }
             );
     }
-
-    if (m_actions.showMemoryUsageMonitor)
-    {
-        connect(
-            m_actions.showMemoryUsageMonitor,
-            &QAction::triggered,
-            this,
-            &MainWindow::showMemoryUsageMonitor
-            );
-    }
-}
-
-void MainWindow::showMemoryUsageMonitor()
-{
-    if (!m_memoryUsageDialog)
-    {
-        m_memoryUsageDialog = std::make_unique<MemoryUsageDialog>(
-            this,
-            m_pages,
-            nullptr,
-            m_services.get(),
-            m_languageService
-            );
-    }
-
-    // The dialog uses non-activating tool-window flags, so show() preserves
-    // the active editor and keyboard target in the main application.
-    m_memoryUsageDialog->show();
 }
 
 void MainWindow::updatePrintExportActions()

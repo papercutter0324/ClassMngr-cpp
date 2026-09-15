@@ -53,13 +53,6 @@ public:
     [[nodiscard]] AcademicCalendarProvider* academicCalendarProvider() const;
     void calendarPreferencesChanged(bool eventsChanged);
 
-signals:
-    void calendarRetentionChanged(
-        int retainedRangeCount,
-        int cachedEventCount,
-        int dateBucketCount
-        );
-
 protected:
     bool eventFilter(
         QObject* watched,
@@ -210,7 +203,6 @@ private:
     QDate m_nextTenSearchEnd;
     QSet<QDate> m_loadedMonths;
     QList<CalendarEventCache::DateRange> m_onDemandRetainedRanges;
-    QList<CalendarEventCache::DateRange> m_lastRecordedRetentionRanges;
     bool m_nextTenSearchComplete = false;
     bool m_nextTenLookupPending = false;
 };

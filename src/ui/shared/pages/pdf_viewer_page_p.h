@@ -16,7 +16,6 @@
 #include <QIntValidator>
 #include <QDir>
 #include <QFile>
-#include <QFileInfo>
 #include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QLabel>

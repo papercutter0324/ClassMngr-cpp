@@ -3,7 +3,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
-#include "core/memory_usage_diagnostics.h"
 #include "core/resource_paths.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
@@ -159,7 +158,6 @@ ClassesPage::ClassesPage(
 {
     setProperty("role", UiRoles::Classes);
 
-    MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
     buildUi();
 }
 
@@ -386,32 +384,6 @@ bool ClassesPage::isEditorInstantiated(
     }
 
     return false;
-}
-
-QList<MemoryBreakdownEntry> ClassesPage::memoryBreakdown() const
-{
-    const quint64 instantiatedEditors =
-        static_cast<quint64>(m_detailsPage != nullptr)
-        + static_cast<quint64>(m_rosterEditor != nullptr)
-        + static_cast<quint64>(m_analyticsPage != nullptr)
-        + static_cast<quint64>(m_evaluationsPage != nullptr)
-        + static_cast<quint64>(m_coTeacherPage != nullptr)
-        + static_cast<quint64>(m_notesPage != nullptr);
-
-    return {
-        {
-            QStringLiteral("Classes shell and class list"),
-            QStringLiteral("Classes"),
-            static_cast<quint64>(m_classes.size()) * sizeof(Classroom),
-            static_cast<quint64>(m_classes.size()) + instantiatedEditors,
-            QStringLiteral("class records=%1; editors=%2/6; active editor=%3; active class=%4")
-                .arg(m_classes.size())
-                .arg(instantiatedEditors)
-                .arg(classesSectionIdentifier(m_currentSection))
-                .arg(m_currentClassId > 0 ? QStringLiteral("loaded") : QStringLiteral("none")),
-            true
-        }
-    };
 }
 
 void ClassesPage::setScheduleDisplayMode(

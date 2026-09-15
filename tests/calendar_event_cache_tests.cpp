@@ -8,8 +8,6 @@
 #include <QUuid>
 #include <QtTest>
 
-#include <algorithm>
-
 namespace
 {
 void createCalendarEventsTable(
@@ -101,8 +99,6 @@ private slots:
 
 void CalendarEventCacheTests::rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess()
 {
-    MemoryUsageDiagnostics::enable();
-    MemoryUsageDiagnostics::history().clear();
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -135,20 +131,6 @@ void CalendarEventCacheTests::rangeLoadPopulatesModelWithoutUiThreadDatabaseAcce
         QStringLiteral("Cached event")
         );
     QVERIFY(model.isMonthLoaded(2026, 7));
-    const QList<MemoryUsageHistoryEntry>& diagnosticEvents =
-        MemoryUsageDiagnostics::history().entries();
-    QVERIFY(std::any_of(
-        diagnosticEvents.cbegin(),
-        diagnosticEvents.cend(),
-        [](const MemoryUsageHistoryEntry& entry)
-        {
-            return entry.kind == MemoryUsageHistoryEntryKind::Event
-                && entry.eventType == QStringLiteral("timing")
-                && entry.eventDetail.contains(
-                    QStringLiteral("calendar-cache-fetch")
-                    );
-        }
-        ));
 }
 
 void CalendarEventCacheTests::invalidationDiscardsCompletedWorkerResult()
@@ -238,12 +220,6 @@ void CalendarEventCacheTests::multiDayEventsUseOneCanonicalRecordAndRangeDedupli
 
     QCOMPARE(cache.eventCount(), 2);
     QCOMPARE(cache.dateBucketCount(), 4);
-    const MemoryBreakdownEntry attribution =
-        cache.memoryBreakdown().constFirst();
-    QCOMPARE(attribution.owner, QStringLiteral("Calendar"));
-    QCOMPARE(attribution.itemCount, quint64(6));
-    QVERIFY(attribution.retainedBytes > 0);
-    QVERIFY(attribution.isEstimated);
     QCOMPARE(cache.eventsForDate(QDate(2026, 7, 12)).size(), 1);
     QCOMPARE(cache.eventsForDate(QDate(2026, 7, 13)).size(), 1);
     QCOMPARE(
@@ -257,8 +233,6 @@ void CalendarEventCacheTests::multiDayEventsUseOneCanonicalRecordAndRangeDedupli
 
 void CalendarEventCacheTests::retainedRangesEvictEventsAndRejectEvictedWorkerResults()
 {
-    MemoryUsageDiagnostics::enable();
-    MemoryUsageDiagnostics::history().clear();
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -305,18 +279,6 @@ void CalendarEventCacheTests::retainedRangesEvictEventsAndRejectEvictedWorkerRes
         );
     QCOMPARE(cache.eventCount(), 0);
     QCOMPARE(cache.dateBucketCount(), 0);
-    const QList<MemoryUsageHistoryEntry>& diagnosticEvents =
-        MemoryUsageDiagnostics::history().entries();
-    QVERIFY(std::any_of(
-        diagnosticEvents.cbegin(),
-        diagnosticEvents.cend(),
-        [](const MemoryUsageHistoryEntry& entry)
-        {
-            return entry.kind == MemoryUsageHistoryEntryKind::Event
-                && entry.eventType == QStringLiteral("calendar-cache-evicted")
-                && entry.eventDetail.contains(QStringLiteral("events=1"));
-        }
-        ));
 
     cache.setRetainedRanges(
         {
