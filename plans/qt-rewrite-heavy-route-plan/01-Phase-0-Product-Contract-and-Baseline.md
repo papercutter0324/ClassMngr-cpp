@@ -704,3 +704,43 @@ No v2 feature work begins without a fixture and an acceptance check.
   report as the Schedule Import before-state oracle. Continue Phase 0 with a
   large Calendar import/open-close boundary, then return to the remaining
   apply/commit and batch-operation gaps before any v2 remediation slice.
+
+## Progress update - 2026-09-16 (large Calendar Import lifecycle retention)
+
+- What changed: the heavy-route harness now opens the real Calendar child tab,
+  triggers the Preferences dialog through the in-process action path, serves a
+  deterministic two-sheet workbook through a local HTTP response, applies the
+  parsed events to the 96-class workspace, closes Preferences, and waits for
+  Calendar cache refresh to settle. The profiler records response bytes,
+  workbook cells/merged ranges/styles, parsed/skipped events, existing-event
+  query size, save/apply counts, representation lifetimes, Calendar cache
+  ranges, and page/widget/model counts.
+- Evidence: the packaged Windows x64 Release child completed normally. The
+  16,284-byte workbook contained 2 sheets, 382 cells, 12 merged ranges, and 4
+  styles. The parser produced 261 events and skipped 104 weekend entries; the
+  import queried 180 existing events and saved 261 new events. Response bytes
+  were no longer retained at workbook parse, the workbook and event list were
+  retained through apply, and raw bytes/workbook/events/operation were all
+  released at the operation-release checkpoint. Calendar then settled at 22
+  cached events, 22 date buckets, one loaded range, and one retained range.
+- Timing and memory: response/parse/events/save/apply/release/page-refresh
+  checkpoints were `3,354`/`3,386`/`3,479`/`3,543`/`3,582`/`3,638`/
+  `3,813 ms`; `workflow-complete` was `11,227 ms` and `settled-1s` was
+  `12,263 ms`. Route-wide peak working set/private usage were
+  `416,530,432`/`457,003,008` bytes. The retained evidence is
+  `docs/qt-rewrite/visual-baseline/release/large-calendar-import-boundary/`.
+- Evaluation impact: this closes the Calendar import/open/close/apply/cache
+  refresh before-state required by the Memory Hotspot Remediation Plan. It
+  confirms that the current service holds a raw response, parsed workbook,
+  parsed event list, existing-event result, and save list across distinct
+  stages, while the page cache owns a separate post-apply refresh. This does
+  not set the v2 memory budget or prove that the eventual importer can share
+  or stream those representations.
+- Decision and next heavy slice: retain this workbook and report as the
+  Calendar Import before-state oracle. Phase 0 remains open for Schedule
+  Import apply/commit confirmation, speaking batch, class transfer, staff
+  directory, PDF/report operation measurements, Sub Prep visuals, explicit
+  Release thresholds, generated-output coverage, and cross-platform evidence.
+  Continue with the next heavy operation while retaining the Sub Prep,
+  Classes, Schedule, Schedule Import, and Calendar artifacts as comparison
+  inputs; do not begin v2 remediation yet.

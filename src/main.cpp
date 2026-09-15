@@ -15,6 +15,7 @@
 #include "ui/shared/constants/options.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "core/utils/platform.h"
+#include "features/calendar/ui/calendar_page.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
@@ -29,10 +30,12 @@
 #endif
 
 #include <QApplication>
+#include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDir>
+#include <QDialog>
 #include <QEvent>
 #include <QFile>
 #include <QFileInfo>
@@ -49,6 +52,7 @@
 #include <QRadioButton>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QTabWidget>
 #include <QDebug>
 
 #include <functional>
@@ -90,6 +94,7 @@ struct StartupPerformanceMode
     bool workflowEnabled = false;
     bool scheduleLifecycleEnabled = false;
     bool scheduleImportLifecycleEnabled = false;
+    bool calendarImportLifecycleEnabled = false;
     bool classesLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
     enum class Scenario
@@ -539,6 +544,10 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-schedule-import-lifecycle")
             );
+    mode.calendarImportLifecycleEnabled =
+        args.contains(
+            QStringLiteral("--startup-performance-calendar-import-lifecycle")
+            );
     mode.classesLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-classes-lifecycle")
@@ -552,6 +561,7 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.workflowEnabled
         || mode.scheduleLifecycleEnabled
         || mode.scheduleImportLifecycleEnabled
+        || mode.calendarImportLifecycleEnabled
         || mode.classesLifecycleEnabled
         || mode.subPrepLifecycleEnabled;
 
@@ -1760,6 +1770,366 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
         );
 }
 
+void scheduleStartupPerformanceCalendarImportLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            MyWorkspacePage* workspace =
+                pages ? pages->myWorkspacePage() : nullptr;
+            CalendarPage* page = workspace
+                ? workspace->calendarPage()
+                : nullptr;
+            QAction* preferencesAction =
+                window.findChild<QAction*>(
+                    QStringLiteral("preferencesAction")
+                    );
+
+            if (
+                !pages
+                || !workspace
+                || !page
+                || !pages->isCurrentPage(PageType::MyWorkspace)
+                || !preferencesAction
+                )
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("calendar-import-lifecycle-failed"),
+                    QStringLiteral(
+                        "workspace-current=%1; calendar-page=%2; preferences-action=%3"
+                        )
+                        .arg(
+                            pages && pages->isCurrentPage(PageType::MyWorkspace)
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                        .arg(page ? QStringLiteral("true")
+                                  : QStringLiteral("false"))
+                        .arg(preferencesAction ? QStringLiteral("true")
+                                                : QStringLiteral("false"))
+                    );
+                completion();
+                return;
+            }
+
+            const QPointer<CalendarPage> pageGuard(page);
+            QPointer<QDialog> dialogGuard;
+            const auto attempts = std::make_shared<int>(0);
+            const auto stage = std::make_shared<int>(0);
+            const auto preferencesOpened = std::make_shared<bool>(false);
+            const auto importFinished = std::make_shared<bool>(false);
+            const auto poll =
+                std::make_shared<std::function<void()>>();
+
+            profiler.checkpoint(
+                QStringLiteral("calendar-import-preferences-start")
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("calendar-import-preferences-start")
+                );
+
+            *poll =
+                [
+                    &app,
+                    &window,
+                    &profiler,
+                    workflowSucceeded,
+                    completion,
+                    pageGuard,
+                    dialogGuard,
+                    attempts,
+                    stage,
+                    preferencesOpened,
+                    importFinished,
+                    poll
+                ]()
+                mutable
+                {
+                    auto schedulePoll =
+                        [
+                            &app,
+                            poll
+                        ]()
+                        {
+                            QTimer::singleShot(
+                                25,
+                                &app,
+                                [poll]()
+                                {
+                                    (*poll)();
+                                }
+                                );
+                        };
+                    auto fail =
+                        [
+                            &app,
+                            &profiler,
+                            workflowSucceeded,
+                            completion,
+                            dialogGuard
+                        ](const QString& detail)
+                        {
+                            *workflowSucceeded = false;
+                            profiler.checkpoint(
+                                QStringLiteral(
+                                    "calendar-import-lifecycle-failed"
+                                    ),
+                                detail
+                                );
+                            if (dialogGuard)
+                            {
+                                dialogGuard->reject();
+                                app.processEvents();
+                                QCoreApplication::sendPostedEvents(
+                                    nullptr,
+                                    QEvent::DeferredDelete
+                                    );
+                                app.processEvents();
+                            }
+                            completion();
+                        };
+
+                    ++*attempts;
+                    if (*attempts > 600)
+                    {
+                        fail(
+                            QStringLiteral(
+                                "timed-out-waiting-for-calendar-import"
+                                )
+                            );
+                        return;
+                    }
+
+                    if (!dialogGuard)
+                    {
+                        QDialog* dialog =
+                            window.findChild<QDialog*>(
+                                QStringLiteral("preferencesDialog")
+                                );
+                        if (!dialog)
+                        {
+                            dialog = qobject_cast<QDialog*>(
+                                QApplication::activeModalWidget()
+                                );
+                        }
+                        if (dialog)
+                        {
+                            dialogGuard = dialog;
+                        }
+                    }
+
+                    if (!dialogGuard)
+                    {
+                        schedulePoll();
+                        return;
+                    }
+
+                    auto* tabs =
+                        dialogGuard->findChild<QTabWidget*>(
+                            QStringLiteral("preferencesTabs")
+                            );
+                    auto* calendarTab =
+                        dialogGuard->findChild<QWidget*>(
+                            QStringLiteral("preferencesCalendarTab")
+                            );
+                    auto* panel =
+                        dialogGuard->findChild<QWidget*>(
+                            QStringLiteral("calendarPreferencesPanel")
+                            );
+                    auto* importButton = panel
+                        ? panel->findChild<QPushButton*>(
+                            QStringLiteral(
+                                "preferencesCalendarImportEvents"
+                                )
+                            )
+                        : nullptr;
+                    auto* status = panel
+                        ? panel->findChild<QLabel*>(
+                            QStringLiteral("sectionSubtitle")
+                            )
+                        : nullptr;
+
+                    if (*stage == 0)
+                    {
+                        if (!tabs || !calendarTab || !panel || !importButton)
+                        {
+                            schedulePoll();
+                            return;
+                        }
+
+                        tabs->setCurrentWidget(calendarTab);
+                        app.processEvents();
+
+                        if (!*preferencesOpened)
+                        {
+                            *preferencesOpened = true;
+                            profiler.checkpoint(
+                                QStringLiteral(
+                                    "calendar-import-preferences-opened"
+                                    ),
+                                QStringLiteral("calendar-tab-index=%1")
+                                    .arg(tabs->indexOf(calendarTab))
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral(
+                                    "calendar-import-preferences-opened"
+                                    )
+                                );
+                            profiler.checkpoint(
+                                QStringLiteral("calendar-import-ui-start")
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral("calendar-import-ui-start")
+                                );
+                            importButton->click();
+                            app.processEvents();
+                            *stage = 1;
+                        }
+                    }
+
+                    if (*stage != 1 || !status)
+                    {
+                        schedulePoll();
+                        return;
+                    }
+
+                    const QString statusText = status->text();
+                    if (statusText.startsWith(QStringLiteral("Import failed:")))
+                    {
+                        fail(statusText);
+                        return;
+                    }
+
+                    if (!statusText.startsWith(QStringLiteral("Imported ")))
+                    {
+                        schedulePoll();
+                        return;
+                    }
+
+                    if (!*importFinished)
+                    {
+                        *importFinished = true;
+                        profiler.checkpoint(
+                            QStringLiteral("calendar-import-finished"),
+                            statusText
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("calendar-import-finished")
+                            );
+                    }
+
+                    if (!pageGuard)
+                    {
+                        fail(QStringLiteral("calendar-page-closed-after-import"));
+                        return;
+                    }
+
+                    const CalendarPageRuntimeMetrics metrics =
+                        pageGuard->runtimeMetrics();
+                    if (metrics.cacheLoading || metrics.cacheEventCount <= 0)
+                    {
+                        schedulePoll();
+                        return;
+                    }
+
+                    const QString outputRoot =
+                        qEnvironmentVariable(
+                            "CLASSMNGR_STARTUP_CALENDAR_IMPORT_OUTPUT_DIR"
+                            ).trimmed();
+                    if (!outputRoot.isEmpty())
+                    {
+                        QDir().mkpath(outputRoot);
+                        dialogGuard->grab().save(
+                            QDir(outputRoot).filePath(
+                                QStringLiteral(
+                                    "calendar-import-preferences.png"
+                                    )
+                                ),
+                            "PNG"
+                            );
+                        pageGuard->grab().save(
+                            QDir(outputRoot).filePath(
+                                QStringLiteral("calendar-page.png")
+                                ),
+                            "PNG"
+                            );
+                    }
+
+                    profiler.checkpoint(
+                        QStringLiteral("calendar-import-page-refreshed"),
+                        QStringLiteral(
+                            "cacheEvents=%1; dateBuckets=%2; loadedRanges=%3; retainedRanges=%4; loadedMonths=%5; modelRevision=%6"
+                            )
+                            .arg(metrics.cacheEventCount)
+                            .arg(metrics.cacheDateBucketCount)
+                            .arg(metrics.cacheLoadedRangeCount)
+                            .arg(metrics.cacheRetainedRangeCount)
+                            .arg(metrics.loadedMonthCount)
+                            .arg(metrics.modelRevision)
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral("calendar-import-page-refreshed")
+                        );
+
+                    dialogGuard->reject();
+                    app.processEvents();
+                    QCoreApplication::sendPostedEvents(
+                        nullptr,
+                        QEvent::DeferredDelete
+                        );
+                    app.processEvents();
+                    profiler.checkpoint(
+                        QStringLiteral("calendar-import-dialog-released")
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral("calendar-import-dialog-released")
+                        );
+                    profiler.checkpoint(
+                        QStringLiteral("calendar-import-operation-end"),
+                        QStringLiteral("applied=true")
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral("calendar-import-operation-end")
+                        );
+                    completion();
+                };
+
+            QTimer::singleShot(
+                0,
+                &app,
+                [preferencesAction]()
+                {
+                    preferencesAction->trigger();
+                }
+                );
+            QTimer::singleShot(
+                25,
+                &app,
+                [poll]()
+                {
+                    (*poll)();
+                }
+                );
+        }
+        );
+}
+
 void scheduleStartupPerformanceWorkflow(
     QApplication& app,
     MainWindow& window,
@@ -1767,6 +2137,7 @@ void scheduleStartupPerformanceWorkflow(
     const std::shared_ptr<bool>& workflowSucceeded,
     bool scheduleLifecycleEnabled,
     bool scheduleImportLifecycleEnabled,
+    bool calendarImportLifecycleEnabled,
     bool classesLifecycleEnabled,
     bool subPrepLifecycleEnabled,
     std::function<void()> completion
@@ -1786,6 +2157,7 @@ void scheduleStartupPerformanceWorkflow(
             workflowSucceeded,
             scheduleLifecycleEnabled,
             scheduleImportLifecycleEnabled,
+            calendarImportLifecycleEnabled,
             classesLifecycleEnabled,
             subPrepLifecycleEnabled,
             pageTypes,
@@ -1916,13 +2288,59 @@ void scheduleStartupPerformanceWorkflow(
                 QStringLiteral("calendar")
                 );
 
-            workspace->openTab(WorkspaceTab::Schedule);
-            appendStartupWorkflowTrace(QStringLiteral("calendar-schedule-returned"));
-            app.processEvents();
-            profiler.checkpoint(
-                QStringLiteral("workflow-child-released"),
-                QStringLiteral("calendar")
-                );
+            const auto returnToSchedule =
+                [
+                    &app,
+                    &profiler,
+                    pageIndex,
+                    runNextPage,
+                    workspace,
+                    calendarImportLifecycleEnabled
+                ]()
+                {
+                    workspace->openTab(WorkspaceTab::Schedule);
+                    appendStartupWorkflowTrace(
+                        QStringLiteral("calendar-schedule-returned")
+                        );
+                    app.processEvents();
+                    if (calendarImportLifecycleEnabled)
+                    {
+                        profiler.checkpoint(
+                            QStringLiteral("calendar-import-page-released")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("calendar-import-page-released")
+                            );
+                    }
+                    profiler.checkpoint(
+                        QStringLiteral("workflow-child-released"),
+                        QStringLiteral("calendar")
+                        );
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                };
+
+            if (calendarImportLifecycleEnabled && calendarReady)
+            {
+                scheduleStartupPerformanceCalendarImportLifecycle(
+                    app,
+                    window,
+                    profiler,
+                    workflowSucceeded,
+                    returnToSchedule
+                    );
+                return;
+            }
+
+            returnToSchedule();
+            return;
         }
 
         if (
@@ -2177,6 +2595,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "exercise large Schedule refresh, leave, and repeated re-entry"
+                )
+            );
+    }
+    if (mode.calendarImportLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise large Calendar workbook import, Preferences close, and Calendar cache refresh"
                 )
             );
     }
@@ -2693,6 +3119,7 @@ int main(int argc, char *argv[])
                 workflowSucceeded,
                 startupPerformance.scheduleLifecycleEnabled,
                 startupPerformance.scheduleImportLifecycleEnabled,
+                startupPerformance.calendarImportLifecycleEnabled,
                 startupPerformance.classesLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
                 scheduleSettledCompletion

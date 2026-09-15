@@ -16,6 +16,7 @@
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
+#include "features/calendar/ui/calendar_page.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
@@ -375,6 +376,32 @@ void MainWindow::initializePages()
                         scheduleMetrics.tableCellWidgetCount;
                     metrics.scheduleVisibleClassCount =
                         scheduleMetrics.visibleClassCount;
+                }
+
+                if (m_pages && m_pages->calendarPage())
+                {
+                    const CalendarPageRuntimeMetrics calendarMetrics =
+                        m_pages->calendarPage()->runtimeMetrics();
+                    metrics.calendarCacheEventCount =
+                        calendarMetrics.cacheEventCount;
+                    metrics.calendarCacheDateBucketCount =
+                        calendarMetrics.cacheDateBucketCount;
+                    metrics.calendarCacheLoadedRangeCount =
+                        calendarMetrics.cacheLoadedRangeCount;
+                    metrics.calendarCacheRetainedRangeCount =
+                        calendarMetrics.cacheRetainedRangeCount;
+                    metrics.calendarLoadedMonthCount =
+                        calendarMetrics.loadedMonthCount;
+                    metrics.calendarOnDemandRetainedRangeCount =
+                        calendarMetrics.onDemandRetainedRangeCount;
+                    metrics.calendarModelRevision =
+                        calendarMetrics.modelRevision;
+                    metrics.calendarPageWidgetCount =
+                        calendarMetrics.pageWidgetCount;
+                    metrics.calendarViewObjectCount =
+                        calendarMetrics.calendarViewObjectCount;
+                    metrics.calendarCacheLoading =
+                        calendarMetrics.cacheLoading;
                 }
 
                 return metrics;

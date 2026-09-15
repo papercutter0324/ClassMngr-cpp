@@ -353,6 +353,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         PRIVATE
             Qt6::Core
             Qt6::Gui
+            Qt6::Network
             Qt6::Sql
             Qt6::Test
     )

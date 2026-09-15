@@ -71,6 +71,8 @@ public:
     bool isLoading() const;
     [[nodiscard]] int eventCount() const;
     [[nodiscard]] int dateBucketCount() const;
+    [[nodiscard]] int loadedRangeCount() const;
+    [[nodiscard]] int retainedRangeCount() const;
 
 signals:
     void cacheChanged();

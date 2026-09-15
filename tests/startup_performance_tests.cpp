@@ -1,8 +1,10 @@
 #include <QDir>
 #include <QElapsedTimer>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
+#include <QHostAddress>
 #include <QImage>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -15,6 +17,9 @@
 #include <QSqlQuery>
 #include <QSet>
 #include <QTemporaryDir>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QTimer>
 #include <QtTest>
 #include <QUuid>
 #include <zlib.h>
@@ -342,6 +347,214 @@ bool writeLargeScheduleImportWorkbook(
         && file.error() == QFile::NoError;
 }
 
+QByteArray calendarInlineStringCell(
+    const QString& reference,
+    const QString& value,
+    int style = 0
+    )
+{
+    return QStringLiteral(
+        "<c r=\"%1\" s=\"%2\" t=\"inlineStr\"><is><t>%3</t></is></c>"
+        )
+        .arg(reference)
+        .arg(style)
+        .arg(value)
+        .toUtf8();
+}
+
+QByteArray calendarNumericCell(
+    const QString& reference,
+    int value,
+    int style
+    )
+{
+    return QStringLiteral(
+        "<c r=\"%1\" s=\"%2\"><v>%3</v></c>"
+        )
+        .arg(reference)
+        .arg(style)
+        .arg(value)
+        .toUtf8();
+}
+
+QByteArray largeCalendarImportWorksheet()
+{
+    const QStringList monthNames{
+        QStringLiteral("January"), QStringLiteral("February"),
+        QStringLiteral("March"), QStringLiteral("April"),
+        QStringLiteral("May"), QStringLiteral("June"),
+        QStringLiteral("July"), QStringLiteral("August"),
+        QStringLiteral("September"), QStringLiteral("October"),
+        QStringLiteral("November"), QStringLiteral("December")
+    };
+
+    QByteArray xml = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+        "<sheetData>"
+        );
+
+    for (int month = 1; month <= 12; ++month)
+    {
+        const int blockRow = 1 + (month - 1) * 16;
+        xml += QStringLiteral("<row r=\"%1\">").arg(blockRow).toUtf8();
+        xml += calendarInlineStringCell(
+            QStringLiteral("A%1").arg(blockRow),
+            monthNames.at(month - 1)
+            );
+        if (month == 1)
+        {
+            xml += calendarInlineStringCell(
+                QStringLiteral("B%1").arg(blockRow),
+                QStringLiteral("2026")
+                );
+        }
+        xml += QByteArrayLiteral("</row>");
+
+        const QDate firstOfMonth(2026, month, 1);
+        const QDate firstGridDate = firstOfMonth.addDays(
+            -(firstOfMonth.dayOfWeek() - Qt::Monday)
+            );
+        for (int gridRow = 0; gridRow < 6; ++gridRow)
+        {
+            const int row = blockRow + 2 + gridRow;
+            xml += QStringLiteral("<row r=\"%1\">").arg(row).toUtf8();
+            for (int column = 0; column < 7; ++column)
+            {
+                const QDate date = firstGridDate.addDays(
+                    gridRow * 7 + column
+                    );
+                if (date.month() != month)
+                {
+                    continue;
+                }
+
+                const int style =
+                    date.dayOfWeek() >= Qt::Saturday
+                        ? 3
+                        : date.day() % 10 == 0
+                            ? 2
+                            : 1;
+                xml += calendarNumericCell(
+                    spreadsheetColumnName(column + 1)
+                        + QString::number(row),
+                    date.day(),
+                    style
+                    );
+            }
+            xml += QByteArrayLiteral("</row>");
+        }
+    }
+
+    xml += QByteArrayLiteral("<row r=\"20\">");
+    xml += calendarInlineStringCell(
+        QStringLiteral("Z20"),
+        QStringLiteral("DYB Workshop"),
+        1
+        );
+    xml += QByteArrayLiteral("</row><row r=\"21\">");
+    xml += calendarInlineStringCell(
+        QStringLiteral("Z21"),
+        QStringLiteral("Red Day"),
+        2
+        );
+    xml += QByteArrayLiteral("</row><row r=\"22\">");
+    xml += calendarInlineStringCell(
+        QStringLiteral("Z22"),
+        QStringLiteral("Weekend"),
+        3
+        );
+    xml += QByteArrayLiteral(
+        "</row></sheetData>"
+        "<mergeCells count=\"12\">"
+        );
+    for (int month = 1; month <= 12; ++month)
+    {
+        const int blockRow = 1 + (month - 1) * 16;
+        xml += QStringLiteral(
+            "<mergeCell ref=\"A%1:B%1\"/>"
+            ).arg(blockRow).toUtf8();
+    }
+    xml += QByteArrayLiteral("</mergeCells></worksheet>");
+    return xml;
+}
+
+QByteArray emptyCalendarImportWorksheet()
+{
+    return QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+        "<sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>Archive</t></is></c></row>"
+        "</sheetData></worksheet>"
+        );
+}
+
+QByteArray largeCalendarImportWorkbookData()
+{
+    const QByteArray workbook = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\""
+        " xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">"
+        "<sheets><sheet name=\"Calendar 2026\" sheetId=\"1\" r:id=\"rId1\"/>"
+        "<sheet name=\"Archive\" sheetId=\"2\" r:id=\"rId2\"/></sheets>"
+        "</workbook>"
+        );
+    const QByteArray relationships = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+        "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/>"
+        "<Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\"/>"
+        "</Relationships>"
+        );
+    const QByteArray styles = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+        "<fonts count=\"1\"><font><color rgb=\"FF000000\"/></font></fonts>"
+        "<fills count=\"5\">"
+        "<fill><patternFill patternType=\"none\"/></fill>"
+        "<fill><patternFill patternType=\"gray125\"/></fill>"
+        "<fill><patternFill patternType=\"solid\"><fgColor rgb=\"FFFFF2CC\"/></patternFill></fill>"
+        "<fill><patternFill patternType=\"solid\"><fgColor rgb=\"FFFFCCCC\"/></patternFill></fill>"
+        "<fill><patternFill patternType=\"solid\"><fgColor rgb=\"FFD9EAD3\"/></patternFill></fill>"
+        "</fills>"
+        "<cellXfs count=\"4\">"
+        "<xf fontId=\"0\" fillId=\"0\"/>"
+        "<xf fontId=\"0\" fillId=\"2\"/>"
+        "<xf fontId=\"0\" fillId=\"3\"/>"
+        "<xf fontId=\"0\" fillId=\"4\"/>"
+        "</cellXfs></styleSheet>"
+        );
+
+    return storedZip({
+        {QByteArrayLiteral("xl/workbook.xml"), workbook},
+        {QByteArrayLiteral("xl/_rels/workbook.xml.rels"), relationships},
+        {QByteArrayLiteral("xl/styles.xml"), styles},
+        {
+            QByteArrayLiteral("xl/worksheets/sheet1.xml"),
+            largeCalendarImportWorksheet()
+        },
+        {
+            QByteArrayLiteral("xl/worksheets/sheet2.xml"),
+            emptyCalendarImportWorksheet()
+        }
+    });
+}
+
+bool writeLargeCalendarImportWorkbook(
+    const QString& path
+    )
+{
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        return false;
+    }
+    const QByteArray data = largeCalendarImportWorkbookData();
+    return file.write(data) == data.size()
+        && file.flush()
+        && file.error() == QFile::NoError;
+}
+
 bool thresholdExceeded(
     const char* environmentVariable,
     double value,
@@ -663,6 +876,7 @@ private slots:
     void capturesLargeClassesBoundaryWhenConfigured();
     void capturesLargeScheduleBoundaryWhenConfigured();
     void capturesLargeScheduleImportBoundaryWhenConfigured();
+    void capturesLargeCalendarImportBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -4062,6 +4276,580 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
             QDir(outputRoot).filePath(
                 QStringLiteral("schedule-import-review.png")
                 )
+            )
+        );
+}
+
+void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_CALENDAR_IMPORT_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_CALENDAR_IMPORT_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString workbookPath =
+        directory.filePath(QStringLiteral("large-calendar-import.xlsx"));
+    QVERIFY2(
+        writeLargeCalendarImportWorkbook(workbookPath),
+        "Unable to write the deterministic large Calendar import workbook."
+        );
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-calendar-import.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    const QString settingsRoot =
+        directory.filePath(QStringLiteral("settings"));
+    QVERIFY2(
+        writeRepresentativeStartupSettings(settingsRoot),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large Calendar Import reference root: %1"
+                ).arg(outputRoot)
+            )
+        );
+    const QString retainedWorkbookPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-calendar-import.xlsx")
+            );
+    if (QFileInfo::exists(retainedWorkbookPath))
+    {
+        QVERIFY(QFile::remove(retainedWorkbookPath));
+    }
+    QVERIFY2(
+        QFile::copy(workbookPath, retainedWorkbookPath),
+        "Unable to retain the generated large Calendar import workbook."
+        );
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-calendar-import-workflow.json")
+            );
+    const QString tracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    if (QFileInfo::exists(metricsPath))
+    {
+        QVERIFY(QFile::remove(metricsPath));
+    }
+    QFile traceOutput(tracePath);
+    QVERIFY2(
+        traceOutput.open(
+            QIODevice::WriteOnly
+            | QIODevice::Truncate
+            | QIODevice::Text
+            ),
+        qPrintable(traceOutput.errorString())
+        );
+    traceOutput.close();
+
+    const auto workbookData =
+        std::make_shared<QByteArray>(largeCalendarImportWorkbookData());
+    QTcpServer server;
+    QVERIFY2(
+        server.listen(QHostAddress::LocalHost),
+        qPrintable(server.errorString())
+        );
+    QObject::connect(
+        &server,
+        &QTcpServer::newConnection,
+        &server,
+        [&server, workbookData]()
+        {
+            while (server.hasPendingConnections())
+            {
+                QTcpSocket* socket = server.nextPendingConnection();
+                QObject::connect(
+                    socket,
+                    &QTcpSocket::disconnected,
+                    socket,
+                    &QObject::deleteLater
+                    );
+                const auto response =
+                    std::make_shared<QByteArray>(
+                    QByteArrayLiteral(
+                        "HTTP/1.1 200 OK\r\n"
+                        "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n"
+                        )
+                    + QByteArrayLiteral("Content-Length: ")
+                    + QByteArray::number(workbookData->size())
+                    + QByteArrayLiteral("\r\nConnection: close\r\n\r\n")
+                    + *workbookData
+                    );
+                const auto responded = std::make_shared<bool>(false);
+                QObject::connect(
+                    socket,
+                    &QTcpSocket::readyRead,
+                    socket,
+                    [socket, response, responded]()
+                    {
+                        socket->readAll();
+                        if (*responded)
+                        {
+                            return;
+                        }
+                        *responded = true;
+                        socket->write(*response);
+                        socket->flush();
+                        socket->disconnectFromHost();
+                    }
+                    );
+            }
+        }
+        );
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        settingsRoot
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        tracePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL"),
+        QStringLiteral("http://127.0.0.1:%1/large-calendar.xlsx")
+            .arg(server.serverPort())
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_CALENDAR_IMPORT_OUTPUT_DIR"),
+        outputRoot
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral(
+                "--startup-performance-calendar-import-lifecycle"
+                ),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    QElapsedTimer processTimer;
+    processTimer.start();
+    bool finished = false;
+    while (processTimer.elapsed() < StartupTimeoutMs)
+    {
+        if (process.waitForFinished(25))
+        {
+            finished = true;
+            break;
+        }
+        QCoreApplication::processEvents(
+            QEventLoop::AllEvents,
+            5
+            );
+    }
+    if (!finished && process.state() == QProcess::NotRunning)
+    {
+        finished = true;
+    }
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+    QCoreApplication::processEvents(
+        QEventLoop::AllEvents,
+        50
+        );
+    server.close();
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+
+    QByteArray traceContents;
+    QFile traceFile(tracePath);
+    if (traceFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        traceContents = traceFile.readAll();
+    }
+    const QStringList traceLines =
+        QString::fromUtf8(traceContents)
+            .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start schedule")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the Schedule transition. "
+                "stdout/stderr were retained under %1."
+                ).arg(outputRoot)
+            )
+        );
+    for (const QString& expectedTrace : {
+             QStringLiteral("calendar-import-preferences-start"),
+             QStringLiteral("calendar-import-preferences-opened"),
+             QStringLiteral("calendar-import-ui-start"),
+             QStringLiteral("calendar-import-operation-start"),
+             QStringLiteral("calendar-import-response-received"),
+             QStringLiteral("calendar-import-workbook-parsed"),
+             QStringLiteral("calendar-import-events-prepared"),
+             QStringLiteral("calendar-import-existing-events-loaded"),
+             QStringLiteral("calendar-import-save-prepared"),
+             QStringLiteral("calendar-import-operation-applied"),
+             QStringLiteral("calendar-import-finished"),
+             QStringLiteral("calendar-import-page-refreshed"),
+             QStringLiteral("calendar-import-operation-released"),
+             QStringLiteral("calendar-import-dialog-released"),
+             QStringLiteral("calendar-import-page-released")
+         })
+    {
+        bool foundTrace = false;
+        for (const QString& line : traceLines)
+        {
+            if (line.startsWith(expectedTrace))
+            {
+                foundTrace = true;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundTrace,
+            qPrintable(
+                QStringLiteral(
+                    "The heavy Calendar Import lifecycle did not record '%1'. "
+                    "stdout/stderr were retained under %2."
+                    )
+                    .arg(expectedTrace, outputRoot)
+                )
+            );
+    }
+
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly | QIODevice::Text),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError parseError;
+    const QJsonDocument metricsDocument =
+        QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+    QVERIFY2(
+        parseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject(),
+        qPrintable(parseError.errorString())
+        );
+    const QJsonObject report = metricsDocument.object();
+    const auto checkpointNamed =
+        [&report](const QString& name)
+        {
+            for (const QJsonValue& value :
+                 report.value(QStringLiteral("checkpoints")).toArray())
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (checkpoint.value(QStringLiteral("name")).toString() == name)
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+
+    const QJsonObject parsedCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-workbook-parsed"));
+    const QJsonObject eventsCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-events-prepared"));
+    const QJsonObject saveCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-save-prepared"));
+    const QJsonObject appliedCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-operation-applied"));
+    const QJsonObject releasedCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-operation-released"));
+    const QJsonObject pageCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-page-refreshed"));
+    const QJsonObject workflowCheckpoint =
+        checkpointNamed(QStringLiteral("workflow-complete"));
+
+    QVERIFY(!parsedCheckpoint.isEmpty());
+    QVERIFY(!eventsCheckpoint.isEmpty());
+    QVERIFY(!saveCheckpoint.isEmpty());
+    QVERIFY(!appliedCheckpoint.isEmpty());
+    QVERIFY(!releasedCheckpoint.isEmpty());
+    QVERIFY(!pageCheckpoint.isEmpty());
+    QVERIFY(!workflowCheckpoint.isEmpty());
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+
+    const QJsonObject parsedMetrics =
+        parsedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        parsedMetrics.value(
+            QStringLiteral("calendarImportWorkbookSheetCount")
+            ).toInt(),
+        2
+        );
+    QVERIFY(
+        parsedMetrics.value(
+            QStringLiteral("calendarImportWorkbookCellCount")
+            ).toInt() > 300
+        );
+    QVERIFY(
+        parsedMetrics.value(
+            QStringLiteral("calendarImportWorkbookMergedRangeCount")
+            ).toInt() >= 12
+        );
+    QCOMPARE(
+        parsedMetrics.value(
+            QStringLiteral("calendarImportWorkbookStyleCount")
+            ).toInt(),
+        4
+        );
+    QVERIFY(
+        !parsedMetrics.value(
+            QStringLiteral("calendarImportRawBytesRetained")
+            ).toBool()
+        );
+    QVERIFY(
+        parsedMetrics.value(
+            QStringLiteral("calendarImportWorkbookRetained")
+            ).toBool()
+        );
+
+    const QJsonObject eventsMetrics =
+        eventsCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        eventsMetrics.value(
+            QStringLiteral("calendarImportParsedEventCount")
+            ).toInt() > 100
+        );
+    QVERIFY(
+        eventsMetrics.value(
+            QStringLiteral("calendarImportParsedSkippedCount")
+            ).toInt() > 0
+        );
+    QVERIFY(
+        eventsMetrics.value(
+            QStringLiteral("calendarImportEventsRetained")
+            ).toBool()
+        );
+
+    const QJsonObject saveMetrics =
+        saveCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        saveMetrics.value(
+            QStringLiteral("calendarImportExistingEventCount")
+            ).toInt() >= 0
+        );
+    QVERIFY(
+        saveMetrics.value(
+            QStringLiteral("calendarImportEventsToSaveCount")
+            ).toInt() > 100
+        );
+
+    const QJsonObject appliedMetrics =
+        appliedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        appliedMetrics.value(
+            QStringLiteral("calendarImportSavedEventCount")
+            ).toInt() > 100
+        );
+    QVERIFY(
+        appliedMetrics.value(
+            QStringLiteral("calendarImportOperationsApplied")
+            ).toInt() >= 1
+        );
+    QVERIFY(
+        appliedMetrics.value(
+            QStringLiteral("calendarImportOperationRetained")
+            ).toBool()
+        );
+
+    const QJsonObject releasedMetrics =
+        releasedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        !releasedMetrics.value(
+            QStringLiteral("calendarImportRawBytesRetained")
+            ).toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(
+            QStringLiteral("calendarImportWorkbookRetained")
+            ).toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(
+            QStringLiteral("calendarImportEventsRetained")
+            ).toBool()
+        );
+    QVERIFY(
+        !releasedMetrics.value(
+            QStringLiteral("calendarImportOperationRetained")
+            ).toBool()
+        );
+    QVERIFY(
+        releasedMetrics.value(
+            QStringLiteral("calendarImportOperationsReleased")
+            ).toInt() >= 1
+        );
+
+    const QJsonObject pageMetrics =
+        pageCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        pageMetrics.value(
+            QStringLiteral("calendarCacheEventCount")
+            ).toInt() > 0
+        );
+    QVERIFY(
+        pageMetrics.value(
+            QStringLiteral("calendarCacheRetainedRangeCount")
+            ).toInt() > 0
+        );
+    QVERIFY(
+        !pageMetrics.value(
+            QStringLiteral("calendarCacheLoading")
+            ).toBool()
+        );
+
+    QJsonObject manifest;
+    manifest.insert(QStringLiteral("fixture"), QStringLiteral("large_startup.sql"));
+    manifest.insert(
+        QStringLiteral("workbookFixture"),
+        QStringLiteral("generated large-calendar-import.xlsx")
+        );
+    manifest.insert(
+        QStringLiteral("fixtureScale"),
+        QStringLiteral("large_startup_calendar_import_lifecycle")
+        );
+    manifest.insert(
+        QStringLiteral("scenario"),
+        QStringLiteral(
+            "96-class heavy route, Calendar workbook response, parse, apply, Preferences close, cache refresh, cleanup"
+            )
+        );
+    manifest.insert(QStringLiteral("teacherCount"), 24);
+    manifest.insert(QStringLiteral("classCount"), 96);
+    manifest.insert(QStringLiteral("workbookBytes"), QFileInfo(workbookPath).size());
+    manifest.insert(QStringLiteral("processFinished"), finished);
+    manifest.insert(
+        QStringLiteral("exitStatus"),
+        process.exitStatus() == QProcess::NormalExit
+            ? QStringLiteral("normal")
+            : QStringLiteral("crash")
+        );
+    manifest.insert(QStringLiteral("exitCode"), process.exitCode());
+    manifest.insert(QStringLiteral("timedOut"), !finished);
+    manifest.insert(QStringLiteral("traceLineCount"), traceLines.size());
+    manifest.insert(
+        QStringLiteral("metricsPath"),
+        QStringLiteral("large-calendar-import-workflow.json")
+        );
+    manifest.insert(
+        QStringLiteral("tracePath"),
+        QStringLiteral("workflow-trace.txt")
+        );
+    manifest.insert(
+        QStringLiteral("stdoutPath"),
+        QStringLiteral("process-stdout.txt")
+        );
+    manifest.insert(
+        QStringLiteral("stderrPath"),
+        QStringLiteral("process-stderr.txt")
+        );
+    manifest.insert(
+        QStringLiteral("parsedCheckpointMetrics"),
+        parsedCheckpoint.value(QStringLiteral("metrics"))
+        );
+    manifest.insert(
+        QStringLiteral("releasedCheckpointMetrics"),
+        releasedCheckpoint.value(QStringLiteral("metrics"))
+        );
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
+        );
+    QVERIFY(manifestFile.flush());
+    QVERIFY(manifestFile.error() == QFile::NoError);
+
+    QVERIFY(
+        QFileInfo::exists(
+            QDir(outputRoot).filePath(
+                QStringLiteral("calendar-import-preferences.png")
+                )
+            )
+        );
+    QVERIFY(
+        QFileInfo::exists(
+            QDir(outputRoot).filePath(QStringLiteral("calendar-page.png"))
             )
         );
 }

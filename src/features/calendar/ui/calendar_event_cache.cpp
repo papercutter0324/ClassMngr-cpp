@@ -368,6 +368,16 @@ int CalendarEventCache::dateBucketCount() const
     return m_eventIdsByDate.size();
 }
 
+int CalendarEventCache::loadedRangeCount() const
+{
+    return m_loadedRanges.size();
+}
+
+int CalendarEventCache::retainedRangeCount() const
+{
+    return m_retainedRanges.size();
+}
+
 CalendarEventCache::LoadResult CalendarEventCache::load(
     const QString& databasePath,
     const Request& request

@@ -240,6 +240,46 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.scheduleVisibleClassCount
         },
         {
+            QStringLiteral("calendarCacheEventCount"),
+            metrics.calendarCacheEventCount
+        },
+        {
+            QStringLiteral("calendarCacheDateBucketCount"),
+            metrics.calendarCacheDateBucketCount
+        },
+        {
+            QStringLiteral("calendarCacheLoadedRangeCount"),
+            metrics.calendarCacheLoadedRangeCount
+        },
+        {
+            QStringLiteral("calendarCacheRetainedRangeCount"),
+            metrics.calendarCacheRetainedRangeCount
+        },
+        {
+            QStringLiteral("calendarLoadedMonthCount"),
+            metrics.calendarLoadedMonthCount
+        },
+        {
+            QStringLiteral("calendarOnDemandRetainedRangeCount"),
+            metrics.calendarOnDemandRetainedRangeCount
+        },
+        {
+            QStringLiteral("calendarModelRevision"),
+            metrics.calendarModelRevision
+        },
+        {
+            QStringLiteral("calendarPageWidgetCount"),
+            metrics.calendarPageWidgetCount
+        },
+        {
+            QStringLiteral("calendarViewObjectCount"),
+            metrics.calendarViewObjectCount
+        },
+        {
+            QStringLiteral("calendarCacheLoading"),
+            metrics.calendarCacheLoading
+        },
+        {
             QStringLiteral("scheduleImportWorkbookSheetCount"),
             metrics.scheduleImportWorkbookSheetCount
         },
@@ -284,6 +324,46 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             static_cast<double>(metrics.scheduleImportRawWorkbookBytes)
         },
         {
+            QStringLiteral("calendarImportWorkbookSheetCount"),
+            metrics.calendarImportWorkbookSheetCount
+        },
+        {
+            QStringLiteral("calendarImportWorkbookCellCount"),
+            metrics.calendarImportWorkbookCellCount
+        },
+        {
+            QStringLiteral("calendarImportWorkbookMergedRangeCount"),
+            metrics.calendarImportWorkbookMergedRangeCount
+        },
+        {
+            QStringLiteral("calendarImportWorkbookSharedStringCount"),
+            metrics.calendarImportWorkbookSharedStringCount
+        },
+        {
+            QStringLiteral("calendarImportWorkbookStyleCount"),
+            metrics.calendarImportWorkbookStyleCount
+        },
+        {
+            QStringLiteral("calendarImportParsedEventCount"),
+            metrics.calendarImportParsedEventCount
+        },
+        {
+            QStringLiteral("calendarImportParsedSkippedCount"),
+            metrics.calendarImportParsedSkippedCount
+        },
+        {
+            QStringLiteral("calendarImportExistingEventCount"),
+            metrics.calendarImportExistingEventCount
+        },
+        {
+            QStringLiteral("calendarImportEventsToSaveCount"),
+            metrics.calendarImportEventsToSaveCount
+        },
+        {
+            QStringLiteral("calendarImportSavedEventCount"),
+            metrics.calendarImportSavedEventCount
+        },
+        {
             QStringLiteral("scheduleImportRawBytesRetained"),
             metrics.scheduleImportRawBytesRetained
         },
@@ -294,6 +374,26 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("scheduleImportReviewRetained"),
             metrics.scheduleImportReviewRetained
+        },
+        {
+            QStringLiteral("calendarImportRawWorkbookBytes"),
+            static_cast<double>(metrics.calendarImportRawWorkbookBytes)
+        },
+        {
+            QStringLiteral("calendarImportRawBytesRetained"),
+            metrics.calendarImportRawBytesRetained
+        },
+        {
+            QStringLiteral("calendarImportWorkbookRetained"),
+            metrics.calendarImportWorkbookRetained
+        },
+        {
+            QStringLiteral("calendarImportEventsRetained"),
+            metrics.calendarImportEventsRetained
+        },
+        {
+            QStringLiteral("calendarImportOperationRetained"),
+            metrics.calendarImportOperationRetained
         },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
@@ -333,6 +433,30 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("scheduleImportOperationsReleased"),
             static_cast<double>(metrics.scheduleImportOperationsReleased)
+        },
+        {
+            QStringLiteral("calendarImportOperationsStarted"),
+            static_cast<double>(metrics.calendarImportOperationsStarted)
+        },
+        {
+            QStringLiteral("calendarImportResponsesReceived"),
+            static_cast<double>(metrics.calendarImportResponsesReceived)
+        },
+        {
+            QStringLiteral("calendarImportWorkbooksParsed"),
+            static_cast<double>(metrics.calendarImportWorkbooksParsed)
+        },
+        {
+            QStringLiteral("calendarImportOperationsApplied"),
+            static_cast<double>(metrics.calendarImportOperationsApplied)
+        },
+        {
+            QStringLiteral("calendarImportOperationsFailed"),
+            static_cast<double>(metrics.calendarImportOperationsFailed)
+        },
+        {
+            QStringLiteral("calendarImportOperationsReleased"),
+            static_cast<double>(metrics.calendarImportOperationsReleased)
         },
         {QStringLiteral("pdfDocumentsLoaded"), static_cast<double>(metrics.pdfDocumentsLoaded)},
         {QStringLiteral("pdfDocumentsReleased"), static_cast<double>(metrics.pdfDocumentsReleased)},
@@ -946,6 +1070,285 @@ void StartupProfiler::recordScheduleImportOperationReleased()
     }
 }
 
+void StartupProfiler::recordCalendarImportStarted(
+    const QString& sourceUrl
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.calendarImportOperationsStarted;
+        metrics.calendarImportOperationRetained = true;
+        metrics.calendarImportRawBytesRetained = false;
+        metrics.calendarImportWorkbookRetained = false;
+        metrics.calendarImportEventsRetained = false;
+        metrics.calendarImportRawWorkbookBytes = 0;
+        metrics.calendarImportWorkbookSheetCount = 0;
+        metrics.calendarImportWorkbookCellCount = 0;
+        metrics.calendarImportWorkbookMergedRangeCount = 0;
+        metrics.calendarImportWorkbookSharedStringCount = 0;
+        metrics.calendarImportWorkbookStyleCount = 0;
+        metrics.calendarImportParsedEventCount = 0;
+        metrics.calendarImportParsedSkippedCount = 0;
+        metrics.calendarImportExistingEventCount = 0;
+        metrics.calendarImportEventsToSaveCount = 0;
+        metrics.calendarImportSavedEventCount = 0;
+
+        const QString detail =
+            QStringLiteral("source=%1")
+                .arg(sourceUrl);
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-operation-start"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-operation-start %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-operation-start"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportResponseReceived(
+    qint64 bytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.calendarImportResponsesReceived;
+        metrics.calendarImportRawWorkbookBytes = qMax<qint64>(0, bytes);
+        metrics.calendarImportRawBytesRetained = true;
+
+        const QString detail =
+            QStringLiteral("rawBytes=%1; rawBytesRetained=true")
+                .arg(metrics.calendarImportRawWorkbookBytes);
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-response-received"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-response-received %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-response-received"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportWorkbookParsed(
+    int sheetCount,
+    int cellCount,
+    int mergedRangeCount,
+    int sharedStringCount,
+    int styleCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.calendarImportWorkbooksParsed;
+        metrics.calendarImportRawBytesRetained = false;
+        metrics.calendarImportWorkbookRetained = true;
+        metrics.calendarImportWorkbookSheetCount = qMax(0, sheetCount);
+        metrics.calendarImportWorkbookCellCount = qMax(0, cellCount);
+        metrics.calendarImportWorkbookMergedRangeCount = qMax(0, mergedRangeCount);
+        metrics.calendarImportWorkbookSharedStringCount = qMax(0, sharedStringCount);
+        metrics.calendarImportWorkbookStyleCount = qMax(0, styleCount);
+
+        const QString detail =
+            QStringLiteral(
+                "sheets=%1; cells=%2; mergedRanges=%3; sharedStrings=%4; styles=%5; rawBytesRetained=false; workbookRetained=true"
+                )
+                .arg(metrics.calendarImportWorkbookSheetCount)
+                .arg(metrics.calendarImportWorkbookCellCount)
+                .arg(metrics.calendarImportWorkbookMergedRangeCount)
+                .arg(metrics.calendarImportWorkbookSharedStringCount)
+                .arg(metrics.calendarImportWorkbookStyleCount);
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-workbook-parsed"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-workbook-parsed %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-workbook-parsed"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportEventsPrepared(
+    int eventCount,
+    int skippedCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.calendarImportEventsRetained = true;
+        metrics.calendarImportParsedEventCount = qMax(0, eventCount);
+        metrics.calendarImportParsedSkippedCount = qMax(0, skippedCount);
+
+        const QString detail =
+            QStringLiteral("events=%1; skipped=%2; eventsRetained=true")
+                .arg(metrics.calendarImportParsedEventCount)
+                .arg(metrics.calendarImportParsedSkippedCount);
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-events-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-events-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-events-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportExistingEventsLoaded(
+    int eventCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.calendarImportExistingEventCount = qMax(0, eventCount);
+
+        const QString detail =
+            QStringLiteral("existingEvents=%1")
+                .arg(metrics.calendarImportExistingEventCount);
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-existing-events-loaded"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-existing-events-loaded %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-existing-events-loaded"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportSavePrepared(
+    int eventsToSaveCount,
+    int skippedCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.calendarImportEventsToSaveCount = qMax(0, eventsToSaveCount);
+        metrics.calendarImportParsedSkippedCount = qMax(0, skippedCount);
+
+        const QString detail =
+            QStringLiteral("eventsToSave=%1; skipped=%2")
+                .arg(metrics.calendarImportEventsToSaveCount)
+                .arg(metrics.calendarImportParsedSkippedCount);
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-save-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-save-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-save-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportApplied(
+    int savedCount,
+    int skippedCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.calendarImportOperationsApplied;
+        metrics.calendarImportSavedEventCount = qMax(0, savedCount);
+        metrics.calendarImportParsedSkippedCount = qMax(0, skippedCount);
+
+        const QString detail =
+            QStringLiteral("saved=%1; skipped=%2")
+                .arg(metrics.calendarImportSavedEventCount)
+                .arg(metrics.calendarImportParsedSkippedCount);
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-operation-applied"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-operation-applied %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-operation-applied"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportFailed(
+    const QString& detail
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.calendarImportOperationsFailed;
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-operation-failed"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-operation-failed %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-operation-failed"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordCalendarImportOperationReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.calendarImportOperationsReleased;
+        metrics.calendarImportRawBytesRetained = false;
+        metrics.calendarImportWorkbookRetained = false;
+        metrics.calendarImportEventsRetained = false;
+        metrics.calendarImportOperationRetained = false;
+
+        profiler->recordEvent(
+            QStringLiteral("calendar-import-operation-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("calendar-import-operation-released")
+            );
+        profiler->checkpoint(
+            QStringLiteral("calendar-import-operation-released")
+            );
+    }
+}
+
 void StartupProfiler::recordEvent(
     const QString& name,
     const QString& detail
@@ -1067,6 +1470,26 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.scheduleTableCellWidgetCount;
         metrics.scheduleVisibleClassCount =
             supplied.scheduleVisibleClassCount;
+        metrics.calendarCacheEventCount =
+            supplied.calendarCacheEventCount;
+        metrics.calendarCacheDateBucketCount =
+            supplied.calendarCacheDateBucketCount;
+        metrics.calendarCacheLoadedRangeCount =
+            supplied.calendarCacheLoadedRangeCount;
+        metrics.calendarCacheRetainedRangeCount =
+            supplied.calendarCacheRetainedRangeCount;
+        metrics.calendarLoadedMonthCount =
+            supplied.calendarLoadedMonthCount;
+        metrics.calendarOnDemandRetainedRangeCount =
+            supplied.calendarOnDemandRetainedRangeCount;
+        metrics.calendarModelRevision =
+            supplied.calendarModelRevision;
+        metrics.calendarPageWidgetCount =
+            supplied.calendarPageWidgetCount;
+        metrics.calendarViewObjectCount =
+            supplied.calendarViewObjectCount;
+        metrics.calendarCacheLoading =
+            supplied.calendarCacheLoading;
     }
 
     return metrics;

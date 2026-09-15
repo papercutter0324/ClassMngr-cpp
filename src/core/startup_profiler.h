@@ -72,10 +72,35 @@ struct StartupApplicationMetrics
     int scheduleImportReviewTeacherControlCount = 0;
     int scheduleImportReviewClassControlCount = 0;
     int scheduleImportReviewPreviewEntryCount = 0;
+    int calendarCacheEventCount = 0;
+    int calendarCacheDateBucketCount = 0;
+    int calendarCacheLoadedRangeCount = 0;
+    int calendarCacheRetainedRangeCount = 0;
+    int calendarLoadedMonthCount = 0;
+    int calendarOnDemandRetainedRangeCount = 0;
+    int calendarModelRevision = 0;
+    int calendarPageWidgetCount = 0;
+    int calendarViewObjectCount = 0;
+    bool calendarCacheLoading = false;
+    int calendarImportWorkbookSheetCount = 0;
+    int calendarImportWorkbookCellCount = 0;
+    int calendarImportWorkbookMergedRangeCount = 0;
+    int calendarImportWorkbookSharedStringCount = 0;
+    int calendarImportWorkbookStyleCount = 0;
+    int calendarImportParsedEventCount = 0;
+    int calendarImportParsedSkippedCount = 0;
+    int calendarImportExistingEventCount = 0;
+    int calendarImportEventsToSaveCount = 0;
+    int calendarImportSavedEventCount = 0;
     qint64 scheduleImportRawWorkbookBytes = 0;
+    qint64 calendarImportRawWorkbookBytes = 0;
     bool scheduleImportRawBytesRetained = false;
     bool scheduleImportWorkbookRetained = false;
     bool scheduleImportReviewRetained = false;
+    bool calendarImportRawBytesRetained = false;
+    bool calendarImportWorkbookRetained = false;
+    bool calendarImportEventsRetained = false;
+    bool calendarImportOperationRetained = false;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -91,6 +116,12 @@ struct StartupApplicationMetrics
     quint64 scheduleImportOperationsCancelled = 0;
     quint64 scheduleImportOperationsApplied = 0;
     quint64 scheduleImportOperationsReleased = 0;
+    quint64 calendarImportOperationsStarted = 0;
+    quint64 calendarImportResponsesReceived = 0;
+    quint64 calendarImportWorkbooksParsed = 0;
+    quint64 calendarImportOperationsApplied = 0;
+    quint64 calendarImportOperationsFailed = 0;
+    quint64 calendarImportOperationsReleased = 0;
     quint64 pdfDocumentsLoaded = 0;
     quint64 pdfDocumentsReleased = 0;
     quint64 pdfRenderCount = 0;
@@ -203,6 +234,38 @@ public:
     static void recordScheduleImportCancelled();
     static void recordScheduleImportApplied();
     static void recordScheduleImportOperationReleased();
+    static void recordCalendarImportStarted(
+        const QString& sourceUrl
+        );
+    static void recordCalendarImportResponseReceived(
+        qint64 bytes
+        );
+    static void recordCalendarImportWorkbookParsed(
+        int sheetCount,
+        int cellCount,
+        int mergedRangeCount,
+        int sharedStringCount,
+        int styleCount
+        );
+    static void recordCalendarImportEventsPrepared(
+        int eventCount,
+        int skippedCount
+        );
+    static void recordCalendarImportExistingEventsLoaded(
+        int eventCount
+        );
+    static void recordCalendarImportSavePrepared(
+        int eventsToSaveCount,
+        int skippedCount
+        );
+    static void recordCalendarImportApplied(
+        int savedCount,
+        int skippedCount
+        );
+    static void recordCalendarImportFailed(
+        const QString& detail
+        );
+    static void recordCalendarImportOperationReleased();
 
 private:
     void recordEvent(
