@@ -148,6 +148,13 @@ malformed `.db` whose bytes must remain unchanged after rejection, and an
 exclusive lock held during legacy migration. The lock case must fail cleanly,
 then migrate successfully after the lock is released.
 
+`tests/fixtures/transfers/conflict_source.json` is the permanent class-transfer
+package used for conflict review. The focused class-transfer test loads it,
+constructs a destination with matching class/teacher identity and a colliding
+schedule, verifies the review choices, and confirms the import rolls back
+without changing the destination. Its readable offscreen dialog reference is
+retained at `docs/qt-rewrite/visual-baseline/conflict/class-import-review.png`.
+
 ## Reproduction commands
 
 Windows x64 clean Phase 0 build (Qt 6.12.0 installed at the path below).
@@ -218,6 +225,12 @@ To retain a canonical fixture for a packaged run, set
 `CLASSMNGR_LEGACY_STARTUP_FIXTURE_OUTPUT_PATH` for the migrated legacy fixture
 while running the corresponding test. With the variables unset, the tests
 continue to use temporary fixtures and ordinary CTest remains non-mutating.
+
+Set `CLASSMNGR_CLASS_TRANSFER_FIXTURE_OUTPUT_PATH` while running
+`jsonRoundTripPreservesCompletePackage` to regenerate the transfer package.
+Set `CLASSMNGR_CONFLICT_REVIEW_OUTPUT_PATH` while running
+`permanentConflictFixturePresentsReviewAndRejectsScheduleCollision` to retain
+the offscreen dialog PNG.
 
 For an empty workspace:
 

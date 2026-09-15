@@ -177,6 +177,19 @@
 - What remains: add conflict/import-review coverage, measure large-feature
   entry/exit and idle retention, and capture generated-output references.
 
+## Progress update - 2026-09-16 (conflict/import-review fixture)
+
+- What changed: added the permanent `conflict_source.json` class-transfer
+  package and an offscreen `ClassImportDialog` capture path. The new test
+  loads the package, verifies matching class/teacher review choices, captures
+  the review dialog when requested, and confirms a colliding schedule is
+  rejected atomically.
+- Evidence: `ClassMngrClassTransferTests` passed all 16 tests; the readable
+  dialog reference is retained at
+  `docs/qt-rewrite/visual-baseline/conflict/class-import-review.png`.
+- What remains: add schedule-workbook/import-review fixtures, then measure
+  large-feature entry/exit and idle retention and capture generated outputs.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)

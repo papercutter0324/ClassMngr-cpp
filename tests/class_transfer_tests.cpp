@@ -5,10 +5,16 @@
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
 
+#include <QApplication>
 #include <QComboBox>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
+#include <QFont>
+#include <QFontDatabase>
 #include <QJsonDocument>
 #include <QListWidget>
+#include <QPixmap>
 #include <QPushButton>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -169,6 +175,23 @@ ClassImportPlan createAllPlan(
 
     return plan;
 }
+
+QString loadReviewFontFamily()
+{
+    const QString fontPath =
+        QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+            QStringLiteral("resources/assets/fonts/Inter.ttc")
+            );
+    const int fontId = QFontDatabase::addApplicationFont(fontPath);
+    if (fontId < 0)
+    {
+        return {};
+    }
+
+    const QStringList families =
+        QFontDatabase::applicationFontFamilies(fontId);
+    return families.isEmpty() ? QString() : families.first();
+}
 }
 
 class ClassTransferTests : public QObject
@@ -186,6 +209,7 @@ private slots:
     void databaseFailureRollsBackAllWrites();
     void incompleteCourseSignatureDoesNotMatch();
     void codecRejectsMalformedAndUnsupportedPackages();
+    void permanentConflictFixturePresentsReviewAndRejectsScheduleCollision();
     void exportDialogStartsClearAndSortsClassesAlphabetically();
     void filesystemSafeJsonFileName();
     void importDialogRequiresAmbiguousTeacherResolution();
@@ -219,8 +243,25 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
     });
     package.classes.append(transferClass);
 
-    const QString path = directory.filePath(
-        QStringLiteral("roundtrip.classmngr-classes.json"));
+    const QString configuredFixturePath =
+        qEnvironmentVariable(
+            "CLASSMNGR_CLASS_TRANSFER_FIXTURE_OUTPUT_PATH"
+            ).trimmed();
+    const QString path =
+        configuredFixturePath.isEmpty()
+            ? directory.filePath(
+                  QStringLiteral("roundtrip.classmngr-classes.json"))
+            : configuredFixturePath;
+    if (!configuredFixturePath.isEmpty())
+    {
+        QVERIFY2(
+            QDir().mkpath(QFileInfo(path).absolutePath()),
+            qPrintable(
+                QStringLiteral("Could not create transfer fixture directory for %1")
+                    .arg(path)
+                )
+            );
+    }
     QVERIFY(ClassTransferJsonCodec::saveFile(path, package).has_value());
 
     const auto loaded = ClassTransferJsonCodec::loadFile(path);
@@ -726,6 +767,115 @@ void ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages()
     classes.replace(0, firstClass);
     json.insert(QStringLiteral("classes"), classes);
     QVERIFY(!ClassTransferJsonCodec::fromJson(json).has_value());
+}
+
+void ClassTransferTests::
+    permanentConflictFixturePresentsReviewAndRejectsScheduleCollision()
+{
+    const QString fixturePath =
+        QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+            QStringLiteral("tests/fixtures/transfers/conflict_source.json")
+            );
+    const auto package = ClassTransferJsonCodec::loadFile(fixturePath);
+    QVERIFY2(
+        package.has_value(),
+        package ? "" : qPrintable(package.error())
+        );
+    QCOMPARE(package->version, ClassTransferPackage::CurrentVersion);
+    QCOMPARE(package->teachers.size(), 1);
+    QCOMPARE(package->classes.size(), 1);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    const int destinationTeacher =
+        createdTeacherId(service, completeTeacher());
+    const int destinationClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Destination Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Destination Student")
+        );
+    QVERIFY(destinationClass > 0);
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY(preview.has_value());
+    QCOMPARE(
+        preview->teachers.first().matchingTeacherIds,
+        QList<int>({destinationTeacher})
+        );
+    QCOMPARE(
+        preview->classes.first().matchingClassIds,
+        QList<int>({destinationClass})
+        );
+
+    ClassService classes(service.databaseSession(), &service);
+    TeacherService teachers(service.databaseSession(), &service);
+    const QString reviewFontFamily = loadReviewFontFamily();
+    if (!reviewFontFamily.isEmpty())
+    {
+        QApplication::setFont(QFont(reviewFontFamily));
+    }
+    ClassImportDialog dialog(
+        &classes, &teachers, *package, *preview);
+    auto* classChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0"));
+    auto* teacherChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_teacher-1"));
+    auto* importButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("importClassesButton"));
+    QVERIFY(classChoice);
+    QVERIFY(teacherChoice);
+    QVERIFY(importButton);
+    QVERIFY(importButton->isEnabled());
+    QCOMPARE(classChoice->count(), 3);
+    QCOMPARE(teacherChoice->count(), 2);
+
+    dialog.show();
+    QApplication::processEvents();
+
+    const QString screenshotPath =
+        qEnvironmentVariable(
+            "CLASSMNGR_CONFLICT_REVIEW_OUTPUT_PATH"
+            ).trimmed();
+    if (!screenshotPath.isEmpty())
+    {
+        QVERIFY2(
+            QDir().mkpath(QFileInfo(screenshotPath).absolutePath()),
+            qPrintable(
+                QStringLiteral("Could not create conflict screenshot directory for %1")
+                    .arg(screenshotPath)
+                )
+            );
+        const QPixmap screenshot = dialog.grab();
+        QVERIFY(!screenshot.isNull());
+        QVERIFY2(
+            screenshot.save(screenshotPath, "PNG"),
+            qPrintable(QStringLiteral("Could not save conflict review screenshot: %1")
+                           .arg(screenshotPath))
+            );
+    }
+
+    const int teachersBefore = service.getAllTeachers()
+        .value_or(QList<Teacher>{}).size();
+    const int classesBefore = service.getClasses()
+        .value_or(QList<Classroom>{}).size();
+    const auto result = service.importClasses(
+        *package, dialog.importPlan());
+    QVERIFY(!result.has_value());
+    QVERIFY(result.error().contains(QStringLiteral("Schedule conflicts")));
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
+    QCOMPARE(service.loadRoster(destinationClass)->rows.first().first(),
+             QStringLiteral("Destination Student"));
 }
 
 void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
