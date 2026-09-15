@@ -131,6 +131,18 @@ Counts include `.cpp`, `.h`, `.ui`, and `.qml` files in each source area.
 - Speaking evaluation workflows: table editing, notes, report dialog, AI batch
   prompt/review, batch export, and PowerPoint/PDF output.
 
+Sub Prep output is currently assembled from the page's rich
+`TeacherGroup` collection and then passed to the PDF/package services. The
+Phase 0 heavy-output probe invokes those same services with the large fixture
+cardinality (24 teachers, 96 classes, 7,200 roster cells), verifies both the
+Sub Prep and Daily roster PDFs by reopening and rendering them, and retains
+the result under
+`docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/`.
+The probe uses an explicit synthetic service payload with that cardinality; it
+does not claim that the unstable large-route SQL workflow completed.
+This is the output oracle for the v2 operation-scoped projection; it is not a
+permission to keep the page's per-class widget graph as the v2 owner.
+
 ## Menu and action inventory
 
 `MenuBuilder` currently creates these menus:

@@ -1,0 +1,27 @@
+{
+    "classCount": 96,
+    "documentCount": 2,
+    "documents": [
+        {
+            "fileSizeBytes": 82095,
+            "firstPageCapture": "reference/Sub Prep-first-page.png",
+            "firstPageHeight": 1754,
+            "firstPageWidth": 1240,
+            "pageCount": 19,
+            "relativePath": "reference/Sub Prep.pdf"
+        },
+        {
+            "fileSizeBytes": 84236,
+            "firstPageCapture": "reference/Rosters - Daily-first-page.png",
+            "firstPageHeight": 1754,
+            "firstPageWidth": 1240,
+            "pageCount": 16,
+            "relativePath": "reference/Rosters - Daily.pdf"
+        }
+    ],
+    "fixtureScale": "large_startup_cardinality",
+    "rosterCellCount": 7200,
+    "rosterRowCount": 2400,
+    "selectedDate": "2026-07-21",
+    "teacherCount": 24
+}

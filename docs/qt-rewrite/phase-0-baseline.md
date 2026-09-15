@@ -153,6 +153,11 @@ does not recreate or rely on them.
   report and its matching route/PDF captures. The four-language/theme matrices
   remain available in the Debug/offscreen
   reference directories.
+- The packaged-configuration Sub Prep output reference is retained under
+  `docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/`. It
+  contains the 96-class-scale `Sub Prep.pdf` and Daily roster PDF, their
+  first-page PNGs, and a manifest with document sizes, page counts, and render
+  dimensions.
 
 ## Fixture added in this pass
 
@@ -170,6 +175,13 @@ workspace without checking in a binary database. Its deterministic contract is
 intensive slot states, 7,200 roster cells, 20 speaking evaluations with 600
 evaluation rows, three campuses, and 180 calendar events. The focused startup
 test validates its integrity and row counts after materialization.
+
+The heavy Sub Prep output slot mirrors the large fixture's 24 teachers, 96
+classes, and 7,200 roster cells in an operation-scoped package request. The
+current output oracle generates a 19-page Sub Prep PDF and a 16-page Daily
+roster PDF, then reopens and renders the first page of each before accepting
+the package. This isolates generated-output behavior from the current large
+route failure while keeping the same stress cardinality.
 
 `tests/fixtures/workspaces/legacy_startup.sql` is a partial schema-version-zero
 `.db` source. The startup test materializes it, runs the current schema manager,
@@ -299,6 +311,14 @@ schedule conflict workbook. Set
 `CLASSMNGR_SCHEDULE_CONFLICT_REVIEW_OUTPUT_PATH` during the same test to retain
 its conflict-state dialog PNG.
 
+Set `CLASSMNGR_SUB_PREP_OUTPUT_REFERENCE_DIR` while running
+`largePackageGeneratesOutputReferenceWhenConfigured` to retain the heavy
+96-class Sub Prep documents, first-page captures, and `manifest.json` under a
+normal reference directory. The package itself is always generated in a
+temporary target, so the retained files do not include empty per-class
+directories. With the variable unset, the test still exercises the same
+renderer against a temporary target and remains non-mutating.
+
 For an empty workspace:
 
 ```powershell
@@ -340,6 +360,12 @@ store the JSON startup trace beside the PNG files.
 - A completed large-workspace Sub Prep route: the current 96-class fixture
   expands too many class-information cards for a stable packaged workflow and
   is reserved as a v2 heavy-route stress case.
-- Golden generated PDFs, reports, rosters, substitute documents, and
-  PowerPoint output.
+- A retained failure-boundary artifact for that actual `large_startup.sql`
+  Sub Prep route, including the last reached checkpoint, process outcome, and
+  feature-specific widget/editor/model/query counts.
+- Sub Prep visual references for the selected, changed-selection, empty, both
+  language/theme, and generated-output states, plus an explicit packaged
+  Release memory budget for the v2 acceptance gate.
+- Golden generated reports, rosters, substitute documents, and PowerPoint
+  output beyond the retained heavy Sub Prep PDF/package reference.
 - Per-resource decoded/resident sizes and page/object lifecycle traces.

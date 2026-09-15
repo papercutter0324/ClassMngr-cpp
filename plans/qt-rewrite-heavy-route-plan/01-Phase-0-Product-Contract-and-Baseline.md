@@ -476,3 +476,37 @@ No v2 feature work begins without a fixture and an acceptance check.
   packaged/cross-platform visual baselines. Future implementation slices must
   follow the heavy route by introducing the parallel v2 ownership and resource
   boundaries rather than extending the legacy composition root.
+
+## Progress update - 2026-09-16 (Sub Prep sub-prep update evaluation)
+
+- What changed: the recent Sub Prep update adds a named Phase 7J heavy slice
+  for memory-bounded class information and operation-scoped output. It now
+  defines summary/detail/print-source contracts, model/delegate ownership,
+  selected-class lifetime, invalidation, output cleanup, and the Phase 9
+  large-fixture memory gate.
+- Evaluation: this is a substantive sequencing and ownership change, not a
+  documentation-only refinement. It confirms that the current page-wide rich
+  `TeacherGroup`/class-card graph is the failure boundary and that the v2 work
+  must move data, application, UI, output, and lifecycle ownership together.
+  The new plan does not close Phase 0 or authorize a model-only v2 patch.
+- New Phase 0 work required by the update: retain a failure-boundary artifact
+  from the actual `large_startup.sql` Sub Prep workflow, including the last
+  reached checkpoint and process outcome; add Sub Prep-specific class-info
+  widget/editor/model-row/query-result measurements; capture the selected,
+  changed-selection, empty, both-language/theme, and generated-output visual
+  states; and state the exact packaged Release memory budget and pass/fail
+  thresholds that Phase 9 will enforce. Remaining generated-output and
+  cross-platform references also stay open.
+- Evidence added in this slice: a packaged Release output oracle uses a
+  synthetic service payload matching the large fixture's 24 teachers, 96
+  classes, and 7,200 roster cells. It generates and reopens a 19-page Sub
+  Prep PDF and a 16-page Daily roster PDF, retaining first-page PNGs and a
+  manifest under
+  `docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/`.
+  This closes only the corresponding output reference; it is not evidence that
+  the actual large route is stable.
+- Decision and next heavy slice: remain in Phase 0, keep the legacy Sub Prep
+  path as the comparison oracle, and do not begin the Phase 7J production
+  migration yet. The next slice will instrument and retain the actual
+  large-fixture Sub Prep failure boundary so the eventual 7J vertical slice
+  has measurable acceptance inputs.
