@@ -5,6 +5,7 @@
 
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
+#include "core/startup_profiler.h"
 #include "data/data_service.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
@@ -52,6 +53,33 @@ struct ScheduleWorkbookLoadResult
     bool fileOpened = false;
     bool succeeded = false;
 };
+
+struct ScheduleImportWorkbookCounts
+{
+    int sheets = 0;
+    int users = 0;
+    int classCandidates = 0;
+    int diagnostics = 0;
+};
+
+ScheduleImportWorkbookCounts workbookCounts(
+    const ScheduleImportWorkbook& workbook
+    )
+{
+    ScheduleImportWorkbookCounts counts;
+    counts.sheets = workbook.sheets.size();
+    for (const ScheduleImportSheet& sheet : workbook.sheets)
+    {
+        counts.diagnostics += sheet.diagnostics.size();
+        counts.users += sheet.users.size();
+        for (const ScheduleImportUserBlock& user : sheet.users)
+        {
+            counts.classCandidates += user.classes.size();
+            counts.diagnostics += user.diagnostics.size();
+        }
+    }
+    return counts;
+}
 }
 
 ScheduleImportDialog::ScheduleImportDialog(
@@ -65,6 +93,14 @@ ScheduleImportDialog::ScheduleImportDialog(
     setModal(true);
     buildUi();
     enforceStaticSize();
+}
+
+ScheduleImportDialog::~ScheduleImportDialog()
+{
+    if (m_scheduleImportDiagnosticsStarted)
+    {
+        StartupProfiler::recordScheduleImportOperationReleased();
+    }
 }
 
 void ScheduleImportDialog::setFilePath(
@@ -415,6 +451,14 @@ bool ScheduleImportDialog::loadWorkbook()
 
     const QString filePath =
         m_fileEdit->text();
+    if (!m_scheduleImportDiagnosticsStarted)
+    {
+        StartupProfiler::recordScheduleImportStarted(
+            filePath,
+            QFileInfo(filePath).size()
+            );
+        m_scheduleImportDiagnosticsStarted = true;
+    }
     const quint64 requestId =
         ++m_loadRequestId;
     const int timeoutSeconds =
@@ -529,6 +573,14 @@ void ScheduleImportDialog::applyLoadedWorkbook(
     )
 {
     m_workbook = std::move(workbook);
+    const ScheduleImportWorkbookCounts counts =
+        workbookCounts(m_workbook);
+    StartupProfiler::recordScheduleImportWorkbookLoaded(
+        counts.sheets,
+        counts.users,
+        counts.classCandidates,
+        counts.diagnostics
+        );
     m_loadedFilePath = filePath;
     m_loadedKind = kind;
     m_workbookLoaded = true;

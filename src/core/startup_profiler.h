@@ -62,6 +62,20 @@ struct StartupApplicationMetrics
     int scheduleTableItemCount = 0;
     int scheduleTableCellWidgetCount = 0;
     int scheduleVisibleClassCount = 0;
+    int scheduleImportWorkbookSheetCount = 0;
+    int scheduleImportWorkbookUserCount = 0;
+    int scheduleImportWorkbookClassCandidateCount = 0;
+    int scheduleImportWorkbookDiagnosticCount = 0;
+    int scheduleImportPreviewTeacherCount = 0;
+    int scheduleImportPreviewClassCount = 0;
+    int scheduleImportPreviewDiagnosticCount = 0;
+    int scheduleImportReviewTeacherControlCount = 0;
+    int scheduleImportReviewClassControlCount = 0;
+    int scheduleImportReviewPreviewEntryCount = 0;
+    qint64 scheduleImportRawWorkbookBytes = 0;
+    bool scheduleImportRawBytesRetained = false;
+    bool scheduleImportWorkbookRetained = false;
+    bool scheduleImportReviewRetained = false;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -70,6 +84,13 @@ struct StartupApplicationMetrics
     quint64 scheduleCellWidgetsCreated = 0;
     quint64 scheduleCellWidgetsRemoved = 0;
     quint64 scheduleCellWidgetsQueuedForDeletion = 0;
+    quint64 scheduleImportOperationsStarted = 0;
+    quint64 scheduleImportWorkbooksLoaded = 0;
+    quint64 scheduleImportReviewsPrepared = 0;
+    quint64 scheduleImportReviewsReleased = 0;
+    quint64 scheduleImportOperationsCancelled = 0;
+    quint64 scheduleImportOperationsApplied = 0;
+    quint64 scheduleImportOperationsReleased = 0;
     quint64 pdfDocumentsLoaded = 0;
     quint64 pdfDocumentsReleased = 0;
     quint64 pdfRenderCount = 0;
@@ -160,6 +181,28 @@ public:
         int cellWidgetsQueuedForDeletion,
         bool fullRender
         );
+    static void recordScheduleImportStarted(
+        const QString& filePath,
+        qint64 rawWorkbookBytes
+        );
+    static void recordScheduleImportWorkbookLoaded(
+        int sheetCount,
+        int userCount,
+        int classCandidateCount,
+        int diagnosticCount
+        );
+    static void recordScheduleImportReviewPrepared(
+        int teacherCount,
+        int classCount,
+        int diagnosticCount,
+        int previewEntryCount,
+        int teacherControlCount,
+        int classControlCount
+        );
+    static void recordScheduleImportReviewReleased();
+    static void recordScheduleImportCancelled();
+    static void recordScheduleImportApplied();
+    static void recordScheduleImportOperationReleased();
 
 private:
     void recordEvent(

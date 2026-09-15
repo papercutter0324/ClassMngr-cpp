@@ -239,6 +239,62 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             QStringLiteral("scheduleVisibleClassCount"),
             metrics.scheduleVisibleClassCount
         },
+        {
+            QStringLiteral("scheduleImportWorkbookSheetCount"),
+            metrics.scheduleImportWorkbookSheetCount
+        },
+        {
+            QStringLiteral("scheduleImportWorkbookUserCount"),
+            metrics.scheduleImportWorkbookUserCount
+        },
+        {
+            QStringLiteral("scheduleImportWorkbookClassCandidateCount"),
+            metrics.scheduleImportWorkbookClassCandidateCount
+        },
+        {
+            QStringLiteral("scheduleImportWorkbookDiagnosticCount"),
+            metrics.scheduleImportWorkbookDiagnosticCount
+        },
+        {
+            QStringLiteral("scheduleImportPreviewTeacherCount"),
+            metrics.scheduleImportPreviewTeacherCount
+        },
+        {
+            QStringLiteral("scheduleImportPreviewClassCount"),
+            metrics.scheduleImportPreviewClassCount
+        },
+        {
+            QStringLiteral("scheduleImportPreviewDiagnosticCount"),
+            metrics.scheduleImportPreviewDiagnosticCount
+        },
+        {
+            QStringLiteral("scheduleImportReviewTeacherControlCount"),
+            metrics.scheduleImportReviewTeacherControlCount
+        },
+        {
+            QStringLiteral("scheduleImportReviewClassControlCount"),
+            metrics.scheduleImportReviewClassControlCount
+        },
+        {
+            QStringLiteral("scheduleImportReviewPreviewEntryCount"),
+            metrics.scheduleImportReviewPreviewEntryCount
+        },
+        {
+            QStringLiteral("scheduleImportRawWorkbookBytes"),
+            static_cast<double>(metrics.scheduleImportRawWorkbookBytes)
+        },
+        {
+            QStringLiteral("scheduleImportRawBytesRetained"),
+            metrics.scheduleImportRawBytesRetained
+        },
+        {
+            QStringLiteral("scheduleImportWorkbookRetained"),
+            metrics.scheduleImportWorkbookRetained
+        },
+        {
+            QStringLiteral("scheduleImportReviewRetained"),
+            metrics.scheduleImportReviewRetained
+        },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
         {QStringLiteral("scheduleWidgetsCreated"), static_cast<double>(metrics.scheduleWidgetsCreated)},
@@ -249,6 +305,34 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("scheduleCellWidgetsQueuedForDeletion"),
             static_cast<double>(metrics.scheduleCellWidgetsQueuedForDeletion)
+        },
+        {
+            QStringLiteral("scheduleImportOperationsStarted"),
+            static_cast<double>(metrics.scheduleImportOperationsStarted)
+        },
+        {
+            QStringLiteral("scheduleImportWorkbooksLoaded"),
+            static_cast<double>(metrics.scheduleImportWorkbooksLoaded)
+        },
+        {
+            QStringLiteral("scheduleImportReviewsPrepared"),
+            static_cast<double>(metrics.scheduleImportReviewsPrepared)
+        },
+        {
+            QStringLiteral("scheduleImportReviewsReleased"),
+            static_cast<double>(metrics.scheduleImportReviewsReleased)
+        },
+        {
+            QStringLiteral("scheduleImportOperationsCancelled"),
+            static_cast<double>(metrics.scheduleImportOperationsCancelled)
+        },
+        {
+            QStringLiteral("scheduleImportOperationsApplied"),
+            static_cast<double>(metrics.scheduleImportOperationsApplied)
+        },
+        {
+            QStringLiteral("scheduleImportOperationsReleased"),
+            static_cast<double>(metrics.scheduleImportOperationsReleased)
         },
         {QStringLiteral("pdfDocumentsLoaded"), static_cast<double>(metrics.pdfDocumentsLoaded)},
         {QStringLiteral("pdfDocumentsReleased"), static_cast<double>(metrics.pdfDocumentsReleased)},
@@ -662,6 +746,202 @@ void StartupProfiler::recordScheduleRenderCompleted(
                 .arg(cellWidgetsCreated)
                 .arg(cellWidgetsRemoved)
                 .arg(cellWidgetsQueuedForDeletion)
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportStarted(
+    const QString& filePath,
+    qint64 rawWorkbookBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.scheduleImportOperationsStarted;
+        metrics.scheduleImportRawWorkbookBytes =
+            qMax<qint64>(0, rawWorkbookBytes);
+        metrics.scheduleImportRawBytesRetained = rawWorkbookBytes > 0;
+        metrics.scheduleImportWorkbookRetained = false;
+        metrics.scheduleImportReviewRetained = false;
+        metrics.scheduleImportWorkbookSheetCount = 0;
+        metrics.scheduleImportWorkbookUserCount = 0;
+        metrics.scheduleImportWorkbookClassCandidateCount = 0;
+        metrics.scheduleImportWorkbookDiagnosticCount = 0;
+        metrics.scheduleImportPreviewTeacherCount = 0;
+        metrics.scheduleImportPreviewClassCount = 0;
+        metrics.scheduleImportPreviewDiagnosticCount = 0;
+        metrics.scheduleImportReviewTeacherControlCount = 0;
+        metrics.scheduleImportReviewClassControlCount = 0;
+        metrics.scheduleImportReviewPreviewEntryCount = 0;
+
+        const QString detail =
+            QStringLiteral("path=%1; rawBytes=%2")
+                .arg(filePath)
+                .arg(qMax<qint64>(0, rawWorkbookBytes));
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-operation-start"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-operation-start %1")
+                .arg(detail)
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportWorkbookLoaded(
+    int sheetCount,
+    int userCount,
+    int classCandidateCount,
+    int diagnosticCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.scheduleImportWorkbooksLoaded;
+        metrics.scheduleImportRawBytesRetained = false;
+        metrics.scheduleImportWorkbookRetained = true;
+        metrics.scheduleImportWorkbookSheetCount = qMax(0, sheetCount);
+        metrics.scheduleImportWorkbookUserCount = qMax(0, userCount);
+        metrics.scheduleImportWorkbookClassCandidateCount =
+            qMax(0, classCandidateCount);
+        metrics.scheduleImportWorkbookDiagnosticCount =
+            qMax(0, diagnosticCount);
+
+        const QString detail =
+            QStringLiteral(
+                "sheets=%1; users=%2; classCandidates=%3; diagnostics=%4; rawBytesRetained=false"
+                )
+                .arg(metrics.scheduleImportWorkbookSheetCount)
+                .arg(metrics.scheduleImportWorkbookUserCount)
+                .arg(metrics.scheduleImportWorkbookClassCandidateCount)
+                .arg(metrics.scheduleImportWorkbookDiagnosticCount);
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-workbook-loaded"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-workbook-loaded %1")
+                .arg(detail)
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportReviewPrepared(
+    int teacherCount,
+    int classCount,
+    int diagnosticCount,
+    int previewEntryCount,
+    int teacherControlCount,
+    int classControlCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.scheduleImportReviewsPrepared;
+        metrics.scheduleImportReviewRetained = true;
+        metrics.scheduleImportPreviewTeacherCount = qMax(0, teacherCount);
+        metrics.scheduleImportPreviewClassCount = qMax(0, classCount);
+        metrics.scheduleImportPreviewDiagnosticCount = qMax(0, diagnosticCount);
+        metrics.scheduleImportReviewPreviewEntryCount =
+            qMax(0, previewEntryCount);
+        metrics.scheduleImportReviewTeacherControlCount =
+            qMax(0, teacherControlCount);
+        metrics.scheduleImportReviewClassControlCount =
+            qMax(0, classControlCount);
+
+        const QString detail =
+            QStringLiteral(
+                "teachers=%1; classes=%2; diagnostics=%3; previewEntries=%4; teacherControls=%5; classControls=%6"
+                )
+                .arg(metrics.scheduleImportPreviewTeacherCount)
+                .arg(metrics.scheduleImportPreviewClassCount)
+                .arg(metrics.scheduleImportPreviewDiagnosticCount)
+                .arg(metrics.scheduleImportReviewPreviewEntryCount)
+                .arg(metrics.scheduleImportReviewTeacherControlCount)
+                .arg(metrics.scheduleImportReviewClassControlCount);
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-review-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-review-prepared %1")
+                .arg(detail)
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportReviewReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.scheduleImportReviewsReleased;
+        metrics.scheduleImportReviewRetained = false;
+        metrics.scheduleImportPreviewTeacherCount = 0;
+        metrics.scheduleImportPreviewClassCount = 0;
+        metrics.scheduleImportPreviewDiagnosticCount = 0;
+        metrics.scheduleImportReviewTeacherControlCount = 0;
+        metrics.scheduleImportReviewClassControlCount = 0;
+        metrics.scheduleImportReviewPreviewEntryCount = 0;
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-review-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-review-released")
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportCancelled()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.scheduleImportOperationsCancelled;
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-operation-cancelled")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-operation-cancelled")
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportApplied()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.scheduleImportOperationsApplied;
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-operation-applied")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-operation-applied")
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportOperationReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.scheduleImportOperationsReleased;
+        metrics.scheduleImportRawBytesRetained = false;
+        metrics.scheduleImportWorkbookRetained = false;
+        metrics.scheduleImportReviewRetained = false;
+        metrics.scheduleImportWorkbookSheetCount = 0;
+        metrics.scheduleImportWorkbookUserCount = 0;
+        metrics.scheduleImportWorkbookClassCandidateCount = 0;
+        metrics.scheduleImportWorkbookDiagnosticCount = 0;
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-operation-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-operation-released")
             );
     }
 }

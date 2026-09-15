@@ -34,6 +34,7 @@ public:
         ScheduleImportReviewRequest request,
         QWidget* parent = nullptr
         );
+    ~ScheduleImportReviewDialog() override;
 
     [[nodiscard]] bool prepare();
 

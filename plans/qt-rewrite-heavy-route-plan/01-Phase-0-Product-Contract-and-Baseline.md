@@ -675,3 +675,32 @@ No v2 feature work begins without a fixture and an acceptance check.
   Release thresholds, generated outputs, and cross-platform evidence. The
   next heavy slice should target a large import/review operation rather than
   treating the bounded schedule refresh result as remediation.
+
+## Progress update - 2026-09-16 (large Schedule Import lifecycle retention)
+
+- What changed: the heavy-route harness now runs the actual packaged Windows
+  x64 Release executable against the 96-class workspace and a deterministic
+  two-sheet workbook containing five user blocks and 96 parsed class
+  candidates. Startup profiling records raw-workbook, parsed-workbook, staged
+  review, review-release, cancellation, and operation-release boundaries, with
+  process traces and retained source/review captures.
+- Evidence: the child completed normally. Parse/review/post-review-release/
+  post-release checkpoints were `3,684`/`4,489`/`4,563`/`4,597 ms`; the review
+  held 20 preview entries with five teacher controls and 20 class controls.
+  Raw workbook bytes were not retained after parsing, the parsed workbook was
+  retained through review, review controls were released on cancellation, and
+  the workbook was released after the source dialog closed. The full route
+  reached `workflow-complete` at `10,760 ms` and `settled-1s` at `11,795 ms`,
+  with route-wide peak working set/private usage of `418,152,448`/
+  `461,545,472` bytes. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-schedule-import-boundary/`.
+- Evaluation impact: this closes the large Schedule Import parse/review/
+  cancel/cleanup before-state required by the Memory Hotspot Remediation Plan.
+  It does not measure apply/commit cleanup, large Calendar import, or establish
+  a v2 operation budget. Phase 0 remains open for those workflows, speaking/
+  transfer/staff/PDF measurements, Sub Prep visuals, explicit Release
+  thresholds, generated outputs, and cross-platform evidence.
+- Decision and next heavy slice: retain this generated workbook and lifecycle
+  report as the Schedule Import before-state oracle. Continue Phase 0 with a
+  large Calendar import/open-close boundary, then return to the remaining
+  apply/commit and batch-operation gaps before any v2 remediation slice.

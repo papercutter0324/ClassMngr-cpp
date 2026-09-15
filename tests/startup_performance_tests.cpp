@@ -17,6 +17,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 #include <QUuid>
+#include <zlib.h>
 
 #include <cstdio>
 #include <utility>
@@ -74,6 +75,271 @@ bool writeDiagnosticFile(
     }
 
     return file.flush() && file.error() == QFile::NoError;
+}
+
+void appendLittleEndian16(
+    QByteArray& data,
+    quint16 value
+    )
+{
+    data.append(static_cast<char>(value & 0xff));
+    data.append(static_cast<char>((value >> 8) & 0xff));
+}
+
+void appendLittleEndian32(
+    QByteArray& data,
+    quint32 value
+    )
+{
+    appendLittleEndian16(data, static_cast<quint16>(value & 0xffff));
+    appendLittleEndian16(data, static_cast<quint16>((value >> 16) & 0xffff));
+}
+
+struct ScheduleImportZipEntry
+{
+    QByteArray name;
+    QByteArray contents;
+    quint32 crc = 0;
+    quint32 localOffset = 0;
+};
+
+QByteArray storedZip(
+    QList<ScheduleImportZipEntry> entries
+    )
+{
+    QByteArray result;
+    for (ScheduleImportZipEntry& entry : entries)
+    {
+        entry.localOffset = static_cast<quint32>(result.size());
+        entry.crc = static_cast<quint32>(
+            crc32(
+                crc32(0L, Z_NULL, 0),
+                reinterpret_cast<const Bytef*>(entry.contents.constData()),
+                static_cast<uInt>(entry.contents.size())
+                )
+            );
+        appendLittleEndian32(result, 0x04034b50);
+        appendLittleEndian16(result, 20);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian32(result, entry.crc);
+        appendLittleEndian32(result, entry.contents.size());
+        appendLittleEndian32(result, entry.contents.size());
+        appendLittleEndian16(result, entry.name.size());
+        appendLittleEndian16(result, 0);
+        result.append(entry.name);
+        result.append(entry.contents);
+    }
+
+    const quint32 centralOffset = static_cast<quint32>(result.size());
+    for (const ScheduleImportZipEntry& entry : entries)
+    {
+        appendLittleEndian32(result, 0x02014b50);
+        appendLittleEndian16(result, 20);
+        appendLittleEndian16(result, 20);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian32(result, entry.crc);
+        appendLittleEndian32(result, entry.contents.size());
+        appendLittleEndian32(result, entry.contents.size());
+        appendLittleEndian16(result, entry.name.size());
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian16(result, 0);
+        appendLittleEndian32(result, 0);
+        appendLittleEndian32(result, entry.localOffset);
+        result.append(entry.name);
+    }
+
+    const quint32 centralSize =
+        static_cast<quint32>(result.size()) - centralOffset;
+    appendLittleEndian32(result, 0x06054b50);
+    appendLittleEndian16(result, 0);
+    appendLittleEndian16(result, 0);
+    appendLittleEndian16(result, entries.size());
+    appendLittleEndian16(result, entries.size());
+    appendLittleEndian32(result, centralSize);
+    appendLittleEndian32(result, centralOffset);
+    appendLittleEndian16(result, 0);
+    return result;
+}
+
+QString spreadsheetColumnName(int column)
+{
+    QString result;
+    for (int value = column; value > 0; value = (value - 1) / 26)
+    {
+        result.prepend(
+            QChar(
+                static_cast<ushort>('A' + ((value - 1) % 26))
+                )
+            );
+    }
+    return result;
+}
+
+QByteArray largeScheduleImportWorksheet()
+{
+    const QStringList teacherNames{
+        QStringLiteral("김선생"), QStringLiteral("이선생"),
+        QStringLiteral("박선생"), QStringLiteral("최선생"),
+        QStringLiteral("정선생"), QStringLiteral("한선생"),
+        QStringLiteral("강선생"), QStringLiteral("윤선생"),
+        QStringLiteral("조선생"), QStringLiteral("임선생"),
+        QStringLiteral("장선생"), QStringLiteral("오선생"),
+        QStringLiteral("서선생"), QStringLiteral("신선생"),
+        QStringLiteral("권선생"), QStringLiteral("황선생"),
+        QStringLiteral("안선생"), QStringLiteral("송선생"),
+        QStringLiteral("류선생"), QStringLiteral("전선생"),
+        QStringLiteral("홍선생"), QStringLiteral("문선생"),
+        QStringLiteral("양선생"), QStringLiteral("배선생")
+    };
+    const QStringList grades{
+        QStringLiteral("E4"), QStringLiteral("E5"),
+        QStringLiteral("E6"), QStringLiteral("M1")
+    };
+    const QStringList levels{
+        QStringLiteral("Theseus"), QStringLiteral("Artemis"),
+        QStringLiteral("Helios"), QStringLiteral("Elephantus")
+    };
+    const QStringList days{
+        QStringLiteral("MON"), QStringLiteral("TUE"),
+        QStringLiteral("WED"), QStringLiteral("THU"),
+        QStringLiteral("FRI")
+    };
+
+    QByteArray xml = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+        "<sheetData><row r=\"1\">"
+        );
+
+    for (int block = 0; block < 5; ++block)
+    {
+        const int startColumn = 1 + block * 7;
+        const QString nameCell =
+            spreadsheetColumnName(startColumn) + QStringLiteral("1");
+        xml += QStringLiteral(
+            "<c r=\"%1\" t=\"inlineStr\"><is><t>Alice</t></is></c>"
+            ).arg(nameCell).toUtf8();
+        for (int dayIndex = 0; dayIndex < days.size(); ++dayIndex)
+        {
+            const QString cell =
+                spreadsheetColumnName(startColumn + 1 + dayIndex)
+                + QStringLiteral("1");
+            xml += QStringLiteral(
+                "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
+                ).arg(cell, days[dayIndex]).toUtf8();
+        }
+    }
+    xml.append(QByteArrayLiteral("</row>"));
+
+    for (int candidate = 0; candidate < 96; ++candidate)
+    {
+        const int block = candidate / 20;
+        const int localRow = candidate % 20;
+        const int row = localRow + 2;
+        const int startColumn = 1 + block * 7;
+        const int teacherIndex = candidate / 4;
+        const int courseIndex = candidate % 4;
+        const QString time =
+            QStringLiteral("%1:00~%1:55")
+                .arg(3 + (localRow % 6));
+        const QString timeCell =
+            spreadsheetColumnName(startColumn) + QString::number(row);
+        const int dayColumn =
+            startColumn + 1 + (candidate % days.size());
+        const QString classCell =
+            spreadsheetColumnName(dayColumn) + QString::number(row);
+        const QString classValue =
+            QStringLiteral("%1 (%2)&#10;%3-%4")
+                .arg(teacherNames[teacherIndex])
+                .arg(301 + teacherIndex)
+                .arg(grades[courseIndex])
+                .arg(levels[courseIndex]);
+
+        xml += QStringLiteral("<row r=\"%1\">").arg(row).toUtf8();
+        xml += QStringLiteral(
+            "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
+            ).arg(timeCell, time).toUtf8();
+        xml += QStringLiteral(
+            "<c r=\"%1\" t=\"inlineStr\"><is><t>%2</t></is></c>"
+            ).arg(classCell, classValue).toUtf8();
+        xml += QByteArrayLiteral("</row>");
+    }
+
+    xml += QByteArrayLiteral("</sheetData></worksheet>");
+    return xml;
+}
+
+QByteArray emptyScheduleImportWorksheet()
+{
+    return QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+        "<sheetData></sheetData></worksheet>"
+        );
+}
+
+QByteArray largeScheduleImportWorkbookData()
+{
+    const QByteArray workbook = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\""
+        " xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">"
+        "<sheets><sheet name=\"Large Import\" sheetId=\"1\" r:id=\"rId1\"/>"
+        "<sheet name=\"Empty\" sheetId=\"2\" r:id=\"rId2\"/></sheets>"
+        "</workbook>"
+        );
+    const QByteArray relationships = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+        "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/>"
+        "<Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\"/>"
+        "</Relationships>"
+        );
+    const QByteArray styles = QByteArrayLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+        "<fonts count=\"1\"><font><color rgb=\"FF000000\"/></font></fonts>"
+        "<fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill>"
+        "<fill><patternFill patternType=\"gray125\"/></fill></fills>"
+        "<cellXfs count=\"1\"><xf fontId=\"0\" fillId=\"0\"/></cellXfs>"
+        "</styleSheet>"
+        );
+    return storedZip({
+        {QByteArrayLiteral("xl/workbook.xml"), workbook},
+        {QByteArrayLiteral("xl/_rels/workbook.xml.rels"), relationships},
+        {QByteArrayLiteral("xl/styles.xml"), styles},
+        {
+            QByteArrayLiteral("xl/worksheets/sheet1.xml"),
+            largeScheduleImportWorksheet()
+        },
+        {
+            QByteArrayLiteral("xl/worksheets/sheet2.xml"),
+            emptyScheduleImportWorksheet()
+        }
+    });
+}
+
+bool writeLargeScheduleImportWorkbook(
+    const QString& path
+    )
+{
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        return false;
+    }
+    const QByteArray data = largeScheduleImportWorkbookData();
+    return file.write(data) == data.size()
+        && file.flush()
+        && file.error() == QFile::NoError;
 }
 
 bool thresholdExceeded(
@@ -396,6 +662,7 @@ private slots:
     void capturesLargeSubPrepBoundaryWhenConfigured();
     void capturesLargeClassesBoundaryWhenConfigured();
     void capturesLargeScheduleBoundaryWhenConfigured();
+    void capturesLargeScheduleImportBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -2034,7 +2301,6 @@ void StartupPerformanceTests
                 .arg(outputRoot)
             )
         );
-
     const QString metricsPath =
         QDir(outputRoot).filePath(
             QStringLiteral("large-sub-prep-workflow.json")
@@ -3313,6 +3579,490 @@ void StartupPerformanceTests::capturesLargeScheduleBoundaryWhenConfigured()
         scheduleMetrics.value(QStringLiteral("scheduleVisibleClassCount"))
             .toInt(),
         96
+        );
+}
+
+void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_SCHEDULE_IMPORT_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_SCHEDULE_IMPORT_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString workbookPath =
+        directory.filePath(QStringLiteral("large-schedule-import.xlsx"));
+    QVERIFY2(
+        writeLargeScheduleImportWorkbook(workbookPath),
+        "Unable to write the deterministic large schedule import workbook."
+        );
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-schedule-import.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large Schedule Import reference root: %1"
+                ).arg(outputRoot)
+            )
+        );
+    const QString retainedWorkbookPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-schedule-import.xlsx")
+            );
+    if (QFileInfo::exists(retainedWorkbookPath))
+    {
+        QVERIFY(QFile::remove(retainedWorkbookPath));
+    }
+    QVERIFY2(
+        QFile::copy(
+            workbookPath,
+            retainedWorkbookPath
+            ),
+        "Unable to retain the generated large schedule import workbook."
+        );
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-schedule-import-workflow.json")
+            );
+    const QString tracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    if (QFileInfo::exists(metricsPath))
+    {
+        QVERIFY(QFile::remove(metricsPath));
+    }
+    QFile traceOutput(tracePath);
+    QVERIFY2(
+        traceOutput.open(
+            QIODevice::WriteOnly
+            | QIODevice::Truncate
+            | QIODevice::Text
+            ),
+        qPrintable(traceOutput.errorString())
+        );
+    traceOutput.close();
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        tracePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_SCHEDULE_IMPORT_PATH"),
+        workbookPath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_SCHEDULE_IMPORT_OUTPUT_DIR"),
+        outputRoot
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral(
+                "--startup-performance-schedule-import-lifecycle"
+                ),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+
+    QByteArray traceContents;
+    QFile traceFile(tracePath);
+    if (traceFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        traceContents = traceFile.readAll();
+    }
+    const QStringList traceLines =
+        QString::fromUtf8(traceContents)
+            .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start schedule")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the Schedule transition. "
+                "stdout/stderr were retained under %1."
+                ).arg(outputRoot)
+            )
+        );
+    for (const QString& expectedTrace : {
+             QStringLiteral("schedule-import-dialog-opened"),
+             QStringLiteral("schedule-import-operation-start"),
+             QStringLiteral("schedule-import-workbook-loaded"),
+             QStringLiteral("schedule-import-parse-complete"),
+             QStringLiteral("schedule-import-review-start"),
+             QStringLiteral("schedule-import-review-prepared"),
+             QStringLiteral("schedule-import-review-ready"),
+             QStringLiteral("schedule-import-cancel-start"),
+             QStringLiteral("schedule-import-operation-cancelled"),
+             QStringLiteral("schedule-import-review-released"),
+             QStringLiteral("schedule-import-post-review-release"),
+             QStringLiteral("schedule-import-operation-released"),
+             QStringLiteral("schedule-import-post-release"),
+             QStringLiteral("schedule-import-operation-end")
+         })
+    {
+        bool foundTrace = false;
+        for (const QString& line : traceLines)
+        {
+            if (line.startsWith(expectedTrace))
+            {
+                foundTrace = true;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundTrace,
+            qPrintable(
+                QStringLiteral(
+                    "The heavy Schedule Import lifecycle did not record '%1'. "
+                    "stdout/stderr were retained under %2."
+                    )
+                    .arg(expectedTrace, outputRoot)
+                )
+            );
+    }
+
+    QJsonObject report;
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly | QIODevice::Text),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError parseError;
+    const QJsonDocument metricsDocument =
+        QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+    QVERIFY2(
+        parseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject(),
+        qPrintable(parseError.errorString())
+        );
+    report = metricsDocument.object();
+
+    QJsonObject parseCheckpoint;
+    QJsonObject reviewCheckpoint;
+    QJsonObject postReviewCheckpoint;
+    QJsonObject postReleaseCheckpoint;
+    QJsonObject operationEndCheckpoint;
+    bool workflowCompleted = false;
+    bool lifecycleCompleted = false;
+    for (const QJsonValue& value :
+         report.value(QStringLiteral("checkpoints")).toArray())
+    {
+        const QJsonObject checkpoint = value.toObject();
+        const QString name =
+            checkpoint.value(QStringLiteral("name")).toString();
+        if (name == QStringLiteral("schedule-import-parse-complete"))
+        {
+            parseCheckpoint = checkpoint;
+        }
+        else if (name == QStringLiteral("schedule-import-review-ready"))
+        {
+            reviewCheckpoint = checkpoint;
+        }
+        else if (name == QStringLiteral("schedule-import-post-review-release"))
+        {
+            postReviewCheckpoint = checkpoint;
+        }
+        else if (name == QStringLiteral("schedule-import-post-release"))
+        {
+            postReleaseCheckpoint = checkpoint;
+        }
+        else if (name == QStringLiteral("schedule-import-operation-end"))
+        {
+            operationEndCheckpoint = checkpoint;
+        }
+        else if (name == QStringLiteral("workflow-complete"))
+        {
+            workflowCompleted = true;
+        }
+        else if (
+            name == QStringLiteral("schedule-import-operation-end")
+            && checkpoint.value(QStringLiteral("detail"))
+                   .toString()
+                   .contains(QStringLiteral("cancelled=true"))
+            )
+        {
+            lifecycleCompleted = true;
+        }
+    }
+    lifecycleCompleted =
+        lifecycleCompleted
+        || !operationEndCheckpoint.isEmpty()
+            && operationEndCheckpoint.value(QStringLiteral("detail"))
+                   .toString()
+                   .contains(QStringLiteral("cancelled=true"));
+
+    QVERIFY(!parseCheckpoint.isEmpty());
+    QVERIFY(!reviewCheckpoint.isEmpty());
+    QVERIFY(!postReviewCheckpoint.isEmpty());
+    QVERIFY(!postReleaseCheckpoint.isEmpty());
+    QVERIFY(!operationEndCheckpoint.isEmpty());
+    QVERIFY(workflowCompleted);
+    QVERIFY(lifecycleCompleted);
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+
+    const QJsonObject parseMetrics =
+        parseCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        parseMetrics.value(
+            QStringLiteral("scheduleImportWorkbookSheetCount")
+            ).toInt(),
+        2
+        );
+    QCOMPARE(
+        parseMetrics.value(
+            QStringLiteral("scheduleImportWorkbookUserCount")
+            ).toInt(),
+        5
+        );
+    QCOMPARE(
+        parseMetrics.value(
+            QStringLiteral("scheduleImportWorkbookClassCandidateCount")
+            ).toInt(),
+        96
+        );
+    QVERIFY(
+        !parseMetrics.value(
+            QStringLiteral("scheduleImportRawBytesRetained")
+            ).toBool()
+        );
+    QVERIFY(
+        parseMetrics.value(
+            QStringLiteral("scheduleImportWorkbookRetained")
+            ).toBool()
+        );
+
+    const QJsonObject reviewMetrics =
+        reviewCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        reviewMetrics.value(
+            QStringLiteral("scheduleImportPreviewTeacherCount")
+            ).toInt() > 0
+        );
+    QVERIFY(
+        reviewMetrics.value(
+            QStringLiteral("scheduleImportPreviewClassCount")
+            ).toInt() > 0
+        );
+    QVERIFY(
+        reviewMetrics.value(
+            QStringLiteral("scheduleImportReviewTeacherControlCount")
+            ).toInt() > 0
+        );
+    QVERIFY(
+        reviewMetrics.value(
+            QStringLiteral("scheduleImportReviewClassControlCount")
+            ).toInt() > 0
+        );
+    QVERIFY(
+        reviewMetrics.value(
+            QStringLiteral("scheduleImportReviewRetained")
+            ).toBool()
+        );
+    QVERIFY(
+        !postReviewCheckpoint
+             .value(QStringLiteral("metrics"))
+             .toObject()
+             .value(QStringLiteral("scheduleImportReviewRetained"))
+             .toBool()
+        );
+    QVERIFY(
+        postReviewCheckpoint
+            .value(QStringLiteral("metrics"))
+            .toObject()
+            .value(QStringLiteral("scheduleImportWorkbookRetained"))
+            .toBool()
+        );
+    const QJsonObject postReleaseMetrics =
+        postReleaseCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        !postReleaseMetrics
+             .value(QStringLiteral("scheduleImportWorkbookRetained"))
+             .toBool()
+        );
+    QVERIFY(
+        postReleaseMetrics
+            .value(QStringLiteral("scheduleImportOperationsCancelled"))
+            .toInt() >= 1
+        );
+    QVERIFY(
+        postReleaseMetrics
+            .value(QStringLiteral("scheduleImportOperationsReleased"))
+            .toInt() >= 1
+        );
+
+    QJsonObject manifest;
+    manifest.insert(QStringLiteral("fixture"), QStringLiteral("large_startup.sql"));
+    manifest.insert(
+        QStringLiteral("workbookFixture"),
+        QStringLiteral("generated large-schedule-import.xlsx")
+        );
+    manifest.insert(
+        QStringLiteral("fixtureScale"),
+        QStringLiteral("large_startup_schedule_import_lifecycle")
+        );
+    manifest.insert(
+        QStringLiteral("scenario"),
+        QStringLiteral(
+            "96-class heavy route, workbook parse, review, conflict acknowledgement, cancel, cleanup"
+            )
+        );
+    manifest.insert(QStringLiteral("teacherCount"), 24);
+    manifest.insert(QStringLiteral("classCount"), 96);
+    manifest.insert(QStringLiteral("workbookBytes"), QFileInfo(workbookPath).size());
+    manifest.insert(QStringLiteral("processFinished"), finished);
+    manifest.insert(
+        QStringLiteral("exitStatus"),
+        process.exitStatus() == QProcess::NormalExit
+            ? QStringLiteral("normal")
+            : QStringLiteral("crash")
+        );
+    manifest.insert(QStringLiteral("exitCode"), process.exitCode());
+    manifest.insert(QStringLiteral("timedOut"), !finished);
+    manifest.insert(QStringLiteral("traceLineCount"), traceLines.size());
+    manifest.insert(
+        QStringLiteral("metricsPath"),
+        QStringLiteral("large-schedule-import-workflow.json")
+        );
+    manifest.insert(
+        QStringLiteral("tracePath"),
+        QStringLiteral("workflow-trace.txt")
+        );
+    manifest.insert(
+        QStringLiteral("stdoutPath"),
+        QStringLiteral("process-stdout.txt")
+        );
+    manifest.insert(
+        QStringLiteral("stderrPath"),
+        QStringLiteral("process-stderr.txt")
+        );
+    manifest.insert(
+        QStringLiteral("reviewCheckpointMetrics"),
+        reviewCheckpoint.value(QStringLiteral("metrics"))
+        );
+    manifest.insert(
+        QStringLiteral("postReleaseCheckpointMetrics"),
+        postReleaseCheckpoint.value(QStringLiteral("metrics"))
+        );
+
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
+        );
+    QVERIFY(
+        QFileInfo::exists(
+            QDir(outputRoot).filePath(
+                QStringLiteral("schedule-import-source.png")
+                )
+            )
+        );
+    QVERIFY(
+        QFileInfo::exists(
+            QDir(outputRoot).filePath(
+                QStringLiteral("schedule-import-review.png")
+                )
+            )
         );
 }
 

@@ -27,6 +27,7 @@ public:
         ApplicationServices* services,
         QWidget* parent = nullptr
         );
+    ~ScheduleImportDialog() override;
 
     void setFilePath(
         const QString& filePath
@@ -68,6 +69,7 @@ private:
     bool m_loading = false;
     quint64 m_loadRequestId = 0;
     QString m_profileName;
+    bool m_scheduleImportDiagnosticsStarted = false;
 
     QLineEdit* m_fileEdit = nullptr;
     QPushButton* m_browseButton = nullptr;

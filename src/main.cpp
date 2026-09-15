@@ -17,6 +17,8 @@
 #include "core/utils/platform.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
@@ -27,14 +29,24 @@
 #endif
 
 #include <QApplication>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QDir>
+#include <QEvent>
 #include <QFile>
+#include <QFileInfo>
 #include <QIcon>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLabel>
+#include <QMessageBox>
 #include <QPixmap>
+#include <QPointer>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QRadioButton>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QDebug>
@@ -77,6 +89,7 @@ struct StartupPerformanceMode
     std::optional<Theme> visualThemeOverride;
     bool workflowEnabled = false;
     bool scheduleLifecycleEnabled = false;
+    bool scheduleImportLifecycleEnabled = false;
     bool classesLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
     enum class Scenario
@@ -522,6 +535,10 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-schedule-lifecycle")
             );
+    mode.scheduleImportLifecycleEnabled =
+        args.contains(
+            QStringLiteral("--startup-performance-schedule-import-lifecycle")
+            );
     mode.classesLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-classes-lifecycle")
@@ -534,6 +551,7 @@ StartupPerformanceMode startupPerformanceMode(
         mode.enabled
         || mode.workflowEnabled
         || mode.scheduleLifecycleEnabled
+        || mode.scheduleImportLifecycleEnabled
         || mode.classesLifecycleEnabled
         || mode.subPrepLifecycleEnabled;
 
@@ -1323,12 +1341,432 @@ void scheduleStartupPerformanceSubPrepLifecycle(
         );
 }
 
+void scheduleStartupPerformanceScheduleImportLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            SchedulePage* page = pages ? pages->schedulePage() : nullptr;
+            const QString filePath =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_SCHEDULE_IMPORT_PATH"
+                    ).trimmed();
+
+            if (
+                !pages
+                || !page
+                || !pages->isCurrentPage(PageType::Schedule)
+                || filePath.isEmpty()
+                || !QFileInfo::exists(filePath)
+                )
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("schedule-import-lifecycle-failed"),
+                    QStringLiteral(
+                        "schedule-page-current=%1; file-exists=%2"
+                        )
+                        .arg(
+                            pages && pages->isCurrentPage(PageType::Schedule)
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                        .arg(
+                            QFileInfo::exists(filePath)
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                    );
+                completion();
+                return;
+            }
+
+            auto* dialog =
+                new ScheduleImportDialog(
+                    window.services(),
+                    page
+                    );
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            QPointer<ScheduleImportDialog> dialogGuard(dialog);
+            dialog->setFilePath(filePath);
+            dialog->show();
+            app.processEvents();
+
+            auto* normal =
+                dialog->findChild<QRadioButton*>(
+                    QStringLiteral("scheduleImportNormalRadio")
+                    );
+            auto* next =
+                dialog->findChild<QPushButton*>(
+                    QStringLiteral("scheduleImportNextButton")
+                    );
+            if (!normal || !next)
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("schedule-import-lifecycle-failed"),
+                    QStringLiteral("source-dialog-controls-missing")
+                    );
+                dialog->reject();
+                completion();
+                return;
+            }
+
+            normal->setChecked(true);
+            appendStartupWorkflowTrace(
+                QStringLiteral("schedule-import-dialog-opened")
+                );
+            profiler.checkpoint(
+                QStringLiteral("schedule-import-dialog-opened"),
+                QStringLiteral("path=%1; fileBytes=%2")
+                    .arg(filePath)
+                    .arg(QFileInfo(filePath).size())
+                );
+            next->click();
+            app.processEvents();
+
+            const auto stage = std::make_shared<int>(0);
+            const auto attempts = std::make_shared<int>(0);
+            const auto poll =
+                std::make_shared<std::function<void()>>();
+
+            *poll =
+                [
+                    &app,
+                    &profiler,
+                    workflowSucceeded,
+                    completion,
+                    dialogGuard,
+                    stage,
+                    attempts,
+                    poll
+                ]()
+                {
+                    if (!dialogGuard)
+                    {
+                        *workflowSucceeded = false;
+                        profiler.checkpoint(
+                            QStringLiteral(
+                                "schedule-import-lifecycle-failed"
+                                ),
+                            QStringLiteral("source-dialog-closed-early")
+                            );
+                        completion();
+                        return;
+                    }
+
+                    ++*attempts;
+                    if (*attempts > 400)
+                    {
+                        *workflowSucceeded = false;
+                        profiler.checkpoint(
+                            QStringLiteral(
+                                "schedule-import-lifecycle-failed"
+                                ),
+                            QStringLiteral("timed-out-waiting-for-review")
+                            );
+                        dialogGuard->reject();
+                        app.processEvents();
+                        completion();
+                        return;
+                    }
+
+                    if (*stage == 0)
+                    {
+                        auto* status =
+                            dialogGuard->findChild<QLabel*>(
+                                QStringLiteral(
+                                    "scheduleImportSourceStatus"
+                                    )
+                                );
+                        auto* users =
+                            dialogGuard->findChild<QComboBox*>(
+                                QStringLiteral("scheduleImportUserCombo")
+                                );
+                        auto* sheets =
+                            dialogGuard->findChild<QComboBox*>(
+                                QStringLiteral("scheduleImportSheetCombo")
+                                );
+                        auto* next =
+                            dialogGuard->findChild<QPushButton*>(
+                                QStringLiteral("scheduleImportNextButton")
+                                );
+                        auto* progress =
+                            dialogGuard->findChild<QProgressBar*>(
+                                QStringLiteral(
+                                    "scheduleImportProgressBar"
+                                    )
+                                );
+
+                        const QString statusText =
+                            status ? status->text() : QString();
+                        if (
+                            statusText.startsWith(
+                                QStringLiteral("Invalid workbook:")
+                                )
+                            || statusText.startsWith(
+                                QStringLiteral(
+                                    "The selected workbook could not be opened."
+                                    )
+                                )
+                            )
+                        {
+                            *workflowSucceeded = false;
+                            profiler.checkpoint(
+                                QStringLiteral(
+                                    "schedule-import-lifecycle-failed"
+                                    ),
+                                statusText
+                                );
+                            dialogGuard->reject();
+                            app.processEvents();
+                            completion();
+                            return;
+                        }
+
+                        if (
+                            progress
+                            && !progress->isHidden()
+                            )
+                        {
+                            QTimer::singleShot(25, &app, [poll]() { (*poll)(); });
+                            return;
+                        }
+
+                        if (sheets && users && !users->isVisible())
+                        {
+                            for (int index = 0; index < sheets->count(); ++index)
+                            {
+                                if (sheets->itemData(index).toInt() >= 0)
+                                {
+                                    sheets->setCurrentIndex(index);
+                                    app.processEvents();
+                                    break;
+                                }
+                            }
+                        }
+
+                        int selectedUser = -1;
+                        if (users && users->isVisible())
+                        {
+                            for (int index = 0; index < users->count(); ++index)
+                            {
+                                if (users->itemData(index).toInt() >= 0)
+                                {
+                                    selectedUser = index;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (
+                            !users
+                            || selectedUser < 0
+                            || !next
+                            )
+                        {
+                            QTimer::singleShot(25, &app, [poll]() { (*poll)(); });
+                            return;
+                        }
+
+                        users->setCurrentIndex(selectedUser);
+                        if (
+                            auto* confirmation =
+                                dialogGuard->findChild<QCheckBox*>(
+                                    QStringLiteral(
+                                        "scheduleImportNameConfirmation"
+                                        )
+                                    )
+                            )
+                        {
+                            confirmation->setChecked(true);
+                        }
+
+                        profiler.checkpoint(
+                            QStringLiteral("schedule-import-parse-complete"),
+                            QStringLiteral(
+                                "source-status=%1; selectedUserIndex=%2"
+                                )
+                                .arg(statusText)
+                                .arg(selectedUser)
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("schedule-import-parse-complete")
+                            );
+                        if (!next->isEnabled())
+                        {
+                            *workflowSucceeded = false;
+                            profiler.checkpoint(
+                                QStringLiteral(
+                                    "schedule-import-lifecycle-failed"
+                                    ),
+                                QStringLiteral("review-transition-disabled")
+                                );
+                            dialogGuard->reject();
+                            app.processEvents();
+                            completion();
+                            return;
+                        }
+
+                        profiler.checkpoint(
+                            QStringLiteral("schedule-import-review-start")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("schedule-import-review-start")
+                            );
+                        next->click();
+                        app.processEvents();
+                        *stage = 1;
+                    }
+
+                    if (*stage == 1)
+                    {
+                        auto* review =
+                            dialogGuard->findChild<ScheduleImportReviewDialog*>();
+                        if (!review)
+                        {
+                            QTimer::singleShot(25, &app, [poll]() { (*poll)(); });
+                            return;
+                        }
+
+                        auto* import =
+                            review->findChild<QPushButton*>(
+                                QStringLiteral("scheduleImportAcceptButton")
+                                );
+                        if (!import)
+                        {
+                            QTimer::singleShot(25, &app, [poll]() { (*poll)(); });
+                            return;
+                        }
+
+                        app.processEvents();
+                        if (
+                            auto* conflictWarning =
+                                review->findChild<QMessageBox*>(
+                                    QStringLiteral(
+                                        "scheduleImportConflictWarning"
+                                        )
+                                    )
+                            )
+                        {
+                            conflictWarning->accept();
+                            app.processEvents();
+                        }
+
+                        const QString outputRoot =
+                            qEnvironmentVariable(
+                                "CLASSMNGR_STARTUP_SCHEDULE_IMPORT_OUTPUT_DIR"
+                                ).trimmed();
+                        if (!outputRoot.isEmpty())
+                        {
+                            QDir().mkpath(outputRoot);
+                            dialogGuard->grab().save(
+                                QDir(outputRoot).filePath(
+                                    QStringLiteral("schedule-import-source.png")
+                                    ),
+                                "PNG"
+                                );
+                            review->show();
+                            app.processEvents();
+                            review->grab().save(
+                                QDir(outputRoot).filePath(
+                                    QStringLiteral("schedule-import-review.png")
+                                    ),
+                                "PNG"
+                                );
+                        }
+
+                        profiler.checkpoint(
+                            QStringLiteral("schedule-import-review-ready"),
+                            QStringLiteral(
+                                "reviewVisible=%1; importEnabled=%2"
+                                )
+                                .arg(
+                                    review->isVisible()
+                                        ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                    )
+                                .arg(
+                                    import->isEnabled()
+                                        ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                    )
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("schedule-import-review-ready")
+                            );
+                        profiler.checkpoint(
+                            QStringLiteral("schedule-import-cancel-start")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("schedule-import-cancel-start")
+                            );
+                        review->reject();
+                        StartupProfiler::recordScheduleImportCancelled();
+                        app.processEvents();
+                        QCoreApplication::sendPostedEvents(
+                            nullptr,
+                            QEvent::DeferredDelete
+                            );
+                        app.processEvents();
+                        profiler.checkpoint(
+                            QStringLiteral("schedule-import-post-review-release")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("schedule-import-post-review-release")
+                            );
+
+                        dialogGuard->reject();
+                        app.processEvents();
+                        QCoreApplication::sendPostedEvents(
+                            nullptr,
+                            QEvent::DeferredDelete
+                            );
+                        app.processEvents();
+                        profiler.checkpoint(
+                            QStringLiteral("schedule-import-post-release")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("schedule-import-post-release")
+                            );
+                        profiler.checkpoint(
+                            QStringLiteral("schedule-import-operation-end"),
+                            QStringLiteral("cancelled=true")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("schedule-import-operation-end")
+                            );
+                        completion();
+                    }
+                };
+
+            QTimer::singleShot(25, &app, [poll]() { (*poll)(); });
+        }
+        );
+}
+
 void scheduleStartupPerformanceWorkflow(
     QApplication& app,
     MainWindow& window,
     StartupProfiler& profiler,
     const std::shared_ptr<bool>& workflowSucceeded,
     bool scheduleLifecycleEnabled,
+    bool scheduleImportLifecycleEnabled,
     bool classesLifecycleEnabled,
     bool subPrepLifecycleEnabled,
     std::function<void()> completion
@@ -1347,6 +1785,7 @@ void scheduleStartupPerformanceWorkflow(
             &profiler,
             workflowSucceeded,
             scheduleLifecycleEnabled,
+            scheduleImportLifecycleEnabled,
             classesLifecycleEnabled,
             subPrepLifecycleEnabled,
             pageTypes,
@@ -1484,6 +1923,37 @@ void scheduleStartupPerformanceWorkflow(
                 QStringLiteral("workflow-child-released"),
                 QStringLiteral("calendar")
                 );
+        }
+
+        if (
+            pageReady
+            && scheduleImportLifecycleEnabled
+            && pageType == PageType::Schedule
+            )
+        {
+            scheduleStartupPerformanceScheduleImportLifecycle(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
         }
 
         if (
@@ -2222,6 +2692,7 @@ int main(int argc, char *argv[])
                 startupProfiler,
                 workflowSucceeded,
                 startupPerformance.scheduleLifecycleEnabled,
+                startupPerformance.scheduleImportLifecycleEnabled,
                 startupPerformance.classesLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
                 scheduleSettledCompletion

@@ -4,6 +4,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/startup_profiler.h"
 #include "core/utils/colorutils.h"
 #include "domain/models/classroom.h"
 #include "domain/rules/schedule_import_rules.h"
@@ -68,6 +69,14 @@ ScheduleImportReviewDialog::ScheduleImportReviewDialog(
     setWindowTitle(tr("Review & Reconcile"));
     setModal(true);
     buildUi();
+}
+
+ScheduleImportReviewDialog::~ScheduleImportReviewDialog()
+{
+    if (m_prepared)
+    {
+        StartupProfiler::recordScheduleImportReviewReleased();
+    }
 }
 
 void ScheduleImportReviewDialog::buildUi()
@@ -376,6 +385,19 @@ bool ScheduleImportReviewDialog::prepare()
         );
     rebuildResolutionControls();
     updateReviewState();
+    int previewEntryCount = 0;
+    for (const ScheduleImportClassCandidate& candidate : m_preview.user.classes)
+    {
+        previewEntryCount += candidate.times.size();
+    }
+    StartupProfiler::recordScheduleImportReviewPrepared(
+        m_preview.teachers.size(),
+        m_preview.classes.size(),
+        m_preview.user.diagnostics.size(),
+        previewEntryCount,
+        m_teacherControls.size(),
+        m_classControls.size()
+        );
     m_prepared = true;
     resizeForReviewStage();
     QTimer::singleShot(
