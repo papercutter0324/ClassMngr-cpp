@@ -2,13 +2,41 @@
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: None
 - Blocks: Every implementation phase
 - Owner: Unassigned
 - Last updated: 2026-09-15
-- Current note: Establish the evidence required before any rewrite decision is accepted.
+- Current note: Static archaeology is recorded for commit `75755460`; runtime,
+  visual, fixture, and packaged-release evidence is still being collected. The
+  clean Windows Release compile is currently blocked by a silent MSVC
+  `0xFFFFFFFF` exit in a feature source.
+
+## Progress update - 2026-09-15
+
+- What changed: added the initial Phase 0 evidence set in
+  `docs/qt-rewrite/` covering source ownership, features, file formats,
+  resources, baseline commands, and risks.
+- What remains: capture screenshots and generated-output references, create
+  representative fixtures, run clean Windows x64/ARM64, macOS universal, and
+  Linux Release baselines, and record startup/resource traces.
+- Evidence: source snapshot `75755460`; raw resource inventory is 226 files
+  totaling 65,729,685 bytes; source/test inventory and the current CTest
+  enumeration are recorded in the evidence documents.
+- Risk: existing build directories include stale configuration from an earlier
+  tree, so they are excluded from acceptance evidence until reconfigured.
+- Blocker: the isolated Ninja Release build reaches feature compilation but
+  currently exits from MSVC with `0xFFFFFFFF` and no diagnostic output.
+
+## Evidence files
+
+- [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)
+- [Feature preservation matrix](../../docs/qt-rewrite/phase-0-feature-preservation-matrix.md)
+- [File compatibility matrix](../../docs/qt-rewrite/phase-0-file-compatibility-matrix.md)
+- [Resource and ownership inventory](../../docs/qt-rewrite/phase-0-resource-and-ownership-inventory.md)
+- [Baseline and evidence log](../../docs/qt-rewrite/phase-0-baseline.md)
+- [Risk register](../../docs/qt-rewrite/phase-0-risk-register.md)
 
 ## Objective
 

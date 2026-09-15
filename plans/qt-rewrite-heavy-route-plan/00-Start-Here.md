@@ -2,19 +2,21 @@
 
 ## Collective status
 
-- Overall status: Not started
+- Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-09-15
 - Current milestone: Phase 0 — product contract, source archaeology, and baseline
-- Current blocker: None recorded
+- Current blocker: Clean Windows Release compilation currently exits from MSVC
+  with `0xFFFFFFFF` and no diagnostic on a feature source; static Phase 0 work
+  continues while the toolchain issue is isolated.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
 
 | Phase | File | Status | Default route | Depends on |
 |---|---|---|---|---|
-| 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Not started | Heavy | None |
+| 0 | 01-Phase-0-Product-Contract-and-Baseline.md | In progress | Heavy | None |
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Not started | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Not started | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Not started | Heavy | 1, 2 |
@@ -30,6 +32,20 @@
 | 13 | 14-Phase-13-Post-Release-Maintenance.md | Not started | Heavy | 12 |
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
+
+## Phase 0 update - 2026-09-15
+
+- What changed: started the Phase 0 evidence set at commit `75755460`; added
+  static source archaeology, feature preservation, file compatibility, resource
+  ownership, baseline, and risk documents under `docs/qt-rewrite/`.
+- What remains: capture visual references, create representative file fixtures,
+  run a fresh packaged Release baseline on every target platform, and complete
+  startup/resource tracing.
+- Evidence: `ctest --test-dir build/windows-x64-debug -N` currently enumerates
+  66 tests, but that build tree contains stale cache options and is not treated
+  as authoritative. A clean Phase 0 build directory is being established.
+- Risk: historical baseline artifacts describe an older source snapshot and
+  must not be used as the rewrite's acceptance baseline.
 
 ## Important context
 
@@ -75,7 +91,7 @@ The default route for every phase is the heavy route:
 - Treat memory, visual parity, file compatibility, and cross-platform behavior as release gates.
 - Keep Qt as the presentation framework while removing unnecessary coupling from the core.
 
-The heavy route is not permission to remove features, change user workflows, or redesign the application. It is a commitment to replace the underlying ownership and lifecycle model thoroughly enough to meet the memory target.
+The heavy route is not permission to remove features, change user workflows, or redesign the application. The developer-only Memory Usage Monitor and its in-app diagnostics are an explicit scope exception. Otherwise, this is a commitment to replace the underlying ownership and lifecycle model thoroughly enough to meet the memory target.
 
 ## Target architecture
 

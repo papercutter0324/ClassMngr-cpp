@@ -1,0 +1,19 @@
+# Qt Rewrite Phase 0 - Risk Register
+
+Status: In progress
+Snapshot: `75755460`
+
+| ID | Risk | Impact | Current evidence/trigger | Mitigation and acceptance |
+| --- | --- | --- | --- | --- |
+| R-01 | Legacy `.db` variants may differ from the tested schema | Data loss or failed migration | `.db` recognition is tested; real legacy fixture inventory is missing | Preserve read-only import path, add real legacy fixtures, compare records and relationships |
+| R-02 | `.tps` save/backup/replacement behavior is spread across `FileController`, `DataService`, and schema/session code | Corruption or accidental overwrite | File and lifecycle code identified; failure-injection fixture pending | Centralize workspace transactions and test cancel/partial/locked failures |
+| R-03 | Print/PDF output can change with fonts, Qt PDF, DPI, or layout ownership | User-visible and operational regressions | Multiple feature print services and templates; golden outputs missing | Render baseline pages to images and compare on each target platform |
+| R-04 | PowerPoint automation is platform-specific and external-app dependent | Speaking workflow unavailable or altered | Windows/macOS automation and access-notice paths found | Keep platform adapter contract, add mocked and end-to-end platform fixtures |
+| R-05 | Korean input, translation, and font metrics are coupled to Qt global state | Text entry/layout regressions | `LanguageService`, `FontManager`, Korean keyboard, and translations are startup-owned | Capture both locales/themes/font sizes and test live retranslation/input |
+| R-06 | QML Calendar behavior differs from Widgets and platform plugins | Calendar regressions or startup cost | `QQuickWidget` and injected QML context found | Keep calendar contract tests, capture Linux/macOS/Windows behavior, defer construction |
+| R-07 | Current resource-pack mounts and update service are cross-cutting | Incomplete resource migration or stale installed packs | Resource manager/leases/paths and RCC build coupling identified | Build typed catalog/loader, ship canonical resources with app, remove pack update path |
+| R-08 | Stale build trees can make tests or packaging appear current | False baseline and unsafe decisions | Current cache contains obsolete `CLASSMNGR_*` options; CTest lists 66 tests | Use isolated clean build directories and record configure fingerprint |
+| R-09 | PageManager retains large widget trees after navigation | Windows memory target missed | Lazy creation exists, but instantiated pages remain stack-owned | Measure create/leave/recreate lifecycle and introduce explicit feature release budgets |
+| R-10 | Table cell widgets, images, PDFs, and document catalogs can multiply allocations | High working set and unbounded growth | Table/PDF/image/QML sites are present across large features | Prefer models/delegates, bounded caches, operation-scoped resources, and memory gates |
+| R-11 | User-edited campus/document content conflicts with read-only packaged resources | Lost admin changes or broken updates | Campus JSON is saved separately; document catalog is packaged | Separate application-owned mutable data from immutable resource catalog and migrate clearly |
+| R-12 | Application update packaging may accidentally retain a second resource update path | Product constraint violation | Current build installs standalone RCC packs and has pack updater code | Make application release the only resource delivery mechanism; add negative tests/search gate |
