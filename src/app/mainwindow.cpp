@@ -355,6 +355,28 @@ void MainWindow::initializePages()
                         classesMetrics.selectedClassId;
                 }
 
+                if (m_pages && m_pages->schedulePage())
+                {
+                    const ScheduleWidgetRuntimeMetrics scheduleMetrics =
+                        m_pages->schedulePage()->runtimeMetrics();
+                    metrics.scheduleModelRowCount =
+                        scheduleMetrics.modelRowCount;
+                    metrics.scheduleModelCellCount =
+                        scheduleMetrics.modelCellCount;
+                    metrics.scheduleModelEntryCount =
+                        scheduleMetrics.modelEntryCount;
+                    metrics.scheduleTableRowCount =
+                        scheduleMetrics.tableRowCount;
+                    metrics.scheduleTableColumnCount =
+                        scheduleMetrics.tableColumnCount;
+                    metrics.scheduleTableItemCount =
+                        scheduleMetrics.tableItemCount;
+                    metrics.scheduleTableCellWidgetCount =
+                        scheduleMetrics.tableCellWidgetCount;
+                    metrics.scheduleVisibleClassCount =
+                        scheduleMetrics.visibleClassCount;
+                }
+
                 return metrics;
             }
             );

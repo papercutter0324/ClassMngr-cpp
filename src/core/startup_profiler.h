@@ -54,6 +54,14 @@ struct StartupApplicationMetrics
     int classesLoadedEditorClassCount = 0;
     int classesRebuildCount = 0;
     int classesSelectedClassId = -1;
+    int scheduleModelRowCount = 0;
+    int scheduleModelCellCount = 0;
+    int scheduleModelEntryCount = 0;
+    int scheduleTableRowCount = 0;
+    int scheduleTableColumnCount = 0;
+    int scheduleTableItemCount = 0;
+    int scheduleTableCellWidgetCount = 0;
+    int scheduleVisibleClassCount = 0;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;

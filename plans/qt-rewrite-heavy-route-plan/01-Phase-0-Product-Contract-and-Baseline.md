@@ -642,3 +642,36 @@ No v2 feature work begins without a fixture and an acceptance check.
   Sub Prep visuals, explicit Release thresholds, generated outputs, and
   cross-platform evidence. The next heavy slice should target the remaining
   large-workflow matrix while retaining both the Sub Prep and Classes artifacts.
+
+## Progress update - 2026-09-16 (large Schedule lifecycle retention)
+
+- What changed: the heavy-route harness now drives the standalone Schedule
+  page in the packaged Release `large_startup.sql` workspace through two
+  refreshes, two leaves, and two re-entries. It records the current schedule
+  model/table shape alongside the existing renderer creation, removal, and
+  deferred-deletion counters. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-schedule-boundary/`.
+- Evidence: the Release child completed normally with
+  `workflow-complete` at `10,109 ms` and `settled-1s` at `11,144 ms`.
+  The schedule lifecycle entry was `201,711,616` working-set bytes and
+  `187,531,264` private-usage bytes; lifecycle completion was
+  `203,198,464` working-set bytes and `189,116,416` private-usage bytes.
+  The full route peak, which also includes later pages, was
+  `410,066,944` working-set bytes and `453,238,784` private-usage bytes.
+- Schedule boundary: the current standalone page holds seven model/table
+  rows, 49 model cells, 768 schedule entries, eight table columns, seven time
+  column items, 49 cell widgets, and 96 visible classes at every lifecycle
+  checkpoint. The process-level schedule counters show two live/created
+  ScheduleWidgets (the standalone and workspace schedules), 98 created cell
+  widgets, and zero cumulative removals or deferred deletions during the
+  repeated refreshes. The page's current table shape is therefore bounded,
+  while the legacy presentation still uses per-cell widgets and needs the
+  Phase 7E model/delegate migration.
+- Evaluation impact: this closes the repeated standalone Schedule refresh,
+  leave, re-entry, and current-render-shape before-state measurement. It does
+  not close large workbook review or calendar import, and it does not set the
+  v2 operation budget. Phase 0 still needs those operation-scoped workflows,
+  speaking/transfer/staff/PDF measurements, Sub Prep visuals, explicit
+  Release thresholds, generated outputs, and cross-platform evidence. The
+  next heavy slice should target a large import/review operation rather than
+  treating the bounded schedule refresh result as remediation.

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/pages/basepage.h"
 
@@ -27,6 +28,7 @@ public:
     void retranslateUi() override;
     void setPageHeaderVisible(bool visible);
     [[nodiscard]] ScheduleDisplayMode displayMode() const;
+    [[nodiscard]] ScheduleWidgetRuntimeMetrics runtimeMetrics() const;
     [[nodiscard]] PageOutputCapabilities
         outputCapabilities() const override;
     void printCurrentPage() override;

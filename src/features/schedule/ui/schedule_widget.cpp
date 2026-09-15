@@ -114,6 +114,48 @@ ScheduleDisplayState ScheduleWidget::displayState() const
     return state;
 }
 
+ScheduleWidgetRuntimeMetrics ScheduleWidget::runtimeMetrics() const
+{
+    ScheduleWidgetRuntimeMetrics metrics;
+    metrics.modelRowCount = m_scheduleModel.rows.size();
+    metrics.visibleClassCount = visibleClassIds().size();
+
+    for (const ScheduleRowView& row : m_scheduleModel.rows)
+    {
+        metrics.modelCellCount += row.cells.size();
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            metrics.modelEntryCount += cell.entries.size();
+        }
+    }
+
+    if (!m_table)
+    {
+        return metrics;
+    }
+
+    metrics.tableRowCount = m_table->rowCount();
+    metrics.tableColumnCount = m_table->columnCount();
+    for (int row = 0; row < metrics.tableRowCount; ++row)
+    {
+        for (int column = 0;
+             column < metrics.tableColumnCount;
+             ++column)
+        {
+            if (m_table->item(row, column))
+            {
+                ++metrics.tableItemCount;
+            }
+            if (m_table->cellWidget(row, column))
+            {
+                ++metrics.tableCellWidgetCount;
+            }
+        }
+    }
+
+    return metrics;
+}
+
 ScheduleViewModel ScheduleWidget::scheduleModel() const
 {
     return m_scheduleModel;

@@ -1,0 +1,80 @@
+start my-workspace
+showPage my-workspace
+showPage-returned my-workspace
+events-processed my-workspace
+calendar-start
+calendar-open-returned
+calendar-events-processed
+calendar-schedule-returned
+start schedule
+showPage schedule
+showPage-returned schedule
+events-processed schedule
+schedule-lifecycle-start
+schedule-refresh-1-start
+schedule-refresh-1-complete
+schedule-left-1 returned=true
+schedule-reentry-1 returned=true
+schedule-refresh-2-start
+schedule-refresh-2-complete
+schedule-left-2 returned=true
+schedule-reentry-2 returned=true
+schedule-lifecycle-complete
+start classes
+showPage classes
+showPage-returned classes
+events-processed classes
+start testing-classes
+showPage testing-classes
+showPage-returned testing-classes
+events-processed testing-classes
+start teacher-info
+showPage teacher-info
+showPage-returned teacher-info
+events-processed teacher-info
+start native-english-teachers
+showPage native-english-teachers
+showPage-returned native-english-teachers
+events-processed native-english-teachers
+start gs-team
+showPage gs-team
+showPage-returned gs-team
+events-processed gs-team
+start campus-dashboard
+showPage campus-dashboard
+showPage-returned campus-dashboard
+events-processed campus-dashboard
+start sub-prep
+showPage sub-prep
+sub-prep-class-information rebuild-start; widgets=0; textEdits=0; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-clear-requested; widgets=0; textEdits=0; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information data-loaded; widgets=0; textEdits=0; navigationRows=0; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-start; widgets=0; textEdits=0; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=244; textEdits=16; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=476; textEdits=32; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=708; textEdits=48; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=940; textEdits=64; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=1172; textEdits=80; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=1404; textEdits=96; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=1636; textEdits=112; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=1868; textEdits=128; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=2100; textEdits=144; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=2332; textEdits=160; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=2564; textEdits=176; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-build-progress; widgets=2796; textEdits=192; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1
+sub-prep-class-information view-ready; widgets=2948; textEdits=192; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=24; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:792,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=25
+showPage-returned sub-prep
+events-processed sub-prep
+start my-classes
+showPage my-classes
+showPage-returned my-classes
+events-processed my-classes
+start pdf-viewer
+showPage pdf-viewer
+showPage-returned pdf-viewer
+events-processed pdf-viewer
+start my-workspace
+showPage my-workspace
+showPage-returned my-workspace
+events-processed my-workspace
+complete

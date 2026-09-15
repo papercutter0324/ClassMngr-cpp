@@ -17,6 +17,7 @@
 #include "core/utils/platform.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "features/schedule/ui/schedule_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -75,6 +76,7 @@ struct StartupPerformanceMode
     std::optional<Language> visualLanguageOverride;
     std::optional<Theme> visualThemeOverride;
     bool workflowEnabled = false;
+    bool scheduleLifecycleEnabled = false;
     bool classesLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
     enum class Scenario
@@ -516,6 +518,10 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-workflow")
             );
+    mode.scheduleLifecycleEnabled =
+        args.contains(
+            QStringLiteral("--startup-performance-schedule-lifecycle")
+            );
     mode.classesLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-classes-lifecycle")
@@ -527,6 +533,7 @@ StartupPerformanceMode startupPerformanceMode(
     mode.enabled =
         mode.enabled
         || mode.workflowEnabled
+        || mode.scheduleLifecycleEnabled
         || mode.classesLifecycleEnabled
         || mode.subPrepLifecycleEnabled;
 
@@ -731,6 +738,179 @@ bool captureStartupVisual(
                 QString::number(screenshot.height())
                 );
     return true;
+}
+
+void scheduleStartupPerformanceScheduleLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            SchedulePage* page = pages ? pages->schedulePage() : nullptr;
+
+            if (
+                !pages
+                || !page
+                || !pages->isCurrentPage(PageType::Schedule)
+                )
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("schedule-lifecycle-failed"),
+                    QStringLiteral("schedule-page-not-current")
+                    );
+                completion();
+                return;
+            }
+
+            bool lifecycleSucceeded = true;
+            const auto metricsDetail =
+                [&page]()
+                {
+                    const ScheduleWidgetRuntimeMetrics metrics =
+                        page->runtimeMetrics();
+                    return QStringLiteral(
+                        "modelRows=%1; modelCells=%2; modelEntries=%3; "
+                        "tableRows=%4; tableColumns=%5; tableItems=%6; "
+                        "tableCellWidgets=%7; visibleClasses=%8"
+                        )
+                        .arg(metrics.modelRowCount)
+                        .arg(metrics.modelCellCount)
+                        .arg(metrics.modelEntryCount)
+                        .arg(metrics.tableRowCount)
+                        .arg(metrics.tableColumnCount)
+                        .arg(metrics.tableItemCount)
+                        .arg(metrics.tableCellWidgetCount)
+                        .arg(metrics.visibleClassCount);
+                };
+            const auto checkpoint =
+                [&profiler](
+                    const QString& name,
+                    const QString& detail = QString()
+                    )
+                {
+                    profiler.checkpoint(name, detail);
+                };
+
+            const auto refresh =
+                [
+                    &app,
+                    &page,
+                    metricsDetail,
+                    checkpoint
+                ](int ordinal)
+                {
+                    const QString startName =
+                        QStringLiteral("schedule-refresh-%1-start")
+                            .arg(ordinal);
+                    const QString completeName =
+                        QStringLiteral("schedule-refresh-%1-complete")
+                            .arg(ordinal);
+                    appendStartupWorkflowTrace(startName);
+                    checkpoint(startName, metricsDetail());
+                    page->refresh();
+                    app.processEvents();
+                    appendStartupWorkflowTrace(completeName);
+                    checkpoint(completeName, metricsDetail());
+                };
+
+            const auto navigate =
+                [
+                    &app,
+                    &pages,
+                    &lifecycleSucceeded,
+                    metricsDetail,
+                    checkpoint
+                ](
+                    PageType destination,
+                    const QString& operation
+                    )
+                {
+                    pages->showPage(destination);
+                    app.processEvents();
+                    const bool reached = pages->isCurrentPage(destination);
+                    appendStartupWorkflowTrace(
+                        QStringLiteral("%1 returned=%2")
+                            .arg(
+                                operation,
+                                reached ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                )
+                        );
+                    if (!reached)
+                    {
+                        lifecycleSucceeded = false;
+                    }
+                    checkpoint(
+                        operation,
+                        QStringLiteral("currentPage=%1; passed=%2; %3")
+                            .arg(pages->currentPageIdentifier())
+                            .arg(reached ? QStringLiteral("true")
+                                         : QStringLiteral("false"))
+                            .arg(metricsDetail())
+                        );
+                };
+
+            appendStartupWorkflowTrace(
+                QStringLiteral("schedule-lifecycle-start")
+                );
+            checkpoint(
+                QStringLiteral("schedule-lifecycle-entry"),
+                metricsDetail()
+                );
+            refresh(1);
+            navigate(
+                PageType::MyWorkspace,
+                QStringLiteral("schedule-left-1")
+                );
+            navigate(
+                PageType::Schedule,
+                QStringLiteral("schedule-reentry-1")
+                );
+            refresh(2);
+            navigate(
+                PageType::MyWorkspace,
+                QStringLiteral("schedule-left-2")
+                );
+            navigate(
+                PageType::Schedule,
+                QStringLiteral("schedule-reentry-2")
+                );
+
+            appendStartupWorkflowTrace(
+                QStringLiteral("schedule-lifecycle-complete")
+                );
+            checkpoint(
+                QStringLiteral("schedule-lifecycle-complete"),
+                QStringLiteral("passed=%1; %2")
+                    .arg(
+                        lifecycleSucceeded
+                            ? QStringLiteral("true")
+                            : QStringLiteral("false")
+                        )
+                    .arg(metricsDetail())
+                );
+            if (!lifecycleSucceeded)
+            {
+                *workflowSucceeded = false;
+            }
+            completion();
+        }
+        );
 }
 
 void scheduleStartupPerformanceClassesLifecycle(
@@ -1148,6 +1328,7 @@ void scheduleStartupPerformanceWorkflow(
     MainWindow& window,
     StartupProfiler& profiler,
     const std::shared_ptr<bool>& workflowSucceeded,
+    bool scheduleLifecycleEnabled,
     bool classesLifecycleEnabled,
     bool subPrepLifecycleEnabled,
     std::function<void()> completion
@@ -1165,6 +1346,7 @@ void scheduleStartupPerformanceWorkflow(
             &window,
             &profiler,
             workflowSucceeded,
+            scheduleLifecycleEnabled,
             classesLifecycleEnabled,
             subPrepLifecycleEnabled,
             pageTypes,
@@ -1302,6 +1484,37 @@ void scheduleStartupPerformanceWorkflow(
                 QStringLiteral("workflow-child-released"),
                 QStringLiteral("calendar")
                 );
+        }
+
+        if (
+            pageReady
+            && scheduleLifecycleEnabled
+            && pageType == PageType::Schedule
+            )
+        {
+            scheduleStartupPerformanceScheduleLifecycle(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
         }
 
         if (
@@ -1486,6 +1699,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "exercise large Classes selection, refresh, leave, and repeated re-entry"
+                )
+            );
+    }
+    if (mode.scheduleLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise large Schedule refresh, leave, and repeated re-entry"
                 )
             );
     }
@@ -2000,6 +2221,7 @@ int main(int argc, char *argv[])
                 window,
                 startupProfiler,
                 workflowSucceeded,
+                startupPerformance.scheduleLifecycleEnabled,
                 startupPerformance.classesLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
                 scheduleSettledCompletion

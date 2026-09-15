@@ -166,6 +166,17 @@ does not recreate or rely on them.
   entry to `273,227,776` bytes at lifecycle completion. The retained artifact
   is under `docs/qt-rewrite/visual-baseline/release/large-classes-boundary/`;
   this is a legacy before-state measurement, not an accepted v2 budget result.
+- The packaged Release Schedule lifecycle run uses the same fixture and
+  completes two refreshes, two leaves, and two re-entries. The standalone
+  schedule page remains at 7 model/table rows, 49 model cells, 768 schedule
+  entries, 8 columns, 7 time-column items, 49 cell widgets, and 96 visible
+  classes at every checkpoint. Its memory rises from `201,711,616` working-set
+  bytes / `187,531,264` private-usage bytes at entry to `203,198,464` /
+  `189,116,416` at lifecycle completion. The process-level renderer counters
+  show 98 created cell widgets and zero removals/deferred deletions across the
+  repeated refreshes; the retained artifact is under
+  `docs/qt-rewrite/visual-baseline/release/large-schedule-boundary/`. This is
+  the legacy Schedule before-state for the Phase 7E model/delegate migration.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large

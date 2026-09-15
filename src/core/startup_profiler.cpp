@@ -207,6 +207,38 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             QStringLiteral("classesSelectedClassId"),
             metrics.classesSelectedClassId
         },
+        {
+            QStringLiteral("scheduleModelRowCount"),
+            metrics.scheduleModelRowCount
+        },
+        {
+            QStringLiteral("scheduleModelCellCount"),
+            metrics.scheduleModelCellCount
+        },
+        {
+            QStringLiteral("scheduleModelEntryCount"),
+            metrics.scheduleModelEntryCount
+        },
+        {
+            QStringLiteral("scheduleTableRowCount"),
+            metrics.scheduleTableRowCount
+        },
+        {
+            QStringLiteral("scheduleTableColumnCount"),
+            metrics.scheduleTableColumnCount
+        },
+        {
+            QStringLiteral("scheduleTableItemCount"),
+            metrics.scheduleTableItemCount
+        },
+        {
+            QStringLiteral("scheduleTableCellWidgetCount"),
+            metrics.scheduleTableCellWidgetCount
+        },
+        {
+            QStringLiteral("scheduleVisibleClassCount"),
+            metrics.scheduleVisibleClassCount
+        },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
         {QStringLiteral("scheduleWidgetsCreated"), static_cast<double>(metrics.scheduleWidgetsCreated)},
@@ -739,6 +771,22 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.classesRebuildCount;
         metrics.classesSelectedClassId =
             supplied.classesSelectedClassId;
+        metrics.scheduleModelRowCount =
+            supplied.scheduleModelRowCount;
+        metrics.scheduleModelCellCount =
+            supplied.scheduleModelCellCount;
+        metrics.scheduleModelEntryCount =
+            supplied.scheduleModelEntryCount;
+        metrics.scheduleTableRowCount =
+            supplied.scheduleTableRowCount;
+        metrics.scheduleTableColumnCount =
+            supplied.scheduleTableColumnCount;
+        metrics.scheduleTableItemCount =
+            supplied.scheduleTableItemCount;
+        metrics.scheduleTableCellWidgetCount =
+            supplied.scheduleTableCellWidgetCount;
+        metrics.scheduleVisibleClassCount =
+            supplied.scheduleVisibleClassCount;
     }
 
     return metrics;
