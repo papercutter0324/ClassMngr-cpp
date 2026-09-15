@@ -1480,6 +1480,16 @@ void ScheduleImportReviewDialog::applyImport()
         return;
     }
 
+    StartupProfiler::recordScheduleImportApplied(
+        summary->teachersCreated,
+        summary->teachersUpdated,
+        summary->classesCreated,
+        summary->classesUpdated,
+        summary->classesSkipped,
+        summary->schedulesCleared,
+        summary->ignoredCells
+        );
+
     DialogServices::showInformation(
         this,
         tr("Import Schedule"),

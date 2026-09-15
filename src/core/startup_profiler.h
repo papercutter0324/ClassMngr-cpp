@@ -72,6 +72,20 @@ struct StartupApplicationMetrics
     int scheduleImportReviewTeacherControlCount = 0;
     int scheduleImportReviewClassControlCount = 0;
     int scheduleImportReviewPreviewEntryCount = 0;
+    int scheduleImportExistingTeacherCount = 0;
+    int scheduleImportExistingClassCount = 0;
+    int scheduleImportExistingClassInfoCount = 0;
+    int scheduleImportApplyFinalClassCount = 0;
+    int scheduleImportApplyFinalScheduleRowCount = 0;
+    int scheduleImportApplyTeacherResolutionCount = 0;
+    int scheduleImportApplyClassResolutionCount = 0;
+    int scheduleImportTeachersCreated = 0;
+    int scheduleImportTeachersUpdated = 0;
+    int scheduleImportClassesCreated = 0;
+    int scheduleImportClassesUpdated = 0;
+    int scheduleImportClassesSkipped = 0;
+    int scheduleImportSchedulesCleared = 0;
+    int scheduleImportIgnoredCells = 0;
     int calendarCacheEventCount = 0;
     int calendarCacheDateBucketCount = 0;
     int calendarCacheLoadedRangeCount = 0;
@@ -232,7 +246,26 @@ public:
         );
     static void recordScheduleImportReviewReleased();
     static void recordScheduleImportCancelled();
-    static void recordScheduleImportApplied();
+    static void recordScheduleImportApplyInputs(
+        int existingTeacherCount,
+        int existingClassCount,
+        int existingClassInfoCount
+        );
+    static void recordScheduleImportApplyPrepared(
+        int finalClassCount,
+        int finalScheduleRowCount,
+        int teacherResolutionCount,
+        int classResolutionCount
+        );
+    static void recordScheduleImportApplied(
+        int teachersCreated,
+        int teachersUpdated,
+        int classesCreated,
+        int classesUpdated,
+        int classesSkipped,
+        int schedulesCleared,
+        int ignoredCells
+        );
     static void recordScheduleImportOperationReleased();
     static void recordCalendarImportStarted(
         const QString& sourceUrl

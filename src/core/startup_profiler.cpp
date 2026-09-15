@@ -320,6 +320,62 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.scheduleImportReviewPreviewEntryCount
         },
         {
+            QStringLiteral("scheduleImportExistingTeacherCount"),
+            metrics.scheduleImportExistingTeacherCount
+        },
+        {
+            QStringLiteral("scheduleImportExistingClassCount"),
+            metrics.scheduleImportExistingClassCount
+        },
+        {
+            QStringLiteral("scheduleImportExistingClassInfoCount"),
+            metrics.scheduleImportExistingClassInfoCount
+        },
+        {
+            QStringLiteral("scheduleImportApplyFinalClassCount"),
+            metrics.scheduleImportApplyFinalClassCount
+        },
+        {
+            QStringLiteral("scheduleImportApplyFinalScheduleRowCount"),
+            metrics.scheduleImportApplyFinalScheduleRowCount
+        },
+        {
+            QStringLiteral("scheduleImportApplyTeacherResolutionCount"),
+            metrics.scheduleImportApplyTeacherResolutionCount
+        },
+        {
+            QStringLiteral("scheduleImportApplyClassResolutionCount"),
+            metrics.scheduleImportApplyClassResolutionCount
+        },
+        {
+            QStringLiteral("scheduleImportTeachersCreated"),
+            metrics.scheduleImportTeachersCreated
+        },
+        {
+            QStringLiteral("scheduleImportTeachersUpdated"),
+            metrics.scheduleImportTeachersUpdated
+        },
+        {
+            QStringLiteral("scheduleImportClassesCreated"),
+            metrics.scheduleImportClassesCreated
+        },
+        {
+            QStringLiteral("scheduleImportClassesUpdated"),
+            metrics.scheduleImportClassesUpdated
+        },
+        {
+            QStringLiteral("scheduleImportClassesSkipped"),
+            metrics.scheduleImportClassesSkipped
+        },
+        {
+            QStringLiteral("scheduleImportSchedulesCleared"),
+            metrics.scheduleImportSchedulesCleared
+        },
+        {
+            QStringLiteral("scheduleImportIgnoredCells"),
+            metrics.scheduleImportIgnoredCells
+        },
+        {
             QStringLiteral("scheduleImportRawWorkbookBytes"),
             static_cast<double>(metrics.scheduleImportRawWorkbookBytes)
         },
@@ -898,6 +954,20 @@ void StartupProfiler::recordScheduleImportStarted(
         metrics.scheduleImportReviewTeacherControlCount = 0;
         metrics.scheduleImportReviewClassControlCount = 0;
         metrics.scheduleImportReviewPreviewEntryCount = 0;
+        metrics.scheduleImportExistingTeacherCount = 0;
+        metrics.scheduleImportExistingClassCount = 0;
+        metrics.scheduleImportExistingClassInfoCount = 0;
+        metrics.scheduleImportApplyFinalClassCount = 0;
+        metrics.scheduleImportApplyFinalScheduleRowCount = 0;
+        metrics.scheduleImportApplyTeacherResolutionCount = 0;
+        metrics.scheduleImportApplyClassResolutionCount = 0;
+        metrics.scheduleImportTeachersCreated = 0;
+        metrics.scheduleImportTeachersUpdated = 0;
+        metrics.scheduleImportClassesCreated = 0;
+        metrics.scheduleImportClassesUpdated = 0;
+        metrics.scheduleImportClassesSkipped = 0;
+        metrics.scheduleImportSchedulesCleared = 0;
+        metrics.scheduleImportIgnoredCells = 0;
 
         const QString detail =
             QStringLiteral("path=%1; rawBytes=%2")
@@ -1034,16 +1104,115 @@ void StartupProfiler::recordScheduleImportCancelled()
     }
 }
 
-void StartupProfiler::recordScheduleImportApplied()
+void StartupProfiler::recordScheduleImportApplyInputs(
+    int existingTeacherCount,
+    int existingClassCount,
+    int existingClassInfoCount
+    )
 {
     if (StartupProfiler* profiler = activeProfiler())
     {
-        ++profiler->m_scheduleMetrics.scheduleImportOperationsApplied;
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.scheduleImportExistingTeacherCount =
+            qMax(0, existingTeacherCount);
+        metrics.scheduleImportExistingClassCount =
+            qMax(0, existingClassCount);
+        metrics.scheduleImportExistingClassInfoCount =
+            qMax(0, existingClassInfoCount);
+        const QString detail =
+            QStringLiteral(
+                "existingTeachers=%1; existingClasses=%2; existingClassInfo=%3"
+                )
+                .arg(metrics.scheduleImportExistingTeacherCount)
+                .arg(metrics.scheduleImportExistingClassCount)
+                .arg(metrics.scheduleImportExistingClassInfoCount);
         profiler->recordEvent(
-            QStringLiteral("schedule-import-operation-applied")
+            QStringLiteral("schedule-import-apply-inputs"),
+            detail
             );
         appendProfilerWorkflowTrace(
-            QStringLiteral("schedule-import-operation-applied")
+            QStringLiteral("schedule-import-apply-inputs %1")
+                .arg(detail)
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportApplyPrepared(
+    int finalClassCount,
+    int finalScheduleRowCount,
+    int teacherResolutionCount,
+    int classResolutionCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.scheduleImportApplyFinalClassCount =
+            qMax(0, finalClassCount);
+        metrics.scheduleImportApplyFinalScheduleRowCount =
+            qMax(0, finalScheduleRowCount);
+        metrics.scheduleImportApplyTeacherResolutionCount =
+            qMax(0, teacherResolutionCount);
+        metrics.scheduleImportApplyClassResolutionCount =
+            qMax(0, classResolutionCount);
+        const QString detail =
+            QStringLiteral(
+                "finalClasses=%1; finalScheduleRows=%2; teacherResolutions=%3; classResolutions=%4"
+                )
+                .arg(metrics.scheduleImportApplyFinalClassCount)
+                .arg(metrics.scheduleImportApplyFinalScheduleRowCount)
+                .arg(metrics.scheduleImportApplyTeacherResolutionCount)
+                .arg(metrics.scheduleImportApplyClassResolutionCount);
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-apply-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-apply-prepared %1")
+                .arg(detail)
+            );
+    }
+}
+
+void StartupProfiler::recordScheduleImportApplied(
+    int teachersCreated,
+    int teachersUpdated,
+    int classesCreated,
+    int classesUpdated,
+    int classesSkipped,
+    int schedulesCleared,
+    int ignoredCells
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.scheduleImportOperationsApplied;
+        metrics.scheduleImportTeachersCreated = qMax(0, teachersCreated);
+        metrics.scheduleImportTeachersUpdated = qMax(0, teachersUpdated);
+        metrics.scheduleImportClassesCreated = qMax(0, classesCreated);
+        metrics.scheduleImportClassesUpdated = qMax(0, classesUpdated);
+        metrics.scheduleImportClassesSkipped = qMax(0, classesSkipped);
+        metrics.scheduleImportSchedulesCleared = qMax(0, schedulesCleared);
+        metrics.scheduleImportIgnoredCells = qMax(0, ignoredCells);
+        const QString detail =
+            QStringLiteral(
+                "committed=true; teachersCreated=%1; teachersUpdated=%2; classesCreated=%3; classesUpdated=%4; classesSkipped=%5; schedulesCleared=%6; ignoredCells=%7"
+                )
+                .arg(metrics.scheduleImportTeachersCreated)
+                .arg(metrics.scheduleImportTeachersUpdated)
+                .arg(metrics.scheduleImportClassesCreated)
+                .arg(metrics.scheduleImportClassesUpdated)
+                .arg(metrics.scheduleImportClassesSkipped)
+                .arg(metrics.scheduleImportSchedulesCleared)
+                .arg(metrics.scheduleImportIgnoredCells);
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-operation-applied"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-operation-applied %1")
+                .arg(detail)
             );
     }
 }

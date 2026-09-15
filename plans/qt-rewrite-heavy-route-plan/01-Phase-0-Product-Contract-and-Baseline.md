@@ -744,3 +744,41 @@ No v2 feature work begins without a fixture and an acceptance check.
   Continue with the next heavy operation while retaining the Sub Prep,
   Classes, Schedule, Schedule Import, and Calendar artifacts as comparison
   inputs; do not begin v2 remediation yet.
+
+## Progress update - 2026-09-16 (large Schedule Import apply lifecycle retention)
+
+- What changed: the heavy-route harness now runs a separate apply-mode variant
+  of the deterministic large Schedule Import workbook. It reaches the actual
+  review Import action, auto-confirms the product prompt in-process, commits
+  the repository transaction, releases the review/source ownership graph, and
+  refreshes the visible Schedule page. The profiler records existing teacher,
+  class, and class-information result sizes, final class/schedule-row counts,
+  resolution counts, committed summary counts, representation release, and
+  post-commit Schedule metrics.
+- Evidence: the packaged Windows x64 Release child completed normally. The
+  workbook contained 96 class candidates and produced 20 preview entries with
+  five teacher controls and 20 class controls. Apply loaded 24 existing
+  teachers, 96 existing classes, and 96 class-information records, then
+  committed five teachers, 20 classes, and 20 schedule rows while clearing 96
+  prior schedules. The review and workbook retention flags were false after
+  the committed operation, and the refreshed Schedule page showed 20 visible
+  classes. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-schedule-import-apply-boundary/`.
+- Timing and memory: apply/release/refresh checkpoints were
+  `4,568`/`4,635`/`4,681 ms`; `workflow-complete` was `9,218 ms` and
+  `settled-1s` was `10,253 ms`. Route-wide peak working set/private usage
+  were `361,115,648`/`403,337,216` bytes.
+- Evaluation impact: this closes the Schedule Import transaction/apply,
+  cleanup, and post-commit refresh before-state required by the Memory Hotspot
+  Remediation Plan. It also confirms that the current path retains the source
+  workbook and review graph through resolution, then loads full existing
+  teacher/class/class-information results and a derived final schedule map
+  before commit. The measurement still does not define the v2 memory budget
+  or justify replacing these representations before the Phase 7E design work.
+- Decision and next heavy slice: retain the cancel and apply workbooks/reports
+  as separate Schedule Import before-state oracles. Phase 0 remains open for
+  speaking batch, class transfer, staff directory, PDF/report operation
+  measurements, Sub Prep visuals, explicit Release thresholds,
+  generated-output coverage, and cross-platform evidence. Continue with the
+  next heavy operation while retaining all prior artifacts; do not begin v2
+  remediation yet.

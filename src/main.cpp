@@ -94,6 +94,7 @@ struct StartupPerformanceMode
     bool workflowEnabled = false;
     bool scheduleLifecycleEnabled = false;
     bool scheduleImportLifecycleEnabled = false;
+    bool scheduleImportApplyLifecycleEnabled = false;
     bool calendarImportLifecycleEnabled = false;
     bool classesLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
@@ -544,6 +545,12 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-schedule-import-lifecycle")
             );
+    mode.scheduleImportApplyLifecycleEnabled =
+        args.contains(
+            QStringLiteral(
+                "--startup-performance-schedule-import-apply-lifecycle"
+                )
+            );
     mode.calendarImportLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-calendar-import-lifecycle")
@@ -561,6 +568,7 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.workflowEnabled
         || mode.scheduleLifecycleEnabled
         || mode.scheduleImportLifecycleEnabled
+        || mode.scheduleImportApplyLifecycleEnabled
         || mode.calendarImportLifecycleEnabled
         || mode.classesLifecycleEnabled
         || mode.subPrepLifecycleEnabled;
@@ -1356,6 +1364,7 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
     MainWindow& window,
     StartupProfiler& profiler,
     const std::shared_ptr<bool>& workflowSucceeded,
+    bool applyImport,
     std::function<void()> completion
     )
 {
@@ -1367,6 +1376,7 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
             &window,
             &profiler,
             workflowSucceeded,
+            applyImport,
             completion
         ]()
         {
@@ -1460,6 +1470,8 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                     &app,
                     &profiler,
                     workflowSucceeded,
+                    applyImport,
+                    page,
                     completion,
                     dialogGuard,
                     stage,
@@ -1678,6 +1690,22 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                             app.processEvents();
                         }
 
+                        if (applyImport)
+                        {
+                            if (
+                                auto* warningAcknowledgement =
+                                    review->findChild<QCheckBox*>(
+                                        QStringLiteral(
+                                            "scheduleImportWarningAcknowledgement"
+                                            )
+                                        )
+                                )
+                            {
+                                warningAcknowledgement->setChecked(true);
+                                app.processEvents();
+                            }
+                        }
+
                         const QString outputRoot =
                             qEnvironmentVariable(
                                 "CLASSMNGR_STARTUP_SCHEDULE_IMPORT_OUTPUT_DIR"
@@ -1720,6 +1748,158 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                         appendStartupWorkflowTrace(
                             QStringLiteral("schedule-import-review-ready")
                             );
+                        if (applyImport)
+                        {
+                            if (!import->isEnabled())
+                            {
+                                *workflowSucceeded = false;
+                                profiler.checkpoint(
+                                    QStringLiteral(
+                                        "schedule-import-lifecycle-failed"
+                                        ),
+                                    QStringLiteral(
+                                        "apply-transition-disabled"
+                                        )
+                                    );
+                                review->reject();
+                                app.processEvents();
+                                completion();
+                                return;
+                            }
+
+                            profiler.checkpoint(
+                                QStringLiteral("schedule-import-apply-start"),
+                                QStringLiteral("review-confirmed")
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral("schedule-import-apply-start")
+                                );
+
+                            auto* promptTimer = new QTimer(&app);
+                            promptTimer->setInterval(10);
+                            QObject::connect(
+                                promptTimer,
+                                &QTimer::timeout,
+                                &app,
+                                []()
+                                {
+                                    for (
+                                        QWidget* widget :
+                                            QApplication::topLevelWidgets()
+                                        )
+                                    {
+                                        auto* prompt =
+                                            qobject_cast<QMessageBox*>(widget);
+                                        if (
+                                            !prompt
+                                            || !prompt->isVisible()
+                                            || prompt->objectName()
+                                                != QStringLiteral(
+                                                    "classmngrUserPrompt"
+                                                    )
+                                            )
+                                        {
+                                            continue;
+                                        }
+
+                                        if (QPushButton* button =
+                                                prompt->defaultButton())
+                                        {
+                                            button->click();
+                                            return;
+                                        }
+                                    }
+                                }
+                                );
+                            promptTimer->start();
+                            import->click();
+                            promptTimer->stop();
+                            promptTimer->deleteLater();
+                            app.processEvents();
+
+                            if (dialogGuard && dialogGuard->isVisible())
+                            {
+                                *workflowSucceeded = false;
+                                profiler.checkpoint(
+                                    QStringLiteral(
+                                        "schedule-import-lifecycle-failed"
+                                        ),
+                                    QStringLiteral(
+                                        "apply-dialog-remained-open"
+                                        )
+                                    );
+                                dialogGuard->reject();
+                                app.processEvents();
+                                completion();
+                                return;
+                            }
+
+                            profiler.checkpoint(
+                                QStringLiteral(
+                                    "schedule-import-apply-complete"
+                                    ),
+                                QStringLiteral("committed=true")
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral(
+                                    "schedule-import-apply-complete committed=true"
+                                    )
+                                );
+
+                            QCoreApplication::sendPostedEvents(
+                                nullptr,
+                                QEvent::DeferredDelete
+                                );
+                            app.processEvents();
+                            profiler.checkpoint(
+                                QStringLiteral(
+                                    "schedule-import-post-review-release"
+                                    )
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral(
+                                    "schedule-import-post-review-release"
+                                    )
+                                );
+                            profiler.checkpoint(
+                                QStringLiteral("schedule-import-post-release")
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral("schedule-import-post-release")
+                                );
+
+                            if (page)
+                            {
+                                page->markStale();
+                                if (page->isVisible())
+                                {
+                                    page->activate();
+                                }
+                                app.processEvents();
+                            }
+                            profiler.checkpoint(
+                                QStringLiteral(
+                                    "schedule-import-page-refreshed"
+                                    )
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral(
+                                    "schedule-import-page-refreshed"
+                                    )
+                                );
+                            profiler.checkpoint(
+                                QStringLiteral("schedule-import-operation-end"),
+                                QStringLiteral("committed=true")
+                                );
+                            appendStartupWorkflowTrace(
+                                QStringLiteral(
+                                    "schedule-import-operation-end committed=true"
+                                    )
+                                );
+                            completion();
+                            return;
+                        }
+
                         profiler.checkpoint(
                             QStringLiteral("schedule-import-cancel-start")
                             );
@@ -2137,6 +2317,7 @@ void scheduleStartupPerformanceWorkflow(
     const std::shared_ptr<bool>& workflowSucceeded,
     bool scheduleLifecycleEnabled,
     bool scheduleImportLifecycleEnabled,
+    bool scheduleImportApplyLifecycleEnabled,
     bool calendarImportLifecycleEnabled,
     bool classesLifecycleEnabled,
     bool subPrepLifecycleEnabled,
@@ -2157,6 +2338,7 @@ void scheduleStartupPerformanceWorkflow(
             workflowSucceeded,
             scheduleLifecycleEnabled,
             scheduleImportLifecycleEnabled,
+            scheduleImportApplyLifecycleEnabled,
             calendarImportLifecycleEnabled,
             classesLifecycleEnabled,
             subPrepLifecycleEnabled,
@@ -2345,15 +2527,19 @@ void scheduleStartupPerformanceWorkflow(
 
         if (
             pageReady
-            && scheduleImportLifecycleEnabled
+            && (
+                scheduleImportLifecycleEnabled
+                || scheduleImportApplyLifecycleEnabled
+                )
             && pageType == PageType::Schedule
-            )
+        )
         {
             scheduleStartupPerformanceScheduleImportLifecycle(
                 app,
                 window,
                 profiler,
                 workflowSucceeded,
+                scheduleImportApplyLifecycleEnabled,
                 [
                     &app,
                     pageIndex,
@@ -2603,6 +2789,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "exercise large Calendar workbook import, Preferences close, and Calendar cache refresh"
+                )
+            );
+    }
+    if (mode.scheduleImportApplyLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise large Schedule Import workbook review, transaction commit, cleanup, and schedule refresh"
                 )
             );
     }
@@ -3119,6 +3313,7 @@ int main(int argc, char *argv[])
                 workflowSucceeded,
                 startupPerformance.scheduleLifecycleEnabled,
                 startupPerformance.scheduleImportLifecycleEnabled,
+                startupPerformance.scheduleImportApplyLifecycleEnabled,
                 startupPerformance.calendarImportLifecycleEnabled,
                 startupPerformance.classesLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,

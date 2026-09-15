@@ -188,7 +188,9 @@ QString spreadsheetColumnName(int column)
     return result;
 }
 
-QByteArray largeScheduleImportWorksheet()
+QByteArray largeScheduleImportWorksheet(
+    bool conflictFree
+    )
 {
     const QStringList teacherNames{
         QStringLiteral("김선생"), QStringLiteral("이선생"),
@@ -254,19 +256,39 @@ QByteArray largeScheduleImportWorksheet()
         const int courseIndex = candidate % 4;
         const QString time =
             QStringLiteral("%1:00~%1:55")
-                .arg(3 + (localRow % 6));
+                .arg(
+                    3
+                    + (
+                        conflictFree
+                            ? localRow % 7
+                            : localRow % 6
+                        )
+                    );
         const QString timeCell =
             spreadsheetColumnName(startColumn) + QString::number(row);
         const int dayColumn =
             startColumn + 1 + (candidate % days.size());
         const QString classCell =
             spreadsheetColumnName(dayColumn) + QString::number(row);
+        const QString classGrade =
+            conflictFree
+                ? QStringLiteral("E6")
+                : grades[courseIndex];
+        const QString classLevel =
+            conflictFree
+                ? QStringList{
+                      QStringLiteral("Helios"),
+                      QStringLiteral("Poseidon"),
+                      QStringLiteral("Gaia"),
+                      QStringLiteral("Hera")
+                  }[courseIndex]
+                : levels[courseIndex];
         const QString classValue =
             QStringLiteral("%1 (%2)&#10;%3-%4")
                 .arg(teacherNames[teacherIndex])
                 .arg(301 + teacherIndex)
-                .arg(grades[courseIndex])
-                .arg(levels[courseIndex]);
+                .arg(classGrade)
+                .arg(classLevel);
 
         xml += QStringLiteral("<row r=\"%1\">").arg(row).toUtf8();
         xml += QStringLiteral(
@@ -291,7 +313,9 @@ QByteArray emptyScheduleImportWorksheet()
         );
 }
 
-QByteArray largeScheduleImportWorkbookData()
+QByteArray largeScheduleImportWorkbookData(
+    bool conflictFree
+    )
 {
     const QByteArray workbook = QByteArrayLiteral(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -323,7 +347,7 @@ QByteArray largeScheduleImportWorkbookData()
         {QByteArrayLiteral("xl/styles.xml"), styles},
         {
             QByteArrayLiteral("xl/worksheets/sheet1.xml"),
-            largeScheduleImportWorksheet()
+            largeScheduleImportWorksheet(conflictFree)
         },
         {
             QByteArrayLiteral("xl/worksheets/sheet2.xml"),
@@ -333,7 +357,8 @@ QByteArray largeScheduleImportWorkbookData()
 }
 
 bool writeLargeScheduleImportWorkbook(
-    const QString& path
+    const QString& path,
+    bool conflictFree = false
     )
 {
     QFile file(path);
@@ -341,7 +366,7 @@ bool writeLargeScheduleImportWorkbook(
     {
         return false;
     }
-    const QByteArray data = largeScheduleImportWorkbookData();
+    const QByteArray data = largeScheduleImportWorkbookData(conflictFree);
     return file.write(data) == data.size()
         && file.flush()
         && file.error() == QFile::NoError;
@@ -876,6 +901,7 @@ private slots:
     void capturesLargeClassesBoundaryWhenConfigured();
     void capturesLargeScheduleBoundaryWhenConfigured();
     void capturesLargeScheduleImportBoundaryWhenConfigured();
+    void capturesLargeScheduleImportApplyBoundaryWhenConfigured();
     void capturesLargeCalendarImportBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
@@ -3798,10 +3824,19 @@ void StartupPerformanceTests::capturesLargeScheduleBoundaryWhenConfigured()
 
 void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured()
 {
-    const QString configuredOutputRoot =
+    const QString cancelOutputRoot =
         qEnvironmentVariable(
             "CLASSMNGR_LARGE_SCHEDULE_IMPORT_BOUNDARY_REFERENCE_DIR"
             ).trimmed();
+    const QString applyOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_SCHEDULE_IMPORT_APPLY_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    const bool applyLifecycle = !applyOutputRoot.isEmpty();
+    const QString configuredOutputRoot =
+        applyLifecycle
+            ? applyOutputRoot
+            : cancelOutputRoot;
     if (configuredOutputRoot.isEmpty())
     {
         QSKIP(
@@ -3829,7 +3864,7 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
     const QString workbookPath =
         directory.filePath(QStringLiteral("large-schedule-import.xlsx"));
     QVERIFY2(
-        writeLargeScheduleImportWorkbook(workbookPath),
+        writeLargeScheduleImportWorkbook(workbookPath, applyLifecycle),
         "Unable to write the deterministic large schedule import workbook."
         );
 
@@ -3918,22 +3953,31 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         QStringLiteral("offscreen")
         );
     process.setProcessEnvironment(environment);
+    QStringList arguments{
+        QStringLiteral("--startup-performance-test"),
+        QStringLiteral("--startup-performance-workflow")
+    };
+    arguments.append(
+        applyLifecycle
+            ? QStringLiteral(
+                "--startup-performance-schedule-import-apply-lifecycle"
+                )
+            : QStringLiteral(
+                "--startup-performance-schedule-import-lifecycle"
+                )
+        );
+    arguments.append({
+        QStringLiteral("--startup-performance-scenario"),
+        QStringLiteral("representative"),
+        QStringLiteral("--startup-performance-settle-ms"),
+        QStringLiteral("1000"),
+        QStringLiteral("--startup-performance-output"),
+        metricsPath,
+        fixturePath
+    });
     process.start(
         appPath,
-        {
-            QStringLiteral("--startup-performance-test"),
-            QStringLiteral("--startup-performance-workflow"),
-            QStringLiteral(
-                "--startup-performance-schedule-import-lifecycle"
-                ),
-            QStringLiteral("--startup-performance-scenario"),
-            QStringLiteral("representative"),
-            QStringLiteral("--startup-performance-settle-ms"),
-            QStringLiteral("1000"),
-            QStringLiteral("--startup-performance-output"),
-            metricsPath,
-            fixturePath
-        }
+        arguments
         );
 
     QVERIFY2(
@@ -3989,22 +4033,45 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
                 ).arg(outputRoot)
             )
         );
-    for (const QString& expectedTrace : {
-             QStringLiteral("schedule-import-dialog-opened"),
-             QStringLiteral("schedule-import-operation-start"),
-             QStringLiteral("schedule-import-workbook-loaded"),
-             QStringLiteral("schedule-import-parse-complete"),
-             QStringLiteral("schedule-import-review-start"),
-             QStringLiteral("schedule-import-review-prepared"),
-             QStringLiteral("schedule-import-review-ready"),
-             QStringLiteral("schedule-import-cancel-start"),
-             QStringLiteral("schedule-import-operation-cancelled"),
-             QStringLiteral("schedule-import-review-released"),
-             QStringLiteral("schedule-import-post-review-release"),
-             QStringLiteral("schedule-import-operation-released"),
-             QStringLiteral("schedule-import-post-release"),
-             QStringLiteral("schedule-import-operation-end")
-         })
+    const QStringList expectedLifecycleTrace =
+        applyLifecycle
+            ? QStringList{
+                  QStringLiteral("schedule-import-dialog-opened"),
+                  QStringLiteral("schedule-import-operation-start"),
+                  QStringLiteral("schedule-import-workbook-loaded"),
+                  QStringLiteral("schedule-import-parse-complete"),
+                  QStringLiteral("schedule-import-review-start"),
+                  QStringLiteral("schedule-import-review-prepared"),
+                  QStringLiteral("schedule-import-review-ready"),
+                  QStringLiteral("schedule-import-apply-start"),
+                  QStringLiteral("schedule-import-apply-inputs"),
+                  QStringLiteral("schedule-import-apply-prepared"),
+                  QStringLiteral("schedule-import-operation-applied"),
+                  QStringLiteral("schedule-import-apply-complete"),
+                  QStringLiteral("schedule-import-review-released"),
+                  QStringLiteral("schedule-import-post-review-release"),
+                  QStringLiteral("schedule-import-operation-released"),
+                  QStringLiteral("schedule-import-post-release"),
+                  QStringLiteral("schedule-import-page-refreshed"),
+                  QStringLiteral("schedule-import-operation-end")
+              }
+            : QStringList{
+                  QStringLiteral("schedule-import-dialog-opened"),
+                  QStringLiteral("schedule-import-operation-start"),
+                  QStringLiteral("schedule-import-workbook-loaded"),
+                  QStringLiteral("schedule-import-parse-complete"),
+                  QStringLiteral("schedule-import-review-start"),
+                  QStringLiteral("schedule-import-review-prepared"),
+                  QStringLiteral("schedule-import-review-ready"),
+                  QStringLiteral("schedule-import-cancel-start"),
+                  QStringLiteral("schedule-import-operation-cancelled"),
+                  QStringLiteral("schedule-import-review-released"),
+                  QStringLiteral("schedule-import-post-review-release"),
+                  QStringLiteral("schedule-import-operation-released"),
+                  QStringLiteral("schedule-import-post-release"),
+                  QStringLiteral("schedule-import-operation-end")
+              };
+    for (const QString& expectedTrace : expectedLifecycleTrace)
     {
         bool foundTrace = false;
         for (const QString& line : traceLines)
@@ -4045,8 +4112,10 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
 
     QJsonObject parseCheckpoint;
     QJsonObject reviewCheckpoint;
+    QJsonObject applyCheckpoint;
     QJsonObject postReviewCheckpoint;
     QJsonObject postReleaseCheckpoint;
+    QJsonObject pageRefreshCheckpoint;
     QJsonObject operationEndCheckpoint;
     bool workflowCompleted = false;
     bool lifecycleCompleted = false;
@@ -4064,6 +4133,10 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         {
             reviewCheckpoint = checkpoint;
         }
+        else if (name == QStringLiteral("schedule-import-apply-complete"))
+        {
+            applyCheckpoint = checkpoint;
+        }
         else if (name == QStringLiteral("schedule-import-post-review-release"))
         {
             postReviewCheckpoint = checkpoint;
@@ -4071,6 +4144,10 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         else if (name == QStringLiteral("schedule-import-post-release"))
         {
             postReleaseCheckpoint = checkpoint;
+        }
+        else if (name == QStringLiteral("schedule-import-page-refreshed"))
+        {
+            pageRefreshCheckpoint = checkpoint;
         }
         else if (name == QStringLiteral("schedule-import-operation-end"))
         {
@@ -4095,10 +4172,19 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         || !operationEndCheckpoint.isEmpty()
             && operationEndCheckpoint.value(QStringLiteral("detail"))
                    .toString()
-                   .contains(QStringLiteral("cancelled=true"));
+                   .contains(
+                       applyLifecycle
+                           ? QStringLiteral("committed=true")
+                           : QStringLiteral("cancelled=true")
+                       );
 
     QVERIFY(!parseCheckpoint.isEmpty());
     QVERIFY(!reviewCheckpoint.isEmpty());
+    if (applyLifecycle)
+    {
+        QVERIFY(!applyCheckpoint.isEmpty());
+        QVERIFY(!pageRefreshCheckpoint.isEmpty());
+    }
     QVERIFY(!postReviewCheckpoint.isEmpty());
     QVERIFY(!postReleaseCheckpoint.isEmpty());
     QVERIFY(!operationEndCheckpoint.isEmpty());
@@ -4173,13 +4259,59 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
              .value(QStringLiteral("scheduleImportReviewRetained"))
              .toBool()
         );
-    QVERIFY(
-        postReviewCheckpoint
-            .value(QStringLiteral("metrics"))
-            .toObject()
-            .value(QStringLiteral("scheduleImportWorkbookRetained"))
-            .toBool()
-        );
+    if (applyLifecycle)
+    {
+        const QJsonObject applyMetrics =
+            applyCheckpoint.value(QStringLiteral("metrics")).toObject();
+        QVERIFY(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportExistingTeacherCount")
+                ).toInt() > 0
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportExistingClassCount")
+                ).toInt(),
+            96
+            );
+        QCOMPARE(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportExistingClassInfoCount")
+                ).toInt(),
+            96
+            );
+        QVERIFY(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportApplyFinalClassCount")
+                ).toInt() > 0
+            );
+        QVERIFY(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportApplyFinalScheduleRowCount")
+                ).toInt() > 0
+            );
+        QVERIFY(
+            applyMetrics.value(
+                QStringLiteral("scheduleImportOperationsApplied")
+                ).toInt() >= 1
+            );
+        QVERIFY(
+            pageRefreshCheckpoint.value(QStringLiteral("metrics"))
+                .toObject()
+                .value(QStringLiteral("scheduleVisibleClassCount"))
+                .toInt() > 0
+            );
+    }
+    else
+    {
+        QVERIFY(
+            postReviewCheckpoint
+                .value(QStringLiteral("metrics"))
+                .toObject()
+                .value(QStringLiteral("scheduleImportWorkbookRetained"))
+                .toBool()
+            );
+    }
     const QJsonObject postReleaseMetrics =
         postReleaseCheckpoint.value(QStringLiteral("metrics")).toObject();
     QVERIFY(
@@ -4189,7 +4321,11 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         );
     QVERIFY(
         postReleaseMetrics
-            .value(QStringLiteral("scheduleImportOperationsCancelled"))
+            .value(
+                applyLifecycle
+                    ? QStringLiteral("scheduleImportOperationsApplied")
+                    : QStringLiteral("scheduleImportOperationsCancelled")
+                )
             .toInt() >= 1
         );
     QVERIFY(
@@ -4206,13 +4342,19 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         );
     manifest.insert(
         QStringLiteral("fixtureScale"),
-        QStringLiteral("large_startup_schedule_import_lifecycle")
+        applyLifecycle
+            ? QStringLiteral("large_startup_schedule_import_apply_lifecycle")
+            : QStringLiteral("large_startup_schedule_import_lifecycle")
         );
     manifest.insert(
         QStringLiteral("scenario"),
-        QStringLiteral(
-            "96-class heavy route, workbook parse, review, conflict acknowledgement, cancel, cleanup"
-            )
+        applyLifecycle
+            ? QStringLiteral(
+                "96-class heavy route, workbook parse, review, conflict acknowledgement, transaction apply, cleanup, schedule refresh"
+                )
+            : QStringLiteral(
+                "96-class heavy route, workbook parse, review, conflict acknowledgement, cancel, cleanup"
+                )
         );
     manifest.insert(QStringLiteral("teacherCount"), 24);
     manifest.insert(QStringLiteral("classCount"), 96);
@@ -4247,6 +4389,17 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         QStringLiteral("reviewCheckpointMetrics"),
         reviewCheckpoint.value(QStringLiteral("metrics"))
         );
+    if (applyLifecycle)
+    {
+        manifest.insert(
+            QStringLiteral("applyCheckpointMetrics"),
+            applyCheckpoint.value(QStringLiteral("metrics"))
+            );
+        manifest.insert(
+            QStringLiteral("pageRefreshCheckpointMetrics"),
+            pageRefreshCheckpoint.value(QStringLiteral("metrics"))
+            );
+    }
     manifest.insert(
         QStringLiteral("postReleaseCheckpointMetrics"),
         postReleaseCheckpoint.value(QStringLiteral("metrics"))
@@ -4278,6 +4431,11 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
                 )
             )
         );
+}
+
+void StartupPerformanceTests::capturesLargeScheduleImportApplyBoundaryWhenConfigured()
+{
+    capturesLargeScheduleImportBoundaryWhenConfigured();
 }
 
 void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured()
