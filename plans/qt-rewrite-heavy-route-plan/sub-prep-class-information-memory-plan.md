@@ -15,7 +15,10 @@
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
 be used for fast route-semantics tests, but it must not replace the large
-fixture's scalability and memory gate.
+fixture's scalability and memory gate. The current packaged Release boundary
+now completes the route but reaches 410,468,352 bytes peak working set and
+452,853,760 bytes peak private usage, so the gate is a bounded-memory
+requirement even when the legacy process exits normally.
 
 ## Objective
 
@@ -40,7 +43,7 @@ compact class-summary projection
 package generation --> operation-scoped print projection --> bounded renderer
 ```
 
-## Current failure boundary
+## Current memory boundary
 
 The current path materializes a widget hierarchy for every visible class in
 `src/features/sub_prep/ui/sub_prep_page_class_information.cpp`. Each class

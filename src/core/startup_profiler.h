@@ -16,6 +16,17 @@ struct StartupApplicationMetrics
     int widgetCount = 0;
     int instantiatedPageCount = 0;
     int registeredPageCount = 0;
+    int subPrepClassInformationWidgetCount = 0;
+    int subPrepClassInformationTextEditCount = 0;
+    int subPrepClassInformationNavigationRowCount = 0;
+    int subPrepClassInformationSourceClassCount = 0;
+    int subPrepClassInformationVisibleClassCount = 0;
+    int subPrepClassInformationGroupCount = 0;
+    int subPrepClassInformationClassInfoLookupCount = 0;
+    int subPrepClassInformationTeacherLookupCount = 0;
+    int subPrepClassInformationRosterLookupCount = 0;
+    int subPrepClassInformationRebuildCount = 0;
+    int subPrepSelectedClassId = -1;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -79,6 +90,10 @@ public:
     static void recordPageInstantiated(const QString& pageIdentifier);
     static void recordPageEntered(const QString& pageIdentifier);
     static void recordPageLeft(const QString& pageIdentifier);
+    static void recordSubPrepClassInformationLifecycle(
+        const QString& phase,
+        const QString& detail = QString()
+        );
     static void recordPdfDocumentLoaded(
         const QString& filePath,
         int pageCount

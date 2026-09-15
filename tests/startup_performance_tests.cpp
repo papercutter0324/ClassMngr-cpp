@@ -44,6 +44,38 @@ QString processOutput(
             );
 }
 
+bool writeDiagnosticFile(
+    const QString& path,
+    const QByteArray& contents,
+    QString* errorMessage
+    )
+{
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("Unable to write %1: %2")
+                    .arg(path, file.errorString());
+        }
+        return false;
+    }
+
+    if (file.write(contents) != contents.size())
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("Unable to finish writing %1: %2")
+                    .arg(path, file.errorString());
+        }
+        return false;
+    }
+
+    return file.flush() && file.error() == QFile::NoError;
+}
+
 bool thresholdExceeded(
     const char* environmentVariable,
     double value,
@@ -361,6 +393,7 @@ private slots:
     void rejectsLockedLegacyWorkspaceDuringMigration();
     void reportsStartupMetricsAndHonorsThresholds();
     void runsRepresentativeWorkspaceLifecycleWorkflow();
+    void capturesLargeSubPrepBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -1942,6 +1975,335 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
             .value(QStringLiteral("elapsedMs"))
             .toDouble();
     QVERIFY(settledElapsed > workflowElapsed);
+}
+
+void StartupPerformanceTests
+    ::capturesLargeSubPrepBoundaryWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_SUB_PREP_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_SUB_PREP_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-sub-prep-workflow.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral("Unable to create large Sub Prep reference root: %1")
+                .arg(outputRoot)
+            )
+        );
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-sub-prep-workflow.json")
+            );
+    const QString tracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+
+    if (QFileInfo::exists(metricsPath))
+    {
+        QVERIFY(QFile::remove(metricsPath));
+    }
+    QFile traceOutput(tracePath);
+    QVERIFY2(
+        traceOutput.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text),
+        qPrintable(traceOutput.errorString())
+        );
+    traceOutput.close();
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        tracePath
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+
+    QByteArray traceContents;
+    QFile traceFile(tracePath);
+    if (traceFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        traceContents = traceFile.readAll();
+    }
+
+    const QStringList traceLines =
+        QString::fromUtf8(traceContents)
+            .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start sub-prep")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the Sub Prep transition.\n"
+                "stdout/stderr were retained under %1."
+                )
+                .arg(outputRoot)
+            )
+        );
+
+    QString lastTraceLine;
+    QString lastSubPrepLifecycleEvent;
+    for (const QString& line : traceLines)
+    {
+        lastTraceLine = line;
+        if (line.startsWith(
+                QStringLiteral("sub-prep-class-information ")
+                ))
+        {
+            lastSubPrepLifecycleEvent = line;
+        }
+    }
+
+    QJsonObject manifest;
+    manifest.insert(QStringLiteral("fixture"), QStringLiteral("large_startup.sql"));
+    manifest.insert(QStringLiteral("fixtureScale"), QStringLiteral("large_startup"));
+    manifest.insert(QStringLiteral("teacherCount"), 24);
+    manifest.insert(QStringLiteral("classCount"), 96);
+    manifest.insert(QStringLiteral("rosterCellCount"), 7200);
+    manifest.insert(QStringLiteral("processFinished"), finished);
+    manifest.insert(
+        QStringLiteral("exitStatus"),
+        process.exitStatus() == QProcess::NormalExit
+            ? QStringLiteral("normal")
+            : QStringLiteral("crash")
+        );
+    manifest.insert(QStringLiteral("exitCode"), process.exitCode());
+    manifest.insert(QStringLiteral("timedOut"), !finished);
+    manifest.insert(QStringLiteral("traceLineCount"), traceLines.size());
+    manifest.insert(QStringLiteral("lastTraceLine"), lastTraceLine);
+    manifest.insert(
+        QStringLiteral("lastSubPrepLifecycleEvent"),
+        lastSubPrepLifecycleEvent
+        );
+    manifest.insert(
+        QStringLiteral("tracePath"),
+        QStringLiteral("workflow-trace.txt")
+        );
+    manifest.insert(
+        QStringLiteral("metricsPath"),
+        QStringLiteral("large-sub-prep-workflow.json")
+        );
+    manifest.insert(
+        QStringLiteral("stdoutPath"),
+        QStringLiteral("process-stdout.txt")
+        );
+    manifest.insert(
+        QStringLiteral("stderrPath"),
+        QStringLiteral("process-stderr.txt")
+        );
+
+    QJsonObject lastCheckpoint;
+    bool workflowCompleted = false;
+    QString lastLifecycleEventFromMetrics;
+    QFile metricsFile(metricsPath);
+    if (metricsFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QJsonParseError parseError;
+        const QJsonDocument metricsDocument =
+            QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+        if (parseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject())
+        {
+            const QJsonObject metricsReport = metricsDocument.object();
+            manifest.insert(
+                QStringLiteral("peakMemory"),
+                metricsReport.value(QStringLiteral("peakMemory"))
+                );
+            const QJsonArray checkpoints =
+                metricsReport.value(QStringLiteral("checkpoints"))
+                    .toArray();
+            if (!checkpoints.isEmpty())
+            {
+                lastCheckpoint = checkpoints.last().toObject();
+                manifest.insert(
+                    QStringLiteral("lastCheckpointName"),
+                    lastCheckpoint.value(QStringLiteral("name"))
+                    );
+                manifest.insert(
+                    QStringLiteral("lastCheckpointMetrics"),
+                    lastCheckpoint.value(QStringLiteral("metrics"))
+                    );
+                manifest.insert(
+                    QStringLiteral("lastCheckpointMemory"),
+                    lastCheckpoint.value(QStringLiteral("memory"))
+                    );
+            }
+
+            for (const QJsonValue& value : metricsReport
+                     .value(QStringLiteral("events"))
+                     .toArray())
+            {
+                const QJsonObject event = value.toObject();
+                if (
+                    event.value(QStringLiteral("name")).toString()
+                        == QStringLiteral("sub-prep-class-information")
+                    )
+                {
+                    lastLifecycleEventFromMetrics =
+                        event.value(QStringLiteral("detail")).toString();
+                }
+            }
+
+            for (const QJsonValue& value : checkpoints)
+            {
+                const QJsonObject checkpoint = value.toObject();
+                const QString checkpointName =
+                    checkpoint.value(QStringLiteral("name")).toString();
+                if (checkpointName == QStringLiteral("workflow-complete"))
+                {
+                    manifest.insert(
+                        QStringLiteral("workflowCompleteElapsedMs"),
+                        checkpoint.value(QStringLiteral("elapsedMs"))
+                        );
+                }
+                else if (checkpointName == QStringLiteral("settled-1s"))
+                {
+                    manifest.insert(
+                        QStringLiteral("settledOneSecondElapsedMs"),
+                        checkpoint.value(QStringLiteral("elapsedMs"))
+                        );
+                }
+                if (
+                    checkpointName
+                        == QStringLiteral("workflow-complete")
+                    )
+                {
+                    workflowCompleted = true;
+                }
+            }
+        }
+    }
+
+    manifest.insert(
+        QStringLiteral("metricsAvailable"),
+        !lastCheckpoint.isEmpty()
+        );
+    manifest.insert(QStringLiteral("workflowCompleted"), workflowCompleted);
+    manifest.insert(
+        QStringLiteral("lastSubPrepLifecycleEventFromMetrics"),
+        lastLifecycleEventFromMetrics
+        );
+    manifest.insert(
+        QStringLiteral("routeOutcome"),
+        workflowCompleted
+            ? QStringLiteral("completed")
+            : !finished
+                ? QStringLiteral("timed-out")
+                : process.exitStatus() != QProcess::NormalExit
+                    ? QStringLiteral("abnormal-exit")
+                    : QStringLiteral("workflow-incomplete")
+        );
+
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
+        );
 }
 
 void StartupPerformanceTests::capturesVisualLanguageAndThemeVariants()

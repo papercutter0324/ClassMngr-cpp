@@ -366,6 +366,21 @@ Create a risk register for:
 - Existing installed resource-pack content.
 - Windows-only memory behavior.
 
+### 0.7 Cross-cutting memory hotspot baseline
+
+Use the [Qt Rewrite Memory Hotspot Remediation
+Plan](memory-hotspot-remediation-plan.md) to complete the before-state audit
+for every identified large-data or widget-heavy workflow. In addition to the
+startup baseline, capture the 96-class Sub Prep route, My Classes and Classes
+navigation, schedule and calendar imports, schedule-table refresh, speaking
+batch review, class transfer, staff directory, PDF/report output, and
+workspace page entry/leave.
+
+Each scenario must record its fixture, lifecycle checkpoints, working set,
+private bytes, peak values, page/model/widget counts, and process outcome.
+Keep the large fixtures as required stress inputs and record normal resident
+memory separately from transient operation peaks.
+
 ## Deliverables
 
 - Feature preservation matrix.
@@ -489,6 +504,13 @@ No v2 feature work begins without a fixture and an acceptance check.
   `TeacherGroup`/class-card graph is the failure boundary and that the v2 work
   must move data, application, UI, output, and lifecycle ownership together.
   The new plan does not close Phase 0 or authorize a model-only v2 patch.
+- Follow-on plan impact: the newer cross-cutting Memory Hotspot Remediation
+  Plan is consistent with this decision. It assigns Phase 0 the before-state
+  measurements, Phases 2–8 the compact data/presentation/output boundaries,
+  Phase 9 the packaged Release memory gate, and later phases the permanent
+  regression/removal work. It broadens the same requirement beyond Sub Prep;
+  it does not move ownership of this Phase 0 evidence or make the Sub Prep
+  migration smaller.
 - New Phase 0 work required by the update: retain a failure-boundary artifact
   from the actual `large_startup.sql` Sub Prep workflow, including the last
   reached checkpoint and process outcome; add Sub Prep-specific class-info
@@ -510,3 +532,38 @@ No v2 feature work begins without a fixture and an acceptance check.
   migration yet. The next slice will instrument and retain the actual
   large-fixture Sub Prep failure boundary so the eventual 7J vertical slice
   has measurable acceptance inputs.
+
+## Progress update - 2026-09-16 (large Sub Prep boundary trace)
+
+- What changed: the startup profiler now exposes Sub Prep class-information
+  widget, text-editor, logical-navigation-row, source-class, visible-class,
+  teacher-group, rebuild, and per-class lookup counts. Lifecycle events flush
+  to the existing workflow trace so the boundary remains reviewable even when
+  a child process cannot write its final JSON report. An opt-in harness runs
+  the actual `large_startup.sql` fixture through the packaged Release route
+  and retains the process result, stdout/stderr, workflow trace, and profile.
+- Evidence: the fresh Windows x64 Release child run completed the full route
+  and exited normally. `workflow-complete` was `9,553 ms` and `settled-1s`
+  was `10,587 ms`; peak working set was `410,468,352` bytes and peak private
+  usage was `452,853,760` bytes. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-sub-prep-boundary/`.
+- At the one-second settled checkpoint the process retained `401,285,120`
+  bytes working set and `425,164,800` bytes private usage, with the same
+  2,948 class-information descendants and 192 text editors.
+- Sub Prep boundary: one rebuild loaded 96 source classes, produced 96
+  visible navigation rows in 24 teacher groups, performed 96 class-info, 96
+  teacher, and 96 roster lookups, and retained 2,948 class-information
+  descendants including 192 text editors. Total process widgets reached
+  9,677. This is a completed legacy route with an unacceptable memory shape,
+  rather than evidence that the v2 bounded-memory requirement is met.
+- Evaluation impact: the recent Sub Prep update is validated as the correct
+  7J ownership change. Phase 0's failure-boundary requirement is now replaced
+  by a measured high-memory boundary for this source/toolchain snapshot, but
+  refresh/re-entry/release measurements, actual SQL query/result sizes,
+  Sub Prep visual states, final Release thresholds, remaining output references,
+  and cross-platform baselines remain open.
+- Decision and next heavy slice: keep Phase 0 open and use these measured
+  counts as the 7J before-state oracle. The next slice will exercise refresh,
+  selection, leave, and repeated re-entry against the same large fixture so
+  deferred deletion and retained detail state are measured before the v2
+  vertical migration begins.

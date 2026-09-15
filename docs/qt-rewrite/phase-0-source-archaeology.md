@@ -51,8 +51,11 @@ Other page factories are lazy, but instantiated pages remain owned by the
 stacked widget until the application exits. The explicit
 `--startup-performance-workflow` harness drives all registered routes and
 records page-enter/page-leave events plus memory checkpoints. It completes on
-the representative fixture; the 96-class large fixture currently fails while
-Sub Prep expands its schedule-derived class-information cards.
+the representative fixture. The opt-in packaged Release run also completes on
+the 96-class large fixture, but Sub Prep expands its schedule-derived
+class-information cards to 2,948 descendants and 192 text editors, producing
+a 410,468,352-byte peak working set; the retained boundary trace is under
+`docs/qt-rewrite/visual-baseline/release/large-sub-prep-boundary/`.
 The workflow also records one `workflow-page-left` checkpoint for every
 transition and supports a `settled-5m` idle checkpoint for Release retention
 evidence; the representative five-minute run completes all 11 transitions

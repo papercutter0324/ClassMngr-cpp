@@ -133,12 +133,19 @@ does not recreate or rely on them.
   `259,510,272` bytes and peak private usage was `298,201,088` bytes. The
   per-route `workflow-page-left` checkpoints cover all 11 transitions from
   My Workspace through the PDF viewer.
-- The same workflow against `large_startup.sql` reaches the Sub Prep route but
-  does not complete: its 96 classes and eight regular slots expand into
-  hundreds of class-information cards. The Debug run exceeded 400 MiB before
-  terminating, and the packaged Release run also terminated before producing
-  a profile. This is a current-product heavy-route finding for the v2
-  virtualization/resource-ownership slice, not an accepted baseline.
+- The opt-in packaged Release workflow against `large_startup.sql` now reaches
+  and completes the Sub Prep route, but the current path is not within the
+  representative memory boundary: `workflow-complete` was `9,553 ms`, peak
+  working set was `410,468,352` bytes, and peak private usage was
+  `452,853,760` bytes. The Sub Prep portion retained 2,948 descendant widgets,
+  192 text editors, 96 logical navigation rows, 24 teacher groups, and made
+  96 class-information, teacher, and roster lookups in one rebuild. The
+  one-second settled checkpoint retained `401,285,120` bytes working set and
+  `425,164,800` bytes private usage with the same feature counts. The
+  retained trace and JSON report are under
+  `docs/qt-rewrite/visual-baseline/release/large-sub-prep-boundary/`; this is
+  the current-product heavy-route boundary for the v2
+  virtualization/resource-ownership slice, not an accepted v2 result.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
@@ -181,7 +188,7 @@ classes, and 7,200 roster cells in an operation-scoped package request. The
 current output oracle generates a 19-page Sub Prep PDF and a 16-page Daily
 roster PDF, then reopens and renders the first page of each before accepting
 the package. This isolates generated-output behavior from the current large
-route failure while keeping the same stress cardinality.
+route's high-memory UI boundary while keeping the same stress cardinality.
 
 `tests/fixtures/workspaces/legacy_startup.sql` is a partial schema-version-zero
 `.db` source. The startup test materializes it, runs the current schema manager,
@@ -319,6 +326,13 @@ temporary target, so the retained files do not include empty per-class
 directories. With the variable unset, the test still exercises the same
 renderer against a temporary target and remains non-mutating.
 
+Set `CLASSMNGR_LARGE_SUB_PREP_BOUNDARY_REFERENCE_DIR` while running
+`capturesLargeSubPrepBoundaryWhenConfigured` to run the actual
+`large_startup.sql` workspace through the packaged Release workflow and retain
+`manifest.json`, the profiler JSON, process logs, and the flushed workflow
+trace. The slot is opt-in because it intentionally drives the high-memory
+large route; the manifest records whether the route completed or terminated.
+
 For an empty workspace:
 
 ```powershell
@@ -358,11 +372,12 @@ store the JSON startup trace beside the PNG files.
 - Golden large schedule-workbook/conflict output; the class-transfer conflict
   and schedule-workbook review fixtures are now permanent.
 - A completed large-workspace Sub Prep route: the current 96-class fixture
-  expands too many class-information cards for a stable packaged workflow and
-  is reserved as a v2 heavy-route stress case.
-- A retained failure-boundary artifact for that actual `large_startup.sql`
-  Sub Prep route, including the last reached checkpoint, process outcome, and
-  feature-specific widget/editor/model/query counts.
+- A v2 large-workspace Sub Prep route within its eventual memory budget; the
+  current route completes but exceeds the representative working-set target
+  with a 2,948-widget/192-editor class-information graph.
+- Feature-specific Sub Prep measurements beyond this retained Release
+  boundary, including refresh/re-entry/release behavior, actual database
+  query/result sizes, and the final v2 budget thresholds.
 - Sub Prep visual references for the selected, changed-selection, empty, both
   language/theme, and generated-output states, plus an explicit packaged
   Release memory budget for the v2 acceptance gate.

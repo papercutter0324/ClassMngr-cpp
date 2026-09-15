@@ -22,6 +22,7 @@
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "features/my_info/ui/my_workspace_page.h"
@@ -260,13 +261,41 @@ void MainWindow::initializePages()
         StartupProfiler::setActiveApplicationMetricsProvider(
             [this]()
             {
-                return StartupApplicationMetrics{
-                    .widgetCount = 0,
-                    .instantiatedPageCount =
-                        m_pages ? m_pages->instantiatedPageCount() : 0,
-                    .registeredPageCount =
-                        m_pages ? m_pages->registeredPageCount() : 0
-                };
+                StartupApplicationMetrics metrics;
+                metrics.instantiatedPageCount =
+                    m_pages ? m_pages->instantiatedPageCount() : 0;
+                metrics.registeredPageCount =
+                    m_pages ? m_pages->registeredPageCount() : 0;
+
+                if (m_pages && m_pages->subPrepPage())
+                {
+                    const SubPrepPageRuntimeMetrics subPrepMetrics =
+                        m_pages->subPrepPage()->runtimeMetrics();
+                    metrics.subPrepClassInformationWidgetCount =
+                        subPrepMetrics.classInformationWidgetCount;
+                    metrics.subPrepClassInformationTextEditCount =
+                        subPrepMetrics.classInformationTextEditCount;
+                    metrics.subPrepClassInformationNavigationRowCount =
+                        subPrepMetrics.classInformationNavigationRowCount;
+                    metrics.subPrepClassInformationSourceClassCount =
+                        subPrepMetrics.classInformationSourceClassCount;
+                    metrics.subPrepClassInformationVisibleClassCount =
+                        subPrepMetrics.classInformationVisibleClassCount;
+                    metrics.subPrepClassInformationGroupCount =
+                        subPrepMetrics.classInformationGroupCount;
+                    metrics.subPrepClassInformationClassInfoLookupCount =
+                        subPrepMetrics.classInformationClassInfoLookupCount;
+                    metrics.subPrepClassInformationTeacherLookupCount =
+                        subPrepMetrics.classInformationTeacherLookupCount;
+                    metrics.subPrepClassInformationRosterLookupCount =
+                        subPrepMetrics.classInformationRosterLookupCount;
+                    metrics.subPrepClassInformationRebuildCount =
+                        subPrepMetrics.classInformationRebuildCount;
+                    metrics.subPrepSelectedClassId =
+                        subPrepMetrics.selectedClassId;
+                }
+
+                return metrics;
             }
             );
     }

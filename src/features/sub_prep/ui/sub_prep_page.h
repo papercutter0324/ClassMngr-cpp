@@ -27,6 +27,21 @@ enum class SubPrepSection
     SubNotes
 };
 
+struct SubPrepPageRuntimeMetrics
+{
+    int classInformationWidgetCount = 0;
+    int classInformationTextEditCount = 0;
+    int classInformationNavigationRowCount = 0;
+    int classInformationSourceClassCount = 0;
+    int classInformationVisibleClassCount = 0;
+    int classInformationGroupCount = 0;
+    int classInformationClassInfoLookupCount = 0;
+    int classInformationTeacherLookupCount = 0;
+    int classInformationRosterLookupCount = 0;
+    int classInformationRebuildCount = 0;
+    int selectedClassId = -1;
+};
+
 class SubPrepPage : public BasePage
 {
     Q_OBJECT
@@ -51,6 +66,7 @@ public:
     void scrollToTop();
     QString currentSectionName() const;
     QString currentSectionKey() const;
+    [[nodiscard]] SubPrepPageRuntimeMetrics runtimeMetrics() const;
 
 protected:
     bool eventFilter(
@@ -79,10 +95,10 @@ private:
     void refreshGeneratedContent();
     void rebuildClassInformation();
     int currentClassInformationId() const;
-    QList<SubPrepClassInformation::TeacherGroup> buildClassInformation() const;
+    QList<SubPrepClassInformation::TeacherGroup> buildClassInformation();
     QList<SubPrepClassInformation::TeacherGroup> buildClassInformation(
         const ScheduleViewModel& schedule
-        ) const;
+        );
 
     bool restoreGradingDefaultIfNeeded();
     QString defaultGradingInstructions() const;
@@ -159,6 +175,14 @@ private:
     QVBoxLayout* m_classInformationLayout = nullptr;
     NavigationTabWidget* m_classInformationTabs = nullptr;
     int m_selectedClassId = -1;
+    int m_classInformationSourceClassCount = 0;
+    int m_classInformationVisibleClassCount = 0;
+    int m_classInformationGroupCount = 0;
+    int m_classInformationNavigationRowCount = 0;
+    int m_classInformationClassInfoLookupCount = 0;
+    int m_classInformationTeacherLookupCount = 0;
+    int m_classInformationRosterLookupCount = 0;
+    int m_classInformationRebuildCount = 0;
 
     QTimer* m_autosaveTimer = nullptr;
 };

@@ -31,12 +31,74 @@ QJsonObject memoryJson(const ProcessMemorySnapshot& memory)
     };
 }
 
+void appendProfilerWorkflowTrace(const QString& message)
+{
+    const QString outputPath =
+        qEnvironmentVariable("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH")
+            .trimmed();
+    if (outputPath.isEmpty())
+    {
+        return;
+    }
+
+    QFile file(outputPath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
+        file.write((message + QLatin1Char('\n')).toUtf8());
+        file.flush();
+    }
+}
+
 QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
 {
     return {
         {QStringLiteral("widgetCount"), metrics.widgetCount},
         {QStringLiteral("instantiatedPageCount"), metrics.instantiatedPageCount},
         {QStringLiteral("registeredPageCount"), metrics.registeredPageCount},
+        {
+            QStringLiteral("subPrepClassInformationWidgetCount"),
+            metrics.subPrepClassInformationWidgetCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationTextEditCount"),
+            metrics.subPrepClassInformationTextEditCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationNavigationRowCount"),
+            metrics.subPrepClassInformationNavigationRowCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationSourceClassCount"),
+            metrics.subPrepClassInformationSourceClassCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationVisibleClassCount"),
+            metrics.subPrepClassInformationVisibleClassCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationGroupCount"),
+            metrics.subPrepClassInformationGroupCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationClassInfoLookupCount"),
+            metrics.subPrepClassInformationClassInfoLookupCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationTeacherLookupCount"),
+            metrics.subPrepClassInformationTeacherLookupCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationRosterLookupCount"),
+            metrics.subPrepClassInformationRosterLookupCount
+        },
+        {
+            QStringLiteral("subPrepClassInformationRebuildCount"),
+            metrics.subPrepClassInformationRebuildCount
+        },
+        {
+            QStringLiteral("subPrepSelectedClassId"),
+            metrics.subPrepSelectedClassId
+        },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
         {QStringLiteral("scheduleWidgetsCreated"), static_cast<double>(metrics.scheduleWidgetsCreated)},
@@ -248,6 +310,28 @@ void StartupProfiler::recordPageLeft(const QString& pageIdentifier)
     }
 }
 
+void StartupProfiler::recordSubPrepClassInformationLifecycle(
+    const QString& phase,
+    const QString& detail
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        const QString eventDetail =
+            detail.isEmpty()
+                ? phase
+                : QStringLiteral("%1; %2").arg(phase, detail);
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-class-information"),
+            eventDetail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-class-information %1")
+                .arg(eventDetail)
+            );
+    }
+}
+
 void StartupProfiler::recordPdfDocumentLoaded(
     const QString& filePath,
     int pageCount
@@ -428,6 +512,28 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             m_applicationMetricsProvider();
         metrics.instantiatedPageCount = supplied.instantiatedPageCount;
         metrics.registeredPageCount = supplied.registeredPageCount;
+        metrics.subPrepClassInformationWidgetCount =
+            supplied.subPrepClassInformationWidgetCount;
+        metrics.subPrepClassInformationTextEditCount =
+            supplied.subPrepClassInformationTextEditCount;
+        metrics.subPrepClassInformationNavigationRowCount =
+            supplied.subPrepClassInformationNavigationRowCount;
+        metrics.subPrepClassInformationSourceClassCount =
+            supplied.subPrepClassInformationSourceClassCount;
+        metrics.subPrepClassInformationVisibleClassCount =
+            supplied.subPrepClassInformationVisibleClassCount;
+        metrics.subPrepClassInformationGroupCount =
+            supplied.subPrepClassInformationGroupCount;
+        metrics.subPrepClassInformationClassInfoLookupCount =
+            supplied.subPrepClassInformationClassInfoLookupCount;
+        metrics.subPrepClassInformationTeacherLookupCount =
+            supplied.subPrepClassInformationTeacherLookupCount;
+        metrics.subPrepClassInformationRosterLookupCount =
+            supplied.subPrepClassInformationRosterLookupCount;
+        metrics.subPrepClassInformationRebuildCount =
+            supplied.subPrepClassInformationRebuildCount;
+        metrics.subPrepSelectedClassId =
+            supplied.subPrepSelectedClassId;
     }
 
     return metrics;

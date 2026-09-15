@@ -1,5 +1,33 @@
 #include "sub_prep_page_p.h"
+#include "core/startup_profiler.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+
+#include <QTextEdit>
+
+namespace
+{
+QString runtimeMetricsDetail(
+    const SubPrepPageRuntimeMetrics& metrics
+    )
+{
+    return QStringLiteral(
+        "widgets=%1; textEdits=%2; navigationRows=%3; sourceClasses=%4; "
+        "visibleClasses=%5; groups=%6; classInfoLookups=%7; "
+        "teacherLookups=%8; rosterLookups=%9; rebuilds=%10; selectedClassId=%11"
+        )
+        .arg(metrics.classInformationWidgetCount)
+        .arg(metrics.classInformationTextEditCount)
+        .arg(metrics.classInformationNavigationRowCount)
+        .arg(metrics.classInformationSourceClassCount)
+        .arg(metrics.classInformationVisibleClassCount)
+        .arg(metrics.classInformationGroupCount)
+        .arg(metrics.classInformationClassInfoLookupCount)
+        .arg(metrics.classInformationTeacherLookupCount)
+        .arg(metrics.classInformationRosterLookupCount)
+        .arg(metrics.classInformationRebuildCount)
+        .arg(metrics.selectedClassId);
+}
+}
 
 void SubPrepPage::refreshGeneratedContent()
 {
@@ -13,6 +41,20 @@ void SubPrepPage::refreshGeneratedContent()
 
 void SubPrepPage::rebuildClassInformation()
 {
+    ++m_classInformationRebuildCount;
+    m_classInformationSourceClassCount = 0;
+    m_classInformationVisibleClassCount = 0;
+    m_classInformationGroupCount = 0;
+    m_classInformationNavigationRowCount = 0;
+    m_classInformationClassInfoLookupCount = 0;
+    m_classInformationTeacherLookupCount = 0;
+    m_classInformationRosterLookupCount = 0;
+
+    StartupProfiler::recordSubPrepClassInformationLifecycle(
+        QStringLiteral("rebuild-start"),
+        runtimeMetricsDetail(runtimeMetrics())
+        );
+
     if (
         !openClassService(m_services)
         || !openTeacherService(m_services)
@@ -37,6 +79,19 @@ void SubPrepPage::rebuildClassInformation()
 
     const auto groups =
         buildClassInformation();
+
+    m_classInformationGroupCount = groups.size();
+    for (const auto& group : groups)
+    {
+        m_classInformationVisibleClassCount += group.classes.size();
+    }
+
+    StartupProfiler::recordSubPrepClassInformationLifecycle(
+        groups.isEmpty()
+            ? QStringLiteral("data-empty")
+            : QStringLiteral("data-loaded"),
+        runtimeMetricsDetail(runtimeMetrics())
+        );
 
     if (groups.isEmpty())
     {
@@ -77,6 +132,12 @@ void SubPrepPage::rebuildClassInformation()
             navigationEntries,
             ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
             );
+    m_classInformationNavigationRowCount = navigationEntries.size();
+
+    StartupProfiler::recordSubPrepClassInformationLifecycle(
+        QStringLiteral("view-build-start"),
+        runtimeMetricsDetail(runtimeMetrics())
+        );
 
     auto* gradeTabs =
         new NavigationTabWidget(
@@ -91,6 +152,7 @@ void SubPrepPage::rebuildClassInformation()
 
     QHash<int, QWidget*> classPages;
 
+    int classPageCount = 0;
     for (int groupIndex = 0; groupIndex < groups.size(); ++groupIndex)
     {
         const auto& group =
@@ -320,6 +382,18 @@ void SubPrepPage::rebuildClassInformation()
                 details.classId,
                 classPage
                 );
+            ++classPageCount;
+
+            if (
+                classPageCount % 8 == 0
+                || classPageCount == navigationEntries.size()
+                )
+            {
+                StartupProfiler::recordSubPrepClassInformationLifecycle(
+                    QStringLiteral("view-build-progress"),
+                    runtimeMetricsDetail(runtimeMetrics())
+                    );
+            }
         }
     }
 
@@ -435,6 +509,11 @@ void SubPrepPage::rebuildClassInformation()
     m_selectedClassId =
         currentClassInformationId();
     m_classInformationLayout->addWidget(gradeTabs);
+
+    StartupProfiler::recordSubPrepClassInformationLifecycle(
+        QStringLiteral("view-ready"),
+        runtimeMetricsDetail(runtimeMetrics())
+        );
 }
 
 int SubPrepPage::currentClassInformationId() const
@@ -466,8 +545,44 @@ int SubPrepPage::currentClassInformationId() const
         .toInt();
 }
 
+SubPrepPageRuntimeMetrics SubPrepPage::runtimeMetrics() const
+{
+    SubPrepPageRuntimeMetrics metrics;
+    metrics.classInformationNavigationRowCount =
+        m_classInformationNavigationRowCount;
+    metrics.classInformationSourceClassCount =
+        m_classInformationSourceClassCount;
+    metrics.classInformationVisibleClassCount =
+        m_classInformationVisibleClassCount;
+    metrics.classInformationGroupCount =
+        m_classInformationGroupCount;
+    metrics.classInformationClassInfoLookupCount =
+        m_classInformationClassInfoLookupCount;
+    metrics.classInformationTeacherLookupCount =
+        m_classInformationTeacherLookupCount;
+    metrics.classInformationRosterLookupCount =
+        m_classInformationRosterLookupCount;
+    metrics.classInformationRebuildCount =
+        m_classInformationRebuildCount;
+    metrics.selectedClassId = m_selectedClassId;
+
+    if (m_classInformationContent)
+    {
+        metrics.classInformationWidgetCount =
+            m_classInformationContent
+                ->findChildren<QWidget*>()
+                .size();
+        metrics.classInformationTextEditCount =
+            m_classInformationContent
+                ->findChildren<QTextEdit*>()
+                .size();
+    }
+
+    return metrics;
+}
+
 QList<SubPrepClassInformation::TeacherGroup>
-SubPrepPage::buildClassInformation() const
+SubPrepPage::buildClassInformation()
 {
     if (!m_scheduleWidget)
     {
@@ -482,7 +597,7 @@ SubPrepPage::buildClassInformation() const
 QList<SubPrepClassInformation::TeacherGroup>
 SubPrepPage::buildClassInformation(
     const ScheduleViewModel& schedule
-    ) const
+    )
 {
     auto* classService = openClassService(m_services);
     auto* teacherService = openTeacherService(m_services);
@@ -511,14 +626,18 @@ SubPrepPage::buildClassInformation(
         return {};
     }
 
+    m_classInformationSourceClassCount = classes->size();
+
     for (const Classroom& classroom : *classes)
     {
         SubPrepClassInformation::SourceClass source;
         source.classroom = classroom;
+        ++m_classInformationClassInfoLookupCount;
         source.info =
             classService->classInfo(
                 classroom.id
                 ).value_or(ClassInfo{});
+        ++m_classInformationRosterLookupCount;
         source.studentCount =
             rosterService->studentCount(
                 classroom.id
@@ -526,6 +645,7 @@ SubPrepPage::buildClassInformation(
 
         if (source.info.teacherId > 0)
         {
+            ++m_classInformationTeacherLookupCount;
             source.teacher = teacherService->teacher(source.info.teacherId)
                 .value_or(Teacher{});
         }
@@ -657,6 +777,11 @@ void SubPrepPage::clearClassInformation()
 {
     m_classInformationTabs = nullptr;
     clearLayout(m_classInformationLayout);
+
+    StartupProfiler::recordSubPrepClassInformationLifecycle(
+        QStringLiteral("view-clear-requested"),
+        runtimeMetricsDetail(runtimeMetrics())
+        );
 }
 
 void SubPrepPage::clearDirty()
