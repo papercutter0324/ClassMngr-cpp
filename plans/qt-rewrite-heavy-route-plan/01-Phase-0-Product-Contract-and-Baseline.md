@@ -421,7 +421,10 @@ No v2 feature work begins without a fixture and an acceptance check.
   Sub Prep route because its 768 schedule entries expand hundreds of class
   information cards and terminate before a stable profile is written. The
   bounded representative workflow proves route semantics; the large fixture
-  remains the stress input for the v2 resource/virtualization slice.
+  remains the stress input for the v2 resource/virtualization slice. The
+  implementation slice is tracked in [Sub Prep Class Information and Output
+  Memory Plan](sub-prep-class-information-memory-plan.md) and is owned by
+  Phase 7J, with Phase 9 providing the final memory gate.
 
 ## Progress update - 2026-09-16 (QtPdf session lifecycle trace)
 

@@ -80,6 +80,12 @@ Repositories must:
 - Avoid returning unnecessary columns or related records.
 - Avoid copying large collections repeatedly.
 
+For Sub Prep, the repository boundary must support a visible-class summary
+projection, teacher data shared by teacher ID, aggregated roster counts, and
+on-demand details for the selected class. The complete feature slice is
+tracked in [Sub Prep Class Information and Output Memory
+Plan](sub-prep-class-information-memory-plan.md).
+
 ### 3.4 File formats
 
 Preserve:

@@ -62,6 +62,11 @@ Create use cases for:
 - Performing backups and recovery.
 - Checking for application updates after startup.
 
+The Sub Prep slice also requires explicit summary, selected-detail, and
+operation-scoped print-source contracts. Their feature-level implementation
+plan is tracked in [Sub Prep Class Information and Output Memory
+Plan](sub-prep-class-information-memory-plan.md).
+
 Each use case must have:
 
 - Explicit input.

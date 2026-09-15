@@ -72,6 +72,12 @@ Isolate:
 
 Avoid retaining source documents, rendered pages, images, and output buffers simultaneously.
 
+Sub Prep package generation and PDF/print output must consume the operation-
+scoped projection defined by [Sub Prep Class Information and Output Memory
+Plan](sub-prep-class-information-memory-plan.md). The adapter boundary must
+not require the page to materialize class widgets or retain the page's rich UI
+model while output is being generated.
+
 ### 8.3 PowerPoint automation
 
 Preserve the current speaking-evaluation PowerPoint workflow.

@@ -127,6 +127,19 @@ Use Windows-native allocation and process tools to validate application-level me
 13. Ensure no debug Qt or debug CRT is used in packaged Release builds.
 14. Add repeated-open and repeated-navigation regression tests.
 
+### Sub Prep large-route gate
+
+The [Sub Prep Class Information and Output Memory
+Plan](sub-prep-class-information-memory-plan.md) is a required Phase 9
+consumer of this instrumentation. The packaged Release workflow must measure
+the 96-class / 8-slot fixture through Sub Prep entry, summary-model creation,
+first-detail selection, refresh, package generation, page leave, and repeated
+enter/leave cycles. The gate must report bounded class-information widget and
+editor counts, peak and settled memory, and memory return after release.
+
+The bounded full-route fixture remains a fast lifecycle/parity check; it cannot
+substitute for the large-fixture stress gate.
+
 ## Memory budget tests
 
 Add automated tests for:

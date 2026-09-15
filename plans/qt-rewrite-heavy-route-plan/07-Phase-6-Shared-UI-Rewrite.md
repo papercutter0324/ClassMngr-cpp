@@ -127,6 +127,11 @@ Prioritize:
 - Roster editors.
 - Any view that creates one Qt object per cell.
 
+Sub Prep class information is a priority model/view slice: its grade/level
+navigation must remain lightweight, and class details must be presented in a
+reusable selected-class view rather than one widget tree per class. See [Sub
+Prep Class Information and Output Memory Plan](sub-prep-class-information-memory-plan.md).
+
 ### 6.8 Appearance preservation
 
 Retain the current:

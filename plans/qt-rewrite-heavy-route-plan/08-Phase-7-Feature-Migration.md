@@ -194,6 +194,24 @@ Migrate:
 
 Stream or stage large outputs instead of retaining source documents, rendered pages, and final buffers simultaneously.
 
+#### 7J.1 - Memory-bounded class information and output pipeline
+
+This is the owning implementation slice for the large-workspace Sub Prep
+failure recorded in Phase 0. Implement the complete vertical path using the
+[Sub Prep Class Information and Output Memory
+Plan](sub-prep-class-information-memory-plan.md):
+
+- compact class-summary and selected-detail application contracts;
+- bounded, visible-ID-filtered persistence queries;
+- model/view navigation with a reusable selected-class detail panel;
+- explicit page suspension, invalidation, and release behavior;
+- operation-scoped package/PDF input and bounded output rendering;
+- large-fixture memory, lifecycle, visual, and output acceptance.
+
+The bounded fixture may prove route semantics quickly, but the 96-class
+large-workspace fixture remains the required scalability test. Phase 9 owns the
+packaged Release memory gate; it does not replace this Phase 7J migration.
+
 ## Per-feature deliverables
 
 Every subphase must produce:
