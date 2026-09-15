@@ -156,6 +156,16 @@ does not recreate or rely on them.
   graph. The trace records `288` roster queries, `7,200` result rows, and
   `21,600` cells across the three loads. These are the legacy before-state
   inputs for the v2 release/reuse boundary, not an accepted v2 budget result.
+- The packaged Release Classes lifecycle run uses the same 96-class fixture and
+  completes selection, two refreshes, two leaves, and two re-entries. It
+  records 96 visible classes in four grade groups, 192 grouped/All class-tab
+  placeholders, and 473 navigation descendants. Across three loads it makes
+  288 class rows, 288 class-information rows with 2,376 schedule rows, and
+  288 teacher rows of query results. Navigation remains bounded at 473
+  descendants, while process working set rises from `231,948,288` bytes at
+  entry to `273,227,776` bytes at lifecycle completion. The retained artifact
+  is under `docs/qt-rewrite/visual-baseline/release/large-classes-boundary/`;
+  this is a legacy before-state measurement, not an accepted v2 budget result.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
@@ -376,8 +386,9 @@ store the JSON startup trace beside the PNG files.
 - Feature-specific retained-memory measurements for the remaining large
   workflows beyond the route-level `workflow-page-left` checkpoints; the
   representative five-minute all-route workflow is retained under
-  `visual-baseline/release/workflow-five-minute/`, and the Sub Prep lifecycle
-  boundary is retained under its large-fixture directory.
+  `visual-baseline/release/workflow-five-minute/`, and the Sub Prep and
+  Classes lifecycle boundaries are retained under their large-fixture
+  directories.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
@@ -387,6 +398,10 @@ store the JSON startup trace beside the PNG files.
   current route completes but exceeds the representative working-set target
   and grows from a 2,948-widget/192-editor class-information graph to
   8,844/576 after two refreshes.
+- A v2 large-workspace Classes route within its eventual memory budget; the
+  current route keeps 473 navigation descendants but still materializes 192
+  class-tab placeholders and repeats broad class-information/teacher queries
+  on each refresh.
 - Sub Prep visual references for the selected, changed-selection, empty, both
   language/theme, and generated-output states, plus an explicit packaged
   Release memory budget for the v2 acceptance gate.

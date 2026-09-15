@@ -139,6 +139,74 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             QStringLiteral("subPrepSelectedClassId"),
             metrics.subPrepSelectedClassId
         },
+        {
+            QStringLiteral("classesSourceClassCount"),
+            metrics.classesSourceClassCount
+        },
+        {
+            QStringLiteral("classesVisibleClassCount"),
+            metrics.classesVisibleClassCount
+        },
+        {
+            QStringLiteral("classesNavigationGradeGroupCount"),
+            metrics.classesNavigationGradeGroupCount
+        },
+        {
+            QStringLiteral("classesNavigationClassTabCount"),
+            metrics.classesNavigationClassTabCount
+        },
+        {
+            QStringLiteral("classesNavigationWidgetCount"),
+            metrics.classesNavigationWidgetCount
+        },
+        {
+            QStringLiteral("classesClassQueryCount"),
+            metrics.classesClassQueryCount
+        },
+        {
+            QStringLiteral("classesClassResultRowCount"),
+            metrics.classesClassResultRowCount
+        },
+        {
+            QStringLiteral("classesClassInfoQueryCount"),
+            metrics.classesClassInfoQueryCount
+        },
+        {
+            QStringLiteral("classesClassInfoResultRowCount"),
+            metrics.classesClassInfoResultRowCount
+        },
+        {
+            QStringLiteral("classesClassInfoScheduleRowCount"),
+            metrics.classesClassInfoScheduleRowCount
+        },
+        {
+            QStringLiteral("classesTeacherQueryCount"),
+            metrics.classesTeacherQueryCount
+        },
+        {
+            QStringLiteral("classesTeacherResultRowCount"),
+            metrics.classesTeacherResultRowCount
+        },
+        {
+            QStringLiteral("classesVisibleSectionCount"),
+            metrics.classesVisibleSectionCount
+        },
+        {
+            QStringLiteral("classesInstantiatedEditorCount"),
+            metrics.classesInstantiatedEditorCount
+        },
+        {
+            QStringLiteral("classesLoadedEditorClassCount"),
+            metrics.classesLoadedEditorClassCount
+        },
+        {
+            QStringLiteral("classesRebuildCount"),
+            metrics.classesRebuildCount
+        },
+        {
+            QStringLiteral("classesSelectedClassId"),
+            metrics.classesSelectedClassId
+        },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
         {QStringLiteral("scheduleWidgetsCreated"), static_cast<double>(metrics.scheduleWidgetsCreated)},
@@ -637,6 +705,40 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.subPrepClassInformationRebuildCount;
         metrics.subPrepSelectedClassId =
             supplied.subPrepSelectedClassId;
+        metrics.classesSourceClassCount =
+            supplied.classesSourceClassCount;
+        metrics.classesVisibleClassCount =
+            supplied.classesVisibleClassCount;
+        metrics.classesNavigationGradeGroupCount =
+            supplied.classesNavigationGradeGroupCount;
+        metrics.classesNavigationClassTabCount =
+            supplied.classesNavigationClassTabCount;
+        metrics.classesNavigationWidgetCount =
+            supplied.classesNavigationWidgetCount;
+        metrics.classesClassQueryCount =
+            supplied.classesClassQueryCount;
+        metrics.classesClassResultRowCount =
+            supplied.classesClassResultRowCount;
+        metrics.classesClassInfoQueryCount =
+            supplied.classesClassInfoQueryCount;
+        metrics.classesClassInfoResultRowCount =
+            supplied.classesClassInfoResultRowCount;
+        metrics.classesClassInfoScheduleRowCount =
+            supplied.classesClassInfoScheduleRowCount;
+        metrics.classesTeacherQueryCount =
+            supplied.classesTeacherQueryCount;
+        metrics.classesTeacherResultRowCount =
+            supplied.classesTeacherResultRowCount;
+        metrics.classesVisibleSectionCount =
+            supplied.classesVisibleSectionCount;
+        metrics.classesInstantiatedEditorCount =
+            supplied.classesInstantiatedEditorCount;
+        metrics.classesLoadedEditorClassCount =
+            supplied.classesLoadedEditorClassCount;
+        metrics.classesRebuildCount =
+            supplied.classesRebuildCount;
+        metrics.classesSelectedClassId =
+            supplied.classesSelectedClassId;
     }
 
     return metrics;

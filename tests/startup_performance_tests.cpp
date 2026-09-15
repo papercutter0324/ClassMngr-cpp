@@ -394,6 +394,7 @@ private slots:
     void reportsStartupMetricsAndHonorsThresholds();
     void runsRepresentativeWorkspaceLifecycleWorkflow();
     void capturesLargeSubPrepBoundaryWhenConfigured();
+    void capturesLargeClassesBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -2424,6 +2425,468 @@ void StartupPerformanceTests
         manifestFile.write(
             QJsonDocument(manifest).toJson(QJsonDocument::Indented)
             ) > 0
+        );
+}
+
+void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_CLASSES_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_CLASSES_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-classes-workflow.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral("Unable to create large Classes reference root: %1")
+                .arg(outputRoot)
+            )
+        );
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-classes-workflow.json")
+            );
+    const QString tracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+
+    if (QFileInfo::exists(metricsPath))
+    {
+        QVERIFY(QFile::remove(metricsPath));
+    }
+    QFile traceOutput(tracePath);
+    QVERIFY2(
+        traceOutput.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text),
+        qPrintable(traceOutput.errorString())
+        );
+    traceOutput.close();
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        tracePath
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-classes-lifecycle"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+
+    QByteArray traceContents;
+    QFile traceFile(tracePath);
+    if (traceFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        traceContents = traceFile.readAll();
+    }
+
+    const QStringList traceLines =
+        QString::fromUtf8(traceContents)
+            .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start classes")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the Classes transition.\n"
+                "stdout/stderr were retained under %1."
+                )
+                .arg(outputRoot)
+            )
+        );
+    for (const QString& expectedTrace : {
+             QStringLiteral("classes-lifecycle-start"),
+             QStringLiteral("classes-refresh-1-start"),
+             QStringLiteral("classes-refresh-1-complete"),
+             QStringLiteral("classes-left-1"),
+             QStringLiteral("classes-reentry-1"),
+             QStringLiteral("classes-refresh-2-start"),
+             QStringLiteral("classes-refresh-2-complete"),
+             QStringLiteral("classes-left-2"),
+             QStringLiteral("classes-reentry-2"),
+             QStringLiteral("classes-lifecycle-complete")
+         })
+    {
+        bool foundTrace = false;
+        for (const QString& line : traceLines)
+        {
+            if (line.startsWith(expectedTrace))
+            {
+                foundTrace = true;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundTrace,
+            qPrintable(
+                QStringLiteral(
+                    "The heavy Classes lifecycle did not record '%1'.\n"
+                    "stdout/stderr were retained under %2."
+                    )
+                    .arg(expectedTrace, outputRoot)
+                )
+            );
+    }
+
+    QJsonObject manifest;
+    manifest.insert(QStringLiteral("fixture"), QStringLiteral("large_startup.sql"));
+    manifest.insert(
+        QStringLiteral("fixtureScale"),
+        QStringLiteral("large_startup_classes_lifecycle")
+        );
+    manifest.insert(
+        QStringLiteral("scenario"),
+        QStringLiteral(
+            "Classes entry, selection, refresh, leave, repeated re-entry"
+            )
+        );
+    manifest.insert(QStringLiteral("teacherCount"), 24);
+    manifest.insert(QStringLiteral("classCount"), 96);
+    manifest.insert(QStringLiteral("rosterCellCount"), 7200);
+    manifest.insert(QStringLiteral("processFinished"), finished);
+    manifest.insert(
+        QStringLiteral("exitStatus"),
+        process.exitStatus() == QProcess::NormalExit
+            ? QStringLiteral("normal")
+            : QStringLiteral("crash")
+        );
+    manifest.insert(QStringLiteral("exitCode"), process.exitCode());
+    manifest.insert(QStringLiteral("timedOut"), !finished);
+    manifest.insert(QStringLiteral("traceLineCount"), traceLines.size());
+    manifest.insert(
+        QStringLiteral("tracePath"),
+        QStringLiteral("workflow-trace.txt")
+        );
+    manifest.insert(
+        QStringLiteral("metricsPath"),
+        QStringLiteral("large-classes-workflow.json")
+        );
+    manifest.insert(
+        QStringLiteral("stdoutPath"),
+        QStringLiteral("process-stdout.txt")
+        );
+    manifest.insert(
+        QStringLiteral("stderrPath"),
+        QStringLiteral("process-stderr.txt")
+        );
+
+    QJsonObject lastCheckpoint;
+    QJsonObject lastClassesLifecycleCheckpoint;
+    bool workflowCompleted = false;
+    bool lifecycleCompleted = false;
+    QJsonArray lifecycleCheckpoints;
+    QFile metricsFile(metricsPath);
+    if (metricsFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QJsonParseError parseError;
+        const QJsonDocument metricsDocument =
+            QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+        if (parseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject())
+        {
+            const QJsonObject metricsReport = metricsDocument.object();
+            manifest.insert(
+                QStringLiteral("peakMemory"),
+                metricsReport.value(QStringLiteral("peakMemory"))
+                );
+            const QJsonArray checkpoints =
+                metricsReport.value(QStringLiteral("checkpoints"))
+                    .toArray();
+            if (!checkpoints.isEmpty())
+            {
+                lastCheckpoint = checkpoints.last().toObject();
+                manifest.insert(
+                    QStringLiteral("lastCheckpointName"),
+                    lastCheckpoint.value(QStringLiteral("name"))
+                    );
+                manifest.insert(
+                    QStringLiteral("lastCheckpointMetrics"),
+                    lastCheckpoint.value(QStringLiteral("metrics"))
+                    );
+                manifest.insert(
+                    QStringLiteral("lastCheckpointMemory"),
+                    lastCheckpoint.value(QStringLiteral("memory"))
+                    );
+            }
+
+            for (const QJsonValue& value : checkpoints)
+            {
+                const QJsonObject checkpoint = value.toObject();
+                const QString checkpointName =
+                    checkpoint.value(QStringLiteral("name")).toString();
+                if (checkpointName.startsWith(QStringLiteral("classes-")))
+                {
+                    lifecycleCheckpoints.append(checkpoint);
+                    lastClassesLifecycleCheckpoint = checkpoint;
+                }
+                if (checkpointName == QStringLiteral("workflow-complete"))
+                {
+                    manifest.insert(
+                        QStringLiteral("workflowCompleteElapsedMs"),
+                        checkpoint.value(QStringLiteral("elapsedMs"))
+                        );
+                    workflowCompleted = true;
+                }
+                if (
+                    checkpointName
+                        == QStringLiteral("classes-lifecycle-complete")
+                    && checkpoint.value(QStringLiteral("detail"))
+                           .toString()
+                           .contains(QStringLiteral("passed=true"))
+                    )
+                {
+                    lifecycleCompleted = true;
+                }
+                if (checkpointName == QStringLiteral("settled-1s"))
+                {
+                    manifest.insert(
+                        QStringLiteral("settledOneSecondElapsedMs"),
+                        checkpoint.value(QStringLiteral("elapsedMs"))
+                        );
+                }
+            }
+        }
+    }
+
+    manifest.insert(
+        QStringLiteral("metricsAvailable"),
+        !lastCheckpoint.isEmpty()
+        );
+    manifest.insert(QStringLiteral("workflowCompleted"), workflowCompleted);
+    manifest.insert(QStringLiteral("lifecycleCompleted"), lifecycleCompleted);
+    manifest.insert(
+        QStringLiteral("classesLifecycleCheckpoints"),
+        lifecycleCheckpoints
+        );
+    if (!lastClassesLifecycleCheckpoint.isEmpty())
+    {
+        manifest.insert(
+            QStringLiteral("classesLifecycleMetrics"),
+            lastClassesLifecycleCheckpoint.value(QStringLiteral("metrics"))
+            );
+        manifest.insert(
+            QStringLiteral("classesLifecycleMemory"),
+            lastClassesLifecycleCheckpoint.value(QStringLiteral("memory"))
+            );
+    }
+    manifest.insert(
+        QStringLiteral("routeOutcome"),
+        workflowCompleted
+            ? QStringLiteral("completed")
+            : !finished
+                ? QStringLiteral("timed-out")
+                : process.exitStatus() != QProcess::NormalExit
+                    ? QStringLiteral("abnormal-exit")
+                    : QStringLiteral("workflow-incomplete")
+        );
+
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
+        );
+
+    QVERIFY2(
+        lifecycleCompleted,
+        qPrintable(
+            QStringLiteral(
+                "The Classes lifecycle did not complete.\n"
+                "stdout/stderr were retained under %1."
+                )
+                .arg(outputRoot)
+            )
+        );
+    QVERIFY2(
+        workflowCompleted,
+        qPrintable(
+            QStringLiteral(
+                "The full heavy workflow did not complete.\n"
+                "stdout/stderr were retained under %1."
+                )
+                .arg(outputRoot)
+            )
+        );
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+
+    const QJsonObject classesMetrics =
+        lastClassesLifecycleCheckpoint.value(QStringLiteral("metrics"))
+            .toObject();
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesSourceClassCount")).toInt(),
+        96
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesVisibleClassCount")).toInt(),
+        96
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesNavigationGradeGroupCount"))
+            .toInt(),
+        4
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesNavigationClassTabCount"))
+            .toInt(),
+        192
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesClassQueryCount")).toInt(),
+        3
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesClassResultRowCount"))
+            .toInt(),
+        288
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesClassInfoQueryCount"))
+            .toInt(),
+        288
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesClassInfoResultRowCount"))
+            .toInt(),
+        288
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesClassInfoScheduleRowCount"))
+            .toInt(),
+        2376
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesTeacherQueryCount")).toInt(),
+        288
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesTeacherResultRowCount"))
+            .toInt(),
+        288
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesVisibleSectionCount")).toInt(),
+        6
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesInstantiatedEditorCount"))
+            .toInt(),
+        1
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesLoadedEditorClassCount"))
+            .toInt(),
+        1
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesRebuildCount")).toInt(),
+        3
+        );
+    QCOMPARE(
+        classesMetrics.value(QStringLiteral("classesSelectedClassId")).toInt(),
+        1
         );
 }
 

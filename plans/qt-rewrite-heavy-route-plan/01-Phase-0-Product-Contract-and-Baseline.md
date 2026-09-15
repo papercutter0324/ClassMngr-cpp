@@ -606,3 +606,39 @@ No v2 feature work begins without a fixture and an acceptance check.
   Release thresholds, generated-output references, and cross-platform
   evidence. The next heavy slice should measure another large workflow while
   retaining this Sub Prep artifact as its comparison oracle.
+
+## Progress update - 2026-09-16 (large Classes lifecycle retention)
+
+- What changed: the heavy-route harness now drives the actual packaged Release
+  `large_startup.sql` workspace through the Classes page with class selection,
+  two refreshes, two leaves, and two re-entries. It records grouped and
+  all-classes navigation counts, query/result sizes, editor instantiation,
+  lifecycle checkpoints, and process memory. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-classes-boundary/`.
+- Evidence: the Release child completed normally with
+  `workflow-complete` at `12,197 ms` and `settled-1s` at `13,233 ms`.
+  Peak working set was `410,247,168` bytes and peak private usage was
+  `453,857,280` bytes. The final settled checkpoint retained
+  `402,075,648` working-set bytes and `426,168,320` private-usage bytes.
+- Classes boundary: the page loaded 96 source and visible classes in four
+  grade groups, rendering 192 class-tab placeholders across grouped and All
+  navigation and 473 navigation descendants. Across the initial load and two
+  refreshes it performed three class queries returning 288 rows, 288
+  class-information queries returning 288 rows and 2,376 schedule rows, and
+  288 teacher queries returning 288 rows. One reusable editor and one loaded
+  editor-class state remained instantiated throughout the lifecycle.
+- Retention finding: unlike the Sub Prep page, the Classes navigation tree
+  stayed bounded at 473 descendants after both refreshes and re-entries. The
+  process working set still rose from `231,948,288` bytes at entry to
+  `273,227,776` bytes at lifecycle completion, so the result is a measured
+  current-product boundary rather than proof of a v2 budget. The v2 work still
+  needs the compact model/view contract and explicit page-release policy, but
+  it should not assume that Classes has the same deferred-delete growth as
+  Sub Prep.
+- Evaluation impact: this closes the large Classes entry/refresh/re-entry
+  before-state measurement and separates its bounded navigation behavior from
+  the Sub Prep retention defect. Phase 0 remains open for schedule/calendar
+  imports, speaking batches, transfer, staff directory, PDF/report operations,
+  Sub Prep visuals, explicit Release thresholds, generated outputs, and
+  cross-platform evidence. The next heavy slice should target the remaining
+  large-workflow matrix while retaining both the Sub Prep and Classes artifacts.

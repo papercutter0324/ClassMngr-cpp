@@ -215,6 +215,7 @@ bool ClassesPage::openClass(
         return false;
     }
 
+    ++m_classQueryCount;
     const Result<QList<Classroom>> loadedClasses = classService->classes();
     if (!loadedClasses)
     {
@@ -233,6 +234,8 @@ bool ClassesPage::openClass(
         return false;
     }
     m_classes = *loadedClasses;
+    m_sourceClassCount = m_classes.size();
+    m_classResultRowCount += m_classes.size();
 
     int selectedClassId =
         classId > 0
@@ -356,6 +359,97 @@ int ClassesPage::currentClassId() const
 ClassesSection ClassesPage::currentSection() const
 {
     return m_currentSection;
+}
+
+ClassesPageRuntimeMetrics ClassesPage::runtimeMetrics() const
+{
+    ClassesPageRuntimeMetrics metrics;
+    metrics.sourceClassCount = m_sourceClassCount;
+    metrics.visibleClassCount = m_visibleClassCount;
+    metrics.navigationGradeGroupCount = m_navigationGradeGroupCount;
+    metrics.navigationClassTabCount = m_navigationClassTabCount;
+    metrics.navigationWidgetCount = m_classTabs
+        ? m_classTabs->findChildren<QWidget*>().size() + 1
+        : 0;
+    metrics.classQueryCount = m_classQueryCount;
+    metrics.classResultRowCount = m_classResultRowCount;
+    metrics.classInfoQueryCount = m_classInfoQueryCount;
+    metrics.classInfoResultRowCount = m_classInfoResultRowCount;
+    metrics.classInfoScheduleRowCount = m_classInfoScheduleRowCount;
+    metrics.teacherQueryCount = m_teacherQueryCount;
+    metrics.teacherResultRowCount = m_teacherResultRowCount;
+    metrics.visibleSectionCount = m_visibleSectionCount;
+    metrics.loadedEditorClassCount = m_loadedEditorClassIds.size();
+    metrics.rebuildCount = m_rebuildCount;
+    metrics.selectedClassId = m_currentClassId;
+
+    for (const BasePage* editor : {
+             static_cast<const BasePage*>(m_detailsPage),
+             static_cast<const BasePage*>(m_rosterEditor),
+             static_cast<const BasePage*>(m_analyticsPage),
+             static_cast<const BasePage*>(m_evaluationsPage),
+             static_cast<const BasePage*>(m_coTeacherPage),
+             static_cast<const BasePage*>(m_notesPage)
+         })
+    {
+        if (editor)
+        {
+            ++metrics.instantiatedEditorCount;
+        }
+    }
+
+    return metrics;
+}
+
+bool ClassesPage::selectClassForStartupDiagnostics(int classId)
+{
+    if (classId <= 0 || !m_classTabs)
+    {
+        return false;
+    }
+
+    for (int gradeIndex = 0;
+         gradeIndex < m_classTabs->count();
+         ++gradeIndex)
+    {
+        QWidget* gradePage = m_classTabs->widget(gradeIndex);
+        auto* classTabs =
+            gradePage
+                ? gradePage->findChild<NavigationTabWidget*>(
+                    QStringLiteral("classesLevelTabs")
+                    )
+                : nullptr;
+        if (!classTabs)
+        {
+            continue;
+        }
+
+        for (int classIndex = 0;
+             classIndex < classTabs->count();
+             ++classIndex)
+        {
+            QWidget* classPage = classTabs->widget(classIndex);
+            if (
+                !classPage
+                || classPage->property("class_id").toInt() != classId
+                )
+            {
+                continue;
+            }
+
+            m_restoringTabs = true;
+            m_selectedGrade = gradePage->property("classGrade").toString();
+            m_classTabs->setCurrentIndex(gradeIndex);
+            classTabs->setCurrentIndex(classIndex);
+            m_restoringTabs = false;
+            rememberClassSelection(m_selectedGrade, classId);
+            setNavigationSelectionVisible(true);
+            const bool activated = activateClass(classId);
+            return activated && m_currentClassId == classId;
+        }
+    }
+
+    return false;
 }
 
 bool ClassesPage::isEditorInstantiated(
@@ -809,6 +903,7 @@ void ClassesPage::rebuildClassTabs(
         return;
     }
 
+    ++m_rebuildCount;
     m_rebuildingTabs = true;
     m_dayFilterButtons.clear();
     m_dayFilterControls = nullptr;
@@ -850,14 +945,29 @@ void ClassesPage::rebuildClassTabs(
                 continue;
             }
 
-            const ClassInfo info =
-                classService->classInfo(classroom.id).value_or(ClassInfo{});
+            ++m_classInfoQueryCount;
+            const Result<ClassInfo> classInfo =
+                classService->classInfo(classroom.id);
+            const ClassInfo info = classInfo.value_or(ClassInfo{});
+            if (classInfo)
+            {
+                ++m_classInfoResultRowCount;
+                m_classInfoScheduleRowCount +=
+                    classInfo->classTimes.size()
+                    + classInfo->intensiveTimes.size();
+            }
             Teacher teacher;
 
             if (info.teacherId > 0)
             {
-                teacher = teacherService->teacher(info.teacherId)
-                    .value_or(Teacher{});
+                ++m_teacherQueryCount;
+                const Result<Teacher> teacherResult =
+                    teacherService->teacher(info.teacherId);
+                if (teacherResult)
+                {
+                    ++m_teacherResultRowCount;
+                    teacher = *teacherResult;
+                }
             }
 
             ClassTabNavigation::ClassEntry entry;
@@ -913,6 +1023,15 @@ void ClassesPage::rebuildClassTabs(
             ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
             m_dayFilter
             );
+
+    m_visibleClassCount = navigation.allClasses.size();
+    m_navigationGradeGroupCount = navigation.gradeGroups.size();
+    m_navigationClassTabCount = navigation.allClasses.size();
+    for (const ClassTabNavigation::GradeGroup& group
+         : navigation.gradeGroups)
+    {
+        m_navigationClassTabCount += group.classes.size();
+    }
 
     if (
         m_selectedGrade.isNull()
@@ -1103,6 +1222,7 @@ void ClassesPage::rebuildSectionTabs()
     }
 
     m_visibleSections = visibleSections;
+    m_visibleSectionCount = m_visibleSections.size();
     for (const ClassesSection section : std::as_const(m_visibleSections))
     {
         m_sectionTabs->addTab(

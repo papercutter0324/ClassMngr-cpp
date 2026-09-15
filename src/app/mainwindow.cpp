@@ -315,6 +315,46 @@ void MainWindow::initializePages()
                         subPrepMetrics.selectedClassId;
                 }
 
+                if (m_pages && m_pages->classesPage())
+                {
+                    const ClassesPageRuntimeMetrics classesMetrics =
+                        m_pages->classesPage()->runtimeMetrics();
+                    metrics.classesSourceClassCount =
+                        classesMetrics.sourceClassCount;
+                    metrics.classesVisibleClassCount =
+                        classesMetrics.visibleClassCount;
+                    metrics.classesNavigationGradeGroupCount =
+                        classesMetrics.navigationGradeGroupCount;
+                    metrics.classesNavigationClassTabCount =
+                        classesMetrics.navigationClassTabCount;
+                    metrics.classesNavigationWidgetCount =
+                        classesMetrics.navigationWidgetCount;
+                    metrics.classesClassQueryCount =
+                        classesMetrics.classQueryCount;
+                    metrics.classesClassResultRowCount =
+                        classesMetrics.classResultRowCount;
+                    metrics.classesClassInfoQueryCount =
+                        classesMetrics.classInfoQueryCount;
+                    metrics.classesClassInfoResultRowCount =
+                        classesMetrics.classInfoResultRowCount;
+                    metrics.classesClassInfoScheduleRowCount =
+                        classesMetrics.classInfoScheduleRowCount;
+                    metrics.classesTeacherQueryCount =
+                        classesMetrics.teacherQueryCount;
+                    metrics.classesTeacherResultRowCount =
+                        classesMetrics.teacherResultRowCount;
+                    metrics.classesVisibleSectionCount =
+                        classesMetrics.visibleSectionCount;
+                    metrics.classesInstantiatedEditorCount =
+                        classesMetrics.instantiatedEditorCount;
+                    metrics.classesLoadedEditorClassCount =
+                        classesMetrics.loadedEditorClassCount;
+                    metrics.classesRebuildCount =
+                        classesMetrics.rebuildCount;
+                    metrics.classesSelectedClassId =
+                        classesMetrics.selectedClassId;
+                }
+
                 return metrics;
             }
             );

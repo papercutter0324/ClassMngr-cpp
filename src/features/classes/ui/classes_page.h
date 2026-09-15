@@ -37,6 +37,27 @@ enum class ClassesSection
     Notes
 };
 
+struct ClassesPageRuntimeMetrics
+{
+    int sourceClassCount = 0;
+    int visibleClassCount = 0;
+    int navigationGradeGroupCount = 0;
+    int navigationClassTabCount = 0;
+    int navigationWidgetCount = 0;
+    int classQueryCount = 0;
+    int classResultRowCount = 0;
+    int classInfoQueryCount = 0;
+    int classInfoResultRowCount = 0;
+    int classInfoScheduleRowCount = 0;
+    int teacherQueryCount = 0;
+    int teacherResultRowCount = 0;
+    int visibleSectionCount = 0;
+    int instantiatedEditorCount = 0;
+    int loadedEditorClassCount = 0;
+    int rebuildCount = 0;
+    int selectedClassId = -1;
+};
+
 class ClassesPage : public BasePage
 {
     Q_OBJECT
@@ -61,9 +82,14 @@ public:
 
     int currentClassId() const;
     ClassesSection currentSection() const;
+    [[nodiscard]] ClassesPageRuntimeMetrics runtimeMetrics() const;
     [[nodiscard]] bool isEditorInstantiated(
         ClassesSection section
         ) const;
+
+    // Used by the opt-in heavy startup diagnostics to exercise a real class
+    // selection without relying on native desktop automation.
+    [[nodiscard]] bool selectClassForStartupDiagnostics(int classId);
 
     void setScheduleDisplayMode(
         ScheduleDisplayMode mode
@@ -162,6 +188,19 @@ private:
     bool m_weekendClassesAvailable = false;
     bool m_firstRowLayoutQueued = false;
     bool m_updatingFirstRowLayout = false;
+    int m_sourceClassCount = 0;
+    int m_visibleClassCount = 0;
+    int m_navigationGradeGroupCount = 0;
+    int m_navigationClassTabCount = 0;
+    int m_classQueryCount = 0;
+    int m_classResultRowCount = 0;
+    int m_classInfoQueryCount = 0;
+    int m_classInfoResultRowCount = 0;
+    int m_classInfoScheduleRowCount = 0;
+    int m_teacherQueryCount = 0;
+    int m_teacherResultRowCount = 0;
+    int m_visibleSectionCount = 0;
+    int m_rebuildCount = 0;
     QString m_selectedGrade;
     QHash<QString, int> m_selectedClassIds;
     QHash<int, int> m_loadedEditorClassIds;
