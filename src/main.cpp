@@ -34,6 +34,7 @@
 #include <QDebug>
 
 #include <memory>
+#include <optional>
 
 // Later: move MainWindow construction behind an ApplicationBootstrap class
 
@@ -65,6 +66,8 @@ struct StartupPerformanceMode
     QString outputPath;
     bool visualCaptureEnabled = false;
     QString visualCaptureOutputPath;
+    std::optional<Language> visualLanguageOverride;
+    std::optional<Theme> visualThemeOverride;
     enum class Scenario
     {
         Minimal,
@@ -122,6 +125,56 @@ StartupPerformanceMode startupPerformanceMode(
         {
             mode.visualCaptureOutputPath =
                 args.at(visualCaptureIndex + 1);
+        }
+    }
+
+    const int visualLanguageIndex =
+        args.indexOf(
+            QStringLiteral("--startup-visual-capture-language")
+            );
+    if (visualLanguageIndex >= 0 && visualLanguageIndex + 1 < args.size())
+    {
+        const QString language =
+            args.at(visualLanguageIndex + 1).trimmed().toLower();
+        if (language == QStringLiteral("english"))
+        {
+            mode.visualLanguageOverride = Language::English;
+        }
+        else if (language == QStringLiteral("korean"))
+        {
+            mode.visualLanguageOverride = Language::Korean;
+        }
+        else
+        {
+            qWarning().noquote()
+                << QStringLiteral(
+                    "Unknown startup visual capture language '%1'."
+                    ).arg(language);
+        }
+    }
+
+    const int visualThemeIndex =
+        args.indexOf(
+            QStringLiteral("--startup-visual-capture-theme")
+            );
+    if (visualThemeIndex >= 0 && visualThemeIndex + 1 < args.size())
+    {
+        const QString theme =
+            args.at(visualThemeIndex + 1).trimmed().toLower();
+        if (theme == QStringLiteral("light"))
+        {
+            mode.visualThemeOverride = Theme::Light;
+        }
+        else if (theme == QStringLiteral("dark"))
+        {
+            mode.visualThemeOverride = Theme::Dark;
+        }
+        else
+        {
+            qWarning().noquote()
+                << QStringLiteral(
+                    "Unknown startup visual capture theme '%1'."
+                    ).arg(theme);
         }
     }
 
@@ -370,7 +423,11 @@ int main(int argc, char *argv[])
 
     LanguageService languageService;
 
-    const Language savedLanguage = LanguageService::savedLanguage();
+    const Language savedLanguage =
+        startupPerformance.visualCaptureEnabled
+        && startupPerformance.visualLanguageOverride.has_value()
+            ? *startupPerformance.visualLanguageOverride
+            : LanguageService::savedLanguage();
 
     const FontSize savedFontSize =
         fontSizeFromStoredValue(
@@ -381,12 +438,15 @@ int main(int argc, char *argv[])
             );
 
     const Theme savedTheme =
-        themeFromStoredValue(
-            SettingsManager::instance().get(
-                OptionKeys::Theme,
-                static_cast<int>(Theme::SystemDefault)
-                ).toInt()
-            );
+        startupPerformance.visualCaptureEnabled
+        && startupPerformance.visualThemeOverride.has_value()
+            ? *startupPerformance.visualThemeOverride
+            : themeFromStoredValue(
+                  SettingsManager::instance().get(
+                      OptionKeys::Theme,
+                      static_cast<int>(Theme::SystemDefault)
+                      ).toInt()
+                  );
 
     if (startupPerformance.enabled)
     {

@@ -117,6 +117,12 @@ to `startup-complete.png`; when a positive settle interval is requested it also
 writes `settled-final.png`. It uses the same startup path as the performance
 instrumentation and exits nonzero if the image cannot be rendered or written.
 
+Use `--startup-visual-capture-language english|korean` and
+`--startup-visual-capture-theme light|dark` to make a language/theme variant
+explicit. The focused startup test exercises all four combinations in an
+offscreen Qt process. The generated empty-workspace reference set is under
+`docs/qt-rewrite/visual-baseline/empty/` in the four variant directories.
+
 For an empty workspace:
 
 ```powershell

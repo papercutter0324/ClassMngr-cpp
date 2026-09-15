@@ -55,9 +55,12 @@
 - Why: native desktop automation is unavailable in the current environment, and
   this keeps visual evidence on the real Qt startup path without changing the
   normal application flow.
-- What remains: capture the required English/Korean, light/dark, empty,
-  populated, editing, read-only, dialog, loading, error, and generated-output
-  reference set; packaged Release and cross-platform evidence remain open.
+- Follow-up: the harness accepts explicit English/Korean and light/dark
+  overrides, the focused startup test exercises all four combinations, and a
+  permanent empty-workspace matrix is now in `docs/qt-rewrite/visual-baseline`.
+- What remains: capture populated, editing, read-only, dialog, loading, error,
+  and generated-output references; packaged Release and cross-platform evidence
+  remain open.
 
 ## Evidence files
 

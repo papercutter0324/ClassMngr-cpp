@@ -18,6 +18,7 @@
 #include <QUuid>
 
 #include <cstdio>
+#include <utility>
 
 #include "data/database/database_schema_manager.h"
 
@@ -218,6 +219,7 @@ class StartupPerformanceTests : public QObject
 private slots:
     void representativeStartupFixtureIsCompleteAndDeterministic();
     void reportsStartupMetricsAndHonorsThresholds();
+    void capturesVisualLanguageAndThemeVariants();
 };
 
 void StartupPerformanceTests
@@ -1005,6 +1007,109 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         std::fflush(stdout);
 
         QFAIL(message.constData());
+    }
+}
+
+void StartupPerformanceTests::capturesVisualLanguageAndThemeVariants()
+{
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+
+    for (const auto& variant : {
+             std::pair<const char*, const char*>{"english", "light"},
+             std::pair<const char*, const char*>{"english", "dark"},
+             std::pair<const char*, const char*>{"korean", "light"},
+             std::pair<const char*, const char*>{"korean", "dark"}
+         })
+    {
+        const QString variantName =
+            QStringLiteral("%1-%2")
+                .arg(
+                    QString::fromLatin1(variant.first),
+                    QString::fromLatin1(variant.second)
+                    );
+        const QString outputDirectory =
+            directory.filePath(
+                QStringLiteral("visual/%1").arg(variantName)
+                );
+
+        QProcess process;
+        process.setProcessEnvironment(environment);
+        process.start(
+            appPath,
+            {
+                QStringLiteral("--startup-visual-capture-output"),
+                outputDirectory,
+                QStringLiteral("--startup-visual-capture-language"),
+                QString::fromLatin1(variant.first),
+                QStringLiteral("--startup-visual-capture-theme"),
+                QString::fromLatin1(variant.second)
+            }
+            );
+
+        QVERIFY2(
+            process.waitForStarted(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(processOutput(process))
+            );
+        QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+        QVERIFY2(
+            process.exitCode() == 0,
+            qPrintable(
+                QStringLiteral(
+                    "Visual capture variant %1 exited with code %2.\n%3"
+                    )
+                    .arg(
+                        variantName,
+                        QString::number(process.exitCode()),
+                        processOutput(process)
+                        )
+                )
+            );
+
+        const QString capturePath =
+            QDir(outputDirectory).filePath(
+                QStringLiteral("startup-complete.png")
+                );
+        const QImage image(capturePath);
+        QVERIFY2(
+            !image.isNull(),
+            qPrintable(
+                QStringLiteral("Unable to read visual capture: %1")
+                    .arg(capturePath)
+                )
+            );
+        QVERIFY(image.width() > 0);
+        QVERIFY(image.height() > 0);
     }
 }
 

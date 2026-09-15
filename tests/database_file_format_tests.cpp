@@ -123,6 +123,10 @@ void DatabaseFileFormatTests::startupDatabasePathIgnoresOptionValues()
                 QStringLiteral("metrics.tps"),
                 QStringLiteral("--startup-visual-capture-output"),
                 QStringLiteral("visual-captures.tps"),
+                QStringLiteral("--startup-visual-capture-language"),
+                QStringLiteral("korean.tps"),
+                QStringLiteral("--startup-visual-capture-theme"),
+                QStringLiteral("dark.tps"),
                 QStringLiteral("current.tps")
             }
             ),

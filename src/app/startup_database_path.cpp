@@ -28,6 +28,14 @@ QString startupDatabasePath(
                 == QStringLiteral(
                     "--startup-visual-capture-output"
                     )
+            || argument
+                == QStringLiteral(
+                    "--startup-visual-capture-language"
+                    )
+            || argument
+                == QStringLiteral(
+                    "--startup-visual-capture-theme"
+                    )
             )
         {
             ++index;
