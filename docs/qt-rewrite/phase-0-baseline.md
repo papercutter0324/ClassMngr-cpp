@@ -115,16 +115,24 @@ does not recreate or rely on them.
   `--startup-performance-workflow` harness visited all 11 registered top-level
   routes, opened the deferred Calendar tab, exercised the PDF viewer, returned
   to My Workspace, and retained the final route state through the one- and
-  five-second samples. `startup-complete` was `2,897 ms`;
-  `workflow-complete` was `7,596 ms`; the one- and five-second samples were
-  `8,635` and `12,638 ms`. The workflow reached 11/11 instantiated pages,
+  five-second samples. `startup-complete` was `3,006 ms`;
+  `workflow-complete` was `8,255 ms`; the one- and five-second samples were
+  `9,302` and `13,298 ms`. The workflow reached 11/11 instantiated pages,
   2,530 widgets, three live ScheduleWidgets, and three full schedule renders.
   The PDF trace opened and rendered the 38-page Lesson Planning Guide twice,
   released it between opens, and ended with zero live PDF documents. Working
-  set was `258,318,336` bytes with a `259,440,640`-byte peak; peak private
-  usage was `298,278,912` bytes. This remains below the 250 MiB Windows
+  set was `249,663,488` bytes with a `259,137,536`-byte peak; peak private
+  usage was `297,848,832` bytes. This remains below the 250 MiB Windows
   working-set target but is a tighter regression boundary than the route-only
   run.
+- Five-minute idle Release workflow: the same heavy route and PDF cycle
+  completed `workflow-complete` at `8,846 ms` and `settled-5m` at
+  `308,890 ms`. The sample retained 2,530 widgets and 11/11 pages, with zero
+  live PDF documents and 2 loads/2 renders/2 releases. Working set at the
+  five-minute sample was `250,036,224` bytes; the run peak was
+  `259,510,272` bytes and peak private usage was `298,201,088` bytes. The
+  per-route `workflow-page-left` checkpoints cover all 11 transitions from
+  My Workspace through the PDF viewer.
 - The same workflow against `large_startup.sql` reaches the Sub Prep route but
   does not complete: its 96 classes and eight regular slots expand into
   hundreds of class-information cards. The Debug run exceeded 400 MiB before
@@ -140,8 +148,10 @@ does not recreate or rely on them.
   `startup-complete.png`, `settled-final.png`, and `startup-metrics.json`; the
   workflow directory additionally contains `pdf-opened.png`,
   `pdf-reopened.png`, and `workflow-trace.txt`. The populated frames show the
-  expected workspace schedule grid; the
-  four-language/theme matrices remain available in the Debug/offscreen
+  expected workspace schedule grid. The
+  `release/workflow-five-minute/` directory contains the five-minute idle
+  report and its matching route/PDF captures. The four-language/theme matrices
+  remain available in the Debug/offscreen
   reference directories.
 
 ## Fixture added in this pass
@@ -319,9 +329,9 @@ store the JSON startup trace beside the PNG files.
 
 ## Evidence currently missing
 
-- Packaged Release five-minute idle data and retained-memory measurements
-  after leaving each large feature; the representative all-route workflow is
-  retained under `visual-baseline/release/workflow/`.
+- Feature-specific retained-memory measurements beyond the route-level
+  `workflow-page-left` checkpoints; the representative five-minute all-route
+  workflow is retained under `visual-baseline/release/workflow-five-minute/`.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.

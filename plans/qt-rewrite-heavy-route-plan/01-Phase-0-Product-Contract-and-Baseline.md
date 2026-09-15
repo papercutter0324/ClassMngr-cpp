@@ -446,8 +446,30 @@ No v2 feature work begins without a fixture and an acceptance check.
   resource lease is released between opens. The added peak is now a measured
   regression boundary for the v2 viewer/resource owner; future implementation
   slices must carry this full route and preserve the explicit release gap.
-- What remains: five-minute idle and per-feature retained-memory evidence,
-  generated-output references, and the remaining packaged/cross-platform
-  visual baselines. Future implementation slices must follow the heavy route
-  by introducing the parallel v2 ownership and resource boundaries rather than
-  extending the legacy composition root.
+
+## Progress update - 2026-09-16 (route retention and five-minute idle gate)
+
+- What changed: the full-route profiler now records a `workflow-page-left`
+  checkpoint for every transitioned top-level page and supports a
+  `settled-5m` checkpoint when the Release runner requests a five-minute idle
+  window. This preserves the route-level memory history without forcing
+  deferred deletion or using event processing as a memory workaround.
+- Evidence: the Release five-minute workflow is retained under
+  `docs/qt-rewrite/visual-baseline/release/workflow-five-minute/`; the shorter
+  `release/workflow/` artifact was refreshed to the same source. Both include
+  route/PDF captures and the full page-transition trace.
+- Measurement: all 11 leave checkpoints completed in order. The five-minute
+  sample reached `308,890 ms` with 2,530 widgets, 11/11 pages, zero live PDF
+  documents, and 2 loads/2 renders/2 releases. Working set was
+  `250,036,224` bytes at five minutes, with a `259,510,272`-byte peak and
+  `298,201,088`-byte peak private usage.
+- Heavy-route implication: this is the retained-memory oracle for the future
+  v2 PageHost/feature-release owners. It confirms that the representative
+  route is idle-stable while the large 96-class Sub Prep fixture remains the
+  required scalability failure boundary; the next implementation slice must
+  address that boundary through the parallel v2 ownership model.
+- What remains: feature-specific retained-memory measurements beyond the
+  route-level checkpoints, generated-output references, and the remaining
+  packaged/cross-platform visual baselines. Future implementation slices must
+  follow the heavy route by introducing the parallel v2 ownership and resource
+  boundaries rather than extending the legacy composition root.

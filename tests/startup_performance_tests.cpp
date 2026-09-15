@@ -1636,6 +1636,7 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
     };
 
     QList<QString> readyPageSequence;
+    QList<QString> leftPageSequence;
     QHash<QString, QJsonObject> checkpoints;
     QSet<QString> checkpointNames;
     for (const QJsonValue& value : report
@@ -1652,6 +1653,12 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
                 checkpoint.value(QStringLiteral("detail")).toString()
                 );
         }
+        if (name == QStringLiteral("workflow-page-left"))
+        {
+            leftPageSequence.append(
+                checkpoint.value(QStringLiteral("detail")).toString()
+                );
+        }
         if (
             name == QStringLiteral("workflow-complete")
             || name == QStringLiteral("startup-complete")
@@ -1664,6 +1671,10 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
     }
 
     QCOMPARE(readyPageSequence, expectedPageSequence);
+    QCOMPARE(
+        leftPageSequence,
+        expectedPageSequence.mid(0, expectedPageSequence.size() - 1)
+        );
     for (const QString& name : {
              QStringLiteral("workflow-child-ready"),
              QStringLiteral("workflow-child-released"),

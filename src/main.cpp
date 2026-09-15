@@ -93,6 +93,7 @@ QString startupScenarioName(
 }
 
 constexpr int StartupWorkflowStepDelayMilliseconds = 150;
+constexpr int StartupFiveMinuteIdleMilliseconds = 5 * 60 * 1000;
 constexpr auto StartupPdfWorkflowRelativePath =
     "Guides/DYB Lesson Planning Guide.pdf";
 
@@ -774,6 +775,8 @@ void scheduleStartupPerformanceWorkflow(
             );
 
         PageManager* pages = window.pageManager();
+        const QString previousPageIdentifier =
+            pages ? pages->currentPageIdentifier() : QString();
         bool pageReady = false;
         if (pages)
         {
@@ -789,6 +792,18 @@ void scheduleStartupPerformanceWorkflow(
                 QStringLiteral("events-processed %1").arg(pageIdentifier)
                 );
             pageReady = pages->isCurrentPage(pageType);
+        }
+
+        if (
+            pageReady
+            && !previousPageIdentifier.isEmpty()
+            && previousPageIdentifier != pageIdentifier
+            )
+        {
+            profiler.checkpoint(
+                QStringLiteral("workflow-page-left"),
+                previousPageIdentifier
+                );
         }
 
         if (!pageReady)
@@ -1417,6 +1432,19 @@ int main(int argc, char *argv[])
                     }
                     );
             }
+            if (settleMilliseconds >= StartupFiveMinuteIdleMilliseconds)
+            {
+                QTimer::singleShot(
+                    StartupFiveMinuteIdleMilliseconds,
+                    &app,
+                    [&startupProfiler]()
+                    {
+                        startupProfiler.checkpoint(
+                            QStringLiteral("settled-5m")
+                            );
+                    }
+                    );
+            }
 
             const int completionDelayMilliseconds =
                 settleMilliseconds > 0
@@ -1436,6 +1464,7 @@ int main(int argc, char *argv[])
                         && settleMilliseconds != 1000
                         && settleMilliseconds != 5000
                         && settleMilliseconds != 30000
+                        && settleMilliseconds != StartupFiveMinuteIdleMilliseconds
                         )
                     {
                         startupProfiler.checkpoint(

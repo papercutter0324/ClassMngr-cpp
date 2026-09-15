@@ -53,6 +53,10 @@ stacked widget until the application exits. The explicit
 records page-enter/page-leave events plus memory checkpoints. It completes on
 the representative fixture; the 96-class large fixture currently fails while
 Sub Prep expands its schedule-derived class-information cards.
+The workflow also records one `workflow-page-left` checkpoint for every
+transition and supports a `settled-5m` idle checkpoint for Release retention
+evidence; the representative five-minute run completes all 11 transitions
+without a live PDF document.
 
 The document path is separate from startup catalog parsing. `DocumentCatalog`
 retains document metadata and localized names without retaining resolved PDF

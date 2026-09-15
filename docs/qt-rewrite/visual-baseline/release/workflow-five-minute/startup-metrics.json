@@ -2,19 +2,19 @@
     "checkpoints": [
         {
             "detail": "",
-            "elapsedMs": 47,
+            "elapsedMs": 43,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.257",
+                "capturedAt": "2026-09-16T02:52:21.464",
                 "handleCount": 183,
-                "pagefileUsageBytes": 4141056,
-                "peakWorkingSetBytes": 18206720,
+                "pagefileUsageBytes": 4132864,
+                "peakWorkingSetBytes": 18198528,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4141056,
-                "privateWorkingSetBytes": 2506752,
+                "privateUsageBytes": 4132864,
+                "privateWorkingSetBytes": 2498560,
                 "threadCount": 4,
-                "workingSetBytes": 18202624
+                "workingSetBytes": 18194432
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -37,19 +37,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 102,
+            "elapsedMs": 111,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.311",
+                "capturedAt": "2026-09-16T02:52:21.516",
                 "handleCount": 204,
-                "pagefileUsageBytes": 4427776,
-                "peakWorkingSetBytes": 21790720,
+                "pagefileUsageBytes": 4460544,
+                "peakWorkingSetBytes": 21860352,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4427776,
-                "privateWorkingSetBytes": 2711552,
+                "privateUsageBytes": 4460544,
+                "privateWorkingSetBytes": 2781184,
                 "threadCount": 4,
-                "workingSetBytes": 21790720
+                "workingSetBytes": 21860352
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -72,19 +72,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 147,
+            "elapsedMs": 170,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.360",
+                "capturedAt": "2026-09-16T02:52:21.576",
                 "handleCount": 204,
-                "pagefileUsageBytes": 4431872,
-                "peakWorkingSetBytes": 23076864,
+                "pagefileUsageBytes": 4509696,
+                "peakWorkingSetBytes": 23101440,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4431872,
-                "privateWorkingSetBytes": 2740224,
+                "privateUsageBytes": 4509696,
+                "privateWorkingSetBytes": 2797568,
                 "threadCount": 4,
-                "workingSetBytes": 21884928
+                "workingSetBytes": 21942272
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -107,19 +107,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 193,
+            "elapsedMs": 232,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.407",
+                "capturedAt": "2026-09-16T02:52:21.637",
                 "handleCount": 226,
-                "pagefileUsageBytes": 4653056,
-                "peakWorkingSetBytes": 23949312,
+                "pagefileUsageBytes": 4853760,
+                "peakWorkingSetBytes": 24047616,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4653056,
-                "privateWorkingSetBytes": 2949120,
+                "privateUsageBytes": 4853760,
+                "privateWorkingSetBytes": 3112960,
                 "threadCount": 4,
-                "workingSetBytes": 23883776
+                "workingSetBytes": 24047616
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -142,19 +142,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 247,
+            "elapsedMs": 285,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.458",
+                "capturedAt": "2026-09-16T02:52:21.704",
                 "handleCount": 227,
-                "pagefileUsageBytes": 29999104,
-                "peakWorkingSetBytes": 64360448,
+                "pagefileUsageBytes": 30081024,
+                "peakWorkingSetBytes": 64516096,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 29999104,
-                "privateWorkingSetBytes": 22913024,
+                "privateUsageBytes": 30081024,
+                "privateWorkingSetBytes": 23068672,
                 "threadCount": 4,
-                "workingSetBytes": 64360448
+                "workingSetBytes": 64516096
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -177,19 +177,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 296,
+            "elapsedMs": 330,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.504",
+                "capturedAt": "2026-09-16T02:52:21.749",
                 "handleCount": 227,
-                "pagefileUsageBytes": 29999104,
-                "peakWorkingSetBytes": 65646592,
+                "pagefileUsageBytes": 30134272,
+                "peakWorkingSetBytes": 65757184,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 29999104,
-                "privateWorkingSetBytes": 22994944,
+                "privateUsageBytes": 30134272,
+                "privateWorkingSetBytes": 23121920,
                 "threadCount": 4,
-                "workingSetBytes": 64491520
+                "workingSetBytes": 64618496
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -212,19 +212,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 343,
+            "elapsedMs": 381,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.554",
+                "capturedAt": "2026-09-16T02:52:21.796",
                 "handleCount": 227,
-                "pagefileUsageBytes": 30019584,
-                "peakWorkingSetBytes": 65777664,
+                "pagefileUsageBytes": 30203904,
+                "peakWorkingSetBytes": 65859584,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 30019584,
-                "privateWorkingSetBytes": 23011328,
+                "privateUsageBytes": 30203904,
+                "privateWorkingSetBytes": 23191552,
                 "threadCount": 4,
-                "workingSetBytes": 64544768
+                "workingSetBytes": 64724992
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -247,19 +247,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 398,
+            "elapsedMs": 436,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.611",
+                "capturedAt": "2026-09-16T02:52:21.856",
                 "handleCount": 239,
-                "pagefileUsageBytes": 49840128,
-                "peakWorkingSetBytes": 83156992,
+                "pagefileUsageBytes": 49905664,
+                "peakWorkingSetBytes": 83202048,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 49840128,
-                "privateWorkingSetBytes": 38764544,
+                "privateUsageBytes": 49905664,
+                "privateWorkingSetBytes": 38813696,
                 "threadCount": 7,
-                "workingSetBytes": 83156992
+                "workingSetBytes": 83202048
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -282,19 +282,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 452,
+            "elapsedMs": 500,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.665",
+                "capturedAt": "2026-09-16T02:52:21.911",
                 "handleCount": 243,
-                "pagefileUsageBytes": 92790784,
-                "peakWorkingSetBytes": 118878208,
+                "pagefileUsageBytes": 92827648,
+                "peakWorkingSetBytes": 118906880,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 92790784,
-                "privateWorkingSetBytes": 72847360,
+                "privateUsageBytes": 92827648,
+                "privateWorkingSetBytes": 72880128,
                 "threadCount": 8,
-                "workingSetBytes": 118878208
+                "workingSetBytes": 118906880
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -317,19 +317,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 500,
+            "elapsedMs": 557,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.711",
-                "handleCount": 243,
-                "pagefileUsageBytes": 93122560,
-                "peakWorkingSetBytes": 120168448,
+                "capturedAt": "2026-09-16T02:52:21.967",
+                "handleCount": 245,
+                "pagefileUsageBytes": 93106176,
+                "peakWorkingSetBytes": 120152064,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 93122560,
-                "privateWorkingSetBytes": 73203712,
+                "privateUsageBytes": 93106176,
+                "privateWorkingSetBytes": 73170944,
                 "threadCount": 8,
-                "workingSetBytes": 119459840
+                "workingSetBytes": 119422976
             },
             "metrics": {
                 "instantiatedPageCount": 0,
@@ -352,19 +352,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 562,
+            "elapsedMs": 622,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.775",
+                "capturedAt": "2026-09-16T02:52:22.038",
                 "handleCount": 245,
-                "pagefileUsageBytes": 78573568,
-                "peakWorkingSetBytes": 121475072,
+                "pagefileUsageBytes": 78725120,
+                "peakWorkingSetBytes": 121495552,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 78573568,
-                "privateWorkingSetBytes": 58150912,
+                "privateUsageBytes": 78725120,
+                "privateWorkingSetBytes": 58290176,
                 "threadCount": 8,
-                "workingSetBytes": 106569728
+                "workingSetBytes": 106704896
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -387,19 +387,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 622,
+            "elapsedMs": 681,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.834",
+                "capturedAt": "2026-09-16T02:52:22.102",
                 "handleCount": 246,
-                "pagefileUsageBytes": 104591360,
-                "peakWorkingSetBytes": 127893504,
+                "pagefileUsageBytes": 104583168,
+                "peakWorkingSetBytes": 127860736,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 104591360,
-                "privateWorkingSetBytes": 78667776,
+                "privateUsageBytes": 104583168,
+                "privateWorkingSetBytes": 78639104,
                 "threadCount": 8,
-                "workingSetBytes": 127893504
+                "workingSetBytes": 127860736
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -422,19 +422,19 @@
         },
         {
             "detail": "open",
-            "elapsedMs": 697,
+            "elapsedMs": 761,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.908",
+                "capturedAt": "2026-09-16T02:52:22.183",
                 "handleCount": 247,
-                "pagefileUsageBytes": 132116480,
-                "peakWorkingSetBytes": 152084480,
+                "pagefileUsageBytes": 132190208,
+                "peakWorkingSetBytes": 152150016,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 132116480,
-                "privateWorkingSetBytes": 100782080,
+                "privateUsageBytes": 132190208,
+                "privateWorkingSetBytes": 100851712,
                 "threadCount": 8,
-                "workingSetBytes": 152084480
+                "workingSetBytes": 152150016
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -457,19 +457,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 748,
+            "elapsedMs": 803,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:11.954",
+                "capturedAt": "2026-09-16T02:52:22.226",
                 "handleCount": 247,
-                "pagefileUsageBytes": 132116480,
-                "peakWorkingSetBytes": 153370624,
+                "pagefileUsageBytes": 132190208,
+                "peakWorkingSetBytes": 153391104,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 132116480,
-                "privateWorkingSetBytes": 100782080,
+                "privateUsageBytes": 132190208,
+                "privateWorkingSetBytes": 100851712,
                 "threadCount": 8,
-                "workingSetBytes": 152084480
+                "workingSetBytes": 152150016
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -492,19 +492,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 795,
+            "elapsedMs": 845,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:12.006",
+                "capturedAt": "2026-09-16T02:52:22.268",
                 "handleCount": 247,
-                "pagefileUsageBytes": 132116480,
-                "peakWorkingSetBytes": 153370624,
+                "pagefileUsageBytes": 132190208,
+                "peakWorkingSetBytes": 153391104,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 132116480,
-                "privateWorkingSetBytes": 100782080,
+                "privateUsageBytes": 132190208,
+                "privateWorkingSetBytes": 100851712,
                 "threadCount": 8,
-                "workingSetBytes": 152084480
+                "workingSetBytes": 152150016
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -527,19 +527,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 842,
+            "elapsedMs": 887,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:12.052",
+                "capturedAt": "2026-09-16T02:52:22.310",
                 "handleCount": 247,
-                "pagefileUsageBytes": 132116480,
-                "peakWorkingSetBytes": 153370624,
+                "pagefileUsageBytes": 132190208,
+                "peakWorkingSetBytes": 153391104,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 132116480,
-                "privateWorkingSetBytes": 100782080,
+                "privateUsageBytes": 132190208,
+                "privateWorkingSetBytes": 100851712,
                 "threadCount": 8,
-                "workingSetBytes": 152084480
+                "workingSetBytes": 152150016
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -562,19 +562,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 2960,
+            "elapsedMs": 2994,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.171",
+                "capturedAt": "2026-09-16T02:52:24.416",
                 "handleCount": 248,
-                "pagefileUsageBytes": 132173824,
-                "peakWorkingSetBytes": 153370624,
+                "pagefileUsageBytes": 132218880,
+                "peakWorkingSetBytes": 153391104,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 132173824,
-                "privateWorkingSetBytes": 100851712,
+                "privateUsageBytes": 132218880,
+                "privateWorkingSetBytes": 100884480,
                 "threadCount": 8,
-                "workingSetBytes": 152260608
+                "workingSetBytes": 152289280
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -597,19 +597,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 3006,
+            "elapsedMs": 3042,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.218",
+                "capturedAt": "2026-09-16T02:52:24.460",
                 "handleCount": 248,
-                "pagefileUsageBytes": 131162112,
-                "peakWorkingSetBytes": 153546752,
+                "pagefileUsageBytes": 131186688,
+                "peakWorkingSetBytes": 153530368,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 131162112,
-                "privateWorkingSetBytes": 99954688,
+                "privateUsageBytes": 131186688,
+                "privateWorkingSetBytes": 99979264,
                 "threadCount": 8,
-                "workingSetBytes": 151240704
+                "workingSetBytes": 151261184
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -632,19 +632,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 3078,
+            "elapsedMs": 3114,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.288",
+                "capturedAt": "2026-09-16T02:52:24.535",
                 "handleCount": 248,
-                "pagefileUsageBytes": 150802432,
-                "peakWorkingSetBytes": 169295872,
+                "pagefileUsageBytes": 150847488,
+                "peakWorkingSetBytes": 169394176,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 150802432,
-                "privateWorkingSetBytes": 115707904,
+                "privateUsageBytes": 150847488,
+                "privateWorkingSetBytes": 115810304,
                 "threadCount": 8,
-                "workingSetBytes": 167399424
+                "workingSetBytes": 167497728
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -667,19 +667,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 3128,
+            "elapsedMs": 3159,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.337",
+                "capturedAt": "2026-09-16T02:52:24.580",
                 "handleCount": 248,
-                "pagefileUsageBytes": 150802432,
-                "peakWorkingSetBytes": 169295872,
+                "pagefileUsageBytes": 150847488,
+                "peakWorkingSetBytes": 169394176,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 150802432,
-                "privateWorkingSetBytes": 115707904,
+                "privateUsageBytes": 150847488,
+                "privateWorkingSetBytes": 115810304,
                 "threadCount": 8,
-                "workingSetBytes": 167399424
+                "workingSetBytes": 167497728
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -702,19 +702,19 @@
         },
         {
             "detail": "calendar",
-            "elapsedMs": 3182,
+            "elapsedMs": 3202,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.386",
+                "capturedAt": "2026-09-16T02:52:24.623",
                 "handleCount": 248,
-                "pagefileUsageBytes": 150802432,
-                "peakWorkingSetBytes": 169295872,
+                "pagefileUsageBytes": 150847488,
+                "peakWorkingSetBytes": 169394176,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 150802432,
-                "privateWorkingSetBytes": 115707904,
+                "privateUsageBytes": 150847488,
+                "privateWorkingSetBytes": 115810304,
                 "threadCount": 8,
-                "workingSetBytes": 167399424
+                "workingSetBytes": 167497728
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -737,19 +737,19 @@
         },
         {
             "detail": "calendar",
-            "elapsedMs": 3345,
+            "elapsedMs": 3354,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.554",
+                "capturedAt": "2026-09-16T02:52:24.771",
                 "handleCount": 257,
-                "pagefileUsageBytes": 179867648,
-                "peakWorkingSetBytes": 189452288,
+                "pagefileUsageBytes": 179769344,
+                "peakWorkingSetBytes": 189505536,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 179867648,
-                "privateWorkingSetBytes": 129552384,
+                "privateUsageBytes": 179769344,
+                "privateWorkingSetBytes": 129613824,
                 "threadCount": 10,
-                "workingSetBytes": 189452288
+                "workingSetBytes": 189505536
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -772,19 +772,19 @@
         },
         {
             "detail": "calendar",
-            "elapsedMs": 3397,
+            "elapsedMs": 3400,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.606",
+                "capturedAt": "2026-09-16T02:52:24.821",
                 "handleCount": 257,
-                "pagefileUsageBytes": 179871744,
-                "peakWorkingSetBytes": 190738432,
+                "pagefileUsageBytes": 179773440,
+                "peakWorkingSetBytes": 190746624,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 179871744,
-                "privateWorkingSetBytes": 129556480,
+                "privateUsageBytes": 179773440,
+                "privateWorkingSetBytes": 129617920,
                 "threadCount": 10,
-                "workingSetBytes": 189456384
+                "workingSetBytes": 189509632
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -807,19 +807,19 @@
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3596,
+            "elapsedMs": 3604,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.804",
+                "capturedAt": "2026-09-16T02:52:25.015",
                 "handleCount": 257,
-                "pagefileUsageBytes": 179871744,
-                "peakWorkingSetBytes": 190742528,
+                "pagefileUsageBytes": 179773440,
+                "peakWorkingSetBytes": 190750720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 179871744,
-                "privateWorkingSetBytes": 129556480,
+                "privateUsageBytes": 179773440,
+                "privateWorkingSetBytes": 129617920,
                 "threadCount": 10,
-                "workingSetBytes": 189460480
+                "workingSetBytes": 189513728
             },
             "metrics": {
                 "instantiatedPageCount": 1,
@@ -842,19 +842,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 3658,
+            "elapsedMs": 3696,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.870",
+                "capturedAt": "2026-09-16T02:52:25.089",
                 "handleCount": 257,
-                "pagefileUsageBytes": 176234496,
-                "peakWorkingSetBytes": 190988288,
+                "pagefileUsageBytes": 176635904,
+                "peakWorkingSetBytes": 191320064,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 176234496,
-                "privateWorkingSetBytes": 131096576,
+                "privateUsageBytes": 176635904,
+                "privateWorkingSetBytes": 131436544,
                 "threadCount": 10,
-                "workingSetBytes": 190988288
+                "workingSetBytes": 191320064
             },
             "metrics": {
                 "instantiatedPageCount": 2,
@@ -877,19 +877,19 @@
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3706,
+            "elapsedMs": 3766,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:14.916",
+                "capturedAt": "2026-09-16T02:52:25.161",
                 "handleCount": 257,
-                "pagefileUsageBytes": 176234496,
-                "peakWorkingSetBytes": 192274432,
+                "pagefileUsageBytes": 176635904,
+                "peakWorkingSetBytes": 192561152,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 176234496,
-                "privateWorkingSetBytes": 131096576,
+                "privateUsageBytes": 176635904,
+                "privateWorkingSetBytes": 131436544,
                 "threadCount": 10,
-                "workingSetBytes": 190988288
+                "workingSetBytes": 191320064
             },
             "metrics": {
                 "instantiatedPageCount": 2,
@@ -912,19 +912,19 @@
         },
         {
             "detail": "classes",
-            "elapsedMs": 3904,
+            "elapsedMs": 3986,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.114",
+                "capturedAt": "2026-09-16T02:52:25.381",
                 "handleCount": 257,
-                "pagefileUsageBytes": 176234496,
-                "peakWorkingSetBytes": 192274432,
+                "pagefileUsageBytes": 176635904,
+                "peakWorkingSetBytes": 192561152,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 176234496,
-                "privateWorkingSetBytes": 131096576,
+                "privateUsageBytes": 176635904,
+                "privateWorkingSetBytes": 131440640,
                 "threadCount": 10,
-                "workingSetBytes": 190988288
+                "workingSetBytes": 191324160
             },
             "metrics": {
                 "instantiatedPageCount": 2,
@@ -947,19 +947,19 @@
         },
         {
             "detail": "schedule",
-            "elapsedMs": 4001,
+            "elapsedMs": 4121,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.212",
+                "capturedAt": "2026-09-16T02:52:25.517",
                 "handleCount": 257,
-                "pagefileUsageBytes": 200273920,
-                "peakWorkingSetBytes": 211415040,
+                "pagefileUsageBytes": 200294400,
+                "peakWorkingSetBytes": 211423232,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 200273920,
-                "privateWorkingSetBytes": 151113728,
+                "privateUsageBytes": 200294400,
+                "privateWorkingSetBytes": 151130112,
                 "threadCount": 10,
-                "workingSetBytes": 211415040
+                "workingSetBytes": 211423232
             },
             "metrics": {
                 "instantiatedPageCount": 3,
@@ -982,19 +982,19 @@
         },
         {
             "detail": "classes",
-            "elapsedMs": 4048,
+            "elapsedMs": 4189,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.259",
+                "capturedAt": "2026-09-16T02:52:25.585",
                 "handleCount": 257,
-                "pagefileUsageBytes": 200273920,
-                "peakWorkingSetBytes": 212701184,
+                "pagefileUsageBytes": 200294400,
+                "peakWorkingSetBytes": 212664320,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 200273920,
-                "privateWorkingSetBytes": 151117824,
+                "privateUsageBytes": 200294400,
+                "privateWorkingSetBytes": 151130112,
                 "threadCount": 10,
-                "workingSetBytes": 211419136
+                "workingSetBytes": 211423232
             },
             "metrics": {
                 "instantiatedPageCount": 3,
@@ -1017,17 +1017,17 @@
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4252,
+            "elapsedMs": 4408,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.456",
+                "capturedAt": "2026-09-16T02:52:25.805",
                 "handleCount": 257,
-                "pagefileUsageBytes": 200306688,
-                "peakWorkingSetBytes": 212705280,
+                "pagefileUsageBytes": 200294400,
+                "peakWorkingSetBytes": 212664320,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 200306688,
-                "privateWorkingSetBytes": 151134208,
+                "privateUsageBytes": 200294400,
+                "privateWorkingSetBytes": 151142400,
                 "threadCount": 10,
                 "workingSetBytes": 211435520
             },
@@ -1052,19 +1052,19 @@
         },
         {
             "detail": "classes",
-            "elapsedMs": 4321,
+            "elapsedMs": 4501,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.529",
+                "capturedAt": "2026-09-16T02:52:25.898",
                 "handleCount": 257,
-                "pagefileUsageBytes": 202772480,
-                "peakWorkingSetBytes": 214392832,
+                "pagefileUsageBytes": 202813440,
+                "peakWorkingSetBytes": 214450176,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 202772480,
-                "privateWorkingSetBytes": 153632768,
+                "privateUsageBytes": 202813440,
+                "privateWorkingSetBytes": 153698304,
                 "threadCount": 10,
-                "workingSetBytes": 214392832
+                "workingSetBytes": 214450176
             },
             "metrics": {
                 "instantiatedPageCount": 4,
@@ -1087,19 +1087,19 @@
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4370,
+            "elapsedMs": 4574,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.579",
+                "capturedAt": "2026-09-16T02:52:25.966",
                 "handleCount": 257,
-                "pagefileUsageBytes": 202772480,
-                "peakWorkingSetBytes": 215678976,
+                "pagefileUsageBytes": 202813440,
+                "peakWorkingSetBytes": 215691264,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 202772480,
-                "privateWorkingSetBytes": 153632768,
+                "privateUsageBytes": 202813440,
+                "privateWorkingSetBytes": 153698304,
                 "threadCount": 10,
-                "workingSetBytes": 214392832
+                "workingSetBytes": 214450176
             },
             "metrics": {
                 "instantiatedPageCount": 4,
@@ -1122,19 +1122,19 @@
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4566,
+            "elapsedMs": 4791,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.778",
+                "capturedAt": "2026-09-16T02:52:26.189",
                 "handleCount": 257,
-                "pagefileUsageBytes": 202772480,
-                "peakWorkingSetBytes": 215678976,
+                "pagefileUsageBytes": 202813440,
+                "peakWorkingSetBytes": 215695360,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 202772480,
-                "privateWorkingSetBytes": 153632768,
+                "privateUsageBytes": 202813440,
+                "privateWorkingSetBytes": 153698304,
                 "threadCount": 10,
-                "workingSetBytes": 214392832
+                "workingSetBytes": 214450176
             },
             "metrics": {
                 "instantiatedPageCount": 4,
@@ -1157,19 +1157,19 @@
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4633,
+            "elapsedMs": 4881,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.843",
+                "capturedAt": "2026-09-16T02:52:26.279",
                 "handleCount": 257,
-                "pagefileUsageBytes": 205864960,
-                "peakWorkingSetBytes": 217620480,
+                "pagefileUsageBytes": 205889536,
+                "peakWorkingSetBytes": 217710592,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 205864960,
-                "privateWorkingSetBytes": 156647424,
+                "privateUsageBytes": 205889536,
+                "privateWorkingSetBytes": 156745728,
                 "threadCount": 10,
-                "workingSetBytes": 217620480
+                "workingSetBytes": 217710592
             },
             "metrics": {
                 "instantiatedPageCount": 5,
@@ -1192,19 +1192,19 @@
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4681,
+            "elapsedMs": 4944,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:15.891",
+                "capturedAt": "2026-09-16T02:52:26.346",
                 "handleCount": 257,
-                "pagefileUsageBytes": 205864960,
-                "peakWorkingSetBytes": 218906624,
+                "pagefileUsageBytes": 205889536,
+                "peakWorkingSetBytes": 218955776,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 205864960,
-                "privateWorkingSetBytes": 156647424,
+                "privateUsageBytes": 205889536,
+                "privateWorkingSetBytes": 156745728,
                 "threadCount": 10,
-                "workingSetBytes": 217620480
+                "workingSetBytes": 217710592
             },
             "metrics": {
                 "instantiatedPageCount": 5,
@@ -1227,19 +1227,19 @@
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4878,
+            "elapsedMs": 5166,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.089",
+                "capturedAt": "2026-09-16T02:52:26.560",
                 "handleCount": 257,
-                "pagefileUsageBytes": 205864960,
-                "peakWorkingSetBytes": 218906624,
+                "pagefileUsageBytes": 205889536,
+                "peakWorkingSetBytes": 218955776,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 205864960,
-                "privateWorkingSetBytes": 156647424,
+                "privateUsageBytes": 205889536,
+                "privateWorkingSetBytes": 156745728,
                 "threadCount": 10,
-                "workingSetBytes": 217620480
+                "workingSetBytes": 217710592
             },
             "metrics": {
                 "instantiatedPageCount": 5,
@@ -1262,19 +1262,19 @@
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4933,
+            "elapsedMs": 5238,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.143",
+                "capturedAt": "2026-09-16T02:52:26.642",
                 "handleCount": 257,
-                "pagefileUsageBytes": 207089664,
-                "peakWorkingSetBytes": 218906624,
+                "pagefileUsageBytes": 207265792,
+                "peakWorkingSetBytes": 219082752,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 207089664,
-                "privateWorkingSetBytes": 157880320,
+                "privateUsageBytes": 207265792,
+                "privateWorkingSetBytes": 158081024,
                 "threadCount": 10,
-                "workingSetBytes": 218890240
+                "workingSetBytes": 219082752
             },
             "metrics": {
                 "instantiatedPageCount": 6,
@@ -1297,19 +1297,19 @@
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4978,
+            "elapsedMs": 5309,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.190",
+                "capturedAt": "2026-09-16T02:52:26.703",
                 "handleCount": 257,
-                "pagefileUsageBytes": 207089664,
-                "peakWorkingSetBytes": 220176384,
+                "pagefileUsageBytes": 207265792,
+                "peakWorkingSetBytes": 220327936,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 207089664,
-                "privateWorkingSetBytes": 157880320,
+                "privateUsageBytes": 207265792,
+                "privateWorkingSetBytes": 158081024,
                 "threadCount": 10,
-                "workingSetBytes": 218890240
+                "workingSetBytes": 219082752
             },
             "metrics": {
                 "instantiatedPageCount": 6,
@@ -1332,19 +1332,19 @@
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 5175,
+            "elapsedMs": 5529,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.386",
+                "capturedAt": "2026-09-16T02:52:26.924",
                 "handleCount": 257,
-                "pagefileUsageBytes": 207089664,
-                "peakWorkingSetBytes": 220176384,
+                "pagefileUsageBytes": 207265792,
+                "peakWorkingSetBytes": 220327936,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 207089664,
-                "privateWorkingSetBytes": 157880320,
+                "privateUsageBytes": 207265792,
+                "privateWorkingSetBytes": 158081024,
                 "threadCount": 10,
-                "workingSetBytes": 218890240
+                "workingSetBytes": 219082752
             },
             "metrics": {
                 "instantiatedPageCount": 6,
@@ -1367,19 +1367,19 @@
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 5230,
+            "elapsedMs": 5612,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.440",
+                "capturedAt": "2026-09-16T02:52:27.005",
                 "handleCount": 257,
-                "pagefileUsageBytes": 208175104,
-                "peakWorkingSetBytes": 220176384,
+                "pagefileUsageBytes": 208277504,
+                "peakWorkingSetBytes": 220327936,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 208175104,
-                "privateWorkingSetBytes": 158924800,
+                "privateUsageBytes": 208277504,
+                "privateWorkingSetBytes": 159117312,
                 "threadCount": 10,
-                "workingSetBytes": 219938816
+                "workingSetBytes": 220123136
             },
             "metrics": {
                 "instantiatedPageCount": 7,
@@ -1402,19 +1402,19 @@
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 5276,
+            "elapsedMs": 5683,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.488",
+                "capturedAt": "2026-09-16T02:52:27.077",
                 "handleCount": 257,
-                "pagefileUsageBytes": 208175104,
-                "peakWorkingSetBytes": 221224960,
+                "pagefileUsageBytes": 208277504,
+                "peakWorkingSetBytes": 221368320,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 208175104,
-                "privateWorkingSetBytes": 158924800,
+                "privateUsageBytes": 208277504,
+                "privateWorkingSetBytes": 159117312,
                 "threadCount": 10,
-                "workingSetBytes": 219938816
+                "workingSetBytes": 220123136
             },
             "metrics": {
                 "instantiatedPageCount": 7,
@@ -1437,19 +1437,19 @@
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5476,
+            "elapsedMs": 5905,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.684",
+                "capturedAt": "2026-09-16T02:52:27.299",
                 "handleCount": 257,
-                "pagefileUsageBytes": 208175104,
-                "peakWorkingSetBytes": 221224960,
+                "pagefileUsageBytes": 208277504,
+                "peakWorkingSetBytes": 221368320,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 208175104,
-                "privateWorkingSetBytes": 158924800,
+                "privateUsageBytes": 208277504,
+                "privateWorkingSetBytes": 159117312,
                 "threadCount": 10,
-                "workingSetBytes": 219938816
+                "workingSetBytes": 220123136
             },
             "metrics": {
                 "instantiatedPageCount": 7,
@@ -1472,19 +1472,19 @@
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 5554,
+            "elapsedMs": 6008,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.764",
+                "capturedAt": "2026-09-16T02:52:27.402",
                 "handleCount": 257,
-                "pagefileUsageBytes": 218595328,
-                "peakWorkingSetBytes": 225435648,
+                "pagefileUsageBytes": 218853376,
+                "peakWorkingSetBytes": 225894400,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 218595328,
-                "privateWorkingSetBytes": 164175872,
+                "privateUsageBytes": 218853376,
+                "privateWorkingSetBytes": 164642816,
                 "threadCount": 10,
-                "workingSetBytes": 225435648
+                "workingSetBytes": 225894400
             },
             "metrics": {
                 "instantiatedPageCount": 8,
@@ -1507,19 +1507,19 @@
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5600,
+            "elapsedMs": 6073,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:16.811",
+                "capturedAt": "2026-09-16T02:52:27.473",
                 "handleCount": 257,
-                "pagefileUsageBytes": 218595328,
-                "peakWorkingSetBytes": 226721792,
+                "pagefileUsageBytes": 218853376,
+                "peakWorkingSetBytes": 227139584,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 218595328,
-                "privateWorkingSetBytes": 164175872,
+                "privateUsageBytes": 218853376,
+                "privateWorkingSetBytes": 164646912,
                 "threadCount": 10,
-                "workingSetBytes": 225435648
+                "workingSetBytes": 225898496
             },
             "metrics": {
                 "instantiatedPageCount": 8,
@@ -1542,19 +1542,19 @@
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5797,
+            "elapsedMs": 6284,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.007",
+                "capturedAt": "2026-09-16T02:52:27.689",
                 "handleCount": 257,
-                "pagefileUsageBytes": 218738688,
-                "peakWorkingSetBytes": 226721792,
+                "pagefileUsageBytes": 218853376,
+                "peakWorkingSetBytes": 227143680,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 218738688,
-                "privateWorkingSetBytes": 164319232,
+                "privateUsageBytes": 218853376,
+                "privateWorkingSetBytes": 164646912,
                 "threadCount": 10,
-                "workingSetBytes": 225579008
+                "workingSetBytes": 225898496
             },
             "metrics": {
                 "instantiatedPageCount": 8,
@@ -1577,19 +1577,19 @@
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5908,
+            "elapsedMs": 6414,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.120",
+                "capturedAt": "2026-09-16T02:52:27.817",
                 "handleCount": 257,
-                "pagefileUsageBytes": 227074048,
-                "peakWorkingSetBytes": 233799680,
+                "pagefileUsageBytes": 227188736,
+                "peakWorkingSetBytes": 234127360,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 227074048,
-                "privateWorkingSetBytes": 172408832,
+                "privateUsageBytes": 227188736,
+                "privateWorkingSetBytes": 172744704,
                 "threadCount": 10,
-                "workingSetBytes": 233799680
+                "workingSetBytes": 234127360
             },
             "metrics": {
                 "instantiatedPageCount": 9,
@@ -1612,19 +1612,19 @@
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5954,
+            "elapsedMs": 6474,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.165",
+                "capturedAt": "2026-09-16T02:52:27.879",
                 "handleCount": 257,
-                "pagefileUsageBytes": 227074048,
-                "peakWorkingSetBytes": 235085824,
+                "pagefileUsageBytes": 227188736,
+                "peakWorkingSetBytes": 235372544,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 227074048,
-                "privateWorkingSetBytes": 172412928,
+                "privateUsageBytes": 227188736,
+                "privateWorkingSetBytes": 172744704,
                 "threadCount": 10,
-                "workingSetBytes": 233803776
+                "workingSetBytes": 234127360
             },
             "metrics": {
                 "instantiatedPageCount": 9,
@@ -1647,19 +1647,19 @@
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6152,
+            "elapsedMs": 6682,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.362",
+                "capturedAt": "2026-09-16T02:52:28.090",
                 "handleCount": 257,
-                "pagefileUsageBytes": 227074048,
-                "peakWorkingSetBytes": 235089920,
+                "pagefileUsageBytes": 227188736,
+                "peakWorkingSetBytes": 235372544,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 227074048,
-                "privateWorkingSetBytes": 172417024,
+                "privateUsageBytes": 227188736,
+                "privateWorkingSetBytes": 172748800,
                 "threadCount": 10,
-                "workingSetBytes": 233807872
+                "workingSetBytes": 234131456
             },
             "metrics": {
                 "instantiatedPageCount": 9,
@@ -1682,19 +1682,19 @@
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 6252,
+            "elapsedMs": 6792,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.462",
+                "capturedAt": "2026-09-16T02:52:28.202",
                 "handleCount": 257,
-                "pagefileUsageBytes": 229822464,
-                "peakWorkingSetBytes": 241647616,
+                "pagefileUsageBytes": 230170624,
+                "peakWorkingSetBytes": 242057216,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 229822464,
-                "privateWorkingSetBytes": 180211712,
+                "privateUsageBytes": 230170624,
+                "privateWorkingSetBytes": 180629504,
                 "threadCount": 10,
-                "workingSetBytes": 241647616
+                "workingSetBytes": 242057216
             },
             "metrics": {
                 "instantiatedPageCount": 10,
@@ -1717,19 +1717,19 @@
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6299,
+            "elapsedMs": 6848,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.509",
+                "capturedAt": "2026-09-16T02:52:28.257",
                 "handleCount": 257,
-                "pagefileUsageBytes": 229822464,
-                "peakWorkingSetBytes": 242933760,
+                "pagefileUsageBytes": 230170624,
+                "peakWorkingSetBytes": 243302400,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 229822464,
-                "privateWorkingSetBytes": 180219904,
+                "privateUsageBytes": 230170624,
+                "privateWorkingSetBytes": 180629504,
                 "threadCount": 10,
-                "workingSetBytes": 241655808
+                "workingSetBytes": 242057216
             },
             "metrics": {
                 "instantiatedPageCount": 10,
@@ -1752,19 +1752,19 @@
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6496,
+            "elapsedMs": 7054,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.707",
+                "capturedAt": "2026-09-16T02:52:28.464",
                 "handleCount": 257,
-                "pagefileUsageBytes": 229822464,
-                "peakWorkingSetBytes": 242941952,
+                "pagefileUsageBytes": 230170624,
+                "peakWorkingSetBytes": 243302400,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 229822464,
-                "privateWorkingSetBytes": 180219904,
+                "privateUsageBytes": 230170624,
+                "privateWorkingSetBytes": 180629504,
                 "threadCount": 10,
-                "workingSetBytes": 241655808
+                "workingSetBytes": 242057216
             },
             "metrics": {
                 "instantiatedPageCount": 10,
@@ -1787,19 +1787,19 @@
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6551,
+            "elapsedMs": 7106,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.762",
+                "capturedAt": "2026-09-16T02:52:28.526",
                 "handleCount": 271,
-                "pagefileUsageBytes": 230723584,
-                "peakWorkingSetBytes": 243576832,
+                "pagefileUsageBytes": 230854656,
+                "peakWorkingSetBytes": 243802112,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 230723584,
-                "privateWorkingSetBytes": 181022720,
+                "privateUsageBytes": 230854656,
+                "privateWorkingSetBytes": 181264384,
                 "threadCount": 12,
-                "workingSetBytes": 243576832
+                "workingSetBytes": 243802112
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -1822,19 +1822,19 @@
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6598,
+            "elapsedMs": 7152,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.808",
+                "capturedAt": "2026-09-16T02:52:28.571",
                 "handleCount": 271,
-                "pagefileUsageBytes": 230723584,
-                "peakWorkingSetBytes": 244862976,
+                "pagefileUsageBytes": 230854656,
+                "peakWorkingSetBytes": 245047296,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 230723584,
-                "privateWorkingSetBytes": 181022720,
+                "privateUsageBytes": 230854656,
+                "privateWorkingSetBytes": 181272576,
                 "threadCount": 12,
-                "workingSetBytes": 243576832
+                "workingSetBytes": 243810304
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -1857,19 +1857,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6644,
+            "elapsedMs": 7197,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.855",
+                "capturedAt": "2026-09-16T02:52:28.617",
                 "handleCount": 271,
-                "pagefileUsageBytes": 230723584,
-                "peakWorkingSetBytes": 244862976,
+                "pagefileUsageBytes": 230854656,
+                "peakWorkingSetBytes": 245055488,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 230723584,
-                "privateWorkingSetBytes": 181022720,
+                "privateUsageBytes": 230854656,
+                "privateWorkingSetBytes": 181272576,
                 "threadCount": 12,
-                "workingSetBytes": 243576832
+                "workingSetBytes": 243810304
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -1892,19 +1892,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6691,
+            "elapsedMs": 7242,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:17.902",
+                "capturedAt": "2026-09-16T02:52:28.662",
                 "handleCount": 271,
-                "pagefileUsageBytes": 263499776,
-                "peakWorkingSetBytes": 244862976,
+                "pagefileUsageBytes": 263630848,
+                "peakWorkingSetBytes": 245055488,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 263499776,
-                "privateWorkingSetBytes": 181022720,
+                "privateUsageBytes": 263630848,
+                "privateWorkingSetBytes": 181272576,
                 "threadCount": 12,
-                "workingSetBytes": 243597312
+                "workingSetBytes": 243830784
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -1927,19 +1927,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf; rendered=600x531",
-            "elapsedMs": 6935,
+            "elapsedMs": 7486,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.146",
+                "capturedAt": "2026-09-16T02:52:28.906",
                 "handleCount": 287,
-                "pagefileUsageBytes": 273502208,
-                "peakWorkingSetBytes": 257757184,
+                "pagefileUsageBytes": 273854464,
+                "peakWorkingSetBytes": 258220032,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 273502208,
-                "privateWorkingSetBytes": 190648320,
+                "privateUsageBytes": 273854464,
+                "privateWorkingSetBytes": 191127552,
                 "threadCount": 16,
-                "workingSetBytes": 257757184
+                "workingSetBytes": 258220032
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -1962,19 +1962,19 @@
         },
         {
             "detail": "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                600x%2",
-            "elapsedMs": 6981,
+            "elapsedMs": 7530,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.192",
+                "capturedAt": "2026-09-16T02:52:28.950",
                 "handleCount": 287,
-                "pagefileUsageBytes": 273502208,
-                "peakWorkingSetBytes": 259043328,
+                "pagefileUsageBytes": 273854464,
+                "peakWorkingSetBytes": 259465216,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 273502208,
-                "privateWorkingSetBytes": 190648320,
+                "privateUsageBytes": 273854464,
+                "privateWorkingSetBytes": 191127552,
                 "threadCount": 16,
-                "workingSetBytes": 257757184
+                "workingSetBytes": 258220032
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -1997,19 +1997,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 7179,
+            "elapsedMs": 7725,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.390",
+                "capturedAt": "2026-09-16T02:52:29.146",
                 "handleCount": 287,
-                "pagefileUsageBytes": 265080832,
-                "peakWorkingSetBytes": 259043328,
+                "pagefileUsageBytes": 265433088,
+                "peakWorkingSetBytes": 259465216,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 265080832,
-                "privateWorkingSetBytes": 182460416,
+                "privateUsageBytes": 265433088,
+                "privateWorkingSetBytes": 182939648,
                 "threadCount": 16,
-                "workingSetBytes": 249577472
+                "workingSetBytes": 250040320
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2032,19 +2032,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 7226,
+            "elapsedMs": 7776,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.437",
+                "capturedAt": "2026-09-16T02:52:29.190",
                 "handleCount": 287,
-                "pagefileUsageBytes": 297848832,
-                "peakWorkingSetBytes": 259043328,
+                "pagefileUsageBytes": 298201088,
+                "peakWorkingSetBytes": 259465216,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 297848832,
-                "privateWorkingSetBytes": 182460416,
+                "privateUsageBytes": 298201088,
+                "privateWorkingSetBytes": 182939648,
                 "threadCount": 16,
-                "workingSetBytes": 249589760
+                "workingSetBytes": 250052608
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2067,19 +2067,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf; rendered=600x531",
-            "elapsedMs": 7456,
+            "elapsedMs": 8021,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.668",
+                "capturedAt": "2026-09-16T02:52:29.432",
                 "handleCount": 287,
-                "pagefileUsageBytes": 273575936,
-                "peakWorkingSetBytes": 259043328,
+                "pagefileUsageBytes": 273928192,
+                "peakWorkingSetBytes": 259465216,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 273575936,
-                "privateWorkingSetBytes": 190734336,
+                "privateUsageBytes": 273928192,
+                "privateWorkingSetBytes": 191164416,
                 "threadCount": 16,
-                "workingSetBytes": 257851392
+                "workingSetBytes": 258265088
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2102,19 +2102,19 @@
         },
         {
             "detail": "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                600x%2",
-            "elapsedMs": 7503,
+            "elapsedMs": 8074,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.714",
+                "capturedAt": "2026-09-16T02:52:29.486",
                 "handleCount": 287,
-                "pagefileUsageBytes": 273575936,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 273928192,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 273575936,
-                "privateWorkingSetBytes": 190734336,
+                "privateUsageBytes": 273928192,
+                "privateWorkingSetBytes": 191164416,
                 "threadCount": 16,
-                "workingSetBytes": 257851392
+                "workingSetBytes": 258265088
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2137,19 +2137,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 7701,
+            "elapsedMs": 8271,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.913",
+                "capturedAt": "2026-09-16T02:52:29.691",
                 "handleCount": 287,
-                "pagefileUsageBytes": 265146368,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 265498624,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 265146368,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 265498624,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249655296
+                "workingSetBytes": 250068992
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2172,19 +2172,19 @@
         },
         {
             "detail": "opened=2; rendered=2; released=2",
-            "elapsedMs": 7748,
+            "elapsedMs": 8316,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:18.959",
+                "capturedAt": "2026-09-16T02:52:29.736",
                 "handleCount": 287,
-                "pagefileUsageBytes": 265146368,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 265498624,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 265146368,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 265498624,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249655296
+                "workingSetBytes": 250068992
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2207,19 +2207,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 7951,
+            "elapsedMs": 8523,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:19.156",
+                "capturedAt": "2026-09-16T02:52:29.932",
                 "handleCount": 287,
-                "pagefileUsageBytes": 265146368,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 265498624,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 265146368,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 265498624,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249655296
+                "workingSetBytes": 250068992
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2242,19 +2242,19 @@
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 8005,
+            "elapsedMs": 8585,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:19.216",
+                "capturedAt": "2026-09-16T02:52:29.994",
                 "handleCount": 287,
-                "pagefileUsageBytes": 270217216,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 270569472,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 270217216,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 270569472,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249663488
+                "workingSetBytes": 250077184
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2277,19 +2277,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 8055,
+            "elapsedMs": 8641,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:19.263",
+                "capturedAt": "2026-09-16T02:52:30.049",
                 "handleCount": 287,
-                "pagefileUsageBytes": 270217216,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 270569472,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 270217216,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 270569472,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249663488
+                "workingSetBytes": 250077184
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2312,19 +2312,19 @@
         },
         {
             "detail": "returned-to-my-workspace",
-            "elapsedMs": 8255,
+            "elapsedMs": 8846,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:19.464",
+                "capturedAt": "2026-09-16T02:52:30.256",
                 "handleCount": 287,
-                "pagefileUsageBytes": 270217216,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 270569472,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 270217216,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 270569472,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249663488
+                "workingSetBytes": 250077184
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2347,19 +2347,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 9302,
+            "elapsedMs": 9901,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:20.513",
+                "capturedAt": "2026-09-16T02:52:31.312",
                 "handleCount": 287,
-                "pagefileUsageBytes": 270217216,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 270569472,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 270217216,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 270569472,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249663488
+                "workingSetBytes": 250077184
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2382,19 +2382,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 13298,
+            "elapsedMs": 13889,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T02:58:24.509",
+                "capturedAt": "2026-09-16T02:52:35.307",
                 "handleCount": 287,
-                "pagefileUsageBytes": 270217216,
-                "peakWorkingSetBytes": 259137536,
+                "pagefileUsageBytes": 270569472,
+                "peakWorkingSetBytes": 259510272,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 270217216,
-                "privateWorkingSetBytes": 182538240,
+                "privateUsageBytes": 270569472,
+                "privateWorkingSetBytes": 182968320,
                 "threadCount": 16,
-                "workingSetBytes": 249663488
+                "workingSetBytes": 250077184
             },
             "metrics": {
                 "instantiatedPageCount": 11,
@@ -2414,267 +2414,337 @@
             },
             "name": "settled-5s",
             "sequence": 69
+        },
+        {
+            "detail": "",
+            "elapsedMs": 38888,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-09-16T02:53:00.307",
+                "handleCount": 263,
+                "pagefileUsageBytes": 270204928,
+                "peakWorkingSetBytes": 259510272,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 270204928,
+                "privateWorkingSetBytes": 182730752,
+                "threadCount": 7,
+                "workingSetBytes": 249905152
+            },
+            "metrics": {
+                "instantiatedPageCount": 11,
+                "livePdfDocumentCount": 0,
+                "liveScheduleWidgetCount": 3,
+                "pdfDocumentsLoaded": 2,
+                "pdfDocumentsReleased": 2,
+                "pdfRenderCount": 2,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 126,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 3,
+                "scheduleTableItemsCreated": 18,
+                "scheduleWidgetsCreated": 3,
+                "widgetCount": 2530
+            },
+            "name": "settled-30s",
+            "sequence": 70
+        },
+        {
+            "detail": "",
+            "elapsedMs": 308890,
+            "memory": {
+                "available": true,
+                "capturedAt": "2026-09-16T02:57:30.307",
+                "handleCount": 263,
+                "pagefileUsageBytes": 270188544,
+                "peakWorkingSetBytes": 259510272,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 270188544,
+                "privateWorkingSetBytes": 182714368,
+                "threadCount": 7,
+                "workingSetBytes": 250036224
+            },
+            "metrics": {
+                "instantiatedPageCount": 11,
+                "livePdfDocumentCount": 0,
+                "liveScheduleWidgetCount": 3,
+                "pdfDocumentsLoaded": 2,
+                "pdfDocumentsReleased": 2,
+                "pdfRenderCount": 2,
+                "registeredPageCount": 11,
+                "scheduleCellWidgetsCreated": 126,
+                "scheduleCellWidgetsQueuedForDeletion": 0,
+                "scheduleCellWidgetsRemoved": 0,
+                "scheduleRenderCount": 3,
+                "scheduleTableItemsCreated": 18,
+                "scheduleWidgetsCreated": 3,
+                "widgetCount": 2530
+            },
+            "name": "settled-5m",
+            "sequence": 71
         }
     ],
     "events": [
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 509,
+            "elapsedMs": 566,
             "name": "schedule-widget-created"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 516,
+            "elapsedMs": 573,
             "name": "page-created"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 517,
+            "elapsedMs": 574,
             "name": "page-enter"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 641,
+            "elapsedMs": 708,
             "name": "schedule-render-start"
         },
         {
-            "detail": "owner=SchedulePage; mode=interactive; elapsedMs=9; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
-            "elapsedMs": 651,
+            "detail": "owner=SchedulePage; mode=interactive; elapsedMs=10; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
+            "elapsedMs": 718,
             "name": "schedule-render-end"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 651,
+            "elapsedMs": 718,
             "name": "page-enter"
         },
         {
             "detail": "expected=1; live=1; created=1; passed=true",
-            "elapsedMs": 3006,
+            "elapsedMs": 3042,
             "name": "schedule-widget-startup-diagnostic"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 3078,
+            "elapsedMs": 3114,
             "name": "page-enter"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 3597,
+            "elapsedMs": 3605,
             "name": "schedule-widget-created"
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3599,
+            "elapsedMs": 3607,
             "name": "page-created"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 3599,
+            "elapsedMs": 3607,
             "name": "page-leave"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 3600,
+            "elapsedMs": 3609,
             "name": "schedule-render-start"
         },
         {
-            "detail": "owner=SchedulePage; mode=interactive; elapsedMs=7; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
-            "elapsedMs": 3608,
+            "detail": "owner=SchedulePage; mode=interactive; elapsedMs=9; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
+            "elapsedMs": 3619,
             "name": "schedule-render-end"
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3608,
+            "elapsedMs": 3619,
             "name": "page-enter"
         },
         {
             "detail": "classes",
-            "elapsedMs": 3908,
+            "elapsedMs": 3991,
             "name": "page-created"
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3908,
+            "elapsedMs": 3991,
             "name": "page-leave"
         },
         {
             "detail": "classes",
-            "elapsedMs": 3949,
+            "elapsedMs": 4046,
             "name": "page-enter"
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4264,
+            "elapsedMs": 4426,
             "name": "page-created"
         },
         {
             "detail": "classes",
-            "elapsedMs": 4264,
+            "elapsedMs": 4426,
             "name": "page-leave"
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4267,
+            "elapsedMs": 4429,
             "name": "page-enter"
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4576,
+            "elapsedMs": 4804,
             "name": "page-created"
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4576,
+            "elapsedMs": 4804,
             "name": "page-leave"
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4582,
+            "elapsedMs": 4810,
             "name": "page-enter"
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4881,
+            "elapsedMs": 5170,
             "name": "page-created"
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4881,
+            "elapsedMs": 5170,
             "name": "page-leave"
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4884,
+            "elapsedMs": 5174,
             "name": "page-enter"
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 5178,
+            "elapsedMs": 5533,
             "name": "page-created"
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 5178,
+            "elapsedMs": 5533,
             "name": "page-leave"
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 5181,
+            "elapsedMs": 5537,
             "name": "page-enter"
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5489,
+            "elapsedMs": 5917,
             "name": "page-created"
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 5489,
+            "elapsedMs": 5917,
             "name": "page-leave"
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5497,
+            "elapsedMs": 5926,
             "name": "page-enter"
         },
         {
             "detail": "owner=SectionCard; mode=read-only",
-            "elapsedMs": 5800,
+            "elapsedMs": 6287,
             "name": "schedule-widget-created"
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5801,
+            "elapsedMs": 6288,
             "name": "page-created"
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5801,
+            "elapsedMs": 6288,
             "name": "page-leave"
         },
         {
             "detail": "owner=SectionCard; mode=read-only",
-            "elapsedMs": 5808,
+            "elapsedMs": 6295,
             "name": "schedule-render-start"
         },
         {
             "detail": "owner=SectionCard; mode=read-only; elapsedMs=7; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
-            "elapsedMs": 5816,
+            "elapsedMs": 6303,
             "name": "schedule-render-end"
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5851,
+            "elapsedMs": 6339,
             "name": "page-enter"
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6154,
+            "elapsedMs": 6684,
             "name": "page-created"
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 6154,
+            "elapsedMs": 6684,
             "name": "page-leave"
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6196,
+            "elapsedMs": 6728,
             "name": "page-enter"
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6500,
+            "elapsedMs": 7058,
             "name": "page-created"
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6500,
+            "elapsedMs": 7058,
             "name": "page-leave"
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6502,
+            "elapsedMs": 7060,
             "name": "page-enter"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; pages=38",
-            "elapsedMs": 6710,
+            "elapsedMs": 7261,
             "name": "pdf-document-loaded"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; size=600x531",
-            "elapsedMs": 6888,
+            "elapsedMs": 7441,
             "name": "pdf-document-rendered"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6982,
+            "elapsedMs": 7531,
             "name": "pdf-document-released"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; pages=38",
-            "elapsedMs": 7251,
+            "elapsedMs": 7807,
             "name": "pdf-document-loaded"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; size=600x531",
-            "elapsedMs": 7411,
+            "elapsedMs": 7967,
             "name": "pdf-document-rendered"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 7504,
+            "elapsedMs": 8075,
             "name": "pdf-document-released"
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 7952,
+            "elapsedMs": 8524,
             "name": "page-leave"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 7953,
+            "elapsedMs": 8525,
             "name": "page-enter"
         }
     ],
@@ -2683,16 +2753,16 @@
     "peakMemory": {
         "available": true,
         "capturedAt": "",
-        "checkpointSampleCount": 69,
+        "checkpointSampleCount": 71,
         "handleCount": 287,
-        "pagefileUsageBytes": 297848832,
-        "peakWorkingSetBytes": 259137536,
+        "pagefileUsageBytes": 298201088,
+        "peakWorkingSetBytes": 259510272,
         "platform": "windows",
         "privateDirtyBytes": 0,
-        "privateUsageBytes": 297848832,
-        "privateWorkingSetBytes": 190734336,
+        "privateUsageBytes": 298201088,
+        "privateWorkingSetBytes": 191164416,
         "threadCount": 16,
-        "workingSetBytes": 257851392
+        "workingSetBytes": 258265088
     },
     "progressUpdates": 14,
     "scenario": {
@@ -2704,7 +2774,7 @@
             "navigate through all registered page routes and return to My Workspace"
         ],
         "name": "representative-startup",
-        "settleMilliseconds": 5000
+        "settleMilliseconds": 300000
     },
     "workflow": {
         "enabled": true,
