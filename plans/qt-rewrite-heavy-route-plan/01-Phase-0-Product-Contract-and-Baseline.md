@@ -14,6 +14,23 @@
   packaged Windows x64 Release startup baseline is recorded; the remaining
   fixture, workflow, and platform evidence is still open.
 
+## Product decision update - 2026-09-16
+
+- Documents displayed through the QtPdf viewer are on-demand content, not
+  startup resources.
+- Startup may load the document catalog, localized names, and validated asset
+  references, but it must not load PDF bodies, render PDF pages, or call
+  `QPdfDocument::load()` for catalog entries before the user requests a
+  document.
+- A requested document is owned by the active viewer session. Closing the
+  viewer, replacing the document, leaving the viewer, or releasing the page
+  must close the QtPdf document and release its document resource. Reopening a
+  document may load it again.
+- Generated and print-output PDFs remain separate operation-scoped resources;
+  this decision does not require changing their output contract.
+- Phase 0 still needs runtime evidence for the startup negative case, the
+  on-demand open path, and memory return after viewer release.
+
 ## Progress update - 2026-09-15
 
 - What changed: added the initial Phase 0 evidence set in
@@ -144,6 +161,22 @@
 - What remains: run the legacy compatibility workspace through packaged
   Release startup, then cover large-feature entry/exit and generated outputs.
 
+## Progress update - 2026-09-16 (legacy workspace Release baseline)
+
+- What changed: retained the migrated schema-version-zero fixture and ran the
+  resulting `.db` through the installed Windows x64 Release startup path. The
+  compatibility test still verifies the latest schema, foreign keys,
+  integrity, repaired teacher reference, and migration backup sidecar.
+- Evidence: the legacy Release run exited `0`; its JSON trace and
+  startup/settled PNGs are retained under
+  `docs/qt-rewrite/visual-baseline/release/legacy/`.
+- Measurement: `database-opened`/`startup-complete`/`settled-5s` were
+  `616`/`2,942`/`7,998 ms`; peak working set was `161,640,448` bytes and peak
+  private usage was `141,246,464` bytes. The startup-complete snapshot had 212
+  widgets and 30 schedule cell widgets, with a 5 ms full schedule render.
+- What remains: add conflict/import-review coverage, measure large-feature
+  entry/exit and idle retention, and capture generated-output references.
+
 ## Evidence files
 
 - [Source archaeology](../../docs/qt-rewrite/phase-0-source-archaeology.md)
@@ -187,6 +220,8 @@ Capture reference images for:
 - Import review and conflict resolution.
 - Initial setup.
 - Print previews.
+- Document-catalog, document-loading, document-ready, document-error, and
+  document-closed/reopened viewer states.
 - Generated documents, reports, and rosters.
 
 Record window geometry, splitter positions, table column widths, font sizes, icon sizes, and important spacing values where they are user-configurable.
@@ -202,7 +237,7 @@ Create fixture workspaces for:
 - Large schedules.
 - Large rosters.
 - Large speaking-evaluation datasets.
-- Multiple campuses and document catalogs.
+- Multiple campuses and document catalogs with representative PDF/PPTX assets.
 
 Document behavior for:
 
@@ -213,6 +248,7 @@ Document behavior for:
 - Schedule, teacher, calendar, and roster imports.
 - Partial and failed imports.
 - Corrupt or locked databases.
+- Document catalog metadata versus on-demand QtPdf content loading and release.
 
 ### 0.4 Packaged startup baseline
 
@@ -235,11 +271,12 @@ Measure:
 6. Main window construction.
 7. Main window shown.
 8. Initial page rendered.
-9. Startup-ready.
-10. Five minutes idle.
+9. Startup-ready, including confirmation that no catalog PDF is loaded.
+10. Five minutes idle with catalog metadata still resident only.
 11. Each large feature entered.
-12. Each large feature left.
-13. Heavy output completed.
+12. A representative PDF opened, rendered, navigated, and closed/released.
+13. Each large feature left, including the document viewer.
+14. Heavy output completed.
 
 On Windows record working set, private bytes, commit, peak working set, handle count, and thread count. Record equivalent resident and private metrics on macOS and Linux.
 
@@ -255,9 +292,11 @@ Trace:
 - Translation loading.
 - Stylesheet loading.
 - Image decoding.
-- PDF construction.
+- PDF construction, `QPdfDocument::load()`, page rendering, close, and release.
 - Table item and cell-widget creation.
-- Document catalog creation.
+- Document catalog creation and metadata-only startup behavior.
+- Document viewer content-open count, active-document count, and retained
+  bytes across open/close/reopen.
 - Update checks.
 
 Catalogue resources by:

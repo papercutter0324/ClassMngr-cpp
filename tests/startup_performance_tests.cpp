@@ -572,8 +572,24 @@ void StartupPerformanceTests::legacyStartupFixtureMigratesAndRemainsReadable()
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
+    const QString configuredFixturePath =
+        qEnvironmentVariable(
+            "CLASSMNGR_LEGACY_STARTUP_FIXTURE_OUTPUT_PATH"
+            ).trimmed();
     const QString fixturePath =
-        directory.filePath(QStringLiteral("legacy-startup.db"));
+        configuredFixturePath.isEmpty()
+            ? directory.filePath(QStringLiteral("legacy-startup.db"))
+            : configuredFixturePath;
+    if (!configuredFixturePath.isEmpty())
+    {
+        QVERIFY2(
+            QDir().mkpath(QFileInfo(fixturePath).absolutePath()),
+            qPrintable(
+                QStringLiteral("Could not create fixture output directory for %1")
+                    .arg(fixturePath)
+                )
+            );
+    }
     QString fixtureError;
     QVERIFY2(
         createLegacyStartupFixture(fixturePath, &fixtureError),
