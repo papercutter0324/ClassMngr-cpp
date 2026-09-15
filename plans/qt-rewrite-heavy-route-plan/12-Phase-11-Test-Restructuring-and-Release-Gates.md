@@ -165,6 +165,9 @@ CI can reject a release candidate for a functional regression, visual regression
 
 ## Heavy-route requirements
 
+- For every Phase 11 slice, use the heavy route: add the deterministic tests
+  and release evidence for the complete affected behavior, enforce the gate in
+  CI, and keep comparison coverage until the slice is accepted.
 - Keep the old implementation available as a comparison oracle until cutover.
 - Prefer deterministic fixture tests over manual verification.
 - Test failure and recovery paths, not only successful paths.

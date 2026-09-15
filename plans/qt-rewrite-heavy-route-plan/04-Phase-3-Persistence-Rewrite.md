@@ -142,6 +142,9 @@ No v2 feature calls DataService or reaches directly into database internals.
 
 ## Heavy-route requirements
 
+- For every Phase 3 slice, use the heavy route: move the slice through schema,
+  persistence, and consuming use-case boundaries, compare it with legacy
+  behavior, and remove temporary compatibility code after acceptance.
 - Preserve data behavior before optimizing schema design.
 - Do not silently discard unknown legacy fields.
 - Do not migrate user files in place without backup.

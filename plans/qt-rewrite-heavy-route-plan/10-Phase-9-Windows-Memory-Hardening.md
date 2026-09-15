@@ -173,6 +173,9 @@ including the active QtPdf document.
 
 ## Heavy-route requirements
 
+- For every Phase 9 slice, use the heavy route: fix the owning lifecycle or
+  allocation boundary, measure the complete affected workflow, and remove any
+  temporary mitigation before accepting the slice.
 - Do not meet the target by disabling features.
 - Do not meet the target by reducing required visual assets or font quality.
 - Do not use only binary size as a memory proxy.

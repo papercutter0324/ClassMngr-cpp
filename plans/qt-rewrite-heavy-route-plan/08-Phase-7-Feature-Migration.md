@@ -217,6 +217,9 @@ Every feature in the preservation matrix works in v2, and no migrated feature re
 
 ## Heavy-route requirements
 
+- For every Phase 7 feature slice, use the heavy route: migrate the complete
+  vertical path from domain and persistence through application, UI, resources,
+  output, and tests before accepting the slice.
 - Migrate complete vertical slices.
 - Do not leave old and new code paths permanently interleaved.
 - Do not accept a feature based only on a happy-path screenshot.

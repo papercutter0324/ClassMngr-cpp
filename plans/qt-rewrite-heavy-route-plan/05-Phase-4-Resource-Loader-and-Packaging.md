@@ -200,6 +200,9 @@ ending that session closes the QtPdf document and releases its content handle.
 
 ## Heavy-route requirements
 
+- For every Phase 4 slice, use the heavy route: trace the resource from its
+  packaged source through loading and release, verify the required lifetime,
+  and remove any temporary fallback when the slice is accepted.
 - Do not replace resource packs with another hidden network-backed pack format.
 - Do not preload all documents, templates, maps, or fonts.
 - Do not load PDF content while building the catalog or starting the

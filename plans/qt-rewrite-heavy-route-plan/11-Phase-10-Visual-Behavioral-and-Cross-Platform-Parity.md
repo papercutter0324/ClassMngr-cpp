@@ -126,6 +126,9 @@ No required feature, workflow, output, language, theme, or platform behavior is 
 
 ## Heavy-route requirements
 
+- For every Phase 10 slice, use the heavy route: compare the complete slice
+  across the required visual, behavioral, output, and platform dimensions, then
+  resolve the owning implementation rather than masking the difference.
 - Do not accept compilation as parity.
 - Do not replace visual assets to hide memory usage.
 - Do not approve platform-specific behavior without a documented reason.

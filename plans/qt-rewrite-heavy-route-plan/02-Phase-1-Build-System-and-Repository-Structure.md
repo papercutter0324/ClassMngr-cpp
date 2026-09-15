@@ -116,6 +116,9 @@ The build can identify which target owns every production source file and which 
 
 ## Heavy-route requirements
 
+- For every Phase 1 slice, use the heavy route: establish the intended v2
+  boundary, verify the slice from a clean build, and keep any legacy bridge
+  explicitly temporary with a removal point.
 - Do not copy the existing monolithic target structure into v2.
 - Do not create a second native UI implementation.
 - Do not delete current source during this phase.

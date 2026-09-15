@@ -122,6 +122,9 @@ V2 is the default application, all release gates pass, rollback is available, an
 
 ## Heavy-route requirements
 
+- For every Phase 12 slice, use the heavy route: complete the dual-run,
+  migration, rollback, and release checks for that slice before cutover, then
+  remove only the legacy paths proven obsolete by its evidence.
 - Do not cut over because the new shell launches.
 - Do not delete v1 before output and migration comparisons pass.
 - Do not delete user data during resource cleanup.

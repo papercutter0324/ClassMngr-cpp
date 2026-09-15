@@ -392,6 +392,9 @@ No v2 feature work begins without a fixture and an acceptance check.
 
 ## Heavy-route requirements
 
+- For every Phase 0 slice, use the heavy route: make the evidence slice
+  explicit, end to end, and acceptance-ready; keep legacy behavior only as a
+  comparison oracle or an explicitly temporary bridge with a removal point.
 - Use real packaged Release builds.
 - Capture the worst representative workspace, not only an empty database.
 - Measure actual Windows Task Manager-visible memory and private allocation.

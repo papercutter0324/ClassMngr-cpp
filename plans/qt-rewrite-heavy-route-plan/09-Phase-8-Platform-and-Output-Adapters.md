@@ -132,6 +132,9 @@ Generated output matches the baseline on every supported platform.
 
 ## Heavy-route requirements
 
+- For every Phase 8 slice, use the heavy route: move the behavior behind its
+  narrow adapter boundary, verify the full output or platform workflow, and
+  remove temporary direct-to-legacy paths after acceptance.
 - Do not duplicate business rules in platform implementations.
 - Do not leave PowerPoint, QtPdf, or PDF output objects owned by widgets
   indefinitely; active viewer documents are session-scoped.

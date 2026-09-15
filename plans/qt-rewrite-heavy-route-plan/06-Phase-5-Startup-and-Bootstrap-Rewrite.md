@@ -145,6 +145,9 @@ requests one.
 
 ## Heavy-route requirements
 
+- For every Phase 5 slice, use the heavy route: connect the slice through the
+  real bootstrap and lifecycle boundaries, verify startup and shutdown
+  behavior, and remove temporary legacy startup paths after acceptance.
 - Do not hide legacy startup work behind a new bootstrap class.
 - Do not construct pages simply to register them.
 - Do not perform network activity before the application is interactive.

@@ -164,6 +164,9 @@ At least one representative large table has been migrated to model/view and demo
 
 ## Heavy-route requirements
 
+- For every Phase 6 slice, use the heavy route: carry the slice through its
+  page, lifecycle, command, and presentation boundaries, verify recreation and
+  release, and remove temporary shared-UI bridges after acceptance.
 - Do not preserve BasePage as a universal god-object.
 - Do not move hidden global behavior into PageHost.
 - Do not let view models become replacement service facades.

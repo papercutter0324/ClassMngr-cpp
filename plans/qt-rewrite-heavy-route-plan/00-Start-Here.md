@@ -107,6 +107,16 @@ The default route for every phase is the heavy route:
 
 The heavy route is not permission to remove features, change user workflows, or redesign the application. The developer-only Memory Usage Monitor and its in-app diagnostics are an explicit scope exception. Otherwise, this is a commitment to replace the underlying ownership and lifecycle model thoroughly enough to meet the memory target.
 
+### Slice-by-slice reminder
+
+Every slice of every phase must use the heavy route. Treat a slice as a bounded
+vertical unit of work, not a one-layer patch: define its target v2 boundary,
+move and verify its end-to-end behavior, keep the legacy path only as a parity
+oracle or an explicitly temporary bridge, and remove that bridge when the
+slice is accepted. Do not switch an individual slice to a lightweight or
+incremental route without recording an explicit product or architecture
+decision in this plan.
+
 ## Target architecture
 
     ClassMngrNext

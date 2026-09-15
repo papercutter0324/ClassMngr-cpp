@@ -95,6 +95,9 @@ The post-release process can detect architectural, memory, resource, compatibili
 
 ## Heavy-route requirements
 
+- For every Phase 13 maintenance slice, use the heavy route: preserve the v2
+  boundaries, verify the complete affected behavior and gates, and remove any
+  temporary compatibility path instead of extending it indefinitely.
 - Do not allow temporary compatibility code to become permanent.
 - Do not accept unbounded caches for convenience.
 - Do not bypass memory or visual gates for small feature additions.

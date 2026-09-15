@@ -114,6 +114,9 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 ## Heavy-route requirements
 
+- For every Phase 2 slice, use the heavy route: implement the contract across
+  its intended v2 boundary, verify it with the owning layers, and remove any
+  temporary compatibility wrapper when the slice is accepted.
 - Convert core contracts rather than wrapping every old Qt type indefinitely.
 - Keep Qt conversion at the UI, filesystem, or platform boundary.
 - Prefer explicit immutable snapshots for read models.
