@@ -159,6 +159,18 @@ struct StartupApplicationMetrics
     int speakingEvalAiReviewItemCount = 0;
     int speakingEvalAiAcceptedCommentCount = 0;
     int speakingEvalExportPdfCount = 0;
+    int staffDirectoryNativeRowCount = 0;
+    int staffDirectoryNativeColumnCount = 0;
+    int staffDirectoryNativeItemCount = 0;
+    int staffDirectoryNativePageWidgetCount = 0;
+    int staffDirectoryNativeRefreshCount = 0;
+    int staffDirectoryNativeReentryCount = 0;
+    int staffDirectoryGsRowCount = 0;
+    int staffDirectoryGsColumnCount = 0;
+    int staffDirectoryGsItemCount = 0;
+    int staffDirectoryGsPageWidgetCount = 0;
+    int staffDirectoryGsRefreshCount = 0;
+    int staffDirectoryGsReentryCount = 0;
     qint64 scheduleImportRawWorkbookBytes = 0;
     qint64 calendarImportRawWorkbookBytes = 0;
     qint64 classTransferRawJsonBytes = 0;
@@ -167,6 +179,8 @@ struct StartupApplicationMetrics
     qint64 speakingEvalAiResponseBytes = 0;
     qint64 speakingEvalExportPdfBytes = 0;
     qint64 speakingEvalExportArchiveBytes = 0;
+    qint64 staffDirectoryNativeTextBytes = 0;
+    qint64 staffDirectoryGsTextBytes = 0;
     bool scheduleImportRawBytesRetained = false;
     bool scheduleImportWorkbookRetained = false;
     bool scheduleImportReviewRetained = false;
@@ -187,6 +201,10 @@ struct StartupApplicationMetrics
     bool speakingEvalAiResponseRetained = false;
     bool speakingEvalExportOperationRetained = false;
     bool speakingEvalOperationRetained = false;
+    bool staffDirectoryNativeTableRetained = false;
+    bool staffDirectoryGsTableRetained = false;
+    bool staffDirectoryNativeOperationRetained = false;
+    bool staffDirectoryGsOperationRetained = false;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -223,6 +241,13 @@ struct StartupApplicationMetrics
     quint64 speakingEvalExportsCompleted = 0;
     quint64 speakingEvalOperationsFailed = 0;
     quint64 speakingEvalOperationsReleased = 0;
+    quint64 staffDirectoryOperationsStarted = 0;
+    quint64 staffDirectoryPagesPrepared = 0;
+    quint64 staffDirectoryRefreshes = 0;
+    quint64 staffDirectoryLeaves = 0;
+    quint64 staffDirectoryReentries = 0;
+    quint64 staffDirectoryOperationsFailed = 0;
+    quint64 staffDirectoryOperationsReleased = 0;
     quint64 pdfDocumentsLoaded = 0;
     quint64 pdfDocumentsReleased = 0;
     quint64 pdfRenderCount = 0;
@@ -482,6 +507,38 @@ public:
         );
     static void recordSpeakingEvaluationFailed(const QString& detail);
     static void recordSpeakingEvaluationOperationReleased();
+    static void recordStaffDirectoryOperationStarted(bool nativeDirectory);
+    static void recordStaffDirectoryPagePrepared(
+        bool nativeDirectory,
+        int rowCount,
+        int columnCount,
+        int itemCount,
+        int pageWidgetCount,
+        qint64 textBytes
+        );
+    static void recordStaffDirectoryRefreshed(
+        bool nativeDirectory,
+        int refreshIndex,
+        int rowCount,
+        int columnCount,
+        int itemCount,
+        int pageWidgetCount,
+        qint64 textBytes
+        );
+    static void recordStaffDirectoryLeft(bool nativeDirectory);
+    static void recordStaffDirectoryReentered(
+        bool nativeDirectory,
+        int rowCount,
+        int columnCount,
+        int itemCount,
+        int pageWidgetCount,
+        qint64 textBytes
+        );
+    static void recordStaffDirectoryFailed(
+        bool nativeDirectory,
+        const QString& detail
+        );
+    static void recordStaffDirectoryOperationReleased(bool nativeDirectory);
 
 private:
     void recordEvent(

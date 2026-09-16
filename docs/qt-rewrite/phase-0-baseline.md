@@ -271,6 +271,24 @@ does not recreate or rely on them.
   `docs/qt-rewrite/visual-baseline/release/large-speaking-evaluation-boundary/`.
   This is the current-product speaking batch before-state, not a v2 operation
   budget.
+- The packaged Release heavy-route Staff Directory run adds 96 deterministic
+  Native English Teacher rows and 96 GS Team rows to a generated copy of the
+  large workspace, then drives both real directory pages through load, two
+  refreshes, leave, re-entry, and operation release. Native English Teachers
+  expose a 96-by-6 table with 576 cell items and 7,314 bytes of cell text;
+  GS Team exposes a 96-by-5 table with 480 items and 4,940 bytes of text.
+  Both pages expose 85 page-widget descendants. Native lifecycle checkpoints
+  are `5,314`/`5,344`/`5,425`/`5,459`/`5,490`/`5,519 ms`; GS checkpoints are
+  `5,784`/`5,815`/`5,889`/`5,923`/`5,955`/`5,984 ms`. The staff operation
+  peaks at `242,855,936` working-set bytes and `235,036,672` private-usage
+  bytes; the full route peaks at `410,624,000`/`452,751,360` bytes and
+  settles at `10,814 ms`. The child exits normally and the retained evidence
+  is under
+  `docs/qt-rewrite/visual-baseline/release/large-staff-directory-boundary/`.
+  Operation ownership is false after release, but both table-retention flags
+  remain true, documenting the current page-manager retention boundary. This
+  is the Staff Directory current-product before-state, not a v2 operation
+  budget.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
@@ -389,6 +407,14 @@ alongside the page/report/export/AI captures, 25 individual PDFs, archive,
 process trace, manifest, and lifecycle report. The augmentation keeps the
 existing workspace and file-format contract while making the large batch
 review and output path reproducible.
+
+The heavy-route Staff Directory boundary adds 96 deterministic rows to each of
+the Native English Teacher and GS Team tables in a generated copy of the large
+workspace. It is retained at
+`docs/qt-rewrite/visual-baseline/release/large-staff-directory-boundary/generated-large-staff-directory.tps`
+alongside the two directory captures, process trace, manifest, and lifecycle
+report. The augmentation preserves the existing database format while making
+the table cardinality and leave/re-entry retention path reproducible.
 
 ## Reproduction commands
 
@@ -534,6 +560,14 @@ archive, `manifest.json`, profiler JSON, process logs, and flushed workflow
 trace. The test is opt-in because it intentionally drives the large
 speaking-report/output memory boundary.
 
+Set `CLASSMNGR_LARGE_STAFF_DIRECTORY_BOUNDARY_REFERENCE_DIR` while running
+`capturesLargeStaffDirectoryBoundaryWhenConfigured` to add the deterministic
+96-row Native English Teacher and GS Team directories and run both actual
+packaged Release pages through load, refresh, leave, re-entry, and release.
+The test retains the generated fixture, two directory PNGs, `manifest.json`,
+profiler JSON, process logs, and flushed workflow trace. The test is opt-in
+because it intentionally drives the large directory memory boundary.
+
 For an empty workspace:
 
 ```powershell
@@ -555,8 +589,8 @@ store the JSON startup trace beside the PNG files.
 3. First page render.
 4. Five minutes idle.
 5. Navigation through all normal pages.
-6. Large schedule, roster, campus, document, speaking-evaluation, and class
-   transfer flows.
+6. Large schedule, roster, campus, document, speaking-evaluation, staff
+   directory, and class transfer flows.
 7. Open a representative PDF in QtPdf, exercise the required viewer actions,
    close or navigate away, and reopen it.
 8. Leave each large feature and observe retained memory, including the viewer.
@@ -574,8 +608,9 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- Staff-directory and PDF/report operation measurements. The Speaking
-  Evaluation batch, Class Transfer package review/commit/release, Schedule
+- PDF/report operation measurements. The Speaking Evaluation batch, Staff
+  Directory load/refresh/leave/re-entry, Class Transfer package
+  review/commit/release, Schedule
   Import parse/review/cancel,
   apply/commit, and cleanup artifacts plus the Calendar workbook/import
   lifecycle are now retained; the class-transfer conflict and compact

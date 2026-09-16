@@ -632,6 +632,54 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.speakingEvalExportPdfCount
         },
         {
+            QStringLiteral("staffDirectoryNativeRowCount"),
+            metrics.staffDirectoryNativeRowCount
+        },
+        {
+            QStringLiteral("staffDirectoryNativeColumnCount"),
+            metrics.staffDirectoryNativeColumnCount
+        },
+        {
+            QStringLiteral("staffDirectoryNativeItemCount"),
+            metrics.staffDirectoryNativeItemCount
+        },
+        {
+            QStringLiteral("staffDirectoryNativePageWidgetCount"),
+            metrics.staffDirectoryNativePageWidgetCount
+        },
+        {
+            QStringLiteral("staffDirectoryNativeRefreshCount"),
+            metrics.staffDirectoryNativeRefreshCount
+        },
+        {
+            QStringLiteral("staffDirectoryNativeReentryCount"),
+            metrics.staffDirectoryNativeReentryCount
+        },
+        {
+            QStringLiteral("staffDirectoryGsRowCount"),
+            metrics.staffDirectoryGsRowCount
+        },
+        {
+            QStringLiteral("staffDirectoryGsColumnCount"),
+            metrics.staffDirectoryGsColumnCount
+        },
+        {
+            QStringLiteral("staffDirectoryGsItemCount"),
+            metrics.staffDirectoryGsItemCount
+        },
+        {
+            QStringLiteral("staffDirectoryGsPageWidgetCount"),
+            metrics.staffDirectoryGsPageWidgetCount
+        },
+        {
+            QStringLiteral("staffDirectoryGsRefreshCount"),
+            metrics.staffDirectoryGsRefreshCount
+        },
+        {
+            QStringLiteral("staffDirectoryGsReentryCount"),
+            metrics.staffDirectoryGsReentryCount
+        },
+        {
             QStringLiteral("scheduleImportRawBytesRetained"),
             metrics.scheduleImportRawBytesRetained
         },
@@ -670,6 +718,14 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("speakingEvalExportArchiveBytes"),
             static_cast<double>(metrics.speakingEvalExportArchiveBytes)
+        },
+        {
+            QStringLiteral("staffDirectoryNativeTextBytes"),
+            static_cast<double>(metrics.staffDirectoryNativeTextBytes)
+        },
+        {
+            QStringLiteral("staffDirectoryGsTextBytes"),
+            static_cast<double>(metrics.staffDirectoryGsTextBytes)
         },
         {
             QStringLiteral("calendarImportRawBytesRetained"),
@@ -738,6 +794,22 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("speakingEvalOperationRetained"),
             metrics.speakingEvalOperationRetained
+        },
+        {
+            QStringLiteral("staffDirectoryNativeTableRetained"),
+            metrics.staffDirectoryNativeTableRetained
+        },
+        {
+            QStringLiteral("staffDirectoryGsTableRetained"),
+            metrics.staffDirectoryGsTableRetained
+        },
+        {
+            QStringLiteral("staffDirectoryNativeOperationRetained"),
+            metrics.staffDirectoryNativeOperationRetained
+        },
+        {
+            QStringLiteral("staffDirectoryGsOperationRetained"),
+            metrics.staffDirectoryGsOperationRetained
         },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
@@ -861,6 +933,34 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("speakingEvalOperationsReleased"),
             static_cast<double>(metrics.speakingEvalOperationsReleased)
+        },
+        {
+            QStringLiteral("staffDirectoryOperationsStarted"),
+            static_cast<double>(metrics.staffDirectoryOperationsStarted)
+        },
+        {
+            QStringLiteral("staffDirectoryPagesPrepared"),
+            static_cast<double>(metrics.staffDirectoryPagesPrepared)
+        },
+        {
+            QStringLiteral("staffDirectoryRefreshes"),
+            static_cast<double>(metrics.staffDirectoryRefreshes)
+        },
+        {
+            QStringLiteral("staffDirectoryLeaves"),
+            static_cast<double>(metrics.staffDirectoryLeaves)
+        },
+        {
+            QStringLiteral("staffDirectoryReentries"),
+            static_cast<double>(metrics.staffDirectoryReentries)
+        },
+        {
+            QStringLiteral("staffDirectoryOperationsFailed"),
+            static_cast<double>(metrics.staffDirectoryOperationsFailed)
+        },
+        {
+            QStringLiteral("staffDirectoryOperationsReleased"),
+            static_cast<double>(metrics.staffDirectoryOperationsReleased)
         },
         {QStringLiteral("pdfDocumentsLoaded"), static_cast<double>(metrics.pdfDocumentsLoaded)},
         {QStringLiteral("pdfDocumentsReleased"), static_cast<double>(metrics.pdfDocumentsReleased)},
@@ -2602,6 +2702,309 @@ void StartupProfiler::recordSpeakingEvaluationOperationReleased()
             );
         profiler->checkpoint(
             QStringLiteral("speaking-evaluation-operation-released")
+            );
+    }
+}
+
+void StartupProfiler::recordStaffDirectoryOperationStarted(
+    bool nativeDirectory
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.staffDirectoryOperationsStarted;
+        const QString prefix = nativeDirectory
+            ? QStringLiteral("staff-directory-native")
+            : QStringLiteral("staff-directory-gs");
+        if (nativeDirectory)
+        {
+            metrics.staffDirectoryNativeOperationRetained = true;
+        }
+        else
+        {
+            metrics.staffDirectoryGsOperationRetained = true;
+        }
+
+        const QString detail =
+            QStringLiteral("operationRetained=true; native=%1")
+                .arg(nativeDirectory ? QStringLiteral("true")
+                                      : QStringLiteral("false"));
+        profiler->recordEvent(
+            prefix + QStringLiteral("-operation-start"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            prefix + QStringLiteral("-operation-start %1").arg(detail)
+            );
+        profiler->checkpoint(
+            prefix + QStringLiteral("-operation-start"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordStaffDirectoryPagePrepared(
+    bool nativeDirectory,
+    int rowCount,
+    int columnCount,
+    int itemCount,
+    int pageWidgetCount,
+    qint64 textBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.staffDirectoryPagesPrepared;
+        const QString prefix = nativeDirectory
+            ? QStringLiteral("staff-directory-native")
+            : QStringLiteral("staff-directory-gs");
+        if (nativeDirectory)
+        {
+            metrics.staffDirectoryNativeRowCount = qMax(0, rowCount);
+            metrics.staffDirectoryNativeColumnCount = qMax(0, columnCount);
+            metrics.staffDirectoryNativeItemCount = qMax(0, itemCount);
+            metrics.staffDirectoryNativePageWidgetCount =
+                qMax(0, pageWidgetCount);
+            metrics.staffDirectoryNativeTextBytes = qMax<qint64>(0, textBytes);
+            metrics.staffDirectoryNativeTableRetained = true;
+        }
+        else
+        {
+            metrics.staffDirectoryGsRowCount = qMax(0, rowCount);
+            metrics.staffDirectoryGsColumnCount = qMax(0, columnCount);
+            metrics.staffDirectoryGsItemCount = qMax(0, itemCount);
+            metrics.staffDirectoryGsPageWidgetCount = qMax(0, pageWidgetCount);
+            metrics.staffDirectoryGsTextBytes = qMax<qint64>(0, textBytes);
+            metrics.staffDirectoryGsTableRetained = true;
+        }
+
+        const QString detail =
+            QStringLiteral(
+                "rows=%1; columns=%2; items=%3; pageWidgets=%4; textBytes=%5; tableRetained=true"
+                )
+                .arg(qMax(0, rowCount))
+                .arg(qMax(0, columnCount))
+                .arg(qMax(0, itemCount))
+                .arg(qMax(0, pageWidgetCount))
+                .arg(qMax<qint64>(0, textBytes));
+        profiler->recordEvent(
+            prefix + QStringLiteral("-page-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            prefix + QStringLiteral("-page-prepared %1").arg(detail)
+            );
+        profiler->checkpoint(
+            prefix + QStringLiteral("-page-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordStaffDirectoryRefreshed(
+    bool nativeDirectory,
+    int refreshIndex,
+    int rowCount,
+    int columnCount,
+    int itemCount,
+    int pageWidgetCount,
+    qint64 textBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.staffDirectoryRefreshes;
+        const QString prefix = nativeDirectory
+            ? QStringLiteral("staff-directory-native")
+            : QStringLiteral("staff-directory-gs");
+        if (nativeDirectory)
+        {
+            metrics.staffDirectoryNativeRowCount = qMax(0, rowCount);
+            metrics.staffDirectoryNativeColumnCount = qMax(0, columnCount);
+            metrics.staffDirectoryNativeItemCount = qMax(0, itemCount);
+            metrics.staffDirectoryNativePageWidgetCount =
+                qMax(0, pageWidgetCount);
+            metrics.staffDirectoryNativeTextBytes = qMax<qint64>(0, textBytes);
+            metrics.staffDirectoryNativeRefreshCount = qMax(0, refreshIndex);
+            metrics.staffDirectoryNativeTableRetained = true;
+        }
+        else
+        {
+            metrics.staffDirectoryGsRowCount = qMax(0, rowCount);
+            metrics.staffDirectoryGsColumnCount = qMax(0, columnCount);
+            metrics.staffDirectoryGsItemCount = qMax(0, itemCount);
+            metrics.staffDirectoryGsPageWidgetCount = qMax(0, pageWidgetCount);
+            metrics.staffDirectoryGsTextBytes = qMax<qint64>(0, textBytes);
+            metrics.staffDirectoryGsRefreshCount = qMax(0, refreshIndex);
+            metrics.staffDirectoryGsTableRetained = true;
+        }
+
+        const QString detail =
+            QStringLiteral(
+                "refresh=%1; rows=%2; columns=%3; items=%4; pageWidgets=%5; textBytes=%6; tableRetained=true"
+                )
+                .arg(qMax(0, refreshIndex))
+                .arg(qMax(0, rowCount))
+                .arg(qMax(0, columnCount))
+                .arg(qMax(0, itemCount))
+                .arg(qMax(0, pageWidgetCount))
+                .arg(qMax<qint64>(0, textBytes));
+        const QString checkpointName =
+            prefix + QStringLiteral("-refresh-%1").arg(qMax(0, refreshIndex));
+        profiler->recordEvent(checkpointName, detail);
+        appendProfilerWorkflowTrace(
+            checkpointName + QStringLiteral(" %1").arg(detail)
+            );
+        profiler->checkpoint(checkpointName, detail);
+    }
+}
+
+void StartupProfiler::recordStaffDirectoryLeft(bool nativeDirectory)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.staffDirectoryLeaves;
+        const QString prefix = nativeDirectory
+            ? QStringLiteral("staff-directory-native")
+            : QStringLiteral("staff-directory-gs");
+        const QString detail =
+            QStringLiteral("tableRetained=true; operationRetained=true");
+        profiler->recordEvent(
+            prefix + QStringLiteral("-page-left"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            prefix + QStringLiteral("-page-left %1").arg(detail)
+            );
+        profiler->checkpoint(
+            prefix + QStringLiteral("-page-left"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordStaffDirectoryReentered(
+    bool nativeDirectory,
+    int rowCount,
+    int columnCount,
+    int itemCount,
+    int pageWidgetCount,
+    qint64 textBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.staffDirectoryReentries;
+        const QString prefix = nativeDirectory
+            ? QStringLiteral("staff-directory-native")
+            : QStringLiteral("staff-directory-gs");
+        if (nativeDirectory)
+        {
+            metrics.staffDirectoryNativeRowCount = qMax(0, rowCount);
+            metrics.staffDirectoryNativeColumnCount = qMax(0, columnCount);
+            metrics.staffDirectoryNativeItemCount = qMax(0, itemCount);
+            metrics.staffDirectoryNativePageWidgetCount =
+                qMax(0, pageWidgetCount);
+            metrics.staffDirectoryNativeTextBytes = qMax<qint64>(0, textBytes);
+            ++metrics.staffDirectoryNativeReentryCount;
+            metrics.staffDirectoryNativeTableRetained = true;
+        }
+        else
+        {
+            metrics.staffDirectoryGsRowCount = qMax(0, rowCount);
+            metrics.staffDirectoryGsColumnCount = qMax(0, columnCount);
+            metrics.staffDirectoryGsItemCount = qMax(0, itemCount);
+            metrics.staffDirectoryGsPageWidgetCount = qMax(0, pageWidgetCount);
+            metrics.staffDirectoryGsTextBytes = qMax<qint64>(0, textBytes);
+            ++metrics.staffDirectoryGsReentryCount;
+            metrics.staffDirectoryGsTableRetained = true;
+        }
+
+        const QString detail =
+            QStringLiteral(
+                "rows=%1; columns=%2; items=%3; pageWidgets=%4; textBytes=%5; tableRetained=true"
+                )
+                .arg(qMax(0, rowCount))
+                .arg(qMax(0, columnCount))
+                .arg(qMax(0, itemCount))
+                .arg(qMax(0, pageWidgetCount))
+                .arg(qMax<qint64>(0, textBytes));
+        profiler->recordEvent(
+            prefix + QStringLiteral("-page-reentered"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            prefix + QStringLiteral("-page-reentered %1").arg(detail)
+            );
+        profiler->checkpoint(
+            prefix + QStringLiteral("-page-reentered"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordStaffDirectoryFailed(
+    bool nativeDirectory,
+    const QString& detail
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.staffDirectoryOperationsFailed;
+        const QString prefix = nativeDirectory
+            ? QStringLiteral("staff-directory-native")
+            : QStringLiteral("staff-directory-gs");
+        profiler->recordEvent(
+            prefix + QStringLiteral("-operation-failed"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            prefix + QStringLiteral("-operation-failed %1").arg(detail)
+            );
+        profiler->checkpoint(
+            prefix + QStringLiteral("-operation-failed"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordStaffDirectoryOperationReleased(
+    bool nativeDirectory
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.staffDirectoryOperationsReleased;
+        const QString prefix = nativeDirectory
+            ? QStringLiteral("staff-directory-native")
+            : QStringLiteral("staff-directory-gs");
+        if (nativeDirectory)
+        {
+            profiler->m_scheduleMetrics.staffDirectoryNativeOperationRetained =
+                false;
+        }
+        else
+        {
+            profiler->m_scheduleMetrics.staffDirectoryGsOperationRetained =
+                false;
+        }
+
+        const QString detail =
+            QStringLiteral("operationRetained=false; tableRetained=true");
+        profiler->recordEvent(
+            prefix + QStringLiteral("-operation-released"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            prefix + QStringLiteral("-operation-released %1").arg(detail)
+            );
+        profiler->checkpoint(
+            prefix + QStringLiteral("-operation-released"),
+            detail
             );
     }
 }

@@ -33,6 +33,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
+#include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -114,6 +115,7 @@ struct StartupPerformanceMode
     bool classesLifecycleEnabled = false;
     bool classTransferLifecycleEnabled = false;
     bool speakingEvaluationLifecycleEnabled = false;
+    bool staffDirectoryLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
     enum class Scenario
     {
@@ -586,6 +588,10 @@ StartupPerformanceMode startupPerformanceMode(
                 "--startup-performance-speaking-evaluation-lifecycle"
                 )
             );
+    mode.staffDirectoryLifecycleEnabled =
+        args.contains(
+            QStringLiteral("--startup-performance-staff-directory-lifecycle")
+            );
     mode.subPrepLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-sub-prep-lifecycle")
@@ -600,6 +606,7 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.classesLifecycleEnabled
         || mode.classTransferLifecycleEnabled
         || mode.speakingEvaluationLifecycleEnabled
+        || mode.staffDirectoryLifecycleEnabled
         || mode.subPrepLifecycleEnabled;
 
     const int outputIndex =
@@ -3336,6 +3343,248 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
         );
 }
 
+void scheduleStartupPerformanceStaffDirectoryLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    bool nativeDirectory,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            nativeDirectory,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            const PageType pageType = nativeDirectory
+                ? PageType::NativeEnglishTeachers
+                : PageType::GsTeam;
+            StaffDirectoryPage* directory = nullptr;
+            if (pages)
+            {
+                directory = nativeDirectory
+                    ? pages->nativeEnglishTeachersPage()
+                    : pages->gsTeamPage();
+            }
+
+            bool operationStarted = false;
+            const auto fail =
+                [
+                    &completion,
+                    &workflowSucceeded,
+                    &operationStarted,
+                    nativeDirectory
+                ](const QString& detail)
+                {
+                    *workflowSucceeded = false;
+                    StartupProfiler::recordStaffDirectoryFailed(
+                        nativeDirectory,
+                        detail
+                        );
+                    if (operationStarted)
+                    {
+                        StartupProfiler::recordStaffDirectoryOperationReleased(
+                            nativeDirectory
+                            );
+                    }
+                    completion();
+                };
+
+            if (
+                !pages
+                || !directory
+                || !pages->isCurrentPage(pageType)
+                )
+            {
+                profiler.checkpoint(
+                    QStringLiteral("staff-directory-lifecycle-failed"),
+                    QStringLiteral(
+                        "pageCurrent=%1; native=%2"
+                        )
+                        .arg(
+                            pages && pages->isCurrentPage(pageType)
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                        .arg(
+                            nativeDirectory
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                    );
+                *workflowSucceeded = false;
+                completion();
+                return;
+            }
+
+            StartupProfiler::recordStaffDirectoryOperationStarted(
+                nativeDirectory
+                );
+            operationStarted = true;
+
+            if (!directory->loadDirectory())
+            {
+                fail(QStringLiteral("staff-directory-load-failed"));
+                return;
+            }
+            app.processEvents();
+
+            struct TableSnapshot
+            {
+                int rows = 0;
+                int columns = 0;
+                int items = 0;
+                int pageWidgets = 0;
+                qint64 textBytes = 0;
+            };
+            const auto snapshot =
+                [](QTableWidget* table) -> TableSnapshot
+                {
+                    TableSnapshot result;
+                    if (!table)
+                    {
+                        return result;
+                    }
+                    result.rows = table->rowCount();
+                    result.columns = table->columnCount();
+                    result.pageWidgets =
+                        table->parentWidget()
+                            ? table->parentWidget()->findChildren<QWidget*>().size()
+                                + 1
+                            : 0;
+                    for (int row = 0; row < result.rows; ++row)
+                    {
+                        for (int column = 0; column < result.columns; ++column)
+                        {
+                            if (QTableWidgetItem* item = table->item(row, column))
+                            {
+                                ++result.items;
+                                result.textBytes += item->text().toUtf8().size();
+                            }
+                        }
+                    }
+                    return result;
+                };
+
+            const QString configuredOutputRoot =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_STAFF_DIRECTORY_OUTPUT_DIR"
+                    ).trimmed();
+            const QString outputRoot = configuredOutputRoot.isEmpty()
+                ? QDir(QDir::tempPath()).filePath(
+                    QStringLiteral("ClassMngr-staff-directory-boundary")
+                    )
+                : QFileInfo(configuredOutputRoot).absoluteFilePath();
+            if (!QDir().mkpath(outputRoot))
+            {
+                fail(QStringLiteral("staff-directory-output-unavailable"));
+                return;
+            }
+
+            QTableWidget* table = directory->findChild<QTableWidget*>();
+            if (!table)
+            {
+                fail(QStringLiteral("staff-directory-table-missing"));
+                return;
+            }
+            TableSnapshot current = snapshot(table);
+            StartupProfiler::recordStaffDirectoryPagePrepared(
+                nativeDirectory,
+                current.rows,
+                current.columns,
+                current.items,
+                current.pageWidgets,
+                current.textBytes
+                );
+            if (!directory->grab().save(
+                    QDir(outputRoot).filePath(
+                        nativeDirectory
+                            ? QStringLiteral(
+                                "staff-directory-native-english-teachers.png"
+                                )
+                            : QStringLiteral("staff-directory-gs-team.png")
+                        ),
+                    "PNG"
+                    ))
+            {
+                fail(QStringLiteral("staff-directory-capture-failed"));
+                return;
+            }
+
+            for (int refreshIndex = 1; refreshIndex <= 2; ++refreshIndex)
+            {
+                directory->refresh();
+                app.processEvents();
+                table = directory->findChild<QTableWidget*>();
+                current = snapshot(table);
+                if (!table || current.rows <= 0 || current.items <= 0)
+                {
+                    fail(
+                        QStringLiteral(
+                            "staff-directory-refresh-data-missing-%1"
+                            ).arg(refreshIndex)
+                        );
+                    return;
+                }
+                StartupProfiler::recordStaffDirectoryRefreshed(
+                    nativeDirectory,
+                    refreshIndex,
+                    current.rows,
+                    current.columns,
+                    current.items,
+                    current.pageWidgets,
+                    current.textBytes
+                    );
+            }
+
+            pages->showPage(PageType::MyWorkspace);
+            app.processEvents();
+            if (!pages->isCurrentPage(PageType::MyWorkspace))
+            {
+                fail(QStringLiteral("staff-directory-leave-failed"));
+                return;
+            }
+            StartupProfiler::recordStaffDirectoryLeft(nativeDirectory);
+
+            pages->showPage(pageType);
+            app.processEvents();
+            if (!pages->isCurrentPage(pageType))
+            {
+                fail(QStringLiteral("staff-directory-reentry-failed"));
+                return;
+            }
+            table = directory->findChild<QTableWidget*>();
+            current = snapshot(table);
+            if (!table || current.rows <= 0 || current.items <= 0)
+            {
+                fail(QStringLiteral("staff-directory-reentry-data-missing"));
+                return;
+            }
+            StartupProfiler::recordStaffDirectoryReentered(
+                nativeDirectory,
+                current.rows,
+                current.columns,
+                current.items,
+                current.pageWidgets,
+                current.textBytes
+                );
+            StartupProfiler::recordStaffDirectoryOperationReleased(
+                nativeDirectory
+                );
+            completion();
+        }
+        );
+}
+
 void scheduleStartupPerformanceWorkflow(
     QApplication& app,
     MainWindow& window,
@@ -3348,6 +3597,7 @@ void scheduleStartupPerformanceWorkflow(
     bool classesLifecycleEnabled,
     bool classTransferLifecycleEnabled,
     bool speakingEvaluationLifecycleEnabled,
+    bool staffDirectoryLifecycleEnabled,
     bool subPrepLifecycleEnabled,
     std::function<void()> completion
     )
@@ -3371,6 +3621,7 @@ void scheduleStartupPerformanceWorkflow(
             classesLifecycleEnabled,
             classTransferLifecycleEnabled,
             speakingEvaluationLifecycleEnabled,
+            staffDirectoryLifecycleEnabled,
             subPrepLifecycleEnabled,
             pageTypes,
             pageIndex,
@@ -3654,6 +3905,41 @@ void scheduleStartupPerformanceWorkflow(
 
         if (
             pageReady
+            && staffDirectoryLifecycleEnabled
+            && (
+                pageType == PageType::NativeEnglishTeachers
+                || pageType == PageType::GsTeam
+                )
+            )
+        {
+            scheduleStartupPerformanceStaffDirectoryLifecycle(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                pageType == PageType::NativeEnglishTeachers,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
+        }
+
+        if (
+            pageReady
             && classTransferLifecycleEnabled
             && pageType == PageType::Classes
             )
@@ -3881,6 +4167,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "exercise large Speaking Evaluation page, report review, AI batch review, PDF export, cleanup, and refresh"
+                )
+            );
+    }
+    if (mode.staffDirectoryLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise large Native English Teacher and GS Team directory tables, refresh, leave, re-entry, and retention"
                 )
             );
     }
@@ -4426,6 +4720,7 @@ int main(int argc, char *argv[])
                 startupPerformance.classesLifecycleEnabled,
                 startupPerformance.classTransferLifecycleEnabled,
                 startupPerformance.speakingEvaluationLifecycleEnabled,
+                startupPerformance.staffDirectoryLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
                 scheduleSettledCompletion
                 );

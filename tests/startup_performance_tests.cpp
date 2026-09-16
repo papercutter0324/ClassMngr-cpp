@@ -42,6 +42,9 @@ constexpr int LargeClassTransferRosterRowCount = 30;
 constexpr int LargeClassTransferEvaluationCount = 2;
 constexpr int LargeSpeakingEvaluationClassCount = 96;
 constexpr int LargeSpeakingEvaluationRowCount = SpeakingEval::RowCount;
+constexpr int LargeStaffDirectoryEntryCount = 96;
+constexpr int LargeStaffDirectoryNativeColumnCount = 6;
+constexpr int LargeStaffDirectoryGsColumnCount = 5;
 
 struct FixtureTableExpectation
 {
@@ -1158,6 +1161,156 @@ bool addLargeSpeakingEvaluationFixtureData(
     return success;
 }
 
+bool addLargeStaffDirectoryFixtureData(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    const QString connectionName =
+        QStringLiteral("startup-large-staff-directory-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(fixturePath);
+
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else
+        {
+            QSqlQuery pragma(database);
+            if (!pragma.exec(QStringLiteral("PRAGMA foreign_keys = ON")))
+            {
+                *errorMessage = pragma.lastError().text();
+            }
+            else if (!database.transaction())
+            {
+                *errorMessage = database.lastError().text();
+            }
+            else
+            {
+                QSqlQuery native(database);
+                QSqlQuery gs(database);
+                native.prepare(QStringLiteral(
+                    "INSERT INTO native_english_teachers "
+                    "(name, position, phone_number, birthday, nationality, email) "
+                    "VALUES (?, ?, ?, ?, ?, ?)"
+                    ));
+                gs.prepare(QStringLiteral(
+                    "INSERT INTO gs_team "
+                    "(name, korean_name, position, phone_number, birthday) "
+                    "VALUES (?, ?, ?, ?, ?)"
+                    ));
+
+                const QStringList nativePositions{
+                    QStringLiteral("NET"),
+                    QStringLiteral("E5 Athena"),
+                    QStringLiteral("M1 Song's"),
+                    QStringLiteral("Team Leader")
+                };
+                const QStringList gsPositions{
+                    QStringLiteral("Branch Manager"),
+                    QStringLiteral("M3"),
+                    QStringLiteral("M2"),
+                    QStringLiteral("C1")
+                };
+
+                bool valid = true;
+                for (
+                    int index = 0;
+                    index < LargeStaffDirectoryEntryCount && valid;
+                    ++index
+                    )
+                {
+                    const QString token = alphabeticFixtureToken(index);
+                    const QString birthday =
+                        QStringLiteral("01-%1")
+                            .arg(1 + (index % 28), 2, 10, QLatin1Char('0'));
+
+                    native.bindValue(
+                        0,
+                        QStringLiteral("Native Staff %1").arg(token)
+                        );
+                    native.bindValue(
+                        1,
+                        nativePositions.at(index % nativePositions.size())
+                        );
+                    native.bindValue(
+                        2,
+                        QStringLiteral("010-7000-%1")
+                            .arg(index + 1, 4, 10, QLatin1Char('0'))
+                        );
+                    native.bindValue(3, birthday);
+                    native.bindValue(
+                        4,
+                        QStringLiteral("Nationality %1").arg(token)
+                        );
+                    native.bindValue(
+                        5,
+                        QStringLiteral("native.%1@example.test").arg(token)
+                        );
+                    if (!native.exec())
+                    {
+                        *errorMessage = native.lastError().text();
+                        valid = false;
+                        break;
+                    }
+
+                    gs.bindValue(
+                        0,
+                        QStringLiteral("GS Staff %1").arg(token)
+                        );
+                    gs.bindValue(
+                        1,
+                        QStringLiteral("GS Korean Staff %1").arg(token)
+                        );
+                    gs.bindValue(
+                        2,
+                        gsPositions.at(index % gsPositions.size())
+                        );
+                    gs.bindValue(
+                        3,
+                        QStringLiteral("010-8000-%1")
+                            .arg(index + 1, 4, 10, QLatin1Char('0'))
+                        );
+                    gs.bindValue(4, birthday);
+                    if (!gs.exec())
+                    {
+                        *errorMessage = gs.lastError().text();
+                        valid = false;
+                        break;
+                    }
+                }
+
+                if (valid && database.commit())
+                {
+                    success = true;
+                }
+                else if (valid)
+                {
+                    *errorMessage = database.lastError().text();
+                }
+                else
+                {
+                    database.rollback();
+                }
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
+
 bool createLegacyStartupSource(
     const QString& fixturePath,
     QString* errorMessage
@@ -1302,6 +1455,7 @@ private slots:
     void capturesLargeCalendarImportBoundaryWhenConfigured();
     void capturesLargeClassTransferBoundaryWhenConfigured();
     void capturesLargeSpeakingEvaluationBoundaryWhenConfigured();
+    void capturesLargeStaffDirectoryBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -5949,6 +6103,614 @@ void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigu
             QStringLiteral("outputDirectory"),
             QStringLiteral("speaking-evaluation-output")
         },
+        {
+            QStringLiteral("peakMemory"),
+            report.value(QStringLiteral("peakMemory"))
+        },
+        {
+            QStringLiteral("lastCheckpoint"),
+            report.value(QStringLiteral("checkpoints")).toArray().isEmpty()
+                ? QJsonObject{}
+                : report.value(QStringLiteral("checkpoints"))
+                    .toArray().last().toObject()
+        }
+    };
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
+        );
+}
+
+void StartupPerformanceTests::capturesLargeStaffDirectoryBoundaryWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_STAFF_DIRECTORY_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_STAFF_DIRECTORY_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral(
+                "ClassMngr executable does not exist: %1"
+                ).arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-staff-directory.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        addLargeStaffDirectoryFixtureData(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large Staff Directory reference root: %1"
+                ).arg(outputRoot)
+            )
+        );
+
+    const QString retainedFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-staff-directory.tps")
+            );
+    if (QFileInfo::exists(retainedFixturePath))
+    {
+        QVERIFY(QFile::remove(retainedFixturePath));
+    }
+    QVERIFY(QFile::copy(fixturePath, retainedFixturePath));
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-staff-directory-workflow.json")
+            );
+    const QString tracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    for (const QString& fileName : {
+             QStringLiteral("large-staff-directory-workflow.json"),
+             QStringLiteral("workflow-trace.txt"),
+             QStringLiteral("manifest.json"),
+             QStringLiteral("process-stdout.txt"),
+             QStringLiteral("process-stderr.txt"),
+             QStringLiteral("staff-directory-native-english-teachers.png"),
+             QStringLiteral("staff-directory-gs-team.png")
+         })
+    {
+        const QString path = QDir(outputRoot).filePath(fileName);
+        if (QFileInfo::exists(path))
+        {
+            QVERIFY(QFile::remove(path));
+        }
+    }
+
+    QFile traceOutput(tracePath);
+    QVERIFY2(
+        traceOutput.open(
+            QIODevice::WriteOnly
+            | QIODevice::Truncate
+            | QIODevice::Text
+            ),
+        qPrintable(traceOutput.errorString())
+        );
+    traceOutput.close();
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        tracePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_STAFF_DIRECTORY_OUTPUT_DIR"),
+        outputRoot
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-staff-directory-lifecycle"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+
+    QByteArray traceContents;
+    QFile traceFile(tracePath);
+    if (traceFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        traceContents = traceFile.readAll();
+    }
+    const QStringList traceLines =
+        QString::fromUtf8(traceContents)
+            .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start native-english-teachers")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the Native English Teacher transition. "
+                "stdout/stderr were retained under %1."
+                ).arg(outputRoot)
+            )
+        );
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start gs-team")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the GS Team transition. "
+                "stdout/stderr were retained under %1."
+                ).arg(outputRoot)
+            )
+        );
+    for (const QString& expectedTrace : {
+             QStringLiteral("staff-directory-native-operation-start"),
+             QStringLiteral("staff-directory-native-page-prepared"),
+             QStringLiteral("staff-directory-native-refresh-1"),
+             QStringLiteral("staff-directory-native-refresh-2"),
+             QStringLiteral("staff-directory-native-page-left"),
+             QStringLiteral("staff-directory-native-page-reentered"),
+             QStringLiteral("staff-directory-native-operation-released"),
+             QStringLiteral("staff-directory-gs-operation-start"),
+             QStringLiteral("staff-directory-gs-page-prepared"),
+             QStringLiteral("staff-directory-gs-refresh-1"),
+             QStringLiteral("staff-directory-gs-refresh-2"),
+             QStringLiteral("staff-directory-gs-page-left"),
+             QStringLiteral("staff-directory-gs-page-reentered"),
+             QStringLiteral("staff-directory-gs-operation-released"),
+             QStringLiteral("complete")
+         })
+    {
+        bool foundTrace = false;
+        for (const QString& line : traceLines)
+        {
+            if (line.startsWith(expectedTrace))
+            {
+                foundTrace = true;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundTrace,
+            qPrintable(
+                QStringLiteral(
+                    "The heavy Staff Directory lifecycle did not record '%1'. "
+                    "stdout/stderr were retained under %2."
+                    )
+                    .arg(expectedTrace, outputRoot)
+                )
+            );
+    }
+
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly | QIODevice::Text),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError parseError;
+    const QJsonDocument metricsDocument =
+        QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+    QVERIFY2(
+        parseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject(),
+        qPrintable(parseError.errorString())
+        );
+    const QJsonObject report = metricsDocument.object();
+    const auto checkpointNamed =
+        [&report](const QString& name)
+        {
+            for (const QJsonValue& value :
+                 report.value(QStringLiteral("checkpoints")).toArray())
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (checkpoint.value(QStringLiteral("name")).toString() == name)
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+
+    const QJsonObject nativePrepared = checkpointNamed(
+        QStringLiteral("staff-directory-native-page-prepared")
+        );
+    const QJsonObject nativeRefresh = checkpointNamed(
+        QStringLiteral("staff-directory-native-refresh-2")
+        );
+    const QJsonObject nativeLeft = checkpointNamed(
+        QStringLiteral("staff-directory-native-page-left")
+        );
+    const QJsonObject nativeReentered = checkpointNamed(
+        QStringLiteral("staff-directory-native-page-reentered")
+        );
+    const QJsonObject nativeReleased = checkpointNamed(
+        QStringLiteral("staff-directory-native-operation-released")
+        );
+    const QJsonObject gsPrepared = checkpointNamed(
+        QStringLiteral("staff-directory-gs-page-prepared")
+        );
+    const QJsonObject gsRefresh = checkpointNamed(
+        QStringLiteral("staff-directory-gs-refresh-2")
+        );
+    const QJsonObject gsLeft = checkpointNamed(
+        QStringLiteral("staff-directory-gs-page-left")
+        );
+    const QJsonObject gsReentered = checkpointNamed(
+        QStringLiteral("staff-directory-gs-page-reentered")
+        );
+    const QJsonObject gsReleased = checkpointNamed(
+        QStringLiteral("staff-directory-gs-operation-released")
+        );
+    const QJsonObject workflowCheckpoint = checkpointNamed(
+        QStringLiteral("workflow-complete")
+        );
+
+    for (const QJsonObject& checkpoint : {
+             nativePrepared,
+             nativeRefresh,
+             nativeLeft,
+             nativeReentered,
+             nativeReleased,
+             gsPrepared,
+             gsRefresh,
+             gsLeft,
+             gsReentered,
+             gsReleased,
+             workflowCheckpoint
+         })
+    {
+        QVERIFY(!checkpoint.isEmpty());
+        QVERIFY(
+            checkpoint.value(QStringLiteral("memory"))
+                .toObject()
+                .value(QStringLiteral("available"))
+                .toBool()
+            );
+    }
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+
+    const QJsonObject nativeMetrics =
+        nativePrepared.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        nativeMetrics.value(QStringLiteral("staffDirectoryNativeRowCount"))
+            .toInt(),
+        LargeStaffDirectoryEntryCount
+        );
+    QCOMPARE(
+        nativeMetrics.value(QStringLiteral("staffDirectoryNativeColumnCount"))
+            .toInt(),
+        LargeStaffDirectoryNativeColumnCount
+        );
+    QCOMPARE(
+        nativeMetrics.value(QStringLiteral("staffDirectoryNativeItemCount"))
+            .toInt(),
+        LargeStaffDirectoryEntryCount * LargeStaffDirectoryNativeColumnCount
+        );
+    QVERIFY(
+        nativeMetrics.value(QStringLiteral("staffDirectoryNativePageWidgetCount"))
+            .toInt() > 0
+        );
+    QVERIFY(
+        nativeMetrics.value(QStringLiteral("staffDirectoryNativeTextBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(
+        nativeMetrics.value(QStringLiteral("staffDirectoryNativeTableRetained"))
+            .toBool()
+        );
+
+    const QJsonObject gsMetrics =
+        gsPrepared.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        gsMetrics.value(QStringLiteral("staffDirectoryGsRowCount"))
+            .toInt(),
+        LargeStaffDirectoryEntryCount
+        );
+    QCOMPARE(
+        gsMetrics.value(QStringLiteral("staffDirectoryGsColumnCount"))
+            .toInt(),
+        LargeStaffDirectoryGsColumnCount
+        );
+    QCOMPARE(
+        gsMetrics.value(QStringLiteral("staffDirectoryGsItemCount"))
+            .toInt(),
+        LargeStaffDirectoryEntryCount * LargeStaffDirectoryGsColumnCount
+        );
+    QVERIFY(
+        gsMetrics.value(QStringLiteral("staffDirectoryGsPageWidgetCount"))
+            .toInt() > 0
+        );
+    QVERIFY(
+        gsMetrics.value(QStringLiteral("staffDirectoryGsTextBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(
+        gsMetrics.value(QStringLiteral("staffDirectoryGsTableRetained"))
+            .toBool()
+        );
+
+    const QJsonObject nativeRefreshMetrics =
+        nativeRefresh.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        nativeRefreshMetrics.value(QStringLiteral("staffDirectoryNativeRefreshCount"))
+            .toInt(),
+        2
+        );
+    QCOMPARE(
+        nativeRefreshMetrics.value(QStringLiteral("staffDirectoryNativeItemCount"))
+            .toInt(),
+        LargeStaffDirectoryEntryCount * LargeStaffDirectoryNativeColumnCount
+        );
+    const QJsonObject nativeLeftMetrics =
+        nativeLeft.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        nativeLeftMetrics.value(QStringLiteral("staffDirectoryNativeTableRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        nativeLeftMetrics.value(QStringLiteral("staffDirectoryNativeOperationRetained"))
+            .toBool()
+        );
+    const QJsonObject nativeReentryMetrics =
+        nativeReentered.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        nativeReentryMetrics.value(QStringLiteral("staffDirectoryNativeReentryCount"))
+            .toInt(),
+        1
+        );
+    const QJsonObject nativeReleasedMetrics =
+        nativeReleased.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        !nativeReleasedMetrics
+             .value(QStringLiteral("staffDirectoryNativeOperationRetained"))
+             .toBool()
+        );
+    QVERIFY(
+        nativeReleasedMetrics
+            .value(QStringLiteral("staffDirectoryNativeTableRetained"))
+            .toBool()
+        );
+
+    const QJsonObject gsRefreshMetrics =
+        gsRefresh.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        gsRefreshMetrics.value(QStringLiteral("staffDirectoryGsRefreshCount"))
+            .toInt(),
+        2
+        );
+    const QJsonObject gsLeftMetrics =
+        gsLeft.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(
+        gsLeftMetrics.value(QStringLiteral("staffDirectoryGsTableRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        gsLeftMetrics.value(QStringLiteral("staffDirectoryGsOperationRetained"))
+            .toBool()
+        );
+    const QJsonObject gsReentryMetrics =
+        gsReentered.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        gsReentryMetrics.value(QStringLiteral("staffDirectoryGsReentryCount"))
+            .toInt(),
+        1
+        );
+    const QJsonObject gsReleasedMetrics =
+        gsReleased.value(QStringLiteral("metrics")).toObject();
+    for (const QString& key : {
+             QStringLiteral("staffDirectoryNativeOperationRetained"),
+             QStringLiteral("staffDirectoryGsOperationRetained")
+         })
+    {
+        QVERIFY2(
+            !gsReleasedMetrics.value(key).toBool(),
+            qPrintable(
+                QStringLiteral("Staff Directory operation remained retained: %1")
+                    .arg(key)
+                )
+            );
+    }
+    for (const QString& key : {
+             QStringLiteral("staffDirectoryNativeTableRetained"),
+             QStringLiteral("staffDirectoryGsTableRetained")
+         })
+    {
+        QVERIFY2(
+            gsReleasedMetrics.value(key).toBool(),
+            qPrintable(
+                QStringLiteral("Staff Directory table was unexpectedly released: %1")
+                    .arg(key)
+                )
+            );
+    }
+    QCOMPARE(
+        gsReleasedMetrics.value(QStringLiteral("staffDirectoryOperationsStarted"))
+            .toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        gsReleasedMetrics.value(QStringLiteral("staffDirectoryPagesPrepared"))
+            .toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        gsReleasedMetrics.value(QStringLiteral("staffDirectoryRefreshes"))
+            .toDouble(),
+        4.0
+        );
+    QCOMPARE(
+        gsReleasedMetrics.value(QStringLiteral("staffDirectoryLeaves"))
+            .toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        gsReleasedMetrics.value(QStringLiteral("staffDirectoryReentries"))
+            .toDouble(),
+        2.0
+        );
+    QCOMPARE(
+        gsReleasedMetrics.value(QStringLiteral("staffDirectoryOperationsFailed"))
+            .toDouble(),
+        0.0
+        );
+    QCOMPARE(
+        gsReleasedMetrics.value(QStringLiteral("staffDirectoryOperationsReleased"))
+            .toDouble(),
+        2.0
+        );
+
+    for (const QString& imageName : {
+             QStringLiteral("staff-directory-native-english-teachers.png"),
+             QStringLiteral("staff-directory-gs-team.png")
+         })
+    {
+        QVERIFY2(
+            QFileInfo(
+                QDir(outputRoot).filePath(imageName)
+                ).size() > 0,
+            qPrintable(
+                QStringLiteral("Expected Staff Directory capture is missing: %1")
+                    .arg(imageName)
+                )
+            );
+    }
+
+    QJsonObject manifest{
+        {QStringLiteral("fixture"), QStringLiteral("large_startup.sql")},
+        {
+            QStringLiteral("fixtureScale"),
+            QStringLiteral("large_staff_directory")
+        },
+        {
+            QStringLiteral("scenario"),
+            QStringLiteral(
+                "96-entry Native English Teacher and GS Team directory load, refresh, leave, re-entry, and retention"
+                )
+        },
+        {QStringLiteral("classCount"), 96},
+        {
+            QStringLiteral("nativeEntryCount"),
+            LargeStaffDirectoryEntryCount
+        },
+        {
+            QStringLiteral("gsEntryCount"),
+            LargeStaffDirectoryEntryCount
+        },
+        {
+            QStringLiteral("nativeCellItemCount"),
+            LargeStaffDirectoryEntryCount * LargeStaffDirectoryNativeColumnCount
+        },
+        {
+            QStringLiteral("gsCellItemCount"),
+            LargeStaffDirectoryEntryCount * LargeStaffDirectoryGsColumnCount
+        },
+        {QStringLiteral("processFinished"), finished},
+        {
+            QStringLiteral("exitStatus"),
+            process.exitStatus() == QProcess::NormalExit
+                ? QStringLiteral("normal")
+                : QStringLiteral("crash")
+        },
+        {QStringLiteral("exitCode"), process.exitCode()},
+        {QStringLiteral("timedOut"), !finished},
+        {QStringLiteral("traceLineCount"), traceLines.size()},
+        {QStringLiteral("tracePath"), QStringLiteral("workflow-trace.txt")},
+        {
+            QStringLiteral("metricsPath"),
+            QStringLiteral("large-staff-directory-workflow.json")
+        },
+        {QStringLiteral("stdoutPath"), QStringLiteral("process-stdout.txt")},
+        {QStringLiteral("stderrPath"), QStringLiteral("process-stderr.txt")},
         {
             QStringLiteral("peakMemory"),
             report.value(QStringLiteral("peakMemory"))

@@ -870,3 +870,39 @@ No v2 feature work begins without a fixture and an acceptance check.
   explicit Release thresholds, remaining generated-output references, and
   cross-platform evidence. Continue with the next heavy operation while
   retaining all prior artifacts; do not begin v2 remediation yet.
+
+## Progress update - 2026-09-16 (large Staff Directory lifecycle retention)
+
+- What changed: the heavy-route harness now adds deterministic 96-row Native
+  English Teacher and GS Team directory data to a generated copy of the large
+  workspace. It drives both actual packaged Windows x64 Release pages through
+  directory load, two refreshes, leave to My Workspace, re-entry, and operation
+  release while recording table shape, text payload size, page-widget count,
+  lifecycle events, process memory, and the flushed workflow trace.
+- Evidence: Native English Teachers exposes a 96-by-6 table with 576 cell
+  items, 7,314 bytes of cell text, and 85 page-widget descendants. GS Team
+  exposes a 96-by-5 table with 480 cell items, 4,940 bytes of text, and the
+  same 85 descendants. Both pages completed two refreshes, one leave, and one
+  re-entry; the child exited normally. The retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-staff-directory-boundary/`.
+- Timing and memory: Native operation start/page-prepared/refresh-2/left/
+  re-entered/released checkpoints were `5,314`/`5,344`/`5,425`/`5,459`/
+  `5,490`/`5,519 ms`; GS checkpoints were `5,784`/`5,815`/`5,889`/`5,923`/
+  `5,955`/`5,984 ms`. The staff operation peaked at `242,855,936` working-set
+  bytes and `235,036,672` private-usage bytes. The full heavy route reached
+  `workflow-complete` at `9,782 ms` and `settled-1s` at `10,814 ms`, with
+  route-wide peak working/private usage of `410,624,000`/`452,751,360` bytes.
+- Memory-hotspot finding: after operation release, both operation-retention
+  flags are false but both table-retention flags remain true through the final
+  checkpoint. This is direct current-product before-state evidence that the
+  Staff Directory page keeps its table graph under PageManager retention; it
+  identifies the later v2 release/reuse work but does not implement it or set
+  its budget. The Staff Directory before-state portion of the Memory Hotspot
+  Remediation Plan is now closed.
+- Decision and next heavy slice: retain the generated fixture, directory
+  captures, lifecycle trace, and report as the Staff Directory before-state
+  oracle. Phase 0 remains open for PDF/report operation measurements, Sub Prep
+  visual states, explicit Release thresholds, remaining generated-output
+  references, per-resource decoded/resident lifecycle traces, and
+  cross-platform evidence. Continue with the next heavy operation while
+  retaining all prior artifacts; do not begin v2 remediation yet.
