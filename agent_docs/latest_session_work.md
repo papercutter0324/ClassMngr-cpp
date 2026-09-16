@@ -146,9 +146,17 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   `360,960,000`/`402,731,008` bytes.
 - `git diff --check` passed before the slice commit.
 
+- Current stop point: the Calendar Import expected-failure harness now guards
+  the two normal-path screenshot assertions when that route is selected. The
+  latest focused attempt still stopped before completion because the required
+  workflow/metrics evidence was incomplete. The diagnostic error-boundary
+  files and device handoff are preserved in commit `a8cccb35`; this is not an
+  acceptance claim.
+
 ## Pending Work and Blockers
 
-- No manual intervention is currently required to resume.
+- Work is paused for device transfer. The only required manual verification
+  after the focused route passes is inspection of the retained error screenshot.
 - `.codex_workflow_staging_1.1.17/` is ignored workflow state. The durable
   `agent_docs/` context is tracked; preserve it for reboot/resume context.
 - Do not run native Office automation unless a suitable platform/environment
@@ -156,7 +164,7 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
 
 ## Next Entry Point
 
-After reboot, start by reading this file and checking:
+After reboot, start by reading `QT-REWRITE-HANDOFF.md`, this file, and checking:
 
 ```powershell
 git status --short
@@ -164,9 +172,9 @@ git log -6 --oneline
 ```
 
 Then inspect the Phase 0 baseline/plan tail and the committed Calendar Import
-diff. Repair the expected-failure artifact timing/conditional assertions,
-rerun that focused route, and manually inspect the retained error screenshot.
-The success variant and full startup suite already pass against fresh Ninja
-Release binaries. Retain and document the error-boundary artifacts only after
-the focused failure route passes; keep the slice uncommitted until then. Do
-not start Phase 1 or v2 remediation.
+diff. Rebuild the fresh Ninja Release targets, rerun the focused expected-
+failure route with a fresh settings/output root, and confirm that complete
+metrics/manifest/trace evidence is produced. If it passes, clear the opt-in,
+rerun the normal success route and full startup suite, manually inspect the
+retained error screenshot, and update the Phase 0 verification documents. Do
+not start Phase 1 or make v2 memory claims.

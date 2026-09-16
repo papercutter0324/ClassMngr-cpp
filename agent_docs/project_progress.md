@@ -28,15 +28,13 @@ Schedule Import slice.
 
 The last accepted slice remains the large Schedule Import conflict-warning
 reference at commit `ecb88af0`. The Calendar Import parser-failure
-implementation is committed at `ded8b5dc`, but its focused acceptance test
-still fails and the slice remains unaccepted. Phase 1 has not started. Fresh
-Ninja Release compilation now succeeds, and the
-unchanged Calendar Import success route plus the full startup suite pass. The
-expected-failure route still fails its test harness at line 9493 because the
-failure path completes before `calendar-import-preferences.png` and
-`calendar-page.png` are retained; the app subprocess itself exits normally and
-the failure-state assertions pass. No Calendar Import error artifact is
-accepted yet.
+implementation is committed at `ded8b5dc`, and the continuation guard plus
+diagnostic handoff/artifacts are preserved in `a8cccb35`; the focused
+acceptance test still fails before complete workflow/metrics evidence is
+available, so the slice remains unaccepted. Phase 1 has not started. Fresh
+Ninja Release compilation succeeded earlier, and the unchanged Calendar Import
+success route plus the full startup suite passed earlier. No Calendar Import
+error artifact is accepted yet.
 
 The CMake configuration cleanup is complete. Multi-config generators now expose
 only `Debug;Release`; every Debug preset explicitly enables tests and every
@@ -48,7 +46,8 @@ CMake output is now ignored; `build/` and `dist/` were not cleaned.
 
 ## Next Milestone
 
-Repair the expected-failure harness so its Preferences/page artifacts are
-captured before completion or asserted conditionally, then rerun the focused
-failure route and inspect the error screenshot. Retain the error artifacts only
-after that route passes; then commit the complete slice. Do not begin Phase 1.
+On the next device, rebuild the fresh Ninja Release targets and rerun the
+focused expected-failure route with complete workflow/metrics inputs and
+outputs. Then run the normal success route and full startup suite, manually
+inspect the error screenshot, and update the Phase 0 verification record. Do
+not begin Phase 1 or make v2 memory claims.

@@ -9,6 +9,7 @@ parser-failure boundary is not accepted yet; do not begin Phase 1.
 - Prior commits:
   - `ded8b5dc089110e5348cb9b9511d17ca770a795a` — `Phase0 - Add Calendar Import parser-failure boundary`
   - `9fa2ba4a54371a5597895061d52e8ec4eae3e163` — `Phase0 - Record Calendar Import verification handoff`
+- Handoff commit: `a8cccb35d09a7888488f781be3c6c2dfafebf888` — `Phase0 - Save Calendar Import device handoff`
 - The current uncommitted test change guards the two normal-path screenshot
   assertions in `tests/startup_performance_tests.cpp` when the configured
   Calendar Import route is expected to fail.

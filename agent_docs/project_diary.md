@@ -78,3 +78,9 @@
   platform, and test concerns because those boundaries are active. Only the
   empty root-generated `CMakeFiles/` residue was removed; root CMake output is
   ignored, and build/dist artifacts are preserved.
+
+- The Calendar Import parser-failure continuation was paused for device
+  transfer after the normal-path screenshot assertions were made conditional.
+  A focused run still lacked complete workflow/metrics evidence. Preserve the
+  diagnostic artifact set and treat it as unaccepted until the focused route,
+  success route, full suite, and error-screenshot inspection are complete.
