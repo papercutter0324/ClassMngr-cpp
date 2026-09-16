@@ -1136,3 +1136,29 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: continue Phase 0 with the next packaged
   Windows x64 Release heavy-route evidence gap; do not begin v2 remediation or
   Phase 1 yet.
+
+## Progress update - 2026-09-16 (large Classes visual-state references)
+
+- What changed: the existing packaged Classes lifecycle now has an opt-in
+  in-process visual capture path. It captures the real populated entry state,
+  selected class `96`, and selected class `1` after re-entry, while retaining
+  the existing selection, refresh, leave, and re-entry checks. The capture is
+  enabled only when `CLASSMNGR_STARTUP_CLASSES_VISUAL_OUTPUT_DIR` is set, so
+  normal startup and lifecycle runs remain unchanged.
+- Heavy-route evidence: the Windows x64 Release 96-class route completed in
+  all four English/Korean and light/dark variants. Each variant retained the
+  three Classes frames plus startup-complete, reported 96 visible classes and
+  473 navigation descendants, and recorded `captured=true` at each visual
+  checkpoint. Workflow completion ranged from `11,367` to `11,415 ms`, with
+  peak working sets from `409,907,200` to `412,454,912` bytes. The retained
+  artifact is under
+  `docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/`.
+- Evaluation impact: populated Classes visual evidence is now retained for
+  both language/theme axes and real selection/re-entry states. This remains
+  current-product before-state evidence; the final `<250 MiB` target and the
+  Classes v2 model/view ownership work are still future-phase obligations.
+  Empty/dialog/error states, remaining feature visuals, cross-platform Release
+  evidence, and generated-output gaps remain open.
+- Decision and next heavy slice: continue Phase 0 with the next packaged
+  Windows x64 Release heavy-route evidence gap; do not begin v2 remediation or
+  Phase 1 yet.

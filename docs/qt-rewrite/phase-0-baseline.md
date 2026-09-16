@@ -167,6 +167,14 @@ does not recreate or rely on them.
   entry to `273,227,776` bytes at lifecycle completion. The retained artifact
   is under `docs/qt-rewrite/visual-baseline/release/large-classes-boundary/`;
   this is a legacy before-state measurement, not an accepted v2 budget result.
+- The follow-up packaged Release Classes visual-state run retains the real
+  entry, selected-class `96`, and selected-class `1` frames for all four
+  English/Korean and light/dark combinations. Each route reports 96 visible
+  classes, 473 navigation descendants, and `captured=true` at every visual
+  checkpoint; the four routes complete between `11,367` and `11,415 ms`, with
+  peak working sets from `409,907,200` to `412,454,912` bytes. The retained
+  fixture, screenshots, metrics/traces, and manifest are under
+  `docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/`.
 - The packaged Release Schedule lifecycle run uses the same fixture and
   completes two refreshes, two leaves, and two re-entries. The standalone
   schedule page remains at 7 model/table rows, 49 model cells, 768 schedule
@@ -701,7 +709,9 @@ store the JSON startup trace beside the PNG files.
   large-fixture directories.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
-  read-only, dialogs, loading, errors, and import conflict resolution.
+  read-only, dialogs, loading, errors, and import conflict resolution; the
+  populated Classes entry/selection/re-entry frames are now retained, while
+  the other feature states remain open.
 - Remaining report/output operation measurements beyond the retained Speaking
   Evaluation, Sub Prep output, and PDF viewer paths. The Staff Directory
   load/refresh/leave/re-entry, Class Transfer package

@@ -1636,6 +1636,7 @@ private slots:
     void runsRepresentativeWorkspaceLifecycleWorkflow();
     void capturesLargeSubPrepBoundaryWhenConfigured();
     void capturesLargeClassesBoundaryWhenConfigured();
+    void capturesLargeClassesVisualStatesWhenConfigured();
     void capturesLargeScheduleBoundaryWhenConfigured();
     void capturesLargeScheduleImportBoundaryWhenConfigured();
     void capturesLargeScheduleImportApplyBoundaryWhenConfigured();
@@ -4143,6 +4144,404 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
     QCOMPARE(
         classesMetrics.value(QStringLiteral("classesSelectedClassId")).toInt(),
         1
+        );
+}
+
+void StartupPerformanceTests::capturesLargeClassesVisualStatesWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_CLASSES_VISUAL_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_CLASSES_VISUAL_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-classes-visual.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large Classes visual reference root: %1"
+                )
+                .arg(outputRoot)
+            )
+        );
+
+    const QString retainedFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-classes-visual.tps")
+            );
+    if (QFileInfo::exists(retainedFixturePath))
+    {
+        QVERIFY(QFile::remove(retainedFixturePath));
+    }
+    QVERIFY2(
+        QFile::copy(fixturePath, retainedFixturePath),
+        "Unable to retain the generated large Classes visual fixture."
+        );
+
+    const QProcessEnvironment baseEnvironment =
+        [&directory]()
+        {
+            QProcessEnvironment environment =
+                QProcessEnvironment::systemEnvironment();
+            environment.insert(
+                QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+                directory.filePath(QStringLiteral("settings"))
+                );
+            environment.insert(
+                QStringLiteral("QT_QPA_PLATFORM"),
+                QStringLiteral("offscreen")
+                );
+            return environment;
+        }();
+
+    const auto checkpointNamed =
+        [](const QJsonObject& report, const QString& name)
+        {
+            for (const QJsonValue& value : report
+                     .value(QStringLiteral("checkpoints"))
+                     .toArray())
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (
+                    checkpoint.value(QStringLiteral("name"))
+                        .toString()
+                    == name
+                    )
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+
+    QJsonArray variantManifest;
+    for (const auto& variant : {
+             std::pair<const char*, const char*> {"english", "light"},
+             std::pair<const char*, const char*> {"english", "dark"},
+             std::pair<const char*, const char*> {"korean", "light"},
+             std::pair<const char*, const char*> {"korean", "dark"}
+         })
+    {
+        const QString variantName =
+            QStringLiteral("%1-%2")
+                .arg(
+                    QString::fromLatin1(variant.first),
+                    QString::fromLatin1(variant.second)
+                    );
+        const QString variantRoot =
+            QDir(outputRoot).filePath(variantName);
+        if (QDir(variantRoot).exists())
+        {
+            QVERIFY2(
+                QDir(variantRoot).removeRecursively(),
+                qPrintable(
+                    QStringLiteral(
+                        "Unable to clear prior Classes visual variant: %1"
+                        )
+                        .arg(variantRoot)
+                    )
+                );
+        }
+        QVERIFY(QDir().mkpath(variantRoot));
+
+        const QString metricsPath =
+            QDir(variantRoot).filePath(QStringLiteral("metrics.json"));
+        const QString tracePath =
+            QDir(variantRoot).filePath(QStringLiteral("workflow-trace.txt"));
+        QProcessEnvironment environment = baseEnvironment;
+        environment.insert(
+            QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+            tracePath
+            );
+        environment.insert(
+            QStringLiteral("CLASSMNGR_STARTUP_CLASSES_VISUAL_OUTPUT_DIR"),
+            variantRoot
+            );
+
+        QProcess process;
+        process.setProcessEnvironment(environment);
+        process.start(
+            appPath,
+            {
+                QStringLiteral("--startup-performance-test"),
+                QStringLiteral("--startup-performance-workflow"),
+                QStringLiteral("--startup-performance-classes-lifecycle"),
+                QStringLiteral("--startup-performance-scenario"),
+                QStringLiteral("representative"),
+                QStringLiteral("--startup-performance-settle-ms"),
+                QStringLiteral("0"),
+                QStringLiteral("--startup-performance-output"),
+                metricsPath,
+                QStringLiteral("--startup-visual-capture-output"),
+                variantRoot,
+                QStringLiteral("--startup-visual-capture-language"),
+                QString::fromLatin1(variant.first),
+                QStringLiteral("--startup-visual-capture-theme"),
+                QString::fromLatin1(variant.second),
+                fixturePath
+            }
+            );
+
+        QVERIFY2(
+            process.waitForStarted(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+        bool finished =
+            process.waitForFinished(StartupTimeoutMs);
+        if (!finished)
+        {
+            process.kill();
+            QVERIFY2(
+                process.waitForFinished(StartupTimeoutMs),
+                qPrintable(process.errorString())
+                );
+        }
+
+        const QByteArray standardOutput = process.readAllStandardOutput();
+        const QByteArray standardError = process.readAllStandardError();
+        QString diagnosticError;
+        QVERIFY2(
+            writeDiagnosticFile(
+                QDir(variantRoot).filePath(QStringLiteral("process-stdout.txt")),
+                standardOutput,
+                &diagnosticError
+                ),
+            qPrintable(diagnosticError)
+            );
+        QVERIFY2(
+            writeDiagnosticFile(
+                QDir(variantRoot).filePath(QStringLiteral("process-stderr.txt")),
+                standardError,
+                &diagnosticError
+                ),
+            qPrintable(diagnosticError)
+            );
+        QVERIFY2(
+            finished,
+            qPrintable(
+                QStringLiteral(
+                    "Classes visual variant %1 timed out. Diagnostics are under %2."
+                    )
+                    .arg(variantName, variantRoot)
+                )
+            );
+        QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+        QVERIFY2(
+            process.exitCode() == 0,
+            qPrintable(
+                QStringLiteral(
+                    "Classes visual variant %1 exited with code %2.\nstdout:\n%3\nstderr:\n%4"
+                    )
+                    .arg(
+                        variantName,
+                        QString::number(process.exitCode()),
+                        QString::fromLocal8Bit(standardOutput),
+                        QString::fromLocal8Bit(standardError)
+                        )
+                )
+            );
+
+        for (const QString& captureName : {
+                 QStringLiteral("startup-complete.png"),
+                 QStringLiteral("classes-entry.png"),
+                 QStringLiteral("classes-selected-96.png"),
+                 QStringLiteral("classes-selected-1.png")
+             })
+        {
+            const QString capturePath =
+                QDir(variantRoot).filePath(captureName);
+            const QImage image(capturePath);
+            QVERIFY2(
+                !image.isNull() && image.width() > 0 && image.height() > 0,
+                qPrintable(
+                    QStringLiteral(
+                        "Missing Classes visual capture %1 for %2."
+                        )
+                        .arg(capturePath, variantName)
+                    )
+                );
+            QVERIFY(QFileInfo(capturePath).size() > 0);
+        }
+
+        QFile metricsFile(metricsPath);
+        QVERIFY2(
+            metricsFile.open(QIODevice::ReadOnly),
+            qPrintable(metricsFile.errorString())
+            );
+        QJsonParseError parseError;
+        const QJsonDocument metricsDocument =
+            QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+        QVERIFY2(
+            parseError.error == QJsonParseError::NoError
+                && metricsDocument.isObject(),
+            qPrintable(parseError.errorString())
+            );
+        const QJsonObject report = metricsDocument.object();
+        const qint64 peakWorkingSetBytes = static_cast<qint64>(
+            report.value(QStringLiteral("peakMemory"))
+                .toObject()
+                .value(QStringLiteral("peakWorkingSetBytes"))
+                .toDouble()
+            );
+        const bool withinFinalNormalWorkingSetTarget =
+            peakWorkingSetBytes < Phase0FinalNormalWorkingSetTargetBytes;
+        const bool withinTransientDiagnosticCeiling =
+            peakWorkingSetBytes < Phase0TransientDiagnosticCeilingBytes;
+        QVERIFY2(
+            withinTransientDiagnosticCeiling,
+            qPrintable(
+                QStringLiteral(
+                    "Legacy Classes visual route exceeded the Phase 0 transient diagnostic ceiling: %1 bytes."
+                    )
+                    .arg(peakWorkingSetBytes)
+                )
+            );
+        QVERIFY(
+            report.value(QStringLiteral("workflow"))
+                .toObject()
+                .value(QStringLiteral("enabled"))
+                .toBool()
+            );
+        QVERIFY(
+            checkpointNamed(
+                report,
+                QStringLiteral("workflow-page-failed")
+                ).isEmpty()
+            );
+
+        const QJsonObject entryCheckpoint =
+            checkpointNamed(report, QStringLiteral("classes-visual-entry"));
+        const QJsonObject selected96Checkpoint =
+            checkpointNamed(report, QStringLiteral("classes-visual-selected-96"));
+        const QJsonObject selected1Checkpoint =
+            checkpointNamed(report, QStringLiteral("classes-visual-selected-1"));
+        const QJsonObject lifecycleCheckpoint =
+            checkpointNamed(report, QStringLiteral("classes-lifecycle-complete"));
+        for (const QJsonObject& checkpoint : {
+                 entryCheckpoint,
+                 selected96Checkpoint,
+                 selected1Checkpoint,
+                 lifecycleCheckpoint
+             })
+        {
+            QVERIFY(!checkpoint.isEmpty());
+        }
+        for (const QJsonObject& checkpoint : {
+                 entryCheckpoint,
+                 selected96Checkpoint,
+                 selected1Checkpoint
+             })
+        {
+            QVERIFY(
+                checkpoint.value(QStringLiteral("detail"))
+                    .toString()
+                    .contains(QStringLiteral("captured=true"))
+                );
+        }
+        QVERIFY(
+            entryCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("visibleClasses=96"))
+            );
+        QVERIFY(
+            selected96Checkpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("selectedClassId=96"))
+            );
+        QVERIFY(
+            selected1Checkpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("selectedClassId=1"))
+            );
+        QVERIFY(
+            lifecycleCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("passed=true"))
+            );
+
+        variantManifest.append(
+            QJsonObject{
+                {QStringLiteral("name"), variantName},
+                {QStringLiteral("language"), QString::fromLatin1(variant.first)},
+                {QStringLiteral("theme"), QString::fromLatin1(variant.second)},
+                {QStringLiteral("outputDirectory"), variantName},
+                {QStringLiteral("metricsPath"), variantName + QStringLiteral("/metrics.json")},
+                {QStringLiteral("tracePath"), variantName + QStringLiteral("/workflow-trace.txt")},
+                {QStringLiteral("peakMemory"), report.value(QStringLiteral("peakMemory"))},
+                {QStringLiteral("finalNormalWorkingSetTargetPass"), withinFinalNormalWorkingSetTarget},
+                {QStringLiteral("transientDiagnosticCeilingPass"), withinTransientDiagnosticCeiling},
+                {QStringLiteral("visualReference"), true}
+            }
+            );
+    }
+
+    const QJsonObject manifest{
+        {QStringLiteral("fixture"), QStringLiteral("large_startup.sql")},
+        {
+            QStringLiteral("fixtureScale"),
+            QStringLiteral("large_classes_visual_states")
+        },
+        {
+            QStringLiteral("scenario"),
+            QStringLiteral(
+                "96-class Classes entry, selected, refresh, re-entry, and language/theme visual states"
+                )
+        },
+        {QStringLiteral("classCount"), 96},
+        {QStringLiteral("teacherCount"), 24},
+        {QStringLiteral("variants"), variantManifest},
+        {QStringLiteral("visualReference"), true},
+        {QStringLiteral("fixturePath"), QStringLiteral("generated-large-classes-visual.tps")}
+    };
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
         );
 }
 

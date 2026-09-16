@@ -2375,6 +2375,69 @@ void scheduleStartupPerformanceClassesLifecycle(
                         );
                 };
 
+            const QString visualOutputDirectoryPath =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_CLASSES_VISUAL_OUTPUT_DIR"
+                    ).trimmed();
+            bool visualCaptureSucceeded = true;
+            const auto captureVisualState =
+                [
+                    &app,
+                    &window,
+                    &page,
+                    &visualCaptureSucceeded,
+                    &checkpoint,
+                    visualOutputDirectoryPath
+                ](const QString& stateName)
+                {
+                    if (visualOutputDirectoryPath.isEmpty())
+                    {
+                        return;
+                    }
+
+                    app.processEvents();
+                    const ClassesPageRuntimeMetrics metrics =
+                        page->runtimeMetrics();
+                    const bool captured =
+                        captureStartupVisual(
+                            visualOutputDirectoryPath,
+                            window,
+                            QStringLiteral("classes-%1").arg(stateName)
+                            );
+                    if (!captured)
+                    {
+                        visualCaptureSucceeded = false;
+                    }
+
+                    const QString detail =
+                        QStringLiteral(
+                            "state=%1; selectedClassId=%2; visibleClasses=%3; "
+                            "visibleSections=%4; navigationWidgets=%5; "
+                            "instantiatedEditors=%6; captured=%7"
+                            )
+                            .arg(stateName)
+                            .arg(metrics.selectedClassId)
+                            .arg(metrics.visibleClassCount)
+                            .arg(metrics.visibleSectionCount)
+                            .arg(metrics.navigationWidgetCount)
+                            .arg(metrics.instantiatedEditorCount)
+                            .arg(
+                                captured
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                );
+                    checkpoint(
+                        QStringLiteral("classes-visual-%1").arg(stateName),
+                        detail
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral(
+                            "classes-visual-%1 %2"
+                            )
+                            .arg(stateName, detail)
+                        );
+                };
+
             appendStartupWorkflowTrace(
                 QStringLiteral("classes-lifecycle-start")
                 );
@@ -2383,8 +2446,10 @@ void scheduleStartupPerformanceClassesLifecycle(
                 QStringLiteral("selectedClassId=%1")
                     .arg(page->runtimeMetrics().selectedClassId)
                 );
+            captureVisualState(QStringLiteral("entry"));
 
             selectClass(96);
+            captureVisualState(QStringLiteral("selected-96"));
             refresh(1);
             navigate(
                 PageType::MyWorkspace,
@@ -2395,6 +2460,7 @@ void scheduleStartupPerformanceClassesLifecycle(
                 QStringLiteral("classes-reentry-1")
                 );
             selectClass(1);
+            captureVisualState(QStringLiteral("selected-1"));
             refresh(2);
             navigate(
                 PageType::MyWorkspace,
@@ -2412,13 +2478,13 @@ void scheduleStartupPerformanceClassesLifecycle(
                 QStringLiteral("classes-lifecycle-complete"),
                 QStringLiteral("passed=%1; selectedClassId=%2")
                     .arg(
-                        lifecycleSucceeded
+                        lifecycleSucceeded && visualCaptureSucceeded
                             ? QStringLiteral("true")
                             : QStringLiteral("false")
                         )
                     .arg(page->runtimeMetrics().selectedClassId)
                 );
-            if (!lifecycleSucceeded)
+            if (!lifecycleSucceeded || !visualCaptureSucceeded)
             {
                 *workflowSucceeded = false;
             }
