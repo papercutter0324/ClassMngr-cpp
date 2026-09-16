@@ -328,6 +328,18 @@ does not recreate or rely on them.
   roster PDF, their first-page PNGs, and a manifest with document sizes, page
   counts, and render dimensions. The actual packaged UI/output boundary is
   retained separately under the large Sub Prep output directory above.
+- The packaged Release heavy-route Sub Prep visual-state run drives the real
+  96-class workspace through populated selection and changed-selection states
+  in English/Korean and light/dark variants, then drives a separate 96-class
+  database with all meeting times cleared to capture the empty class-information
+  state. The populated captures report 96 visible classes and change the
+  selected class from 25 to 1; the empty capture reports zero visible classes
+  and selected class `-1`. The four populated routes completed between `9,773`
+  and `10,179 ms`, with peak working sets between `408,436,736` and
+  `410,849,280` bytes. The empty route completed at `7,643 ms` with a
+  `292,823,040`-byte peak working set. The retained screenshots, two generated
+  fixtures, per-variant metrics/traces, and manifest are under
+  `docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/`.
 
 ## Fixture added in this pass
 
@@ -354,6 +366,13 @@ packaged UI/output boundary drives the real dialog and package path against a
 96-class workspace, with 30 valid By Day selections, and retains its generated
 PDFs and decoded first-page captures under
 `docs/qt-rewrite/visual-baseline/release/large-sub-prep-output-boundary/`.
+
+The packaged Sub Prep visual-state probe generates a populated copy of the
+large workspace plus a matching copy with regular and intensive meeting times
+cleared. It retains the selected and changed-selection captures for all four
+English/Korean and light/dark combinations, the empty class-information
+capture, and their metrics/traces under
+`docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/`.
 
 `tests/fixtures/workspaces/legacy_startup.sql` is a partial schema-version-zero
 `.db` source. The startup test materializes it, runs the current schema manager,
@@ -654,9 +673,10 @@ store the JSON startup trace beside the PNG files.
   current route keeps 473 navigation descendants but still materializes 192
   class-tab placeholders and repeats broad class-information/teacher queries
   on each refresh.
-- Sub Prep visual references for the selected, changed-selection, empty, both
-  language/theme, and generated-output states, plus an explicit packaged
-  Release memory budget for the v2 acceptance gate.
+- Sub Prep visual references for editing, read-only, dialogs, loading/errors,
+  and other states beyond the now-retained selected, changed-selection, empty,
+  both-language/theme, and generated-output references, plus an explicit
+  packaged Release memory budget for the v2 acceptance gate.
 - Golden generated reports, substitute documents, additional roster variants,
   and PowerPoint output beyond the retained heavy Sub Prep PDF/package
   references.

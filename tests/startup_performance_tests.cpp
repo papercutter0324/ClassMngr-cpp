@@ -39,6 +39,7 @@ namespace
 {
 constexpr int StartupTimeoutMs = 60000;
 constexpr int SubPrepOutputTimeoutMs = 180000;
+constexpr int SubPrepVisualTimeoutMs = 120000;
 constexpr int LargeClassTransferTeacherCount = 12;
 constexpr int LargeClassTransferClassCount = 48;
 constexpr int LargeClassTransferRosterColumnCount = 6;
@@ -1115,6 +1116,69 @@ bool prepareLargeSubPrepOutputFixture(
     return success;
 }
 
+bool prepareLargeSubPrepEmptyFixture(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    const QString connectionName =
+        QStringLiteral("startup-sub-prep-empty-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(fixturePath);
+
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else if (!database.transaction())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else
+        {
+            QSqlQuery query(database);
+            bool cleared = true;
+            for (const QString& tableName : {
+                     QStringLiteral("class_times"),
+                     QStringLiteral("class_intensive_times"),
+                     QStringLiteral("intensive_slot_states")
+                 })
+            {
+                if (!query.exec(QStringLiteral("DELETE FROM %1").arg(tableName)))
+                {
+                    *errorMessage = query.lastError().text();
+                    cleared = false;
+                    break;
+                }
+            }
+
+            if (cleared && database.commit())
+            {
+                success = true;
+            }
+            else
+            {
+                if (cleared)
+                {
+                    *errorMessage = database.lastError().text();
+                }
+                database.rollback();
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
+
 QString alphabeticFixtureToken(int value)
 {
     QString token;
@@ -1576,6 +1640,7 @@ private slots:
     void capturesLargeSpeakingEvaluationBoundaryWhenConfigured();
     void capturesLargeStaffDirectoryBoundaryWhenConfigured();
     void capturesLargeSubPrepOutputBoundaryWhenConfigured();
+    void capturesLargeSubPrepVisualStatesWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -1716,7 +1781,6 @@ void StartupPerformanceTests::largeStartupFixtureIsCompleteAndDeterministic()
         createLargeStartupFixture(fixturePath, &fixtureError),
         qPrintable(fixtureError)
         );
-
     const QString connectionName =
         QStringLiteral("startup-large-fixture-validation");
     QSqlDatabase database =
@@ -7328,6 +7392,575 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         },
         {QStringLiteral("stdoutPath"), QStringLiteral("process-stdout.txt")},
         {QStringLiteral("stderrPath"), QStringLiteral("process-stderr.txt")}
+    };
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
+        );
+}
+
+void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_SUB_PREP_VISUAL_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_SUB_PREP_VISUAL_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-sub-prep-visual.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    const QString emptyFixturePath =
+        directory.filePath(QStringLiteral("large-sub-prep-empty.tps"));
+    QVERIFY2(
+        createLargeStartupFixture(emptyFixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        prepareLargeSubPrepEmptyFixture(emptyFixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large Sub Prep visual reference root: %1"
+                )
+                .arg(outputRoot)
+            )
+        );
+
+    const QString retainedFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-sub-prep-visual.tps")
+            );
+    if (QFileInfo::exists(retainedFixturePath))
+    {
+        QVERIFY(QFile::remove(retainedFixturePath));
+    }
+    QVERIFY2(
+        QFile::copy(fixturePath, retainedFixturePath),
+        "Unable to retain the generated large Sub Prep visual fixture."
+        );
+    const QString retainedEmptyFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-sub-prep-empty.tps")
+            );
+    if (QFileInfo::exists(retainedEmptyFixturePath))
+    {
+        QVERIFY(QFile::remove(retainedEmptyFixturePath));
+    }
+    QVERIFY2(
+        QFile::copy(emptyFixturePath, retainedEmptyFixturePath),
+        "Unable to retain the generated empty Sub Prep visual fixture."
+        );
+
+    const QProcessEnvironment baseEnvironment =
+        [&directory]()
+        {
+            QProcessEnvironment environment =
+                QProcessEnvironment::systemEnvironment();
+            environment.insert(
+                QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+                directory.filePath(QStringLiteral("settings"))
+                );
+            environment.insert(
+                QStringLiteral("QT_QPA_PLATFORM"),
+                QStringLiteral("offscreen")
+                );
+            return environment;
+        }();
+
+    const auto checkpointNamed =
+        [](const QJsonObject& report, const QString& name)
+        {
+            for (const QJsonValue& value : report
+                     .value(QStringLiteral("checkpoints"))
+                     .toArray())
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (
+                    checkpoint.value(QStringLiteral("name"))
+                        .toString()
+                    == name
+                    )
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+
+    QJsonArray variantManifest;
+    for (const auto& variant : {
+             std::pair<const char*, const char*> {"english", "light"},
+             std::pair<const char*, const char*> {"english", "dark"},
+             std::pair<const char*, const char*> {"korean", "light"},
+             std::pair<const char*, const char*> {"korean", "dark"}
+         })
+    {
+        const QString variantName =
+            QStringLiteral("%1-%2")
+                .arg(
+                    QString::fromLatin1(variant.first),
+                    QString::fromLatin1(variant.second)
+                    );
+        const QString variantRoot =
+            QDir(outputRoot).filePath(variantName);
+        if (QDir(variantRoot).exists())
+        {
+            QVERIFY2(
+                QDir(variantRoot).removeRecursively(),
+                qPrintable(
+                    QStringLiteral(
+                        "Unable to clear prior Sub Prep visual variant: %1"
+                        )
+                        .arg(variantRoot)
+                    )
+                );
+        }
+        QVERIFY(QDir().mkpath(variantRoot));
+
+        const QString metricsPath =
+            QDir(variantRoot).filePath(QStringLiteral("metrics.json"));
+        const QString tracePath =
+            QDir(variantRoot).filePath(QStringLiteral("workflow-trace.txt"));
+        QProcessEnvironment environment = baseEnvironment;
+        environment.insert(
+            QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+            tracePath
+            );
+
+        QProcess process;
+        process.setProcessEnvironment(environment);
+        process.start(
+            appPath,
+            {
+                QStringLiteral("--startup-performance-test"),
+                QStringLiteral("--startup-performance-workflow"),
+                QStringLiteral("--startup-performance-sub-prep-visual-states"),
+                QStringLiteral("--startup-performance-scenario"),
+                QStringLiteral("representative"),
+                QStringLiteral("--startup-performance-settle-ms"),
+                QStringLiteral("0"),
+                QStringLiteral("--startup-performance-output"),
+                metricsPath,
+                QStringLiteral("--startup-visual-capture-output"),
+                variantRoot,
+                QStringLiteral("--startup-visual-capture-language"),
+                QString::fromLatin1(variant.first),
+                QStringLiteral("--startup-visual-capture-theme"),
+                QString::fromLatin1(variant.second),
+                fixturePath
+            }
+            );
+
+        QVERIFY2(
+            process.waitForStarted(SubPrepVisualTimeoutMs),
+            qPrintable(process.errorString())
+            );
+        bool finished =
+            process.waitForFinished(SubPrepVisualTimeoutMs);
+        if (!finished)
+        {
+            process.kill();
+            QVERIFY2(
+                process.waitForFinished(SubPrepVisualTimeoutMs),
+                qPrintable(process.errorString())
+                );
+        }
+
+        const QByteArray standardOutput = process.readAllStandardOutput();
+        const QByteArray standardError = process.readAllStandardError();
+        QString diagnosticError;
+        QVERIFY2(
+            writeDiagnosticFile(
+                QDir(variantRoot).filePath(QStringLiteral("process-stdout.txt")),
+                standardOutput,
+                &diagnosticError
+                ),
+            qPrintable(diagnosticError)
+            );
+        QVERIFY2(
+            writeDiagnosticFile(
+                QDir(variantRoot).filePath(QStringLiteral("process-stderr.txt")),
+                standardError,
+                &diagnosticError
+                ),
+            qPrintable(diagnosticError)
+            );
+        QVERIFY2(
+            finished,
+            qPrintable(
+                QStringLiteral(
+                    "Sub Prep visual variant %1 timed out. Diagnostics are under %2."
+                    )
+                    .arg(variantName, variantRoot)
+                )
+            );
+        QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+        QVERIFY2(
+            process.exitCode() == 0,
+            qPrintable(
+                QStringLiteral(
+                    "Sub Prep visual variant %1 exited with code %2.\nstdout:\n%3\nstderr:\n%4"
+                    )
+                    .arg(
+                        variantName,
+                        QString::number(process.exitCode()),
+                        QString::fromLocal8Bit(standardOutput),
+                        QString::fromLocal8Bit(standardError)
+                        )
+                )
+            );
+
+        for (const QString& captureName : {
+                 QStringLiteral("startup-complete.png"),
+                 QStringLiteral("sub-prep-selected.png"),
+                 QStringLiteral("sub-prep-changed-selection.png")
+             })
+        {
+            const QString capturePath =
+                QDir(variantRoot).filePath(captureName);
+            const QImage image(capturePath);
+            QVERIFY2(
+                !image.isNull() && image.width() > 0 && image.height() > 0,
+                qPrintable(
+                    QStringLiteral(
+                        "Missing Sub Prep visual capture %1 for %2."
+                        )
+                        .arg(capturePath, variantName)
+                    )
+                );
+            QVERIFY(QFileInfo(capturePath).size() > 0);
+        }
+
+        QFile metricsFile(metricsPath);
+        QVERIFY2(
+            metricsFile.open(QIODevice::ReadOnly),
+            qPrintable(metricsFile.errorString())
+            );
+        QJsonParseError parseError;
+        const QJsonDocument metricsDocument =
+            QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+        QVERIFY2(
+            parseError.error == QJsonParseError::NoError
+                && metricsDocument.isObject(),
+            qPrintable(parseError.errorString())
+            );
+        const QJsonObject report = metricsDocument.object();
+        QVERIFY(
+            report.value(QStringLiteral("workflow"))
+                .toObject()
+                .value(QStringLiteral("enabled"))
+                .toBool()
+            );
+        QVERIFY(
+            checkpointNamed(
+                report,
+                QStringLiteral("workflow-page-failed")
+                ).isEmpty()
+            );
+
+        const QJsonObject selectedCheckpoint =
+            checkpointNamed(
+                report,
+                QStringLiteral("sub-prep-visual-selected")
+                );
+        const QJsonObject changedCheckpoint =
+            checkpointNamed(
+                report,
+                QStringLiteral("sub-prep-visual-changed-selection")
+                );
+        const QJsonObject completeCheckpoint =
+            checkpointNamed(
+                report,
+                QStringLiteral("sub-prep-visual-states-complete")
+                );
+        for (const QJsonObject& checkpoint : {
+                 selectedCheckpoint,
+                 changedCheckpoint,
+                 completeCheckpoint
+             })
+        {
+            QVERIFY(!checkpoint.isEmpty());
+            QVERIFY(
+                checkpoint.value(QStringLiteral("memory"))
+                    .toObject()
+                    .value(QStringLiteral("available"))
+                    .toBool()
+                );
+        }
+        const QJsonObject selectedMetrics =
+            selectedCheckpoint.value(QStringLiteral("metrics")).toObject();
+        const QJsonObject changedMetrics =
+            changedCheckpoint.value(QStringLiteral("metrics")).toObject();
+        QVERIFY(
+            selectedMetrics
+                .value(QStringLiteral("subPrepClassInformationVisibleClassCount"))
+                .toInt()
+                >= 90
+            );
+        QVERIFY(
+            selectedMetrics.value(QStringLiteral("subPrepSelectedClassId"))
+                .toInt()
+                > 0
+            );
+        QVERIFY(
+            selectedMetrics.value(QStringLiteral("subPrepClassInformationWidgetCount"))
+                .toInt()
+                > 0
+            );
+        QVERIFY(
+            changedMetrics
+                .value(QStringLiteral("subPrepClassInformationVisibleClassCount"))
+                .toInt()
+                >= 90
+            );
+        QVERIFY(
+            changedMetrics.value(QStringLiteral("subPrepSelectedClassId"))
+                .toInt()
+                > 0
+            );
+        QVERIFY(
+            changedMetrics.value(QStringLiteral("subPrepSelectedClassId"))
+                .toInt()
+                != selectedMetrics.value(QStringLiteral("subPrepSelectedClassId"))
+                    .toInt()
+            );
+        QVERIFY(
+            completeCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("passed=true"))
+            );
+
+        variantManifest.append(
+            QJsonObject{
+                {QStringLiteral("name"), variantName},
+                {QStringLiteral("language"), QString::fromLatin1(variant.first)},
+                {QStringLiteral("theme"), QString::fromLatin1(variant.second)},
+                {QStringLiteral("outputDirectory"), variantName},
+                {QStringLiteral("metricsPath"), variantName + QStringLiteral("/metrics.json")},
+                {QStringLiteral("tracePath"), variantName + QStringLiteral("/workflow-trace.txt")},
+                {QStringLiteral("peakMemory"), report.value(QStringLiteral("peakMemory"))}
+            }
+            );
+    }
+
+    const QString emptyRoot = QDir(outputRoot).filePath(QStringLiteral("empty"));
+    if (QDir(emptyRoot).exists())
+    {
+        QVERIFY(QDir(emptyRoot).removeRecursively());
+    }
+    QVERIFY(QDir().mkpath(emptyRoot));
+    const QString emptyMetricsPath =
+        QDir(emptyRoot).filePath(QStringLiteral("metrics.json"));
+    const QString emptyTracePath =
+        QDir(emptyRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    QProcessEnvironment emptyEnvironment = baseEnvironment;
+    emptyEnvironment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        emptyTracePath
+        );
+
+    QProcess emptyProcess;
+    emptyProcess.setProcessEnvironment(emptyEnvironment);
+    emptyProcess.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-sub-prep-visual-states"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("0"),
+            QStringLiteral("--startup-performance-output"),
+            emptyMetricsPath,
+            QStringLiteral("--startup-visual-capture-output"),
+            emptyRoot,
+            emptyFixturePath
+        }
+        );
+    QVERIFY2(
+        emptyProcess.waitForStarted(SubPrepVisualTimeoutMs),
+        qPrintable(emptyProcess.errorString())
+        );
+    bool emptyFinished =
+        emptyProcess.waitForFinished(SubPrepVisualTimeoutMs);
+    if (!emptyFinished)
+    {
+        emptyProcess.kill();
+        QVERIFY2(
+            emptyProcess.waitForFinished(SubPrepVisualTimeoutMs),
+            qPrintable(emptyProcess.errorString())
+            );
+    }
+    const QByteArray emptyStandardOutput =
+        emptyProcess.readAllStandardOutput();
+    const QByteArray emptyStandardError =
+        emptyProcess.readAllStandardError();
+    QString emptyDiagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(emptyRoot).filePath(QStringLiteral("process-stdout.txt")),
+            emptyStandardOutput,
+            &emptyDiagnosticError
+            ),
+        qPrintable(emptyDiagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(emptyRoot).filePath(QStringLiteral("process-stderr.txt")),
+            emptyStandardError,
+            &emptyDiagnosticError
+            ),
+        qPrintable(emptyDiagnosticError)
+        );
+    QVERIFY2(
+        emptyFinished,
+        qPrintable(
+            QStringLiteral(
+                "Sub Prep empty visual state timed out. Diagnostics are under %1."
+                )
+                .arg(emptyRoot)
+            )
+        );
+    QCOMPARE(emptyProcess.exitStatus(), QProcess::NormalExit);
+    QVERIFY2(
+        emptyProcess.exitCode() == 0,
+        qPrintable(
+            QStringLiteral(
+                "Sub Prep empty visual state exited with code %1.\nstdout:\n%2\nstderr:\n%3"
+                )
+                .arg(
+                    QString::number(emptyProcess.exitCode()),
+                    QString::fromLocal8Bit(emptyStandardOutput),
+                    QString::fromLocal8Bit(emptyStandardError)
+                    )
+            )
+        );
+
+    const QString emptyCapturePath =
+        QDir(emptyRoot).filePath(QStringLiteral("sub-prep-empty.png"));
+    const QImage emptyImage(emptyCapturePath);
+    QVERIFY(!emptyImage.isNull());
+    QVERIFY(emptyImage.width() > 0);
+    QVERIFY(emptyImage.height() > 0);
+    QVERIFY(QFileInfo(emptyCapturePath).size() > 0);
+
+    QFile emptyMetricsFile(emptyMetricsPath);
+    QVERIFY2(
+        emptyMetricsFile.open(QIODevice::ReadOnly),
+        qPrintable(emptyMetricsFile.errorString())
+        );
+    QJsonParseError emptyParseError;
+    const QJsonDocument emptyDocument =
+        QJsonDocument::fromJson(emptyMetricsFile.readAll(), &emptyParseError);
+    QVERIFY2(
+        emptyParseError.error == QJsonParseError::NoError
+            && emptyDocument.isObject(),
+        qPrintable(emptyParseError.errorString())
+        );
+    const QJsonObject emptyReport = emptyDocument.object();
+    const QJsonObject emptyCheckpoint =
+        checkpointNamed(
+            emptyReport,
+            QStringLiteral("sub-prep-visual-empty")
+            );
+    const QJsonObject emptyCompleteCheckpoint =
+        checkpointNamed(
+            emptyReport,
+            QStringLiteral("sub-prep-visual-states-complete")
+            );
+    QVERIFY(!emptyCheckpoint.isEmpty());
+    QVERIFY(!emptyCompleteCheckpoint.isEmpty());
+    const QJsonObject emptyMetrics =
+        emptyCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        emptyMetrics.value(QStringLiteral("subPrepClassInformationVisibleClassCount"))
+            .toInt(),
+        0
+        );
+    QCOMPARE(
+        emptyMetrics.value(QStringLiteral("subPrepSelectedClassId")).toInt(),
+        -1
+        );
+    QVERIFY(
+        emptyCompleteCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("passed=true"))
+        );
+
+    const QJsonObject manifest{
+        {QStringLiteral("fixture"), QStringLiteral("large_startup.sql")},
+        {
+            QStringLiteral("fixtureScale"),
+            QStringLiteral("large_sub_prep_visual_states")
+        },
+        {
+            QStringLiteral("scenario"),
+            QStringLiteral(
+                "96-class Sub Prep selected, changed-selection, empty, and language/theme visual states"
+                )
+        },
+        {QStringLiteral("classCount"), 96},
+        {QStringLiteral("teacherCount"), 24},
+        {QStringLiteral("rosterCellCount"), 7200},
+        {QStringLiteral("variants"), variantManifest},
+        {
+            QStringLiteral("emptyState"),
+            QJsonObject{
+                {QStringLiteral("outputDirectory"), QStringLiteral("empty")},
+                {QStringLiteral("metricsPath"), QStringLiteral("empty/metrics.json")},
+                {QStringLiteral("tracePath"), QStringLiteral("empty/workflow-trace.txt")}
+            }
+        },
+        {QStringLiteral("fixturePath"), QStringLiteral("generated-large-sub-prep-visual.tps")},
+        {QStringLiteral("emptyFixturePath"), QStringLiteral("generated-large-sub-prep-empty.tps")}
     };
     QFile manifestFile(
         QDir(outputRoot).filePath(QStringLiteral("manifest.json"))

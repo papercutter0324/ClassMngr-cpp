@@ -365,7 +365,39 @@ void SubPrepPage::scrollToTop()
                     );
             }
         }
+    );
+}
+
+void SubPrepPage::scrollToClassInformationForStartupDiagnostics(
+    bool emptyState
+    )
+{
+    if (!m_scrollArea || !m_classInformationHeading)
+    {
+        return;
+    }
+
+    QWidget* target =
+        m_classInformationContent
+            ? m_classInformationContent
+            : m_classInformationHeading;
+    m_scrollArea->ensureWidgetVisible(
+        target,
+        0,
+        0
         );
+    if (auto* scrollBar = m_scrollArea->verticalScrollBar())
+    {
+        scrollBar->setValue(
+            emptyState
+                ? scrollBar->maximum()
+                : target->y()
+            );
+    }
+    if (auto* scrollBar = m_scrollArea->horizontalScrollBar())
+    {
+        scrollBar->setValue(scrollBar->minimum());
+    }
 }
 
 QString SubPrepPage::currentSectionName() const

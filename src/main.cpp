@@ -124,6 +124,7 @@ struct StartupPerformanceMode
     bool staffDirectoryLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
     bool subPrepOutputLifecycleEnabled = false;
+    bool subPrepVisualStatesEnabled = false;
     enum class Scenario
     {
         Minimal,
@@ -962,6 +963,12 @@ StartupPerformanceMode startupPerformanceMode(
                 "--startup-performance-sub-prep-output-lifecycle"
                 )
             );
+    mode.subPrepVisualStatesEnabled =
+        args.contains(
+            QStringLiteral(
+                "--startup-performance-sub-prep-visual-states"
+                )
+            );
     mode.subPrepLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-sub-prep-lifecycle")
@@ -979,7 +986,8 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.speakingEvaluationLifecycleEnabled
         || mode.staffDirectoryLifecycleEnabled
         || mode.subPrepLifecycleEnabled
-        || mode.subPrepOutputLifecycleEnabled;
+        || mode.subPrepOutputLifecycleEnabled
+        || mode.subPrepVisualStatesEnabled;
 
     const int outputIndex =
         args.indexOf(
@@ -1182,6 +1190,214 @@ bool captureStartupVisual(
                 QString::number(screenshot.height())
                 );
     return true;
+}
+
+void scheduleStartupPerformanceSubPrepVisualStates(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    const QString& outputDirectoryPath,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            outputDirectoryPath,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            SubPrepPage* page = pages ? pages->subPrepPage() : nullptr;
+
+            if (
+                !pages
+                || !page
+                || !pages->isCurrentPage(PageType::SubPrep)
+                )
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("sub-prep-visual-states-failed"),
+                    QStringLiteral("sub-prep-page-not-current")
+                    );
+                StartupProfiler::setSubPrepDiagnosticsActive(false);
+                completion();
+                return;
+            }
+
+            bool visualStatesSucceeded = true;
+            const auto captureState =
+                [
+                    &app,
+                    &window,
+                    &page,
+                    &profiler,
+                    &visualStatesSucceeded,
+                    &outputDirectoryPath
+                ](const QString& stateName)
+                {
+                    page->scrollToClassInformationForStartupDiagnostics(
+                        stateName == QStringLiteral("empty")
+                        );
+                    app.processEvents();
+                    const SubPrepPageRuntimeMetrics metrics =
+                        page->runtimeMetrics();
+                    const bool captured =
+                        captureStartupVisual(
+                            outputDirectoryPath,
+                            window,
+                            QStringLiteral("sub-prep-%1").arg(stateName)
+                            );
+                    if (!captured)
+                    {
+                        visualStatesSucceeded = false;
+                    }
+
+                    const QString detail =
+                        QStringLiteral(
+                            "state=%1; visibleClasses=%2; selectedClassId=%3; "
+                            "widgets=%4; textEdits=%5; captured=%6"
+                            )
+                            .arg(stateName)
+                            .arg(metrics.classInformationVisibleClassCount)
+                            .arg(metrics.selectedClassId)
+                            .arg(metrics.classInformationWidgetCount)
+                            .arg(metrics.classInformationTextEditCount)
+                            .arg(
+                                captured
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                );
+                    profiler.checkpoint(
+                        QStringLiteral("sub-prep-visual-%1").arg(stateName),
+                        detail
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral(
+                            "sub-prep-visual-%1 visibleClasses=%2 selectedClassId=%3 captured=%4"
+                            )
+                            .arg(stateName)
+                            .arg(metrics.classInformationVisibleClassCount)
+                            .arg(metrics.selectedClassId)
+                            .arg(
+                                captured
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                )
+                        );
+                };
+
+            const SubPrepPageRuntimeMetrics initialMetrics =
+                page->runtimeMetrics();
+            appendStartupWorkflowTrace(
+                QStringLiteral("sub-prep-visual-states-start")
+                );
+            profiler.checkpoint(
+                QStringLiteral("sub-prep-visual-states-start"),
+                QStringLiteral(
+                    "visibleClasses=%1; selectedClassId=%2"
+                    )
+                    .arg(initialMetrics.classInformationVisibleClassCount)
+                    .arg(initialMetrics.selectedClassId)
+                );
+
+            if (initialMetrics.classInformationVisibleClassCount <= 0)
+            {
+                captureState(QStringLiteral("empty"));
+            }
+            else
+            {
+                if (initialMetrics.selectedClassId <= 0)
+                {
+                    const bool selected =
+                        page->selectClassForStartupDiagnostics(1);
+                    app.processEvents();
+                    if (!selected)
+                    {
+                        visualStatesSucceeded = false;
+                    }
+                }
+
+                const SubPrepPageRuntimeMetrics selectedMetrics =
+                    page->runtimeMetrics();
+                if (selectedMetrics.selectedClassId <= 0)
+                {
+                    visualStatesSucceeded = false;
+                    profiler.checkpoint(
+                        QStringLiteral("sub-prep-visual-states-failed"),
+                        QStringLiteral("populated-state-has-no-selection")
+                        );
+                }
+                else
+                {
+                    captureState(QStringLiteral("selected"));
+
+                    const int changedClassId =
+                        selectedMetrics.selectedClassId == 1 ? 48 : 1;
+                    const bool changed =
+                        page->selectClassForStartupDiagnostics(changedClassId);
+                    app.processEvents();
+                    if (
+                        !changed
+                        || page->runtimeMetrics().selectedClassId
+                            == selectedMetrics.selectedClassId
+                        )
+                    {
+                        visualStatesSucceeded = false;
+                        profiler.checkpoint(
+                            QStringLiteral("sub-prep-visual-states-failed"),
+                            QStringLiteral(
+                                "changed-selection-failed; requestedClassId=%1; selectedClassId=%2"
+                                )
+                                .arg(changedClassId)
+                                .arg(page->runtimeMetrics().selectedClassId)
+                            );
+                    }
+                    else
+                    {
+                        captureState(QStringLiteral("changed-selection"));
+                    }
+                }
+            }
+
+            if (!visualStatesSucceeded)
+            {
+                *workflowSucceeded = false;
+            }
+            profiler.checkpoint(
+                QStringLiteral("sub-prep-visual-states-complete"),
+                QStringLiteral(
+                    "passed=%1; visibleClasses=%2; selectedClassId=%3"
+                    )
+                    .arg(
+                        visualStatesSucceeded
+                            ? QStringLiteral("true")
+                            : QStringLiteral("false")
+                        )
+                    .arg(page->runtimeMetrics().classInformationVisibleClassCount)
+                    .arg(page->runtimeMetrics().selectedClassId)
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral(
+                    "sub-prep-visual-states-complete passed=%1"
+                    )
+                    .arg(
+                        visualStatesSucceeded
+                            ? QStringLiteral("true")
+                            : QStringLiteral("false")
+                        )
+                );
+            StartupProfiler::setSubPrepDiagnosticsActive(false);
+            completion();
+        }
+        );
 }
 
 void scheduleStartupPerformanceScheduleLifecycle(
@@ -3991,6 +4207,8 @@ void scheduleStartupPerformanceWorkflow(
     bool staffDirectoryLifecycleEnabled,
     bool subPrepLifecycleEnabled,
     bool subPrepOutputLifecycleEnabled,
+    bool subPrepVisualStatesEnabled,
+    const QString& subPrepVisualOutputDirectoryPath,
     std::function<void()> completion
     )
 {
@@ -4016,6 +4234,8 @@ void scheduleStartupPerformanceWorkflow(
             staffDirectoryLifecycleEnabled,
             subPrepLifecycleEnabled,
             subPrepOutputLifecycleEnabled,
+            subPrepVisualStatesEnabled,
+            subPrepVisualOutputDirectoryPath,
             pageTypes,
             pageIndex,
             runNextPage,
@@ -4063,7 +4283,7 @@ void scheduleStartupPerformanceWorkflow(
                 QStringLiteral("showPage %1").arg(pageIdentifier)
                 );
             if (
-                subPrepLifecycleEnabled
+                (subPrepLifecycleEnabled || subPrepVisualStatesEnabled)
                 && pageType == PageType::SubPrep
                 )
             {
@@ -4395,6 +4615,38 @@ void scheduleStartupPerformanceWorkflow(
 
         if (
             pageReady
+            && subPrepVisualStatesEnabled
+            && pageType == PageType::SubPrep
+            )
+        {
+            scheduleStartupPerformanceSubPrepVisualStates(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                subPrepVisualOutputDirectoryPath,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
+        }
+
+        if (
+            pageReady
             && subPrepLifecycleEnabled
             && pageType == PageType::SubPrep
             )
@@ -4546,7 +4798,15 @@ bool writeStartupPerformanceMetrics(
             QStringLiteral(
                 "exercise the real heavy Sub Prep generation dialog, PDF outputs, first-page decoding, and release"
                 )
-            );
+        );
+    }
+    if (mode.subPrepVisualStatesEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "capture populated, changed-selection, and empty Sub Prep visual states"
+                )
+        );
     }
     if (mode.classesLifecycleEnabled)
     {
@@ -5125,6 +5385,8 @@ int main(int argc, char *argv[])
                 startupPerformance.staffDirectoryLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
                 startupPerformance.subPrepOutputLifecycleEnabled,
+                startupPerformance.subPrepVisualStatesEnabled,
+                startupPerformance.visualCaptureOutputPath,
                 scheduleSettledCompletion
                 );
             return;

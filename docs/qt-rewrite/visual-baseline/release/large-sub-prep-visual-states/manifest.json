@@ -1,0 +1,105 @@
+{
+    "classCount": 96,
+    "emptyFixturePath": "generated-large-sub-prep-empty.tps",
+    "emptyState": {
+        "metricsPath": "empty/metrics.json",
+        "outputDirectory": "empty",
+        "tracePath": "empty/workflow-trace.txt"
+    },
+    "fixture": "large_startup.sql",
+    "fixturePath": "generated-large-sub-prep-visual.tps",
+    "fixtureScale": "large_sub_prep_visual_states",
+    "rosterCellCount": 7200,
+    "scenario": "96-class Sub Prep selected, changed-selection, empty, and language/theme visual states",
+    "teacherCount": 24,
+    "variants": [
+        {
+            "language": "english",
+            "metricsPath": "english-light/metrics.json",
+            "name": "english-light",
+            "outputDirectory": "english-light",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 71,
+                "handleCount": 297,
+                "pagefileUsageBytes": 452378624,
+                "peakWorkingSetBytes": 410849280,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 452378624,
+                "privateWorkingSetBytes": 342499328,
+                "threadCount": 16,
+                "workingSetBytes": 409907200
+            },
+            "theme": "light",
+            "tracePath": "english-light/workflow-trace.txt"
+        },
+        {
+            "language": "english",
+            "metricsPath": "english-dark/metrics.json",
+            "name": "english-dark",
+            "outputDirectory": "english-dark",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 71,
+                "handleCount": 297,
+                "pagefileUsageBytes": 452399104,
+                "peakWorkingSetBytes": 410288128,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 452399104,
+                "privateWorkingSetBytes": 342016000,
+                "threadCount": 16,
+                "workingSetBytes": 409346048
+            },
+            "theme": "dark",
+            "tracePath": "english-dark/workflow-trace.txt"
+        },
+        {
+            "language": "korean",
+            "metricsPath": "korean-light/metrics.json",
+            "name": "korean-light",
+            "outputDirectory": "korean-light",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 71,
+                "handleCount": 275,
+                "pagefileUsageBytes": 452415488,
+                "peakWorkingSetBytes": 409038848,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 452415488,
+                "privateWorkingSetBytes": 342315008,
+                "threadCount": 16,
+                "workingSetBytes": 408096768
+            },
+            "theme": "light",
+            "tracePath": "korean-light/workflow-trace.txt"
+        },
+        {
+            "language": "korean",
+            "metricsPath": "korean-dark/metrics.json",
+            "name": "korean-dark",
+            "outputDirectory": "korean-dark",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 71,
+                "handleCount": 275,
+                "pagefileUsageBytes": 451743744,
+                "peakWorkingSetBytes": 408436736,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 451743744,
+                "privateWorkingSetBytes": 341725184,
+                "threadCount": 16,
+                "workingSetBytes": 407502848
+            },
+            "theme": "dark",
+            "tracePath": "korean-dark/workflow-trace.txt"
+        }
+    ]
+}

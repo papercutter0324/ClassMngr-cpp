@@ -944,3 +944,33 @@ No v2 feature work begins without a fixture and an acceptance check.
   decoded/resident lifecycle traces, and cross-platform Release evidence.
   Continue with the next heavy Phase 0 slice; do not begin v2 remediation or
   Phase 1 yet.
+
+## Progress update - 2026-09-16 (large Sub Prep visual-state references)
+
+- What changed: the heavy-route harness now has a dedicated in-process Qt
+  visual-state mode. It enters the actual packaged Windows x64 Release Sub Prep
+  page, scrolls the class-information content into view, captures the initial
+  selected class, changes selection, and captures the resulting state. A
+  second 96-class database with regular and intensive meeting times cleared
+  supplies the real empty class-information state; no native desktop
+  automation is required.
+- Evidence: the populated Release route ran English/Korean × light/dark, with
+  96 visible classes and a selected-class transition from `25` to `1` in each
+  variant. The four routes completed between `9,773` and `10,179 ms`; peak
+  working sets ranged from `408,436,736` to `410,849,280` bytes. The empty
+  route reported zero visible classes and selected class `-1`, completed at
+  `7,643 ms`, and retained a `292,823,040`-byte peak working set. Screenshots,
+  generated fixtures, metrics, traces, and the manifest are retained under
+  `docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/`.
+- Evaluation impact: this closes the selected, changed-selection, empty, and
+  both-language/theme Sub Prep visual-reference requirement from the updated
+  Phase 0 audit. The page-scroll diagnostic hook is test-only behavior and
+  does not alter normal navigation. This is still current-product before-state
+  evidence; it does not set the v2 Release memory budget or implement the 7J
+  remediation.
+- Decision and next heavy slice: Phase 0 remains open for editing/read-only
+  and dialog/loading/error visual states, explicit Release thresholds,
+  remaining report/substitute/PowerPoint output references, per-resource
+  decoded/resident lifecycle traces, and Windows ARM64/macOS universal/Linux
+  Release evidence. Continue the next heavy Phase 0 slice; do not begin v2
+  remediation or Phase 1 yet.

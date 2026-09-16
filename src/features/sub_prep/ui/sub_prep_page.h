@@ -81,6 +81,11 @@ public:
     // Used by the opt-in heavy startup diagnostics to exercise a real class
     // selection without relying on native desktop automation.
     [[nodiscard]] bool selectClassForStartupDiagnostics(int classId);
+    // Used by the opt-in heavy startup visual diagnostics to make the
+    // class-information or empty-state content visible in the captured frame.
+    void scrollToClassInformationForStartupDiagnostics(
+        bool emptyState = false
+        );
 
 protected:
     bool eventFilter(
