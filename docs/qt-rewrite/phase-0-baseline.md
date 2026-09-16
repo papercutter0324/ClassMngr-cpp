@@ -244,6 +244,17 @@ does not recreate or rely on them.
   `docs/qt-rewrite/visual-baseline/release/large-calendar-import-boundary/`.
   This is the current-product Calendar import before-state, not a v2 operation
   budget.
+- The same packaged Calendar Import Heavy route now retains the real transient
+  Preferences loading state as `calendar-import-loading.png`. The checkpoint
+  records `status=Importing events...`, `controlsDisabled=true`, and
+  `captured=true`; the capture scrolls the existing Calendar tab to the Import
+  section for a useful frame and restores the prior scroll position afterward.
+  Loading occurred at `3,207 ms`, workbook parsing at `3,262 ms`, page refresh
+  at `3,656 ms`, and the route completed at `10,112 ms` with `11,138 ms`
+  settled. Route-wide peak working set/private usage was `416,694,272`/
+  `457,310,208` bytes. The retained loading frame, updated Preferences and
+  Calendar captures, trace, manifest, and profiler report remain under the
+  Calendar Import boundary directory.
 - The packaged Release heavy-route Class Transfer run uses the same 96-class
   workspace and a generated 1,716,291-byte JSON package containing 12 teachers,
   48 classes, 8,640 roster cells, 96 speaking evaluations with 26,400 cells,

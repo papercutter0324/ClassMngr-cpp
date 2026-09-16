@@ -1187,3 +1187,28 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: continue Phase 0 with the next packaged
   Windows x64 Release Heavy-route evidence gap; do not begin v2 remediation or
   Phase 1 yet.
+
+## Progress update - 2026-09-16 (large Calendar Import loading reference)
+
+- What changed: the existing in-process Calendar Import Heavy-route controller
+  now captures the real Preferences loading state immediately after the Import
+  Events action. It records the `Importing events...` status, disabled import
+  control, and capture result while leaving the production path unchanged. The
+  evidence probe temporarily scrolls the existing Calendar preferences tab to
+  the Import section so the retained frame shows the state, then restores the
+  prior scroll position.
+- Heavy-route evidence: the packaged Windows x64 Release 96-class route passed
+  the deterministic local HTTP workbook workflow and retained
+  `calendar-import-loading.png` alongside the Preferences and Calendar frames.
+  The loading/parse/page-refresh checkpoints were `3,207`/`3,262`/`3,656 ms`,
+  workflow completion was `10,112 ms`, and one-second settle was `11,138 ms`.
+  Peak working set/private usage was `416,694,272`/`457,310,208` bytes. The
+  checkpoint records `status=Importing events...`, `controlsDisabled=true`,
+  and `captured=true`.
+- Evaluation impact: Calendar Import transient loading evidence is now part of
+  the current-product import oracle, while cross-platform Release capture,
+  remaining feature visual/error states, generated-output gaps, and v2
+  ownership/memory work remain open.
+- Decision and next heavy slice: continue Phase 0 with the next packaged
+  Windows x64 Release Heavy-route evidence gap; do not begin v2 remediation or
+  Phase 1 yet.

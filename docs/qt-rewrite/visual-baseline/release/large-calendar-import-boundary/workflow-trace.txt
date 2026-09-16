@@ -8,7 +8,8 @@ calendar-events-processed
 calendar-import-preferences-start
 calendar-import-preferences-opened
 calendar-import-ui-start
-calendar-import-operation-start source=http://127.0.0.1:51114/large-calendar.xlsx
+calendar-import-operation-start source=http://127.0.0.1:54637/large-calendar.xlsx
+calendar-import-loading status=Importing events...; controlsDisabled=true; captured=true
 calendar-import-response-received rawBytes=16284; rawBytesRetained=true
 calendar-import-workbook-parsed sheets=2; cells=382; mergedRanges=12; sharedStrings=0; styles=4; rawBytesRetained=false; workbookRetained=true
 calendar-import-events-prepared events=261; skipped=104; eventsRetained=true

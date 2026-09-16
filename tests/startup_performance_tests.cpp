@@ -8677,6 +8677,14 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
         qPrintable(traceOutput.errorString())
         );
     traceOutput.close();
+    const QString loadingCapturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("calendar-import-loading.png")
+            );
+    if (QFileInfo::exists(loadingCapturePath))
+    {
+        QVERIFY(QFile::remove(loadingCapturePath));
+    }
 
     const auto workbookData =
         std::make_shared<QByteArray>(largeCalendarImportWorkbookData());
@@ -8855,6 +8863,7 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
              QStringLiteral("calendar-import-preferences-start"),
              QStringLiteral("calendar-import-preferences-opened"),
              QStringLiteral("calendar-import-ui-start"),
+             QStringLiteral("calendar-import-loading"),
              QStringLiteral("calendar-import-operation-start"),
              QStringLiteral("calendar-import-response-received"),
              QStringLiteral("calendar-import-workbook-parsed"),
@@ -8921,6 +8930,8 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
 
     const QJsonObject parsedCheckpoint =
         checkpointNamed(QStringLiteral("calendar-import-workbook-parsed"));
+    const QJsonObject loadingCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-loading"));
     const QJsonObject eventsCheckpoint =
         checkpointNamed(QStringLiteral("calendar-import-events-prepared"));
     const QJsonObject saveCheckpoint =
@@ -8935,12 +8946,28 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
         checkpointNamed(QStringLiteral("workflow-complete"));
 
     QVERIFY(!parsedCheckpoint.isEmpty());
+    QVERIFY(!loadingCheckpoint.isEmpty());
     QVERIFY(!eventsCheckpoint.isEmpty());
     QVERIFY(!saveCheckpoint.isEmpty());
     QVERIFY(!appliedCheckpoint.isEmpty());
     QVERIFY(!releasedCheckpoint.isEmpty());
     QVERIFY(!pageCheckpoint.isEmpty());
     QVERIFY(!workflowCheckpoint.isEmpty());
+    QVERIFY(
+        loadingCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("status=Importing events..."))
+        );
+    QVERIFY(
+        loadingCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("controlsDisabled=true"))
+        );
+    QVERIFY(
+        loadingCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("captured=true"))
+        );
     QVERIFY(finished);
     QCOMPARE(process.exitStatus(), QProcess::NormalExit);
     QCOMPARE(process.exitCode(), 0);
@@ -9094,6 +9121,7 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
     manifest.insert(QStringLiteral("teacherCount"), 24);
     manifest.insert(QStringLiteral("classCount"), 96);
     manifest.insert(QStringLiteral("workbookBytes"), QFileInfo(workbookPath).size());
+    manifest.insert(QStringLiteral("loadingVisualReference"), true);
     manifest.insert(QStringLiteral("processFinished"), finished);
     manifest.insert(
         QStringLiteral("exitStatus"),
@@ -9143,6 +9171,19 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
     QVERIFY(manifestFile.flush());
     QVERIFY(manifestFile.error() == QFile::NoError);
 
+    const QImage loadingCapture(loadingCapturePath);
+    QVERIFY2(
+        !loadingCapture.isNull()
+            && loadingCapture.width() > 0
+            && loadingCapture.height() > 0,
+        qPrintable(
+            QStringLiteral(
+                "Unable to read Calendar Import loading capture: %1"
+                )
+                .arg(loadingCapturePath)
+            )
+        );
+    QVERIFY(QFileInfo(loadingCapturePath).size() > 0);
     QVERIFY(
         QFileInfo::exists(
             QDir(outputRoot).filePath(

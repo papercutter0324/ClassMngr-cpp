@@ -69,6 +69,8 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QTabWidget>
@@ -4560,6 +4562,114 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
             const auto stage = std::make_shared<int>(0);
             const auto preferencesOpened = std::make_shared<bool>(false);
             const auto importFinished = std::make_shared<bool>(false);
+            const auto loadingVisualCaptured =
+                std::make_shared<bool>(false);
+            const QString loadingOutputRoot =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_CALENDAR_IMPORT_OUTPUT_DIR"
+                    ).trimmed();
+            const auto captureLoadingVisual =
+                [
+                    &profiler,
+                    workflowSucceeded,
+                    loadingVisualCaptured,
+                    loadingOutputRoot
+                ](const QPointer<QDialog>& currentDialogGuard)
+                {
+                    if (
+                        loadingOutputRoot.isEmpty()
+                        || *loadingVisualCaptured
+                        || !currentDialogGuard
+                        )
+                    {
+                        return;
+                    }
+
+                    auto* panel =
+                        currentDialogGuard->findChild<QWidget*>(
+                            QStringLiteral("calendarPreferencesPanel")
+                            );
+                    auto* importButton = panel
+                        ? panel->findChild<QPushButton*>(
+                            QStringLiteral(
+                                "preferencesCalendarImportEvents"
+                                )
+                            )
+                        : nullptr;
+                    auto* status = panel
+                        ? panel->findChild<QLabel*>(
+                            QStringLiteral("sectionSubtitle")
+                            )
+                        : nullptr;
+                    if (
+                        !importButton
+                        || !status
+                        || !status->text().startsWith(
+                            QStringLiteral("Importing events...")
+                            )
+                        )
+                    {
+                        return;
+                    }
+
+                    const bool controlsDisabled = !importButton->isEnabled();
+                    auto* calendarScroll =
+                        currentDialogGuard->findChild<QScrollArea*>(
+                            QStringLiteral("preferencesCalendarTab")
+                            );
+                    QScrollBar* scrollBar = calendarScroll
+                        ? calendarScroll->verticalScrollBar()
+                        : nullptr;
+                    const int previousScrollValue = scrollBar
+                        ? scrollBar->value()
+                        : 0;
+                    if (scrollBar)
+                    {
+                        scrollBar->setValue(scrollBar->maximum());
+                    }
+                    QDir().mkpath(loadingOutputRoot);
+                    const QString capturePath =
+                        QDir(loadingOutputRoot).filePath(
+                            QStringLiteral("calendar-import-loading.png")
+                            );
+                    const QPixmap capture = currentDialogGuard->grab();
+                    const bool captured =
+                        !capture.isNull()
+                        && capture.save(capturePath, "PNG");
+                    if (scrollBar)
+                    {
+                        scrollBar->setValue(previousScrollValue);
+                    }
+                    const QString detail =
+                        QStringLiteral(
+                            "status=%1; controlsDisabled=%2; captured=%3"
+                            )
+                            .arg(status->text())
+                            .arg(
+                                controlsDisabled
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                )
+                            .arg(
+                                captured
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                );
+                    profiler.checkpoint(
+                        QStringLiteral("calendar-import-loading"),
+                        detail
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral(
+                            "calendar-import-loading %1"
+                            ).arg(detail)
+                        );
+                    *loadingVisualCaptured = true;
+                    if (!captured || !controlsDisabled)
+                    {
+                        *workflowSucceeded = false;
+                    }
+                };
             const auto poll =
                 std::make_shared<std::function<void()>>();
 
@@ -4583,6 +4693,7 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
                     stage,
                     preferencesOpened,
                     importFinished,
+                    captureLoadingVisual,
                     poll
                 ]()
                 mutable
@@ -4724,6 +4835,7 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
                                 QStringLiteral("calendar-import-ui-start")
                                 );
                             importButton->click();
+                            captureLoadingVisual(dialogGuard);
                             app.processEvents();
                             *stage = 1;
                         }
@@ -4744,6 +4856,7 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
 
                     if (!statusText.startsWith(QStringLiteral("Imported ")))
                     {
+                        captureLoadingVisual(dialogGuard);
                         schedulePoll();
                         return;
                     }
