@@ -70,3 +70,8 @@ AGENTS.md
 
 # Local codex-workflow update staging
 .codex_workflow_staging_*/
+
+# Root-scoped in-source CMake generator output
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake

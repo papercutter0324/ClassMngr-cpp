@@ -21,7 +21,9 @@ required dependency with a Qt bundled fallback available on Windows.
 ## Build, Test, and Development Tools
 
 CMake 3.25+ and the checked-in `CMakePresets.json` define configuration,
-build, install, and selected artifact workflows. Ninja is used by the Linux
+build, install, and selected artifact workflows for Debug and Release only.
+Windows multi-config generators are constrained to `Debug;Release`; Linux
+and macOS retain single-config `CMAKE_BUILD_TYPE`. Ninja is used by the Linux
 and macOS presets; Windows uses the Visual Studio/MSVC generator. Qt deployment
 tools package release runtimes, and CTest runs the registered Qt test suite.
 Linux release deployment also uses `patchelf`.
@@ -42,6 +44,5 @@ website rather than calling an AI API. (CMakeLists.txt, README.md)
   `CMAKE_PREFIX_PATH`, and must match the compiler and target architecture.
 - Resource-pack signature enforcement defaults to enabled, while the dormant
   resource-pack startup check defaults to disabled. (CMakeLists.txt)
-- Evidence discrepancy to resolve: `BUILDING.md` says Qt 6.11.1 or newer,
-  while `CMakeLists.txt` requires Qt 6.12.0. Use the CMake requirement for
-  current configuration until the build guidance is reconciled.
+- `CMakeLists.txt`, `BUILDING.md`, active CI workflows, and the macOS release
+  helper now use or require Qt 6.12.0.

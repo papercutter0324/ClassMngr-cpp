@@ -12,6 +12,16 @@ project(ClassMngr
     LANGUAGES CXX
 )
 
+# Keep every multi-configuration generator focused on the supported build
+# variants.  Single-configuration generators continue to use their preset's
+# CMAKE_BUILD_TYPE instead.
+if(CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING
+        "Supported ClassMngr build configurations"
+        FORCE
+    )
+endif()
+
 if(WIN32)
     enable_language(RC)
 endif()
@@ -190,7 +200,7 @@ include(cmake/deployment.cmake)
 include(cmake/platform/macos.cmake)
 include(cmake/platform/windows.cmake)
 if(BUILD_TESTING)
-    find_package(Qt6 6.11.1 REQUIRED COMPONENTS
+    find_package(Qt6 6.12.0 REQUIRED COMPONENTS
         Test
     )
 
