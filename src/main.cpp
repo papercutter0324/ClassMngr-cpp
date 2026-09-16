@@ -4225,15 +4225,117 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                         }
 
                         app.processEvents();
-                        if (
-                            auto* conflictWarning =
-                                review->findChild<QMessageBox*>(
-                                    QStringLiteral(
-                                        "scheduleImportConflictWarning"
-                                        )
+                        const QString outputRoot =
+                            qEnvironmentVariable(
+                                "CLASSMNGR_STARTUP_SCHEDULE_IMPORT_OUTPUT_DIR"
+                                ).trimmed();
+                        auto* conflictWarning =
+                            review->findChild<QMessageBox*>(
+                                QStringLiteral(
+                                    "scheduleImportConflictWarning"
                                     )
+                                );
+                        if (!conflictWarning)
+                        {
+                            for (QWidget* widget :
+                                 QApplication::topLevelWidgets())
+                            {
+                                auto* candidate =
+                                    qobject_cast<QMessageBox*>(widget);
+                                if (
+                                    candidate
+                                    && candidate->objectName()
+                                        == QStringLiteral(
+                                            "scheduleImportConflictWarning"
+                                            )
+                                    )
+                                {
+                                    conflictWarning = candidate;
+                                    break;
+                                }
+                            }
+                        }
+                        if (
+                            !conflictWarning
+                            && !outputRoot.isEmpty()
+                            && !applyImport
                             )
                         {
+                            QTimer::singleShot(
+                                25,
+                                &app,
+                                [poll]()
+                                {
+                                    (*poll)();
+                                }
+                                );
+                            return;
+                        }
+                        if (conflictWarning)
+                        {
+                            if (!outputRoot.isEmpty())
+                            {
+                                QDir().mkpath(outputRoot);
+                                const QString warningText =
+                                    conflictWarning->text()
+                                        .simplified()
+                                        .replace(
+                                            QChar(';'),
+                                            QChar(',')
+                                            );
+                                const QString capturePath =
+                                    QDir(outputRoot).filePath(
+                                        QStringLiteral(
+                                            "schedule-import-conflict-warning.png"
+                                            )
+                                        );
+                                const QPixmap capture =
+                                    conflictWarning->grab();
+                                const bool captured =
+                                    !capture.isNull()
+                                    && capture.save(capturePath, "PNG");
+                                const QString detail =
+                                    QStringLiteral(
+                                        "visible=%1; warningText=%2; "
+                                        "importEnabled=%3; captured=%4"
+                                        )
+                                        .arg(
+                                            conflictWarning->isVisible()
+                                                ? QStringLiteral("true")
+                                                : QStringLiteral("false")
+                                            )
+                                        .arg(warningText)
+                                        .arg(
+                                            import->isEnabled()
+                                                ? QStringLiteral("true")
+                                                : QStringLiteral("false")
+                                            )
+                                        .arg(
+                                            captured
+                                                ? QStringLiteral("true")
+                                                : QStringLiteral("false")
+                                            );
+                                profiler.checkpoint(
+                                    QStringLiteral(
+                                        "schedule-import-conflict-warning"
+                                        ),
+                                    detail
+                                    );
+                                appendStartupWorkflowTrace(
+                                    QStringLiteral(
+                                        "schedule-import-conflict-warning %1"
+                                        ).arg(detail)
+                                    );
+                                if (
+                                    !conflictWarning->isVisible()
+                                    || warningText.isEmpty()
+                                    || import->isEnabled()
+                                    || !captured
+                                    )
+                                {
+                                    *workflowSucceeded = false;
+                                }
+                            }
                             conflictWarning->accept();
                             app.processEvents();
                         }
@@ -4254,10 +4356,6 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                             }
                         }
 
-                        const QString outputRoot =
-                            qEnvironmentVariable(
-                                "CLASSMNGR_STARTUP_SCHEDULE_IMPORT_OUTPUT_DIR"
-                                ).trimmed();
                         if (!outputRoot.isEmpty())
                         {
                             QDir().mkpath(outputRoot);

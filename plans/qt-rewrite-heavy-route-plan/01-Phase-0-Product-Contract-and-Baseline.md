@@ -1188,6 +1188,36 @@ No v2 feature work begins without a fixture and an acceptance check.
   Windows x64 Release Heavy-route evidence gap; do not begin v2 remediation or
   Phase 1 yet.
 
+## Progress update - 2026-09-16 (large Schedule Import conflict-warning reference)
+
+- What changed: the existing in-process Schedule Import Heavy-route controller
+  now waits for the real conflict-warning `QMessageBox` created by the review
+  dialog, captures it by its stable object name, records its visibility/text/
+  disabled-Import state, and acknowledges it before the existing cancel path
+  continues. The wait is enabled only for the opt-in evidence output and the
+  existing event-loop controller; normal production behavior is unchanged.
+- Heavy-route evidence: the cancel fixture was adjusted so four-class teacher
+  groups intentionally share projected day/time slots, which makes the real
+  warning path appear. The packaged Windows x64 Release cancel route retained
+  `schedule-import-conflict-warning.png` and recorded
+  `visible=true`, warning text beginning `Review these schedule conflicts
+  before importing:`, `importEnabled=false`, and `captured=true`. The
+  conflict-free apply variant still commits normally and records no warning
+  visual reference. Cancel/apply peak working sets were `418,058,240` /
+  `360,960,000` bytes; peak private usage was `461,225,984` /
+  `402,731,008` bytes.
+- Evaluation impact: the large Schedule Import current-product oracle now
+  includes asynchronous loading, staged review, a real conflict-warning modal,
+  cancellation, conflict-free transaction apply, cleanup, and schedule
+  refresh. The warning image, generated cancel workbook, manifests, traces,
+  and profiler reports are under the two existing large Schedule Import
+  boundary directories. This remains before-state evidence; v2 memory and
+  ownership work, generated-output gaps, cross-platform Release evidence, and
+  other feature states remain open.
+- Decision and next heavy slice: Phase 0 remains open. Resume with the next
+  packaged Windows x64 Release Heavy-route evidence gap after this session;
+  do not begin v2 remediation or Phase 1 yet.
+
 ## Progress update - 2026-09-16 (large Calendar Import loading reference)
 
 - What changed: the existing in-process Calendar Import Heavy-route controller

@@ -5,8 +5,9 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
 ## Detailed Current State
 
 - User instruction: use the Heavy route for every slice; commit each slice and
-  immediately continue unless the user asks to pause. The current request is
-  to commit the completed slice and continue.
+  immediately continue unless the user asks to pause. The current final slice
+  is being committed after the 13:00 Asia/Seoul cutoff; stop immediately after
+  that commit and do not begin another slice.
 - The `<250 MiB` RAM value is the target for the completed rewrite, not a
   Phase 0 acceptance gate for the legacy widget graph. Phase 0 retains current
   packaged Windows x64 Release measurements as baseline/trend evidence. Later
@@ -48,11 +49,19 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
     working set for cancel and `361,316,352` bytes for apply.
 - `f0fb4b3` — `Phase 0: retain Calendar Import loading state`
   - Retained the real packaged Calendar Import Preferences loading state. The
-    Calendar tab is scrolled to the Import section only for the opt-in capture,
-    then restored; the evidence records `Importing events...`, the disabled
-    import button, and a non-empty screenshot. The focused route and full
-    startup-performance suite passed with a `416,694,272`-byte working-set and
-    `457,310,208`-byte private-usage peak.
+  Calendar tab is scrolled to the Import section only for the opt-in capture,
+  then restored; the evidence records `Importing events...`, the disabled
+  import button, and a non-empty screenshot. The focused route and full
+  startup-performance suite passed with a `416,694,272`-byte working-set and
+  `457,310,208`-byte private-usage peak.
+- Final current-session slice — `Phase 0: retain Schedule Import conflict
+  warning` (commit created after the cutoff): the packaged large Schedule
+  Import cancel route now retains the real conflict-warning modal, including
+  visible warning text, disabled Import, and a validated screenshot. The
+  cancel fixture intentionally overlaps projected meetings; the separate
+  apply fixture remains conflict-free and commits normally. The current
+  source/test/evidence/docs changes are included in the final post-cutoff
+  commit for this session.
 
 ## Verification
 
@@ -75,6 +84,13 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   developer environment. Its focused packaged Heavy route, visual inspection,
   and the full `ClassMngrStartupPerformanceTests.exe` suite passed with all
   opt-in capture variables cleared for the full run.
+- The Schedule Import conflict-warning slice rebuilt the packaged Release
+  application and Debug startup test target successfully. Both focused
+  boundary routes and the full `ClassMngrStartupPerformanceTests.exe` suite
+  passed. The cancel warning capture was visually inspected and the profiler
+  recorded peak working-set/private-usage values of
+  `418,058,240`/`461,225,984` bytes; the conflict-free apply route recorded
+  `360,960,000`/`402,731,008` bytes.
 - `git diff --check` passed before the slice commit.
 
 ## Pending Work and Blockers
@@ -94,10 +110,8 @@ git status --short
 git log -6 --oneline
 ```
 
-Then inspect the Phase 0 baseline/plan tail. Resume with the next packaged
-  Windows x64 Release Heavy-route evidence slice, now continuing with another
-  explicitly open Phase 0 visual/output gap. Keep every slice separately
-  committed and do not start Phase 1 until Phase 0's evidence/contract work is
-  genuinely complete. If a commit is made after 13:00 Asia/Seoul, stop after
-  that commit; if work is still active at 13:15, commit a handoff update and
-  stop.
+Then inspect the Phase 0 baseline/plan tail. The final post-cutoff commit from
+this session contains the completed Schedule Import conflict-warning slice. On
+the next session, resume with the next packaged Windows x64 Release Heavy-route
+evidence slice, keep every slice separately committed, and do not start Phase 1
+until Phase 0's evidence/contract work is genuinely complete.

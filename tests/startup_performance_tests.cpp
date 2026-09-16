@@ -283,13 +283,17 @@ QByteArray largeScheduleImportWorksheet(
                     + (
                         conflictFree
                             ? localRow % 7
-                            : localRow % 6
+                            : (candidate / 4) % 6
                         )
                     );
         const QString timeCell =
             spreadsheetColumnName(startColumn) + QString::number(row);
         const int dayColumn =
-            startColumn + 1 + (candidate % days.size());
+            startColumn + 1 + (
+                conflictFree
+                    ? candidate % days.size()
+                    : (candidate / 4) % days.size()
+                );
         const QString classCell =
             spreadsheetColumnName(dayColumn) + QString::number(row);
         const QString classGrade =
@@ -5076,6 +5080,14 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         qPrintable(traceOutput.errorString())
         );
     traceOutput.close();
+    const QString conflictWarningCapturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("schedule-import-conflict-warning.png")
+            );
+    if (QFileInfo::exists(conflictWarningCapturePath))
+    {
+        QVERIFY(QFile::remove(conflictWarningCapturePath));
+    }
 
     QProcess process;
     QProcessEnvironment environment =
@@ -5212,6 +5224,7 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
                   QStringLiteral("schedule-import-parse-complete"),
                   QStringLiteral("schedule-import-review-start"),
                   QStringLiteral("schedule-import-review-prepared"),
+                  QStringLiteral("schedule-import-conflict-warning"),
                   QStringLiteral("schedule-import-review-ready"),
                   QStringLiteral("schedule-import-cancel-start"),
                   QStringLiteral("schedule-import-operation-cancelled"),
@@ -5263,6 +5276,7 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
     QJsonObject parseCheckpoint;
     QJsonObject loadingCheckpoint;
     QJsonObject reviewCheckpoint;
+    QJsonObject conflictWarningCheckpoint;
     QJsonObject applyCheckpoint;
     QJsonObject postReviewCheckpoint;
     QJsonObject postReleaseCheckpoint;
@@ -5287,6 +5301,12 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         else if (name == QStringLiteral("schedule-import-review-ready"))
         {
             reviewCheckpoint = checkpoint;
+        }
+        else if (
+            name == QStringLiteral("schedule-import-conflict-warning")
+            )
+        {
+            conflictWarningCheckpoint = checkpoint;
         }
         else if (name == QStringLiteral("schedule-import-apply-complete"))
         {
@@ -5335,6 +5355,10 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
 
     QVERIFY(!loadingCheckpoint.isEmpty());
     QVERIFY(!parseCheckpoint.isEmpty());
+    if (!applyLifecycle)
+    {
+        QVERIFY(!conflictWarningCheckpoint.isEmpty());
+    }
     QVERIFY(
         loadingCheckpoint.value(QStringLiteral("detail"))
             .toString()
@@ -5355,6 +5379,33 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
             .toString()
             .contains(QStringLiteral("captured=true"))
         );
+    if (!applyLifecycle)
+    {
+        QVERIFY(
+            conflictWarningCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("visible=true"))
+            );
+        QVERIFY(
+            conflictWarningCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(
+                    QStringLiteral(
+                        "warningText=Review these schedule conflicts before importing:"
+                        )
+                    )
+            );
+        QVERIFY(
+            conflictWarningCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("importEnabled=false"))
+            );
+        QVERIFY(
+            conflictWarningCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("captured=true"))
+            );
+    }
     QVERIFY(!reviewCheckpoint.isEmpty());
     if (applyLifecycle)
     {
@@ -5536,6 +5587,10 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
     manifest.insert(QStringLiteral("classCount"), 96);
     manifest.insert(QStringLiteral("workbookBytes"), QFileInfo(workbookPath).size());
     manifest.insert(QStringLiteral("loadingVisualReference"), true);
+    manifest.insert(
+        QStringLiteral("conflictWarningVisualReference"),
+        !applyLifecycle
+        );
     manifest.insert(QStringLiteral("processFinished"), finished);
     manifest.insert(
         QStringLiteral("exitStatus"),
@@ -5594,6 +5649,22 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
             QJsonDocument(manifest).toJson(QJsonDocument::Indented)
             ) > 0
         );
+    if (!applyLifecycle)
+    {
+        const QImage conflictWarningCapture(conflictWarningCapturePath);
+        QVERIFY2(
+            !conflictWarningCapture.isNull()
+                && conflictWarningCapture.width() > 0
+                && conflictWarningCapture.height() > 0,
+            qPrintable(
+                QStringLiteral(
+                    "Unable to read Schedule Import conflict warning capture: %1"
+                    )
+                    .arg(conflictWarningCapturePath)
+                )
+            );
+        QVERIFY(QFileInfo(conflictWarningCapturePath).size() > 0);
+    }
     const QString loadingCapturePath =
         QDir(outputRoot).filePath(
             QStringLiteral("schedule-import-loading.png")

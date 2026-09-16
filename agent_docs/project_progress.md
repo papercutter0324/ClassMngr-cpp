@@ -18,22 +18,23 @@ transfer, staff-directory, and generated-output evidence. Recent slices added
 a Speaking Evaluation PowerPoint renderer-selection reference, a Sub Prep
 output-dialog validation-error reference, a Sub Prep editing/read-only
 reference, populated Classes visual references across English/Korean and
-light/dark variants, and real Schedule Import loading references for both
-cancel and apply boundaries, plus the Calendar Import Preferences loading
-reference. Each focused route and the full startup-performance suite passed
-for the current committed Calendar Import slice.
+light/dark variants, real Schedule Import loading references for both cancel
+and apply boundaries, a real large-route Schedule Import conflict-warning
+reference, and the Calendar Import Preferences loading reference. Each focused
+route and the full startup-performance suite passed for the current final
+Schedule Import slice.
 
 ## Current Position
 
-Current position is the open Phase 0 evidence gap after committed slice
-`f0fb4b3`. Phase 1 has not started. The current route remains a legacy
-before-state measurement; later phases must avoid regressions and should lower
-the affected heavy-route working set.
+The final current-session slice is the large Schedule Import conflict-warning
+reference, committed after the Asia/Seoul 13:00 cutoff. Phase 1 has not
+started. The current route remains a legacy before-state measurement; later
+phases must avoid regressions and should lower the affected heavy-route
+working set.
 
 ## Next Milestone
 
-Resume with the next packaged Windows x64 Release heavy-route slice covering
+Resume with the next packaged Windows x64 Release Heavy-route slice covering
 another explicitly open visual/output gap. Run the focused heavy route, the
-full startup-performance suite, and commit the slice before continuing. Apply
-the Asia/Seoul cutoff: a commit after 13:00 ends the work session, and active
-work at 13:15 requires a committed handoff before stopping.
+full startup-performance suite, and commit that slice before continuing. The
+current session stops after its post-13:00 commit.

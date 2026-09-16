@@ -250,6 +250,7 @@
         "widgetCount": 394
     },
     "classCount": 96,
+    "conflictWarningVisualReference": false,
     "exitCode": 0,
     "exitStatus": "normal",
     "fixture": "large_startup.sql",

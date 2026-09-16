@@ -45,3 +45,10 @@
   value afterward. Calendar Import uses this to show `Importing events...` and
   the disabled Import Events button without changing the production UI path or
   the later Preferences reference state.
+- A Schedule Import conflict warning is only created when the projected
+  preview actually contains overlapping meetings; a large fixture that merely
+  contains invalid patterns does not exercise that modal. For an evidence-only
+  boundary, make the cancel fixture overlap deterministic day/time slots, poll
+  the existing event loop for the asynchronously queued `QMessageBox`, capture
+  it, and keep the apply fixture conflict-free so the transaction path remains
+  independently measurable.

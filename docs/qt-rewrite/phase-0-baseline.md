@@ -226,6 +226,21 @@ does not recreate or rely on them.
   `418,488,320`-byte peak working set and the apply route with
   `361,316,352` bytes; the loading capture is retained in each corresponding
   Schedule Import boundary directory.
+- The cancel boundary now also retains the real Schedule Import conflict-warning
+  modal from the large route. Its deterministic workbook variant intentionally
+  overlaps projected meetings so the existing warning path is exercised; the
+  checkpoint records `visible=true`, warning text beginning
+  `Review these schedule conflicts before importing:`, `importEnabled=false`,
+  and `captured=true`. The captured `schedule-import-conflict-warning.png` is
+  retained under
+  `docs/qt-rewrite/visual-baseline/release/large-schedule-import-boundary/`,
+  with the full warning detail preserved in the trace and profiler report.
+  The separate apply variant remains conflict-free, commits normally, and
+  records `conflictWarningVisualReference=false` in its manifest. In the
+  latest focused runs, cancel/apply peak working sets were `418,058,240` /
+  `360,960,000` bytes and peak private usage was `461,225,984` /
+  `402,731,008` bytes. This is current-product before-state evidence, not a
+  v2 operation budget.
 - The packaged Release heavy-route Calendar Import run uses the same 96-class
   workspace and a deterministic two-sheet, 16,284-byte workbook served through
   a local HTTP response. The import parsed 382 cells and 12 merged ranges,
