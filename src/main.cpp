@@ -3880,7 +3880,128 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                     .arg(filePath)
                     .arg(QFileInfo(filePath).size())
                 );
+            const auto loadingVisualCaptured =
+                std::make_shared<bool>(false);
+            const QString loadingOutputRoot =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_SCHEDULE_IMPORT_OUTPUT_DIR"
+                    ).trimmed();
+            const auto captureLoadingVisual =
+                [
+                    &profiler,
+                    workflowSucceeded,
+                    dialogGuard,
+                    loadingVisualCaptured,
+                    loadingOutputRoot
+                ]()
+                {
+                    if (
+                        loadingOutputRoot.isEmpty()
+                        || *loadingVisualCaptured
+                        || !dialogGuard
+                        )
+                    {
+                        return;
+                    }
+
+                    auto* status =
+                        dialogGuard->findChild<QLabel*>(
+                            QStringLiteral("scheduleImportSourceStatus")
+                            );
+                    auto* progress =
+                        dialogGuard->findChild<QProgressBar*>(
+                            QStringLiteral("scheduleImportProgressBar")
+                            );
+                    auto* fileEdit =
+                        dialogGuard->findChild<QLineEdit*>(
+                            QStringLiteral("scheduleImportFilePath")
+                            );
+                    auto* browse =
+                        dialogGuard->findChild<QPushButton*>(
+                            QStringLiteral("scheduleImportBrowseButton")
+                            );
+                    auto* normalRadio =
+                        dialogGuard->findChild<QRadioButton*>(
+                            QStringLiteral("scheduleImportNormalRadio")
+                            );
+                    auto* intensiveRadio =
+                        dialogGuard->findChild<QRadioButton*>(
+                            QStringLiteral("scheduleImportIntensiveRadio")
+                            );
+                    auto* next =
+                        dialogGuard->findChild<QPushButton*>(
+                            QStringLiteral("scheduleImportNextButton")
+                            );
+                    if (!progress || progress->isHidden())
+                    {
+                        return;
+                    }
+
+                    const QString statusText =
+                        status ? status->text() : QString();
+                    const bool progressVisible = progress->isVisible();
+                    const bool controlsDisabled =
+                        fileEdit
+                        && browse
+                        && normalRadio
+                        && intensiveRadio
+                        && next
+                        && !fileEdit->isEnabled()
+                        && !browse->isEnabled()
+                        && !normalRadio->isEnabled()
+                        && !intensiveRadio->isEnabled()
+                        && !next->isEnabled();
+                    QDir().mkpath(loadingOutputRoot);
+                    const QString capturePath =
+                        QDir(loadingOutputRoot).filePath(
+                            QStringLiteral("schedule-import-loading.png")
+                            );
+                    const QPixmap capture = dialogGuard->grab();
+                    const bool captured =
+                        !capture.isNull()
+                        && capture.save(capturePath, "PNG");
+                    const QString detail =
+                        QStringLiteral(
+                            "status=%1; progressVisible=%2; "
+                            "controlsDisabled=%3; captured=%4"
+                            )
+                            .arg(statusText)
+                            .arg(
+                                progressVisible
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                )
+                            .arg(
+                                controlsDisabled
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                )
+                            .arg(
+                                captured
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                );
+                    profiler.checkpoint(
+                        QStringLiteral("schedule-import-loading"),
+                        detail
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral(
+                            "schedule-import-loading %1"
+                            ).arg(detail)
+                        );
+                    *loadingVisualCaptured = true;
+                    if (
+                        !captured
+                        || !progressVisible
+                        || !controlsDisabled
+                        )
+                    {
+                        *workflowSucceeded = false;
+                    }
+                };
             next->click();
+            captureLoadingVisual();
             app.processEvents();
 
             const auto stage = std::make_shared<int>(0);
@@ -3899,6 +4020,7 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                     dialogGuard,
                     stage,
                     attempts,
+                    captureLoadingVisual,
                     poll
                 ]()
                 {
@@ -3989,6 +4111,7 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                             && !progress->isHidden()
                             )
                         {
+                            captureLoadingVisual();
                             QTimer::singleShot(25, &app, [poll]() { (*poll)(); });
                             return;
                         }

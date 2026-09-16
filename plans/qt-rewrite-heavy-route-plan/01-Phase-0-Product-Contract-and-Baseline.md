@@ -1162,3 +1162,28 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: continue Phase 0 with the next packaged
   Windows x64 Release heavy-route evidence gap; do not begin v2 remediation or
   Phase 1 yet.
+
+## Progress update - 2026-09-16 (large Schedule Import loading reference)
+
+- What changed: the existing in-process Schedule Import Heavy-route controller
+  now captures the real asynchronous loading state immediately after the Load
+  action, with the existing event-loop poll retained as a fallback. It records
+  the loading status, visible progress bar, disabled source/load controls, and
+  capture result. No production dialog behavior or new fixture was added.
+- Heavy-route evidence: both packaged Windows x64 Release 96-class routes
+  completed normally: the conflict/cancel route and the conflict-free
+  transaction/apply route each retained `schedule-import-loading.png`. Both
+  checkpoints record `status=Loading workbook...`,
+  `progressVisible=true`, `controlsDisabled=true`, and `captured=true`. The
+  cancel/apply route peaks were `418,488,320` and `361,316,352` working-set
+  bytes respectively. The retained files are under the existing
+  `large-schedule-import-boundary/` and
+  `large-schedule-import-apply-boundary/` directories.
+- Evaluation impact: the packaged Schedule Import loading visual is now part
+  of the current-product import oracle alongside parse, review, conflict,
+  cancel, apply, and release evidence. This remains before-state evidence; the
+  final memory target, other feature loading/error states, cross-platform
+  Release evidence, and remaining generated-output gaps remain open.
+- Decision and next heavy slice: continue Phase 0 with the next packaged
+  Windows x64 Release Heavy-route evidence gap; do not begin v2 remediation or
+  Phase 1 yet.

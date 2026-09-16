@@ -11,7 +11,8 @@ showPage schedule
 showPage-returned schedule
 events-processed schedule
 schedule-import-dialog-opened
-schedule-import-operation-start path=C:/Users/wfelt/AppData/Local/Temp/ClassMngrStartupPerformanceTests-XUUiZY/large-schedule-import.xlsx; rawBytes=17529
+schedule-import-operation-start path=C:/Users/wfelt/AppData/Local/Temp/ClassMngrStartupPerformanceTests-kjdhKM/large-schedule-import.xlsx; rawBytes=17529
+schedule-import-loading status=Loading workbook...; progressVisible=true; controlsDisabled=true; captured=true
 schedule-import-workbook-loaded sheets=2; users=5; classCandidates=96; diagnostics=0; rawBytesRetained=false
 schedule-import-parse-complete
 schedule-import-review-start

@@ -5186,6 +5186,7 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
             ? QStringList{
                   QStringLiteral("schedule-import-dialog-opened"),
                   QStringLiteral("schedule-import-operation-start"),
+                  QStringLiteral("schedule-import-loading"),
                   QStringLiteral("schedule-import-workbook-loaded"),
                   QStringLiteral("schedule-import-parse-complete"),
                   QStringLiteral("schedule-import-review-start"),
@@ -5206,6 +5207,7 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
             : QStringList{
                   QStringLiteral("schedule-import-dialog-opened"),
                   QStringLiteral("schedule-import-operation-start"),
+                  QStringLiteral("schedule-import-loading"),
                   QStringLiteral("schedule-import-workbook-loaded"),
                   QStringLiteral("schedule-import-parse-complete"),
                   QStringLiteral("schedule-import-review-start"),
@@ -5259,6 +5261,7 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
     report = metricsDocument.object();
 
     QJsonObject parseCheckpoint;
+    QJsonObject loadingCheckpoint;
     QJsonObject reviewCheckpoint;
     QJsonObject applyCheckpoint;
     QJsonObject postReviewCheckpoint;
@@ -5276,6 +5279,10 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
         if (name == QStringLiteral("schedule-import-parse-complete"))
         {
             parseCheckpoint = checkpoint;
+        }
+        else if (name == QStringLiteral("schedule-import-loading"))
+        {
+            loadingCheckpoint = checkpoint;
         }
         else if (name == QStringLiteral("schedule-import-review-ready"))
         {
@@ -5326,7 +5333,28 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
                            : QStringLiteral("cancelled=true")
                        );
 
+    QVERIFY(!loadingCheckpoint.isEmpty());
     QVERIFY(!parseCheckpoint.isEmpty());
+    QVERIFY(
+        loadingCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("status=Loading workbook..."))
+        );
+    QVERIFY(
+        loadingCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("progressVisible=true"))
+        );
+    QVERIFY(
+        loadingCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("controlsDisabled=true"))
+        );
+    QVERIFY(
+        loadingCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("captured=true"))
+        );
     QVERIFY(!reviewCheckpoint.isEmpty());
     if (applyLifecycle)
     {
@@ -5507,6 +5535,7 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
     manifest.insert(QStringLiteral("teacherCount"), 24);
     manifest.insert(QStringLiteral("classCount"), 96);
     manifest.insert(QStringLiteral("workbookBytes"), QFileInfo(workbookPath).size());
+    manifest.insert(QStringLiteral("loadingVisualReference"), true);
     manifest.insert(QStringLiteral("processFinished"), finished);
     manifest.insert(
         QStringLiteral("exitStatus"),
@@ -5565,6 +5594,23 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
             QJsonDocument(manifest).toJson(QJsonDocument::Indented)
             ) > 0
         );
+    const QString loadingCapturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("schedule-import-loading.png")
+            );
+    const QImage loadingCapture(loadingCapturePath);
+    QVERIFY2(
+        !loadingCapture.isNull()
+            && loadingCapture.width() > 0
+            && loadingCapture.height() > 0,
+        qPrintable(
+            QStringLiteral(
+                "Unable to read Schedule Import loading capture: %1"
+                )
+                .arg(loadingCapturePath)
+            )
+        );
+    QVERIFY(QFileInfo(loadingCapturePath).size() > 0);
     QVERIFY(
         QFileInfo::exists(
             QDir(outputRoot).filePath(

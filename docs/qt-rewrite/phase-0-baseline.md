@@ -218,6 +218,14 @@ does not recreate or rely on them.
   `docs/qt-rewrite/visual-baseline/release/large-schedule-import-apply-boundary/`.
   This is the current-product apply/commit before-state, not a v2 operation
   budget.
+- Both packaged Schedule Import heavy routes now retain the real asynchronous
+  loading state as `schedule-import-loading.png`. The capture records
+  `status=Loading workbook...`, a visible indeterminate progress bar, all
+  source/load controls disabled, and `captured=true` before the 96-class
+  workbook reaches parsing. The cancel route completed with a
+  `418,488,320`-byte peak working set and the apply route with
+  `361,316,352` bytes; the loading capture is retained in each corresponding
+  Schedule Import boundary directory.
 - The packaged Release heavy-route Calendar Import run uses the same 96-class
   workspace and a deterministic two-sheet, 16,284-byte workbook served through
   a local HTTP response. The import parsed 382 cells and 12 merged ranges,
@@ -710,8 +718,8 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution; the
-  populated Classes entry/selection/re-entry frames are now retained, while
-  the other feature states remain open.
+  populated Classes entry/selection/re-entry frames and Schedule Import
+  loading dialog are now retained, while the other feature states remain open.
 - Remaining report/output operation measurements beyond the retained Speaking
   Evaluation, Sub Prep output, and PDF viewer paths. The Staff Directory
   load/refresh/leave/re-entry, Class Transfer package
