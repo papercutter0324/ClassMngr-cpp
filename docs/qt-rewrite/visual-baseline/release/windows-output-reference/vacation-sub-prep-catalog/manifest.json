@@ -1,0 +1,135 @@
+{
+    "documents": [
+        {
+            "catalogFileName": "1 - How to Apply for Vacation.pdf",
+            "catalogId": "document_vacation_sub_prep_applying",
+            "loadStatus": "Ready",
+            "pageCount": 1,
+            "pdf": "document_vacation_sub_prep_applying.pdf",
+            "pdfBytes": 284638,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 841.9199829101562,
+                    "pageWidthPoints": 595.3200073242188,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1191,
+                    "png": "document_vacation_sub_prep_applying-page-01.png",
+                    "pngBytes": 217339
+                }
+            ],
+            "statusAfterClose": "Null"
+        },
+        {
+            "catalogFileName": "2 - Vacation Guidelines.pdf",
+            "catalogId": "document_vacation_sub_prep_guidelines",
+            "loadStatus": "Ready",
+            "pageCount": 4,
+            "pdf": "document_vacation_sub_prep_guidelines.pdf",
+            "pdfBytes": 344983,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 841.9199829101562,
+                    "pageWidthPoints": 595.3200073242188,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1191,
+                    "png": "document_vacation_sub_prep_guidelines-page-01.png",
+                    "pngBytes": 245821
+                }
+            ],
+            "statusAfterClose": "Null"
+        },
+        {
+            "catalogFileName": "3 - Vacation Request Form.pdf",
+            "catalogId": "document_vacation_sub_prep_request_form",
+            "loadStatus": "Ready",
+            "pageCount": 1,
+            "pdf": "document_vacation_sub_prep_request_form.pdf",
+            "pdfBytes": 82634,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 841.6799926757812,
+                    "pageWidthPoints": 595.2000122070312,
+                    "pixelHeight": 1683,
+                    "pixelWidth": 1190,
+                    "png": "document_vacation_sub_prep_request_form-page-01.png",
+                    "pngBytes": 156652
+                }
+            ],
+            "statusAfterClose": "Null"
+        },
+        {
+            "catalogFileName": "DYB Sub Procedures.pdf",
+            "catalogId": "document_vacation_sub_prep_procedures",
+            "loadStatus": "Ready",
+            "pageCount": 2,
+            "pdf": "document_vacation_sub_prep_procedures.pdf",
+            "pdfBytes": 191242,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 841.9199829101562,
+                    "pageWidthPoints": 595.3200073242188,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1191,
+                    "png": "document_vacation_sub_prep_procedures-page-01.png",
+                    "pngBytes": 221826
+                }
+            ],
+            "statusAfterClose": "Null"
+        },
+        {
+            "catalogFileName": "DYB Sub Prep Checklist.pdf",
+            "catalogId": "document_vacation_sub_prep_checklist",
+            "loadStatus": "Ready",
+            "pageCount": 2,
+            "pdf": "document_vacation_sub_prep_checklist.pdf",
+            "pdfBytes": 231538,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 841.9199829101562,
+                    "pageWidthPoints": 595.3200073242188,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1191,
+                    "png": "document_vacation_sub_prep_checklist-page-01.png",
+                    "pngBytes": 272917
+                }
+            ],
+            "statusAfterClose": "Null"
+        },
+        {
+            "catalogFileName": "DYB Sub Prep Template.pdf",
+            "catalogId": "document_vacation_sub_prep_template",
+            "loadStatus": "Ready",
+            "pageCount": 5,
+            "pdf": "document_vacation_sub_prep_template.pdf",
+            "pdfBytes": 522266,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 841.9199829101562,
+                    "pageWidthPoints": 595.3200073242188,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1191,
+                    "png": "document_vacation_sub_prep_template-page-01.png",
+                    "pngBytes": 233321
+                }
+            ],
+            "statusAfterClose": "Null"
+        }
+    ],
+    "kind": "vacation-sub-prep-catalog-pdf-lifecycle",
+    "lifecycle": [
+        "resolve catalog entry",
+        "open packaged PDF on demand",
+        "render first page",
+        "close PDF document"
+    ],
+    "schemaVersion": 1,
+    "sourceCatalogRoot": "resources/assets/documents",
+    "syntheticTestContent": false,
+    "test": "capturesVacationSubPrepCatalogPdfLifecycleWhenConfigured"
+}

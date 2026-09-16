@@ -183,9 +183,14 @@ classmngr_add_qt_test(
             src/features/documents/document_catalog.cpp
             src/core/resource_packs/resource_pack_manager.cpp
             src/core/updater/version.cpp
+        COMPILE_DEFINITIONS
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
         LIBRARIES
             Qt6::Core
+            Qt6::Gui
+            Qt6::Pdf
             Qt6::Test
+        OFFSCREEN
     )
 
     add_dependencies(

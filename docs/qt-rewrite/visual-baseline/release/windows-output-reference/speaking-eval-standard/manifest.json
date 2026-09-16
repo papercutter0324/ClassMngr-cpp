@@ -1,0 +1,27 @@
+{
+    "goldenFixture": "goldenReportData(Standard)",
+    "kind": "speaking-evaluation-report-pdf",
+    "reportTemplate": "standard",
+    "reports": [
+        {
+            "pageCount": 1,
+            "pdf": "speaking-eval-standard-golden.pdf",
+            "pdfBytes": 2072286,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 780,
+                    "pageWidthPoints": 540,
+                    "pixelHeight": 1560,
+                    "pixelWidth": 1080,
+                    "png": "speaking-eval-standard-golden-page-01.png",
+                    "pngBytes": 351841
+                }
+            ],
+            "statusAfterClose": "Null"
+        }
+    ],
+    "schemaVersion": 1,
+    "syntheticTestContent": true,
+    "test": "internalPdfMatchesWidgetRendering"
+}

@@ -1,0 +1,36 @@
+{
+    "kind": "roster-template-pdf",
+    "pageLayout": "A4 portrait",
+    "pdfs": [
+        {
+            "pageCount": 2,
+            "pdf": "daily-overflow-rosters.pdf",
+            "pdfBytes": 23294,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 842,
+                    "pageWidthPoints": 595,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1190,
+                    "png": "daily-overflow-rosters-page-01.png",
+                    "pngBytes": 128318
+                },
+                {
+                    "page": 2,
+                    "pageHeightPoints": 842,
+                    "pageWidthPoints": 595,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1190,
+                    "png": "daily-overflow-rosters-page-02.png",
+                    "pngBytes": 31856
+                }
+            ],
+            "statusAfterClose": "Null"
+        }
+    ],
+    "schemaVersion": 1,
+    "syntheticTestContent": true,
+    "template": "Daily",
+    "test": "dailyPdfUsesA4PortraitAndContinuesOverflowPages"
+}

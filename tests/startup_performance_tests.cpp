@@ -10185,6 +10185,7 @@ void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
                 )
         },
         {QStringLiteral("processFinished"), finished},
+        {QStringLiteral("timedOut"), !finished},
         {
             QStringLiteral("exitStatus"),
             process.exitStatus() == QProcess::NormalExit
@@ -10219,6 +10220,28 @@ void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
         manifestFile.write(
             QJsonDocument(manifest).toJson(QJsonDocument::Indented)
             ) > 0
+        );
+    manifestFile.close();
+    QVERIFY2(
+        manifestFile.open(QIODevice::ReadOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QJsonParseError manifestParseError;
+    const QJsonDocument retainedManifest =
+        QJsonDocument::fromJson(
+            manifestFile.readAll(),
+            &manifestParseError
+            );
+    QVERIFY2(
+        manifestParseError.error == QJsonParseError::NoError
+            && retainedManifest.isObject(),
+        qPrintable(manifestParseError.errorString())
+        );
+    QCOMPARE(
+        retainedManifest.object()
+            .value(QStringLiteral("timedOut"))
+            .toBool(),
+        !finished
         );
 }
 

@@ -1,8 +1,12 @@
 #include "features/documents/document_catalog.h"
 #include "core/resource_packs/resource_pack_manager.h"
+#include "windows_output_reference_capture.h"
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -98,6 +102,7 @@ private slots:
     void malformedActiveCatalogUsesEmbeddedCatalog();
     void rejectsCatalogLevelFailures();
     void startupParsingReleasesDocumentsPack();
+    void capturesVacationSubPrepCatalogPdfLifecycleWhenConfigured();
 };
 
 void DocumentCatalogTests::loadsValidCatalogAndResolvesLocales()
@@ -311,6 +316,138 @@ void DocumentCatalogTests::startupParsingReleasesDocumentsPack()
     {
         QVERIFY(document.exportFile->absoluteFilePath.isEmpty());
     }
+}
+
+void DocumentCatalogTests::
+    capturesVacationSubPrepCatalogPdfLifecycleWhenConfigured()
+{
+    WindowsOutputReferenceCapture::OutputDirectory referenceDirectory;
+    QVERIFY2(
+        WindowsOutputReferenceCapture::prepareOutputDirectory(
+            WindowsOutputReferenceCapture::OutputRootEnvironmentVariable,
+            QStringLiteral("vacation-sub-prep-catalog"),
+            &referenceDirectory
+            ),
+        qPrintable(referenceDirectory.error)
+        );
+    if (!referenceDirectory.enabled)
+    {
+        QSKIP(
+            "Set CLASSMNGR_WINDOWS_OUTPUT_REFERENCE_DIR to capture packaged PDF references."
+            );
+    }
+
+    const QString documentsRoot =
+        QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+            QStringLiteral("resources/assets/documents")
+            );
+    const auto catalog = DocumentCatalog::loadFromRoot(documentsRoot);
+    if (!catalog)
+    {
+        QFAIL(qPrintable(catalog.error()));
+    }
+
+    struct ExpectedDocument
+    {
+        const char* id;
+        const char* fileName;
+    };
+    const QList<ExpectedDocument> expectedDocuments{
+        {"document_vacation_sub_prep_applying", "1 - How to Apply for Vacation.pdf"},
+        {"document_vacation_sub_prep_guidelines", "2 - Vacation Guidelines.pdf"},
+        {"document_vacation_sub_prep_request_form", "3 - Vacation Request Form.pdf"},
+        {"document_vacation_sub_prep_procedures", "DYB Sub Procedures.pdf"},
+        {"document_vacation_sub_prep_checklist", "DYB Sub Prep Checklist.pdf"},
+        {"document_vacation_sub_prep_template", "DYB Sub Prep Template.pdf"}
+    };
+
+    QJsonArray capturedDocuments;
+    for (const ExpectedDocument& expected : expectedDocuments)
+    {
+        const QString documentId = QString::fromLatin1(expected.id);
+        const DocumentDefinition* definition =
+            catalog->document(documentId);
+        QVERIFY2(
+            definition,
+            qPrintable(
+                QStringLiteral("Missing catalog document: %1")
+                    .arg(documentId)
+                )
+            );
+        QCOMPARE(
+            definition->pdf.fileName,
+            QString::fromLatin1(expected.fileName)
+            );
+        QVERIFY(QFileInfo::exists(definition->pdf.absoluteFilePath));
+
+        QPdfDocument document;
+        QCOMPARE(
+            document.load(definition->pdf.absoluteFilePath),
+            QPdfDocument::Error::None
+            );
+        QCOMPARE(document.status(), QPdfDocument::Status::Ready);
+        QVERIFY(document.pageCount() > 0);
+
+        WindowsOutputReferenceCapture::PdfCapture pdfCapture;
+        QString captureError;
+        QVERIFY2(
+            WindowsOutputReferenceCapture::capturePdf(
+                definition->pdf.absoluteFilePath,
+                referenceDirectory.path,
+                documentId,
+                document,
+                &pdfCapture,
+                &captureError,
+                1
+                ),
+            qPrintable(captureError)
+            );
+        const int pageCount = document.pageCount();
+        document.close();
+        QCOMPARE(document.status(), QPdfDocument::Status::Null);
+
+        QJsonObject capturedDocument =
+            WindowsOutputReferenceCapture::pdfManifestEntry(
+                pdfCapture,
+                QStringLiteral("Null")
+                );
+        capturedDocument.insert(QStringLiteral("catalogId"), documentId);
+        capturedDocument.insert(
+            QStringLiteral("catalogFileName"),
+            definition->pdf.fileName
+            );
+        capturedDocument.insert(QStringLiteral("pageCount"), pageCount);
+        capturedDocument.insert(
+            QStringLiteral("loadStatus"),
+            QStringLiteral("Ready")
+            );
+        capturedDocuments.append(capturedDocument);
+    }
+
+    const QJsonObject manifest{
+        {QStringLiteral("schemaVersion"), 1},
+        {QStringLiteral("kind"), QStringLiteral("vacation-sub-prep-catalog-pdf-lifecycle")},
+        {QStringLiteral("test"), QStringLiteral("capturesVacationSubPrepCatalogPdfLifecycleWhenConfigured")},
+        {QStringLiteral("syntheticTestContent"), false},
+        {QStringLiteral("sourceCatalogRoot"),
+         QStringLiteral("resources/assets/documents")},
+        {QStringLiteral("lifecycle"), QJsonArray{
+             QStringLiteral("resolve catalog entry"),
+             QStringLiteral("open packaged PDF on demand"),
+             QStringLiteral("render first page"),
+             QStringLiteral("close PDF document")
+         }},
+        {QStringLiteral("documents"), capturedDocuments}
+    };
+    QString captureError;
+    QVERIFY2(
+        WindowsOutputReferenceCapture::writeManifest(
+            referenceDirectory.path,
+            manifest,
+            &captureError
+            ),
+        qPrintable(captureError)
+        );
 }
 
 QTEST_MAIN(DocumentCatalogTests)
