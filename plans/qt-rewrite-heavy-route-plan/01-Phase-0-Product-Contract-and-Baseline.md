@@ -828,3 +828,45 @@ No v2 feature work begins without a fixture and an acceptance check.
   generated-output coverage, and cross-platform evidence. Continue with the
   next heavy operation while retaining all prior artifacts; do not begin v2
   remediation yet.
+
+## Progress update - 2026-09-16 (large Speaking Evaluation batch lifecycle retention)
+
+- What changed: the heavy-route harness now augments a generated copy of the
+  96-class workspace with 96 canonical `Winter` speaking evaluations and 2,400
+  evaluation rows. It runs the actual packaged Windows x64 Release page,
+  selected evaluation model, report review dialog, batch export dialog, AI
+  prompt/review dialog, accepted-comment apply, cleanup, and page refresh.
+  Profiler fields cover class-tab/model shape, report text, AI prompt and
+  response sizes, review-table item counts, PDF/archive output, operation
+  retention, and release checkpoints.
+- Evidence: the child exited normally. The page exposed 96 visible class tabs
+  across four navigation widgets, four evaluation tabs, and a 25-by-11 model
+  (275 cells). The selected batch produced 25 report records, 25 PDFs, and a
+  51,634,180-byte archive. AI review parsed 25 rows across five columns, with
+  125 review items and 25 accepted comments. The report/AI/export operation
+  retention flags were all false after cleanup and the refreshed page. The
+  retained artifact is
+  `docs/qt-rewrite/visual-baseline/release/large-speaking-evaluation-boundary/`.
+- Timing and memory: operation start/page/report/export-complete/AI-response/
+  release/page-refresh checkpoints were
+  `4,558`/`5,597`/`5,637`/`9,646`/`9,736`/`9,941`/`9,993 ms`. The speaking
+  operation reached `384,593,920` working-set bytes and
+  `292,061,184` private-usage bytes before release, then measured
+  `307,388,416`/`289,484,800` at operation release. The full route reached
+  `workflow-complete` at `14,893 ms` and `settled-1s` at `15,923 ms`, with
+  route-wide peak working/private usage of
+  `471,343,104`/`525,725,696` bytes.
+- Evaluation impact: this closes the large speaking-batch review/export/
+  cleanup before-state required by the Memory Hotspot Remediation Plan's
+  report and AI workflow entry. It proves the current route's cardinalities,
+  output contract, and release checkpoints; it does not prove a bounded v2
+  model/view, one-record-at-a-time report loader, chunked output pipeline, or
+  a Phase 9 memory budget. The new Phase 0 evidence therefore supports the
+  later Phase 7H/Phase 8 ownership work without starting that remediation
+  early.
+- Decision and next heavy slice: retain the augmented fixture and output
+  package as the Speaking Evaluation before-state oracle. Phase 0 remains
+  open for staff-directory and PDF/report measurements, Sub Prep visual states,
+  explicit Release thresholds, remaining generated-output references, and
+  cross-platform evidence. Continue with the next heavy operation while
+  retaining all prior artifacts; do not begin v2 remediation yet.

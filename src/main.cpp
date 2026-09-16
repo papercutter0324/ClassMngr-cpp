@@ -25,9 +25,17 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_page.h"
+#include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_model.h"
+#include "features/speaking_eval/ui/speaking_eval_page.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #if !defined(Q_OS_MACOS)
 #include "ui/shared/styles/file_dialog_icon_style.h"
@@ -51,12 +59,15 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QPointer>
+#include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QTabWidget>
+#include <QTableWidget>
+#include <QLineEdit>
 #include <QDebug>
 
 #include <functional>
@@ -102,6 +113,7 @@ struct StartupPerformanceMode
     bool calendarImportLifecycleEnabled = false;
     bool classesLifecycleEnabled = false;
     bool classTransferLifecycleEnabled = false;
+    bool speakingEvaluationLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
     enum class Scenario
     {
@@ -568,6 +580,12 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-class-transfer-lifecycle")
             );
+    mode.speakingEvaluationLifecycleEnabled =
+        args.contains(
+            QStringLiteral(
+                "--startup-performance-speaking-evaluation-lifecycle"
+                )
+            );
     mode.subPrepLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-sub-prep-lifecycle")
@@ -581,6 +599,7 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.calendarImportLifecycleEnabled
         || mode.classesLifecycleEnabled
         || mode.classTransferLifecycleEnabled
+        || mode.speakingEvaluationLifecycleEnabled
         || mode.subPrepLifecycleEnabled;
 
     const int outputIndex =
@@ -1156,6 +1175,562 @@ void scheduleStartupPerformanceClassesLifecycle(
             {
                 *workflowSucceeded = false;
             }
+            completion();
+        }
+        );
+}
+
+void scheduleStartupPerformanceSpeakingEvaluationLifecycle(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    QTimer::singleShot(
+        0,
+        &app,
+        [
+            &app,
+            &window,
+            &profiler,
+            workflowSucceeded,
+            completion
+        ]()
+        {
+            PageManager* pages = window.pageManager();
+            ClassesPage* classesPage =
+                pages ? pages->classesPage() : nullptr;
+            ApplicationServices* services = window.services();
+            ClassService* classService = services
+                ? services->classService()
+                : nullptr;
+            SpeakingEvaluationService* evaluationService = services
+                ? services->speakingEvaluationService()
+                : nullptr;
+
+            const auto fail =
+                [
+                    &completion,
+                    &workflowSucceeded
+                ](const QString& detail)
+                {
+                    *workflowSucceeded = false;
+                    StartupProfiler::recordSpeakingEvaluationFailed(detail);
+                    StartupProfiler::recordSpeakingEvaluationOperationReleased();
+                    completion();
+                };
+
+            if (
+                !pages
+                || !classesPage
+                || !classService
+                || !evaluationService
+                || !classService->isAvailable()
+                || !evaluationService->isAvailable()
+                || !pages->isCurrentPage(PageType::Classes)
+                )
+            {
+                *workflowSucceeded = false;
+                profiler.checkpoint(
+                    QStringLiteral("speaking-evaluation-lifecycle-failed"),
+                    QStringLiteral(
+                        "classesPageCurrent=%1; classServiceAvailable=%2; evaluationServiceAvailable=%3"
+                        )
+                        .arg(
+                            pages && pages->isCurrentPage(PageType::Classes)
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                        .arg(
+                            classService && classService->isAvailable()
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                        .arg(
+                            evaluationService && evaluationService->isAvailable()
+                                ? QStringLiteral("true")
+                                : QStringLiteral("false")
+                            )
+                    );
+                completion();
+                return;
+            }
+
+            StartupProfiler::recordSpeakingEvaluationOperationStarted();
+            appendStartupWorkflowTrace(
+                QStringLiteral("speaking-evaluation-source-opened")
+                );
+
+            if (!classesPage->openClass(1, ClassesSection::Evaluations))
+            {
+                fail(QStringLiteral("classes-evaluation-section-not-opened"));
+                return;
+            }
+            app.processEvents();
+
+            SpeakingEvalPage* evaluationPage =
+                classesPage->findChild<SpeakingEvalPage*>();
+            SpeakingEvalModel* model = evaluationPage
+                ? evaluationPage->findChild<SpeakingEvalModel*>()
+                : nullptr;
+            SpeakingEvalTableView* table = evaluationPage
+                ? evaluationPage->findChild<SpeakingEvalTableView*>()
+                : nullptr;
+
+            if (!evaluationPage || !model || !table)
+            {
+                fail(QStringLiteral("speaking-evaluation-page-controls-missing"));
+                return;
+            }
+
+            int classTabWidgetCount = 0;
+            int classTabCount = 0;
+            int evaluationTabCount = 0;
+            for (
+                NavigationTabWidget* tabs :
+                evaluationPage->findChildren<NavigationTabWidget*>()
+                )
+            {
+                if (!tabs)
+                {
+                    continue;
+                }
+                if (tabs->objectName() == QStringLiteral("speakingEvalClassTabs"))
+                {
+                    ++classTabWidgetCount;
+                    classTabCount += tabs->count();
+                }
+                else if (
+                    tabs->objectName()
+                        == QStringLiteral("classEvaluationsEvaluationTabs")
+                    )
+                {
+                    evaluationTabCount += tabs->count();
+                }
+            }
+
+            const SpeakingEvalRows displayedRows = model->rows();
+            const auto matrixCellCount =
+                [](const SpeakingEvalRows& rows)
+                {
+                    int cells = 0;
+                    for (const QStringList& row : rows)
+                    {
+                        cells += row.size();
+                    }
+                    return cells;
+                };
+
+            StartupProfiler::recordSpeakingEvaluationPagePrepared(
+                classesPage->runtimeMetrics().sourceClassCount,
+                classesPage->runtimeMetrics().visibleClassCount,
+                classTabWidgetCount,
+                classTabCount,
+                evaluationTabCount,
+                model->rowCount(),
+                model->columnCount(),
+                model->rowCount() * model->columnCount(),
+                1,
+                displayedRows.size(),
+                matrixCellCount(displayedRows)
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("speaking-evaluation-page-ready")
+                );
+
+            const QString configuredOutputRoot =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_SPEAKING_EVALUATION_OUTPUT_DIR"
+                    ).trimmed();
+            const QString outputRoot = configuredOutputRoot.isEmpty()
+                ? QDir(QDir::tempPath()).filePath(
+                    QStringLiteral("ClassMngr-speaking-evaluation-boundary")
+                    )
+                : QFileInfo(configuredOutputRoot).absoluteFilePath();
+            if (!QDir().mkpath(outputRoot))
+            {
+                fail(
+                    QStringLiteral("speaking-evaluation-output-directory-unavailable")
+                    );
+                return;
+            }
+            evaluationPage->grab().save(
+                QDir(outputRoot).filePath(
+                    QStringLiteral("speaking-evaluation-page.png")
+                    ),
+                "PNG"
+                );
+
+            const Result<SpeakingEvalRows> loadedEvaluation =
+                evaluationService->evaluation(
+                    classesPage->currentClassId(),
+                    QStringLiteral("Winter")
+                    );
+            if (!loadedEvaluation)
+            {
+                fail(loadedEvaluation.error());
+                return;
+            }
+
+            const Result<ClassInfo> loadedClassInfo =
+                classService->classInfo(classesPage->currentClassId());
+            if (!loadedClassInfo)
+            {
+                fail(loadedClassInfo.error());
+                return;
+            }
+
+            QList<SpeakingEvalBatchReportService::StudentReport> reports =
+                buildSpeakingEvalStudentReports(
+                    *loadedEvaluation,
+                    *loadedClassInfo
+                    );
+            if (reports.isEmpty())
+            {
+                fail(QStringLiteral("speaking-evaluation-report-batch-empty"));
+                return;
+            }
+
+            const auto reportTextBytes =
+                [](const QList<SpeakingEvalBatchReportService::StudentReport>&
+                   reportList)
+                {
+                    qint64 bytes = 0;
+                    const auto add =
+                        [&bytes](const QString& value)
+                        {
+                            bytes += value.toUtf8().size();
+                        };
+                    for (const auto& student : reportList)
+                    {
+                        const SpeakingEvalReportData& report = student.report;
+                        add(student.displayName);
+                        add(report.englishName);
+                        add(report.koreanName);
+                        add(report.classLabel);
+                        add(report.nativeTeacher);
+                        add(report.koreanTeacher);
+                        add(report.date);
+                        add(report.comments);
+                        add(report.notes);
+                        for (const QString& score : report.scores)
+                        {
+                            add(score);
+                        }
+                        bytes += report.signatureImage.size();
+                    }
+                    return bytes;
+                };
+
+            StartupProfiler::recordSpeakingEvaluationReportsPrepared(
+                reports.size(),
+                reportTextBytes(reports)
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("speaking-evaluation-reports-ready")
+                );
+
+            {
+                StartupProfiler::recordSpeakingEvaluationReportDialogPrepared(
+                    reports.size()
+                    );
+                SpeakingEvalReportDialog dialog(
+                    reports,
+                    0,
+                    evaluationPage,
+                    true
+                    );
+                dialog.show();
+                app.processEvents();
+                dialog.grab().save(
+                    QDir(outputRoot).filePath(
+                        QStringLiteral("speaking-evaluation-report.png")
+                        ),
+                    "PNG"
+                    );
+                dialog.reject();
+                app.processEvents();
+                StartupProfiler::recordSpeakingEvaluationReportDialogReleased();
+            }
+
+            const QString reportOutputDirectory =
+                QDir(outputRoot).filePath(
+                    QStringLiteral("speaking-evaluation-output")
+                    );
+            if (!QDir().mkpath(reportOutputDirectory))
+            {
+                fail(QStringLiteral("speaking-evaluation-report-output-unavailable"));
+                return;
+            }
+
+            {
+                StartupProfiler::recordSpeakingEvaluationExportDialogPrepared(
+                    reports.size()
+                    );
+                SpeakingEvalBatchExportDialog dialog(
+                    reports,
+                    0,
+                    reportOutputDirectory,
+                    SpeakingEvalBatchExportDialog::Mode::SaveAs,
+                    evaluationPage
+                    );
+                dialog.show();
+                app.processEvents();
+                dialog.grab().save(
+                    QDir(outputRoot).filePath(
+                        QStringLiteral("speaking-evaluation-export-dialog.png")
+                        ),
+                    "PNG"
+                    );
+                dialog.reject();
+                app.processEvents();
+                StartupProfiler::recordSpeakingEvaluationExportDialogReleased();
+            }
+
+            StartupProfiler::recordSpeakingEvaluationExportStarted(
+                reports.size()
+                );
+            SpeakingEvalBatchReportService::Request exportRequest;
+            exportRequest.parent = evaluationPage;
+            exportRequest.reports = reports;
+            exportRequest.renderer =
+                SpeakingEvalBatchReportService::Renderer::Internal;
+            exportRequest.savePdf = true;
+            exportRequest.keepIndividualPdfFiles = true;
+            exportRequest.overwriteExisting = true;
+            exportRequest.outputDirectory = reportOutputDirectory;
+            exportRequest.progressCallback =
+                [&app](int, int, const QString&)
+                {
+                    app.processEvents();
+                    return true;
+                };
+            const SpeakingEvalBatchReportService::Result exportResult =
+                SpeakingEvalBatchReportService::exportReports(exportRequest);
+            if (!exportResult.succeeded())
+            {
+                fail(exportResult.message);
+                return;
+            }
+
+            qint64 exportedPdfBytes = 0;
+            for (const QString& path : exportResult.savedPdfPaths)
+            {
+                exportedPdfBytes += QFileInfo(path).size();
+            }
+            const qint64 exportedArchiveBytes =
+                QFileInfo(exportResult.savedArchivePath).size();
+            StartupProfiler::recordSpeakingEvaluationExportCompleted(
+                exportResult.savedPdfPaths.size(),
+                exportedPdfBytes,
+                exportedArchiveBytes
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("speaking-evaluation-reports-exported")
+                );
+
+            QList<SpeakingEvalAiBatchAcceptedComment> acceptedComments;
+            QString aiError;
+            {
+                SpeakingEvalAiBatchDialog dialog(
+                    reports,
+                    evaluationPage
+                    );
+                dialog.show();
+                app.processEvents();
+
+                QTableWidget* selectionTable = dialog.findChild<QTableWidget*>(
+                    QStringLiteral("speakingEvalAiBatchSelectionTable")
+                    );
+                QTableWidget* reviewTable = dialog.findChild<QTableWidget*>(
+                    QStringLiteral("speakingEvalAiBatchReviewTable")
+                    );
+                QPushButton* createPromptButton =
+                    dialog.findChild<QPushButton*>(
+                        QStringLiteral("speakingEvalAiBatchCreatePrompt")
+                        );
+                QPlainTextEdit* promptEdit = dialog.findChild<QPlainTextEdit*>(
+                    QStringLiteral("speakingEvalAiBatchPrompt")
+                    );
+                QPlainTextEdit* responseEdit = dialog.findChild<QPlainTextEdit*>(
+                    QStringLiteral("speakingEvalAiBatchResponse")
+                    );
+                QPushButton* parseButton = dialog.findChild<QPushButton*>(
+                    QStringLiteral("speakingEvalAiBatchParse")
+                    );
+                QPushButton* applyButton = dialog.findChild<QPushButton*>(
+                    QStringLiteral("speakingEvalAiBatchApply")
+                    );
+                QTabWidget* tabs = dialog.findChild<QTabWidget*>(
+                    QStringLiteral("speakingEvalAiBatchTabs")
+                    );
+
+                const auto itemCount =
+                    [](const QTableWidget* widget)
+                    {
+                        if (!widget)
+                        {
+                            return 0;
+                        }
+                        int count = 0;
+                        for (int row = 0; row < widget->rowCount(); ++row)
+                        {
+                            for (int column = 0;
+                                 column < widget->columnCount();
+                                 ++column)
+                            {
+                                count += widget->item(row, column) ? 1 : 0;
+                            }
+                        }
+                        return count;
+                    };
+
+                if (
+                    !selectionTable
+                    || !reviewTable
+                    || !createPromptButton
+                    || !promptEdit
+                    || !responseEdit
+                    || !parseButton
+                    || !applyButton
+                    || !tabs
+                    )
+                {
+                    aiError = QStringLiteral("speaking-evaluation-ai-controls-missing");
+                }
+                else
+                {
+                    StartupProfiler::recordSpeakingEvaluationAiDialogPrepared(
+                        reports.size(),
+                        selectionTable->rowCount(),
+                        selectionTable->columnCount(),
+                        itemCount(selectionTable)
+                        );
+                    createPromptButton->click();
+                    app.processEvents();
+                    tabs->setCurrentIndex(1);
+                    app.processEvents();
+
+                    QString response;
+                    const QString comment = QStringLiteral(
+                        "STD_NAME speaks clearly and uses strong grammar in class. "
+                        "Keep practicing pronunciation and vocabulary during each lesson. "
+                        "Your steady effort is helping you grow."
+                        );
+                    for (int index = 0; index < reports.size(); ++index)
+                    {
+                        response +=
+                            QStringLiteral("<<<STUDENT_%1>>>\n%2\n<<<END_STUDENT_%1>>>\n")
+                                .arg(index + 1, 2, 10, QLatin1Char('0'))
+                                .arg(comment);
+                    }
+                    responseEdit->setPlainText(response);
+                    app.processEvents();
+                    parseButton->click();
+                    app.processEvents();
+
+                    const int reviewRows = reviewTable->rowCount();
+                    const int reviewColumns = reviewTable->columnCount();
+                    const int reviewItems = itemCount(reviewTable);
+                    if (!applyButton->isEnabled())
+                    {
+                        aiError = QStringLiteral("speaking-evaluation-ai-apply-disabled");
+                    }
+                    else
+                    {
+                        dialog.grab().save(
+                            QDir(outputRoot).filePath(
+                                QStringLiteral("speaking-evaluation-ai-review.png")
+                                ),
+                            "PNG"
+                            );
+                        applyButton->click();
+                        app.processEvents();
+                        acceptedComments = dialog.acceptedComments();
+                        StartupProfiler::recordSpeakingEvaluationAiResponsePrepared(
+                            promptEdit->toPlainText().toUtf8().size(),
+                            response.toUtf8().size(),
+                            reviewRows,
+                            reviewColumns,
+                            reviewItems,
+                            acceptedComments.size()
+                            );
+                    }
+                }
+
+                if (dialog.isVisible())
+                {
+                    dialog.reject();
+                    app.processEvents();
+                }
+                StartupProfiler::recordSpeakingEvaluationAiDialogReleased();
+            }
+
+            if (!aiError.isEmpty())
+            {
+                fail(aiError);
+                return;
+            }
+
+            QList<SpeakingEvalCellEdit> commentChanges;
+            commentChanges.reserve(acceptedComments.size());
+            for (const SpeakingEvalAiBatchAcceptedComment& comment
+                 : acceptedComments)
+            {
+                commentChanges.append(
+                    {
+                        comment.sourceRow,
+                        SpeakingEval::toInt(SpeakingEvalColumn::Comments),
+                        comment.oldComment,
+                        comment.newComment
+                    }
+                    );
+            }
+            if (!commentChanges.isEmpty())
+            {
+                table->applyChanges(
+                    commentChanges,
+                    QStringLiteral("Startup diagnostics: Apply AI comments")
+                    );
+                app.processEvents();
+            }
+            profiler.checkpoint(
+                QStringLiteral("speaking-evaluation-comments-applied"),
+                QStringLiteral(
+                    "acceptedComments=%1; modelDirty=%2"
+                    )
+                    .arg(acceptedComments.size())
+                    .arg(
+                        model->isDirty()
+                            ? QStringLiteral("true")
+                            : QStringLiteral("false")
+                        )
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("speaking-evaluation-comments-applied")
+                );
+
+            reports.clear();
+            StartupProfiler::recordSpeakingEvaluationOperationReleased();
+            appendStartupWorkflowTrace(
+                QStringLiteral("speaking-evaluation-operation-released")
+                );
+            evaluationPage->refresh();
+            classesPage->refresh();
+            app.processEvents();
+            profiler.checkpoint(
+                QStringLiteral("speaking-evaluation-page-refreshed"),
+                QStringLiteral(
+                    "classId=%1; modelRows=%2; reportListRetained=false"
+                    )
+                    .arg(classesPage->currentClassId())
+                    .arg(model->rowCount())
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("speaking-evaluation-page-refreshed")
+                );
             completion();
         }
         );
@@ -2772,6 +3347,7 @@ void scheduleStartupPerformanceWorkflow(
     bool calendarImportLifecycleEnabled,
     bool classesLifecycleEnabled,
     bool classTransferLifecycleEnabled,
+    bool speakingEvaluationLifecycleEnabled,
     bool subPrepLifecycleEnabled,
     std::function<void()> completion
     )
@@ -2794,6 +3370,7 @@ void scheduleStartupPerformanceWorkflow(
             calendarImportLifecycleEnabled,
             classesLifecycleEnabled,
             classTransferLifecycleEnabled,
+            speakingEvaluationLifecycleEnabled,
             subPrepLifecycleEnabled,
             pageTypes,
             pageIndex,
@@ -3046,6 +3623,37 @@ void scheduleStartupPerformanceWorkflow(
 
         if (
             pageReady
+            && speakingEvaluationLifecycleEnabled
+            && pageType == PageType::Classes
+            )
+        {
+            scheduleStartupPerformanceSpeakingEvaluationLifecycle(
+                app,
+                window,
+                profiler,
+                workflowSucceeded,
+                [
+                    &app,
+                    pageIndex,
+                    runNextPage
+                ]()
+                {
+                    ++*pageIndex;
+                    QTimer::singleShot(
+                        StartupWorkflowStepDelayMilliseconds,
+                        &app,
+                        [runNextPage]()
+                        {
+                            (*runNextPage)();
+                        }
+                        );
+                }
+                );
+            return;
+        }
+
+        if (
+            pageReady
             && classTransferLifecycleEnabled
             && pageType == PageType::Classes
             )
@@ -3265,6 +3873,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "exercise large multi-class transfer package review, transaction commit, cleanup, and Classes refresh"
+                )
+            );
+    }
+    if (mode.speakingEvaluationLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise large Speaking Evaluation page, report review, AI batch review, PDF export, cleanup, and refresh"
                 )
             );
     }
@@ -3809,6 +4425,7 @@ int main(int argc, char *argv[])
                 startupPerformance.calendarImportLifecycleEnabled,
                 startupPerformance.classesLifecycleEnabled,
                 startupPerformance.classTransferLifecycleEnabled,
+                startupPerformance.speakingEvaluationLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
                 scheduleSettledCompletion
                 );

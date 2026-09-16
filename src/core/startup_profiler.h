@@ -136,9 +136,37 @@ struct StartupApplicationMetrics
     int classTransferDestinationClassesAfter = 0;
     int classTransferDestinationTeachersBefore = 0;
     int classTransferDestinationTeachersAfter = 0;
+    int speakingEvalSourceClassCount = 0;
+    int speakingEvalVisibleClassCount = 0;
+    int speakingEvalClassTabWidgetCount = 0;
+    int speakingEvalClassTabCount = 0;
+    int speakingEvalEvaluationTabCount = 0;
+    int speakingEvalModelRowCount = 0;
+    int speakingEvalModelColumnCount = 0;
+    int speakingEvalModelCellCount = 0;
+    int speakingEvalLoadedEvaluationCount = 0;
+    int speakingEvalLoadedEvaluationRowCount = 0;
+    int speakingEvalLoadedEvaluationCellCount = 0;
+    int speakingEvalBatchReportCount = 0;
+    int speakingEvalReportDialogReportCount = 0;
+    int speakingEvalExportDialogReportCount = 0;
+    int speakingEvalAiDialogReportCount = 0;
+    int speakingEvalAiSelectionRowCount = 0;
+    int speakingEvalAiSelectionColumnCount = 0;
+    int speakingEvalAiSelectionItemCount = 0;
+    int speakingEvalAiReviewRowCount = 0;
+    int speakingEvalAiReviewColumnCount = 0;
+    int speakingEvalAiReviewItemCount = 0;
+    int speakingEvalAiAcceptedCommentCount = 0;
+    int speakingEvalExportPdfCount = 0;
     qint64 scheduleImportRawWorkbookBytes = 0;
     qint64 calendarImportRawWorkbookBytes = 0;
     qint64 classTransferRawJsonBytes = 0;
+    qint64 speakingEvalBatchReportTextBytes = 0;
+    qint64 speakingEvalAiPromptBytes = 0;
+    qint64 speakingEvalAiResponseBytes = 0;
+    qint64 speakingEvalExportPdfBytes = 0;
+    qint64 speakingEvalExportArchiveBytes = 0;
     bool scheduleImportRawBytesRetained = false;
     bool scheduleImportWorkbookRetained = false;
     bool scheduleImportReviewRetained = false;
@@ -152,6 +180,13 @@ struct StartupApplicationMetrics
     bool classTransferPreviewRetained = false;
     bool classTransferDialogRetained = false;
     bool classTransferOperationRetained = false;
+    bool speakingEvalReportListRetained = false;
+    bool speakingEvalReportDialogRetained = false;
+    bool speakingEvalExportDialogRetained = false;
+    bool speakingEvalAiDialogRetained = false;
+    bool speakingEvalAiResponseRetained = false;
+    bool speakingEvalExportOperationRetained = false;
+    bool speakingEvalOperationRetained = false;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -179,6 +214,15 @@ struct StartupApplicationMetrics
     quint64 classTransferOperationsApplied = 0;
     quint64 classTransferOperationsFailed = 0;
     quint64 classTransferOperationsReleased = 0;
+    quint64 speakingEvalOperationsStarted = 0;
+    quint64 speakingEvalReportBatchesPrepared = 0;
+    quint64 speakingEvalReportDialogsOpened = 0;
+    quint64 speakingEvalExportDialogsOpened = 0;
+    quint64 speakingEvalAiDialogsOpened = 0;
+    quint64 speakingEvalExportsStarted = 0;
+    quint64 speakingEvalExportsCompleted = 0;
+    quint64 speakingEvalOperationsFailed = 0;
+    quint64 speakingEvalOperationsReleased = 0;
     quint64 pdfDocumentsLoaded = 0;
     quint64 pdfDocumentsReleased = 0;
     quint64 pdfRenderCount = 0;
@@ -387,6 +431,57 @@ public:
     static void recordClassTransferDialogReleased();
     static void recordClassTransferFailed(const QString& detail);
     static void recordClassTransferOperationReleased();
+    static void recordSpeakingEvaluationOperationStarted();
+    static void recordSpeakingEvaluationPagePrepared(
+        int sourceClassCount,
+        int visibleClassCount,
+        int classTabWidgetCount,
+        int classTabCount,
+        int evaluationTabCount,
+        int modelRowCount,
+        int modelColumnCount,
+        int modelCellCount,
+        int loadedEvaluationCount,
+        int loadedEvaluationRowCount,
+        int loadedEvaluationCellCount
+        );
+    static void recordSpeakingEvaluationReportsPrepared(
+        int reportCount,
+        qint64 reportTextBytes
+        );
+    static void recordSpeakingEvaluationReportDialogPrepared(
+        int reportCount
+        );
+    static void recordSpeakingEvaluationReportDialogReleased();
+    static void recordSpeakingEvaluationExportDialogPrepared(
+        int reportCount
+        );
+    static void recordSpeakingEvaluationExportDialogReleased();
+    static void recordSpeakingEvaluationAiDialogPrepared(
+        int reportCount,
+        int selectionRowCount,
+        int selectionColumnCount,
+        int selectionItemCount
+        );
+    static void recordSpeakingEvaluationAiResponsePrepared(
+        qint64 promptBytes,
+        qint64 responseBytes,
+        int reviewRowCount,
+        int reviewColumnCount,
+        int reviewItemCount,
+        int acceptedCommentCount
+        );
+    static void recordSpeakingEvaluationAiDialogReleased();
+    static void recordSpeakingEvaluationExportStarted(
+        int reportCount
+        );
+    static void recordSpeakingEvaluationExportCompleted(
+        int pdfCount,
+        qint64 pdfBytes,
+        qint64 archiveBytes
+        );
+    static void recordSpeakingEvaluationFailed(const QString& detail);
+    static void recordSpeakingEvaluationOperationReleased();
 
 private:
     void recordEvent(

@@ -40,6 +40,8 @@ constexpr int LargeClassTransferClassCount = 48;
 constexpr int LargeClassTransferRosterColumnCount = 6;
 constexpr int LargeClassTransferRosterRowCount = 30;
 constexpr int LargeClassTransferEvaluationCount = 2;
+constexpr int LargeSpeakingEvaluationClassCount = 96;
+constexpr int LargeSpeakingEvaluationRowCount = SpeakingEval::RowCount;
 
 struct FixtureTableExpectation
 {
@@ -991,6 +993,171 @@ bool createLargeStartupFixture(
         );
 }
 
+QString alphabeticFixtureToken(int value)
+{
+    QString token;
+    do
+    {
+        token.prepend(
+            QChar(
+                static_cast<ushort>(
+                    'A' + (value % 26)
+                    )
+                )
+            );
+        value = value / 26 - 1;
+    }
+    while (value >= 0);
+    return token;
+}
+
+bool addLargeSpeakingEvaluationFixtureData(
+    const QString& fixturePath,
+    QString* errorMessage
+    )
+{
+    const QString connectionName =
+        QStringLiteral("startup-large-speaking-evaluation-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(fixturePath);
+
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else
+        {
+            QSqlQuery pragma(database);
+            if (!pragma.exec(QStringLiteral("PRAGMA foreign_keys = ON")))
+            {
+                *errorMessage = pragma.lastError().text();
+            }
+            else if (!database.transaction())
+            {
+                *errorMessage = database.lastError().text();
+            }
+            else
+            {
+                QSqlQuery evaluation(database);
+                QSqlQuery row(database);
+                evaluation.prepare(QStringLiteral(
+                    "INSERT INTO speaking_evaluations "
+                    "(class_id, evaluation_name) VALUES (?, ?)"
+                    ));
+                row.prepare(QStringLiteral(
+                    "INSERT INTO speaking_eval_data ("
+                    "evaluation_id, row_index, col_0, col_1, col_2, "
+                    "col_3, col_4, col_5, col_6, col_7, col_8, col_9, col_10"
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    ));
+
+                bool valid = true;
+                for (
+                    int classId = 1;
+                    classId <= LargeSpeakingEvaluationClassCount && valid;
+                    ++classId
+                    )
+                {
+                    evaluation.bindValue(0, classId);
+                    evaluation.bindValue(1, QStringLiteral("Winter"));
+                    if (!evaluation.exec())
+                    {
+                        *errorMessage = evaluation.lastError().text();
+                        valid = false;
+                        break;
+                    }
+
+                    bool idValid = false;
+                    const int evaluationId =
+                        evaluation.lastInsertId().toInt(&idValid);
+                    if (!idValid || evaluationId <= 0)
+                    {
+                        *errorMessage =
+                            QStringLiteral(
+                                "SQLite did not return the speaking-evaluation id."
+                                );
+                        valid = false;
+                        break;
+                    }
+
+                    for (
+                        int rowIndex = 0;
+                        rowIndex < LargeSpeakingEvaluationRowCount;
+                        ++rowIndex
+                        )
+                    {
+                        const QString classToken =
+                            alphabeticFixtureToken(classId - 1);
+                        const QString rowToken =
+                            alphabeticFixtureToken(rowIndex);
+                        const QStringList values{
+                            QString(),
+                            QStringLiteral("Student%1%2")
+                                .arg(classToken, rowToken),
+                            QString(),
+                            rowIndex % 5 == 0 ? QStringLiteral("A+")
+                                              : QStringLiteral("A"),
+                            rowIndex % 5 == 1 ? QStringLiteral("B+")
+                                              : QStringLiteral("A"),
+                            rowIndex % 5 == 2 ? QStringLiteral("B")
+                                              : QStringLiteral("A"),
+                            QStringLiteral("A"),
+                            QStringLiteral("A"),
+                            rowIndex % 5 == 3 ? QStringLiteral("B+")
+                                              : QStringLiteral("A"),
+                            QString(),
+                            QStringLiteral(
+                                "[Did Well]\nclear speaking\nstrong grammar\n"
+                                "[Needs Improvement]\npractice pronunciation\n"
+                                "review vocabulary"
+                                )
+                        };
+
+                        row.bindValue(0, evaluationId);
+                        row.bindValue(1, rowIndex);
+                        for (int column = 0; column < values.size(); ++column)
+                        {
+                            row.bindValue(column + 2, values.at(column));
+                        }
+                        if (!row.exec())
+                        {
+                            *errorMessage = row.lastError().text();
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (valid && database.commit())
+                {
+                    success = true;
+                }
+                else if (valid)
+                {
+                    *errorMessage = database.lastError().text();
+                }
+                else
+                {
+                    database.rollback();
+                }
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
+
 bool createLegacyStartupSource(
     const QString& fixturePath,
     QString* errorMessage
@@ -1134,6 +1301,7 @@ private slots:
     void capturesLargeScheduleImportApplyBoundaryWhenConfigured();
     void capturesLargeCalendarImportBoundaryWhenConfigured();
     void capturesLargeClassTransferBoundaryWhenConfigured();
+    void capturesLargeSpeakingEvaluationBoundaryWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -5162,6 +5330,648 @@ void StartupPerformanceTests::capturesLargeClassTransferBoundaryWhenConfigured()
                 QStringLiteral("class-transfer-review.png")
                 )
             )
+        );
+}
+
+void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_SPEAKING_EVALUATION_BOUNDARY_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_SPEAKING_EVALUATION_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral(
+                "ClassMngr executable does not exist: %1"
+                ).arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-speaking-evaluation.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        addLargeSpeakingEvaluationFixtureData(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        writeRepresentativeStartupSettings(
+            directory.filePath(QStringLiteral("settings"))
+            ),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large Speaking Evaluation reference root: %1"
+                ).arg(outputRoot)
+            )
+        );
+
+    const QString retainedFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-speaking-evaluation.tps")
+            );
+    if (QFileInfo::exists(retainedFixturePath))
+    {
+        QVERIFY(QFile::remove(retainedFixturePath));
+    }
+    QVERIFY(QFile::copy(fixturePath, retainedFixturePath));
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-speaking-evaluation-workflow.json")
+            );
+    const QString tracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    for (const QString& fileName : {
+             QStringLiteral("large-speaking-evaluation-workflow.json"),
+             QStringLiteral("workflow-trace.txt"),
+             QStringLiteral("manifest.json"),
+             QStringLiteral("process-stdout.txt"),
+             QStringLiteral("process-stderr.txt"),
+             QStringLiteral("speaking-evaluation-page.png"),
+             QStringLiteral("speaking-evaluation-report.png"),
+             QStringLiteral("speaking-evaluation-export-dialog.png"),
+             QStringLiteral("speaking-evaluation-ai-review.png")
+         })
+    {
+        const QString path = QDir(outputRoot).filePath(fileName);
+        if (QFileInfo::exists(path))
+        {
+            QVERIFY(QFile::remove(path));
+        }
+    }
+
+    const QString reportOutputDirectory =
+        QDir(outputRoot).filePath(
+            QStringLiteral("speaking-evaluation-output")
+            );
+    QVERIFY(QDir().mkpath(reportOutputDirectory));
+    const QDir reportOutput(reportOutputDirectory);
+    for (const QFileInfo& fileInfo : reportOutput.entryInfoList(
+             QDir::Files | QDir::NoDotAndDotDot,
+             QDir::Name
+             ))
+    {
+        QVERIFY(QFile::remove(fileInfo.absoluteFilePath()));
+    }
+
+    QFile traceOutput(tracePath);
+    QVERIFY2(
+        traceOutput.open(
+            QIODevice::WriteOnly
+            | QIODevice::Truncate
+            | QIODevice::Text
+            ),
+        qPrintable(traceOutput.errorString())
+        );
+    traceOutput.close();
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        directory.filePath(QStringLiteral("settings"))
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        tracePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_SPEAKING_EVALUATION_OUTPUT_DIR"),
+        outputRoot
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral(
+                "--startup-performance-speaking-evaluation-lifecycle"
+                ),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+
+    QByteArray traceContents;
+    QFile traceFile(tracePath);
+    if (traceFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        traceContents = traceFile.readAll();
+    }
+    const QStringList traceLines =
+        QString::fromUtf8(traceContents)
+            .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(
+        traceLines.contains(QStringLiteral("start classes")),
+        qPrintable(
+            QStringLiteral(
+                "The heavy route did not reach the Classes transition. "
+                "stdout/stderr were retained under %1."
+                ).arg(outputRoot)
+            )
+        );
+    for (const QString& expectedTrace : {
+             QStringLiteral("speaking-evaluation-source-opened"),
+             QStringLiteral("speaking-evaluation-operation-start"),
+             QStringLiteral("speaking-evaluation-page-prepared"),
+             QStringLiteral("speaking-evaluation-reports-prepared"),
+             QStringLiteral("speaking-evaluation-report-dialog-prepared"),
+             QStringLiteral("speaking-evaluation-report-dialog-released"),
+             QStringLiteral("speaking-evaluation-export-dialog-prepared"),
+             QStringLiteral("speaking-evaluation-export-dialog-released"),
+             QStringLiteral("speaking-evaluation-export-start"),
+             QStringLiteral("speaking-evaluation-export-complete"),
+             QStringLiteral("speaking-evaluation-ai-dialog-prepared"),
+             QStringLiteral("speaking-evaluation-ai-response-prepared"),
+             QStringLiteral("speaking-evaluation-ai-dialog-released"),
+             QStringLiteral("speaking-evaluation-comments-applied"),
+             QStringLiteral("speaking-evaluation-operation-released"),
+             QStringLiteral("speaking-evaluation-page-refreshed"),
+             QStringLiteral("complete")
+         })
+    {
+        bool foundTrace = false;
+        for (const QString& line : traceLines)
+        {
+            if (line.startsWith(expectedTrace))
+            {
+                foundTrace = true;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundTrace,
+            qPrintable(
+                QStringLiteral(
+                    "The heavy Speaking Evaluation lifecycle did not record '%1'. "
+                    "stdout/stderr were retained under %2."
+                    )
+                    .arg(expectedTrace, outputRoot)
+                )
+            );
+    }
+
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly | QIODevice::Text),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError parseError;
+    const QJsonDocument metricsDocument =
+        QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+    QVERIFY2(
+        parseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject(),
+        qPrintable(parseError.errorString())
+        );
+    const QJsonObject report = metricsDocument.object();
+    const auto checkpointNamed =
+        [&report](const QString& name)
+        {
+            for (const QJsonValue& value :
+                 report.value(QStringLiteral("checkpoints")).toArray())
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (checkpoint.value(QStringLiteral("name")).toString() == name)
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+
+    const QJsonObject pageCheckpoint =
+        checkpointNamed(QStringLiteral("speaking-evaluation-page-prepared"));
+    const QJsonObject reportCheckpoint =
+        checkpointNamed(QStringLiteral("speaking-evaluation-reports-prepared"));
+    const QJsonObject reportDialogCheckpoint =
+        checkpointNamed(
+            QStringLiteral("speaking-evaluation-report-dialog-prepared")
+            );
+    const QJsonObject exportDialogCheckpoint =
+        checkpointNamed(
+            QStringLiteral("speaking-evaluation-export-dialog-prepared")
+            );
+    const QJsonObject exportCheckpoint =
+        checkpointNamed(QStringLiteral("speaking-evaluation-export-complete"));
+    const QJsonObject aiCheckpoint =
+        checkpointNamed(QStringLiteral("speaking-evaluation-ai-dialog-prepared"));
+    const QJsonObject responseCheckpoint =
+        checkpointNamed(
+            QStringLiteral("speaking-evaluation-ai-response-prepared")
+            );
+    const QJsonObject releasedCheckpoint =
+        checkpointNamed(
+            QStringLiteral("speaking-evaluation-operation-released")
+            );
+    const QJsonObject refreshedCheckpoint =
+        checkpointNamed(QStringLiteral("speaking-evaluation-page-refreshed"));
+    const QJsonObject workflowCheckpoint =
+        checkpointNamed(QStringLiteral("workflow-complete"));
+
+    QVERIFY(!pageCheckpoint.isEmpty());
+    QVERIFY(!reportCheckpoint.isEmpty());
+    QVERIFY(!reportDialogCheckpoint.isEmpty());
+    QVERIFY(!exportDialogCheckpoint.isEmpty());
+    QVERIFY(!exportCheckpoint.isEmpty());
+    QVERIFY(!aiCheckpoint.isEmpty());
+    QVERIFY(!responseCheckpoint.isEmpty());
+    QVERIFY(!releasedCheckpoint.isEmpty());
+    QVERIFY(!refreshedCheckpoint.isEmpty());
+    QVERIFY(!workflowCheckpoint.isEmpty());
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+
+    const QJsonObject pageMetrics =
+        pageCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalSourceClassCount"))
+            .toInt(),
+        LargeSpeakingEvaluationClassCount
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalVisibleClassCount"))
+            .toInt(),
+        LargeSpeakingEvaluationClassCount
+        );
+    QVERIFY(
+        pageMetrics.value(QStringLiteral("speakingEvalClassTabWidgetCount"))
+            .toInt() > 0
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalClassTabCount"))
+            .toInt(),
+        LargeSpeakingEvaluationClassCount
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalEvaluationTabCount"))
+            .toInt(),
+        4
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalModelRowCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalModelColumnCount"))
+            .toInt(),
+        SpeakingEval::ColumnCount
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalModelCellCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount * SpeakingEval::ColumnCount
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalLoadedEvaluationCount"))
+            .toInt(),
+        1
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalLoadedEvaluationRowCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QCOMPARE(
+        pageMetrics.value(QStringLiteral("speakingEvalLoadedEvaluationCellCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount * SpeakingEval::ColumnCount
+        );
+
+    const QJsonObject reportMetrics =
+        reportCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        reportMetrics.value(QStringLiteral("speakingEvalBatchReportCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QVERIFY(
+        reportMetrics.value(QStringLiteral("speakingEvalBatchReportTextBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(
+        reportMetrics.value(QStringLiteral("speakingEvalReportListRetained"))
+            .toBool()
+        );
+
+    const QJsonObject reportDialogMetrics =
+        reportDialogCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        reportDialogMetrics
+            .value(QStringLiteral("speakingEvalReportDialogReportCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QVERIFY(
+        reportDialogMetrics
+            .value(QStringLiteral("speakingEvalReportDialogRetained"))
+            .toBool()
+        );
+
+    const QJsonObject exportDialogMetrics =
+        exportDialogCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        exportDialogMetrics
+            .value(QStringLiteral("speakingEvalExportDialogReportCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QVERIFY(
+        exportDialogMetrics
+            .value(QStringLiteral("speakingEvalExportDialogRetained"))
+            .toBool()
+        );
+
+    const QJsonObject exportMetrics =
+        exportCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        exportMetrics.value(QStringLiteral("speakingEvalExportPdfCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QVERIFY(
+        exportMetrics.value(QStringLiteral("speakingEvalExportPdfBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(
+        exportMetrics.value(QStringLiteral("speakingEvalExportArchiveBytes"))
+            .toDouble() > 0
+        );
+
+    const QJsonObject aiMetrics =
+        aiCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        aiMetrics.value(QStringLiteral("speakingEvalAiDialogReportCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QCOMPARE(
+        aiMetrics.value(QStringLiteral("speakingEvalAiSelectionRowCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QCOMPARE(
+        aiMetrics.value(QStringLiteral("speakingEvalAiSelectionColumnCount"))
+            .toInt(),
+        3
+        );
+    QCOMPARE(
+        aiMetrics.value(QStringLiteral("speakingEvalAiSelectionItemCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount * 3
+        );
+    QVERIFY(
+        aiMetrics.value(QStringLiteral("speakingEvalAiDialogRetained"))
+            .toBool()
+        );
+
+    const QJsonObject responseMetrics =
+        responseCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        responseMetrics.value(QStringLiteral("speakingEvalAiReviewRowCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QCOMPARE(
+        responseMetrics.value(QStringLiteral("speakingEvalAiReviewColumnCount"))
+            .toInt(),
+        5
+        );
+    QCOMPARE(
+        responseMetrics.value(QStringLiteral("speakingEvalAiReviewItemCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount * 5
+        );
+    QCOMPARE(
+        responseMetrics.value(QStringLiteral("speakingEvalAiAcceptedCommentCount"))
+            .toInt(),
+        LargeSpeakingEvaluationRowCount
+        );
+    QVERIFY(
+        responseMetrics.value(QStringLiteral("speakingEvalAiPromptBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(
+        responseMetrics.value(QStringLiteral("speakingEvalAiResponseBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(
+        responseMetrics.value(QStringLiteral("speakingEvalAiResponseRetained"))
+            .toBool()
+        );
+
+    const QJsonObject releasedMetrics =
+        releasedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    for (const QString& key : {
+             QStringLiteral("speakingEvalReportListRetained"),
+             QStringLiteral("speakingEvalReportDialogRetained"),
+             QStringLiteral("speakingEvalExportDialogRetained"),
+             QStringLiteral("speakingEvalAiDialogRetained"),
+             QStringLiteral("speakingEvalAiResponseRetained"),
+             QStringLiteral("speakingEvalExportOperationRetained"),
+             QStringLiteral("speakingEvalOperationRetained")
+         })
+    {
+        QVERIFY2(
+            !releasedMetrics.value(key).toBool(),
+            qPrintable(
+                QStringLiteral(
+                    "Speaking Evaluation retention flag remained set: %1"
+                    ).arg(key)
+                )
+            );
+    }
+    QCOMPARE(
+        releasedMetrics.value(QStringLiteral("speakingEvalOperationsReleased"))
+            .toDouble(),
+        1.0
+        );
+
+    QVERIFY(
+        !refreshedCheckpoint.value(QStringLiteral("metrics"))
+            .toObject()
+            .value(QStringLiteral("speakingEvalOperationRetained"))
+            .toBool()
+        );
+
+    const QStringList pdfFiles =
+        reportOutput.entryList(
+            QStringList{QStringLiteral("*.pdf")},
+            QDir::Files,
+            QDir::Name
+            );
+    QCOMPARE(pdfFiles.size(), LargeSpeakingEvaluationRowCount);
+    const QString archivePath =
+        reportOutput.filePath(
+            QStringLiteral("speaking-evaluation-output.zip")
+            );
+    QVERIFY2(
+        QFileInfo(archivePath).size() > 0,
+        qPrintable(
+            QStringLiteral("Expected Speaking Evaluation archive was not created: %1")
+                .arg(archivePath)
+            )
+        );
+    for (const QString& imageName : {
+             QStringLiteral("speaking-evaluation-page.png"),
+             QStringLiteral("speaking-evaluation-report.png"),
+             QStringLiteral("speaking-evaluation-export-dialog.png"),
+             QStringLiteral("speaking-evaluation-ai-review.png")
+         })
+    {
+        QVERIFY2(
+            QFileInfo(
+                QDir(outputRoot).filePath(imageName)
+                ).size() > 0,
+            qPrintable(
+                QStringLiteral("Expected Speaking Evaluation capture is missing: %1")
+                    .arg(imageName)
+                )
+            );
+    }
+
+    QJsonObject manifest{
+        {QStringLiteral("fixture"), QStringLiteral("large_startup.sql")},
+        {
+            QStringLiteral("fixtureScale"),
+            QStringLiteral("large_speaking_evaluation_batch")
+        },
+        {
+            QStringLiteral("scenario"),
+            QStringLiteral(
+                "96-class speaking-evaluation navigation, report review, AI batch review, PDF export, release, and refresh"
+                )
+        },
+        {QStringLiteral("classCount"), LargeSpeakingEvaluationClassCount},
+        {
+            QStringLiteral("canonicalEvaluationCount"),
+            LargeSpeakingEvaluationClassCount
+        },
+        {
+            QStringLiteral("evaluationRowCount"),
+            LargeSpeakingEvaluationClassCount * LargeSpeakingEvaluationRowCount
+        },
+        {QStringLiteral("selectedBatchReportCount"), LargeSpeakingEvaluationRowCount},
+        {QStringLiteral("processFinished"), finished},
+        {
+            QStringLiteral("exitStatus"),
+            process.exitStatus() == QProcess::NormalExit
+                ? QStringLiteral("normal")
+                : QStringLiteral("crash")
+        },
+        {QStringLiteral("exitCode"), process.exitCode()},
+        {QStringLiteral("timedOut"), !finished},
+        {QStringLiteral("traceLineCount"), traceLines.size()},
+        {QStringLiteral("tracePath"), QStringLiteral("workflow-trace.txt")},
+        {
+            QStringLiteral("metricsPath"),
+            QStringLiteral("large-speaking-evaluation-workflow.json")
+        },
+        {QStringLiteral("stdoutPath"), QStringLiteral("process-stdout.txt")},
+        {QStringLiteral("stderrPath"), QStringLiteral("process-stderr.txt")},
+        {
+            QStringLiteral("outputDirectory"),
+            QStringLiteral("speaking-evaluation-output")
+        },
+        {
+            QStringLiteral("peakMemory"),
+            report.value(QStringLiteral("peakMemory"))
+        },
+        {
+            QStringLiteral("lastCheckpoint"),
+            report.value(QStringLiteral("checkpoints")).toArray().isEmpty()
+                ? QJsonObject{}
+                : report.value(QStringLiteral("checkpoints"))
+                    .toArray().last().toObject()
+        }
+    };
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
         );
 }
 

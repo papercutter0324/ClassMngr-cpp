@@ -246,6 +246,31 @@ does not recreate or rely on them.
   review capture, trace, manifest, process logs, and profiler report are under
   `docs/qt-rewrite/visual-baseline/release/large-class-transfer-boundary/`.
   This is the current-product transfer before-state, not a v2 operation budget.
+- The packaged Release heavy-route Speaking Evaluation run augments the same
+  96-class workspace with 96 canonical `Winter` evaluations and 2,400
+  evaluation rows, then exercises the real page, report dialog, export dialog,
+  AI prompt/review dialog, comment apply, cleanup, and refresh paths for one
+  selected 25-row evaluation. The page reports 96 visible class tabs across
+  four navigation widgets, four evaluation tabs, and an 11-column by 25-row
+  model (275 cells). The report batch contains 25 records (`4,215` text bytes);
+  the AI selection/review tables contain 75/125 items, with 25 accepted
+  comments and an `8,109`-byte prompt plus `5,025`-byte response. Export
+  produces 25 individual PDFs (`51,631,608` bytes) and a
+  `51,634,180`-byte archive. The child exits normally; operation start/page/
+  report/export/AI-response/release/refresh checkpoints are
+  `4,558`/`5,597`/`5,637`/`9,646`/`9,736`/`9,941`/`9,993 ms`.
+  The speaking operation reaches a `384,593,920`-byte peak working set and
+  `292,061,184`-byte private usage before release; after release it measures
+  `307,388,416`/`289,484,800` bytes. The full route reaches
+  `workflow-complete` at `14,893 ms` and `settled-1s` at `15,923 ms`, with
+  route-wide peak working set/private usage of
+  `471,343,104`/`525,725,696` bytes. All speaking-operation retention flags
+  are false after release and refresh. The retained fixture, four UI captures,
+  25 PDFs, archive, trace, manifest, process logs, and profiler report are
+  under
+  `docs/qt-rewrite/visual-baseline/release/large-speaking-evaluation-boundary/`.
+  This is the current-product speaking batch before-state, not a v2 operation
+  budget.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
@@ -355,6 +380,15 @@ alongside the review capture, process trace, manifest, and lifecycle report.
 The package is intentionally larger than the compact compatibility fixture so
 JSON decoding, matching, review controls, transaction apply, and release can
 be measured at a multi-class scale without changing the product file format.
+
+The heavy-route Speaking Evaluation boundary augments a generated copy of the
+large workspace with 96 canonical `Winter` evaluations and 2,400 evaluation
+rows. It is retained at
+`docs/qt-rewrite/visual-baseline/release/large-speaking-evaluation-boundary/generated-large-speaking-evaluation.tps`
+alongside the page/report/export/AI captures, 25 individual PDFs, archive,
+process trace, manifest, and lifecycle report. The augmentation keeps the
+existing workspace and file-format contract while making the large batch
+review and output path reproducible.
 
 ## Reproduction commands
 
@@ -491,6 +525,15 @@ and flushed workflow trace under the configured directory. The test is opt-in
 because it intentionally drives the large transfer review/apply memory
 boundary.
 
+Set `CLASSMNGR_LARGE_SPEAKING_EVALUATION_BOUNDARY_REFERENCE_DIR` while running
+`capturesLargeSpeakingEvaluationBoundaryWhenConfigured` to augment the
+96-class workspace and run the actual packaged Release Speaking Evaluation
+page, report review, AI batch review, PDF export, cleanup, and refresh path.
+The test retains the augmented fixture, four UI captures, individual PDFs and
+archive, `manifest.json`, profiler JSON, process logs, and flushed workflow
+trace. The test is opt-in because it intentionally drives the large
+speaking-report/output memory boundary.
+
 For an empty workspace:
 
 ```powershell
@@ -525,14 +568,14 @@ store the JSON startup trace beside the PNG files.
 - Feature-specific retained-memory measurements for the remaining large
   workflows beyond the route-level `workflow-page-left` checkpoints; the
   representative five-minute all-route workflow is retained under
-  `visual-baseline/release/workflow-five-minute/`, and the Sub Prep and
-  Classes lifecycle boundaries are retained under their large-fixture
-  directories.
+  `visual-baseline/release/workflow-five-minute/`, and the Sub Prep, Classes,
+  and Speaking Evaluation lifecycle boundaries are retained under their
+  large-fixture directories.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- Large speaking-evaluation batch, staff-directory, and PDF/report operation
-  measurements. The Class Transfer package review/commit/release, Schedule
+- Staff-directory and PDF/report operation measurements. The Speaking
+  Evaluation batch, Class Transfer package review/commit/release, Schedule
   Import parse/review/cancel,
   apply/commit, and cleanup artifacts plus the Calendar workbook/import
   lifecycle are now retained; the class-transfer conflict and compact

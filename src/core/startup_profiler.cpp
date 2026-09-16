@@ -540,6 +540,98 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.classTransferDestinationTeachersAfter
         },
         {
+            QStringLiteral("speakingEvalSourceClassCount"),
+            metrics.speakingEvalSourceClassCount
+        },
+        {
+            QStringLiteral("speakingEvalVisibleClassCount"),
+            metrics.speakingEvalVisibleClassCount
+        },
+        {
+            QStringLiteral("speakingEvalClassTabWidgetCount"),
+            metrics.speakingEvalClassTabWidgetCount
+        },
+        {
+            QStringLiteral("speakingEvalClassTabCount"),
+            metrics.speakingEvalClassTabCount
+        },
+        {
+            QStringLiteral("speakingEvalEvaluationTabCount"),
+            metrics.speakingEvalEvaluationTabCount
+        },
+        {
+            QStringLiteral("speakingEvalModelRowCount"),
+            metrics.speakingEvalModelRowCount
+        },
+        {
+            QStringLiteral("speakingEvalModelColumnCount"),
+            metrics.speakingEvalModelColumnCount
+        },
+        {
+            QStringLiteral("speakingEvalModelCellCount"),
+            metrics.speakingEvalModelCellCount
+        },
+        {
+            QStringLiteral("speakingEvalLoadedEvaluationCount"),
+            metrics.speakingEvalLoadedEvaluationCount
+        },
+        {
+            QStringLiteral("speakingEvalLoadedEvaluationRowCount"),
+            metrics.speakingEvalLoadedEvaluationRowCount
+        },
+        {
+            QStringLiteral("speakingEvalLoadedEvaluationCellCount"),
+            metrics.speakingEvalLoadedEvaluationCellCount
+        },
+        {
+            QStringLiteral("speakingEvalBatchReportCount"),
+            metrics.speakingEvalBatchReportCount
+        },
+        {
+            QStringLiteral("speakingEvalReportDialogReportCount"),
+            metrics.speakingEvalReportDialogReportCount
+        },
+        {
+            QStringLiteral("speakingEvalExportDialogReportCount"),
+            metrics.speakingEvalExportDialogReportCount
+        },
+        {
+            QStringLiteral("speakingEvalAiDialogReportCount"),
+            metrics.speakingEvalAiDialogReportCount
+        },
+        {
+            QStringLiteral("speakingEvalAiSelectionRowCount"),
+            metrics.speakingEvalAiSelectionRowCount
+        },
+        {
+            QStringLiteral("speakingEvalAiSelectionColumnCount"),
+            metrics.speakingEvalAiSelectionColumnCount
+        },
+        {
+            QStringLiteral("speakingEvalAiSelectionItemCount"),
+            metrics.speakingEvalAiSelectionItemCount
+        },
+        {
+            QStringLiteral("speakingEvalAiReviewRowCount"),
+            metrics.speakingEvalAiReviewRowCount
+        },
+        {
+            QStringLiteral("speakingEvalAiReviewColumnCount"),
+            metrics.speakingEvalAiReviewColumnCount
+        },
+        {
+            QStringLiteral("speakingEvalAiReviewItemCount"),
+            metrics.speakingEvalAiReviewItemCount
+        },
+        {
+            QStringLiteral("speakingEvalAiAcceptedCommentCount"),
+            metrics.speakingEvalAiAcceptedCommentCount
+        },
+        {
+            QStringLiteral("speakingEvalExportPdfCount"),
+            metrics.speakingEvalExportPdfCount
+        },
+        {
             QStringLiteral("scheduleImportRawBytesRetained"),
             metrics.scheduleImportRawBytesRetained
         },
@@ -558,6 +650,26 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("classTransferRawJsonBytes"),
             static_cast<double>(metrics.classTransferRawJsonBytes)
+        },
+        {
+            QStringLiteral("speakingEvalBatchReportTextBytes"),
+            static_cast<double>(metrics.speakingEvalBatchReportTextBytes)
+        },
+        {
+            QStringLiteral("speakingEvalAiPromptBytes"),
+            static_cast<double>(metrics.speakingEvalAiPromptBytes)
+        },
+        {
+            QStringLiteral("speakingEvalAiResponseBytes"),
+            static_cast<double>(metrics.speakingEvalAiResponseBytes)
+        },
+        {
+            QStringLiteral("speakingEvalExportPdfBytes"),
+            static_cast<double>(metrics.speakingEvalExportPdfBytes)
+        },
+        {
+            QStringLiteral("speakingEvalExportArchiveBytes"),
+            static_cast<double>(metrics.speakingEvalExportArchiveBytes)
         },
         {
             QStringLiteral("calendarImportRawBytesRetained"),
@@ -598,6 +710,34 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("classTransferOperationRetained"),
             metrics.classTransferOperationRetained
+        },
+        {
+            QStringLiteral("speakingEvalReportListRetained"),
+            metrics.speakingEvalReportListRetained
+        },
+        {
+            QStringLiteral("speakingEvalReportDialogRetained"),
+            metrics.speakingEvalReportDialogRetained
+        },
+        {
+            QStringLiteral("speakingEvalExportDialogRetained"),
+            metrics.speakingEvalExportDialogRetained
+        },
+        {
+            QStringLiteral("speakingEvalAiDialogRetained"),
+            metrics.speakingEvalAiDialogRetained
+        },
+        {
+            QStringLiteral("speakingEvalAiResponseRetained"),
+            metrics.speakingEvalAiResponseRetained
+        },
+        {
+            QStringLiteral("speakingEvalExportOperationRetained"),
+            metrics.speakingEvalExportOperationRetained
+        },
+        {
+            QStringLiteral("speakingEvalOperationRetained"),
+            metrics.speakingEvalOperationRetained
         },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
@@ -685,6 +825,42 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("classTransferOperationsReleased"),
             static_cast<double>(metrics.classTransferOperationsReleased)
+        },
+        {
+            QStringLiteral("speakingEvalOperationsStarted"),
+            static_cast<double>(metrics.speakingEvalOperationsStarted)
+        },
+        {
+            QStringLiteral("speakingEvalReportBatchesPrepared"),
+            static_cast<double>(metrics.speakingEvalReportBatchesPrepared)
+        },
+        {
+            QStringLiteral("speakingEvalReportDialogsOpened"),
+            static_cast<double>(metrics.speakingEvalReportDialogsOpened)
+        },
+        {
+            QStringLiteral("speakingEvalExportDialogsOpened"),
+            static_cast<double>(metrics.speakingEvalExportDialogsOpened)
+        },
+        {
+            QStringLiteral("speakingEvalAiDialogsOpened"),
+            static_cast<double>(metrics.speakingEvalAiDialogsOpened)
+        },
+        {
+            QStringLiteral("speakingEvalExportsStarted"),
+            static_cast<double>(metrics.speakingEvalExportsStarted)
+        },
+        {
+            QStringLiteral("speakingEvalExportsCompleted"),
+            static_cast<double>(metrics.speakingEvalExportsCompleted)
+        },
+        {
+            QStringLiteral("speakingEvalOperationsFailed"),
+            static_cast<double>(metrics.speakingEvalOperationsFailed)
+        },
+        {
+            QStringLiteral("speakingEvalOperationsReleased"),
+            static_cast<double>(metrics.speakingEvalOperationsReleased)
         },
         {QStringLiteral("pdfDocumentsLoaded"), static_cast<double>(metrics.pdfDocumentsLoaded)},
         {QStringLiteral("pdfDocumentsReleased"), static_cast<double>(metrics.pdfDocumentsReleased)},
@@ -1989,6 +2165,443 @@ void StartupProfiler::recordClassTransferOperationReleased()
             );
         profiler->checkpoint(
             QStringLiteral("class-transfer-operation-released")
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationOperationStarted()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.speakingEvalOperationsStarted;
+        metrics.speakingEvalReportListRetained = false;
+        metrics.speakingEvalReportDialogRetained = false;
+        metrics.speakingEvalExportDialogRetained = false;
+        metrics.speakingEvalAiDialogRetained = false;
+        metrics.speakingEvalAiResponseRetained = false;
+        metrics.speakingEvalExportOperationRetained = false;
+        metrics.speakingEvalOperationRetained = true;
+
+        const QString detail =
+            QStringLiteral("operationRetained=true");
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-operation-start"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-operation-start %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-operation-start"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationPagePrepared(
+    int sourceClassCount,
+    int visibleClassCount,
+    int classTabWidgetCount,
+    int classTabCount,
+    int evaluationTabCount,
+    int modelRowCount,
+    int modelColumnCount,
+    int modelCellCount,
+    int loadedEvaluationCount,
+    int loadedEvaluationRowCount,
+    int loadedEvaluationCellCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.speakingEvalSourceClassCount = qMax(0, sourceClassCount);
+        metrics.speakingEvalVisibleClassCount = qMax(0, visibleClassCount);
+        metrics.speakingEvalClassTabWidgetCount = qMax(0, classTabWidgetCount);
+        metrics.speakingEvalClassTabCount = qMax(0, classTabCount);
+        metrics.speakingEvalEvaluationTabCount = qMax(0, evaluationTabCount);
+        metrics.speakingEvalModelRowCount = qMax(0, modelRowCount);
+        metrics.speakingEvalModelColumnCount = qMax(0, modelColumnCount);
+        metrics.speakingEvalModelCellCount = qMax(0, modelCellCount);
+        metrics.speakingEvalLoadedEvaluationCount = qMax(0, loadedEvaluationCount);
+        metrics.speakingEvalLoadedEvaluationRowCount =
+            qMax(0, loadedEvaluationRowCount);
+        metrics.speakingEvalLoadedEvaluationCellCount =
+            qMax(0, loadedEvaluationCellCount);
+
+        const QString detail =
+            QStringLiteral(
+                "sourceClasses=%1; visibleClasses=%2; classTabWidgets=%3; classTabs=%4; evaluationTabs=%5; modelRows=%6; modelColumns=%7; modelCells=%8; loadedEvaluations=%9; loadedRows=%10; loadedCells=%11"
+                )
+                .arg(metrics.speakingEvalSourceClassCount)
+                .arg(metrics.speakingEvalVisibleClassCount)
+                .arg(metrics.speakingEvalClassTabWidgetCount)
+                .arg(metrics.speakingEvalClassTabCount)
+                .arg(metrics.speakingEvalEvaluationTabCount)
+                .arg(metrics.speakingEvalModelRowCount)
+                .arg(metrics.speakingEvalModelColumnCount)
+                .arg(metrics.speakingEvalModelCellCount)
+                .arg(metrics.speakingEvalLoadedEvaluationCount)
+                .arg(metrics.speakingEvalLoadedEvaluationRowCount)
+                .arg(metrics.speakingEvalLoadedEvaluationCellCount);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-page-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-page-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-page-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationReportsPrepared(
+    int reportCount,
+    qint64 reportTextBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.speakingEvalReportBatchesPrepared;
+        metrics.speakingEvalBatchReportCount = qMax(0, reportCount);
+        metrics.speakingEvalBatchReportTextBytes = qMax<qint64>(0, reportTextBytes);
+        metrics.speakingEvalReportListRetained = true;
+
+        const QString detail =
+            QStringLiteral(
+                "reports=%1; reportTextBytes=%2; reportListRetained=true"
+                )
+                .arg(metrics.speakingEvalBatchReportCount)
+                .arg(metrics.speakingEvalBatchReportTextBytes);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-reports-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-reports-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-reports-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationReportDialogPrepared(
+    int reportCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.speakingEvalReportDialogsOpened;
+        metrics.speakingEvalReportDialogReportCount = qMax(0, reportCount);
+        metrics.speakingEvalReportDialogRetained = true;
+
+        const QString detail =
+            QStringLiteral(
+                "reports=%1; reportDialogRetained=true"
+                )
+                .arg(metrics.speakingEvalReportDialogReportCount);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-report-dialog-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-report-dialog-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-report-dialog-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationReportDialogReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->m_scheduleMetrics.speakingEvalReportDialogRetained = false;
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-report-dialog-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-report-dialog-released")
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-report-dialog-released")
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationExportDialogPrepared(
+    int reportCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.speakingEvalExportDialogsOpened;
+        profiler->m_scheduleMetrics.speakingEvalExportDialogReportCount =
+            qMax(0, reportCount);
+        profiler->m_scheduleMetrics.speakingEvalExportDialogRetained = true;
+        const QString detail =
+            QStringLiteral(
+                "reports=%1; exportDialogRetained=true"
+                )
+                .arg(profiler->m_scheduleMetrics.speakingEvalExportDialogReportCount);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-export-dialog-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-export-dialog-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-export-dialog-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationExportDialogReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->m_scheduleMetrics.speakingEvalExportDialogRetained = false;
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-export-dialog-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-export-dialog-released")
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-export-dialog-released")
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationAiDialogPrepared(
+    int reportCount,
+    int selectionRowCount,
+    int selectionColumnCount,
+    int selectionItemCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.speakingEvalAiDialogsOpened;
+        metrics.speakingEvalAiDialogReportCount = qMax(0, reportCount);
+        metrics.speakingEvalAiSelectionRowCount = qMax(0, selectionRowCount);
+        metrics.speakingEvalAiSelectionColumnCount = qMax(0, selectionColumnCount);
+        metrics.speakingEvalAiSelectionItemCount = qMax(0, selectionItemCount);
+        metrics.speakingEvalAiDialogRetained = true;
+
+        const QString detail =
+            QStringLiteral(
+                "reports=%1; selectionRows=%2; selectionColumns=%3; selectionItems=%4; aiDialogRetained=true"
+                )
+                .arg(metrics.speakingEvalAiDialogReportCount)
+                .arg(metrics.speakingEvalAiSelectionRowCount)
+                .arg(metrics.speakingEvalAiSelectionColumnCount)
+                .arg(metrics.speakingEvalAiSelectionItemCount);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-ai-dialog-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-ai-dialog-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-ai-dialog-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationAiResponsePrepared(
+    qint64 promptBytes,
+    qint64 responseBytes,
+    int reviewRowCount,
+    int reviewColumnCount,
+    int reviewItemCount,
+    int acceptedCommentCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.speakingEvalAiPromptBytes = qMax<qint64>(0, promptBytes);
+        metrics.speakingEvalAiResponseBytes = qMax<qint64>(0, responseBytes);
+        metrics.speakingEvalAiReviewRowCount = qMax(0, reviewRowCount);
+        metrics.speakingEvalAiReviewColumnCount = qMax(0, reviewColumnCount);
+        metrics.speakingEvalAiReviewItemCount = qMax(0, reviewItemCount);
+        metrics.speakingEvalAiAcceptedCommentCount = qMax(0, acceptedCommentCount);
+        metrics.speakingEvalAiResponseRetained = true;
+
+        const QString detail =
+            QStringLiteral(
+                "promptBytes=%1; responseBytes=%2; reviewRows=%3; reviewColumns=%4; reviewItems=%5; acceptedComments=%6; aiResponseRetained=true"
+                )
+                .arg(metrics.speakingEvalAiPromptBytes)
+                .arg(metrics.speakingEvalAiResponseBytes)
+                .arg(metrics.speakingEvalAiReviewRowCount)
+                .arg(metrics.speakingEvalAiReviewColumnCount)
+                .arg(metrics.speakingEvalAiReviewItemCount)
+                .arg(metrics.speakingEvalAiAcceptedCommentCount);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-ai-response-prepared"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-ai-response-prepared %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-ai-response-prepared"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationAiDialogReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.speakingEvalAiDialogRetained = false;
+        metrics.speakingEvalAiResponseRetained = false;
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-ai-dialog-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-ai-dialog-released")
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-ai-dialog-released")
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationExportStarted(
+    int reportCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.speakingEvalExportsStarted;
+        metrics.speakingEvalExportDialogReportCount = qMax(0, reportCount);
+        metrics.speakingEvalExportOperationRetained = true;
+        const QString detail =
+            QStringLiteral(
+                "reports=%1; exportOperationRetained=true"
+                )
+                .arg(metrics.speakingEvalExportDialogReportCount);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-export-start"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-export-start %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-export-start"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationExportCompleted(
+    int pdfCount,
+    qint64 pdfBytes,
+    qint64 archiveBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.speakingEvalExportsCompleted;
+        metrics.speakingEvalExportPdfCount = qMax(0, pdfCount);
+        metrics.speakingEvalExportPdfBytes = qMax<qint64>(0, pdfBytes);
+        metrics.speakingEvalExportArchiveBytes = qMax<qint64>(0, archiveBytes);
+        metrics.speakingEvalExportOperationRetained = false;
+        const QString detail =
+            QStringLiteral(
+                "pdfCount=%1; pdfBytes=%2; archiveBytes=%3; exportOperationRetained=false"
+                )
+                .arg(metrics.speakingEvalExportPdfCount)
+                .arg(metrics.speakingEvalExportPdfBytes)
+                .arg(metrics.speakingEvalExportArchiveBytes);
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-export-complete"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-export-complete %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-export-complete"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationFailed(const QString& detail)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.speakingEvalOperationsFailed;
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-operation-failed"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-operation-failed %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-operation-failed"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSpeakingEvaluationOperationReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.speakingEvalOperationsReleased;
+        metrics.speakingEvalReportListRetained = false;
+        metrics.speakingEvalReportDialogRetained = false;
+        metrics.speakingEvalExportDialogRetained = false;
+        metrics.speakingEvalAiDialogRetained = false;
+        metrics.speakingEvalAiResponseRetained = false;
+        metrics.speakingEvalExportOperationRetained = false;
+        metrics.speakingEvalOperationRetained = false;
+
+        profiler->recordEvent(
+            QStringLiteral("speaking-evaluation-operation-released")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("speaking-evaluation-operation-released")
+            );
+        profiler->checkpoint(
+            QStringLiteral("speaking-evaluation-operation-released")
             );
     }
 }
