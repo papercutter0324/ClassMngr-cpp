@@ -26,15 +26,29 @@ Schedule Import slice.
 
 ## Current Position
 
-The final current-session slice is the large Schedule Import conflict-warning
-reference, committed after the Asia/Seoul 13:00 cutoff. Phase 1 has not
-started. The current route remains a legacy before-state measurement; later
-phases must avoid regressions and should lower the affected heavy-route
-working set.
+The last accepted slice remains the large Schedule Import conflict-warning
+reference at commit `ecb88af0`. The next proposed slice adds a packaged
+Calendar Import parser-failure reference, but it is currently uncommitted and
+unverified in `src/main.cpp` and `tests/startup_performance_tests.cpp`. Phase 1
+has not started. Fresh Ninja Release compilation now succeeds, and the
+unchanged Calendar Import success route plus the full startup suite pass. The
+expected-failure route still fails its test harness at line 9493 because the
+failure path completes before `calendar-import-preferences.png` and
+`calendar-page.png` are retained; the app subprocess itself exits normally and
+the failure-state assertions pass. No Calendar Import error artifact is
+accepted yet.
+
+The CMake configuration cleanup is complete. Multi-config generators now expose
+only `Debug;Release`; every Debug preset explicitly enables tests and every
+Release preset disables them; non-QML test targets opt out of unnecessary QML
+import scanning; and active build/docs/workflow references use Qt 6.12.0. A
+fresh isolated Windows configure produced 195 tests and zero `qmlimportscan`
+targets. The empty root-generated `CMakeFiles/` residue was removed and root
+CMake output is now ignored; `build/` and `dist/` were not cleaned.
 
 ## Next Milestone
 
-Resume with the next packaged Windows x64 Release Heavy-route slice covering
-another explicitly open visual/output gap. Run the focused heavy route, the
-full startup-performance suite, and commit that slice before continuing. The
-current session stops after its post-13:00 commit.
+Repair the expected-failure harness so its Preferences/page artifacts are
+captured before completion or asserted conditionally, then rerun the focused
+failure route and inspect the error screenshot. Retain the error artifacts only
+after that route passes; then commit the complete slice. Do not begin Phase 1.

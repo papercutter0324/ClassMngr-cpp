@@ -18,8 +18,51 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   generated-output references, cross-platform Release evidence, and the
   eventual v2 memory/ownership remediation. Populated Classes visual states are
   now retained for both language/theme axes.
+- The CMake configuration cleanup deployment is complete and independent of the
+  uncommitted Calendar Import slice. Multi-config generators are limited to
+  `Debug;Release`; Debug/Release test intent is explicit; non-QML test targets
+  skip unnecessary import scanning; active Qt references are all 6.12.0; and
+  only the empty root-generated `CMakeFiles/` residue was removed. The tracked
+  `cmake/` modules, `build/`, and `dist/` were preserved.
 
 ## Session Changes
+
+- Current continuation attempt — `Calendar Import parser-failure reference`
+  remains uncommitted and unverified. The proposed opt-in route is selected by
+  `CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE=1` and writes to
+  `CLASSMNGR_LARGE_CALENDAR_IMPORT_ERROR_BOUNDARY_REFERENCE_DIR`; it uses a
+  deterministic malformed local HTTP response and is intended to retain the
+  real `Import failed:`/re-enabled Import Events state, unchanged event count,
+  failure/release trace, and error screenshot. The current source/test delta is
+  in `src/main.cpp` and `tests/startup_performance_tests.cpp` only.
+- Verification blocker for that attempt: the preset Release build stopped
+  before compilation with MSBuild/FileTracker
+  `System.UnauthorizedAccessException`; the existing Ninja Release cache then
+  failed before project compilation because MSVC could not find `type_traits`
+  and `limits`; the x64 Visual Studio developer shell was located at
+  `C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Launch-VsDevShell.ps1`,
+  but the explicit Ninja reconfigure was interrupted before producing a usable
+  cache or executable. No fresh error artifacts or runtime results exist.
+- Current automation attempt — deployment `qt0_calendar_verify_20260916` —
+  invoked the installed x64 developer shell and an explicit new Ninja Release
+  configure with `BUILD_TESTING=ON`. CMake emitted only the known optional
+  Vulkan/Qt6SerialPort notices before the configure was stopped after it
+  stalled during Qt/QML target generation. The tree contains only partial
+  metadata/compiler probes; no `ClassMngr.exe`, startup test executable,
+  focused route, full suite, or fresh artifact exists. The five modified files
+  remain uncommitted.
+- Compile repair and runtime verification: `tests/startup_performance_tests.cpp`
+  now uses a `const char*` environment selector and no longer redeclares
+  `diagnosticError`; the fresh Ninja Release app/test targets compile and link.
+  The expected-failure route reached the real `Import failed:` state with the
+  Import control re-enabled, unchanged events, forbidden success checkpoints
+  absent, correct release ordering, a readable error PNG, a 69-byte malformed
+  response, and a 391.24 MiB peak. Its QTest function still failed at line
+  9493 because `calendar-import-preferences.png` was missing; the failure path
+  completes before the normal-path Preferences/page captures. The unchanged
+  success variant passed (`3 passed, 0 failed`, 394.92 MiB peak), the full
+  startup suite passed (`11 passed, 0 failed, 14 skipped`), and
+  `git diff --check` passed. No commit was made.
 
 - `b5c1a8a1` — `Phase 0: retain PowerPoint renderer reference`
   - Added a real Speaking Evaluation export-dialog PowerPoint renderer
@@ -64,6 +107,13 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   commit for this session.
 
 ## Verification
+
+- CMake cleanup verification passed: JSON parsing, configure/build/workflow
+  preset listing, `git diff --check`, and a fresh isolated Windows configure
+  all succeeded. The configure cache contained only `Debug;Release`; it
+  generated 195 tests and zero `qmlimportscan` files. Linux and macOS
+  configurations were not executed on this Windows host, and application tests
+  were intentionally not run for this configuration task.
 
 - The Classes visual-state slice rebuilt the Release application and Debug
   startup test target successfully inside the Visual Studio developer
@@ -110,8 +160,10 @@ git status --short
 git log -6 --oneline
 ```
 
-Then inspect the Phase 0 baseline/plan tail. The final post-cutoff commit from
-this session contains the completed Schedule Import conflict-warning slice. On
-the next session, resume with the next packaged Windows x64 Release Heavy-route
-evidence slice, keep every slice separately committed, and do not start Phase 1
-until Phase 0's evidence/contract work is genuinely complete.
+Then inspect the Phase 0 baseline/plan tail and the uncommitted Calendar Import
+diff. Repair the expected-failure artifact timing/conditional assertions,
+rerun that focused route, and manually inspect the retained error screenshot.
+The success variant and full startup suite already pass against fresh Ninja
+Release binaries. Retain and document the error-boundary artifacts only after
+the focused failure route passes; keep the slice uncommitted until then. Do
+not start Phase 1 or v2 remediation.

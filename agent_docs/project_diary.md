@@ -11,9 +11,9 @@
 - Feature-scoped assets are produced as standalone RCC resource packs. Do not
   assume every asset belongs in the main executable bundle; follow
   `cmake/resources.cmake` when changing packaging.
-- Build evidence must be checked against CMake: the current top-level Qt
-  requirement is 6.12.0, despite the older 6.11.1 floor stated in
-  `BUILDING.md`.
+- Build evidence must be checked against CMake: the project, BUILDING.md,
+  active CI workflows, and release helper now agree on Qt 6.12.0. Keep future
+  examples aligned with that minimum.
 - The Phase 0 memory contract separates the final `<250 MiB` end-of-rewrite
   normal target from the temporary `<512 MiB` diagnostic ceiling. Legacy heavy
   routes retain both comparisons as trend evidence; do not treat an over-target
@@ -52,3 +52,29 @@
   the existing event loop for the asynchronously queued `QMessageBox`, capture
   it, and keep the apply fixture conflict-free so the transaction path remains
   independently measurable.
+- The Calendar Import parser-failure slice is not accepted until it has fresh
+  Release evidence. On this host, the preset MSBuild tree hit a FileTracker
+  `UnauthorizedAccessException`, an ambient Ninja tree could not resolve MSVC
+  standard headers, and a correctly initialized Visual Studio shell still did
+  not finish CMake generation even with `BUILD_TESTING=ON`. Treat compiler
+  probes/optional-component notices or missing executables as an environment
+  blocker, not as evidence that the source compiles; preserve the uncommitted
+  diff for the next clean build attempt.
+- The fresh Calendar Import runtime run proved the expected failure behavior
+  and passed the unchanged success route/full startup suite, but the failure
+  test still expected the normal-path Preferences and Calendar screenshots.
+  Because the failure controller completes before those later captures, either
+  retain those frames before completion or make their assertions conditional;
+  keep the error route's own screenshot and lifecycle assertions strict.
+- Multi-config CMake generators previously exposed the default
+  `Debug;Release;MinSizeRel;RelWithDebInfo` set. The source-level configuration
+  guard now limits them to `Debug;Release`, while single-config presets retain
+  their explicit build type.
+- Release presets explicitly set `BUILD_TESTING=OFF`, and test targets without
+  a QML module opt out of Qt import scanning. This removed the unnecessary
+  `qmlimportscan` target fan-out seen in the Debug tree without changing test
+  source or link ownership.
+- The tracked `cmake/` tree remains split by source, resources, deployment,
+  platform, and test concerns because those boundaries are active. Only the
+  empty root-generated `CMakeFiles/` residue was removed; root CMake output is
+  ignored, and build/dist artifacts are preserved.

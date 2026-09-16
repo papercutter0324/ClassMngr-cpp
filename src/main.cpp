@@ -4660,6 +4660,13 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
             const auto stage = std::make_shared<int>(0);
             const auto preferencesOpened = std::make_shared<bool>(false);
             const auto importFinished = std::make_shared<bool>(false);
+            const bool expectedImportFailure =
+                qEnvironmentVariable(
+                    "CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE"
+                    ).trimmed()
+                == QStringLiteral("1");
+            const auto calendarEventCountBeforeImport =
+                std::make_shared<int>(-1);
             const auto loadingVisualCaptured =
                 std::make_shared<bool>(false);
             const QString loadingOutputRoot =
@@ -4791,6 +4798,8 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
                     stage,
                     preferencesOpened,
                     importFinished,
+                    expectedImportFailure,
+                    calendarEventCountBeforeImport,
                     captureLoadingVisual,
                     poll
                 ]()
@@ -4913,6 +4922,18 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
 
                         if (!*preferencesOpened)
                         {
+                            if (expectedImportFailure && pageGuard)
+                            {
+                                const CalendarPageRuntimeMetrics metrics =
+                                    pageGuard->runtimeMetrics();
+                                if (metrics.cacheLoading)
+                                {
+                                    schedulePoll();
+                                    return;
+                                }
+                                *calendarEventCountBeforeImport =
+                                    metrics.cacheEventCount;
+                            }
                             *preferencesOpened = true;
                             profiler.checkpoint(
                                 QStringLiteral(
@@ -4948,7 +4969,124 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
                     const QString statusText = status->text();
                     if (statusText.startsWith(QStringLiteral("Import failed:")))
                     {
-                        fail(statusText);
+                        if (!expectedImportFailure)
+                        {
+                            fail(statusText);
+                            return;
+                        }
+
+                        if (!pageGuard)
+                        {
+                            fail(QStringLiteral("calendar-page-closed-after-import-failure"));
+                            return;
+                        }
+
+                        const CalendarPageRuntimeMetrics metrics =
+                            pageGuard->runtimeMetrics();
+                        if (metrics.cacheLoading)
+                        {
+                            schedulePoll();
+                            return;
+                        }
+
+                        const bool statusVisible = status->isVisible();
+                        const bool controlsEnabled =
+                            importButton && importButton->isEnabled();
+                        const int eventsBefore =
+                            *calendarEventCountBeforeImport;
+                        const int eventsAfter = metrics.cacheEventCount;
+                        const bool calendarEventsUnchanged =
+                            eventsBefore >= 0 && eventsAfter == eventsBefore;
+                        const QString outputRoot =
+                            qEnvironmentVariable(
+                                "CLASSMNGR_STARTUP_CALENDAR_IMPORT_OUTPUT_DIR"
+                                ).trimmed();
+                        bool captured = outputRoot.isEmpty();
+                        if (!outputRoot.isEmpty())
+                        {
+                            QDir().mkpath(outputRoot);
+                            const QPixmap capture = dialogGuard->grab();
+                            captured =
+                                !capture.isNull()
+                                && capture.save(
+                                    QDir(outputRoot).filePath(
+                                        QStringLiteral(
+                                            "calendar-import-error.png"
+                                            )
+                                        ),
+                                    "PNG"
+                                    );
+                        }
+                        const QString detail =
+                            QStringLiteral(
+                                "status=%1; statusVisible=%2; controlsEnabled=%3; calendarEventsBefore=%4; calendarEventsAfter=%5; calendarEventsUnchanged=%6; captured=%7"
+                                )
+                                .arg(statusText)
+                                .arg(
+                                    statusVisible
+                                        ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                    )
+                                .arg(
+                                    controlsEnabled
+                                        ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                    )
+                                .arg(eventsBefore)
+                                .arg(eventsAfter)
+                                .arg(
+                                    calendarEventsUnchanged
+                                        ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                    )
+                                .arg(
+                                    captured
+                                        ? QStringLiteral("true")
+                                        : QStringLiteral("false")
+                                    );
+                        profiler.checkpoint(
+                            QStringLiteral("calendar-import-failure-observed"),
+                            detail
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral(
+                                "calendar-import-failure-observed %1"
+                                ).arg(detail)
+                            );
+                        if (
+                            !statusVisible
+                            || !controlsEnabled
+                            || !calendarEventsUnchanged
+                            || !captured
+                        )
+                        {
+                            fail(QStringLiteral("calendar-import-error-boundary-check-failed"));
+                            return;
+                        }
+
+                        dialogGuard->reject();
+                        app.processEvents();
+                        QCoreApplication::sendPostedEvents(
+                            nullptr,
+                            QEvent::DeferredDelete
+                            );
+                        app.processEvents();
+                        profiler.checkpoint(
+                            QStringLiteral("calendar-import-dialog-released")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral("calendar-import-dialog-released")
+                            );
+                        profiler.checkpoint(
+                            QStringLiteral("calendar-import-operation-end"),
+                            QStringLiteral("failed=true")
+                            );
+                        appendStartupWorkflowTrace(
+                            QStringLiteral(
+                                "calendar-import-operation-end failed=true"
+                                )
+                            );
+                        completion();
                         return;
                     }
 

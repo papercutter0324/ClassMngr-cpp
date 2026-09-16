@@ -8656,14 +8656,30 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
 
 void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured()
 {
-    const QString configuredOutputRoot =
+    const bool expectedFailure =
         qEnvironmentVariable(
-            "CLASSMNGR_LARGE_CALENDAR_IMPORT_BOUNDARY_REFERENCE_DIR"
-            ).trimmed();
+            "CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE"
+            ).trimmed()
+        == QStringLiteral("1");
+    const char* outputEnvironmentName = expectedFailure
+        ? "CLASSMNGR_LARGE_CALENDAR_IMPORT_ERROR_BOUNDARY_REFERENCE_DIR"
+        : "CLASSMNGR_LARGE_CALENDAR_IMPORT_BOUNDARY_REFERENCE_DIR";
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(outputEnvironmentName).trimmed();
     if (configuredOutputRoot.isEmpty())
     {
         QSKIP(
-            "Set CLASSMNGR_LARGE_CALENDAR_IMPORT_BOUNDARY_REFERENCE_DIR to run the heavy route."
+            qPrintable(
+                QStringLiteral(
+                    "Set %1 to run the heavy %2 route."
+                    )
+                    .arg(
+                        QString::fromLatin1(outputEnvironmentName),
+                        expectedFailure
+                            ? QStringLiteral("Calendar Import error-boundary")
+                            : QStringLiteral("Calendar Import boundary")
+                        )
+                )
             );
     }
 
@@ -8719,14 +8735,45 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
         QDir(outputRoot).filePath(
             QStringLiteral("generated-large-calendar-import.xlsx")
             );
+    const QString malformedResponsePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("malformed-calendar-import-response.bin")
+            );
     if (QFileInfo::exists(retainedWorkbookPath))
     {
         QVERIFY(QFile::remove(retainedWorkbookPath));
     }
+    if (QFileInfo::exists(malformedResponsePath))
+    {
+        QVERIFY(QFile::remove(malformedResponsePath));
+    }
+
+    const auto workbookData =
+        std::make_shared<QByteArray>(largeCalendarImportWorkbookData());
+    const auto responseBody =
+        std::make_shared<QByteArray>(
+            expectedFailure
+                ? QByteArrayLiteral(
+                    "This response is intentionally not a valid Office Open XML workbook.\n"
+                    )
+                : *workbookData
+            );
+    QString diagnosticError;
     QVERIFY2(
         QFile::copy(workbookPath, retainedWorkbookPath),
         "Unable to retain the generated large Calendar import workbook."
         );
+    if (expectedFailure)
+    {
+        QVERIFY2(
+            writeDiagnosticFile(
+                malformedResponsePath,
+                *responseBody,
+                &diagnosticError
+                ),
+            qPrintable(diagnosticError)
+            );
+    }
 
     const QString metricsPath =
         QDir(outputRoot).filePath(
@@ -8756,9 +8803,27 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
     {
         QVERIFY(QFile::remove(loadingCapturePath));
     }
+    const QString errorCapturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("calendar-import-error.png")
+            );
+    if (QFileInfo::exists(errorCapturePath))
+    {
+        QVERIFY(QFile::remove(errorCapturePath));
+    }
+    for (const QString& fileName : {
+             QStringLiteral("calendar-import-preferences.png"),
+             QStringLiteral("calendar-page.png"),
+             QStringLiteral("calendar-import-error-report.json")
+         })
+    {
+        const QString path = QDir(outputRoot).filePath(fileName);
+        if (QFileInfo::exists(path))
+        {
+            QVERIFY(QFile::remove(path));
+        }
+    }
 
-    const auto workbookData =
-        std::make_shared<QByteArray>(largeCalendarImportWorkbookData());
     QTcpServer server;
     QVERIFY2(
         server.listen(QHostAddress::LocalHost),
@@ -8768,7 +8833,7 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
         &server,
         &QTcpServer::newConnection,
         &server,
-        [&server, workbookData]()
+        [&server, responseBody]()
         {
             while (server.hasPendingConnections())
             {
@@ -8786,9 +8851,9 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
                         "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n"
                         )
                     + QByteArrayLiteral("Content-Length: ")
-                    + QByteArray::number(workbookData->size())
+                    + QByteArray::number(responseBody->size())
                     + QByteArrayLiteral("\r\nConnection: close\r\n\r\n")
-                    + *workbookData
+                    + *responseBody
                     );
                 const auto responded = std::make_shared<bool>(false);
                 QObject::connect(
@@ -8831,6 +8896,10 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
     environment.insert(
         QStringLiteral("CLASSMNGR_STARTUP_CALENDAR_IMPORT_OUTPUT_DIR"),
         outputRoot
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE"),
+        expectedFailure ? QStringLiteral("1") : QStringLiteral("0")
         );
     environment.insert(
         QStringLiteral("QT_QPA_PLATFORM"),
@@ -8894,7 +8963,6 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
 
     const QByteArray standardOutput = process.readAllStandardOutput();
     const QByteArray standardError = process.readAllStandardError();
-    QString diagnosticError;
     QVERIFY2(
         writeDiagnosticFile(
             QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
@@ -8930,34 +8998,53 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
                 ).arg(outputRoot)
             )
         );
-    for (const QString& expectedTrace : {
-             QStringLiteral("calendar-import-preferences-start"),
-             QStringLiteral("calendar-import-preferences-opened"),
-             QStringLiteral("calendar-import-ui-start"),
-             QStringLiteral("calendar-import-loading"),
-             QStringLiteral("calendar-import-operation-start"),
-             QStringLiteral("calendar-import-response-received"),
-             QStringLiteral("calendar-import-workbook-parsed"),
-             QStringLiteral("calendar-import-events-prepared"),
-             QStringLiteral("calendar-import-existing-events-loaded"),
-             QStringLiteral("calendar-import-save-prepared"),
-             QStringLiteral("calendar-import-operation-applied"),
-             QStringLiteral("calendar-import-finished"),
-             QStringLiteral("calendar-import-page-refreshed"),
-             QStringLiteral("calendar-import-operation-released"),
-             QStringLiteral("calendar-import-dialog-released"),
-             QStringLiteral("calendar-import-page-released")
-         })
+    const QStringList expectedLifecycleTrace = expectedFailure
+        ? QStringList{
+              QStringLiteral("calendar-import-preferences-start"),
+              QStringLiteral("calendar-import-preferences-opened"),
+              QStringLiteral("calendar-import-ui-start"),
+              QStringLiteral("calendar-import-loading"),
+              QStringLiteral("calendar-import-operation-start"),
+              QStringLiteral("calendar-import-response-received"),
+              QStringLiteral("calendar-import-operation-failed"),
+              QStringLiteral("calendar-import-operation-released"),
+              QStringLiteral("calendar-import-failure-observed"),
+              QStringLiteral("calendar-import-dialog-released"),
+              QStringLiteral("calendar-import-operation-end failed=true"),
+              QStringLiteral("calendar-import-page-released")
+          }
+        : QStringList{
+              QStringLiteral("calendar-import-preferences-start"),
+              QStringLiteral("calendar-import-preferences-opened"),
+              QStringLiteral("calendar-import-ui-start"),
+              QStringLiteral("calendar-import-loading"),
+              QStringLiteral("calendar-import-operation-start"),
+              QStringLiteral("calendar-import-response-received"),
+              QStringLiteral("calendar-import-workbook-parsed"),
+              QStringLiteral("calendar-import-events-prepared"),
+              QStringLiteral("calendar-import-existing-events-loaded"),
+              QStringLiteral("calendar-import-save-prepared"),
+              QStringLiteral("calendar-import-operation-applied"),
+              QStringLiteral("calendar-import-finished"),
+              QStringLiteral("calendar-import-page-refreshed"),
+              QStringLiteral("calendar-import-operation-released"),
+              QStringLiteral("calendar-import-dialog-released"),
+              QStringLiteral("calendar-import-page-released")
+          };
+    const auto traceIndex = [&traceLines](const QString& prefix)
     {
-        bool foundTrace = false;
-        for (const QString& line : traceLines)
+        for (int index = 0; index < traceLines.size(); ++index)
         {
-            if (line.startsWith(expectedTrace))
+            if (traceLines.at(index).startsWith(prefix))
             {
-                foundTrace = true;
-                break;
+                return index;
             }
         }
+        return -1;
+    };
+    for (const QString& expectedTrace : expectedLifecycleTrace)
+    {
+        const bool foundTrace = traceIndex(expectedTrace) >= 0;
         QVERIFY2(
             foundTrace,
             qPrintable(
@@ -8967,6 +9054,45 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
                     )
                     .arg(expectedTrace, outputRoot)
                 )
+            );
+    }
+    if (expectedFailure)
+    {
+        for (const QString& forbiddenTrace : {
+                 QStringLiteral("calendar-import-workbook-parsed"),
+                 QStringLiteral("calendar-import-events-prepared"),
+                 QStringLiteral("calendar-import-existing-events-loaded"),
+                 QStringLiteral("calendar-import-save-prepared"),
+                 QStringLiteral("calendar-import-operation-applied"),
+                 QStringLiteral("calendar-import-finished"),
+                 QStringLiteral("calendar-import-page-refreshed")
+             })
+        {
+            QCOMPARE(traceIndex(forbiddenTrace), -1);
+        }
+        QVERIFY(
+            traceIndex(QStringLiteral("calendar-import-response-received"))
+            < traceIndex(QStringLiteral("calendar-import-operation-failed"))
+            );
+        QVERIFY(
+            traceIndex(QStringLiteral("calendar-import-operation-failed"))
+            < traceIndex(QStringLiteral("calendar-import-operation-released"))
+            );
+        QVERIFY(
+            traceIndex(QStringLiteral("calendar-import-operation-released"))
+            < traceIndex(QStringLiteral("calendar-import-failure-observed"))
+            );
+        QVERIFY(
+            traceIndex(QStringLiteral("calendar-import-failure-observed"))
+            < traceIndex(QStringLiteral("calendar-import-dialog-released"))
+            );
+        QVERIFY(
+            traceIndex(QStringLiteral("calendar-import-dialog-released"))
+            < traceIndex(QStringLiteral("calendar-import-operation-end failed=true"))
+            );
+        QVERIFY(
+            traceIndex(QStringLiteral("calendar-import-operation-end failed=true"))
+            < traceIndex(QStringLiteral("calendar-import-page-released"))
             );
     }
 
@@ -9009,6 +9135,10 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
         checkpointNamed(QStringLiteral("calendar-import-save-prepared"));
     const QJsonObject appliedCheckpoint =
         checkpointNamed(QStringLiteral("calendar-import-operation-applied"));
+    const QJsonObject failureCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-operation-failed"));
+    const QJsonObject failureObservedCheckpoint =
+        checkpointNamed(QStringLiteral("calendar-import-failure-observed"));
     const QJsonObject releasedCheckpoint =
         checkpointNamed(QStringLiteral("calendar-import-operation-released"));
     const QJsonObject pageCheckpoint =
@@ -9016,13 +9146,8 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
     const QJsonObject workflowCheckpoint =
         checkpointNamed(QStringLiteral("workflow-complete"));
 
-    QVERIFY(!parsedCheckpoint.isEmpty());
     QVERIFY(!loadingCheckpoint.isEmpty());
-    QVERIFY(!eventsCheckpoint.isEmpty());
-    QVERIFY(!saveCheckpoint.isEmpty());
-    QVERIFY(!appliedCheckpoint.isEmpty());
     QVERIFY(!releasedCheckpoint.isEmpty());
-    QVERIFY(!pageCheckpoint.isEmpty());
     QVERIFY(!workflowCheckpoint.isEmpty());
     QVERIFY(
         loadingCheckpoint.value(QStringLiteral("detail"))
@@ -9043,8 +9168,113 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
     QCOMPARE(process.exitStatus(), QProcess::NormalExit);
     QCOMPARE(process.exitCode(), 0);
 
-    const QJsonObject parsedMetrics =
-        parsedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject releasedMetrics =
+        releasedCheckpoint.value(QStringLiteral("metrics")).toObject();
+
+    if (expectedFailure)
+    {
+        QVERIFY(!failureCheckpoint.isEmpty());
+        QVERIFY(!failureObservedCheckpoint.isEmpty());
+        QVERIFY(
+            !failureCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .trimmed()
+                .isEmpty()
+            );
+
+        const QString failureObservedDetail =
+            failureObservedCheckpoint.value(QStringLiteral("detail"))
+                .toString();
+        QVERIFY(
+            failureObservedDetail.startsWith(
+                QStringLiteral("status=Import failed:")
+                )
+            );
+        const auto detailValue =
+            [&failureObservedDetail](const QString& fieldName)
+            {
+                const QString fieldPrefix = fieldName + QLatin1Char('=');
+                for (const QString& field :
+                     failureObservedDetail.split(
+                         QChar(';'),
+                         Qt::SkipEmptyParts
+                         ))
+                {
+                    const QString trimmedField = field.trimmed();
+                    if (trimmedField.startsWith(fieldPrefix))
+                    {
+                        return trimmedField.mid(fieldPrefix.size());
+                    }
+                }
+                return QString{};
+            };
+        QVERIFY(
+            detailValue(QStringLiteral("status"))
+                .startsWith(QStringLiteral("Import failed:"))
+            );
+        QCOMPARE(
+            detailValue(QStringLiteral("statusVisible")),
+            QStringLiteral("true")
+            );
+        QCOMPARE(
+            detailValue(QStringLiteral("controlsEnabled")),
+            QStringLiteral("true")
+            );
+        QCOMPARE(
+            detailValue(QStringLiteral("calendarEventsUnchanged")),
+            QStringLiteral("true")
+            );
+        QCOMPARE(
+            detailValue(QStringLiteral("captured")),
+            QStringLiteral("true")
+            );
+
+        bool eventsBeforeOk = false;
+        bool eventsAfterOk = false;
+        const int eventsBefore =
+            detailValue(QStringLiteral("calendarEventsBefore"))
+                .toInt(&eventsBeforeOk);
+        const int eventsAfter =
+            detailValue(QStringLiteral("calendarEventsAfter"))
+                .toInt(&eventsAfterOk);
+        QVERIFY(eventsBeforeOk);
+        QVERIFY(eventsAfterOk);
+        QVERIFY(eventsBefore >= 0);
+        QCOMPARE(eventsAfter, eventsBefore);
+
+        for (const QString& retainedFlag : {
+                 QStringLiteral("calendarImportRawBytesRetained"),
+                 QStringLiteral("calendarImportWorkbookRetained"),
+                 QStringLiteral("calendarImportEventsRetained"),
+                 QStringLiteral("calendarImportOperationRetained")
+             })
+        {
+            if (releasedMetrics.contains(retainedFlag))
+            {
+                QCOMPARE(releasedMetrics.value(retainedFlag).toBool(), false);
+            }
+        }
+        if (releasedMetrics.contains(
+                QStringLiteral("calendarImportOperationsReleased")
+                ))
+        {
+            QVERIFY(
+                releasedMetrics.value(
+                    QStringLiteral("calendarImportOperationsReleased")
+                    ).toInt() >= 1
+                );
+        }
+    }
+    else
+    {
+        QVERIFY(!parsedCheckpoint.isEmpty());
+        QVERIFY(!eventsCheckpoint.isEmpty());
+        QVERIFY(!saveCheckpoint.isEmpty());
+        QVERIFY(!appliedCheckpoint.isEmpty());
+        QVERIFY(!pageCheckpoint.isEmpty());
+
+        const QJsonObject parsedMetrics =
+            parsedCheckpoint.value(QStringLiteral("metrics")).toObject();
     QCOMPARE(
         parsedMetrics.value(
             QStringLiteral("calendarImportWorkbookSheetCount")
@@ -9127,8 +9357,6 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
             ).toBool()
         );
 
-    const QJsonObject releasedMetrics =
-        releasedCheckpoint.value(QStringLiteral("metrics")).toObject();
     QVERIFY(
         !releasedMetrics.value(
             QStringLiteral("calendarImportRawBytesRetained")
@@ -9172,6 +9400,7 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
             QStringLiteral("calendarCacheLoading")
             ).toBool()
         );
+    }
 
     QJsonObject manifest;
     manifest.insert(QStringLiteral("fixture"), QStringLiteral("large_startup.sql"));
