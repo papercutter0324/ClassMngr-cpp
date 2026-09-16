@@ -46,6 +46,13 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
     controls, and a non-empty screenshot. The focused routes and the full
     startup-performance suite passed; measured peaks were `418,488,320` bytes
     working set for cancel and `361,316,352` bytes for apply.
+- `f0fb4b3` — `Phase 0: retain Calendar Import loading state`
+  - Retained the real packaged Calendar Import Preferences loading state. The
+    Calendar tab is scrolled to the Import section only for the opt-in capture,
+    then restored; the evidence records `Importing events...`, the disabled
+    import button, and a non-empty screenshot. The focused route and full
+    startup-performance suite passed with a `416,694,272`-byte working-set and
+    `457,310,208`-byte private-usage peak.
 
 ## Verification
 
@@ -63,6 +70,11 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   and Debug startup test target successfully inside the Visual Studio
   developer environment. Both focused boundary routes and the full
   `ClassMngrStartupPerformanceTests.exe` suite passed.
+- The Calendar Import loading slice rebuilt the packaged Release application
+  and Debug startup test target successfully inside the Visual Studio
+  developer environment. Its focused packaged Heavy route, visual inspection,
+  and the full `ClassMngrStartupPerformanceTests.exe` suite passed with all
+  opt-in capture variables cleared for the full run.
 - `git diff --check` passed before the slice commit.
 
 ## Pending Work and Blockers

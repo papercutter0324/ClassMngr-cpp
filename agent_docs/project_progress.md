@@ -19,14 +19,14 @@ a Speaking Evaluation PowerPoint renderer-selection reference, a Sub Prep
 output-dialog validation-error reference, a Sub Prep editing/read-only
 reference, populated Classes visual references across English/Korean and
 light/dark variants, and real Schedule Import loading references for both
-cancel and apply boundaries. Each focused route and the full
-startup-performance suite passed for the current committed Schedule Import
-slice.
+cancel and apply boundaries, plus the Calendar Import Preferences loading
+reference. Each focused route and the full startup-performance suite passed
+for the current committed Calendar Import slice.
 
 ## Current Position
 
 Current position is the open Phase 0 evidence gap after committed slice
-`71e44c8`. Phase 1 has not started. The current route remains a legacy
+`f0fb4b3`. Phase 1 has not started. The current route remains a legacy
 before-state measurement; later phases must avoid regressions and should lower
 the affected heavy-route working set.
 

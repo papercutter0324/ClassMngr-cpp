@@ -40,3 +40,8 @@
   `Loading workbook...`, indeterminate progress, disabled source/load controls,
   and a validated screenshot for both cancel and apply outcomes without
   changing the production path.
+- When a loading control is below the visible fold, an evidence-only probe may
+  move the existing scroll bar before grabbing the real dialog and restore its
+  value afterward. Calendar Import uses this to show `Importing events...` and
+  the disabled Import Events button without changing the production UI path or
+  the later Preferences reference state.
