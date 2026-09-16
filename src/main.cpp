@@ -74,6 +74,7 @@
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QLineEdit>
+#include <QTextEdit>
 #include <QDebug>
 
 #include <functional>
@@ -1848,6 +1849,102 @@ void scheduleStartupPerformanceSubPrepVisualStates(
                         );
                 };
 
+            const auto captureEditingReadOnlyState =
+                [
+                    &app,
+                    &window,
+                    &page,
+                    &profiler,
+                    &visualStatesSucceeded,
+                    &outputDirectoryPath
+                ]()
+                {
+                    page->scrollToTop();
+                    app.processEvents();
+
+                    int readOnlyLineEditCount = 0;
+                    bool editabilityContractValid = true;
+                    for (const QString& objectName : {
+                             QStringLiteral("subPrepOfficeNumberEdit"),
+                             QStringLiteral("subPrepOfficeWifiEdit"),
+                             QStringLiteral("subPrepOfficeWifiPasswordEdit"),
+                             QStringLiteral("subPrepPhotocopierCodeEdit"),
+                             QStringLiteral("subPrepZoomLoginIdEdit"),
+                             QStringLiteral("subPrepZoomPasswordEdit")
+                         })
+                    {
+                        QLineEdit* edit =
+                            page->findChild<QLineEdit*>(objectName);
+                        if (!edit || !edit->isReadOnly())
+                        {
+                            editabilityContractValid = false;
+                        }
+                        else
+                        {
+                            ++readOnlyLineEditCount;
+                        }
+                    }
+
+                    int editableTextEditCount = 0;
+                    for (const QString& objectName : {
+                             QStringLiteral("subPrepClassMaterialsEdit"),
+                             QStringLiteral("subPrepNotesEdit"),
+                             QStringLiteral("subPrepGradingInstructionsEdit"),
+                             QStringLiteral("subPrepSpecialInstructionsEdit")
+                         })
+                    {
+                        QTextEdit* edit =
+                            page->findChild<QTextEdit*>(objectName);
+                        if (!edit || edit->isReadOnly())
+                        {
+                            editabilityContractValid = false;
+                        }
+                        else
+                        {
+                            ++editableTextEditCount;
+                        }
+                    }
+
+                    const bool captured =
+                        captureStartupVisual(
+                            outputDirectoryPath,
+                            window,
+                            QStringLiteral("sub-prep-editing-read-only")
+                            );
+                    if (!captured || !editabilityContractValid)
+                    {
+                        visualStatesSucceeded = false;
+                    }
+
+                    const QString detail =
+                        QStringLiteral(
+                            "editableTextEdits=%1; readOnlyLineEdits=%2; "
+                            "contractValid=%3; captured=%4"
+                            )
+                            .arg(editableTextEditCount)
+                            .arg(readOnlyLineEditCount)
+                            .arg(
+                                editabilityContractValid
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                )
+                            .arg(
+                                captured
+                                    ? QStringLiteral("true")
+                                    : QStringLiteral("false")
+                                );
+                    profiler.checkpoint(
+                        QStringLiteral("sub-prep-visual-editing-read-only"),
+                        detail
+                        );
+                    appendStartupWorkflowTrace(
+                        QStringLiteral(
+                            "sub-prep-visual-editing-read-only %1"
+                            )
+                            .arg(detail)
+                        );
+                };
+
             const SubPrepPageRuntimeMetrics initialMetrics =
                 page->runtimeMetrics();
             appendStartupWorkflowTrace(
@@ -1891,6 +1988,7 @@ void scheduleStartupPerformanceSubPrepVisualStates(
                 }
                 else
                 {
+                    captureEditingReadOnlyState();
                     captureState(QStringLiteral("selected"));
 
                     const int changedClassId =

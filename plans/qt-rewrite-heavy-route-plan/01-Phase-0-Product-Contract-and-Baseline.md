@@ -1113,3 +1113,26 @@ No v2 feature work begins without a fixture and an acceptance check.
   cross-platform Release evidence, and v2 ownership/memory work remain open.
 - Decision and next heavy slice: continue Phase 0 with the next large-route
   evidence gap; do not begin v2 remediation or Phase 1 yet.
+
+## Progress update - 2026-09-16 (large Sub Prep editing/read-only reference)
+
+- What changed: the packaged heavy-route Sub Prep visual probe now captures
+  the top-of-page settings state and asserts the current mixed editability
+  contract in-process. Four named text editors remain editable while the four
+  campus fields and two Zoom fields remain read-only; the existing schedule and
+  class-information states are unchanged.
+- Heavy-route evidence: the Windows x64 Release 96-class route retained
+  `sub-prep-editing-read-only.png` for each English/Korean and light/dark
+  populated variant. The four populated routes completed between `7,079` and
+  `7,364 ms`, with peak working sets from `408,637,440` to `410,324,992` bytes;
+  the empty route remained covered and completed at `5,085 ms` with a
+  `292,331,520`-byte peak. Each populated checkpoint records
+  `editableTextEdits=4`, `readOnlyLineEdits=6`, `contractValid=true`, and
+  `captured=true`.
+- Evaluation impact: the Sub Prep editing/read-only visual and runtime
+  contract is now retained as current-product evidence. Loading and other
+  feature error states, remaining generated-output references, cross-platform
+  Release evidence, and v2 ownership/memory work remain open.
+- Decision and next heavy slice: continue Phase 0 with the next packaged
+  Windows x64 Release heavy-route evidence gap; do not begin v2 remediation or
+  Phase 1 yet.

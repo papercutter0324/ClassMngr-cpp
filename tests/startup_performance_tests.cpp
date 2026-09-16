@@ -7723,6 +7723,7 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
 
         for (const QString& captureName : {
                  QStringLiteral("startup-complete.png"),
+                 QStringLiteral("sub-prep-editing-read-only.png"),
                  QStringLiteral("sub-prep-selected.png"),
                  QStringLiteral("sub-prep-changed-selection.png")
              })
@@ -7793,6 +7794,11 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 report,
                 QStringLiteral("sub-prep-visual-selected")
                 );
+        const QJsonObject editingReadOnlyCheckpoint =
+            checkpointNamed(
+                report,
+                QStringLiteral("sub-prep-visual-editing-read-only")
+                );
         const QJsonObject changedCheckpoint =
             checkpointNamed(
                 report,
@@ -7804,6 +7810,7 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 QStringLiteral("sub-prep-visual-states-complete")
                 );
         for (const QJsonObject& checkpoint : {
+                 editingReadOnlyCheckpoint,
                  selectedCheckpoint,
                  changedCheckpoint,
                  completeCheckpoint
@@ -7814,9 +7821,29 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 checkpoint.value(QStringLiteral("memory"))
                     .toObject()
                     .value(QStringLiteral("available"))
-                    .toBool()
-                );
+                .toBool()
+            );
         }
+        QVERIFY(
+            editingReadOnlyCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("editableTextEdits=4"))
+        );
+        QVERIFY(
+            editingReadOnlyCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("readOnlyLineEdits=6"))
+        );
+        QVERIFY(
+            editingReadOnlyCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("contractValid=true"))
+        );
+        QVERIFY(
+            editingReadOnlyCheckpoint.value(QStringLiteral("detail"))
+                .toString()
+                .contains(QStringLiteral("captured=true"))
+        );
         const QJsonObject selectedMetrics =
             selectedCheckpoint.value(QStringLiteral("metrics")).toObject();
         const QJsonObject changedMetrics =
@@ -7870,7 +7897,8 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 {QStringLiteral("tracePath"), variantName + QStringLiteral("/workflow-trace.txt")},
                 {QStringLiteral("peakMemory"), report.value(QStringLiteral("peakMemory"))},
                 {QStringLiteral("finalNormalWorkingSetTargetPass"), withinFinalNormalWorkingSetTarget},
-                {QStringLiteral("transientDiagnosticCeilingPass"), withinTransientDiagnosticCeiling}
+                {QStringLiteral("transientDiagnosticCeilingPass"), withinTransientDiagnosticCeiling},
+                {QStringLiteral("editingReadOnlyVisualReference"), true}
             }
             );
     }
@@ -8048,7 +8076,7 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
         {
             QStringLiteral("scenario"),
             QStringLiteral(
-                "96-class Sub Prep selected, changed-selection, empty, and language/theme visual states"
+                "96-class Sub Prep editing/read-only, selected, changed-selection, empty, and language/theme visual states"
                 )
         },
         {QStringLiteral("classCount"), 96},
@@ -8081,6 +8109,7 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
             }
         },
         {QStringLiteral("variants"), variantManifest},
+        {QStringLiteral("editingReadOnlyVisualReference"), true},
         {
             QStringLiteral("emptyState"),
             QJsonObject{

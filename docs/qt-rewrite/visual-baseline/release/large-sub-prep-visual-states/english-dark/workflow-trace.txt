@@ -152,6 +152,7 @@ sub-prep-class-information view-ready; widgets=2948; textEdits=192; navigationRo
 showPage-returned sub-prep
 events-processed sub-prep
 sub-prep-visual-states-start
+sub-prep-visual-editing-read-only editableTextEdits=4; readOnlyLineEdits=6; contractValid=true; captured=true
 sub-prep-visual-selected visibleClasses=96 selectedClassId=25 captured=true
 sub-prep-visual-changed-selection visibleClasses=96 selectedClassId=1 captured=true
 sub-prep-visual-states-complete passed=true

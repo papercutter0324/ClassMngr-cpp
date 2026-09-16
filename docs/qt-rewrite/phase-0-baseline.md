@@ -341,10 +341,12 @@ does not recreate or rely on them.
   database with all meeting times cleared to capture the empty class-information
   state. The populated captures report 96 visible classes and change the
   selected class from 25 to 1; the empty capture reports zero visible classes
-  and selected class `-1`. The four populated routes completed between `9,773`
-  and `10,179 ms`, with peak working sets between `408,436,736` and
-  `410,849,280` bytes. The empty route completed at `7,643 ms` with a
-  `292,823,040`-byte peak working set. The retained screenshots, two generated
+  and selected class `-1`. Each populated route also captures the top-of-page
+  mixed editing/read-only state and verifies four editable text fields plus
+  six read-only line fields. The four populated routes completed between
+  `7,079` and `7,364 ms`, with peak working sets between `408,637,440` and
+  `410,324,992` bytes. The empty route completed at `5,085 ms` with a
+  `292,331,520`-byte peak working set. The retained screenshots, two generated
   fixtures, per-variant metrics/traces, and manifest are under
   `docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/`.
 
@@ -716,10 +718,9 @@ store the JSON startup trace beside the PNG files.
   current route keeps 473 navigation descendants but still materializes 192
   class-tab placeholders and repeats broad class-information/teacher queries
   on each refresh.
-- Sub Prep visual references for editing, read-only, loading, and other states
-  beyond the now-retained selected, changed-selection, empty,
-  both-language/theme, generated-output, and output-dialog validation-error
-  references.
+- Sub Prep visual references for loading and other states beyond the now-retained
+  editing/read-only, selected, changed-selection, empty, both-language/theme,
+  generated-output, and output-dialog validation-error references.
 - Golden generated reports, substitute documents, additional roster variants,
   and PowerPoint output beyond the retained Speaking Evaluation PDF/archive
   and PowerPoint renderer-selection reference. The actual external Office
