@@ -47,6 +47,7 @@ class RouteSpec:
     trace_file: str | None = None
     manifest_required: bool = False
     checkpoint_sequence: tuple[str, ...] = ()
+    terminal_checkpoint_sequence: tuple[str, ...] = ()
     event_sequence: tuple[str, ...] = ()
     png_files: tuple[str, ...] = ()
     minimum_pdf_files: int = 0
@@ -54,6 +55,7 @@ class RouteSpec:
     minimum_png_files: int = 0
     resource_trace_file: str | None = None
     release_prefixes: tuple[str, ...] = ()
+    release_checkpoints: tuple[str, ...] = ()
     expected_failure: bool = False
 
 
@@ -99,10 +101,10 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
             "visual/representative",
             required_files=("route-manifest.json",),
             required_globs=tuple(
-                f"{variant}/startup-complete.png" for variant in VARIANTS
+                f"representative/{variant}/startup-complete.png" for variant in VARIANTS
             ),
             png_files=tuple(
-                f"{variant}/startup-complete.png" for variant in VARIANTS
+                f"representative/{variant}/startup-complete.png" for variant in VARIANTS
             ),
         ),
         RouteSpec(
@@ -194,6 +196,7 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
             required_files=("route-manifest.json", "startup-metrics.json"),
             metrics_file="startup-metrics.json",
             checkpoint_sequence=("startup-complete", "settled-1s"),
+            terminal_checkpoint_sequence=("startup-complete", "settled-1s"),
         ),
         RouteSpec(
             "startup-representative",
@@ -208,6 +211,7 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
             metrics_file="startup-metrics.json",
             png_files=("startup-complete.png", "settled-final.png"),
             checkpoint_sequence=("startup-complete", "settled-5s"),
+            terminal_checkpoint_sequence=("startup-complete", "settled-5s"),
         ),
         RouteSpec(
             "workflow-representative",
@@ -259,7 +263,9 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "sub-prep-reentry-2",
                 "sub-prep-lifecycle-complete",
             ),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
             release_prefixes=("subPrepOutput",),
+            release_checkpoints=("sub-prep-lifecycle-complete",),
         ),
         RouteSpec(
             "lifecycle-classes",
@@ -282,6 +288,7 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "classes-reentry-2",
                 "classes-lifecycle-complete",
             ),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
         ),
         RouteSpec(
             "lifecycle-schedule",
@@ -303,6 +310,7 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "schedule-reentry-2",
                 "schedule-lifecycle-complete",
             ),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
         ),
         RouteSpec(
             "lifecycle-schedule-import",
@@ -329,6 +337,8 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "schedule-import-operation-released",
             ),
             release_prefixes=("scheduleImport",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=("schedule-import-post-release",),
         ),
         RouteSpec(
             "lifecycle-schedule-import-apply",
@@ -357,6 +367,8 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "schedule-import-operation-released",
             ),
             release_prefixes=("scheduleImport",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=("schedule-import-post-release",),
         ),
         RouteSpec(
             "lifecycle-calendar-import",
@@ -384,6 +396,8 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "calendar-import-operation-released",
             ),
             release_prefixes=("calendarImport",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=("calendar-import-operation-released",),
         ),
         RouteSpec(
             "lifecycle-calendar-import-error",
@@ -408,6 +422,8 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "calendar-import-operation-released",
             ),
             release_prefixes=("calendarImport",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=("calendar-import-operation-released",),
             expected_failure=True,
         ),
         RouteSpec(
@@ -439,6 +455,8 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "class-transfer-operation-released",
             ),
             release_prefixes=("classTransfer",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=("class-transfer-operation-released",),
         ),
         RouteSpec(
             "lifecycle-speaking-evaluation",
@@ -475,6 +493,8 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "speaking-evaluation-operation-released",
             ),
             release_prefixes=("speakingEval",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=("speaking-evaluation-operation-released",),
         ),
         RouteSpec(
             "lifecycle-staff-directory",
@@ -511,6 +531,11 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "staff-directory-gs-operation-released",
             ),
             release_prefixes=("staffDirectory",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=(
+                "staff-directory-native-operation-released",
+                "staff-directory-gs-operation-released",
+            ),
         ),
         RouteSpec(
             "output-sub-prep",
@@ -534,6 +559,8 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
                 "sub-prep-output-operation-released",
             ),
             release_prefixes=("subPrepOutput",),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
+            release_checkpoints=("sub-prep-output-operation-released",),
         ),
         RouteSpec(
             "resource-trace",
@@ -545,6 +572,7 @@ ROUTE_SPECS: tuple[RouteSpec, ...] = tuple(
             manifest_required=True,
             resource_trace_file="resource-trace.json",
             checkpoint_sequence=("resource-trace-start", "resource-trace-complete"),
+            terminal_checkpoint_sequence=("workflow-complete", "settled-1s"),
         ),
     ]
 )
@@ -736,29 +764,36 @@ def _checkpoint_names(
     return names, [str(value.get("name")) for value in normalized if isinstance(value.get("name"), str)], normalized
 
 
-def _find_terminal_metrics(
+def _find_release_metrics(
     report: dict[str, Any],
     route_manifest: dict[str, Any] | None,
-) -> list[dict[str, Any]]:
-    candidates: list[dict[str, Any]] = []
+    release_checkpoints: tuple[str, ...],
+) -> dict[str, dict[str, Any]]:
+    expected = set(release_checkpoints)
+    candidates: dict[str, dict[str, Any]] = {}
     checkpoints = report.get("checkpoints", [])
     if isinstance(checkpoints, list):
         for checkpoint in checkpoints:
             if not isinstance(checkpoint, dict):
                 continue
             name = checkpoint.get("name", "")
-            if isinstance(name, str) and (
-                "release" in name or "complete" in name or name in {"settled-1s", "settled-5s"}
-            ):
+            if isinstance(name, str) and name in expected:
                 metrics = checkpoint.get("metrics")
                 if isinstance(metrics, dict):
-                    candidates.append(metrics)
+                    candidates[name] = metrics
     if isinstance(route_manifest, dict):
-        for key, value in route_manifest.items():
-            if isinstance(value, dict) and (
-                "release" in key.lower() or "lastcheckpointmetrics" in key.lower()
-            ):
-                candidates.append(value)
+        for name in expected:
+            metrics = route_manifest.get(name)
+            if isinstance(metrics, dict):
+                candidates[name] = metrics
+        last_checkpoint_name = route_manifest.get("lastCheckpointName")
+        last_checkpoint_metrics = route_manifest.get("lastCheckpointMetrics")
+        if (
+            isinstance(last_checkpoint_name, str)
+            and last_checkpoint_name in expected
+            and isinstance(last_checkpoint_metrics, dict)
+        ):
+            candidates[last_checkpoint_name] = last_checkpoint_metrics
     return candidates
 
 
@@ -771,7 +806,14 @@ def _check_release_flags(
 ) -> None:
     if not spec.release_prefixes:
         return
-    terminal = _find_terminal_metrics(report, route_manifest)
+    release_metrics = _find_release_metrics(
+        report,
+        route_manifest,
+        spec.release_checkpoints,
+    )
+    missing_release_checkpoints = [
+        name for name in spec.release_checkpoints if name not in release_metrics
+    ]
     retained_true: list[str] = []
 
     def visit(value: Any, key_path: str = "") -> None:
@@ -791,11 +833,22 @@ def _check_release_flags(
             for index, child in enumerate(value):
                 visit(child, f"{key_path}[{index}]")
 
-    for candidate in terminal:
+    for candidate in release_metrics.values():
         visit(candidate)
 
-    lifecycle_summary["terminalReleaseFlagsChecked"] = bool(terminal)
+    lifecycle_summary["terminalReleaseFlagsChecked"] = (
+        bool(spec.release_checkpoints) and not missing_release_checkpoints
+    )
+    lifecycle_summary["missingReleaseCheckpoints"] = missing_release_checkpoints
+    lifecycle_summary["releaseCheckpoints"] = list(spec.release_checkpoints)
     lifecycle_summary["retainedFlagsTrue"] = sorted(set(retained_true))
+    if missing_release_checkpoints:
+        _append_issue(
+            failures,
+            "missing-release-checkpoint",
+            "Release checkpoint metrics are missing: "
+            + ", ".join(missing_release_checkpoints),
+        )
     if retained_true:
         _append_issue(
             failures,
@@ -981,14 +1034,19 @@ def _validate_route(
         lifecycle["missingCheckpoints"] = missing
         if missing:
             _append_issue(failures, "lifecycle-order", f"Missing or out-of-order lifecycle checkpoints: {', '.join(missing)}.", report_path)
-        if spec.category in {"memory", "output"}:
-            terminal_missing = _sequence_missing(names, ("workflow-complete", "settled-1s"))
+        if spec.terminal_checkpoint_sequence:
+            terminal_missing = _sequence_missing(
+                names,
+                spec.terminal_checkpoint_sequence,
+            )
             lifecycle["missingTerminalCheckpoints"] = terminal_missing
             if terminal_missing:
                 _append_issue(
                     failures,
                     "lifecycle-order",
-                    f"Missing or out-of-order route completion checkpoints: {', '.join(terminal_missing)}.",
+                    "Missing or out-of-order route completion checkpoints: "
+                    + ", ".join(terminal_missing)
+                    + ".",
                     report_path,
                 )
         event_names: list[str] = []
@@ -1746,6 +1804,52 @@ def _create_self_test_fixture(root: Path) -> None:
 
 
 def run_self_test() -> int:
+    def self_test_route_record(spec: RouteSpec) -> dict[str, Any]:
+        return {
+            "routeId": spec.route_id,
+            "category": spec.category,
+            "scenario": f"self-test {spec.route_id}",
+            "fixture": "self-test fixture",
+            "artifactPath": spec.artifact_path,
+            "status": "completed",
+        }
+
+    def write_self_test_route_manifest(route_root: Path, spec: RouteSpec) -> None:
+        _write_json(
+            route_root / "route-manifest.json",
+            {
+                "schema": "classmngr-phase0-route-v1",
+                "routeId": spec.route_id,
+                "category": spec.category,
+                "scenario": f"self-test {spec.route_id}",
+                "fixture": "self-test fixture",
+                "artifactPath": spec.artifact_path,
+                "status": "completed",
+                "invocation": {
+                    "command": ["ClassMngr.exe"],
+                    "environment": {"QT_QPA_PLATFORM": "offscreen"},
+                    "processFinished": True,
+                    "exitStatus": "normal",
+                    "exitCode": 0,
+                    "timedOut": False,
+                },
+            },
+        )
+
+    def set_self_test_run_routes(
+        root: Path,
+        specs: tuple[RouteSpec, ...],
+    ) -> None:
+        manifest_path = root / "run-manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["requestedRoutes"] = [spec.route_id for spec in specs]
+        manifest["routes"] = [self_test_route_record(spec) for spec in specs]
+        manifest["commands"] = [
+            {"id": spec.route_id, "kind": "route", "status": "completed"}
+            for spec in specs
+        ]
+        _write_json(manifest_path, manifest)
+
     class ValidatorSelfTest(unittest.TestCase):
         def test_valid_fixture_passes(self) -> None:
             with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:
@@ -1861,6 +1965,158 @@ def run_self_test() -> int:
                 self.assertTrue(any(item["code"] == "missing-artifact" for item in summary["failures"]))
                 self.assertEqual(summary["memoryTrend"]["aboveLegacy250MiBCount"], 1)
                 self.assertFalse(summary["memoryTrend"]["isPhase0Failure"])
+
+        def test_representative_visual_uses_nested_variant_paths(self) -> None:
+            with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                spec = ROUTE_BY_ID["visual-representative"]
+                route_root = root / spec.artifact_path
+                write_self_test_route_manifest(route_root, spec)
+                for variant in VARIANTS:
+                    image = route_root / "representative" / variant / "startup-complete.png"
+                    image.parent.mkdir(parents=True, exist_ok=True)
+                    image.write_bytes(_minimal_png())
+                manifest_path = root / "run-manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["requestedRoutes"].append(spec.route_id)
+                manifest["routes"].append(self_test_route_record(spec))
+                manifest["commands"].append(
+                    {"id": spec.route_id, "kind": "route", "status": "completed"}
+                )
+                _write_json(manifest_path, manifest)
+
+                summary = validate_evidence(root)
+
+                self.assertEqual(summary["status"], "pass", summary["failures"])
+                route_summary = next(
+                    item for item in summary["routeSummary"]
+                    if item["routeId"] == spec.route_id
+                )
+                self.assertEqual(route_summary["status"], "completed")
+                self.assertEqual(summary["metricSummary"]["visualArtifacts"], 8)
+
+        def test_startup_only_routes_use_route_specific_terminal_sequences(self) -> None:
+            with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                specs = (
+                    ROUTE_BY_ID["startup-empty"],
+                    ROUTE_BY_ID["startup-representative"],
+                )
+                checkpoint_names = {
+                    "startup-empty": ("startup-complete", "settled-1s"),
+                    "startup-representative": ("startup-complete", "settled-5s"),
+                }
+                for spec in specs:
+                    route_root = root / spec.artifact_path
+                    route_root.mkdir(parents=True, exist_ok=True)
+                    write_self_test_route_manifest(route_root, spec)
+                    checkpoints = [
+                        {
+                            "name": name,
+                            "elapsedMs": index * 1000,
+                            "memory": {
+                                "workingSetBytes": 1024,
+                                "peakWorkingSetBytes": 1024,
+                            },
+                            "metrics": {},
+                        }
+                        for index, name in enumerate(checkpoint_names[spec.route_id])
+                    ]
+                    _write_json(
+                        route_root / "startup-metrics.json",
+                        {
+                            "format": "classmngr-startup-profile-v2",
+                            "scenario": {"name": spec.route_id},
+                            "checkpoints": checkpoints,
+                            "events": [],
+                            "peakMemory": {
+                                "workingSetBytes": 1024,
+                                "peakWorkingSetBytes": 1024,
+                            },
+                        },
+                    )
+                    for relative in spec.png_files:
+                        image = route_root / relative
+                        image.parent.mkdir(parents=True, exist_ok=True)
+                        image.write_bytes(_minimal_png())
+                set_self_test_run_routes(root, specs)
+
+                summary = validate_evidence(root)
+
+                self.assertEqual(summary["status"], "pass", summary["failures"])
+                for route in summary["routeSummary"]:
+                    self.assertEqual(
+                        route["lifecycle"]["missingTerminalCheckpoints"],
+                        [],
+                        route["routeId"],
+                    )
+
+        def test_release_flags_only_fail_at_actual_release_checkpoints(self) -> None:
+            spec = RouteSpec(
+                "lifecycle-schedule-import",
+                "output",
+                "memory/schedule-import",
+                release_prefixes=("scheduleImport",),
+                release_checkpoints=("schedule-import-post-release",),
+            )
+            report = {
+                "checkpoints": [
+                    {
+                        "name": "schedule-import-parse-complete",
+                        "metrics": {"scheduleImportWorkbookRetained": True},
+                    },
+                    {
+                        "name": "schedule-import-dialog-released",
+                        "metrics": {"scheduleImportWorkbookRetained": True},
+                    },
+                    {
+                        "name": "schedule-import-post-review-release",
+                        "metrics": {"scheduleImportWorkbookRetained": True},
+                    },
+                    {
+                        "name": "schedule-import-post-release",
+                        "metrics": {"scheduleImportWorkbookRetained": False},
+                    },
+                ]
+            }
+            failures: list[dict[str, Any]] = []
+            lifecycle: dict[str, Any] = {}
+            _check_release_flags(spec, report, None, failures, lifecycle)
+            self.assertFalse(failures)
+            self.assertTrue(lifecycle["terminalReleaseFlagsChecked"])
+            self.assertEqual(lifecycle["retainedFlagsTrue"], [])
+
+            report["checkpoints"][-1]["metrics"]["scheduleImportWorkbookRetained"] = True
+            failures = []
+            _check_release_flags(spec, report, None, failures, {})
+            self.assertEqual(
+                [failure["code"] for failure in failures],
+                ["lifecycle-release-flag"],
+            )
+
+        def test_missing_timed_out_metadata_remains_a_process_failure(self) -> None:
+            failures: list[dict[str, Any]] = []
+            record = {
+                "processFinished": True,
+                "exitStatus": "normal",
+                "exitCode": 0,
+            }
+
+            self.assertFalse(
+                _validate_process_record(
+                    record,
+                    failures,
+                    "resource-trace manifest",
+                    Path("memory/resource-trace/manifest.json"),
+                )
+            )
+            self.assertEqual(
+                [failure["code"] for failure in failures],
+                ["abnormal-process"],
+            )
+            self.assertIn("timedOut=None", failures[0]["message"])
 
         def test_bad_json_abnormal_process_and_failed_lifecycle_fail(self) -> None:
             with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:
