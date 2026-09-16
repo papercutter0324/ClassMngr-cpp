@@ -297,18 +297,21 @@ does not recreate or rely on them.
   selection/lifecycle boundary with the actual generation dialog and package
   service. A valid By Day output fixture selects 30 classes across the five
   weekdays and six supported time slots, while retaining the 96-class workspace
-  load and 7,200-cell roster payload. The in-process Qt automation captures the
-  configured dialog, accepts the real modal flow, generates two PDFs (the
-  Sub Prep document and By Day roster) totaling 17 pages and `139,650` bytes,
-  then reopens both documents and renders their first pages at 150 DPI. Output
-  operation start/generated/release checkpoints were `7,965`/`9,024`/`9,060 ms`;
-  decoded first-page bytes totaled `17,399,680`. The output operation peaked at
-  `489,000,960` working-set bytes and `480,849,920` private-usage bytes, and
-  the full route reached `workflow-complete` at `11,442 ms` and `settled-1s`
-  at `12,472 ms`. Output failure/operation-retention flags were clear after
-  release and `livePdfDocumentCount` was zero. The retained dialog, PDFs,
-  first-page captures, generated fixture, trace, manifest, and profiler report
-  are under
+  load and 7,200-cell roster payload. The in-process Qt automation captures
+  the configured dialog, drives the real validation state with both output
+  options cleared, verifies that the OK action is disabled, then restores valid
+  controls and accepts the real modal flow. It generates two PDFs (the Sub
+  Prep document and By Day roster) totaling 17 pages and `139,650` bytes, then
+  reopens both documents and renders their first pages at 150 DPI. Output
+  start/validation/generated/release checkpoints were
+  `8,088`/`8,747`/`9,296`/`9,337 ms`; decoded first-page bytes totaled
+  `17,399,680`. The output operation peaked at `498,176,000` working-set bytes
+  and `480,948,224` private-usage bytes, and the full route reached
+  `workflow-complete` at `11,896 ms` and `settled-1s` at `12,928 ms`.
+  Output failure/operation-retention flags were clear after release and
+  `livePdfDocumentCount` was zero. The retained configured dialog,
+  validation-error dialog, PDFs, first-page captures, generated fixture, trace,
+  manifest, and profiler report are under
   `docs/qt-rewrite/visual-baseline/release/large-sub-prep-output-boundary/`.
   This is current-product generated-output before-state evidence, not a v2
   memory budget.
@@ -367,7 +370,8 @@ The direct heavy Sub Prep output slot mirrors the large fixture's 24 teachers,
 direct output oracle generates a 19-page Sub Prep PDF and a 16-page Daily
 roster PDF, then reopens and renders the first page of each. The separate
 packaged UI/output boundary drives the real dialog and package path against a
-96-class workspace, with 30 valid By Day selections, and retains its generated
+96-class workspace, retains the valid configured dialog and the disabled-OK
+validation-error state, uses 30 valid By Day selections, and retains its generated
 PDFs and decoded first-page captures under
 `docs/qt-rewrite/visual-baseline/release/large-sub-prep-output-boundary/`.
 
@@ -650,10 +654,11 @@ because it intentionally drives the large directory memory boundary.
 Set `CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR` while running
 `capturesLargeSubPrepOutputBoundaryWhenConfigured` to run the actual packaged
 Release Sub Prep generation dialog and package output path. The test retains
-the valid large-workspace output fixture, configured dialog capture, generated
-Sub Prep and By Day PDFs, decoded first-page PNGs, `manifest.json`, profiler
-JSON, process logs, and flushed workflow trace. The test is opt-in because it
-intentionally drives the large Sub Prep generation/output memory boundary.
+the valid large-workspace output fixture, configured and validation-error dialog
+captures, generated Sub Prep and By Day PDFs, decoded first-page PNGs,
+`manifest.json`, profiler JSON, process logs, and flushed workflow trace. The
+test is opt-in because it intentionally drives the large Sub Prep
+generation/output memory boundary.
 
 For an empty workspace:
 
@@ -711,9 +716,10 @@ store the JSON startup trace beside the PNG files.
   current route keeps 473 navigation descendants but still materializes 192
   class-tab placeholders and repeats broad class-information/teacher queries
   on each refresh.
-- Sub Prep visual references for editing, read-only, dialogs, loading/errors,
-  and other states beyond the now-retained selected, changed-selection, empty,
-  both-language/theme, and generated-output references.
+- Sub Prep visual references for editing, read-only, loading, and other states
+  beyond the now-retained selected, changed-selection, empty,
+  both-language/theme, generated-output, and output-dialog validation-error
+  references.
 - Golden generated reports, substitute documents, additional roster variants,
   and PowerPoint output beyond the retained Speaking Evaluation PDF/archive
   and PowerPoint renderer-selection reference. The actual external Office

@@ -1091,3 +1091,25 @@ No v2 feature work begins without a fixture and an acceptance check.
   feature-state references, and the final memory trend record. Continue with
   the next heavy Phase 0 evidence gap; do not begin v2 remediation or Phase 1
   yet.
+
+## Progress update - 2026-09-16 (large Sub Prep output-dialog validation reference)
+
+- What changed: the existing heavy-route Sub Prep generation controller now
+  drives the real modal dialog into its validation-error state by clearing both
+  output options. It captures the resulting message and disabled OK action,
+  records a checkpoint/trace entry, restores valid controls, and completes the
+  normal package/PDF lifecycle. This remains in-process Qt automation and does
+  not require native desktop control.
+- Heavy-route evidence: the packaged Windows x64 Release 96-class route passed
+  with validation/generated/release checkpoints at `8,747`/`9,296`/`9,337 ms`.
+  The retained validation capture visibly shows
+  `Select Create Folder and/or Print Paper Copies to continue.` with OK
+  disabled. Normal generation still produced two PDFs over 17 pages and the
+  post-release route retained zero live PDF documents; the output peak was
+  `498,176,000` working-set bytes, below the temporary `512 MiB` diagnostic
+  ceiling and still observational before-state evidence.
+- Evaluation impact: the Sub Prep output-dialog validation/error reference is
+  now retained. Editing/read-only/loading parity, other feature error states,
+  cross-platform Release evidence, and v2 ownership/memory work remain open.
+- Decision and next heavy slice: continue Phase 0 with the next large-route
+  evidence gap; do not begin v2 remediation or Phase 1 yet.

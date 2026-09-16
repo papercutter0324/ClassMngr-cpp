@@ -733,6 +733,7 @@ void scheduleStartupPerformanceSubPrepOutputLifecycle(
     *controller =
         [
             &app,
+            &profiler,
             targetRoot,
             dialogAccepted,
             generationWarning,
@@ -820,6 +821,94 @@ void scheduleStartupPerformanceSubPrepOutputLifecycle(
             }
             return;
         }
+
+        QCheckBox* createFolderCheck =
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepCreateFolderCheckBox")
+                );
+        QCheckBox* printPaperCheck =
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepPrintPaperCopiesCheckBox")
+                );
+        QPushButton* okButton =
+            dialog->findChild<QPushButton*>(
+                QStringLiteral("subPrepGenerateOkButton")
+                );
+        QLabel* validationLabel =
+            dialog->findChild<QLabel*>(
+                QStringLiteral("subPrepGenerationValidationLabel")
+                );
+        if (
+            !createFolderCheck
+            || !printPaperCheck
+            || !okButton
+            || !validationLabel
+            )
+        {
+            StartupProfiler::recordSubPrepOutputFailed(
+                QStringLiteral("output-dialog-validation-controls-missing")
+                );
+            dialog->reject();
+            *controllerStopped = true;
+            return;
+        }
+
+        createFolderCheck->setChecked(false);
+        printPaperCheck->setChecked(false);
+        app.processEvents();
+        const QString validationCapturePath =
+            QDir(targetRoot).filePath(
+                QStringLiteral("sub-prep-output-validation-error.png")
+                );
+        const QPixmap validationCapture = dialog->grab();
+        const bool validationCaptured =
+            !validationCapture.isNull()
+            && validationCapture.save(validationCapturePath, "PNG");
+        const bool validationDisabled = !okButton->isEnabled();
+        const QString validationText = validationLabel->text().simplified();
+        profiler.checkpoint(
+            QStringLiteral("sub-prep-output-validation-error"),
+            QStringLiteral(
+                "message=%1; okEnabled=%2; captured=%3"
+                )
+                .arg(validationText)
+                .arg(
+                    okButton->isEnabled()
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    )
+                .arg(
+                    validationCaptured
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    )
+            );
+        appendStartupWorkflowTrace(
+            QStringLiteral(
+                "sub-prep-output-validation-error okEnabled=%1 captured=%2"
+                )
+                .arg(
+                    okButton->isEnabled()
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    )
+                .arg(
+                    validationCaptured
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    )
+            );
+        if (!validationCaptured || !validationDisabled)
+        {
+            StartupProfiler::recordSubPrepOutputFailed(
+                QStringLiteral("output-dialog-validation-state-failed")
+                );
+            dialog->reject();
+            *controllerStopped = true;
+            return;
+        }
+
+        createFolderCheck->setChecked(true);
 
         if (QLineEdit* targetEdit =
                 dialog->findChild<QLineEdit*>(

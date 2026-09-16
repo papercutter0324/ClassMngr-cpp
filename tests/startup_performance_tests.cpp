@@ -7148,6 +7148,7 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
              QStringLiteral("start sub-prep"),
              QStringLiteral("sub-prep-lifecycle-complete"),
              QStringLiteral("sub-prep-output-operation-start"),
+             QStringLiteral("sub-prep-output-validation-error"),
              QStringLiteral("sub-prep-output-generated"),
              QStringLiteral("sub-prep-output-operation-released"),
              QStringLiteral("complete")
@@ -7201,6 +7202,7 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
     }
     for (const QString& checkpointName : {
              QStringLiteral("sub-prep-output-operation-start"),
+             QStringLiteral("sub-prep-output-validation-error"),
              QStringLiteral("sub-prep-output-generated"),
              QStringLiteral("sub-prep-output-operation-released"),
              QStringLiteral("workflow-complete"),
@@ -7227,6 +7229,8 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         checkpoints.value(QStringLiteral("sub-prep-output-operation-start"))
             .value(QStringLiteral("metrics"))
             .toObject();
+    const QJsonObject validationCheckpoint =
+        checkpoints.value(QStringLiteral("sub-prep-output-validation-error"));
     const QJsonObject outputGeneratedMetrics =
         checkpoints.value(QStringLiteral("sub-prep-output-generated"))
             .value(QStringLiteral("metrics"))
@@ -7301,6 +7305,16 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         settledMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
         0
         );
+    QVERIFY(
+        validationCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("okEnabled=false"))
+        );
+    QVERIFY(
+        validationCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("captured=true"))
+        );
 
     QStringList pdfPaths;
     QDirIterator pdfIterator(
@@ -7350,6 +7364,14 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
     const QImage dialogCapture(dialogCapturePath);
     QVERIFY(!dialogCapture.isNull());
     QVERIFY(QFileInfo(dialogCapturePath).size() > 0);
+
+    const QString validationCapturePath =
+        QDir(targetRoot).filePath(
+            QStringLiteral("sub-prep-output-validation-error.png")
+            );
+    const QImage validationCapture(validationCapturePath);
+    QVERIFY(!validationCapture.isNull());
+    QVERIFY(QFileInfo(validationCapturePath).size() > 0);
 
     int firstPageCaptureCount = 0;
     QDirIterator imageIterator(
@@ -7403,6 +7425,7 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         {QStringLiteral("pageCount"), pageCount},
         {QStringLiteral("pdfBytes"), static_cast<double>(pdfBytes)},
         {QStringLiteral("firstPageCaptureCount"), firstPageCaptureCount},
+        {QStringLiteral("validationErrorVisualReference"), true},
         {QStringLiteral("processFinished"), finished},
         {QStringLiteral("exitStatus"), QStringLiteral("normal")},
         {QStringLiteral("exitCode"), process.exitCode()},

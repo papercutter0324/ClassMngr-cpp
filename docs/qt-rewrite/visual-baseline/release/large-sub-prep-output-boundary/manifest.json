@@ -12,24 +12,25 @@
     "peakMemory": {
         "available": true,
         "capturedAt": "",
-        "checkpointSampleCount": 83,
-        "handleCount": 294,
-        "pagefileUsageBytes": 480849920,
-        "peakWorkingSetBytes": 498036736,
+        "checkpointSampleCount": 87,
+        "handleCount": 291,
+        "pagefileUsageBytes": 480948224,
+        "peakWorkingSetBytes": 498176000,
         "platform": "windows",
         "privateDirtyBytes": 0,
-        "privateUsageBytes": 480849920,
-        "privateWorkingSetBytes": 424558592,
+        "privateUsageBytes": 480948224,
+        "privateWorkingSetBytes": 424706048,
         "threadCount": 16,
-        "workingSetBytes": 489000960
+        "workingSetBytes": 489140224
     },
     "processFinished": true,
     "scenario": "96-class Sub Prep generation dialog, package PDFs, first-page decoding, and release",
-    "settledElapsedMs": 12472,
+    "settledElapsedMs": 12928,
     "stderrPath": "process-stderr.txt",
     "stdoutPath": "process-stdout.txt",
     "timedOut": false,
-    "traceLineCount": 616,
+    "traceLineCount": 617,
     "tracePath": "workflow-trace.txt",
-    "workflowCompleteElapsedMs": 11442
+    "validationErrorVisualReference": true,
+    "workflowCompleteElapsedMs": 11896
 }
