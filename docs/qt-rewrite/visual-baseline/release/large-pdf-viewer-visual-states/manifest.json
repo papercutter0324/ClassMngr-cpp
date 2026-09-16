@@ -1,0 +1,32 @@
+{
+    "captureNames": [
+        "pdf-catalog.png",
+        "pdf-opened.png",
+        "pdf-closed.png",
+        "pdf-error.png",
+        "pdf-reopened.png"
+    ],
+    "exitCode": 0,
+    "exitStatus": "normal",
+    "fixture": "large-pdf-viewer-visual.tps",
+    "fixtureScale": "large_pdf_viewer_visual_states",
+    "metricsPath": "large-pdf-viewer-visual-workflow.json",
+    "peakMemory": {
+        "available": true,
+        "capturedAt": "",
+        "checkpointSampleCount": 71,
+        "handleCount": 297,
+        "pagefileUsageBytes": 452141056,
+        "peakWorkingSetBytes": 410120192,
+        "platform": "windows",
+        "privateDirtyBytes": 0,
+        "privateUsageBytes": 452141056,
+        "privateWorkingSetBytes": 341733376,
+        "threadCount": 16,
+        "workingSetBytes": 409186304
+    },
+    "processFinished": true,
+    "scenario": "96-class packaged PDF viewer catalog-ready, open, render, close, error, reopen, and release states",
+    "workflowCompleteElapsedMs": 8990,
+    "workflowTracePath": "workflow-trace.txt"
+}

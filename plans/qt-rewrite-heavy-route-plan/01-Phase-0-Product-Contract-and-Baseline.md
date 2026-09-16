@@ -1040,3 +1040,31 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: retain this resource trace as the ownership
   oracle and continue with the next heavy Phase 0 evidence gap; do not begin
   v2 remediation or Phase 1 yet.
+
+## Progress update - 2026-09-16 (large packaged PDF viewer visual states)
+
+- What changed: the existing in-process PDF lifecycle route now captures and
+  checkpoints the empty catalog-ready viewer before any document load, the
+  post-release closed viewer, an expected missing-file error state, and the
+  reopened document in addition to the existing open/render/release path. The
+  invalid load is deliberately cleared before reopen, so the error state cannot
+  retain a document body or resource lease.
+- Heavy-route evidence: the real packaged Windows x64 Release executable ran
+  against the 96-class workspace and retained five captures under
+  `docs/qt-rewrite/visual-baseline/release/large-pdf-viewer-visual-states/`.
+  The route reached catalog-ready/open/closed/error/reopened checkpoints at
+  `7,976`/`8,238`/`8,485`/`8,526`/`8,761 ms`, completed at `8,990 ms`, and
+  settled at `10,448 ms`. Peak memory was `410,120,192` working-set bytes and
+  `452,141,056` private-usage bytes. The expected error capture visibly says
+  the file was not found, while the error and closed checkpoints both report
+  zero active PDF documents.
+- Evaluation impact: this closes the large packaged document-viewer
+  catalog-ready, loading, ready, closed/released, error, and reopened visual
+  reference gap without native desktop automation. The route still uses
+  QtPdf's real load/render/close path and remains before-state evidence, not a
+  v2 memory acceptance result. Phase 0 remains open for the remaining
+  report/substitute/PowerPoint output references, feature visual states, and
+  cross-platform Release evidence.
+- Decision and next heavy slice: retain the five viewer captures and lifecycle
+  metrics as the document-viewer parity oracle and continue with the next
+  heavy Phase 0 evidence gap; do not begin v2 remediation or Phase 1 yet.

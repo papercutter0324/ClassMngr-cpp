@@ -1646,6 +1646,7 @@ private slots:
     void capturesLargeSubPrepOutputBoundaryWhenConfigured();
     void capturesLargeSubPrepVisualStatesWhenConfigured();
     void capturesLargeResourceTraceWhenConfigured();
+    void capturesLargePdfViewerVisualStatesWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -2964,11 +2965,14 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
              QStringLiteral("workflow-child-released"),
              QStringLiteral("workflow-complete"),
              QStringLiteral("settled-1s"),
+             QStringLiteral("pdf-catalog-ready"),
              QStringLiteral("pdf-workflow-start"),
              QStringLiteral("pdf-open-start"),
              QStringLiteral("pdf-opened"),
              QStringLiteral("pdf-rendered"),
              QStringLiteral("pdf-released"),
+             QStringLiteral("pdf-closed"),
+             QStringLiteral("pdf-error"),
              QStringLiteral("pdf-reopen-start"),
              QStringLiteral("pdf-reopened"),
              QStringLiteral("pdf-reopened-rendered"),
@@ -3201,7 +3205,10 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
     QCOMPARE(pdfDocumentsReleased, 2);
     QCOMPARE(pdfDocumentsRendered, 2);
     for (const QString& fileName : {
+             QStringLiteral("pdf-catalog.png"),
              QStringLiteral("pdf-opened.png"),
+             QStringLiteral("pdf-closed.png"),
+             QStringLiteral("pdf-error.png"),
              QStringLiteral("pdf-reopened.png")
          })
     {
@@ -8621,6 +8628,344 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
         QFileInfo::exists(
             QDir(outputRoot).filePath(QStringLiteral("calendar-page.png"))
             )
+        );
+}
+
+void StartupPerformanceTests::capturesLargePdfViewerVisualStatesWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_PDF_VIEWER_VISUAL_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_PDF_VIEWER_VISUAL_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-pdf-viewer-visual.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    const QString settingsRoot =
+        directory.filePath(QStringLiteral("settings"));
+    QVERIFY2(
+        writeRepresentativeStartupSettings(settingsRoot),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large PDF viewer visual reference root: %1"
+                ).arg(outputRoot)
+            )
+        );
+    const QString retainedFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-pdf-viewer-visual.tps")
+            );
+    if (QFileInfo::exists(retainedFixturePath))
+    {
+        QVERIFY(QFile::remove(retainedFixturePath));
+    }
+    QVERIFY2(
+        QFile::copy(fixturePath, retainedFixturePath),
+        "Unable to retain the generated large PDF viewer visual fixture."
+        );
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-pdf-viewer-visual-workflow.json")
+            );
+    const QString workflowTracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    for (const QString& fileName : {
+             QStringLiteral("large-pdf-viewer-visual-workflow.json"),
+             QStringLiteral("workflow-trace.txt"),
+             QStringLiteral("manifest.json"),
+             QStringLiteral("process-stdout.txt"),
+             QStringLiteral("process-stderr.txt"),
+             QStringLiteral("pdf-catalog.png"),
+             QStringLiteral("pdf-opened.png"),
+             QStringLiteral("pdf-closed.png"),
+             QStringLiteral("pdf-error.png"),
+             QStringLiteral("pdf-reopened.png")
+         })
+    {
+        const QString path = QDir(outputRoot).filePath(fileName);
+        if (QFileInfo::exists(path))
+        {
+            QVERIFY(QFile::remove(path));
+        }
+    }
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        settingsRoot
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        workflowTracePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR"),
+        outputRoot
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError parseError;
+    const QJsonDocument document =
+        QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+    QVERIFY2(
+        parseError.error == QJsonParseError::NoError
+            && document.isObject(),
+        qPrintable(parseError.errorString())
+        );
+    const QJsonObject report = document.object();
+    const auto checkpointNamed =
+        [&report](const QString& name)
+        {
+            for (
+                const QJsonValue& value :
+                report.value(QStringLiteral("checkpoints")).toArray()
+                )
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (checkpoint.value(QStringLiteral("name")).toString() == name)
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+
+    const QJsonObject catalogCheckpoint =
+        checkpointNamed(QStringLiteral("pdf-catalog-ready"));
+    const QJsonObject openedCheckpoint =
+        checkpointNamed(QStringLiteral("pdf-opened"));
+    const QJsonObject closedCheckpoint =
+        checkpointNamed(QStringLiteral("pdf-closed"));
+    const QJsonObject errorCheckpoint =
+        checkpointNamed(QStringLiteral("pdf-error"));
+    const QJsonObject reopenedCheckpoint =
+        checkpointNamed(QStringLiteral("pdf-reopened"));
+    const QJsonObject completeCheckpoint =
+        checkpointNamed(QStringLiteral("pdf-workflow-complete"));
+    for (const QJsonObject& checkpoint : {
+             catalogCheckpoint,
+             openedCheckpoint,
+             closedCheckpoint,
+             errorCheckpoint,
+             reopenedCheckpoint,
+             completeCheckpoint
+         })
+    {
+        QVERIFY(!checkpoint.isEmpty());
+    }
+
+    const QJsonObject catalogMetrics =
+        catalogCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        catalogMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        0
+        );
+    QCOMPARE(
+        catalogMetrics.value(QStringLiteral("pdfDocumentsLoaded")).toDouble(),
+        0.0
+        );
+    const QJsonObject openedMetrics =
+        openedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        openedMetrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+        1
+        );
+    const QJsonObject closedMetrics =
+        closedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject errorMetrics =
+        errorCheckpoint.value(QStringLiteral("metrics")).toObject();
+    for (const QJsonObject& metrics : {closedMetrics, errorMetrics})
+    {
+        QCOMPARE(
+            metrics.value(QStringLiteral("livePdfDocumentCount")).toInt(),
+            0
+            );
+    }
+    QVERIFY(
+        errorCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("activeDocumentCount=0"))
+        );
+    QCOMPARE(
+        reopenedCheckpoint.value(QStringLiteral("metrics"))
+            .toObject()
+            .value(QStringLiteral("livePdfDocumentCount"))
+            .toInt(),
+        1
+        );
+    QCOMPARE(
+        completeCheckpoint.value(QStringLiteral("metrics"))
+            .toObject()
+            .value(QStringLiteral("livePdfDocumentCount"))
+            .toInt(),
+        0
+        );
+
+    for (const QString& fileName : {
+             QStringLiteral("pdf-catalog.png"),
+             QStringLiteral("pdf-opened.png"),
+             QStringLiteral("pdf-closed.png"),
+             QStringLiteral("pdf-error.png"),
+             QStringLiteral("pdf-reopened.png")
+         })
+    {
+        const QImage image(QDir(outputRoot).filePath(fileName));
+        QVERIFY2(
+            !image.isNull() && image.width() > 0 && image.height() > 0,
+            qPrintable(
+                QStringLiteral("Missing large PDF viewer capture: %1")
+                    .arg(fileName)
+                )
+            );
+    }
+
+    QJsonObject manifest{
+        {QStringLiteral("fixture"), QStringLiteral("large-pdf-viewer-visual.tps")},
+        {
+            QStringLiteral("fixtureScale"),
+            QStringLiteral("large_pdf_viewer_visual_states")
+        },
+        {
+            QStringLiteral("scenario"),
+            QStringLiteral(
+                "96-class packaged PDF viewer catalog-ready, open, render, close, error, reopen, and release states"
+                )
+        },
+        {QStringLiteral("processFinished"), finished},
+        {
+            QStringLiteral("exitStatus"),
+            process.exitStatus() == QProcess::NormalExit
+                ? QStringLiteral("normal")
+                : QStringLiteral("crash")
+        },
+        {QStringLiteral("exitCode"), process.exitCode()},
+        {QStringLiteral("metricsPath"), QStringLiteral("large-pdf-viewer-visual-workflow.json")},
+        {QStringLiteral("workflowTracePath"), QStringLiteral("workflow-trace.txt")},
+        {
+            QStringLiteral("captureNames"),
+            QJsonArray{
+                QStringLiteral("pdf-catalog.png"),
+                QStringLiteral("pdf-opened.png"),
+                QStringLiteral("pdf-closed.png"),
+                QStringLiteral("pdf-error.png"),
+                QStringLiteral("pdf-reopened.png")
+            }
+        },
+        {QStringLiteral("peakMemory"), report.value(QStringLiteral("peakMemory"))},
+        {
+            QStringLiteral("workflowCompleteElapsedMs"),
+            completeCheckpoint.value(QStringLiteral("elapsedMs"))
+        }
+    };
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
         );
 }
 

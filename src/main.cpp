@@ -1013,6 +1013,31 @@ void scheduleStartupPerformancePdfLifecycle(
 
         if (*phase == 0)
         {
+            app.processEvents();
+            if (
+                viewer->hasLoadedDocument()
+                || !viewer->currentFilePath().isEmpty()
+                )
+            {
+                fail(QStringLiteral("catalog-viewer-not-empty"));
+                return;
+            }
+
+            if (
+                !saveStartupPdfCapture(
+                    viewer->grab(),
+                    QStringLiteral("pdf-catalog.png")
+                    )
+                )
+            {
+                fail(QStringLiteral("catalog-viewer-capture-failed"));
+                return;
+            }
+            profiler.checkpoint(
+                QStringLiteral("pdf-catalog-ready"),
+                QStringLiteral("loaded=false; activeDocumentCount=0")
+                );
+
             profiler.checkpoint(
                 QStringLiteral("pdf-workflow-start"),
                 QString::fromUtf8(StartupPdfWorkflowRelativePath)
@@ -1155,6 +1180,61 @@ void scheduleStartupPerformancePdfLifecycle(
                 QStringLiteral("pdf-released"),
                 QString::fromUtf8(StartupPdfWorkflowRelativePath)
                 );
+
+            if (
+                !saveStartupPdfCapture(
+                    viewer->grab(),
+                    QStringLiteral("pdf-closed.png")
+                    )
+                )
+            {
+                fail(QStringLiteral("closed-viewer-capture-failed"));
+                return;
+            }
+            profiler.checkpoint(
+                QStringLiteral("pdf-closed"),
+                QStringLiteral("loaded=false; activeDocumentCount=0")
+                );
+
+            PdfViewerDocumentDescriptor invalidDescriptor;
+            invalidDescriptor.pdfFilePath =
+                QDir(QDir::tempPath()).filePath(
+                    QStringLiteral(
+                        "ClassMngr-phase0-missing-document-%1.pdf"
+                        ).arg(QCoreApplication::applicationPid())
+                    );
+            if (viewer->loadPdf(std::move(invalidDescriptor)))
+            {
+                fail(QStringLiteral("invalid-document-open-accepted"));
+                return;
+            }
+            app.processEvents();
+            if (viewer->hasLoadedDocument())
+            {
+                fail(QStringLiteral("invalid-document-reported-ready"));
+                return;
+            }
+            if (
+                !saveStartupPdfCapture(
+                    viewer->grab(),
+                    QStringLiteral("pdf-error.png")
+                    )
+                )
+            {
+                fail(QStringLiteral("error-viewer-capture-failed"));
+                return;
+            }
+            profiler.checkpoint(
+                QStringLiteral("pdf-error"),
+                QStringLiteral("loaded=false; activeDocumentCount=0")
+                );
+            viewer->releaseDocument();
+            app.processEvents();
+            if (!viewer->currentFilePath().isEmpty())
+            {
+                fail(QStringLiteral("invalid-document-release-incomplete"));
+                return;
+            }
 
             auto lease = ResourcePaths::Documents::acquire();
             if (!lease)

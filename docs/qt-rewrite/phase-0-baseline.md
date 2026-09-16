@@ -386,6 +386,16 @@ recorded as optional and unavailable because this checkout has no source
 directory or packaged `.rcc`; that is an explicit Phase 4 packaging decision,
 not silently omitted evidence.
 
+The large packaged PDF viewer probe now retains the empty catalog-ready viewer,
+first open/render, post-close release, expected missing-file error, and
+reopened document states under
+`docs/qt-rewrite/visual-baseline/release/large-pdf-viewer-visual-states/`.
+The route completed normally with `workflow-complete` at `8,990 ms`, settled at
+`10,448 ms`, and reached a `410,120,192`-byte working-set peak. The error
+capture visibly reports the expected missing-file message while the profiler
+keeps the active PDF document count at zero; this is in-process Qt automation
+on the real packaged Release route.
+
 `tests/fixtures/workspaces/legacy_startup.sql` is a partial schema-version-zero
 `.db` source. The startup test materializes it, runs the current schema manager,
 and verifies migration to the latest schema, foreign-key integrity, preservation
@@ -679,8 +689,8 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- Remaining PDF/report operation measurements beyond the retained Speaking
-  Evaluation and Sub Prep output paths. The Staff Directory
+- Remaining report/output operation measurements beyond the retained Speaking
+  Evaluation, Sub Prep output, and PDF viewer paths. The Staff Directory
   load/refresh/leave/re-entry, Class Transfer package
   review/commit/release, Schedule
   Import parse/review/cancel,
