@@ -39,6 +39,13 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
     entry, selected class 96, and selected class 1 after re-entry. The route
     retains all four English/Korean light/dark variants and reports the capture
     checkpoints in its metrics.
+- `71e44c8` — `Phase 0: retain Schedule Import loading state`
+  - Retained the real packaged large-workbook Schedule Import loading state for
+    both cancel and apply boundary routes. The evidence records the
+    `Loading workbook...` status, indeterminate progress, disabled source/load
+    controls, and a non-empty screenshot. The focused routes and the full
+    startup-performance suite passed; measured peaks were `418,488,320` bytes
+    working set for cancel and `361,316,352` bytes for apply.
 
 ## Verification
 
@@ -52,6 +59,10 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   Classes visual changes with the opt-in capture variables cleared.
 - The full `ClassMngrStartupPerformanceTests.exe` suite passed with the opt-in
   capture variables cleared.
+- The Schedule Import loading slice rebuilt the packaged Release application
+  and Debug startup test target successfully inside the Visual Studio
+  developer environment. Both focused boundary routes and the full
+  `ClassMngrStartupPerformanceTests.exe` suite passed.
 - `git diff --check` passed before the slice commit.
 
 ## Pending Work and Blockers
@@ -72,7 +83,9 @@ git log -6 --oneline
 ```
 
 Then inspect the Phase 0 baseline/plan tail. Resume with the next packaged
-  Windows x64 Release Heavy-route evidence slice, most directly the remaining
-  Schedule Import loading state or another explicitly open Phase 0 visual/output
-  gap. Keep every slice separately committed and do not start Phase 1 until
-  Phase 0's evidence/contract work is genuinely complete.
+  Windows x64 Release Heavy-route evidence slice, now continuing with another
+  explicitly open Phase 0 visual/output gap. Keep every slice separately
+  committed and do not start Phase 1 until Phase 0's evidence/contract work is
+  genuinely complete. If a commit is made after 13:00 Asia/Seoul, stop after
+  that commit; if work is still active at 13:15, commit a handoff update and
+  stop.

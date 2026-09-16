@@ -34,3 +34,9 @@
   Classes visual slice uses `CLASSMNGR_STARTUP_CLASSES_VISUAL_OUTPUT_DIR` and
   retains four language/theme variants; it records capture success in the same
   startup profile as the lifecycle assertions.
+- For a fast asynchronous UI boundary, capture the loading state immediately
+  after the real action and retain the event-loop poll as a fallback. The
+  Schedule Import slice uses the existing large-workbook route to retain
+  `Loading workbook...`, indeterminate progress, disabled source/load controls,
+  and a validated screenshot for both cancel and apply outcomes without
+  changing the production path.
