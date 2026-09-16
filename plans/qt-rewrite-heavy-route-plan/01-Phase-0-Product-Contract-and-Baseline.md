@@ -11,8 +11,19 @@
 - Current note: Static archaeology is recorded for commit `75755460`; runtime,
   visual, fixture, and packaged-release evidence is still being collected. A
   clean Windows x64 Debug/Ninja build and startup test now pass, and the
-  packaged Windows x64 Release startup baseline is recorded; the remaining
-  fixture, workflow, and platform evidence is still open.
+  packaged Windows x64 Release baseline is recorded. The 24-route runner was
+  parse-checked and all-route planned; its full route set still needs fresh
+  Windows x64 evidence, and macOS universal evidence is not yet available.
+
+### Phase 0 platform and route gate
+
+- Required packaged Release evidence: Windows x64 and macOS universal.
+- Windows ARM64 and Linux are unofficial ports deferred to later work; they do
+  not block Phase 0.
+- The exit gate requires all 24 route IDs on each required platform. A valid
+  subset per-run result is not gate completion; use `--require-exit-gate` with
+  the Windows evidence root and `--macos-evidence-root` to enforce complete
+  coverage. See the [runner and validator guide](../../scripts/phase0/README.md).
 
 ## Product decision update - 2026-09-16
 
@@ -37,8 +48,8 @@
   `docs/qt-rewrite/` covering source ownership, features, file formats,
   resources, baseline commands, and risks.
 - What remains: capture screenshots and generated-output references, create
-  representative fixtures, run clean Windows x64/ARM64, macOS universal, and
-  Linux Release baselines, and record startup/resource traces.
+  representative fixtures, run clean Windows x64 and macOS universal Release
+  baselines, and record startup/resource traces.
 - Evidence: source snapshot `75755460`; raw resource inventory is 226 files
   totaling 65,729,685 bytes; source/test inventory and the current CTest
   enumeration are recorded in the evidence documents.
@@ -60,7 +71,7 @@
   this is not packaged Release acceptance evidence.
 - What remains: add the other Phase 0 fixtures, capture visual and generated
   output references, trace startup/resource ownership, and run packaged Release
-  baselines on every target platform.
+  baselines on Windows x64 and macOS universal.
 - Risk: Qt 6.12 QML import scanning makes clean configuration slow, and the
   older Visual Studio build directory still loops during regeneration.
 
@@ -294,12 +305,13 @@ Document behavior for:
 
 ### 0.4 Packaged startup baseline
 
-Build packaged Release artifacts for:
+Build packaged Release artifacts for the required Phase 0 platforms:
 
 - Windows x64.
-- Windows ARM64.
 - macOS universal.
-- Linux.
+
+Windows ARM64 and Linux are unofficial ports deferred to later work and are not
+Phase 0 baseline requirements.
 
 Do not use a debugger, development Qt installation, or profiler for the primary memory report.
 
@@ -320,7 +332,9 @@ Measure:
 13. Each large feature left, including the document viewer.
 14. Heavy output completed.
 
-On Windows record working set, private bytes, commit, peak working set, handle count, and thread count. Record equivalent resident and private metrics on macOS and Linux.
+On Windows x64 record working set, private bytes, commit, peak working set,
+handle count, and thread count. Record equivalent resident and private metrics
+on macOS universal. Windows ARM64 and Linux remain deferred ports.
 
 ### 0.5 Startup and resource trace
 
@@ -971,8 +985,8 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: Phase 0 remains open for editing/read-only
   and dialog/loading/error visual states, explicit Release thresholds,
   remaining report/substitute/PowerPoint output references, per-resource
-  decoded/resident lifecycle traces, and Windows ARM64/macOS universal/Linux
-  Release evidence. Continue the next heavy Phase 0 slice; do not begin v2
+  decoded/resident lifecycle traces, and macOS universal Release evidence.
+  Continue the next heavy Phase 0 slice; do not begin v2
   remediation or Phase 1 yet.
 
 ## Progress update - 2026-09-16 (packaged Release memory threshold contract)
@@ -1001,7 +1015,7 @@ No v2 feature work begins without a fixture and an acceptance check.
   remediation work into Phase 0. Each later phase must avoid regressions and
   should lower the affected heavy-route measurements. Phase 0 remains open
   for the remaining output/parity references, per-resource decoded/resident
-  traces, and Windows ARM64/macOS universal/Linux Release evidence.
+  traces, and macOS universal Release evidence.
 - Decision and next heavy slice: retain the threshold-classified visual
   artifacts as the before-state budget oracle and continue with the next
   heavy Phase 0 evidence gap; do not begin v2 remediation or Phase 1 yet.

@@ -1,14 +1,17 @@
 # Project Progress
 
-Active deployment plan: continue the Qt rewrite Phase 0 baseline/evidence
-work using the heavy route, with one commit per completed slice.
+Active deployment plan: automate and complete the Qt rewrite Phase 0
+baseline/evidence work using the heavy route, with one commit per completed
+slice. Current automation deployment: `qt0_evidence_automation_20260917`.
 
 ## Goal
 
 Complete Phase 0's product contract, packaged Release baseline, visual/output
 evidence, resource ownership evidence, and memory trend record before starting
-Phase 1. The final `<250 MiB` RAM target applies to the completed rewrite; it
-is not a Phase 0 acceptance gate for the legacy widget graph.
+Phase 1. Windows x64 and macOS universal are supported baseline targets;
+Windows ARM64 and Linux are unofficial ports deferred by user decision. The
+final `<250 MiB` RAM target applies to the completed rewrite; it is not a Phase
+0 acceptance gate for the legacy widget graph.
 
 ## Overall Progress
 
@@ -23,6 +26,14 @@ and apply boundaries, a real large-route Schedule Import conflict-warning
 reference, the Calendar Import Preferences loading reference, and the Calendar
 Import parser-failure boundary. Each focused route and the full
 startup-performance suite passed for the accepted Calendar Import slice.
+The new `scripts/phase0/` automation provides a Windows x64 packaged-evidence
+runner for 24 existing routes and a standard-library validator/exit-gate
+consolidator. Historical Windows x64 Release artifacts passed integrity
+validation (28 manifests, 81 PNGs, 29 PDFs, and one ZIP), but that legacy
+layout cannot establish coverage for the required 24 orchestrated route IDs.
+The exit gate correctly remains incomplete pending full route runs for Windows
+x64 and macOS universal. Windows ARM64 and Linux are recorded as deferred, not
+blockers.
 
 ## Current Position
 
@@ -36,6 +47,13 @@ evidence, and a manually inspected error screenshot. The unchanged success
 route and the opt-in-cleared full startup suite also passed. Phase 1 has not
 started.
 
+Phase 0 automation is implemented under `scripts/phase0/`. Independent checks
+confirmed all 24 runner route mappings, a no-write all-route plan, root-safety
+rejections, validator self-tests, and retained Windows x64 evidence. The full
+24-route collection was not executed in this deployment; PowerShell 7 and a
+macOS run remain unverified. The exit-gate report requires all 24 routes on
+both Windows x64 and macOS universal; it is distinct from a per-run pass.
+
 The CMake configuration cleanup is complete. Multi-config generators now expose
 only `Debug;Release`; every Debug preset explicitly enables tests and every
 Release preset disables them; non-QML test targets opt out of unnecessary QML
@@ -46,7 +64,8 @@ CMake output is now ignored; `build/` and `dist/` were not cleaned.
 
 ## Next Milestone
 
-Continue Phase 0 with the remaining feature loading/error states, generated
-output references, cross-platform Release evidence, and final memory trend
-record. Do not begin Phase 1 or make v2 memory claims from the legacy widget
-graph.
+Run the new Windows x64 route matrix with an explicit evidence parent, address
+the remaining generated-output/visual review gaps, and obtain packaged macOS
+universal evidence for exit-gate consolidation. Preserve Windows ARM64/Linux as
+deferred unofficial ports. Do not begin Phase 1 or make v2 memory claims from
+the legacy widget graph.

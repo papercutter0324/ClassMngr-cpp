@@ -6,9 +6,10 @@
 - Qt 6 desktop runtime. The top-level CMake configuration currently requires
   Qt 6.12.0 or newer for the application; Qt Test is additionally required
   when `BUILD_TESTING` is enabled.
-- Supported build targets described by the presets are Windows x64/ARM64,
-  Linux GCC, and a macOS universal `arm64;x86_64` bundle targeting macOS
-  13.0 or newer.
+- Build presets target Windows x64/ARM64, Linux GCC, and a macOS universal
+  `arm64;x86_64` bundle targeting macOS 13.0 or newer. For Phase 0, Windows
+  x64 and macOS universal are the required evidence platforms; Windows ARM64
+  and Linux are unofficial ports deferred to later work, not Phase 0 blockers.
 
 ## Frameworks and Libraries
 

@@ -1,10 +1,45 @@
 # Latest Session Work
 
-Qt rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. The Heavy-route
-deployment `qt0_calendar_verify_20260917` accepted the Calendar Import
-parser-failure boundary; Phase 1 must not begin yet.
+Qt Rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. Current Heavy
+deployment: `qt0_evidence_automation_20260917`. Phase 1 must not begin until
+the supported-platform Phase 0 exit gate and remaining evidence are complete.
 
-## Detailed Current State
+## Current Deployment Handoff
+
+- Product support scope: packaged Windows x64 and macOS universal remain
+  supported Phase 0 targets. Per the user's decision, Windows ARM64 and Linux
+  are unofficial ports deferred to later and are not Phase 0 blockers.
+- Added `scripts/phase0/run_phase0_evidence.ps1`,
+  `scripts/phase0/validate_phase0_evidence.py`, and their usage guide. The
+  runner defines 24 opt-in packaged routes for visual captures, generated
+  outputs, memory/lifecycle traces, and fixtures; planning is no-write and
+  requires no build or run. Execution requires an explicit evidence parent and
+  creates a new timestamped child directory.
+- Independent validation passed the all-route plan and checked that all 24
+  route IDs, paths, test slots, and environment-variable mappings match the
+  existing harness. Repository/build paths and non-empty evidence-root
+  collisions were rejected without writes.
+- The standard-library validator passed nine self-tests. The historical
+  Windows x64 Release tree passed artifact integrity checks (28 manifests, 81
+  PNGs, 29 PDFs, one ZIP), but its legacy layout cannot prove the required 24
+  orchestrated route IDs. Its platform exit gate therefore remains incomplete
+  with 0/24 routes for each supported platform. Lifecycle failures, malformed
+  JSON, missing artifacts, and bad manifest references were independently
+  confirmed to fail. Legacy 250 MiB comparisons are trend warnings only;
+  512 MiB is diagnostic context.
+- A Windows x64 per-run pass is distinct from the overall Phase 0 exit gate.
+  The validator requires every route ID on both Windows x64 and macOS
+  universal; `--require-exit-gate` returns nonzero while any platform or route
+  is missing. The 24 fresh routes were not run in this deployment;
+  PowerShell 7 and a macOS run remain unverified. The final route message
+  explicitly distinguishes those statuses.
+- Remaining Phase 0 gaps include obtaining packaged macOS universal evidence,
+  human review of visual/output fidelity, remaining golden report/substitute/
+  roster references, and any feature states not covered by the current routes.
+  Native Office automation was not run. Do not begin Phase 1 or v2 memory
+  remediation.
+
+## Prior Session Detail (superseded by the current handoff above)
 
 - Use the Heavy route for every slice, commit each completed slice, and do not
   begin Phase 1 until the Phase 0 exit gate is actually satisfied.
@@ -25,7 +60,7 @@ parser-failure boundary; Phase 1 must not begin yet.
   only the empty root-generated `CMakeFiles/` residue was removed. The tracked
   `cmake/` modules, `build/`, and `dist/` were preserved.
 
-## Session Changes
+## Prior Session Changes
 
 - Accepted Calendar Import parser-failure reference: the implementation is
   based on `ded8b5dc`, and the evidence-only follow-up scrolls Calendar
@@ -89,7 +124,7 @@ parser-failure boundary; Phase 1 must not begin yet.
   source/test/evidence/docs changes are included in the final post-cutoff
   commit for this session.
 
-## Verification
+## Prior Session Verification
 
 - CMake cleanup verification passed: JSON parsing, configure/build/workflow
   preset listing, `git diff --check`, and a fresh isolated Windows configure
@@ -132,7 +167,7 @@ parser-failure boundary; Phase 1 must not begin yet.
   evidence is complete and the retained error screenshot was manually
   inspected. The focused success route and opt-in-cleared full suite passed.
 
-## Pending Work and Blockers
+## Prior Pending Work and Blockers
 
 - Phase 0 remains active for remaining feature loading/error states,
   generated-output coverage, cross-platform Release evidence, and the eventual
@@ -143,7 +178,7 @@ parser-failure boundary; Phase 1 must not begin yet.
 - Do not run native Office automation unless a suitable platform/environment
   is available; the current in-process/offscreen boundary is intentional.
 
-## Next Entry Point
+## Prior Next Entry Point
 
 On the next session, start by reading `QT-REWRITE-HANDOFF.md`, this file, and checking:
 

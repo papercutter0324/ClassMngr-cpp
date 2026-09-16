@@ -588,8 +588,9 @@ cmake --build build/qt-rewrite-phase0-windows-x64-release --config Release --par
 cmake --install build/qt-rewrite-phase0-windows-x64-release --config Release
 ```
 
-The same release process must later be run on Windows ARM64, macOS universal,
-and Linux. Runtime memory reports must record commit, private bytes, working
+The required Phase 0 packaged Release platforms are Windows x64 and macOS
+universal. Windows ARM64 and Linux are unofficial ports deferred to later
+work. Runtime memory reports must record commit, private bytes, working
 set/Resident Set Size, peak working set, handles, threads, and the exact
 scenario/fixture.
 
@@ -766,7 +767,8 @@ store the JSON startup trace beside the PNG files.
   `visual-baseline/release/workflow-five-minute/`, and the Sub Prep, Classes,
   and Speaking Evaluation lifecycle boundaries are retained under their
   large-fixture directories.
-- Windows ARM64, macOS universal, and Linux Release baselines.
+- macOS universal Release baseline; Windows ARM64 and Linux are deferred ports
+  and are not Phase 0 blockers.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution; the
   populated Classes entry/selection/re-entry frames, Schedule Import loading
@@ -799,3 +801,26 @@ store the JSON startup trace beside the PNG files.
 - Remaining feature page/object lifecycle traces beyond the retained heavy
   workflow boundaries; per-resource payload, decoded-image, PDF/PPTX deferral,
   and resource-pack lease traces are now retained.
+
+## Phase 0 evidence automation and gate status - 2026-09-17
+
+The exit gate requires all 24 orchestrated route IDs on each required platform:
+Windows x64 and macOS universal. A valid subset run is not a complete gate.
+Windows ARM64 and Linux remain deferred unofficial ports. Runner and validator
+usage, including gate-enforced validation, is documented in the
+[automation README](../../scripts/phase0/README.md).
+
+- The runner passed a PowerShell parse check and no-write all-route plan under
+  Windows PowerShell 5.1. PowerShell 7 and actual route execution were not run.
+- The validator's nine standard-library self-tests passed. An independent
+  Tester validated all 24 runner mappings and safety behavior; unsafe project/
+  build output roots and non-empty run collisions were rejected without writes.
+- The historical retained Release tree passed artifact-integrity checks for
+  28 manifests, 81 PNGs, 29 PDFs, and one ZIP. It contains no new orchestrated
+  route manifests, so it contributes 0/24 route coverage on each platform and
+  does not pass the exit gate. No fresh full 24-route orchestrated build/run
+  occurred, and no macOS evidence is available.
+- Next: produce all 24 routes in a fresh Windows x64 run and produce/ingest all
+  24 macOS universal routes.
+- Native Office automation was not run. Visual and generated-output semantic
+  approval remains a human review; Phase 0 remains In progress.

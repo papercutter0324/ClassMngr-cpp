@@ -84,3 +84,14 @@
   platform, and test concerns because those boundaries are active. Only the
   empty root-generated `CMakeFiles/` residue was removed; root CMake output is
   ignored, and build/dist artifacts are preserved.
+- The Phase 0 platform contract is Windows x64 plus macOS universal. By user
+  decision, Windows ARM64 and Linux are unofficial ports deferred to later;
+  do not list them as Phase 0 blockers. A Windows x64 per-run validation pass
+  is not the full Phase 0 exit gate while macOS evidence is missing.
+- The `scripts/phase0/` runner uses existing opt-in packaged Qt routes and a
+  fresh caller-selected evidence run directory; its plan mode is non-mutating.
+  The validator checks artifacts, JSON/manifests, lifecycle checkpoints and
+  memory trends, and can consolidate a macOS run. Use
+  `--require-exit-gate` when automation must fail until all supported-platform
+  evidence passes. Legacy 250 MiB measurements remain trend-only; 512 MiB is
+  a diagnostic ceiling, not a Phase 0 pass criterion.
