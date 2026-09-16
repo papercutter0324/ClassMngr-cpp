@@ -1,22 +1,18 @@
 # Latest Session Work
 
 Qt Rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. The latest
-completed slice is the macOS universal Release baseline at a 14.4 deployment
-target. The local evidence automation adds a distinct 24-route exit gate that
-still requires full Windows x64 and macOS universal route runs. Current Heavy
-deployment: `qt0_merge_conflicts_20260917`; the preceding automation deployment
-was `qt0_evidence_automation_20260917`. Phase 1 must not begin until the
-supported-platform Phase 0 exit gate and remaining evidence are complete.
+completed slice is the fresh Windows x64 24-route run and compact audit record.
+Windows coverage is 24/24; macOS universal remains 0/24, so the combined Phase
+0 gate is still incomplete. Current Heavy deployment:
+`qt0_windows_completion_20260917`. Phase 1 must not begin until the supported-
+platform gate and remaining visual/output review are complete.
 
 ## Current Deployment Handoff
 
-- Merge reconciliation completed in local merge commit `7a9cb3c` (parents
-  `875159da` and `e7d05f4c`). All 17 intended paths are included; the Tester
-  confirmed no unresolved paths or conflict markers. The merge remains local;
-  nothing was pushed.
-- `git diff-tree --check`, `cmake --list-presets`, and
-  `cmake -P cmake/platform/deployment.cmake` passed. The check host was
-  Windows; the macOS 14.4 runtime was not directly exercised.
+- The prior merge reconciliation is recorded in local commit `7a9cb3c`
+  (parents `875159da` and `e7d05f4c`); its 17 intended paths were checked for
+  unresolved paths and conflict markers. The macOS 14.4 runtime was not
+  directly exercised on that merge host.
 - Product support scope: packaged Windows x64 and macOS universal remain
   supported Phase 0 targets. Per the user's decision, Windows ARM64 and Linux
   are unofficial ports deferred to later and are not Phase 0 blockers.
@@ -30,26 +26,32 @@ supported-platform Phase 0 exit gate and remaining evidence are complete.
   route IDs, paths, test slots, and environment-variable mappings match the
   existing harness. Repository/build paths and non-empty evidence-root
   collisions were rejected without writes.
-- The standard-library validator passed nine self-tests. The historical
-  Windows x64 Release tree passed artifact integrity checks (28 manifests, 81
-  PNGs, 29 PDFs, one ZIP), but its legacy layout cannot prove the required 24
-  orchestrated route IDs. Its platform exit gate therefore remains incomplete
-  with 0/24 routes for each supported platform. Lifecycle failures, malformed
-  JSON, missing artifacts, and bad manifest references were independently
-  confirmed to fail. Legacy 250 MiB comparisons are trend warnings only;
-  512 MiB is diagnostic context.
-- A Windows x64 per-run pass is distinct from the overall Phase 0 exit gate.
-  The validator requires every route ID on both Windows x64 and macOS
-  universal; `--require-exit-gate` returns nonzero while any platform or route
-  is missing. The 24 fresh routes were not run in this deployment;
-  PowerShell 7 and a macOS run remain unverified. The final route message
-  explicitly distinguishes those statuses.
-- Remaining Phase 0 gaps include running the required 24-route matrix on both
-  Windows x64 and macOS universal, human review of visual/output fidelity,
-  remaining golden report/substitute/roster references, and any feature states
-  not covered by the current routes. The retained macOS baseline does not by
-  itself satisfy the route matrix. Native Office automation was not run. Do not
-  begin Phase 1 or v2 memory remediation.
+- Validator corrections are in `6f08877b` and generated-output references are
+  in `227664b4`. The validator now rejects incomplete Windows process records
+  and checks the full startup-only completion sequence; its 13 self-tests pass.
+- A fresh full run used `-Routes all`, with no build/run/validation skips. All
+  24 routes (1 fixture, 8 visual, 8 memory, 1 workflow, 6 output) plus the six
+  build/package/orchestration/validation commands exited 0 without timing out.
+  The independent audit confirmed the run validator passed with zero failures
+  and 151/151 required files present. The only warning is legacy memory-trend
+  data.
+- The original evidence root is
+  `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-QT0-Windows-x64-final-20260916T201256Z\qt0-windows-x64-final-20260916T201256Z-msvc`.
+  It contains 331 files / 147,732,123 bytes and remains local. The checked-in
+  compact bundle retains byte-identical run and validation manifests plus a
+  per-file SHA-256 inventory; it is not a substitute for the complete evidence
+  root. The resource trace records 189 entries and normal completion without
+  timeout.
+- The validator's overall `exitGate` is still incomplete because macOS
+  universal has no 24-route run yet. The packaged macOS baseline exists but is
+  not a replacement for its required matrix. Phase 1 and v2 memory remediation
+  remain blocked by the Phase 0 exit gate and remaining human visual/output
+  review.
+- The opt-in output-reference commit retains 11 PDFs, 12 PNGs, and five
+  manifests. In noninteractive/offscreen Windows testing, two Speaking
+  Evaluation clipboard UI cases fail with `0x800401d0`; capture-specific PDF
+  checks pass. PowerPoint COM export fails before PDF creation with
+  `0x80070520`, so native Office output is not accepted evidence.
 
 ## Prior Session Detail (superseded by the current handoff above)
 
@@ -72,7 +74,7 @@ supported-platform Phase 0 exit gate and remaining evidence are complete.
   only the empty root-generated `CMakeFiles/` residue was removed. The tracked
   `cmake/` modules, `build/`, and `dist/` were preserved.
 
-## Latest Completed Slice: macOS Universal Release Baseline (2026-09-17)
+## Previous Completed Slice: macOS Universal Release Baseline (2026-09-17)
 
 - The macOS deployment minimum is now 14.4 in the configure preset and build
   documentation, matching the selected universal Qt 6.12.0 kit.
@@ -97,9 +99,10 @@ supported-platform Phase 0 exit gate and remaining evidence are complete.
 - The large `.tps` workflow can write workspace state on exit. Its final run
   used a byte-identical temporary copy; the tracked source fixture was restored
   to its baseline and remains unchanged.
-- Overall Phase 0 remains in progress. Fresh 24-route evidence for Windows x64
-  and macOS universal, human review, and remaining feature-state/output
-  evidence stay open. Windows ARM64 and Linux remain deferred unofficial ports.
+- At the completion of this earlier slice, both 24-route matrices were open.
+  The Windows x64 matrix is now complete; macOS universal route coverage and
+  remaining human visual/output review remain open. Windows ARM64 and Linux
+  remain deferred unofficial ports.
 
 ## Earlier Session Changes
 

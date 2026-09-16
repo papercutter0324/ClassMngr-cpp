@@ -96,3 +96,24 @@
   `--require-exit-gate` when automation must fail until all supported-platform
   evidence passes. Legacy 250 MiB measurements remain trend-only; 512 MiB is
   a diagnostic ceiling, not a Phase 0 pass criterion.
+
+## Windows route-matrix and output-reference lessons - 2026-09-17
+
+- Run the complete 24-route Windows x64 matrix from a fresh Release package and
+  a separate Debug harness build. Require both each route's process record and
+  the runner's validator result to show normal completion and no timeout; a
+  per-run pass still leaves Phase 0 open until macOS universal also has 24/24.
+- The full route root is 147,732,123 bytes and includes repeat generated PDFs,
+  a ZIP, and other machine artifacts. Keep its full root available for
+  revalidation when needed; the compact checked-in audit bundle contains the
+  original run manifest, validation summary, and per-file hashes, but is not a
+  replacement evidence root.
+- Retained PDF preview PNGs must composite rendered page pixels onto opaque
+  white RGB before saving so transparent PDF backgrounds display as intended.
+  The capture helper must keep the renderer's input and generated PDF intact;
+  validate image type/alpha, PDF signatures/page counts, manifest byte sizes,
+  and representative frames after capture.
+- In a noninteractive Windows session, PowerPoint COM can fail before any PDF
+  is generated (`0x80070520`), and clipboard-dependent UI tests can fail while
+  opening the system clipboard (`0x800401d0`). Record these as environment
+  limits; do not claim native Office output or suppress the failing checks.

@@ -10,10 +10,9 @@
 - Last updated: 2026-09-17
 - Current note: Static archaeology is recorded for commit `75755460`; runtime,
   visual, fixture, and packaged-release evidence is still being collected. A
-  clean Windows x64 Debug/Ninja build and startup test now pass, and the
-  packaged Windows x64 Release baseline is recorded. The 24-route runner was
-  parse-checked and all-route planned; its full route set still needs fresh
-  Windows x64 evidence, and macOS universal evidence is not yet available.
+  fresh Windows x64 Release run now passes all 24 routes. The macOS universal
+  Release app baseline exists, but its 24-route matrix remains 0/24, so the
+  combined Phase 0 gate is In Progress and Phase 1 remains blocked.
 
 ### Phase 0 platform and route gate
 
@@ -39,8 +38,10 @@
   document may load it again.
 - Generated and print-output PDFs remain separate operation-scoped resources;
   this decision does not require changing their output contract.
-- Phase 0 still needs runtime evidence for the startup negative case, the
-  on-demand open path, and memory return after viewer release.
+- The Windows x64 route matrix and packaged macOS universal baseline now record
+  the startup negative case, on-demand document open, and release after viewer
+  close. The macOS 24-route matrix remains 0/24 and blocks the combined gate;
+  see the [baseline evidence](../../docs/qt-rewrite/phase-0-baseline.md).
 
 ## Progress update - 2026-09-15
 

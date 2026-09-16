@@ -114,5 +114,56 @@ empty and populated language/theme variants already supported by the harness,
 Classes/Sub Prep/PDF visual states, navigation/PDF lifecycle, Schedule and
 Classes lifecycle, Schedule/Calendar imports, Class Transfer, Speaking
 Evaluation, Staff Directory, Sub Prep output generation, and resource tracing.
-External Office/PowerPoint automation is not run by the Windows offscreen
-harness; its renderer-selection reference is retained as a visual artifact.
+External Office/PowerPoint automation is separate from the Windows offscreen
+harness. Its renderer-selection reference is retained, but the current Windows
+logon could not create Office output; see the
+[baseline record](../../docs/qt-rewrite/phase-0-baseline.md).
+
+## Supplemental Windows output references
+
+Focused QtTest slots can retain generated PDFs and page previews for visual
+review. This is separate from the 24-route matrix. Set
+`CLASSMNGR_WINDOWS_OUTPUT_REFERENCE_DIR` to a fresh absolute directory; each
+slot creates a named child directory and refuses to overwrite existing files.
+The helper copies the PDF and renders its pages to opaque RGB PNGs composited
+over white. A manifest records page counts, dimensions, and file sizes. The
+catalog references use packaged content; roster and report examples use
+synthetic test data.
+
+Build the three test targets in a configured Windows x64 test build, then run
+the capture slots directly (adjust executable paths for the chosen build
+configuration):
+
+```powershell
+$testBuild = 'C:\path\to\configured\ninja-build'
+$captureRoot = Join-Path $env:TEMP 'ClassMngr-output-references-new-run'
+$env:CLASSMNGR_WINDOWS_OUTPUT_REFERENCE_DIR = $captureRoot
+
+function Invoke-CaptureSlot([string]$Executable, [string]$Slot) {
+  & (Join-Path $testBuild $Executable) $Slot
+  if ($LASTEXITCODE -ne 0) {
+    throw "$Executable $Slot failed with exit code $LASTEXITCODE."
+  }
+}
+
+Invoke-CaptureSlot 'ClassMngrDocumentCatalogTests.exe' `
+  'capturesVacationSubPrepCatalogPdfLifecycleWhenConfigured'
+Invoke-CaptureSlot 'ClassMngrRosterTemplatePrintServiceTests.exe' `
+  'dailyPdfUsesA4PortraitAndContinuesOverflowPages'
+Invoke-CaptureSlot 'ClassMngrRosterTemplatePrintServiceTests.exe' `
+  'perClassWithExtraInfoPdfHonorsPortraitAndLandscape'
+Invoke-CaptureSlot 'ClassMngrSpeakingEvalBatchReportServiceTests.exe' `
+  'internalPdfMatchesWidgetRendering'
+```
+
+Confirm each process exits `0`; the Speaking Evaluation slot runs both
+standard and advanced internal-renderer cases. Use a new output root for each
+capture run because existing child directories are intentionally protected.
+The accepted references are under
+`docs/qt-rewrite/visual-baseline/release/windows-output-reference/`.
+
+PowerPoint COM output is a separate opt-in integration test. In this Windows
+logon environment, it failed before PDF generation with `0x80070520`; no Office
+PDF references were produced. Two Speaking Evaluation UI tests in the full
+offscreen CTest target also failed on Windows clipboard error `0x800401d0`;
+the internal PDF capture slot and focused roster slots passed.

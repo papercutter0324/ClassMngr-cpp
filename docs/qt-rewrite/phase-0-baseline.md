@@ -811,22 +811,52 @@ Windows ARM64 and Linux remain deferred unofficial ports. Runner and validator
 usage, including gate-enforced validation, is documented in the
 [automation README](../../scripts/phase0/README.md).
 
-- The runner passed a PowerShell parse check and no-write all-route plan under
-  Windows PowerShell 5.1. PowerShell 7 and actual orchestrated route execution
-  were not run.
-- The validator's nine standard-library self-tests passed. An independent
-  Tester validated all 24 runner mappings and safety behavior; unsafe project/
-  build output roots and non-empty run collisions were rejected without writes.
+- The runner passed its PowerShell parse check and no-write all-route plan.
+  Validator self-tests and an independent audit of the 24 route mappings and
+  runner safety checks also passed.
 - The historical retained Release tree passed artifact-integrity checks for
   28 manifests, 81 PNGs, 29 PDFs, and one ZIP. It contains no orchestrated
-  route manifests and contributes 0/24 route-matrix coverage per platform.
-  The separate 12-route macOS workflow below is baseline evidence, not a
-  substitute for all 24 orchestrated route IDs. No fresh full 24-route run
-  occurred on either required platform.
-- Next: produce all 24 routes in a fresh Windows x64 run and produce/ingest all
-  24 macOS universal routes.
-- Native Office automation was not run. Visual and generated-output semantic
-  approval remains a human review; Phase 0 remains In progress.
+  route manifests. The 12-route macOS workflow below is baseline evidence and
+  does not replace the required 24-route matrix.
+- The fresh Windows x64 matrix passed, but macOS universal route evidence is
+  still missing. Native Office automation did not complete in this Windows
+  logon environment. Visual and generated-output semantic approval remains a
+  human review; Phase 0 remains In Progress.
+
+## Fresh Windows x64 route matrix - 2026-09-17
+
+The fresh packaged Release run completed all 30 commands (five build/package,
+24 route, and one final validation) with exit code 0 and no timeouts. The
+independent audit confirmed the validator's per-run `pass=true`,
+zero failures, and 151/151 required artifacts. Its sole warning is the legacy
+memory trend. The separate combined exit gate remains `incomplete` because the
+macOS universal matrix is still 0/24; Phase 1 remains blocked.
+
+The resource trace contains 189 entries, ended with `processFinished=true`,
+`exitCode=0`, and `timedOut=false`, and recorded a maximum working set of
+496,005,120 bytes. It includes 495 samples at or above 250 MiB and none at or
+above 512 MiB. This is legacy trend evidence: 250 MiB is the future rewrite
+target, not a Phase 0 acceptance limit.
+
+The [retained compact run record](phase-0-evidence/windows-x64-route-matrix-2026-09-17/)
+contains `run-manifest.json`, `validation-summary.json`, and a SHA-256 TSV
+inventory for the complete raw run root at
+`C:\Users\wfelt\AppData\Local\Temp\ClassMngr-QT0-Windows-x64-final-20260916T201256Z\qt0-windows-x64-final-20260916T201256Z-msvc`.
+The raw root has 331 files / 147,732,123 bytes and is not copied into Git. The
+compact bundle is an audit record, not a validator evidence root; rerunning the
+validator requires the full root. The run used Windows PowerShell 5.1.26100.9444,
+MSVC 19.51.36257/toolset 14.51.36231, CMake 4.4.2, Ninja 1.13.2, Python
+3.14.7, and Qt 6.12.0 MSVC x64.
+
+The output-reference capture added 11 PDFs, 12 white-composited RGB PNG page
+renders, and five manifests (8,504,264 bytes) under
+`visual-baseline/release/windows-output-reference/`; the captures passed
+structural and sample visual review. Office PowerPoint COM automation failed
+before PDF generation with `0x80070520` in this logon environment. Two other
+Speaking Evaluation UI CTest cases separately failed on the unavailable
+noninteractive Windows clipboard (`0x800401d0`); the internal PDF capture slot
+and focused roster slots passed. These limitations do not change the route
+matrix result or indicate successful external Office automation.
 
 ## macOS universal Release baseline (2026-09-17)
 
