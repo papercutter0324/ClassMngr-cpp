@@ -27,31 +27,25 @@ parser-failure boundary; Phase 1 must not begin yet.
 
 ## Session Changes
 
-- Current continuation attempt — `Calendar Import parser-failure reference`
-  is committed at `ded8b5dc` but remains unaccepted pending focused verification.
-  The proposed opt-in route is selected by
+- Accepted Calendar Import parser-failure reference: the implementation is
+  based on `ded8b5dc`, and the evidence-only follow-up scrolls Calendar
+  Preferences to the Import section before capturing the error and restores
+  the prior position. The route is selected by
   `CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE=1` and writes to
-  `CLASSMNGR_LARGE_CALENDAR_IMPORT_ERROR_BOUNDARY_REFERENCE_DIR`; it uses a
-  deterministic malformed local HTTP response and is intended to retain the
-  real `Import failed:`/re-enabled Import Events state, unchanged event count,
-  failure/release trace, and error screenshot. The current source/test delta is
-  in `src/main.cpp` and `tests/startup_performance_tests.cpp` only.
+  `CLASSMNGR_LARGE_CALENDAR_IMPORT_ERROR_BOUNDARY_REFERENCE_DIR`.
 - Earlier automation attempt — deployment `qt0_calendar_verify_20260916` —
   was superseded by the fresh Ninja Release verification described below.
-- Compile repair and runtime verification: `tests/startup_performance_tests.cpp`
-  now uses a `const char*` environment selector and no longer redeclares
-  `diagnosticError`; the fresh Ninja Release app/test targets compile and link.
-  The expected-failure route reached the real `Import failed:` state with the
-  Import control re-enabled, unchanged events, forbidden success checkpoints
-  absent, correct release ordering, a readable error PNG, a 69-byte malformed
-  response, and a 391.24 MiB peak. Its QTest function still failed at line
-  9493 because `calendar-import-preferences.png` was missing; the failure path
-  completes before the normal-path Preferences/page captures. The unchanged
-  success variant passed (`3 passed, 0 failed`, 394.92 MiB peak), the full
-  startup suite passed (`11 passed, 0 failed, 14 skipped`), and
-  `git diff --check` passed. The five tracked source/test/handoff files were
-  committed at `ded8b5dc`; the generated error-boundary directory remains
-  uncommitted pending the focused-route repair.
+- Fresh Ninja Release app/test targets compile and link. The expected-failure
+  route passed with a 69-byte malformed local HTTP response, the real missing
+  `xl/workbook.xml` error, re-enabled Import Events, unchanged events,
+  forbidden success checkpoints absent, complete evidence, and normal exit.
+  Its peak was `410,251,264` working-set bytes and `452,120,576` private-usage
+  bytes; this is legacy before-state evidence only. The unchanged success
+  route and opt-in-cleared full startup suite also passed. The error screenshot
+  was manually inspected and visibly shows the Calendar Import section, the
+  enabled Import Events control, and the real parser error. Retained failure
+  evidence is under
+  `docs/qt-rewrite/visual-baseline/release/large-calendar-import-error-boundary/`.
 
 - `b5c1a8a1` — `Phase 0: retain PowerPoint renderer reference`
   - Added a real Speaking Evaluation export-dialog PowerPoint renderer

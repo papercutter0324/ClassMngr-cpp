@@ -41,7 +41,7 @@ git log -3 --oneline
   failure observation, absent forbidden success checkpoints, workflow complete,
   and normal exit.
 - The failure route completed at `workflow` `11,191 ms` and `settled-1s`
-  `12,228 ms`. Peak working set/private usage was `409,145,344`/
+  `12,228 ms`. Peak working set/private usage was `410,251,264`/
   `452,120,576` bytes; these are legacy before-state measurements only.
 - Manual inspection of `calendar-import-error.png` found the Calendar Import
   Import section, enabled Import Events, and the real error. An independent
@@ -62,6 +62,6 @@ git log -3 --oneline
 
 ## Git handoff
 
-The accepted slice is committed at `03122c62`:
+The accepted slice is committed at `c0ebb484`:
 `Phase0 - Accept Calendar Import parser-failure evidence`. The worktree was
 clean after the commit. Continue Phase 0 with the remaining evidence gaps.

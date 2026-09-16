@@ -407,7 +407,7 @@ does not recreate or rely on them.
   before failure observation, absent forbidden success checkpoints, workflow
   complete, and normal exit. It completed at `11,191 ms`/`12,228 ms`
   (`workflow`/`settled-1s`) with peak working set/private usage of
-  `409,145,344`/`452,120,576` bytes (legacy before-state only).
+  `410,251,264`/`452,120,576` bytes (legacy before-state only).
 - The error screenshot was manually inspected; an independent Tester
   confirmed both PNGs valid at `1020x735` and all checks. The unchanged
   success route passed, and `ClassMngrStartupPerformanceTests.exe -v1` with

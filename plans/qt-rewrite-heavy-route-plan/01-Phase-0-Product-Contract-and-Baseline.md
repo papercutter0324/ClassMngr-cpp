@@ -1254,7 +1254,7 @@ No v2 feature work begins without a fixture and an acceptance check.
   error, enabled Import Events, unchanged events `0 -> 0`, operation release
   before failure observation, no forbidden success checkpoints, workflow
   completion, and normal exit. It completed at `11,191 ms`/`12,228 ms`, with
-  `409,145,344` working-set and `452,120,576` private-usage peak bytes.
+  `410,251,264` working-set and `452,120,576` private-usage peak bytes.
 - Evidence is retained under
   `docs/qt-rewrite/visual-baseline/release/large-calendar-import-error-boundary/`;
   the manifest references `large-calendar-import-workflow.json`. Manual
