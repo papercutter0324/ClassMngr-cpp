@@ -374,6 +374,18 @@ English/Korean and light/dark combinations, the empty class-information
 capture, and their metrics/traces under
 `docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/`.
 
+The packaged Release resource trace runs after the full large-workspace route,
+including PDF open/render/release/reopen, and returns to My Workspace before
+enumerating every required RCC pack and embedded asset. Its retained report is
+under `docs/qt-rewrite/visual-baseline/release/large-resource-trace-boundary/`:
+189 payload entries, `62,781,401` logical installed bytes, 34 image decodes
+with `147,851,916` bytes of potential decoded residency, 83 on-demand entries,
+and zero decoded bytes for all catalog PDF/PPTX entries. Required pack leases
+return to their pre-trace mount state. The declared `roster-designs` pack is
+recorded as optional and unavailable because this checkout has no source
+directory or packaged `.rcc`; that is an explicit Phase 4 packaging decision,
+not silently omitted evidence.
+
 `tests/fixtures/workspaces/legacy_startup.sql` is a partial schema-version-zero
 `.db` source. The startup test materializes it, runs the current schema manager,
 and verifies migration to the latest schema, foreign-key integrity, preservation
@@ -689,4 +701,6 @@ store the JSON startup trace beside the PNG files.
 - Golden generated reports, substitute documents, additional roster variants,
   and PowerPoint output beyond the retained heavy Sub Prep PDF/package
   references.
-- Per-resource decoded/resident sizes and page/object lifecycle traces.
+- Remaining feature page/object lifecycle traces beyond the retained heavy
+  workflow boundaries; per-resource payload, decoded-image, PDF/PPTX deferral,
+  and resource-pack lease traces are now retained.

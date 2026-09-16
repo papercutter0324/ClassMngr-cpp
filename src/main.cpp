@@ -125,6 +125,7 @@ struct StartupPerformanceMode
     bool subPrepLifecycleEnabled = false;
     bool subPrepOutputLifecycleEnabled = false;
     bool subPrepVisualStatesEnabled = false;
+    bool resourceTraceEnabled = false;
     enum class Scenario
     {
         Minimal,
@@ -185,6 +186,385 @@ void appendStartupWorkflowTrace(const QString& message)
         file.write((message + QLatin1Char('\n')).toUtf8());
         file.flush();
     }
+}
+
+bool writeStartupResourceTrace()
+{
+    const QString outputPath =
+        qEnvironmentVariable("CLASSMNGR_STARTUP_RESOURCE_TRACE_PATH")
+            .trimmed();
+    if (outputPath.isEmpty())
+    {
+        qWarning()
+            << "Startup resource trace output path was not provided.";
+        return false;
+    }
+
+    const QFileInfo outputFile(outputPath);
+    if (!QDir().mkpath(outputFile.absolutePath()))
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to create startup resource trace directory %1."
+                ).arg(outputFile.absolutePath());
+        return false;
+    }
+
+    QJsonArray entries;
+    QJsonArray packLifecycles;
+    QStringList errors;
+    qint64 totalInstalledPayloadBytes = 0;
+    qint64 totalDecodedResidentBytes = 0;
+    int decodedImageCount = 0;
+    int startupNecessaryEntryCount = 0;
+    int onDemandEntryCount = 0;
+    int optionalUnavailablePackCount = 0;
+
+    const auto appendResourceTree =
+        [
+            &entries,
+            &errors,
+            &totalInstalledPayloadBytes,
+            &totalDecodedResidentBytes,
+            &decodedImageCount,
+            &startupNecessaryEntryCount,
+            &onDemandEntryCount
+        ](
+            const QString& root,
+            const QString& source,
+            const QString& resourcePack,
+            const QString& classification,
+            const QString& owner,
+            const QString& expectedLifetime,
+            const QString& loadPolicy,
+            bool startupNecessary,
+            bool streamable
+            )
+        -> int
+        {
+            if (!QDir(root).exists())
+            {
+                errors.append(
+                    QStringLiteral("Resource root is unavailable: %1")
+                        .arg(root)
+                    );
+                return 0;
+            }
+
+            const int initialEntryCount = entries.size();
+            QDirIterator iterator(
+                root,
+                QDir::Files,
+                QDirIterator::Subdirectories
+                );
+            while (iterator.hasNext())
+            {
+                iterator.next();
+                const QFileInfo fileInfo = iterator.fileInfo();
+                if (!fileInfo.isFile())
+                {
+                    continue;
+                }
+
+                const QString path = fileInfo.filePath();
+                qint64 installedPayloadBytes = fileInfo.size();
+                if (installedPayloadBytes < 0)
+                {
+                    QFile resourceFile(path);
+                    if (resourceFile.open(QIODevice::ReadOnly))
+                    {
+                        installedPayloadBytes = resourceFile.size();
+                    }
+                }
+                if (installedPayloadBytes < 0)
+                {
+                    installedPayloadBytes = 0;
+                }
+
+                const QString suffix = fileInfo.suffix().toLower();
+                const bool imageCandidate =
+                    suffix == QStringLiteral("bmp")
+                    || suffix == QStringLiteral("gif")
+                    || suffix == QStringLiteral("jpg")
+                    || suffix == QStringLiteral("jpeg")
+                    || suffix == QStringLiteral("png")
+                    || suffix == QStringLiteral("webp");
+
+                qint64 decodedResidentBytes = 0;
+                int width = 0;
+                int height = 0;
+                if (imageCandidate)
+                {
+                    const QImage image(path);
+                    if (!image.isNull())
+                    {
+                        decodedResidentBytes =
+                            static_cast<qint64>(image.sizeInBytes());
+                        width = image.width();
+                        height = image.height();
+                        ++decodedImageCount;
+                    }
+                }
+
+                totalInstalledPayloadBytes += installedPayloadBytes;
+                totalDecodedResidentBytes += decodedResidentBytes;
+                if (startupNecessary)
+                {
+                    ++startupNecessaryEntryCount;
+                }
+                if (loadPolicy == QStringLiteral("on-demand"))
+                {
+                    ++onDemandEntryCount;
+                }
+
+                entries.append(
+                    QJsonObject{
+                        {QStringLiteral("source"), source},
+                        {QStringLiteral("resourcePack"), resourcePack},
+                        {QStringLiteral("path"), path},
+                        {QStringLiteral("suffix"), suffix},
+                        {QStringLiteral("classification"), classification},
+                        {QStringLiteral("owner"), owner},
+                        {
+                            QStringLiteral("expectedLifetime"),
+                            expectedLifetime
+                        },
+                        {QStringLiteral("loadPolicy"), loadPolicy},
+                        {QStringLiteral("startupNecessary"), startupNecessary},
+                        {QStringLiteral("streamable"), streamable},
+                        {
+                            QStringLiteral("installedPayloadBytes"),
+                            static_cast<double>(installedPayloadBytes)
+                        },
+                        {
+                            QStringLiteral("decodedResidentBytes"),
+                            static_cast<double>(decodedResidentBytes)
+                        },
+                        {QStringLiteral("decodedWidth"), width},
+                        {QStringLiteral("decodedHeight"), height}
+                    }
+                    );
+            }
+
+            if (entries.size() == initialEntryCount)
+            {
+                errors.append(
+                    QStringLiteral("Resource root contains no files: %1")
+                        .arg(root)
+                    );
+            }
+            return static_cast<int>(entries.size() - initialEntryCount);
+        };
+
+    ResourcePackManager& resourcePackManager = ResourcePackManager::instance();
+    const QStringList resourcePackIds{
+        QStringLiteral("campuses"),
+        QStringLiteral("templates"),
+        QStringLiteral("roster-designs"),
+        QStringLiteral("documents"),
+        QStringLiteral("files"),
+        QStringLiteral("images"),
+        QStringLiteral("splash")
+    };
+    for (const QString& packId : resourcePackIds)
+    {
+        const bool mountedBefore = resourcePackManager.isMounted(packId);
+        const bool optionalPack = packId == QStringLiteral("roster-designs");
+        QJsonObject lifecycle{
+            {QStringLiteral("packId"), packId},
+            {QStringLiteral("mountedBefore"), mountedBefore},
+            {QStringLiteral("required"), !optionalPack}
+        };
+        auto lease = resourcePackManager.acquire(packId);
+        if (!lease)
+        {
+            lifecycle.insert(QStringLiteral("acquired"), false);
+            lifecycle.insert(QStringLiteral("error"), lease.error());
+            packLifecycles.append(lifecycle);
+            if (optionalPack)
+            {
+                ++optionalUnavailablePackCount;
+            }
+            else
+            {
+                errors.append(lease.error());
+            }
+            continue;
+        }
+
+        lifecycle.insert(QStringLiteral("acquired"), true);
+        lifecycle.insert(QStringLiteral("root"), lease->root());
+        lifecycle.insert(
+            QStringLiteral("packFileBytes"),
+            static_cast<double>(
+                QFileInfo(
+                    QDir(resourcePackManager.baselineDirectory()).filePath(
+                        packId + QStringLiteral(".rcc")
+                        )
+                    ).size()
+                )
+            );
+
+        QString classification = QStringLiteral("feature");
+        QString owner = QStringLiteral("feature-resource-loader");
+        QString expectedLifetime = QStringLiteral("feature-entry");
+        QString loadPolicy = QStringLiteral("feature-entry");
+        bool startupNecessary = false;
+        bool streamable = false;
+        if (packId == QStringLiteral("documents"))
+        {
+            classification = QStringLiteral("document-catalog");
+            owner = QStringLiteral("DocumentCatalog");
+            expectedLifetime = QStringLiteral("catalog-metadata");
+            loadPolicy = QStringLiteral("on-demand");
+            streamable = true;
+        }
+        else if (packId == QStringLiteral("splash"))
+        {
+            classification = QStringLiteral("core");
+            owner = QStringLiteral("SplashScreen");
+            expectedLifetime = QStringLiteral("startup-only");
+            loadPolicy = QStringLiteral("startup");
+            startupNecessary = true;
+        }
+        else if (packId == QStringLiteral("templates"))
+        {
+            classification = QStringLiteral("operation");
+            owner = QStringLiteral("report-and-template-services");
+            expectedLifetime = QStringLiteral("operation-scoped");
+            loadPolicy = QStringLiteral("on-demand");
+            streamable = true;
+        }
+        else if (packId == QStringLiteral("files"))
+        {
+            classification = QStringLiteral("operation");
+            owner = QStringLiteral("feature-workflow");
+            expectedLifetime = QStringLiteral("operation-scoped");
+            loadPolicy = QStringLiteral("on-demand");
+            streamable = true;
+        }
+
+        lifecycle.insert(
+            QStringLiteral("entryCount"),
+            appendResourceTree(
+                lease->root(),
+                QStringLiteral("resource-pack"),
+                packId,
+                classification,
+                owner,
+                expectedLifetime,
+                loadPolicy,
+                startupNecessary,
+                streamable
+                )
+            );
+        lease->reset();
+        lifecycle.insert(
+            QStringLiteral("mountedAfter"),
+            resourcePackManager.isMounted(packId)
+            );
+        packLifecycles.append(lifecycle);
+    }
+
+    const auto appendEmbeddedRoot =
+        [&appendResourceTree](
+            const QString& root,
+            const QString& source,
+            const QString& owner,
+            bool startupNecessary
+            )
+        {
+            return appendResourceTree(
+                root,
+                source,
+                QStringLiteral("embedded"),
+                QStringLiteral("core"),
+                owner,
+                QStringLiteral("process-lifetime"),
+                QStringLiteral("startup"),
+                startupNecessary,
+                false
+                );
+        };
+    appendEmbeddedRoot(
+        QStringLiteral(":/assets/fonts"),
+        QStringLiteral("embedded-resource"),
+        QStringLiteral("FontManager"),
+        true
+        );
+    appendEmbeddedRoot(
+        QStringLiteral(":/assets/icons"),
+        QStringLiteral("embedded-resource"),
+        QStringLiteral("application-and-feature-actions"),
+        true
+        );
+    appendEmbeddedRoot(
+        QStringLiteral(":/assets/styles"),
+        QStringLiteral("embedded-resource"),
+        QStringLiteral("ThemeService"),
+        true
+        );
+    appendEmbeddedRoot(
+        QStringLiteral(":/i18n"),
+        QStringLiteral("embedded-resource"),
+        QStringLiteral("LanguageService"),
+        true
+        );
+
+    const QJsonObject trace{
+        {QStringLiteral("schema"), QStringLiteral("classmngr-resource-trace-v1")},
+        {QStringLiteral("scenario"), QStringLiteral("packaged-release-heavy-startup")},
+        {
+            QStringLiteral("summary"),
+            QJsonObject{
+                {QStringLiteral("entryCount"), entries.size()},
+                {
+                    QStringLiteral("totalInstalledPayloadBytes"),
+                    static_cast<double>(totalInstalledPayloadBytes)
+                },
+                {
+                    QStringLiteral("totalDecodedResidentBytes"),
+                    static_cast<double>(totalDecodedResidentBytes)
+                },
+                {QStringLiteral("decodedImageCount"), decodedImageCount},
+                {
+                    QStringLiteral("startupNecessaryEntryCount"),
+                    startupNecessaryEntryCount
+                },
+                {QStringLiteral("onDemandEntryCount"), onDemandEntryCount},
+                {
+                    QStringLiteral("optionalUnavailablePackCount"),
+                    optionalUnavailablePackCount
+                },
+                {QStringLiteral("errorCount"), errors.size()}
+            }
+        },
+        {QStringLiteral("packLifecycles"), packLifecycles},
+        {QStringLiteral("entries"), entries},
+        {QStringLiteral("errors"), QJsonArray::fromStringList(errors)}
+    };
+
+    QFile file(outputPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to write startup resource trace to %1: %2"
+                )
+                .arg(outputPath, file.errorString());
+        return false;
+    }
+    if (file.write(QJsonDocument(trace).toJson(QJsonDocument::Indented)) <= 0)
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to finish startup resource trace at %1: %2"
+                )
+                .arg(outputPath, file.errorString());
+        return false;
+    }
+
+    return errors.isEmpty();
 }
 
 bool saveStartupPdfCapture(
@@ -969,6 +1349,10 @@ StartupPerformanceMode startupPerformanceMode(
                 "--startup-performance-sub-prep-visual-states"
                 )
             );
+    mode.resourceTraceEnabled =
+        args.contains(
+            QStringLiteral("--startup-performance-resource-trace")
+            );
     mode.subPrepLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-sub-prep-lifecycle")
@@ -987,7 +1371,8 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.staffDirectoryLifecycleEnabled
         || mode.subPrepLifecycleEnabled
         || mode.subPrepOutputLifecycleEnabled
-        || mode.subPrepVisualStatesEnabled;
+        || mode.subPrepVisualStatesEnabled
+        || mode.resourceTraceEnabled;
 
     const int outputIndex =
         args.indexOf(
@@ -4808,6 +5193,14 @@ bool writeStartupPerformanceMetrics(
                 )
         );
     }
+    if (mode.resourceTraceEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "enumerate packaged resource payloads, decode image sizes, and trace resource-pack lease release"
+                )
+            );
+    }
     if (mode.classesLifecycleEnabled)
     {
         scenarioActions.append(
@@ -5365,7 +5758,44 @@ int main(int argc, char *argv[])
                     }
                     finishPerformanceRun();
                 }
+            );
+        };
+
+        const auto scheduleResourceTraceCompletion =
+            [
+                &startupProfiler,
+                &startupPerformance,
+                workflowSucceeded,
+                scheduleSettledCompletion
+            ]()
+        {
+            if (!startupPerformance.resourceTraceEnabled)
+            {
+                scheduleSettledCompletion();
+                return;
+            }
+
+            startupProfiler.checkpoint(
+                QStringLiteral("resource-trace-start")
                 );
+            appendStartupWorkflowTrace(
+                QStringLiteral("resource-trace-start")
+                );
+            const bool traceSucceeded = writeStartupResourceTrace();
+            startupProfiler.checkpoint(
+                QStringLiteral("resource-trace-complete"),
+                QStringLiteral("passed=%1")
+                    .arg(traceSucceeded ? QStringLiteral("true") : QStringLiteral("false"))
+                );
+            appendStartupWorkflowTrace(
+                QStringLiteral("resource-trace-complete passed=%1")
+                    .arg(traceSucceeded ? QStringLiteral("true") : QStringLiteral("false"))
+                );
+            if (!traceSucceeded)
+            {
+                *workflowSucceeded = false;
+            }
+            scheduleSettledCompletion();
         };
 
         if (startupPerformance.workflowEnabled)
@@ -5387,12 +5817,12 @@ int main(int argc, char *argv[])
                 startupPerformance.subPrepOutputLifecycleEnabled,
                 startupPerformance.subPrepVisualStatesEnabled,
                 startupPerformance.visualCaptureOutputPath,
-                scheduleSettledCompletion
+                scheduleResourceTraceCompletion
                 );
             return;
         }
 
-        scheduleSettledCompletion();
+        scheduleResourceTraceCompletion();
     };
 
     // This is the single transition from startup to normal operation.  The

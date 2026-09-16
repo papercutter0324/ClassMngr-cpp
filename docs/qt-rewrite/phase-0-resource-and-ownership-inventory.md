@@ -1,6 +1,7 @@
 # Qt Rewrite Phase 0 - Resource and Ownership Inventory
 
-Status: In progress
+Status: Packaged Release payload/lifetime trace recorded; cross-platform and
+remaining feature-ownership evidence are still in progress.
 Snapshot: `75755460`
 
 The raw checked-in asset tree contains 226 files totaling 65,729,685 bytes.
@@ -18,6 +19,7 @@ The table is a source inventory, not a decoded-memory measurement.
 | `styles` | 2 | 32,284 | `ThemeService`/global stylesheet | Core/startup |
 | `templates` | 55 | 2,750,781 | roster/speaking/report/template services | Feature/operation; speaking sources are build-excluded |
 | `translations` | 5 | 1,748,858 | `LanguageService` and Qt Linguist output | Core/startup |
+| `roster-designs` | 0 in this checkout | `ResourcePackManager` declaration and `ResourcePaths::RosterDesigns` | Declared optional updateable pack, but no source directory or packaged payload is present; keep this explicit for the Phase 4 packaging decision |
 
 ## Current ownership and retention findings
 
@@ -42,6 +44,29 @@ embeds fonts, icons, styles, translations, and other non-scoped assets. Runtime
 code can resolve `:/` resources, mounted pack roots, application-adjacent
 filesystem paths, and the source tree. The rewrite must preserve installed
 resource availability while deleting the independent pack mount/update path.
+
+## Packaged Release trace
+
+The heavy packaged Windows x64 Release route now runs
+`--startup-performance-resource-trace` after full large-workspace navigation,
+the PDF open/render/release/reopen path, and return to My Workspace. The
+retained evidence is under
+`docs/qt-rewrite/visual-baseline/release/large-resource-trace-boundary/`.
+
+The trace enumerated 189 payloads totaling `62,781,401` logical installed
+bytes. It measured potential decoded image residency for 34 images totaling
+`147,851,916` bytes, while leaving all PDF and PPTX entries at zero decoded
+bytes and classifying 83 entries as on-demand. The six required RCC packs were
+acquired and returned to their pre-trace mount state. The declared
+`roster-designs` pack remains explicitly unavailable (`required=false`) because
+this checkout contains neither its source directory nor a packaged `.rcc`;
+the trace records that discrepancy instead of silently treating it as a
+loaded resource.
+
+This is a payload/lifetime baseline, not a claim that all decoded images are
+simultaneously resident: the image values are per-resource potential sizes and
+the process working-set report remains the authority for actual resident
+memory.
 
 ## Trace points to add or retain
 

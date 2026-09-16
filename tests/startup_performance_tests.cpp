@@ -1645,6 +1645,7 @@ private slots:
     void capturesLargeStaffDirectoryBoundaryWhenConfigured();
     void capturesLargeSubPrepOutputBoundaryWhenConfigured();
     void capturesLargeSubPrepVisualStatesWhenConfigured();
+    void capturesLargeResourceTraceWhenConfigured();
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
@@ -8620,6 +8621,389 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
         QFileInfo::exists(
             QDir(outputRoot).filePath(QStringLiteral("calendar-page.png"))
             )
+        );
+}
+
+void StartupPerformanceTests::capturesLargeResourceTraceWhenConfigured()
+{
+    const QString configuredOutputRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_RESOURCE_TRACE_REFERENCE_DIR"
+            ).trimmed();
+    if (configuredOutputRoot.isEmpty())
+    {
+        QSKIP(
+            "Set CLASSMNGR_LARGE_RESOURCE_TRACE_REFERENCE_DIR to run the heavy route."
+            );
+    }
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
+    QVERIFY2(
+        !appPath.trimmed().isEmpty(),
+        "CLASSMNGR_TEST_APP_PATH was not provided."
+        );
+    QVERIFY2(
+        QFile::exists(appPath),
+        qPrintable(
+            QStringLiteral("ClassMngr executable does not exist: %1")
+                .arg(appPath)
+            )
+        );
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("large-resource-trace.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    const QString settingsRoot =
+        directory.filePath(QStringLiteral("settings"));
+    QVERIFY2(
+        writeRepresentativeStartupSettings(settingsRoot),
+        "Unable to write deterministic large-workspace settings."
+        );
+
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral(
+                "Unable to create large resource trace reference root: %1"
+                ).arg(outputRoot)
+            )
+        );
+
+    const QString retainedFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-resource-trace.tps")
+            );
+    if (QFileInfo::exists(retainedFixturePath))
+    {
+        QVERIFY(QFile::remove(retainedFixturePath));
+    }
+    QVERIFY2(
+        QFile::copy(fixturePath, retainedFixturePath),
+        "Unable to retain the generated large resource trace fixture."
+        );
+
+    const QString metricsPath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("large-resource-trace-workflow.json")
+            );
+    const QString workflowTracePath =
+        QDir(outputRoot).filePath(QStringLiteral("workflow-trace.txt"));
+    const QString resourceTracePath =
+        QDir(outputRoot).filePath(QStringLiteral("resource-trace.json"));
+    for (const QString& fileName : {
+             QStringLiteral("large-resource-trace-workflow.json"),
+             QStringLiteral("workflow-trace.txt"),
+             QStringLiteral("resource-trace.json"),
+             QStringLiteral("manifest.json"),
+             QStringLiteral("process-stdout.txt"),
+             QStringLiteral("process-stderr.txt")
+         })
+    {
+        const QString path = QDir(outputRoot).filePath(fileName);
+        if (QFileInfo::exists(path))
+        {
+            QVERIFY(QFile::remove(path));
+        }
+    }
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+        settingsRoot
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"),
+        workflowTracePath
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_RESOURCE_TRACE_PATH"),
+        resourceTracePath
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-resource-trace"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("1000"),
+            QStringLiteral("--startup-performance-output"),
+            metricsPath,
+            fixturePath
+        }
+        );
+
+    QVERIFY2(
+        process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString())
+        );
+    const bool finished =
+        process.waitForFinished(StartupTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+    }
+
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+            standardOutput,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY2(
+        writeDiagnosticFile(
+            QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+            standardError,
+            &diagnosticError
+            ),
+        qPrintable(diagnosticError)
+        );
+    QVERIFY(finished);
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+    QVERIFY(QFileInfo::exists(metricsPath));
+    QVERIFY(QFileInfo::exists(resourceTracePath));
+
+    QFile metricsFile(metricsPath);
+    QVERIFY2(
+        metricsFile.open(QIODevice::ReadOnly),
+        qPrintable(metricsFile.errorString())
+        );
+    QJsonParseError metricsParseError;
+    const QJsonDocument metricsDocument =
+        QJsonDocument::fromJson(metricsFile.readAll(), &metricsParseError);
+    QVERIFY2(
+        metricsParseError.error == QJsonParseError::NoError
+            && metricsDocument.isObject(),
+        qPrintable(metricsParseError.errorString())
+    );
+    const QJsonObject metrics = metricsDocument.object();
+    const auto checkpointNamed =
+        [&metrics](const QString& name)
+        {
+            for (
+                const QJsonValue& value :
+                metrics.value(QStringLiteral("checkpoints")).toArray()
+                )
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (checkpoint.value(QStringLiteral("name")).toString() == name)
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+    const QJsonObject resourceTraceStart =
+        checkpointNamed(
+            QStringLiteral("resource-trace-start")
+            );
+    const QJsonObject resourceTraceComplete =
+        checkpointNamed(
+            QStringLiteral("resource-trace-complete")
+            );
+    QVERIFY(!resourceTraceStart.isEmpty());
+    QVERIFY(!resourceTraceComplete.isEmpty());
+    QVERIFY(
+        resourceTraceComplete.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("passed=true"))
+        );
+
+    QFile traceFile(resourceTracePath);
+    QVERIFY2(
+        traceFile.open(QIODevice::ReadOnly),
+        qPrintable(traceFile.errorString())
+        );
+    QJsonParseError traceParseError;
+    const QJsonDocument traceDocument =
+        QJsonDocument::fromJson(traceFile.readAll(), &traceParseError);
+    QVERIFY2(
+        traceParseError.error == QJsonParseError::NoError
+            && traceDocument.isObject(),
+        qPrintable(traceParseError.errorString())
+        );
+    const QJsonObject trace = traceDocument.object();
+    QCOMPARE(
+        trace.value(QStringLiteral("schema")).toString(),
+        QStringLiteral("classmngr-resource-trace-v1")
+        );
+    QCOMPARE(
+        trace.value(QStringLiteral("scenario")).toString(),
+        QStringLiteral("packaged-release-heavy-startup")
+        );
+
+    const QJsonObject summary =
+        trace.value(QStringLiteral("summary")).toObject();
+    QVERIFY(summary.value(QStringLiteral("entryCount")).toInt() > 100);
+    QVERIFY(
+        summary.value(QStringLiteral("totalInstalledPayloadBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(
+        summary.value(QStringLiteral("totalDecodedResidentBytes"))
+            .toDouble() > 0
+        );
+    QVERIFY(summary.value(QStringLiteral("decodedImageCount")).toInt() > 0);
+    QVERIFY(
+        summary.value(QStringLiteral("startupNecessaryEntryCount"))
+            .toInt() > 0
+        );
+    QVERIFY(
+        summary.value(QStringLiteral("onDemandEntryCount")).toInt() > 0
+        );
+    QCOMPARE(
+        summary.value(QStringLiteral("optionalUnavailablePackCount")).toInt(),
+        1
+        );
+    QCOMPARE(summary.value(QStringLiteral("errorCount")).toInt(), 0);
+
+    const QJsonArray packLifecycles =
+        trace.value(QStringLiteral("packLifecycles")).toArray();
+    QCOMPARE(packLifecycles.size(), 7);
+    for (const QJsonValue& packValue : packLifecycles)
+    {
+        const QJsonObject pack = packValue.toObject();
+        if (pack.value(QStringLiteral("packId")).toString()
+            == QStringLiteral("roster-designs"))
+        {
+            QVERIFY(!pack.value(QStringLiteral("required")).toBool());
+            QVERIFY(!pack.value(QStringLiteral("acquired")).toBool());
+            QVERIFY(!pack.value(QStringLiteral("error")).toString().isEmpty());
+            continue;
+        }
+        QVERIFY(pack.value(QStringLiteral("required")).toBool());
+        QVERIFY(pack.value(QStringLiteral("acquired")).toBool());
+        QCOMPARE(
+            pack.value(QStringLiteral("mountedAfter")).toBool(),
+            pack.value(QStringLiteral("mountedBefore")).toBool()
+            );
+    }
+
+    bool sawEmbeddedEntry = false;
+    bool sawImageEntry = false;
+    int pdfEntryCount = 0;
+    int pptxEntryCount = 0;
+    const QJsonArray entries =
+        trace.value(QStringLiteral("entries")).toArray();
+    for (const QJsonValue& entryValue : entries)
+    {
+        const QJsonObject entry = entryValue.toObject();
+        sawEmbeddedEntry =
+            sawEmbeddedEntry
+            || entry.value(QStringLiteral("resourcePack")).toString()
+                == QStringLiteral("embedded");
+        sawImageEntry =
+            sawImageEntry
+            || entry.value(QStringLiteral("decodedResidentBytes")).toDouble()
+                > 0;
+        const QString suffix =
+            entry.value(QStringLiteral("suffix")).toString();
+        if (suffix == QStringLiteral("pdf"))
+        {
+            ++pdfEntryCount;
+            QCOMPARE(
+                entry.value(QStringLiteral("decodedResidentBytes")).toDouble(),
+                0.0
+                );
+            QCOMPARE(
+                entry.value(QStringLiteral("loadPolicy")).toString(),
+                QStringLiteral("on-demand")
+                );
+        }
+        if (suffix == QStringLiteral("pptx"))
+        {
+            ++pptxEntryCount;
+            QCOMPARE(
+                entry.value(QStringLiteral("decodedResidentBytes")).toDouble(),
+                0.0
+                );
+            QCOMPARE(
+                entry.value(QStringLiteral("loadPolicy")).toString(),
+                QStringLiteral("on-demand")
+                );
+        }
+    }
+    QVERIFY(sawEmbeddedEntry);
+    QVERIFY(sawImageEntry);
+    QVERIFY(pdfEntryCount > 0);
+    QVERIFY(pptxEntryCount > 0);
+
+    QJsonObject manifest{
+        {QStringLiteral("fixture"), QStringLiteral("large-resource-trace.tps")},
+        {
+            QStringLiteral("fixtureScale"),
+            QStringLiteral("large_packaged_resource_trace")
+        },
+        {
+            QStringLiteral("scenario"),
+            QStringLiteral(
+                "large-workspace full navigation with packaged resource payload, decoded-image, and lease lifecycle trace"
+                )
+        },
+        {QStringLiteral("processFinished"), finished},
+        {
+            QStringLiteral("exitStatus"),
+            process.exitStatus() == QProcess::NormalExit
+                ? QStringLiteral("normal")
+                : QStringLiteral("crash")
+        },
+        {QStringLiteral("exitCode"), process.exitCode()},
+        {QStringLiteral("metricsPath"), QStringLiteral("large-resource-trace-workflow.json")},
+        {QStringLiteral("resourceTracePath"), QStringLiteral("resource-trace.json")},
+        {QStringLiteral("workflowTracePath"), QStringLiteral("workflow-trace.txt")},
+        {QStringLiteral("entryCount"), summary.value(QStringLiteral("entryCount"))},
+        {
+            QStringLiteral("totalInstalledPayloadBytes"),
+            summary.value(QStringLiteral("totalInstalledPayloadBytes"))
+        },
+        {
+            QStringLiteral("totalDecodedResidentBytes"),
+            summary.value(QStringLiteral("totalDecodedResidentBytes"))
+        },
+        {QStringLiteral("pdfEntryCount"), pdfEntryCount},
+        {QStringLiteral("pptxEntryCount"), pptxEntryCount},
+        {QStringLiteral("trace"), trace}
+    };
+    QFile manifestFile(
+        QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
+        );
+    QVERIFY2(
+        manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString())
+        );
+    QVERIFY(
+        manifestFile.write(
+            QJsonDocument(manifest).toJson(QJsonDocument::Indented)
+            ) > 0
         );
 }
 

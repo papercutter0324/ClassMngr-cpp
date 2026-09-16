@@ -1005,3 +1005,38 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: retain the threshold-classified visual
   artifacts as the before-state budget oracle and continue with the next
   heavy Phase 0 evidence gap; do not begin v2 remediation or Phase 1 yet.
+
+## Progress update - 2026-09-16 (packaged Release resource ownership trace)
+
+- What changed: the packaged startup harness now has an explicit
+  `--startup-performance-resource-trace` mode. It runs after the full
+  large-workspace navigation/PDF workflow, enumerates each required RCC pack
+  and embedded asset, records logical installed payload bytes, image dimensions
+  and potential decoded bytes, classifies startup versus on-demand ownership,
+  and records whether each resource-pack lease returns to its pre-trace mount
+  state. PDF and PPTX bodies are catalogued without loading them into a
+  decoder.
+- Heavy-route evidence: the packaged Windows x64 Release route completed
+  normally. It retained 189 entries totaling `62,781,401` logical installed
+  bytes, 34 decoded-image candidates totaling `147,851,916` potential decoded
+  bytes, 83 on-demand entries, and zero decoded bytes for catalog PDF/PPTX
+  entries. The route peak was `482,676,736` working-set bytes and
+  `452,280,320` private-usage bytes; the trace completed at `9,646 ms`, with
+  the route settled at `10,676 ms`. Evidence is under
+  `docs/qt-rewrite/visual-baseline/release/large-resource-trace-boundary/`.
+- Finding: the six required RCC packs acquired and returned to their prior
+  mount state. `roster-designs` is declared by the current resource-pack
+  manager but has no source directory or packaged `.rcc` in this checkout; the
+  trace records it explicitly as `required=false` and unavailable. Preserve
+  this as a Phase 4 packaging decision rather than treating the missing asset
+  as a successful load.
+- Evaluation impact: the Phase 0 per-resource payload/decoded/deferred-load
+  and pack-lease evidence gap is closed for the Windows x64 packaged heavy
+  route. The per-resource decoded values are potential per-asset sizes, not a
+  claim that all images are simultaneously resident; process working set
+  remains the actual memory authority. Phase 0 remains open for the remaining
+  visual/output references, feature page/object gaps, and cross-platform
+  Release evidence.
+- Decision and next heavy slice: retain this resource trace as the ownership
+  oracle and continue with the next heavy Phase 0 evidence gap; do not begin
+  v2 remediation or Phase 1 yet.
