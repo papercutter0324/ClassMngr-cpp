@@ -5004,6 +5004,21 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
                         bool captured = outputRoot.isEmpty();
                         if (!outputRoot.isEmpty())
                         {
+                            auto* calendarScroll =
+                                dialogGuard->findChild<QScrollArea*>(
+                                    QStringLiteral("preferencesCalendarTab")
+                                    );
+                            QScrollBar* scrollBar = calendarScroll
+                                ? calendarScroll->verticalScrollBar()
+                                : nullptr;
+                            const int previousScrollValue = scrollBar
+                                ? scrollBar->value()
+                                : 0;
+                            if (scrollBar)
+                            {
+                                scrollBar->setValue(scrollBar->maximum());
+                                app.processEvents();
+                            }
                             QDir().mkpath(outputRoot);
                             const QPixmap capture = dialogGuard->grab();
                             captured =
@@ -5016,6 +5031,11 @@ void scheduleStartupPerformanceCalendarImportLifecycle(
                                         ),
                                     "PNG"
                                     );
+                            if (scrollBar)
+                            {
+                                scrollBar->setValue(previousScrollValue);
+                                app.processEvents();
+                            }
                         }
                         const QString detail =
                             QStringLiteral(

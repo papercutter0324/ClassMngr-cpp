@@ -8,7 +8,7 @@ calendar-events-processed
 calendar-import-preferences-start
 calendar-import-preferences-opened
 calendar-import-ui-start
-calendar-import-operation-start source=http://127.0.0.1:62619/large-calendar.xlsx
+calendar-import-operation-start source=http://127.0.0.1:59043/large-calendar.xlsx
 calendar-import-loading status=Importing events...; controlsDisabled=true; captured=true
 calendar-import-response-received rawBytes=69; rawBytesRetained=true
 calendar-import-operation-failed The downloaded spreadsheet is missing xl/workbook.xml.
@@ -75,3 +75,8 @@ start pdf-viewer
 showPage pdf-viewer
 showPage-returned pdf-viewer
 events-processed pdf-viewer
+start my-workspace
+showPage my-workspace
+showPage-returned my-workspace
+events-processed my-workspace
+complete

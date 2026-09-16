@@ -20,21 +20,21 @@ output-dialog validation-error reference, a Sub Prep editing/read-only
 reference, populated Classes visual references across English/Korean and
 light/dark variants, real Schedule Import loading references for both cancel
 and apply boundaries, a real large-route Schedule Import conflict-warning
-reference, and the Calendar Import Preferences loading reference. Each focused
-route and the full startup-performance suite passed for the current final
-Schedule Import slice.
+reference, the Calendar Import Preferences loading reference, and the Calendar
+Import parser-failure boundary. Each focused route and the full
+startup-performance suite passed for the accepted Calendar Import slice.
 
 ## Current Position
 
-The last accepted slice remains the large Schedule Import conflict-warning
-reference at commit `ecb88af0`. The Calendar Import parser-failure
-implementation is committed at `ded8b5dc`, and the continuation guard plus
-diagnostic handoff/artifacts are preserved in `a8cccb35`; the focused
-acceptance test still fails before complete workflow/metrics evidence is
-available, so the slice remains unaccepted. Phase 1 has not started. Fresh
-Ninja Release compilation succeeded earlier, and the unchanged Calendar Import
-success route plus the full startup suite passed earlier. No Calendar Import
-error artifact is accepted yet.
+The Calendar Import parser-failure boundary is now accepted. Its implementation
+is based on `ded8b5dc`, with the evidence-only error capture scroll fix and fresh
+Release artifacts completed in deployment `qt0_calendar_verify_20260917`.
+The 69-byte malformed response produced the real missing
+`xl/workbook.xml` error, re-enabled Import Events, unchanged calendar events,
+strict failure/release ordering, complete workflow/metrics/manifest/trace
+evidence, and a manually inspected error screenshot. The unchanged success
+route and the opt-in-cleared full startup suite also passed. Phase 1 has not
+started.
 
 The CMake configuration cleanup is complete. Multi-config generators now expose
 only `Debug;Release`; every Debug preset explicitly enables tests and every
@@ -46,8 +46,7 @@ CMake output is now ignored; `build/` and `dist/` were not cleaned.
 
 ## Next Milestone
 
-On the next device, rebuild the fresh Ninja Release targets and rerun the
-focused expected-failure route with complete workflow/metrics inputs and
-outputs. Then run the normal success route and full startup suite, manually
-inspect the error screenshot, and update the Phase 0 verification record. Do
-not begin Phase 1 or make v2 memory claims.
+Continue Phase 0 with the remaining feature loading/error states, generated
+output references, cross-platform Release evidence, and final memory trend
+record. Do not begin Phase 1 or make v2 memory claims from the legacy widget
+graph.

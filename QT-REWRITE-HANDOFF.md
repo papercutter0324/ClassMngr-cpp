@@ -1,27 +1,19 @@
 # Qt Rewrite Handoff
 
-Paused on 2026-09-16 (Asia/Seoul) at the user's request. Continue on the
-`Qt-Rewrite` branch from the commit containing this file. The Calendar Import
-parser-failure boundary is not accepted yet; do not begin Phase 1.
+Deployment `qt0_calendar_verify_20260917` closure is `complete`. Phase 0
+remains `In progress`: the Calendar Import parser-failure boundary is accepted,
+but Phase 0 is not closed and Phase 1 must not start.
+Continue on branch `Qt-Rewrite` from the main agent's reviewed worktree.
 
 ## State at handoff
 
 - Prior commits:
   - `ded8b5dc089110e5348cb9b9511d17ca770a795a` — `Phase0 - Add Calendar Import parser-failure boundary`
   - `9fa2ba4a54371a5597895061d52e8ec4eae3e163` — `Phase0 - Record Calendar Import verification handoff`
-- Handoff commit: `a8cccb35d09a7888488f781be3c6c2dfafebf888` — `Phase0 - Save Calendar Import device handoff`
-- The current uncommitted test change guards the two normal-path screenshot
-  assertions in `tests/startup_performance_tests.cpp` when the configured
-  Calendar Import route is expected to fail.
-- The generated directory
-  `docs/qt-rewrite/visual-baseline/release/large-calendar-import-error-boundary/`
-  contains the current error/loading screenshots, generated workbook,
-  malformed response, manifest, process logs, and workflow trace. It is
-  preserved as diagnostic evidence, not acceptance evidence. The latest set is
-  incomplete: the focused route stopped because the required
-  `large-calendar-import-workflow.json`/completed metrics evidence was not
-  available.
-- No further build or test was run after the stop request.
+- The screenshot-scroll fix is the only source delta after `ded8b5dc`.
+- The error-boundary evidence directory below contains the completed
+  manifest, metrics, trace, screenshots, workbook, and malformed response; it
+  is accepted Phase 0 evidence.
 
 Read these first:
 
@@ -32,51 +24,44 @@ Get-Content -Raw .\plans\qt-rewrite-heavy-route-plan\00-Start-Here.md
 git log -3 --oneline
 ```
 
-## Next-device verification
+## Accepted Calendar Import parser-failure boundary
 
-Open an x64 Visual Studio developer PowerShell, or initialize one with:
+- A fresh Ninja Release configure/build completed at
+  `build/qt-rewrite-calendar-verify-ninja` with Qt `6.12.0`/x64 MSVC;
+  `ClassMngr` and `ClassMngrStartupPerformanceTests` linked.
+- The focused expected-failure route passed with
+  `CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE=1` and a deterministic
+  69-byte malformed local HTTP response.
+- Retained failure evidence is under
+  `docs/qt-rewrite/visual-baseline/release/large-calendar-import-error-boundary/`.
+  Its manifest references `large-calendar-import-workflow.json`; trace and
+  metrics record the real error
+  `Import failed: The downloaded spreadsheet is missing xl/workbook.xml.`,
+  re-enabled Import Events, unchanged events `0 -> 0`, operation release before
+  failure observation, absent forbidden success checkpoints, workflow complete,
+  and normal exit.
+- The failure route completed at `workflow` `11,191 ms` and `settled-1s`
+  `12,228 ms`. Peak working set/private usage was `409,145,344`/
+  `452,120,576` bytes; these are legacy before-state measurements only.
+- Manual inspection of `calendar-import-error.png` found the Calendar Import
+  Import section, enabled Import Events, and the real error. An independent
+  Tester confirmed both PNGs valid at `1020x735` and all checks.
+- The unchanged success route passed, and
+  `ClassMngrStartupPerformanceTests.exe -v1` with Calendar Import opt-ins
+  cleared exited `0`. Normal success evidence is under
+  `docs/qt-rewrite/visual-baseline/release/large-calendar-import-boundary/`.
 
-```powershell
-& "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -NoLogo
-```
+## Remaining Phase 0 evidence gaps
 
-If script execution policy prevents that command, use the corresponding x64
-Developer Command Prompt or invoke the script with an appropriate
-`ExecutionPolicy Bypass` option. Confirm Ninja is available:
+- Windows ARM64, macOS universal, and Linux Release evidence.
+- Remaining packaged feature editing/read-only/loading/error/warning states
+  and golden report, substitute, roster, and PowerPoint outputs; external
+  Office automation remains unexecuted in the Windows offscreen baseline.
+- Final cross-platform and feature memory trend evidence; do not treat the
+  retained legacy measurements as final `<250 MiB` acceptance or as v2 claims.
 
-```powershell
-where.exe ninja
-```
+## Git handoff
 
-From the repository root, rebuild the two required targets:
-
-```powershell
-ninja -C build/qt-rewrite-calendar-verify-ninja -j 2 ClassMngr ClassMngrStartupPerformanceTests
-```
-
-Run the focused expected-failure route with a fresh settings/output root:
-
-```powershell
-$verifyRoot = Join-Path (Get-Location) "artifacts\qt0-calendar-next"
-New-Item -ItemType Directory -Force -Path $verifyRoot | Out-Null
-$env:CLASSMNGR_TEST_APP_PATH = (Resolve-Path ".\build\qt-rewrite-calendar-verify-ninja\ClassMngr.exe").Path
-$env:CLASSMNGR_SETTINGS_ROOT = Join-Path $verifyRoot "settings"
-New-Item -ItemType Directory -Force -Path $env:CLASSMNGR_SETTINGS_ROOT | Out-Null
-$env:CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE = "1"
-$env:CLASSMNGR_LARGE_CALENDAR_IMPORT_ERROR_BOUNDARY_REFERENCE_DIR = (Resolve-Path ".\docs\qt-rewrite\visual-baseline\release\large-calendar-import-error-boundary").Path
-& ".\build\qt-rewrite-calendar-verify-ninja\ClassMngrStartupPerformanceTests.exe" capturesLargeCalendarImportBoundaryWhenConfigured
-```
-
-The expected-failure run must produce usable metrics/manifest/trace evidence,
-show the real import error, re-enable controls, preserve the unchanged-event
-invariants, omit forbidden success checkpoints, and pass the release-ordering
-and memory assertions. If it passes, clear the expected-failure opt-in and run
-the normal success route and then the full startup-performance suite. Manually
-inspect `calendar-import-error.png` before treating the Phase 0 evidence as
-accepted. Then update the Phase 0 handoff/verification documents and make the
-final evidence commit.
-
-Do not make v2 memory claims from this work. The remaining manual check is the
-visual inspection of the error screenshot; all other listed checks are
-intended to be automated once the focused route has complete inputs and output
-artifacts.
+The accepted slice is committed at `03122c62`:
+`Phase0 - Accept Calendar Import parser-failure evidence`. The worktree was
+clean after the commit. Continue Phase 0 with the remaining evidence gaps.

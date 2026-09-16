@@ -7,7 +7,7 @@
 - Depends on: None
 - Blocks: Every implementation phase
 - Owner: Unassigned
-- Last updated: 2026-09-16
+- Last updated: 2026-09-17
 - Current note: Static archaeology is recorded for commit `75755460`; runtime,
   visual, fixture, and packaged-release evidence is still being collected. A
   clean Windows x64 Debug/Ninja build and startup test now pass, and the
@@ -1242,3 +1242,24 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: continue Phase 0 with the next packaged
   Windows x64 Release Heavy-route evidence gap; do not begin v2 remediation or
   Phase 1 yet.
+
+## Progress update - 2026-09-17 (Calendar Import parser-failure boundary)
+
+- The Calendar Import parser-failure boundary is accepted for Phase 0 after a
+  fresh Ninja Release build at `build/qt-rewrite-calendar-verify-ninja` using
+  Qt `6.12.0`/x64 MSVC, with both required binaries linked. The focused route
+  passed with the expected-failure opt-in and a deterministic 69-byte malformed
+  local HTTP response; trace/metrics show the real
+  `Import failed: The downloaded spreadsheet is missing xl/workbook.xml.`
+  error, enabled Import Events, unchanged events `0 -> 0`, operation release
+  before failure observation, no forbidden success checkpoints, workflow
+  completion, and normal exit. It completed at `11,191 ms`/`12,228 ms`, with
+  `409,145,344` working-set and `452,120,576` private-usage peak bytes.
+- Evidence is retained under
+  `docs/qt-rewrite/visual-baseline/release/large-calendar-import-error-boundary/`;
+  the manifest references `large-calendar-import-workflow.json`. Manual
+  screenshot inspection and independent Tester validation passed; the
+  unchanged success route and full startup suite (Calendar opt-ins cleared)
+  also passed with exit `0`. Phase 0 remains In progress; remaining
+  cross-platform, feature-state, and generated-output evidence is still open,
+  and no Phase 1 or v2 memory acceptance follows.

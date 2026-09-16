@@ -1,25 +1,25 @@
 # Latest Session Work
 
-Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
+Qt rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. The Heavy-route
+deployment `qt0_calendar_verify_20260917` accepted the Calendar Import
+parser-failure boundary; Phase 1 must not begin yet.
 
 ## Detailed Current State
 
-- User instruction: use the Heavy route for every slice; commit each slice and
-  immediately continue unless the user asks to pause. The current final slice
-  is being committed after the 13:00 Asia/Seoul cutoff; stop immediately after
-  that commit and do not begin another slice.
+- Use the Heavy route for every slice, commit each completed slice, and do not
+  begin Phase 1 until the Phase 0 exit gate is actually satisfied.
 - The `<250 MiB` RAM value is the target for the completed rewrite, not a
   Phase 0 acceptance gate for the legacy widget graph. Phase 0 retains current
   packaged Windows x64 Release measurements as baseline/trend evidence. Later
   phases must avoid regressions and should lower the affected heavy-route
   working set. The temporary `<512 MiB` ceiling is diagnostic only.
 - Phase 0 is not complete and Phase 1 must not begin yet. Remaining gaps
-  include Sub Prep loading and other feature error states, remaining
-  generated-output references, cross-platform Release evidence, and the
-  eventual v2 memory/ownership remediation. Populated Classes visual states are
-  now retained for both language/theme axes.
+  include remaining feature loading/error states, generated-output references,
+  cross-platform Release evidence, and the eventual v2 memory/ownership
+  remediation. Populated Classes visual states are retained for both
+  language/theme axes.
 - The CMake configuration cleanup deployment is complete and independent of the
-  uncommitted Calendar Import slice. Multi-config generators are limited to
+  accepted Calendar Import slice. Multi-config generators are limited to
   `Debug;Release`; Debug/Release test intent is explicit; non-QML test targets
   skip unnecessary import scanning; active Qt references are all 6.12.0; and
   only the empty root-generated `CMakeFiles/` residue was removed. The tracked
@@ -36,22 +36,8 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   real `Import failed:`/re-enabled Import Events state, unchanged event count,
   failure/release trace, and error screenshot. The current source/test delta is
   in `src/main.cpp` and `tests/startup_performance_tests.cpp` only.
-- Verification blocker for that attempt: the preset Release build stopped
-  before compilation with MSBuild/FileTracker
-  `System.UnauthorizedAccessException`; the existing Ninja Release cache then
-  failed before project compilation because MSVC could not find `type_traits`
-  and `limits`; the x64 Visual Studio developer shell was located at
-  `C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\Launch-VsDevShell.ps1`,
-  but the explicit Ninja reconfigure was interrupted before producing a usable
-  cache or executable. No fresh error artifacts or runtime results exist.
-- Current automation attempt — deployment `qt0_calendar_verify_20260916` —
-  invoked the installed x64 developer shell and an explicit new Ninja Release
-  configure with `BUILD_TESTING=ON`. CMake emitted only the known optional
-  Vulkan/Qt6SerialPort notices before the configure was stopped after it
-  stalled during Qt/QML target generation. The tree contains only partial
-  metadata/compiler probes; no `ClassMngr.exe`, startup test executable,
-  focused route, full suite, or fresh artifact exists. The five modified files
-  remain uncommitted.
+- Earlier automation attempt — deployment `qt0_calendar_verify_20260916` —
+  was superseded by the fresh Ninja Release verification described below.
 - Compile repair and runtime verification: `tests/startup_performance_tests.cpp`
   now uses a `const char*` environment selector and no longer redeclares
   `diagnosticError`; the fresh Ninja Release app/test targets compile and link.
@@ -146,17 +132,18 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   `360,960,000`/`402,731,008` bytes.
 - `git diff --check` passed before the slice commit.
 
-- Current stop point: the Calendar Import expected-failure harness now guards
-  the two normal-path screenshot assertions when that route is selected. The
-  latest focused attempt still stopped before completion because the required
-  workflow/metrics evidence was incomplete. The diagnostic error-boundary
-  files and device handoff are preserved in commit `a8cccb35`; this is not an
-  acceptance claim.
+- Current accepted point: the Calendar Import expected-failure harness guards
+  the normal-path screenshot assertions, captures the error after scrolling the
+  Import section into view, and restores the prior position. Fresh Release
+  evidence is complete and the retained error screenshot was manually
+  inspected. The focused success route and opt-in-cleared full suite passed.
 
 ## Pending Work and Blockers
 
-- Work is paused for device transfer. The only required manual verification
-  after the focused route passes is inspection of the retained error screenshot.
+- Phase 0 remains active for remaining feature loading/error states,
+  generated-output coverage, cross-platform Release evidence, and the eventual
+  v2 ownership/memory work. The Calendar Import failure boundary is no longer a
+  blocker.
 - `.codex_workflow_staging_1.1.17/` is ignored workflow state. The durable
   `agent_docs/` context is tracked; preserve it for reboot/resume context.
 - Do not run native Office automation unless a suitable platform/environment
@@ -164,17 +151,12 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
 
 ## Next Entry Point
 
-After reboot, start by reading `QT-REWRITE-HANDOFF.md`, this file, and checking:
+On the next session, start by reading `QT-REWRITE-HANDOFF.md`, this file, and checking:
 
 ```powershell
 git status --short
 git log -6 --oneline
 ```
 
-Then inspect the Phase 0 baseline/plan tail and the committed Calendar Import
-diff. Rebuild the fresh Ninja Release targets, rerun the focused expected-
-failure route with a fresh settings/output root, and confirm that complete
-metrics/manifest/trace evidence is produced. If it passes, clear the opt-in,
-rerun the normal success route and full startup suite, manually inspect the
-retained error screenshot, and update the Phase 0 verification documents. Do
-not start Phase 1 or make v2 memory claims.
+Then inspect the Phase 0 baseline/plan tail and continue with the next Phase 0
+evidence gap. Do not start Phase 1 or make v2 memory claims.

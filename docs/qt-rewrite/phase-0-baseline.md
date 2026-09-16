@@ -392,6 +392,31 @@ does not recreate or rely on them.
   fixtures, per-variant metrics/traces, and manifest are under
   `docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/`.
 
+## Progress update - 2026-09-17 (Calendar Import parser-failure boundary)
+
+- The Calendar Import parser-failure boundary is accepted for Phase 0. A
+  fresh Ninja Release configure/build completed at
+  `build/qt-rewrite-calendar-verify-ninja` with Qt `6.12.0`/x64 MSVC, linking
+  `ClassMngr` and `ClassMngrStartupPerformanceTests`.
+- The expected-failure route passed with
+  `CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE=1` and a deterministic
+  69-byte malformed local HTTP response. The manifest references
+  `large-calendar-import-workflow.json`; trace/metrics record
+  `Import failed: The downloaded spreadsheet is missing xl/workbook.xml.`,
+  Import Events re-enabled, unchanged events `0 -> 0`, operation release
+  before failure observation, absent forbidden success checkpoints, workflow
+  complete, and normal exit. It completed at `11,191 ms`/`12,228 ms`
+  (`workflow`/`settled-1s`) with peak working set/private usage of
+  `409,145,344`/`452,120,576` bytes (legacy before-state only).
+- The error screenshot was manually inspected; an independent Tester
+  confirmed both PNGs valid at `1020x735` and all checks. The unchanged
+  success route passed, and `ClassMngrStartupPerformanceTests.exe -v1` with
+  Calendar Import opt-ins cleared exited `0`. Failure evidence is under
+  `docs/qt-rewrite/visual-baseline/release/large-calendar-import-error-boundary/`;
+  normal success evidence is under the corresponding
+  `large-calendar-import-boundary/` directory. Phase 0 remains In progress;
+  no Phase 1 or v2 memory acceptance follows from this boundary.
+
 ## Fixture added in this pass
 
 `tests/fixtures/workspaces/representative_startup.sql` is the permanent,
@@ -744,16 +769,17 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution; the
-  populated Classes entry/selection/re-entry frames and Schedule Import
-  loading dialog are now retained, while the other feature states remain open.
+  populated Classes entry/selection/re-entry frames, Schedule Import loading
+  dialog, and Calendar Import parser-failure/error boundary are now retained,
+  while the other feature states remain open.
 - Remaining report/output operation measurements beyond the retained Speaking
   Evaluation, Sub Prep output, and PDF viewer paths. The Staff Directory
   load/refresh/leave/re-entry, Class Transfer package
   review/commit/release, Schedule
   Import parse/review/cancel,
   apply/commit, and cleanup artifacts plus the Calendar workbook/import
-  lifecycle are now retained; the class-transfer conflict and compact
-  schedule-workbook review fixtures are permanent.
+  lifecycle and parser-failure boundary are now retained; the class-transfer
+  conflict and compact schedule-workbook review fixtures are permanent.
 - A v2 large-workspace Sub Prep route within its eventual memory budget; the
   current route completes but exceeds the representative working-set target
   and grows from a 2,948-widget/192-editor class-information graph to

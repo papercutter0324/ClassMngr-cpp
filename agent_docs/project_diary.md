@@ -60,12 +60,18 @@
   probes/optional-component notices or missing executables as an environment
   blocker, not as evidence that the source compiles; preserve the committed
   implementation for the next clean build attempt.
-- The fresh Calendar Import runtime run proved the expected failure behavior
-  and passed the unchanged success route/full startup suite, but the failure
-  test still expected the normal-path Preferences and Calendar screenshots.
-  Because the failure controller completes before those later captures, either
-  retain those frames before completion or make their assertions conditional;
-  keep the error route's own screenshot and lifecycle assertions strict.
+- The Calendar Import parser-failure boundary uses a deterministic 69-byte
+  malformed local HTTP response. Its focused Release route must retain the
+  complete workflow/metrics/manifest/trace, prove the real parser error,
+  re-enable Import Events, preserve the event count, and omit success
+  checkpoints. The unchanged success route and the opt-in-cleared full suite
+  are separate required checks.
+- When the Calendar Import error status is below the Preferences viewport fold,
+  the evidence-only probe must move the existing Calendar-tab scroll bar to its
+  maximum before grabbing `calendar-import-error.png`, process the view update,
+  and restore the prior value. A non-empty screenshot alone is insufficient;
+  manually verify that the real error text and re-enabled Import Events control
+  are visible.
 - Multi-config CMake generators previously exposed the default
   `Debug;Release;MinSizeRel;RelWithDebInfo` set. The source-level configuration
   guard now limits them to `Debug;Release`, while single-config presets retain
@@ -78,9 +84,3 @@
   platform, and test concerns because those boundaries are active. Only the
   empty root-generated `CMakeFiles/` residue was removed; root CMake output is
   ignored, and build/dist artifacts are preserved.
-
-- The Calendar Import parser-failure continuation was paused for device
-  transfer after the normal-path screenshot assertions were made conditional.
-  A focused run still lacked complete workflow/metrics evidence. Preserve the
-  diagnostic artifact set and treat it as unaccepted until the focused route,
-  success route, full suite, and error-screenshot inspection are complete.
