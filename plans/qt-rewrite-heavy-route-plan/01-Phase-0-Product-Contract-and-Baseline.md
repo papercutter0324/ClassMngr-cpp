@@ -906,3 +906,41 @@ No v2 feature work begins without a fixture and an acceptance check.
   references, per-resource decoded/resident lifecycle traces, and
   cross-platform evidence. Continue with the next heavy operation while
   retaining all prior artifacts; do not begin v2 remediation yet.
+
+## Progress update - 2026-09-16 (large Sub Prep output lifecycle retention)
+
+- What changed: the heavy-route harness now composes the actual packaged
+  Windows x64 Release Sub Prep page lifecycle with its real generation dialog,
+  package service, PDF outputs, first-page decoding, and release boundary. The
+  in-process Qt controller configures and captures the modal dialog and watches
+  for product warning dialogs, so this slice remains runnable without native
+  desktop automation.
+- Fixture/evidence: the test retains the 96-class, 7,200-cell workspace while
+  using a valid By Day output schedule with 30 selected classes distributed
+  one-per-slot across five weekdays and six supported times. Roster columns
+  are normalized to the service's English/Korean output contract so the
+  generated reference is populated. The child exited normally and retained
+  the dialog capture, two generated PDFs, two decoded first-page PNGs, the
+  generated `.tps` fixture, manifest, trace, and profiler report under
+  `docs/qt-rewrite/visual-baseline/release/large-sub-prep-output-boundary/`.
+- Evidence: the real route generated the Sub Prep document and By Day roster
+  PDFs, totaling two documents, 17 pages, and `139,650` bytes. First-page
+  decoding totaled `17,399,680` bytes. Output start/generated/release
+  checkpoints were `7,965`/`9,024`/`9,060 ms`; the full route reached
+  `workflow-complete` at `11,442 ms` and `settled-1s` at `12,472 ms`. The
+  output boundary measured `489,000,960` working-set bytes and
+  `480,849,920` private-usage bytes at generation; output failure and
+  operation-retention flags were false after release, with
+  `livePdfDocumentCount=0`.
+- Evaluation impact: this closes the actual packaged Sub Prep generated-output
+  before-state and the corresponding PDF decode/release evidence required by
+  the Memory Hotspot Remediation Plan. It does not set a v2 budget or prove
+  remediation. The valid By Day fixture is deliberate: the unmodified
+  96-class schedule correctly rejects overlapping By Day slots, so the output
+  oracle preserves that product validation instead of bypassing it.
+- Decision and next heavy slice: keep Phase 0 open for Sub Prep selected/
+  changed/empty/language/theme visual states, explicit Release thresholds,
+  remaining report/substitute/PowerPoint output references, per-resource
+  decoded/resident lifecycle traces, and cross-platform Release evidence.
+  Continue with the next heavy Phase 0 slice; do not begin v2 remediation or
+  Phase 1 yet.

@@ -680,6 +680,14 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.staffDirectoryGsReentryCount
         },
         {
+            QStringLiteral("subPrepOutputPdfCount"),
+            metrics.subPrepOutputPdfCount
+        },
+        {
+            QStringLiteral("subPrepOutputPageCount"),
+            metrics.subPrepOutputPageCount
+        },
+        {
             QStringLiteral("scheduleImportRawBytesRetained"),
             metrics.scheduleImportRawBytesRetained
         },
@@ -726,6 +734,14 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("staffDirectoryGsTextBytes"),
             static_cast<double>(metrics.staffDirectoryGsTextBytes)
+        },
+        {
+            QStringLiteral("subPrepOutputPdfBytes"),
+            static_cast<double>(metrics.subPrepOutputPdfBytes)
+        },
+        {
+            QStringLiteral("subPrepOutputDecodedFirstPageBytes"),
+            static_cast<double>(metrics.subPrepOutputDecodedFirstPageBytes)
         },
         {
             QStringLiteral("calendarImportRawBytesRetained"),
@@ -810,6 +826,14 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("staffDirectoryGsOperationRetained"),
             metrics.staffDirectoryGsOperationRetained
+        },
+        {
+            QStringLiteral("subPrepOutputDocumentsRetained"),
+            metrics.subPrepOutputDocumentsRetained
+        },
+        {
+            QStringLiteral("subPrepOutputOperationRetained"),
+            metrics.subPrepOutputOperationRetained
         },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
@@ -961,6 +985,22 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("staffDirectoryOperationsReleased"),
             static_cast<double>(metrics.staffDirectoryOperationsReleased)
+        },
+        {
+            QStringLiteral("subPrepOutputOperationsStarted"),
+            static_cast<double>(metrics.subPrepOutputOperationsStarted)
+        },
+        {
+            QStringLiteral("subPrepOutputOperationsGenerated"),
+            static_cast<double>(metrics.subPrepOutputOperationsGenerated)
+        },
+        {
+            QStringLiteral("subPrepOutputOperationsFailed"),
+            static_cast<double>(metrics.subPrepOutputOperationsFailed)
+        },
+        {
+            QStringLiteral("subPrepOutputOperationsReleased"),
+            static_cast<double>(metrics.subPrepOutputOperationsReleased)
         },
         {QStringLiteral("pdfDocumentsLoaded"), static_cast<double>(metrics.pdfDocumentsLoaded)},
         {QStringLiteral("pdfDocumentsReleased"), static_cast<double>(metrics.pdfDocumentsReleased)},
@@ -1280,6 +1320,112 @@ void StartupProfiler::recordPdfDocumentRendered(
                     QString::number(width),
                     QString::number(height)
                     )
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputOperationStarted(
+    const QString& targetRoot
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.subPrepOutputOperationsStarted;
+        metrics.subPrepOutputOperationRetained = true;
+        const QString detail =
+            QStringLiteral("targetRoot=%1").arg(targetRoot);
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-operation-start"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-operation-start %1").arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-operation-start"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputGenerated(
+    int pdfCount,
+    int pageCount,
+    qint64 pdfBytes,
+    qint64 decodedFirstPageBytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        ++metrics.subPrepOutputOperationsGenerated;
+        metrics.subPrepOutputPdfCount = qMax(0, pdfCount);
+        metrics.subPrepOutputPageCount = qMax(0, pageCount);
+        metrics.subPrepOutputPdfBytes = qMax<qint64>(0, pdfBytes);
+        metrics.subPrepOutputDecodedFirstPageBytes =
+            qMax<qint64>(0, decodedFirstPageBytes);
+        metrics.subPrepOutputDocumentsRetained = true;
+        const QString detail =
+            QStringLiteral(
+                "pdfs=%1; pages=%2; pdfBytes=%3; decodedFirstPageBytes=%4"
+                )
+                .arg(metrics.subPrepOutputPdfCount)
+                .arg(metrics.subPrepOutputPageCount)
+                .arg(metrics.subPrepOutputPdfBytes)
+                .arg(metrics.subPrepOutputDecodedFirstPageBytes);
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-generated"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-generated %1").arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-generated"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputFailed(const QString& detail)
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.subPrepOutputOperationsFailed;
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-failed"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-failed %1").arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-failed"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputOperationReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        ++profiler->m_scheduleMetrics.subPrepOutputOperationsReleased;
+        profiler->m_scheduleMetrics.subPrepOutputOperationRetained = false;
+        profiler->m_scheduleMetrics.subPrepOutputDocumentsRetained = false;
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-operation-released"),
+            QStringLiteral("documentsRetained=false")
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral(
+                "sub-prep-output-operation-released documentsRetained=false"
+                )
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-operation-released"),
+            QStringLiteral("documentsRetained=false")
             );
     }
 }

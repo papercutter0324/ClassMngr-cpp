@@ -171,6 +171,8 @@ struct StartupApplicationMetrics
     int staffDirectoryGsPageWidgetCount = 0;
     int staffDirectoryGsRefreshCount = 0;
     int staffDirectoryGsReentryCount = 0;
+    int subPrepOutputPdfCount = 0;
+    int subPrepOutputPageCount = 0;
     qint64 scheduleImportRawWorkbookBytes = 0;
     qint64 calendarImportRawWorkbookBytes = 0;
     qint64 classTransferRawJsonBytes = 0;
@@ -181,6 +183,8 @@ struct StartupApplicationMetrics
     qint64 speakingEvalExportArchiveBytes = 0;
     qint64 staffDirectoryNativeTextBytes = 0;
     qint64 staffDirectoryGsTextBytes = 0;
+    qint64 subPrepOutputPdfBytes = 0;
+    qint64 subPrepOutputDecodedFirstPageBytes = 0;
     bool scheduleImportRawBytesRetained = false;
     bool scheduleImportWorkbookRetained = false;
     bool scheduleImportReviewRetained = false;
@@ -205,6 +209,8 @@ struct StartupApplicationMetrics
     bool staffDirectoryGsTableRetained = false;
     bool staffDirectoryNativeOperationRetained = false;
     bool staffDirectoryGsOperationRetained = false;
+    bool subPrepOutputDocumentsRetained = false;
+    bool subPrepOutputOperationRetained = false;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -248,6 +254,10 @@ struct StartupApplicationMetrics
     quint64 staffDirectoryReentries = 0;
     quint64 staffDirectoryOperationsFailed = 0;
     quint64 staffDirectoryOperationsReleased = 0;
+    quint64 subPrepOutputOperationsStarted = 0;
+    quint64 subPrepOutputOperationsGenerated = 0;
+    quint64 subPrepOutputOperationsFailed = 0;
+    quint64 subPrepOutputOperationsReleased = 0;
     quint64 pdfDocumentsLoaded = 0;
     quint64 pdfDocumentsReleased = 0;
     quint64 pdfRenderCount = 0;
@@ -539,6 +549,15 @@ public:
         const QString& detail
         );
     static void recordStaffDirectoryOperationReleased(bool nativeDirectory);
+    static void recordSubPrepOutputOperationStarted(const QString& targetRoot);
+    static void recordSubPrepOutputGenerated(
+        int pdfCount,
+        int pageCount,
+        qint64 pdfBytes,
+        qint64 decodedFirstPageBytes
+        );
+    static void recordSubPrepOutputFailed(const QString& detail);
+    static void recordSubPrepOutputOperationReleased();
 
 private:
     void recordEvent(

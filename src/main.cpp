@@ -32,6 +32,8 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
+#include "features/sub_prep/services/sub_prep_package_service.h"
+#include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
@@ -48,17 +50,20 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDir>
+#include <QDirIterator>
 #include <QDialog>
 #include <QEvent>
 #include <QFile>
 #include <QFileInfo>
 #include <QIcon>
+#include <QImage>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QPdfDocument>
 #include <QPointer>
 #include <QPlainTextEdit>
 #include <QProgressBar>
@@ -72,6 +77,7 @@
 #include <QDebug>
 
 #include <functional>
+#include <algorithm>
 #include <memory>
 #include <optional>
 
@@ -117,6 +123,7 @@ struct StartupPerformanceMode
     bool speakingEvaluationLifecycleEnabled = false;
     bool staffDirectoryLifecycleEnabled = false;
     bool subPrepLifecycleEnabled = false;
+    bool subPrepOutputLifecycleEnabled = false;
     enum class Scenario
     {
         Minimal,
@@ -214,6 +221,363 @@ bool saveStartupPdfCapture(
     }
 
     return true;
+}
+
+struct StartupGeneratedPdfSummary
+{
+    bool valid = false;
+    QString error;
+    QStringList pdfPaths;
+    int pageCount = 0;
+    qint64 pdfBytes = 0;
+    qint64 decodedFirstPageBytes = 0;
+};
+
+StartupGeneratedPdfSummary inspectStartupGeneratedPdfs(
+    const QString& outputRoot
+    )
+{
+    StartupGeneratedPdfSummary summary;
+    QDirIterator iterator(
+        outputRoot,
+        {QStringLiteral("*.pdf")},
+        QDir::Files,
+        QDirIterator::Subdirectories
+        );
+    while (iterator.hasNext())
+    {
+        summary.pdfPaths.append(iterator.next());
+    }
+
+    std::sort(summary.pdfPaths.begin(), summary.pdfPaths.end());
+    for (int index = 0; index < summary.pdfPaths.size(); ++index)
+    {
+        const QString& pdfPath = summary.pdfPaths.at(index);
+        QPdfDocument document;
+        const QPdfDocument::Error loadError = document.load(pdfPath);
+        if (
+            loadError != QPdfDocument::Error::None
+            || document.status() != QPdfDocument::Status::Ready
+            || document.pageCount() <= 0
+            )
+        {
+            summary.error =
+                QStringLiteral("generated-pdf-load-failed: %1").arg(pdfPath);
+            return summary;
+        }
+
+        const QSizeF pagePoints = document.pagePointSize(0);
+        const QSize renderSize(
+            std::max(1, qRound(pagePoints.width() * 150.0 / 72.0)),
+            std::max(1, qRound(pagePoints.height() * 150.0 / 72.0))
+            );
+        const QImage firstPage = document.render(0, renderSize);
+        if (firstPage.isNull())
+        {
+            summary.error =
+                QStringLiteral("generated-pdf-render-failed: %1").arg(pdfPath);
+            return summary;
+        }
+
+        const QString capturePath =
+            QDir(outputRoot).filePath(
+                QStringLiteral("generated-output-%1-first-page.png")
+                    .arg(index + 1)
+                );
+        if (!firstPage.save(capturePath, "PNG"))
+        {
+            summary.error =
+                QStringLiteral("generated-pdf-capture-failed: %1")
+                    .arg(capturePath);
+            return summary;
+        }
+
+        summary.pageCount += document.pageCount();
+        summary.pdfBytes += QFileInfo(pdfPath).size();
+        summary.decodedFirstPageBytes +=
+            static_cast<qint64>(firstPage.sizeInBytes());
+    }
+
+    if (summary.pdfPaths.isEmpty())
+    {
+        summary.error = QStringLiteral("generated-pdf-output-empty");
+        return summary;
+    }
+
+    summary.valid = true;
+    return summary;
+}
+
+void scheduleStartupPerformanceSubPrepOutputLifecycle(
+    QApplication& app,
+    SubPrepPage* page,
+    StartupProfiler& profiler,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    const QString targetRoot =
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_TARGET_ROOT"
+            ).trimmed();
+    if (targetRoot.isEmpty())
+    {
+        *workflowSucceeded = false;
+        StartupProfiler::recordSubPrepOutputFailed(
+            QStringLiteral("target-root-not-configured")
+            );
+        StartupProfiler::recordSubPrepOutputOperationReleased();
+        completion();
+        return;
+    }
+
+    if (!QDir().mkpath(targetRoot))
+    {
+        *workflowSucceeded = false;
+        StartupProfiler::recordSubPrepOutputFailed(
+            QStringLiteral("target-root-create-failed: %1").arg(targetRoot)
+            );
+        StartupProfiler::recordSubPrepOutputOperationReleased();
+        completion();
+        return;
+    }
+
+    StartupProfiler::recordSubPrepOutputOperationStarted(targetRoot);
+    const auto dialogAccepted = std::make_shared<bool>(false);
+    const auto generationWarning = std::make_shared<QString>();
+    const auto controllerStopped = std::make_shared<bool>(false);
+    const auto controllerAttempts = std::make_shared<int>(0);
+    const auto controller =
+        std::make_shared<std::function<void()>>();
+    *controller =
+        [
+            &app,
+            targetRoot,
+            dialogAccepted,
+            generationWarning,
+            controllerStopped,
+            controllerAttempts,
+            controller
+        ]()
+    {
+        if (*controllerStopped)
+        {
+            return;
+        }
+
+        if (*dialogAccepted)
+        {
+            QMessageBox* warning =
+                qobject_cast<QMessageBox*>(
+                    QApplication::activeModalWidget()
+                    );
+            if (!warning)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    if (widget->isVisible())
+                    {
+                        warning = qobject_cast<QMessageBox*>(widget);
+                        if (warning)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (warning)
+            {
+                const QString detail =
+                    QStringLiteral("generation-warning title=%1; text=%2")
+                        .arg(
+                            warning->windowTitle().simplified(),
+                            warning->text().simplified()
+                            );
+                *generationWarning = detail;
+                StartupProfiler::recordSubPrepOutputFailed(detail);
+                warning->reject();
+                *controllerStopped = true;
+                return;
+            }
+        }
+
+        SubPrepPrintDialog* dialog = nullptr;
+        if (!*dialogAccepted)
+        {
+            dialog =
+                qobject_cast<SubPrepPrintDialog*>(
+                    QApplication::activeModalWidget()
+                    );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    dialog = qobject_cast<SubPrepPrintDialog*>(widget);
+                    if (dialog)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!dialog)
+        {
+            ++*controllerAttempts;
+            const int maxAttempts = *dialogAccepted ? 6000 : 100;
+            if (*controllerAttempts < maxAttempts)
+            {
+                QTimer::singleShot(
+                    10,
+                    &app,
+                    [controller]()
+                    {
+                        (*controller)();
+                    }
+                    );
+            }
+            return;
+        }
+
+        if (QLineEdit* targetEdit =
+                dialog->findChild<QLineEdit*>(
+                    QStringLiteral("subPrepTargetFolderEdit")
+                    ))
+        {
+            targetEdit->setText(targetRoot);
+        }
+        if (QLineEdit* nameEdit =
+                dialog->findChild<QLineEdit*>(
+                    QStringLiteral("subPrepUserNameEdit")
+                    ))
+        {
+            nameEdit->setText(QStringLiteral("Phase 0 Heavy"));
+        }
+        if (QCheckBox* createFolderCheck =
+                dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepCreateFolderCheckBox")
+                    ))
+        {
+            createFolderCheck->setChecked(true);
+        }
+        if (QCheckBox* openFolderCheck =
+                dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepOpenFolderCheckBox")
+                    ))
+        {
+            openFolderCheck->setChecked(false);
+        }
+        if (QCheckBox* printPaperCheck =
+                dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepPrintPaperCopiesCheckBox")
+                    ))
+        {
+            printPaperCheck->setChecked(false);
+        }
+        for (QCheckBox* dayCheck : dialog->findChildren<QCheckBox*>())
+        {
+            if (!dayCheck->property("day").toString().isEmpty())
+            {
+                dayCheck->setChecked(true);
+            }
+        }
+
+        const QPixmap dialogCapture = dialog->grab();
+        if (
+            dialogCapture.isNull()
+            || !dialogCapture.save(
+                QDir(targetRoot).filePath(
+                    QStringLiteral("sub-prep-output-dialog.png")
+                    ),
+                "PNG"
+                )
+            )
+        {
+            StartupProfiler::recordSubPrepOutputFailed(
+                QStringLiteral("output-dialog-capture-failed")
+                );
+            dialog->reject();
+            return;
+        }
+
+        dialog->accept();
+        *dialogAccepted = true;
+        *controllerAttempts = 0;
+        QTimer::singleShot(
+            10,
+            &app,
+            [controller]()
+            {
+                (*controller)();
+            }
+            );
+    };
+
+    QTimer::singleShot(
+        0,
+        &app,
+        [controller]()
+        {
+            (*controller)();
+        }
+        );
+
+    if (!QMetaObject::invokeMethod(
+            page,
+            "generateSubPrep",
+            Qt::DirectConnection
+            ))
+    {
+        *workflowSucceeded = false;
+        StartupProfiler::recordSubPrepOutputFailed(
+            QStringLiteral("generate-invoke-failed")
+            );
+        StartupProfiler::recordSubPrepOutputOperationReleased();
+        completion();
+        return;
+    }
+
+    *controllerStopped = true;
+
+    if (!generationWarning->isEmpty())
+    {
+        *workflowSucceeded = false;
+        StartupProfiler::recordSubPrepOutputOperationReleased();
+        completion();
+        return;
+    }
+
+    if (!*dialogAccepted)
+    {
+        *workflowSucceeded = false;
+        StartupProfiler::recordSubPrepOutputFailed(
+            QStringLiteral("output-dialog-not-accepted")
+            );
+        StartupProfiler::recordSubPrepOutputOperationReleased();
+        completion();
+        return;
+    }
+
+    const StartupGeneratedPdfSummary summary =
+        inspectStartupGeneratedPdfs(targetRoot);
+    if (!summary.valid)
+    {
+        *workflowSucceeded = false;
+        StartupProfiler::recordSubPrepOutputFailed(summary.error);
+        StartupProfiler::recordSubPrepOutputOperationReleased();
+        completion();
+        return;
+    }
+
+    StartupProfiler::recordSubPrepOutputGenerated(
+        summary.pdfPaths.size(),
+        summary.pageCount,
+        summary.pdfBytes,
+        summary.decodedFirstPageBytes
+        );
+    StartupProfiler::recordSubPrepOutputOperationReleased();
+    completion();
 }
 
 void scheduleStartupPerformancePdfLifecycle(
@@ -592,10 +956,17 @@ StartupPerformanceMode startupPerformanceMode(
         args.contains(
             QStringLiteral("--startup-performance-staff-directory-lifecycle")
             );
+    mode.subPrepOutputLifecycleEnabled =
+        args.contains(
+            QStringLiteral(
+                "--startup-performance-sub-prep-output-lifecycle"
+                )
+            );
     mode.subPrepLifecycleEnabled =
         args.contains(
             QStringLiteral("--startup-performance-sub-prep-lifecycle")
-            );
+            )
+        || mode.subPrepOutputLifecycleEnabled;
     mode.enabled =
         mode.enabled
         || mode.workflowEnabled
@@ -607,7 +978,8 @@ StartupPerformanceMode startupPerformanceMode(
         || mode.classTransferLifecycleEnabled
         || mode.speakingEvaluationLifecycleEnabled
         || mode.staffDirectoryLifecycleEnabled
-        || mode.subPrepLifecycleEnabled;
+        || mode.subPrepLifecycleEnabled
+        || mode.subPrepOutputLifecycleEnabled;
 
     const int outputIndex =
         args.indexOf(
@@ -2189,6 +2561,7 @@ void scheduleStartupPerformanceSubPrepLifecycle(
     MainWindow& window,
     StartupProfiler& profiler,
     const std::shared_ptr<bool>& workflowSucceeded,
+    bool outputLifecycleEnabled,
     std::function<void()> completion
     )
 {
@@ -2200,6 +2573,7 @@ void scheduleStartupPerformanceSubPrepLifecycle(
             &window,
             &profiler,
             workflowSucceeded,
+            outputLifecycleEnabled,
             completion
         ]()
         {
@@ -2386,6 +2760,23 @@ void scheduleStartupPerformanceSubPrepLifecycle(
             {
                 *workflowSucceeded = false;
             }
+
+            if (lifecycleSucceeded && outputLifecycleEnabled)
+            {
+                scheduleStartupPerformanceSubPrepOutputLifecycle(
+                    app,
+                    page,
+                    profiler,
+                    workflowSucceeded,
+                    [completion]()
+                    {
+                        StartupProfiler::setSubPrepDiagnosticsActive(false);
+                        completion();
+                    }
+                    );
+                return;
+            }
+
             StartupProfiler::setSubPrepDiagnosticsActive(false);
             completion();
         }
@@ -3599,6 +3990,7 @@ void scheduleStartupPerformanceWorkflow(
     bool speakingEvaluationLifecycleEnabled,
     bool staffDirectoryLifecycleEnabled,
     bool subPrepLifecycleEnabled,
+    bool subPrepOutputLifecycleEnabled,
     std::function<void()> completion
     )
 {
@@ -3623,6 +4015,7 @@ void scheduleStartupPerformanceWorkflow(
             speakingEvaluationLifecycleEnabled,
             staffDirectoryLifecycleEnabled,
             subPrepLifecycleEnabled,
+            subPrepOutputLifecycleEnabled,
             pageTypes,
             pageIndex,
             runNextPage,
@@ -4011,6 +4404,7 @@ void scheduleStartupPerformanceWorkflow(
                 window,
                 profiler,
                 workflowSucceeded,
+                subPrepOutputLifecycleEnabled,
                 [
                     &app,
                     pageIndex,
@@ -4143,6 +4537,14 @@ bool writeStartupPerformanceMetrics(
         scenarioActions.append(
             QStringLiteral(
                 "exercise large Sub Prep selection, refresh, leave, and repeated re-entry"
+                )
+        );
+    }
+    if (mode.subPrepOutputLifecycleEnabled)
+    {
+        scenarioActions.append(
+            QStringLiteral(
+                "exercise the real heavy Sub Prep generation dialog, PDF outputs, first-page decoding, and release"
                 )
             );
     }
@@ -4722,6 +5124,7 @@ int main(int argc, char *argv[])
                 startupPerformance.speakingEvaluationLifecycleEnabled,
                 startupPerformance.staffDirectoryLifecycleEnabled,
                 startupPerformance.subPrepLifecycleEnabled,
+                startupPerformance.subPrepOutputLifecycleEnabled,
                 scheduleSettledCompletion
                 );
             return;

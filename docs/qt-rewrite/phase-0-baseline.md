@@ -289,6 +289,25 @@ does not recreate or rely on them.
   remain true, documenting the current page-manager retention boundary. This
   is the Staff Directory current-product before-state, not a v2 operation
   budget.
+- The packaged Release heavy-route Sub Prep output run composes the 96-class
+  selection/lifecycle boundary with the actual generation dialog and package
+  service. A valid By Day output fixture selects 30 classes across the five
+  weekdays and six supported time slots, while retaining the 96-class workspace
+  load and 7,200-cell roster payload. The in-process Qt automation captures the
+  configured dialog, accepts the real modal flow, generates two PDFs (the
+  Sub Prep document and By Day roster) totaling 17 pages and `139,650` bytes,
+  then reopens both documents and renders their first pages at 150 DPI. Output
+  operation start/generated/release checkpoints were `7,965`/`9,024`/`9,060 ms`;
+  decoded first-page bytes totaled `17,399,680`. The output operation peaked at
+  `489,000,960` working-set bytes and `480,849,920` private-usage bytes, and
+  the full route reached `workflow-complete` at `11,442 ms` and `settled-1s`
+  at `12,472 ms`. Output failure/operation-retention flags were clear after
+  release and `livePdfDocumentCount` was zero. The retained dialog, PDFs,
+  first-page captures, generated fixture, trace, manifest, and profiler report
+  are under
+  `docs/qt-rewrite/visual-baseline/release/large-sub-prep-output-boundary/`.
+  This is current-product generated-output before-state evidence, not a v2
+  memory budget.
 - Reviewable Release artifacts are retained at
   `docs/qt-rewrite/visual-baseline/release/empty/` and
   `docs/qt-rewrite/visual-baseline/release/representative/`, with the large
@@ -305,9 +324,10 @@ does not recreate or rely on them.
   reference directories.
 - The packaged-configuration Sub Prep output reference is retained under
   `docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/`. It
-  contains the 96-class-scale `Sub Prep.pdf` and Daily roster PDF, their
-  first-page PNGs, and a manifest with document sizes, page counts, and render
-  dimensions.
+  contains the direct service-level 96-class-scale `Sub Prep.pdf` and Daily
+  roster PDF, their first-page PNGs, and a manifest with document sizes, page
+  counts, and render dimensions. The actual packaged UI/output boundary is
+  retained separately under the large Sub Prep output directory above.
 
 ## Fixture added in this pass
 
@@ -326,12 +346,14 @@ intensive slot states, 7,200 roster cells, 20 speaking evaluations with 600
 evaluation rows, three campuses, and 180 calendar events. The focused startup
 test validates its integrity and row counts after materialization.
 
-The heavy Sub Prep output slot mirrors the large fixture's 24 teachers, 96
-classes, and 7,200 roster cells in an operation-scoped package request. The
-current output oracle generates a 19-page Sub Prep PDF and a 16-page Daily
-roster PDF, then reopens and renders the first page of each before accepting
-the package. This isolates generated-output behavior from the current large
-route's high-memory UI boundary while keeping the same stress cardinality.
+The direct heavy Sub Prep output slot mirrors the large fixture's 24 teachers,
+96 classes, and 7,200 roster cells in an operation-scoped package request. The
+direct output oracle generates a 19-page Sub Prep PDF and a 16-page Daily
+roster PDF, then reopens and renders the first page of each. The separate
+packaged UI/output boundary drives the real dialog and package path against a
+96-class workspace, with 30 valid By Day selections, and retains its generated
+PDFs and decoded first-page captures under
+`docs/qt-rewrite/visual-baseline/release/large-sub-prep-output-boundary/`.
 
 `tests/fixtures/workspaces/legacy_startup.sql` is a partial schema-version-zero
 `.db` source. The startup test materializes it, runs the current schema manager,
@@ -568,6 +590,14 @@ The test retains the generated fixture, two directory PNGs, `manifest.json`,
 profiler JSON, process logs, and flushed workflow trace. The test is opt-in
 because it intentionally drives the large directory memory boundary.
 
+Set `CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR` while running
+`capturesLargeSubPrepOutputBoundaryWhenConfigured` to run the actual packaged
+Release Sub Prep generation dialog and package output path. The test retains
+the valid large-workspace output fixture, configured dialog capture, generated
+Sub Prep and By Day PDFs, decoded first-page PNGs, `manifest.json`, profiler
+JSON, process logs, and flushed workflow trace. The test is opt-in because it
+intentionally drives the large Sub Prep generation/output memory boundary.
+
 For an empty workspace:
 
 ```powershell
@@ -608,8 +638,9 @@ store the JSON startup trace beside the PNG files.
 - Windows ARM64, macOS universal, and Linux Release baselines.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution.
-- PDF/report operation measurements. The Speaking Evaluation batch, Staff
-  Directory load/refresh/leave/re-entry, Class Transfer package
+- Remaining PDF/report operation measurements beyond the retained Speaking
+  Evaluation and Sub Prep output paths. The Staff Directory
+  load/refresh/leave/re-entry, Class Transfer package
   review/commit/release, Schedule
   Import parse/review/cancel,
   apply/commit, and cleanup artifacts plus the Calendar workbook/import
@@ -626,6 +657,7 @@ store the JSON startup trace beside the PNG files.
 - Sub Prep visual references for the selected, changed-selection, empty, both
   language/theme, and generated-output states, plus an explicit packaged
   Release memory budget for the v2 acceptance gate.
-- Golden generated reports, rosters, substitute documents, and PowerPoint
-  output beyond the retained heavy Sub Prep PDF/package reference.
+- Golden generated reports, substitute documents, additional roster variants,
+  and PowerPoint output beyond the retained heavy Sub Prep PDF/package
+  references.
 - Per-resource decoded/resident sizes and page/object lifecycle traces.
