@@ -27,10 +27,10 @@ Schedule Import slice.
 ## Current Position
 
 The last accepted slice remains the large Schedule Import conflict-warning
-reference at commit `ecb88af0`. The next proposed slice adds a packaged
-Calendar Import parser-failure reference, but it is currently uncommitted and
-unverified in `src/main.cpp` and `tests/startup_performance_tests.cpp`. Phase 1
-has not started. Fresh Ninja Release compilation now succeeds, and the
+reference at commit `ecb88af0`. The Calendar Import parser-failure
+implementation is committed at `ded8b5dc`, but its focused acceptance test
+still fails and the slice remains unaccepted. Phase 1 has not started. Fresh
+Ninja Release compilation now succeeds, and the
 unchanged Calendar Import success route plus the full startup suite pass. The
 expected-failure route still fails its test harness at line 9493 because the
 failure path completes before `calendar-import-preferences.png` and

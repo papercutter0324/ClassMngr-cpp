@@ -58,8 +58,8 @@
   standard headers, and a correctly initialized Visual Studio shell still did
   not finish CMake generation even with `BUILD_TESTING=ON`. Treat compiler
   probes/optional-component notices or missing executables as an environment
-  blocker, not as evidence that the source compiles; preserve the uncommitted
-  diff for the next clean build attempt.
+  blocker, not as evidence that the source compiles; preserve the committed
+  implementation for the next clean build attempt.
 - The fresh Calendar Import runtime run proved the expected failure behavior
   and passed the unchanged success route/full startup suite, but the failure
   test still expected the normal-path Preferences and Calendar screenshots.

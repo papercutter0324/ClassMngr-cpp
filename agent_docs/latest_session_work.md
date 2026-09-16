@@ -28,7 +28,8 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
 ## Session Changes
 
 - Current continuation attempt — `Calendar Import parser-failure reference`
-  remains uncommitted and unverified. The proposed opt-in route is selected by
+  is committed at `ded8b5dc` but remains unaccepted pending focused verification.
+  The proposed opt-in route is selected by
   `CLASSMNGR_STARTUP_CALENDAR_IMPORT_EXPECTED_FAILURE=1` and writes to
   `CLASSMNGR_LARGE_CALENDAR_IMPORT_ERROR_BOUNDARY_REFERENCE_DIR`; it uses a
   deterministic malformed local HTTP response and is intended to retain the
@@ -62,7 +63,9 @@ Qt rewrite Phase 0 is still in progress on branch `Qt-Rewrite`.
   completes before the normal-path Preferences/page captures. The unchanged
   success variant passed (`3 passed, 0 failed`, 394.92 MiB peak), the full
   startup suite passed (`11 passed, 0 failed, 14 skipped`), and
-  `git diff --check` passed. No commit was made.
+  `git diff --check` passed. The five tracked source/test/handoff files were
+  committed at `ded8b5dc`; the generated error-boundary directory remains
+  uncommitted pending the focused-route repair.
 
 - `b5c1a8a1` — `Phase 0: retain PowerPoint renderer reference`
   - Added a real Speaking Evaluation export-dialog PowerPoint renderer
@@ -160,7 +163,7 @@ git status --short
 git log -6 --oneline
 ```
 
-Then inspect the Phase 0 baseline/plan tail and the uncommitted Calendar Import
+Then inspect the Phase 0 baseline/plan tail and the committed Calendar Import
 diff. Repair the expected-failure artifact timing/conditional assertions,
 rerun that focused route, and manually inspect the retained error screenshot.
 The success variant and full startup suite already pass against fresh Ninja
