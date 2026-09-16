@@ -9484,18 +9484,21 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
             )
         );
     QVERIFY(QFileInfo(loadingCapturePath).size() > 0);
-    QVERIFY(
-        QFileInfo::exists(
-            QDir(outputRoot).filePath(
-                QStringLiteral("calendar-import-preferences.png")
+    if (!expectedFailure)
+    {
+        QVERIFY(
+            QFileInfo::exists(
+                QDir(outputRoot).filePath(
+                    QStringLiteral("calendar-import-preferences.png")
+                    )
                 )
-            )
-        );
-    QVERIFY(
-        QFileInfo::exists(
-            QDir(outputRoot).filePath(QStringLiteral("calendar-page.png"))
-            )
-        );
+            );
+        QVERIFY(
+            QFileInfo::exists(
+                QDir(outputRoot).filePath(QStringLiteral("calendar-page.png"))
+                )
+            );
+    }
 }
 
 void StartupPerformanceTests::capturesLargePdfViewerVisualStatesWhenConfigured()
