@@ -2544,6 +2544,71 @@ void scheduleStartupPerformanceSpeakingEvaluationLifecycle(
                         ),
                     "PNG"
                     );
+                QComboBox* rendererSelector =
+                    dialog.findChild<QComboBox*>(
+                        QStringLiteral("speakingEvalBatchRenderer")
+                        );
+                const int powerPointIndex = rendererSelector
+                    ? rendererSelector->findData(
+                        static_cast<int>(
+                            SpeakingEvalBatchReportService::Renderer::PowerPoint
+                            )
+                        )
+                    : -1;
+                if (powerPointIndex >= 0)
+                {
+                    rendererSelector->setCurrentIndex(powerPointIndex);
+                    app.processEvents();
+                    const QPixmap powerPointCapture = dialog.grab();
+                    if (
+                        powerPointCapture.isNull()
+                        || !powerPointCapture.save(
+                            QDir(outputRoot).filePath(
+                                QStringLiteral(
+                                    "speaking-evaluation-powerpoint-renderer.png"
+                                    )
+                                ),
+                            "PNG"
+                            )
+                        )
+                    {
+                        fail(
+                            QStringLiteral(
+                                "speaking-evaluation-powerpoint-capture-failed"
+                                )
+                            );
+                        return;
+                    }
+                    profiler.checkpoint(
+                        QStringLiteral(
+                            "speaking-evaluation-powerpoint-renderer-ready"
+                            ),
+                        QStringLiteral(
+                            "renderer=PowerPoint; externalAutomation=not-run"
+                            )
+                        );
+                    const int internalIndex = rendererSelector->findData(
+                        static_cast<int>(
+                            SpeakingEvalBatchReportService::Renderer::Internal
+                            )
+                        );
+                    if (internalIndex >= 0)
+                    {
+                        rendererSelector->setCurrentIndex(internalIndex);
+                        app.processEvents();
+                    }
+                }
+                else
+                {
+                    profiler.checkpoint(
+                        QStringLiteral(
+                            "speaking-evaluation-powerpoint-renderer-unavailable"
+                            ),
+                        QStringLiteral(
+                            "renderer=PowerPoint; externalAutomation=not-run"
+                            )
+                        );
+                }
                 dialog.reject();
                 app.processEvents();
                 StartupProfiler::recordSpeakingEvaluationExportDialogReleased();

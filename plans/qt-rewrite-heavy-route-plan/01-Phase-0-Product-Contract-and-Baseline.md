@@ -1068,3 +1068,26 @@ No v2 feature work begins without a fixture and an acceptance check.
 - Decision and next heavy slice: retain the five viewer captures and lifecycle
   metrics as the document-viewer parity oracle and continue with the next
   heavy Phase 0 evidence gap; do not begin v2 remediation or Phase 1 yet.
+
+## Progress update - 2026-09-16 (large Speaking Evaluation PowerPoint renderer reference)
+
+- What changed: the heavy-route harness now exposes the real Speaking
+  Evaluation export dialog's PowerPoint renderer option through an object name
+  and captures the selected renderer state in-process. The route records a
+  ready checkpoint with `externalAutomation=not-run`; it deliberately does not
+  invoke external Office automation from the Windows offscreen test process.
+- Heavy-route evidence: the packaged Windows x64 Release route ran the full
+  96-class Speaking Evaluation workflow, retained the renderer-selection
+  screenshot alongside the existing PDF/archive and report/AI captures, and
+  completed normally. The retained manifest records
+  `powerPointRendererVisualReference=true` and
+  `powerPointAutomationExecuted=false`.
+- Evaluation impact: the renderer choice and fallback-warning UI are now part
+  of the current-product output oracle, while the platform-specific external
+  automation path remains an explicit evidence gap. This slice does not set a
+  v2 output budget or implement the PowerPoint rewrite path.
+- Decision and next heavy slice: keep Phase 0 open for platform-specific
+  Office automation/cross-platform evidence, remaining generated-output and
+  feature-state references, and the final memory trend record. Continue with
+  the next heavy Phase 0 evidence gap; do not begin v2 remediation or Phase 1
+  yet.

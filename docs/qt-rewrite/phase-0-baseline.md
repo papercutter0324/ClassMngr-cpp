@@ -122,8 +122,9 @@ does not recreate or rely on them.
   The PDF trace opened and rendered the 38-page Lesson Planning Guide twice,
   released it between opens, and ended with zero live PDF documents. Working
   set was `249,663,488` bytes with a `259,137,536`-byte peak; peak private
-  usage was `297,848,832` bytes. This remains below the 250 MiB Windows
-  working-set target but is a tighter regression boundary than the route-only
+  usage was `297,848,832` bytes. Both working-set samples remain below the
+  final 250 MiB target; this is observational trend evidence, not a Phase 0
+  acceptance gate, and it is a tighter regression boundary than the route-only
   run.
 - Five-minute idle Release workflow: the same heavy route and PDF cycle
   completed `workflow-complete` at `8,846 ms` and `settled-5m` at
@@ -269,6 +270,9 @@ does not recreate or rely on them.
   25 PDFs, archive, trace, manifest, process logs, and profiler report are
   under
   `docs/qt-rewrite/visual-baseline/release/large-speaking-evaluation-boundary/`.
+  The retained UI set now includes the PowerPoint renderer-selection reference;
+  the external Office automation itself was not executed in this Windows
+  offscreen run and remains platform-specific evidence for a later slice.
   This is the current-product speaking batch before-state, not a v2 operation
   budget.
 - The packaged Release heavy-route Staff Directory run adds 96 deterministic
@@ -628,10 +632,12 @@ Set `CLASSMNGR_LARGE_SPEAKING_EVALUATION_BOUNDARY_REFERENCE_DIR` while running
 `capturesLargeSpeakingEvaluationBoundaryWhenConfigured` to augment the
 96-class workspace and run the actual packaged Release Speaking Evaluation
 page, report review, AI batch review, PDF export, cleanup, and refresh path.
-The test retains the augmented fixture, four UI captures, individual PDFs and
-archive, `manifest.json`, profiler JSON, process logs, and flushed workflow
-trace. The test is opt-in because it intentionally drives the large
-speaking-report/output memory boundary.
+The test retains the augmented fixture, five UI captures (including the
+PowerPoint renderer-selection reference), individual PDFs and archive,
+`manifest.json`, profiler JSON, process logs, and flushed workflow trace. The
+reference proves the renderer option and fallback warning are present; it does
+not execute external Office automation. The test is opt-in because it
+intentionally drives the large speaking-report/output memory boundary.
 
 Set `CLASSMNGR_LARGE_STAFF_DIRECTORY_BOUNDARY_REFERENCE_DIR` while running
 `capturesLargeStaffDirectoryBoundaryWhenConfigured` to add the deterministic
@@ -709,8 +715,10 @@ store the JSON startup trace beside the PNG files.
   and other states beyond the now-retained selected, changed-selection, empty,
   both-language/theme, and generated-output references.
 - Golden generated reports, substitute documents, additional roster variants,
-  and PowerPoint output beyond the retained heavy Sub Prep PDF/package
-  references.
+  and PowerPoint output beyond the retained Speaking Evaluation PDF/archive
+  and PowerPoint renderer-selection reference. The actual external Office
+  automation path remains platform-specific and is not exercised by this
+  Windows offscreen baseline.
 - Remaining feature page/object lifecycle traces beyond the retained heavy
   workflow boundaries; per-resource payload, decoded-image, PDF/PPTX deferral,
   and resource-pack lease traces are now retained.

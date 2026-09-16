@@ -5976,6 +5976,14 @@ void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigu
         checkpointNamed(
             QStringLiteral("speaking-evaluation-export-dialog-prepared")
             );
+    const QJsonObject powerPointRendererCheckpoint =
+        checkpointNamed(
+            QStringLiteral("speaking-evaluation-powerpoint-renderer-ready")
+            );
+    const QJsonObject powerPointUnavailableCheckpoint =
+        checkpointNamed(
+            QStringLiteral("speaking-evaluation-powerpoint-renderer-unavailable")
+            );
     const QJsonObject exportCheckpoint =
         checkpointNamed(QStringLiteral("speaking-evaluation-export-complete"));
     const QJsonObject aiCheckpoint =
@@ -5997,6 +6005,10 @@ void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigu
     QVERIFY(!reportCheckpoint.isEmpty());
     QVERIFY(!reportDialogCheckpoint.isEmpty());
     QVERIFY(!exportDialogCheckpoint.isEmpty());
+    QVERIFY(
+        powerPointRendererCheckpoint.isEmpty()
+            != powerPointUnavailableCheckpoint.isEmpty()
+        );
     QVERIFY(!exportCheckpoint.isEmpty());
     QVERIFY(!aiCheckpoint.isEmpty());
     QVERIFY(!responseCheckpoint.isEmpty());
@@ -6253,6 +6265,18 @@ void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigu
                 QStringLiteral("Expected Speaking Evaluation capture is missing: %1")
                     .arg(imageName)
                 )
+        );
+    }
+    if (!powerPointRendererCheckpoint.isEmpty())
+    {
+        QVERIFY(
+            QFileInfo(
+                QDir(outputRoot).filePath(
+                    QStringLiteral(
+                        "speaking-evaluation-powerpoint-renderer.png"
+                        )
+                    )
+                ).size() > 0
             );
     }
 
@@ -6278,6 +6302,11 @@ void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigu
             LargeSpeakingEvaluationClassCount * LargeSpeakingEvaluationRowCount
         },
         {QStringLiteral("selectedBatchReportCount"), LargeSpeakingEvaluationRowCount},
+        {
+            QStringLiteral("powerPointRendererVisualReference"),
+            !powerPointRendererCheckpoint.isEmpty()
+        },
+        {QStringLiteral("powerPointAutomationExecuted"), false},
         {QStringLiteral("processFinished"), finished},
         {
             QStringLiteral("exitStatus"),
