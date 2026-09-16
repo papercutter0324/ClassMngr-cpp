@@ -10,6 +10,13 @@ supported-platform Phase 0 exit gate and remaining evidence are complete.
 
 ## Current Deployment Handoff
 
+- Merge reconciliation completed in local merge commit `7a9cb3c` (parents
+  `875159da` and `e7d05f4c`). All 17 intended paths are included; the Tester
+  confirmed no unresolved paths or conflict markers. The merge remains local;
+  nothing was pushed.
+- `git diff-tree --check`, `cmake --list-presets`, and
+  `cmake -P cmake/platform/deployment.cmake` passed. The check host was
+  Windows; the macOS 14.4 runtime was not directly exercised.
 - Product support scope: packaged Windows x64 and macOS universal remain
   supported Phase 0 targets. Per the user's decision, Windows ARM64 and Linux
   are unofficial ports deferred to later and are not Phase 0 blockers.

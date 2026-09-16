@@ -3,7 +3,8 @@
 Active deployment plan: automate and complete the Qt rewrite Phase 0
 baseline/evidence work using the heavy route, with one commit per completed
 slice. Current automation deployment: `qt0_evidence_automation_20260917`.
-Current merge reconciliation deployment: `qt0_merge_conflicts_20260917`.
+Current merge reconciliation deployment: `qt0_merge_conflicts_20260917`
+(completed locally in `7a9cb3c`; not pushed).
 
 ## Goal
 
