@@ -13,22 +13,24 @@ is not a Phase 0 acceptance gate for the legacy widget graph.
 ## Overall Progress
 
 The packaged Windows x64 Release heavy route has retained startup, lifecycle,
-resource-trace, PDF-viewer, Sub Prep, Speaking Evaluation, import, transfer,
-staff-directory, and generated-output evidence. Recent slices added a
-Speaking Evaluation PowerPoint renderer-selection reference and a Sub Prep
-output-dialog validation-error reference. Each focused route and the full
-startup-performance suite passed.
+resource-trace, PDF-viewer, Sub Prep, Classes, Speaking Evaluation, import,
+transfer, staff-directory, and generated-output evidence. Recent slices added
+a Speaking Evaluation PowerPoint renderer-selection reference, a Sub Prep
+output-dialog validation-error reference, a Sub Prep editing/read-only
+reference, and populated Classes visual references across English/Korean and
+light/dark variants. Each focused route and the full startup-performance suite
+passed for the current committed Classes visual slice.
 
 ## Current Position
 
-Current position is the open Phase 0 evidence gap after the Sub Prep
-validation-dialog slice. Phase 1 has not started. The current route remains a
-legacy before-state measurement; later phases must avoid regressions and
-should lower the affected heavy-route working set.
+Current position is the open Phase 0 evidence gap after committed slice
+`630f61b`. Phase 1 has not started. The current route remains a legacy
+before-state measurement; later phases must avoid regressions and should lower
+the affected heavy-route working set.
 
 ## Next Milestone
 
 Resume with the next packaged Windows x64 Release heavy-route slice, preferably
-Sub Prep editing/read-only/loading or another explicitly open visual/output
+Schedule Import loading-state evidence or another explicitly open visual/output
 gap. Run the focused heavy route, the full startup-performance suite, and
 commit the slice before continuing.

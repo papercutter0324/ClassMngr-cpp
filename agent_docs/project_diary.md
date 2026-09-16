@@ -28,3 +28,9 @@
   retained artifacts, verify the exact path and grant the normal Git identity
   read access only to that generated evidence folder; do not discard the
   generated PDFs.
+- For packaged feature visuals, an opt-in environment variable on an existing
+  Heavy-route lifecycle keeps the production path unchanged while allowing
+  in-process screenshots after real selection and re-entry operations. The
+  Classes visual slice uses `CLASSMNGR_STARTUP_CLASSES_VISUAL_OUTPUT_DIR` and
+  retains four language/theme variants; it records capture success in the same
+  startup profile as the lifecycle assertions.
