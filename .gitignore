@@ -63,3 +63,10 @@ artifacts/
 .agents/
 .codex/
 .codex_workflow_hidden_resources/
+
+# codex-workflow-managed-start
+AGENTS.md
+# codex-workflow-managed-end
+
+# Local codex-workflow update staging
+.codex_workflow_staging_*/
