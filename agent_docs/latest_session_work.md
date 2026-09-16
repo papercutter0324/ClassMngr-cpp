@@ -1,8 +1,9 @@
 # Latest Session Work
 
-Qt rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. The Heavy-route
-deployment `qt0_calendar_verify_20260917` accepted the Calendar Import
-parser-failure boundary; Phase 1 must not begin yet.
+Qt rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. The latest
+completed slice is the macOS universal Release baseline at a 14.4 deployment
+target. The accepted Calendar Import parser-failure boundary remains recorded
+below; Phase 1 must not begin yet.
 
 ## Detailed Current State
 
@@ -15,7 +16,7 @@ parser-failure boundary; Phase 1 must not begin yet.
   working set. The temporary `<512 MiB` ceiling is diagnostic only.
 - Phase 0 is not complete and Phase 1 must not begin yet. Remaining gaps
   include remaining feature loading/error states, generated-output references,
-  cross-platform Release evidence, and the eventual v2 memory/ownership
+  Windows ARM64 and Linux Release evidence, and the eventual v2 memory/ownership
   remediation. Populated Classes visual states are retained for both
   language/theme axes.
 - The CMake configuration cleanup deployment is complete and independent of the
@@ -24,6 +25,34 @@ parser-failure boundary; Phase 1 must not begin yet.
   skip unnecessary import scanning; active Qt references are all 6.12.0; and
   only the empty root-generated `CMakeFiles/` residue was removed. The tracked
   `cmake/` modules, `build/`, and `dist/` were preserved.
+
+## Latest Slice: macOS Universal Release Baseline (2026-09-17)
+
+- The macOS deployment minimum is now 14.4 in the configure preset and build
+  documentation, matching the selected universal Qt 6.12.0 kit.
+- Release packaging no longer moves SQL drivers out of the external Qt kit;
+  it removes unwanted SQL plugins only from the app bundle and re-signs after
+  deployment. The release validator checks both architectures and minimum OS
+  versions for every embedded Mach-O.
+- A clean universal Release build produced
+  `dist/ClassMngr-0.19.0-macos-universal.dmg`. The staged app reports 14.4 in
+  both `Info.plist` and the main executable; all 115 bundled Mach-O files are
+  arm64/x86_64 and target no later than 14.4. Signature and disk-image
+  checksums passed; `libqsqlite.dylib` is the only bundled SQL driver.
+- The packaged app ran on macOS 26.6.2 through empty startup and a 96-class,
+  12-route workflow including two PDF render/release cycles. Fresh universal
+  Debug startup-performance and dialog-services CTest targets passed with a
+  14.4 deployment target.
+- Evidence, profiles, trace, screenshots, DMG hash, and host/toolchain details
+  are in `docs/qt-rewrite/visual-baseline/macos-universal/release/`. The empty
+  startup profile is retained without its screenshot because that frame
+  exposes seeded campus Wi-Fi credentials. The minimum macOS 14.4 runtime was
+  not directly exercised on this macOS 26.6.2 host.
+- The large `.tps` workflow can write workspace state on exit. Its final run
+  used a byte-identical temporary copy; the tracked source fixture was restored
+  to its baseline and remains unchanged.
+- Overall Phase 0 remains in progress. Next platform baselines are Windows
+  ARM64 and Linux; remaining feature-state/output evidence also stays open.
 
 ## Session Changes
 
@@ -80,7 +109,7 @@ parser-failure boundary; Phase 1 must not begin yet.
   import button, and a non-empty screenshot. The focused route and full
   startup-performance suite passed with a `416,694,272`-byte working-set and
   `457,310,208`-byte private-usage peak.
-- Final current-session slice — `Phase 0: retain Schedule Import conflict
+- Previously completed slice — `Phase 0: retain Schedule Import conflict
   warning` (commit created after the cutoff): the packaged large Schedule
   Import cancel route now retains the real conflict-warning modal, including
   visible warning text, disabled Import, and a validated screenshot. The
@@ -135,9 +164,9 @@ parser-failure boundary; Phase 1 must not begin yet.
 ## Pending Work and Blockers
 
 - Phase 0 remains active for remaining feature loading/error states,
-  generated-output coverage, cross-platform Release evidence, and the eventual
-  v2 ownership/memory work. The Calendar Import failure boundary is no longer a
-  blocker.
+  generated-output coverage, Windows ARM64 and Linux Release evidence, and the
+  eventual v2 ownership/memory work. The Calendar Import failure boundary is
+  no longer a blocker.
 - `.codex_workflow_staging_1.1.17/` is ignored workflow state. The durable
   `agent_docs/` context is tracked; preserve it for reboot/resume context.
 - Do not run native Office automation unless a suitable platform/environment

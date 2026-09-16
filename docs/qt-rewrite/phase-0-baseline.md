@@ -766,7 +766,8 @@ store the JSON startup trace beside the PNG files.
   `visual-baseline/release/workflow-five-minute/`, and the Sub Prep, Classes,
   and Speaking Evaluation lifecycle boundaries are retained under their
   large-fixture directories.
-- Windows ARM64, macOS universal, and Linux Release baselines.
+- Windows ARM64 and Linux Release baselines. The macOS universal Release
+  baseline is retained below.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution; the
   populated Classes entry/selection/re-entry frames, Schedule Import loading
@@ -799,3 +800,43 @@ store the JSON startup trace beside the PNG files.
 - Remaining feature page/object lifecycle traces beyond the retained heavy
   workflow boundaries; per-resource payload, decoded-image, PDF/PPTX deferral,
   and resource-pack lease traces are now retained.
+
+## macOS universal Release baseline (2026-09-17)
+
+The universal Release app and versioned DMG were rebuilt after setting the
+macOS deployment minimum to 14.4. The Qt 6.12.0 kit used here also targets
+14.4. A release validation pass inspected every embedded Mach-O: all 115
+contained both `arm64` and `x86_64` slices and none requires a newer macOS
+version. The staged app declares `LSMinimumSystemVersion=14.4`, its main binary
+has a 14.4 minimum, its code signature verifies, and only `libqsqlite.dylib`
+is present in the SQL plugin directory. The disk image checksum verified.
+
+Build host: macOS 26.6.2, Apple Silicon arm64, Xcode 26.6 / AppleClang 21.0.0,
+CMake 4.3.3, Ninja 1.13.2, and Qt 6.12.0 universal (`arm64;x86_64`). The clean
+Release installer build used `macos-clang-release-installer`; the universal
+Debug startup and dialog test targets were configured at the same 14.4
+deployment target. The packaged app was exercised on this host, not on a
+macOS 14.4 machine.
+
+Empty-workspace startup completed in 2,906 ms with a 235,356,160-byte working
+set, 237,273,088-byte peak working set, and 123,815,016-byte macOS physical
+footprint. The populated 96-class startup completed in 3,137 ms at
+235,470,848 bytes working set, then the complete 12-route workflow completed
+in 9,407 ms. Its peak working set was 508,624,896 bytes; at the workflow
+checkpoint it retained 9,678 widgets and all 11 registered pages. The route
+performed 96 Sub Prep class-information, teacher, and roster lookups; loaded,
+rendered, and released two PDFs; and returned to My Workspace. At the 1-second
+settled checkpoint, the working set was 505,069,568 bytes and the physical
+footprint was 402,179,512 bytes. These are legacy before-state measurements,
+not v2 memory acceptance results.
+
+Retained artifacts are in
+`docs/qt-rewrite/visual-baseline/macos-universal/release/`: the
+`manifest.json`, empty-startup profile, and 96-class workflow profile, trace,
+startup frame, and settled frame. The empty-startup frame was not retained
+because the initial setup page displays prefilled campus Wi-Fi credentials.
+The 96-class source fixture is shared with the existing
+`release/large-classes-visual-states/` fixture. The verified DMG SHA-256 is
+`6ebc6d71e7fb9188d606999b6ab5e479e14422ca9e133126527c8ca2adf653ec`.
+For reproduction, copy that `.tps` fixture before launching the workflow: the
+application writes workspace state on exit.

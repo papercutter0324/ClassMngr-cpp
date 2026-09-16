@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 QT_PREFIX="${QT_MACOS_PREFIX:-}"
 PRESET="macos-clang-release"
+TARGET_MINIMUM_VERSION="14.4"
 
 if [[ -z "${QT_PREFIX}" ]]; then
     echo "QT_MACOS_PREFIX must point at a Qt macOS installation." >&2
@@ -67,10 +68,72 @@ MINIMUM_VERSIONS="$(
         | awk '/minos/ { print $2 }' \
         | sort -u
 )"
-if [[ "${MINIMUM_VERSIONS}" != "13.0" ]]; then
-    echo "Expected a macOS 13.0 deployment target, found: ${MINIMUM_VERSIONS}" >&2
+if [[ "${MINIMUM_VERSIONS}" != "${TARGET_MINIMUM_VERSION}" ]]; then
+    echo "Expected a macOS ${TARGET_MINIMUM_VERSION} deployment target, found: ${MINIMUM_VERSIONS}" >&2
     exit 1
 fi
+
+PLIST_MINIMUM_VERSION="$(
+    plutil -extract LSMinimumSystemVersion raw "${STAGED_APP}/Contents/Info.plist"
+)"
+if [[ "${PLIST_MINIMUM_VERSION}" != "${TARGET_MINIMUM_VERSION}" ]]; then
+    echo "Expected LSMinimumSystemVersion ${TARGET_MINIMUM_VERSION}, found: ${PLIST_MINIMUM_VERSION}" >&2
+    exit 1
+fi
+
+MACH_O_COUNT=0
+while IFS= read -r -d '' BINARY; do
+    if [[ "$(file -b "${BINARY}")" != *"Mach-O"* ]]; then
+        continue
+    fi
+
+    BINARY_ARCHITECTURES="$(lipo -archs "${BINARY}")"
+    if [[ " ${BINARY_ARCHITECTURES} " != *" arm64 "* \
+        || " ${BINARY_ARCHITECTURES} " != *" x86_64 "* ]]; then
+        echo "Expected a universal arm64/x86_64 bundle binary, found ${BINARY_ARCHITECTURES}: ${BINARY}" >&2
+        exit 1
+    fi
+
+    if ! BINARY_MINIMUM_VERSIONS="$(
+        xcrun vtool -show-build "${BINARY}" \
+            | awk '/minos/ { print $2 }' \
+            | sort -u
+    )"; then
+        echo "Unable to inspect the minimum OS version of: ${BINARY}" >&2
+        exit 1
+    fi
+    if [[ -z "${BINARY_MINIMUM_VERSIONS}" ]]; then
+        echo "No minimum OS version found for bundle binary: ${BINARY}" >&2
+        exit 1
+    fi
+
+    while IFS= read -r BINARY_MINIMUM_VERSION; do
+        if awk -F. -v found="${BINARY_MINIMUM_VERSION}" -v target="${TARGET_MINIMUM_VERSION}" '
+            BEGIN {
+                split(found, actual_parts, ".")
+                split(target, target_parts, ".")
+                if ((actual_parts[1] + 0) > (target_parts[1] + 0)
+                    || ((actual_parts[1] + 0) == (target_parts[1] + 0)
+                        && (actual_parts[2] + 0) > (target_parts[2] + 0))) {
+                    exit 0
+                }
+                exit 1
+            }
+        '; then
+            echo "Bundle binary requires macOS ${BINARY_MINIMUM_VERSION}, newer than ${TARGET_MINIMUM_VERSION}: ${BINARY}" >&2
+            exit 1
+        fi
+    done <<< "${BINARY_MINIMUM_VERSIONS}"
+
+    ((MACH_O_COUNT += 1))
+done < <(find "${STAGED_APP}/Contents" -type f -print0)
+
+if (( MACH_O_COUNT == 0 )); then
+    echo "No Mach-O binaries were found in the staged app: ${STAGED_APP}" >&2
+    exit 1
+fi
+
+echo "Validated ${MACH_O_COUNT} universal bundle binaries for macOS ${TARGET_MINIMUM_VERSION} compatibility."
 
 for driver in libqsqlmimer.dylib libqsqlodbc.dylib libqsqlpsql.dylib; do
     if [[ -e "${STAGED_APP}/Contents/PlugIns/sqldrivers/${driver}" ]]; then

@@ -8,7 +8,7 @@
   when `BUILD_TESTING` is enabled.
 - Supported build targets described by the presets are Windows x64/ARM64,
   Linux GCC, and a macOS universal `arm64;x86_64` bundle targeting macOS
-  13.0 or newer.
+  14.4 or newer.
 
 ## Frameworks and Libraries
 
