@@ -2,18 +2,30 @@
     "classCount": 96,
     "emptyFixturePath": "generated-large-sub-prep-empty.tps",
     "emptyState": {
+        "finalNormalWorkingSetTargetPass": false,
         "metricsPath": "empty/metrics.json",
         "outputDirectory": "empty",
-        "tracePath": "empty/workflow-trace.txt"
+        "peakWorkingSetBytes": 292638720,
+        "tracePath": "empty/workflow-trace.txt",
+        "transientDiagnosticCeilingPass": true
     },
     "fixture": "large_startup.sql",
     "fixturePath": "generated-large-sub-prep-visual.tps",
     "fixtureScale": "large_sub_prep_visual_states",
+    "memoryBudgets": {
+        "comparator": "strictly-less-than",
+        "finalNormalWorkingSetTargetBytes": 262144000,
+        "finalTargetPhase": "phase-9",
+        "phase0Role": "baseline-and-trend",
+        "primaryMetric": "windows-working-set",
+        "transientDiagnosticCeilingBytes": 536870912
+    },
     "rosterCellCount": 7200,
     "scenario": "96-class Sub Prep selected, changed-selection, empty, and language/theme visual states",
     "teacherCount": 24,
     "variants": [
         {
+            "finalNormalWorkingSetTargetPass": false,
             "language": "english",
             "metricsPath": "english-light/metrics.json",
             "name": "english-light",
@@ -23,19 +35,21 @@
                 "capturedAt": "",
                 "checkpointSampleCount": 71,
                 "handleCount": 297,
-                "pagefileUsageBytes": 452378624,
-                "peakWorkingSetBytes": 410849280,
+                "pagefileUsageBytes": 451784704,
+                "peakWorkingSetBytes": 409714688,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 452378624,
-                "privateWorkingSetBytes": 342499328,
+                "privateUsageBytes": 451784704,
+                "privateWorkingSetBytes": 341356544,
                 "threadCount": 16,
-                "workingSetBytes": 409907200
+                "workingSetBytes": 408768512
             },
             "theme": "light",
-            "tracePath": "english-light/workflow-trace.txt"
+            "tracePath": "english-light/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
         },
         {
+            "finalNormalWorkingSetTargetPass": false,
             "language": "english",
             "metricsPath": "english-dark/metrics.json",
             "name": "english-dark",
@@ -45,19 +59,21 @@
                 "capturedAt": "",
                 "checkpointSampleCount": 71,
                 "handleCount": 297,
-                "pagefileUsageBytes": 452399104,
-                "peakWorkingSetBytes": 410288128,
+                "pagefileUsageBytes": 452153344,
+                "peakWorkingSetBytes": 410603520,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 452399104,
-                "privateWorkingSetBytes": 342016000,
+                "privateUsageBytes": 452153344,
+                "privateWorkingSetBytes": 342323200,
                 "threadCount": 16,
-                "workingSetBytes": 409346048
+                "workingSetBytes": 409661440
             },
             "theme": "dark",
-            "tracePath": "english-dark/workflow-trace.txt"
+            "tracePath": "english-dark/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
         },
         {
+            "finalNormalWorkingSetTargetPass": false,
             "language": "korean",
             "metricsPath": "korean-light/metrics.json",
             "name": "korean-light",
@@ -67,19 +83,21 @@
                 "capturedAt": "",
                 "checkpointSampleCount": 71,
                 "handleCount": 275,
-                "pagefileUsageBytes": 452415488,
-                "peakWorkingSetBytes": 409038848,
+                "pagefileUsageBytes": 452460544,
+                "peakWorkingSetBytes": 409145344,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 452415488,
-                "privateWorkingSetBytes": 342315008,
+                "privateUsageBytes": 452460544,
+                "privateWorkingSetBytes": 342421504,
                 "threadCount": 16,
-                "workingSetBytes": 408096768
+                "workingSetBytes": 408203264
             },
             "theme": "light",
-            "tracePath": "korean-light/workflow-trace.txt"
+            "tracePath": "korean-light/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
         },
         {
+            "finalNormalWorkingSetTargetPass": false,
             "language": "korean",
             "metricsPath": "korean-dark/metrics.json",
             "name": "korean-dark",
@@ -89,17 +107,18 @@
                 "capturedAt": "",
                 "checkpointSampleCount": 71,
                 "handleCount": 275,
-                "pagefileUsageBytes": 451743744,
-                "peakWorkingSetBytes": 408436736,
+                "pagefileUsageBytes": 452374528,
+                "peakWorkingSetBytes": 409120768,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 451743744,
-                "privateWorkingSetBytes": 341725184,
+                "privateUsageBytes": 452374528,
+                "privateWorkingSetBytes": 342409216,
                 "threadCount": 16,
-                "workingSetBytes": 407502848
+                "workingSetBytes": 408186880
             },
             "theme": "dark",
-            "tracePath": "korean-dark/workflow-trace.txt"
+            "tracePath": "korean-dark/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
         }
     ]
 }

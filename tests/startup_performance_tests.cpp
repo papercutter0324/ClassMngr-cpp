@@ -40,6 +40,10 @@ namespace
 constexpr int StartupTimeoutMs = 60000;
 constexpr int SubPrepOutputTimeoutMs = 180000;
 constexpr int SubPrepVisualTimeoutMs = 120000;
+constexpr qint64 Phase0FinalNormalWorkingSetTargetBytes =
+    250LL * 1024LL * 1024LL;
+constexpr qint64 Phase0TransientDiagnosticCeilingBytes =
+    512LL * 1024LL * 1024LL;
 constexpr int LargeClassTransferTeacherCount = 12;
 constexpr int LargeClassTransferClassCount = 48;
 constexpr int LargeClassTransferRosterColumnCount = 6;
@@ -7692,6 +7696,25 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
             qPrintable(parseError.errorString())
             );
         const QJsonObject report = metricsDocument.object();
+        const qint64 peakWorkingSetBytes = static_cast<qint64>(
+            report.value(QStringLiteral("peakMemory"))
+                .toObject()
+                .value(QStringLiteral("peakWorkingSetBytes"))
+                .toDouble()
+            );
+        const bool withinFinalNormalWorkingSetTarget =
+            peakWorkingSetBytes < Phase0FinalNormalWorkingSetTargetBytes;
+        const bool withinTransientDiagnosticCeiling =
+            peakWorkingSetBytes < Phase0TransientDiagnosticCeilingBytes;
+        QVERIFY2(
+            withinTransientDiagnosticCeiling,
+            qPrintable(
+                QStringLiteral(
+                    "Legacy Sub Prep visual route exceeded the Phase 0 transient diagnostic ceiling: %1 bytes."
+                    )
+                    .arg(peakWorkingSetBytes)
+                )
+            );
         QVERIFY(
             report.value(QStringLiteral("workflow"))
                 .toObject()
@@ -7785,7 +7808,9 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 {QStringLiteral("outputDirectory"), variantName},
                 {QStringLiteral("metricsPath"), variantName + QStringLiteral("/metrics.json")},
                 {QStringLiteral("tracePath"), variantName + QStringLiteral("/workflow-trace.txt")},
-                {QStringLiteral("peakMemory"), report.value(QStringLiteral("peakMemory"))}
+                {QStringLiteral("peakMemory"), report.value(QStringLiteral("peakMemory"))},
+                {QStringLiteral("finalNormalWorkingSetTargetPass"), withinFinalNormalWorkingSetTarget},
+                {QStringLiteral("transientDiagnosticCeilingPass"), withinTransientDiagnosticCeiling}
             }
             );
     }
@@ -7906,6 +7931,25 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
         qPrintable(emptyParseError.errorString())
         );
     const QJsonObject emptyReport = emptyDocument.object();
+    const qint64 emptyPeakWorkingSetBytes = static_cast<qint64>(
+        emptyReport.value(QStringLiteral("peakMemory"))
+            .toObject()
+            .value(QStringLiteral("peakWorkingSetBytes"))
+            .toDouble()
+        );
+    const bool emptyWithinFinalNormalWorkingSetTarget =
+        emptyPeakWorkingSetBytes < Phase0FinalNormalWorkingSetTargetBytes;
+    const bool emptyWithinTransientDiagnosticCeiling =
+        emptyPeakWorkingSetBytes < Phase0TransientDiagnosticCeilingBytes;
+    QVERIFY2(
+        emptyWithinTransientDiagnosticCeiling,
+        qPrintable(
+            QStringLiteral(
+                "Legacy Sub Prep empty visual route exceeded the Phase 0 transient diagnostic ceiling: %1 bytes."
+                )
+                .arg(emptyPeakWorkingSetBytes)
+            )
+        );
     const QJsonObject emptyCheckpoint =
         checkpointNamed(
             emptyReport,
@@ -7950,13 +7994,42 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
         {QStringLiteral("classCount"), 96},
         {QStringLiteral("teacherCount"), 24},
         {QStringLiteral("rosterCellCount"), 7200},
+        {
+            QStringLiteral("memoryBudgets"),
+            QJsonObject{
+                {
+                    QStringLiteral("finalNormalWorkingSetTargetBytes"),
+                    static_cast<double>(Phase0FinalNormalWorkingSetTargetBytes)
+                },
+                {
+                    QStringLiteral("transientDiagnosticCeilingBytes"),
+                    static_cast<double>(Phase0TransientDiagnosticCeilingBytes)
+                },
+                {QStringLiteral("comparator"), QStringLiteral("strictly-less-than")},
+                {
+                    QStringLiteral("primaryMetric"),
+                    QStringLiteral("windows-working-set")
+                },
+                {
+                    QStringLiteral("phase0Role"),
+                    QStringLiteral("baseline-and-trend")
+                },
+                {
+                    QStringLiteral("finalTargetPhase"),
+                    QStringLiteral("phase-9")
+                }
+            }
+        },
         {QStringLiteral("variants"), variantManifest},
         {
             QStringLiteral("emptyState"),
             QJsonObject{
                 {QStringLiteral("outputDirectory"), QStringLiteral("empty")},
                 {QStringLiteral("metricsPath"), QStringLiteral("empty/metrics.json")},
-                {QStringLiteral("tracePath"), QStringLiteral("empty/workflow-trace.txt")}
+                {QStringLiteral("tracePath"), QStringLiteral("empty/workflow-trace.txt")},
+                {QStringLiteral("peakWorkingSetBytes"), static_cast<double>(emptyPeakWorkingSetBytes)},
+                {QStringLiteral("finalNormalWorkingSetTargetPass"), emptyWithinFinalNormalWorkingSetTarget},
+                {QStringLiteral("transientDiagnosticCeilingPass"), emptyWithinTransientDiagnosticCeiling}
             }
         },
         {QStringLiteral("fixturePath"), QStringLiteral("generated-large-sub-prep-visual.tps")},

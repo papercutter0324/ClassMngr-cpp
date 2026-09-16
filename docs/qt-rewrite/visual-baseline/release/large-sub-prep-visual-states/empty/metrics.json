@@ -2,19 +2,19 @@
     "checkpoints": [
         {
             "detail": "",
-            "elapsedMs": 28,
+            "elapsedMs": 29,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:00.979",
+                "capturedAt": "2026-09-16T11:12:52.055",
                 "handleCount": 185,
-                "pagefileUsageBytes": 4157440,
-                "peakWorkingSetBytes": 18132992,
+                "pagefileUsageBytes": 4112384,
+                "peakWorkingSetBytes": 18096128,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4157440,
-                "privateWorkingSetBytes": 2502656,
+                "privateUsageBytes": 4112384,
+                "privateWorkingSetBytes": 2465792,
                 "threadCount": 4,
-                "workingSetBytes": 18128896
+                "workingSetBytes": 18092032
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -271,19 +271,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 61,
+            "elapsedMs": 64,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.013",
+                "capturedAt": "2026-09-16T11:12:52.089",
                 "handleCount": 206,
-                "pagefileUsageBytes": 4599808,
-                "peakWorkingSetBytes": 21794816,
+                "pagefileUsageBytes": 4435968,
+                "peakWorkingSetBytes": 21708800,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4599808,
-                "privateWorkingSetBytes": 2777088,
+                "privateUsageBytes": 4435968,
+                "privateWorkingSetBytes": 2691072,
                 "threadCount": 4,
-                "workingSetBytes": 21794816
+                "workingSetBytes": 21708800
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -540,19 +540,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 89,
+            "elapsedMs": 93,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.040",
+                "capturedAt": "2026-09-16T11:12:52.117",
                 "handleCount": 206,
-                "pagefileUsageBytes": 4599808,
-                "peakWorkingSetBytes": 22728704,
+                "pagefileUsageBytes": 4435968,
+                "peakWorkingSetBytes": 22650880,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4599808,
-                "privateWorkingSetBytes": 2809856,
+                "privateUsageBytes": 4435968,
+                "privateWorkingSetBytes": 2723840,
                 "threadCount": 4,
-                "workingSetBytes": 21921792
+                "workingSetBytes": 21835776
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -809,19 +809,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 119,
+            "elapsedMs": 123,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.070",
+                "capturedAt": "2026-09-16T11:12:52.152",
                 "handleCount": 228,
-                "pagefileUsageBytes": 4874240,
-                "peakWorkingSetBytes": 23973888,
+                "pagefileUsageBytes": 4640768,
+                "peakWorkingSetBytes": 23875584,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 4874240,
-                "privateWorkingSetBytes": 3084288,
+                "privateUsageBytes": 4640768,
+                "privateWorkingSetBytes": 2924544,
                 "threadCount": 4,
-                "workingSetBytes": 23973888
+                "workingSetBytes": 23814144
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -1078,19 +1078,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 154,
+            "elapsedMs": 157,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.105",
+                "capturedAt": "2026-09-16T11:12:52.186",
                 "handleCount": 229,
-                "pagefileUsageBytes": 30101504,
-                "peakWorkingSetBytes": 64442368,
+                "pagefileUsageBytes": 29937664,
+                "peakWorkingSetBytes": 64299008,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 30101504,
-                "privateWorkingSetBytes": 23040000,
+                "privateUsageBytes": 29937664,
+                "privateWorkingSetBytes": 22896640,
                 "threadCount": 4,
-                "workingSetBytes": 64442368
+                "workingSetBytes": 64299008
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -1347,19 +1347,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 182,
+            "elapsedMs": 185,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.130",
+                "capturedAt": "2026-09-16T11:12:52.214",
                 "handleCount": 229,
-                "pagefileUsageBytes": 30101504,
-                "peakWorkingSetBytes": 65376256,
+                "pagefileUsageBytes": 29954048,
+                "peakWorkingSetBytes": 65232896,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 30101504,
-                "privateWorkingSetBytes": 23068672,
+                "privateUsageBytes": 29954048,
+                "privateWorkingSetBytes": 22937600,
                 "threadCount": 4,
-                "workingSetBytes": 64536576
+                "workingSetBytes": 64405504
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -1616,19 +1616,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 211,
+            "elapsedMs": 213,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.165",
+                "capturedAt": "2026-09-16T11:12:52.242",
                 "handleCount": 229,
-                "pagefileUsageBytes": 30048256,
-                "peakWorkingSetBytes": 65470464,
+                "pagefileUsageBytes": 29958144,
+                "peakWorkingSetBytes": 65339392,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 30048256,
-                "privateWorkingSetBytes": 23015424,
+                "privateUsageBytes": 29958144,
+                "privateWorkingSetBytes": 22941696,
                 "threadCount": 4,
-                "workingSetBytes": 64528384
+                "workingSetBytes": 64454656
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -1885,19 +1885,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 254,
+            "elapsedMs": 258,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.206",
+                "capturedAt": "2026-09-16T11:12:52.283",
                 "handleCount": 242,
-                "pagefileUsageBytes": 49881088,
-                "peakWorkingSetBytes": 83304448,
+                "pagefileUsageBytes": 49790976,
+                "peakWorkingSetBytes": 83226624,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 49881088,
-                "privateWorkingSetBytes": 38838272,
+                "privateUsageBytes": 49790976,
+                "privateWorkingSetBytes": 38764544,
                 "threadCount": 7,
-                "workingSetBytes": 83304448
+                "workingSetBytes": 83226624
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -2154,19 +2154,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 290,
+            "elapsedMs": 294,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.244",
+                "capturedAt": "2026-09-16T11:12:52.323",
                 "handleCount": 246,
-                "pagefileUsageBytes": 92844032,
-                "peakWorkingSetBytes": 118984704,
+                "pagefileUsageBytes": 92770304,
+                "peakWorkingSetBytes": 118931456,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 92844032,
-                "privateWorkingSetBytes": 72871936,
+                "privateUsageBytes": 92770304,
+                "privateWorkingSetBytes": 72822784,
                 "threadCount": 8,
-                "workingSetBytes": 118984704
+                "workingSetBytes": 118931456
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -2423,19 +2423,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 319,
+            "elapsedMs": 324,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.274",
+                "capturedAt": "2026-09-16T11:12:52.352",
                 "handleCount": 246,
-                "pagefileUsageBytes": 93118464,
-                "peakWorkingSetBytes": 119918592,
+                "pagefileUsageBytes": 93040640,
+                "peakWorkingSetBytes": 119865344,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 93118464,
-                "privateWorkingSetBytes": 73175040,
+                "privateUsageBytes": 93040640,
+                "privateWorkingSetBytes": 73113600,
                 "threadCount": 8,
-                "workingSetBytes": 119508992
+                "workingSetBytes": 119443456
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -2692,19 +2692,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 362,
+            "elapsedMs": 367,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.316",
+                "capturedAt": "2026-09-16T11:12:52.395",
                 "handleCount": 248,
-                "pagefileUsageBytes": 78659584,
-                "peakWorkingSetBytes": 121700352,
+                "pagefileUsageBytes": 78614528,
+                "peakWorkingSetBytes": 121634816,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 78659584,
-                "privateWorkingSetBytes": 58212352,
+                "privateUsageBytes": 78614528,
+                "privateWorkingSetBytes": 58163200,
                 "threadCount": 8,
-                "workingSetBytes": 106774528
+                "workingSetBytes": 106721280
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -2961,19 +2961,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 400,
+            "elapsedMs": 404,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.354",
+                "capturedAt": "2026-09-16T11:12:52.433",
                 "handleCount": 248,
-                "pagefileUsageBytes": 104280064,
-                "peakWorkingSetBytes": 127827968,
+                "pagefileUsageBytes": 104480768,
+                "peakWorkingSetBytes": 127836160,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 104280064,
-                "privateWorkingSetBytes": 78520320,
+                "privateUsageBytes": 104480768,
+                "privateWorkingSetBytes": 78532608,
                 "threadCount": 8,
-                "workingSetBytes": 127827968
+                "workingSetBytes": 127836160
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -3230,19 +3230,19 @@
         },
         {
             "detail": "open",
-            "elapsedMs": 475,
+            "elapsedMs": 481,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.429",
+                "capturedAt": "2026-09-16T11:12:52.509",
                 "handleCount": 249,
-                "pagefileUsageBytes": 123314176,
-                "peakWorkingSetBytes": 144773120,
+                "pagefileUsageBytes": 123392000,
+                "peakWorkingSetBytes": 144723968,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 123314176,
-                "privateWorkingSetBytes": 93753344,
+                "privateUsageBytes": 123392000,
+                "privateWorkingSetBytes": 93708288,
                 "threadCount": 8,
-                "workingSetBytes": 144773120
+                "workingSetBytes": 144723968
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -3499,19 +3499,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 503,
+            "elapsedMs": 509,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.457",
+                "capturedAt": "2026-09-16T11:12:52.538",
                 "handleCount": 249,
-                "pagefileUsageBytes": 123346944,
-                "peakWorkingSetBytes": 145707008,
+                "pagefileUsageBytes": 123424768,
+                "peakWorkingSetBytes": 145657856,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 123346944,
-                "privateWorkingSetBytes": 93777920,
+                "privateUsageBytes": 123424768,
+                "privateWorkingSetBytes": 93728768,
                 "threadCount": 8,
-                "workingSetBytes": 144797696
+                "workingSetBytes": 144744448
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -3768,19 +3768,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 530,
+            "elapsedMs": 537,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.485",
+                "capturedAt": "2026-09-16T11:12:52.565",
                 "handleCount": 249,
-                "pagefileUsageBytes": 123346944,
-                "peakWorkingSetBytes": 145731584,
+                "pagefileUsageBytes": 123424768,
+                "peakWorkingSetBytes": 145678336,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 123346944,
-                "privateWorkingSetBytes": 93777920,
+                "privateUsageBytes": 123424768,
+                "privateWorkingSetBytes": 93728768,
                 "threadCount": 8,
-                "workingSetBytes": 144797696
+                "workingSetBytes": 144744448
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -4037,19 +4037,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 558,
+            "elapsedMs": 565,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:01.513",
+                "capturedAt": "2026-09-16T11:12:52.594",
                 "handleCount": 249,
-                "pagefileUsageBytes": 123346944,
-                "peakWorkingSetBytes": 145731584,
+                "pagefileUsageBytes": 123424768,
+                "peakWorkingSetBytes": 145678336,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 123346944,
-                "privateWorkingSetBytes": 93777920,
+                "privateUsageBytes": 123424768,
+                "privateWorkingSetBytes": 93732864,
                 "threadCount": 8,
-                "workingSetBytes": 144797696
+                "workingSetBytes": 144748544
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -4306,19 +4306,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 2800,
+            "elapsedMs": 2806,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:03.753",
+                "capturedAt": "2026-09-16T11:12:54.832",
                 "handleCount": 250,
-                "pagefileUsageBytes": 123416576,
-                "peakWorkingSetBytes": 145731584,
+                "pagefileUsageBytes": 123445248,
+                "peakWorkingSetBytes": 145682432,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 123416576,
-                "privateWorkingSetBytes": 93859840,
+                "privateUsageBytes": 123445248,
+                "privateWorkingSetBytes": 93753344,
                 "threadCount": 8,
-                "workingSetBytes": 144998400
+                "workingSetBytes": 144887808
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -4575,19 +4575,19 @@
         },
         {
             "detail": "",
-            "elapsedMs": 2828,
+            "elapsedMs": 2834,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:03.782",
+                "capturedAt": "2026-09-16T11:12:54.863",
                 "handleCount": 250,
-                "pagefileUsageBytes": 122380288,
-                "peakWorkingSetBytes": 145932288,
+                "pagefileUsageBytes": 122392576,
+                "peakWorkingSetBytes": 145821696,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 122380288,
-                "privateWorkingSetBytes": 92946432,
+                "privateUsageBytes": 122392576,
+                "privateWorkingSetBytes": 92831744,
                 "threadCount": 8,
-                "workingSetBytes": 143962112
+                "workingSetBytes": 143843328
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -4844,19 +4844,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 2874,
+            "elapsedMs": 2882,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:03.828",
+                "capturedAt": "2026-09-16T11:12:54.910",
                 "handleCount": 250,
-                "pagefileUsageBytes": 142045184,
-                "peakWorkingSetBytes": 161906688,
+                "pagefileUsageBytes": 142073856,
+                "peakWorkingSetBytes": 161869824,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 142045184,
-                "privateWorkingSetBytes": 108613632,
+                "privateUsageBytes": 142073856,
+                "privateWorkingSetBytes": 108580864,
                 "threadCount": 8,
-                "workingSetBytes": 160022528
+                "workingSetBytes": 159985664
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -5113,19 +5113,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 2904,
+            "elapsedMs": 2912,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:03.851",
+                "capturedAt": "2026-09-16T11:12:54.935",
                 "handleCount": 250,
-                "pagefileUsageBytes": 142045184,
-                "peakWorkingSetBytes": 161906688,
+                "pagefileUsageBytes": 142073856,
+                "peakWorkingSetBytes": 161869824,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 142045184,
-                "privateWorkingSetBytes": 108617728,
+                "privateUsageBytes": 142073856,
+                "privateWorkingSetBytes": 108580864,
                 "threadCount": 8,
-                "workingSetBytes": 160030720
+                "workingSetBytes": 159989760
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -5382,19 +5382,19 @@
         },
         {
             "detail": "calendar",
-            "elapsedMs": 2932,
+            "elapsedMs": 2939,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:03.886",
+                "capturedAt": "2026-09-16T11:12:54.966",
                 "handleCount": 250,
-                "pagefileUsageBytes": 142045184,
-                "peakWorkingSetBytes": 161906688,
+                "pagefileUsageBytes": 142073856,
+                "peakWorkingSetBytes": 161869824,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 142045184,
-                "privateWorkingSetBytes": 108617728,
+                "privateUsageBytes": 142073856,
+                "privateWorkingSetBytes": 108580864,
                 "threadCount": 8,
-                "workingSetBytes": 160030720
+                "workingSetBytes": 159989760
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -5651,19 +5651,19 @@
         },
         {
             "detail": "calendar",
-            "elapsedMs": 3045,
+            "elapsedMs": 3051,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:03.998",
+                "capturedAt": "2026-09-16T11:12:55.079",
                 "handleCount": 259,
-                "pagefileUsageBytes": 171155456,
-                "peakWorkingSetBytes": 182218752,
+                "pagefileUsageBytes": 171438080,
+                "peakWorkingSetBytes": 182296576,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 171155456,
-                "privateWorkingSetBytes": 122650624,
+                "privateUsageBytes": 171438080,
+                "privateWorkingSetBytes": 122732544,
                 "threadCount": 10,
-                "workingSetBytes": 182218752
+                "workingSetBytes": 182296576
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -5920,19 +5920,19 @@
         },
         {
             "detail": "calendar",
-            "elapsedMs": 3075,
+            "elapsedMs": 3081,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.028",
+                "capturedAt": "2026-09-16T11:12:55.109",
                 "handleCount": 259,
-                "pagefileUsageBytes": 171159552,
-                "peakWorkingSetBytes": 183152640,
+                "pagefileUsageBytes": 171442176,
+                "peakWorkingSetBytes": 183230464,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 171159552,
-                "privateWorkingSetBytes": 122654720,
+                "privateUsageBytes": 171442176,
+                "privateWorkingSetBytes": 122736640,
                 "threadCount": 10,
-                "workingSetBytes": 182231040
+                "workingSetBytes": 182308864
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -6189,19 +6189,19 @@
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3251,
+            "elapsedMs": 3260,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.204",
+                "capturedAt": "2026-09-16T11:12:55.287",
                 "handleCount": 259,
-                "pagefileUsageBytes": 171159552,
-                "peakWorkingSetBytes": 183164928,
+                "pagefileUsageBytes": 171442176,
+                "peakWorkingSetBytes": 183242752,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 171159552,
-                "privateWorkingSetBytes": 122654720,
+                "privateUsageBytes": 171442176,
+                "privateWorkingSetBytes": 122736640,
                 "threadCount": 10,
-                "workingSetBytes": 182243328
+                "workingSetBytes": 182321152
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -6458,19 +6458,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 3298,
+            "elapsedMs": 3299,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.240",
+                "capturedAt": "2026-09-16T11:12:55.327",
                 "handleCount": 259,
-                "pagefileUsageBytes": 167469056,
-                "peakWorkingSetBytes": 183570432,
+                "pagefileUsageBytes": 167940096,
+                "peakWorkingSetBytes": 183848960,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 167469056,
-                "privateWorkingSetBytes": 123994112,
+                "privateUsageBytes": 167940096,
+                "privateWorkingSetBytes": 124276736,
                 "threadCount": 10,
-                "workingSetBytes": 183570432
+                "workingSetBytes": 183848960
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -6727,19 +6727,19 @@
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3333,
+            "elapsedMs": 3327,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.275",
+                "capturedAt": "2026-09-16T11:12:55.352",
                 "handleCount": 259,
-                "pagefileUsageBytes": 167534592,
-                "peakWorkingSetBytes": 184504320,
+                "pagefileUsageBytes": 168005632,
+                "peakWorkingSetBytes": 184782848,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 167534592,
-                "privateWorkingSetBytes": 124018688,
+                "privateUsageBytes": 168005632,
+                "privateWorkingSetBytes": 124297216,
                 "threadCount": 10,
-                "workingSetBytes": 183595008
+                "workingSetBytes": 183869440
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -6996,19 +6996,19 @@
         },
         {
             "detail": "classes",
-            "elapsedMs": 3517,
+            "elapsedMs": 3502,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.464",
+                "capturedAt": "2026-09-16T11:12:55.531",
                 "handleCount": 259,
-                "pagefileUsageBytes": 167534592,
-                "peakWorkingSetBytes": 184528896,
+                "pagefileUsageBytes": 168005632,
+                "peakWorkingSetBytes": 184803328,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 167534592,
-                "privateWorkingSetBytes": 124022784,
+                "privateUsageBytes": 168005632,
+                "privateWorkingSetBytes": 124297216,
                 "threadCount": 10,
-                "workingSetBytes": 183603200
+                "workingSetBytes": 183873536
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -7265,19 +7265,19 @@
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3579,
+            "elapsedMs": 3556,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.525",
+                "capturedAt": "2026-09-16T11:12:55.581",
                 "handleCount": 259,
-                "pagefileUsageBytes": 169418752,
-                "peakWorkingSetBytes": 185446400,
+                "pagefileUsageBytes": 169914368,
+                "peakWorkingSetBytes": 185884672,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 169418752,
-                "privateWorkingSetBytes": 125652992,
+                "privateUsageBytes": 169914368,
+                "privateWorkingSetBytes": 126095360,
                 "threadCount": 10,
-                "workingSetBytes": 185446400
+                "workingSetBytes": 185884672
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -7534,19 +7534,19 @@
         },
         {
             "detail": "classes",
-            "elapsedMs": 3615,
+            "elapsedMs": 3583,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.559",
+                "capturedAt": "2026-09-16T11:12:55.609",
                 "handleCount": 259,
-                "pagefileUsageBytes": 169418752,
-                "peakWorkingSetBytes": 186380288,
+                "pagefileUsageBytes": 169914368,
+                "peakWorkingSetBytes": 186818560,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 169418752,
-                "privateWorkingSetBytes": 125657088,
+                "privateUsageBytes": 169914368,
+                "privateWorkingSetBytes": 126095360,
                 "threadCount": 10,
-                "workingSetBytes": 185450496
+                "workingSetBytes": 185884672
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -7803,19 +7803,19 @@
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 3800,
+            "elapsedMs": 3759,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.746",
+                "capturedAt": "2026-09-16T11:12:55.788",
                 "handleCount": 259,
-                "pagefileUsageBytes": 169418752,
-                "peakWorkingSetBytes": 186384384,
+                "pagefileUsageBytes": 169914368,
+                "peakWorkingSetBytes": 186818560,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 169418752,
-                "privateWorkingSetBytes": 125657088,
+                "privateUsageBytes": 169914368,
+                "privateWorkingSetBytes": 126095360,
                 "threadCount": 10,
-                "workingSetBytes": 185450496
+                "workingSetBytes": 185884672
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -8072,19 +8072,19 @@
         },
         {
             "detail": "classes",
-            "elapsedMs": 3856,
+            "elapsedMs": 3808,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.799",
+                "capturedAt": "2026-09-16T11:12:55.831",
                 "handleCount": 259,
-                "pagefileUsageBytes": 172060672,
-                "peakWorkingSetBytes": 188993536,
+                "pagefileUsageBytes": 172228608,
+                "peakWorkingSetBytes": 189169664,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 172060672,
-                "privateWorkingSetBytes": 128299008,
+                "privateUsageBytes": 172228608,
+                "privateWorkingSetBytes": 128479232,
                 "threadCount": 10,
-                "workingSetBytes": 188993536
+                "workingSetBytes": 189169664
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -8341,19 +8341,19 @@
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 3893,
+            "elapsedMs": 3836,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:04.837",
+                "capturedAt": "2026-09-16T11:12:55.859",
                 "handleCount": 259,
-                "pagefileUsageBytes": 172060672,
-                "peakWorkingSetBytes": 189927424,
+                "pagefileUsageBytes": 172228608,
+                "peakWorkingSetBytes": 190103552,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 172060672,
-                "privateWorkingSetBytes": 128303104,
+                "privateUsageBytes": 172228608,
+                "privateWorkingSetBytes": 128483328,
                 "threadCount": 10,
-                "workingSetBytes": 188997632
+                "workingSetBytes": 189173760
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -8610,19 +8610,19 @@
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4080,
+            "elapsedMs": 4014,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.026",
+                "capturedAt": "2026-09-16T11:12:56.044",
                 "handleCount": 259,
-                "pagefileUsageBytes": 172060672,
-                "peakWorkingSetBytes": 189931520,
+                "pagefileUsageBytes": 172228608,
+                "peakWorkingSetBytes": 190107648,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 172060672,
-                "privateWorkingSetBytes": 128303104,
+                "privateUsageBytes": 172228608,
+                "privateWorkingSetBytes": 128483328,
                 "threadCount": 10,
-                "workingSetBytes": 188997632
+                "workingSetBytes": 189173760
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -8879,19 +8879,19 @@
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4133,
+            "elapsedMs": 4059,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.078",
+                "capturedAt": "2026-09-16T11:12:56.088",
                 "handleCount": 259,
-                "pagefileUsageBytes": 174661632,
-                "peakWorkingSetBytes": 191807488,
+                "pagefileUsageBytes": 175063040,
+                "peakWorkingSetBytes": 192155648,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 174661632,
-                "privateWorkingSetBytes": 130875392,
+                "privateUsageBytes": 175063040,
+                "privateWorkingSetBytes": 131227648,
                 "threadCount": 10,
-                "workingSetBytes": 191807488
+                "workingSetBytes": 192155648
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -9148,19 +9148,19 @@
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4169,
+            "elapsedMs": 4088,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.115",
+                "capturedAt": "2026-09-16T11:12:56.116",
                 "handleCount": 259,
-                "pagefileUsageBytes": 174661632,
-                "peakWorkingSetBytes": 192741376,
+                "pagefileUsageBytes": 175063040,
+                "peakWorkingSetBytes": 193089536,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 174661632,
-                "privateWorkingSetBytes": 130875392,
+                "privateUsageBytes": 175063040,
+                "privateWorkingSetBytes": 131231744,
                 "threadCount": 10,
-                "workingSetBytes": 191807488
+                "workingSetBytes": 192159744
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -9417,19 +9417,19 @@
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4353,
+            "elapsedMs": 4264,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.300",
+                "capturedAt": "2026-09-16T11:12:56.294",
                 "handleCount": 259,
-                "pagefileUsageBytes": 174661632,
-                "peakWorkingSetBytes": 192741376,
+                "pagefileUsageBytes": 175063040,
+                "peakWorkingSetBytes": 193093632,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 174661632,
-                "privateWorkingSetBytes": 130879488,
+                "privateUsageBytes": 175063040,
+                "privateWorkingSetBytes": 131231744,
                 "threadCount": 10,
-                "workingSetBytes": 191811584
+                "workingSetBytes": 192159744
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -9686,19 +9686,19 @@
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4397,
+            "elapsedMs": 4300,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.337",
+                "capturedAt": "2026-09-16T11:12:56.324",
                 "handleCount": 259,
-                "pagefileUsageBytes": 176353280,
-                "peakWorkingSetBytes": 193482752,
+                "pagefileUsageBytes": 176414720,
+                "peakWorkingSetBytes": 193507328,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 176353280,
-                "privateWorkingSetBytes": 132509696,
+                "privateUsageBytes": 176414720,
+                "privateWorkingSetBytes": 132538368,
                 "threadCount": 10,
-                "workingSetBytes": 193482752
+                "workingSetBytes": 193507328
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -9955,19 +9955,19 @@
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4435,
+            "elapsedMs": 4328,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.379",
+                "capturedAt": "2026-09-16T11:12:56.352",
                 "handleCount": 259,
-                "pagefileUsageBytes": 176353280,
-                "peakWorkingSetBytes": 194416640,
+                "pagefileUsageBytes": 176414720,
+                "peakWorkingSetBytes": 194441216,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 176353280,
-                "privateWorkingSetBytes": 132509696,
+                "privateUsageBytes": 176414720,
+                "privateWorkingSetBytes": 132542464,
                 "threadCount": 10,
-                "workingSetBytes": 193482752
+                "workingSetBytes": 193511424
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -10224,19 +10224,19 @@
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 4620,
+            "elapsedMs": 4500,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.564",
+                "capturedAt": "2026-09-16T11:12:56.530",
                 "handleCount": 259,
-                "pagefileUsageBytes": 176353280,
-                "peakWorkingSetBytes": 194416640,
+                "pagefileUsageBytes": 176414720,
+                "peakWorkingSetBytes": 194445312,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 176353280,
-                "privateWorkingSetBytes": 132513792,
+                "privateUsageBytes": 176414720,
+                "privateWorkingSetBytes": 132542464,
                 "threadCount": 10,
-                "workingSetBytes": 193486848
+                "workingSetBytes": 193511424
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -10493,19 +10493,19 @@
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4669,
+            "elapsedMs": 4535,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.609",
+                "capturedAt": "2026-09-16T11:12:56.560",
                 "handleCount": 259,
-                "pagefileUsageBytes": 177360896,
-                "peakWorkingSetBytes": 194465792,
+                "pagefileUsageBytes": 177344512,
+                "peakWorkingSetBytes": 194461696,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 177360896,
+                "privateUsageBytes": 177344512,
                 "privateWorkingSetBytes": 133488640,
                 "threadCount": 10,
-                "workingSetBytes": 194465792
+                "workingSetBytes": 194461696
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -10762,17 +10762,17 @@
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 4707,
+            "elapsedMs": 4564,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.650",
+                "capturedAt": "2026-09-16T11:12:56.588",
                 "handleCount": 259,
-                "pagefileUsageBytes": 177360896,
-                "peakWorkingSetBytes": 195399680,
+                "pagefileUsageBytes": 177344512,
+                "peakWorkingSetBytes": 195395584,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 177360896,
-                "privateWorkingSetBytes": 133488640,
+                "privateUsageBytes": 177344512,
+                "privateWorkingSetBytes": 133492736,
                 "threadCount": 10,
                 "workingSetBytes": 194465792
             },
@@ -11031,19 +11031,19 @@
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 4894,
+            "elapsedMs": 4740,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.839",
+                "capturedAt": "2026-09-16T11:12:56.767",
                 "handleCount": 259,
-                "pagefileUsageBytes": 177360896,
+                "pagefileUsageBytes": 177344512,
                 "peakWorkingSetBytes": 195399680,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 177360896,
+                "privateUsageBytes": 177344512,
                 "privateWorkingSetBytes": 133492736,
                 "threadCount": 10,
-                "workingSetBytes": 194469888
+                "workingSetBytes": 194465792
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -11300,19 +11300,19 @@
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 4948,
+            "elapsedMs": 4794,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.900",
+                "capturedAt": "2026-09-16T11:12:56.818",
                 "handleCount": 259,
-                "pagefileUsageBytes": 187457536,
-                "peakWorkingSetBytes": 199766016,
+                "pagefileUsageBytes": 187518976,
+                "peakWorkingSetBytes": 199790592,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 187457536,
-                "privateWorkingSetBytes": 138481664,
+                "privateUsageBytes": 187518976,
+                "privateWorkingSetBytes": 138510336,
                 "threadCount": 10,
-                "workingSetBytes": 199766016
+                "workingSetBytes": 199790592
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -11569,19 +11569,19 @@
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 4979,
+            "elapsedMs": 4823,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:05.927",
+                "capturedAt": "2026-09-16T11:12:56.851",
                 "handleCount": 259,
-                "pagefileUsageBytes": 187457536,
-                "peakWorkingSetBytes": 200708096,
+                "pagefileUsageBytes": 187518976,
+                "peakWorkingSetBytes": 200724480,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 187457536,
-                "privateWorkingSetBytes": 138481664,
+                "privateUsageBytes": 187518976,
+                "privateWorkingSetBytes": 138514432,
                 "threadCount": 10,
-                "workingSetBytes": 199766016
+                "workingSetBytes": 199794688
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -11838,19 +11838,19 @@
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5153,
+            "elapsedMs": 5000,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.106",
+                "capturedAt": "2026-09-16T11:12:57.030",
                 "handleCount": 259,
-                "pagefileUsageBytes": 187457536,
-                "peakWorkingSetBytes": 200708096,
+                "pagefileUsageBytes": 187518976,
+                "peakWorkingSetBytes": 200728576,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 187457536,
-                "privateWorkingSetBytes": 138485760,
+                "privateUsageBytes": 187518976,
+                "privateWorkingSetBytes": 138514432,
                 "threadCount": 10,
-                "workingSetBytes": 199770112
+                "workingSetBytes": 199794688
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -12107,19 +12107,19 @@
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5245,
+            "elapsedMs": 5092,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.198",
+                "capturedAt": "2026-09-16T11:12:57.115",
                 "handleCount": 259,
-                "pagefileUsageBytes": 191291392,
-                "peakWorkingSetBytes": 203497472,
+                "pagefileUsageBytes": 191500288,
+                "peakWorkingSetBytes": 203694080,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 191291392,
-                "privateWorkingSetBytes": 142131200,
+                "privateUsageBytes": 191500288,
+                "privateWorkingSetBytes": 142331904,
                 "threadCount": 10,
-                "workingSetBytes": 203497472
+                "workingSetBytes": 203694080
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -12376,19 +12376,19 @@
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5274,
+            "elapsedMs": 5121,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.228",
+                "capturedAt": "2026-09-16T11:12:57.145",
                 "handleCount": 259,
-                "pagefileUsageBytes": 191291392,
-                "peakWorkingSetBytes": 204431360,
+                "pagefileUsageBytes": 191500288,
+                "peakWorkingSetBytes": 204627968,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 191291392,
-                "privateWorkingSetBytes": 142131200,
+                "privateUsageBytes": 191500288,
+                "privateWorkingSetBytes": 142336000,
                 "threadCount": 10,
-                "workingSetBytes": 203497472
+                "workingSetBytes": 203698176
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -12645,19 +12645,19 @@
         },
         {
             "detail": "visibleClasses=0; selectedClassId=-1",
-            "elapsedMs": 5304,
+            "elapsedMs": 5150,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.257",
+                "capturedAt": "2026-09-16T11:12:57.178",
                 "handleCount": 259,
-                "pagefileUsageBytes": 191291392,
-                "peakWorkingSetBytes": 204431360,
+                "pagefileUsageBytes": 191500288,
+                "peakWorkingSetBytes": 204640256,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 191291392,
-                "privateWorkingSetBytes": 142131200,
+                "privateUsageBytes": 191500288,
+                "privateWorkingSetBytes": 142336000,
                 "threadCount": 10,
-                "workingSetBytes": 203513856
+                "workingSetBytes": 203714560
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -12914,19 +12914,19 @@
         },
         {
             "detail": "state=empty; visibleClasses=0; selectedClassId=-1; widgets=1; textEdits=0; captured=true",
-            "elapsedMs": 5353,
+            "elapsedMs": 5198,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.302",
+                "capturedAt": "2026-09-16T11:12:57.225",
                 "handleCount": 259,
-                "pagefileUsageBytes": 191291392,
-                "peakWorkingSetBytes": 205557760,
+                "pagefileUsageBytes": 191500288,
+                "peakWorkingSetBytes": 205692928,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 191291392,
-                "privateWorkingSetBytes": 142237696,
+                "privateUsageBytes": 191500288,
+                "privateWorkingSetBytes": 142376960,
                 "threadCount": 10,
-                "workingSetBytes": 203636736
+                "workingSetBytes": 203771904
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -13183,19 +13183,19 @@
         },
         {
             "detail": "passed=true; visibleClasses=0; selectedClassId=-1",
-            "elapsedMs": 5382,
+            "elapsedMs": 5228,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.330",
+                "capturedAt": "2026-09-16T11:12:57.254",
                 "handleCount": 259,
-                "pagefileUsageBytes": 191291392,
-                "peakWorkingSetBytes": 205557760,
+                "pagefileUsageBytes": 191500288,
+                "peakWorkingSetBytes": 205692928,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 191291392,
-                "privateWorkingSetBytes": 142237696,
+                "privateUsageBytes": 191500288,
+                "privateWorkingSetBytes": 142376960,
                 "threadCount": 10,
-                "workingSetBytes": 203636736
+                "workingSetBytes": 203771904
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -13452,19 +13452,19 @@
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 5560,
+            "elapsedMs": 5403,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.514",
+                "capturedAt": "2026-09-16T11:12:57.432",
                 "handleCount": 259,
-                "pagefileUsageBytes": 191291392,
-                "peakWorkingSetBytes": 205557760,
+                "pagefileUsageBytes": 191500288,
+                "peakWorkingSetBytes": 205692928,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 191291392,
-                "privateWorkingSetBytes": 142237696,
+                "privateUsageBytes": 191500288,
+                "privateWorkingSetBytes": 142376960,
                 "threadCount": 10,
-                "workingSetBytes": 203636736
+                "workingSetBytes": 203771904
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -13721,19 +13721,19 @@
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5988,
+            "elapsedMs": 5821,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.927",
+                "capturedAt": "2026-09-16T11:12:57.848",
                 "handleCount": 259,
-                "pagefileUsageBytes": 258654208,
-                "peakWorkingSetBytes": 274882560,
+                "pagefileUsageBytes": 258760704,
+                "peakWorkingSetBytes": 275034112,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 258654208,
-                "privateWorkingSetBytes": 213385216,
+                "privateUsageBytes": 258760704,
+                "privateWorkingSetBytes": 213540864,
                 "threadCount": 10,
-                "workingSetBytes": 274882560
+                "workingSetBytes": 275034112
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -13990,19 +13990,19 @@
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6025,
+            "elapsedMs": 5850,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:06.969",
+                "capturedAt": "2026-09-16T11:12:57.872",
                 "handleCount": 259,
-                "pagefileUsageBytes": 258703360,
-                "peakWorkingSetBytes": 275816448,
+                "pagefileUsageBytes": 258809856,
+                "peakWorkingSetBytes": 275968000,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 258703360,
-                "privateWorkingSetBytes": 213426176,
+                "privateUsageBytes": 258809856,
+                "privateWorkingSetBytes": 213585920,
                 "threadCount": 10,
-                "workingSetBytes": 274923520
+                "workingSetBytes": 275079168
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -14259,19 +14259,19 @@
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6209,
+            "elapsedMs": 6028,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.154",
+                "capturedAt": "2026-09-16T11:12:58.057",
                 "handleCount": 259,
-                "pagefileUsageBytes": 258981888,
-                "peakWorkingSetBytes": 275857408,
+                "pagefileUsageBytes": 258809856,
+                "peakWorkingSetBytes": 276013056,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 258981888,
-                "privateWorkingSetBytes": 213561344,
+                "privateUsageBytes": 258809856,
+                "privateWorkingSetBytes": 213590016,
                 "threadCount": 10,
-                "workingSetBytes": 275058688
+                "workingSetBytes": 275083264
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -14528,19 +14528,19 @@
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6244,
+            "elapsedMs": 6063,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.198",
+                "capturedAt": "2026-09-16T11:12:58.087",
                 "handleCount": 273,
-                "pagefileUsageBytes": 259379200,
-                "peakWorkingSetBytes": 276656128,
+                "pagefileUsageBytes": 259584000,
+                "peakWorkingSetBytes": 276893696,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 259379200,
-                "privateWorkingSetBytes": 214044672,
+                "privateUsageBytes": 259584000,
+                "privateWorkingSetBytes": 214278144,
                 "threadCount": 12,
-                "workingSetBytes": 276656128
+                "workingSetBytes": 276893696
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -14797,19 +14797,19 @@
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6273,
+            "elapsedMs": 6092,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.225",
+                "capturedAt": "2026-09-16T11:12:58.116",
                 "handleCount": 273,
-                "pagefileUsageBytes": 259428352,
-                "peakWorkingSetBytes": 277590016,
+                "pagefileUsageBytes": 259584000,
+                "peakWorkingSetBytes": 277827584,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 259428352,
-                "privateWorkingSetBytes": 214093824,
+                "privateUsageBytes": 259584000,
+                "privateWorkingSetBytes": 214298624,
                 "threadCount": 12,
-                "workingSetBytes": 276705280
+                "workingSetBytes": 276914176
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -15066,19 +15066,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6301,
+            "elapsedMs": 6125,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.253",
+                "capturedAt": "2026-09-16T11:12:58.149",
                 "handleCount": 273,
-                "pagefileUsageBytes": 259428352,
-                "peakWorkingSetBytes": 277639168,
+                "pagefileUsageBytes": 259584000,
+                "peakWorkingSetBytes": 277848064,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 259428352,
-                "privateWorkingSetBytes": 214093824,
+                "privateUsageBytes": 259584000,
+                "privateWorkingSetBytes": 214298624,
                 "threadCount": 12,
-                "workingSetBytes": 276705280
+                "workingSetBytes": 276914176
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -15335,19 +15335,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6329,
+            "elapsedMs": 6155,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.281",
+                "capturedAt": "2026-09-16T11:12:58.178",
                 "handleCount": 273,
-                "pagefileUsageBytes": 292200448,
-                "peakWorkingSetBytes": 277639168,
+                "pagefileUsageBytes": 292356096,
+                "peakWorkingSetBytes": 277848064,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 292200448,
-                "privateWorkingSetBytes": 214093824,
+                "privateUsageBytes": 292356096,
+                "privateWorkingSetBytes": 214298624,
                 "threadCount": 12,
-                "workingSetBytes": 276721664
+                "workingSetBytes": 276930560
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -15604,19 +15604,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf; rendered=600x526",
-            "elapsedMs": 6557,
+            "elapsedMs": 6385,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.503",
+                "capturedAt": "2026-09-16T11:12:58.406",
                 "handleCount": 289,
-                "pagefileUsageBytes": 303181824,
-                "peakWorkingSetBytes": 291803136,
+                "pagefileUsageBytes": 302878720,
+                "peakWorkingSetBytes": 291614720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 303181824,
-                "privateWorkingSetBytes": 224677888,
+                "privateUsageBytes": 302878720,
+                "privateWorkingSetBytes": 224489472,
                 "threadCount": 16,
-                "workingSetBytes": 291803136
+                "workingSetBytes": 291614720
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -15873,19 +15873,19 @@
         },
         {
             "detail": "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           600x%2",
-            "elapsedMs": 6587,
+            "elapsedMs": 6415,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.538",
+                "capturedAt": "2026-09-16T11:12:58.441",
                 "handleCount": 289,
-                "pagefileUsageBytes": 303230976,
-                "peakWorkingSetBytes": 292737024,
+                "pagefileUsageBytes": 302927872,
+                "peakWorkingSetBytes": 292556800,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 303230976,
-                "privateWorkingSetBytes": 224718848,
+                "privateUsageBytes": 302927872,
+                "privateWorkingSetBytes": 224534528,
                 "threadCount": 16,
-                "workingSetBytes": 291844096
+                "workingSetBytes": 291659776
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -16142,19 +16142,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6763,
+            "elapsedMs": 6592,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.715",
+                "capturedAt": "2026-09-16T11:12:58.620",
                 "handleCount": 289,
-                "pagefileUsageBytes": 294821888,
-                "peakWorkingSetBytes": 292777984,
+                "pagefileUsageBytes": 294518784,
+                "peakWorkingSetBytes": 292601856,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 294821888,
-                "privateWorkingSetBytes": 216547328,
+                "privateUsageBytes": 294518784,
+                "privateWorkingSetBytes": 216363008,
                 "threadCount": 16,
-                "workingSetBytes": 283680768
+                "workingSetBytes": 283496448
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -16411,19 +16411,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6792,
+            "elapsedMs": 6621,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.746",
+                "capturedAt": "2026-09-16T11:12:58.642",
                 "handleCount": 289,
-                "pagefileUsageBytes": 327598080,
-                "peakWorkingSetBytes": 292777984,
+                "pagefileUsageBytes": 327294976,
+                "peakWorkingSetBytes": 292601856,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 327598080,
-                "privateWorkingSetBytes": 216547328,
+                "privateUsageBytes": 327294976,
+                "privateWorkingSetBytes": 216363008,
                 "threadCount": 16,
-                "workingSetBytes": 283693056
+                "workingSetBytes": 283508736
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -16680,19 +16680,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf; rendered=600x526",
-            "elapsedMs": 6994,
+            "elapsedMs": 6822,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.947",
+                "capturedAt": "2026-09-16T11:12:58.850",
                 "handleCount": 289,
-                "pagefileUsageBytes": 303300608,
-                "peakWorkingSetBytes": 292777984,
+                "pagefileUsageBytes": 302948352,
+                "peakWorkingSetBytes": 292601856,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 303300608,
-                "privateWorkingSetBytes": 224743424,
+                "privateUsageBytes": 302948352,
+                "privateWorkingSetBytes": 224555008,
                 "threadCount": 16,
-                "workingSetBytes": 291876864
+                "workingSetBytes": 291688448
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -16949,19 +16949,19 @@
         },
         {
             "detail": "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           600x%2",
-            "elapsedMs": 7022,
+            "elapsedMs": 6851,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:07.975",
+                "capturedAt": "2026-09-16T11:12:58.879",
                 "handleCount": 289,
-                "pagefileUsageBytes": 303300608,
-                "peakWorkingSetBytes": 292818944,
+                "pagefileUsageBytes": 302948352,
+                "peakWorkingSetBytes": 292630528,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 303300608,
-                "privateWorkingSetBytes": 224747520,
+                "privateUsageBytes": 302948352,
+                "privateWorkingSetBytes": 224563200,
                 "threadCount": 16,
-                "workingSetBytes": 291880960
+                "workingSetBytes": 291696640
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -17218,19 +17218,19 @@
         },
         {
             "detail": "Guides/DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 7199,
+            "elapsedMs": 7027,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:08.153",
+                "capturedAt": "2026-09-16T11:12:59.056",
                 "handleCount": 289,
-                "pagefileUsageBytes": 294883328,
-                "peakWorkingSetBytes": 292823040,
+                "pagefileUsageBytes": 294531072,
+                "peakWorkingSetBytes": 292638720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 294883328,
-                "privateWorkingSetBytes": 216563712,
+                "privateUsageBytes": 294531072,
+                "privateWorkingSetBytes": 216379392,
                 "threadCount": 16,
-                "workingSetBytes": 283697152
+                "workingSetBytes": 283512832
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -17487,19 +17487,19 @@
         },
         {
             "detail": "opened=2; rendered=2; released=2",
-            "elapsedMs": 7228,
+            "elapsedMs": 7056,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:08.176",
+                "capturedAt": "2026-09-16T11:12:59.080",
                 "handleCount": 289,
-                "pagefileUsageBytes": 294883328,
-                "peakWorkingSetBytes": 292823040,
+                "pagefileUsageBytes": 294531072,
+                "peakWorkingSetBytes": 292638720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 294883328,
-                "privateWorkingSetBytes": 216563712,
+                "privateUsageBytes": 294531072,
+                "privateWorkingSetBytes": 216379392,
                 "threadCount": 16,
-                "workingSetBytes": 283697152
+                "workingSetBytes": 283512832
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -17756,19 +17756,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 7405,
+            "elapsedMs": 7229,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:08.359",
+                "capturedAt": "2026-09-16T11:12:59.258",
                 "handleCount": 289,
-                "pagefileUsageBytes": 294883328,
-                "peakWorkingSetBytes": 292823040,
+                "pagefileUsageBytes": 294531072,
+                "peakWorkingSetBytes": 292638720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 294883328,
-                "privateWorkingSetBytes": 216563712,
+                "privateUsageBytes": 294531072,
+                "privateWorkingSetBytes": 216379392,
                 "threadCount": 16,
-                "workingSetBytes": 283697152
+                "workingSetBytes": 283512832
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -18025,19 +18025,19 @@
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 7439,
+            "elapsedMs": 7263,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:08.391",
+                "capturedAt": "2026-09-16T11:12:59.289",
                 "handleCount": 289,
-                "pagefileUsageBytes": 299958272,
-                "peakWorkingSetBytes": 292823040,
+                "pagefileUsageBytes": 299606016,
+                "peakWorkingSetBytes": 292638720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 299958272,
-                "privateWorkingSetBytes": 216563712,
+                "privateUsageBytes": 299606016,
+                "privateWorkingSetBytes": 216379392,
                 "threadCount": 16,
-                "workingSetBytes": 283705344
+                "workingSetBytes": 283521024
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -18294,19 +18294,19 @@
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 7467,
+            "elapsedMs": 7292,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:08.419",
+                "capturedAt": "2026-09-16T11:12:59.317",
                 "handleCount": 289,
-                "pagefileUsageBytes": 299958272,
-                "peakWorkingSetBytes": 292823040,
+                "pagefileUsageBytes": 299606016,
+                "peakWorkingSetBytes": 292638720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 299958272,
-                "privateWorkingSetBytes": 216563712,
+                "privateUsageBytes": 299606016,
+                "privateWorkingSetBytes": 216379392,
                 "threadCount": 16,
-                "workingSetBytes": 283705344
+                "workingSetBytes": 283521024
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -18563,19 +18563,19 @@
         },
         {
             "detail": "returned-to-my-workspace",
-            "elapsedMs": 7643,
+            "elapsedMs": 7466,
             "memory": {
                 "available": true,
-                "capturedAt": "2026-09-16T10:57:08.598",
+                "capturedAt": "2026-09-16T11:12:59.494",
                 "handleCount": 289,
-                "pagefileUsageBytes": 299958272,
-                "peakWorkingSetBytes": 292823040,
+                "pagefileUsageBytes": 299606016,
+                "peakWorkingSetBytes": 292638720,
                 "platform": "windows",
                 "privateDirtyBytes": 0,
-                "privateUsageBytes": 299958272,
-                "privateWorkingSetBytes": 216563712,
+                "privateUsageBytes": 299606016,
+                "privateWorkingSetBytes": 216379392,
                 "threadCount": 16,
-                "workingSetBytes": 283709440
+                "workingSetBytes": 283525120
             },
             "metrics": {
                 "calendarCacheDateBucketCount": 0,
@@ -18834,757 +18834,757 @@
     "events": [
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 327,
+            "elapsedMs": 331,
             "name": "schedule-widget-created"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 333,
+            "elapsedMs": 338,
             "name": "page-created"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 334,
+            "elapsedMs": 339,
             "name": "page-enter"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 441,
+            "elapsedMs": 446,
             "name": "schedule-render-start"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive; elapsedMs=6; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
-            "elapsedMs": 447,
+            "elapsedMs": 452,
             "name": "schedule-render-end"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 447,
+            "elapsedMs": 452,
             "name": "page-enter"
         },
         {
             "detail": "expected=1; live=1; created=1; passed=true",
-            "elapsedMs": 2828,
+            "elapsedMs": 2834,
             "name": "schedule-widget-startup-diagnostic"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 2875,
+            "elapsedMs": 2882,
             "name": "page-enter"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 3252,
+            "elapsedMs": 3262,
             "name": "schedule-widget-created"
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3253,
+            "elapsedMs": 3263,
             "name": "page-created"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 3253,
+            "elapsedMs": 3263,
             "name": "page-leave"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive",
-            "elapsedMs": 3254,
+            "elapsedMs": 3264,
             "name": "schedule-render-start"
         },
         {
             "detail": "owner=SchedulePage; mode=interactive; elapsedMs=4; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
-            "elapsedMs": 3259,
+            "elapsedMs": 3269,
             "name": "schedule-render-end"
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3259,
+            "elapsedMs": 3269,
             "name": "page-enter"
         },
         {
             "detail": "classes",
-            "elapsedMs": 3520,
+            "elapsedMs": 3504,
             "name": "page-created"
         },
         {
             "detail": "schedule",
-            "elapsedMs": 3520,
+            "elapsedMs": 3504,
             "name": "page-leave"
         },
         {
             "detail": "classes",
-            "elapsedMs": 3542,
+            "elapsedMs": 3526,
             "name": "page-enter"
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 3810,
+            "elapsedMs": 3770,
             "name": "page-created"
         },
         {
             "detail": "classes",
-            "elapsedMs": 3810,
+            "elapsedMs": 3770,
             "name": "page-leave"
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 3816,
+            "elapsedMs": 3776,
             "name": "page-enter"
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4088,
+            "elapsedMs": 4021,
             "name": "page-created"
         },
         {
             "detail": "testing-classes",
-            "elapsedMs": 4088,
+            "elapsedMs": 4021,
             "name": "page-leave"
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4092,
+            "elapsedMs": 4025,
             "name": "page-enter"
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4356,
+            "elapsedMs": 4267,
             "name": "page-created"
         },
         {
             "detail": "teacher-info",
-            "elapsedMs": 4356,
+            "elapsedMs": 4267,
             "name": "page-leave"
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4359,
+            "elapsedMs": 4269,
             "name": "page-enter"
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 4623,
+            "elapsedMs": 4502,
             "name": "page-created"
         },
         {
             "detail": "native-english-teachers",
-            "elapsedMs": 4623,
+            "elapsedMs": 4502,
             "name": "page-leave"
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 4626,
+            "elapsedMs": 4505,
             "name": "page-enter"
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 4905,
+            "elapsedMs": 4752,
             "name": "page-created"
         },
         {
             "detail": "gs-team",
-            "elapsedMs": 4905,
+            "elapsedMs": 4752,
             "name": "page-leave"
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 4912,
+            "elapsedMs": 4759,
             "name": "page-enter"
         },
         {
             "detail": "owner=SectionCard; mode=read-only",
-            "elapsedMs": 5156,
+            "elapsedMs": 5003,
             "name": "schedule-widget-created"
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5157,
+            "elapsedMs": 5004,
             "name": "page-created"
         },
         {
             "detail": "campus-dashboard",
-            "elapsedMs": 5157,
+            "elapsedMs": 5004,
             "name": "page-leave"
         },
         {
             "detail": "owner=SectionCard; mode=read-only",
-            "elapsedMs": 5163,
+            "elapsedMs": 5009,
             "name": "schedule-render-start"
         },
         {
             "detail": "owner=SectionCard; mode=read-only; elapsedMs=4; fullRender=true; tableItemsCreated=6; cellWidgetsCreated=42; cellWidgetsRemoved=0; cellWidgetsQueuedForDeletion=0",
-            "elapsedMs": 5168,
+            "elapsedMs": 5014,
             "name": "schedule-render-end"
         },
         {
             "detail": "rebuild-start; widgets=0; textEdits=0; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=1; selectedClassId=-1",
-            "elapsedMs": 5168,
+            "elapsedMs": 5014,
             "name": "sub-prep-class-information"
         },
         {
             "detail": "view-clear-requested; widgets=0; textEdits=0; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=1; selectedClassId=-1",
-            "elapsedMs": 5168,
+            "elapsedMs": 5014,
             "name": "sub-prep-class-information"
         },
         {
             "detail": "classId=1; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5168,
+            "elapsedMs": 5015,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=2; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5169,
+            "elapsedMs": 5015,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=3; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5169,
+            "elapsedMs": 5016,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=4; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5170,
+            "elapsedMs": 5016,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=5; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5170,
+            "elapsedMs": 5017,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=6; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5171,
+            "elapsedMs": 5017,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=7; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5172,
+            "elapsedMs": 5018,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=8; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5172,
+            "elapsedMs": 5018,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=9; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5173,
+            "elapsedMs": 5019,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=10; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5173,
+            "elapsedMs": 5019,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=11; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5174,
+            "elapsedMs": 5020,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=12; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5174,
+            "elapsedMs": 5020,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=13; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5174,
+            "elapsedMs": 5020,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=14; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5175,
+            "elapsedMs": 5021,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=15; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5175,
+            "elapsedMs": 5021,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=16; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5176,
+            "elapsedMs": 5022,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=17; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5176,
+            "elapsedMs": 5022,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=18; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5177,
+            "elapsedMs": 5023,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=19; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5177,
+            "elapsedMs": 5023,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=20; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5178,
+            "elapsedMs": 5023,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=21; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5178,
+            "elapsedMs": 5024,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=22; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5178,
+            "elapsedMs": 5025,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=23; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5179,
+            "elapsedMs": 5025,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=24; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5179,
+            "elapsedMs": 5026,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=25; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5180,
+            "elapsedMs": 5026,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=26; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5180,
+            "elapsedMs": 5027,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=27; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5181,
+            "elapsedMs": 5027,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=28; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5181,
+            "elapsedMs": 5028,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=29; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5182,
+            "elapsedMs": 5028,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=30; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5182,
+            "elapsedMs": 5029,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=31; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5183,
+            "elapsedMs": 5029,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=32; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5183,
+            "elapsedMs": 5029,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=33; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5184,
+            "elapsedMs": 5030,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=34; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5184,
+            "elapsedMs": 5030,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=35; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5185,
+            "elapsedMs": 5031,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=36; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5185,
+            "elapsedMs": 5031,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=37; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5185,
+            "elapsedMs": 5032,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=38; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5186,
+            "elapsedMs": 5032,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=39; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5186,
+            "elapsedMs": 5033,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=40; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5187,
+            "elapsedMs": 5033,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=41; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5187,
+            "elapsedMs": 5033,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=42; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5188,
+            "elapsedMs": 5034,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=43; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5188,
+            "elapsedMs": 5034,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=44; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5189,
+            "elapsedMs": 5035,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=45; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5189,
+            "elapsedMs": 5035,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=46; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5190,
+            "elapsedMs": 5036,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=47; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5190,
+            "elapsedMs": 5036,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=48; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5190,
+            "elapsedMs": 5037,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=49; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5191,
+            "elapsedMs": 5037,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=50; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5191,
+            "elapsedMs": 5038,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=51; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5192,
+            "elapsedMs": 5038,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=52; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5192,
+            "elapsedMs": 5038,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=53; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5193,
+            "elapsedMs": 5039,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=54; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5193,
+            "elapsedMs": 5039,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=55; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5193,
+            "elapsedMs": 5040,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=56; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5194,
+            "elapsedMs": 5040,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=57; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5194,
+            "elapsedMs": 5041,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=58; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5195,
+            "elapsedMs": 5041,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=59; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5195,
+            "elapsedMs": 5042,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=60; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5196,
+            "elapsedMs": 5042,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=61; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5196,
+            "elapsedMs": 5043,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=62; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5197,
+            "elapsedMs": 5043,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=63; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5197,
+            "elapsedMs": 5044,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=64; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5198,
+            "elapsedMs": 5044,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=65; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5198,
+            "elapsedMs": 5045,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=66; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5199,
+            "elapsedMs": 5045,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=67; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5199,
+            "elapsedMs": 5046,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=68; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5200,
+            "elapsedMs": 5046,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=69; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5200,
+            "elapsedMs": 5047,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=70; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5200,
+            "elapsedMs": 5047,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=71; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5201,
+            "elapsedMs": 5047,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=72; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5201,
+            "elapsedMs": 5048,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=73; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5202,
+            "elapsedMs": 5048,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=74; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5202,
+            "elapsedMs": 5049,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=75; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5203,
+            "elapsedMs": 5049,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=76; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5203,
+            "elapsedMs": 5050,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=77; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5204,
+            "elapsedMs": 5050,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=78; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5204,
+            "elapsedMs": 5050,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=79; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5205,
+            "elapsedMs": 5051,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=80; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5205,
+            "elapsedMs": 5051,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=81; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5206,
+            "elapsedMs": 5052,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=82; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5206,
+            "elapsedMs": 5052,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=83; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5207,
+            "elapsedMs": 5053,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=84; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5207,
+            "elapsedMs": 5053,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=85; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5207,
+            "elapsedMs": 5053,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=86; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5208,
+            "elapsedMs": 5054,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=87; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5208,
+            "elapsedMs": 5054,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=88; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5209,
+            "elapsedMs": 5055,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=89; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5209,
+            "elapsedMs": 5055,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=90; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5210,
+            "elapsedMs": 5056,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=91; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5210,
+            "elapsedMs": 5056,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=92; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5210,
+            "elapsedMs": 5057,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=93; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5211,
+            "elapsedMs": 5057,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=94; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5211,
+            "elapsedMs": 5057,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=95; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5212,
+            "elapsedMs": 5058,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "classId=96; columns=3; rows=25; cells=75; returnedStudents=0",
-            "elapsedMs": 5212,
+            "elapsedMs": 5058,
             "name": "sub-prep-roster-query"
         },
         {
             "detail": "data-empty; widgets=0; textEdits=0; navigationRows=0; sourceClasses=96; visibleClasses=0; groups=0; classInfoLookups=96; teacherLookups=96; rosterLookups=96; queryCounts=classes:1,classInfo:96,teachers:96,rosterCounts:96; resultRows=classes:96,classInfo:96,classInfoSchedule:0,teachers:96,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1",
-            "elapsedMs": 5213,
+            "elapsedMs": 5059,
             "name": "sub-prep-class-information"
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5213,
+            "elapsedMs": 5059,
             "name": "page-enter"
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 5562,
+            "elapsedMs": 5405,
             "name": "page-created"
         },
         {
             "detail": "sub-prep",
-            "elapsedMs": 5562,
+            "elapsedMs": 5405,
             "name": "page-leave"
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 5863,
+            "elapsedMs": 5705,
             "name": "page-enter"
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6212,
+            "elapsedMs": 6031,
             "name": "page-created"
         },
         {
             "detail": "my-classes",
-            "elapsedMs": 6212,
+            "elapsedMs": 6031,
             "name": "page-leave"
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 6214,
+            "elapsedMs": 6033,
             "name": "page-enter"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; pages=38",
-            "elapsedMs": 6346,
+            "elapsedMs": 6172,
             "name": "pdf-document-loaded"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; size=600x526",
-            "elapsedMs": 6527,
+            "elapsedMs": 6354,
             "name": "pdf-document-rendered"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 6588,
+            "elapsedMs": 6416,
             "name": "pdf-document-released"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; pages=38",
-            "elapsedMs": 6814,
+            "elapsedMs": 6643,
             "name": "pdf-document-loaded"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf; size=600x526",
-            "elapsedMs": 6965,
+            "elapsedMs": 6793,
             "name": "pdf-document-rendered"
         },
         {
             "detail": "DYB Lesson Planning Guide.pdf",
-            "elapsedMs": 7023,
+            "elapsedMs": 6852,
             "name": "pdf-document-released"
         },
         {
             "detail": "pdf-viewer",
-            "elapsedMs": 7405,
+            "elapsedMs": 7229,
             "name": "page-leave"
         },
         {
             "detail": "my-workspace",
-            "elapsedMs": 7407,
+            "elapsedMs": 7231,
             "name": "page-enter"
         }
     ],
@@ -19595,14 +19595,14 @@
         "capturedAt": "",
         "checkpointSampleCount": 70,
         "handleCount": 289,
-        "pagefileUsageBytes": 327598080,
-        "peakWorkingSetBytes": 292823040,
+        "pagefileUsageBytes": 327294976,
+        "peakWorkingSetBytes": 292638720,
         "platform": "windows",
         "privateDirtyBytes": 0,
-        "privateUsageBytes": 327598080,
-        "privateWorkingSetBytes": 224747520,
+        "privateUsageBytes": 327294976,
+        "privateWorkingSetBytes": 224563200,
         "threadCount": 16,
-        "workingSetBytes": 291880960
+        "workingSetBytes": 291696640
     },
     "progressUpdates": 14,
     "scenario": {

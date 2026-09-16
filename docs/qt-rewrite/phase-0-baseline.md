@@ -494,6 +494,16 @@ and Linux. Runtime memory reports must record commit, private bytes, working
 set/Resident Set Size, peak working set, handles, threads, and the exact
 scenario/fixture.
 
+The Phase 0 memory contract is recorded in
+`docs/qt-rewrite/phase-0-memory-thresholds.md`: packaged Release working set
+uses a strictly-below `262,144,000`-byte (`250 MiB`) comparison for the
+end-of-rewrite normal resident target, while bounded heavy operations have a
+temporary strictly-below `536,870,912`-byte (`512 MiB`) diagnostic ceiling.
+Current legacy before-state runs retain both comparisons in each heavy
+manifest as trend evidence; they are not Phase 0 acceptance gates or v2 pass
+results. Each later phase must avoid regressions and should lower the affected
+heavy-route working set until the final target can be enforced.
+
 ### Visual capture harness
 
 The application now supports an in-process visual capture mode for Phase 0
@@ -675,8 +685,7 @@ store the JSON startup trace beside the PNG files.
   on each refresh.
 - Sub Prep visual references for editing, read-only, dialogs, loading/errors,
   and other states beyond the now-retained selected, changed-selection, empty,
-  both-language/theme, and generated-output references, plus an explicit
-  packaged Release memory budget for the v2 acceptance gate.
+  both-language/theme, and generated-output references.
 - Golden generated reports, substitute documents, additional roster variants,
   and PowerPoint output beyond the retained heavy Sub Prep PDF/package
   references.

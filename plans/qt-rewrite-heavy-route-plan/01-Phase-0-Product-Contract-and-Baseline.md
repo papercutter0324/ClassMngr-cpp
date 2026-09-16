@@ -974,3 +974,34 @@ No v2 feature work begins without a fixture and an acceptance check.
   decoded/resident lifecycle traces, and Windows ARM64/macOS universal/Linux
   Release evidence. Continue the next heavy Phase 0 slice; do not begin v2
   remediation or Phase 1 yet.
+
+## Progress update - 2026-09-16 (packaged Release memory threshold contract)
+
+- What changed: Phase 0 now records the exact primary-memory contract required
+  by the Memory Hotspot Remediation update. The end-of-rewrite normal
+  resident/idle/post-release target is strictly below `262,144,000` bytes
+  (`250 MiB`) Windows working set. Phase 0 records the current legacy distance
+  to that target rather than requiring the legacy widget graph to pass it. The
+  separate bounded transient-operation ceiling is a temporary diagnostic
+  ceiling, strictly below `536,870,912` bytes (`512 MiB`), with private bytes,
+  commit, peak, handles, and threads retained as secondary diagnostics. The
+  contract is documented in `docs/qt-rewrite/phase-0-memory-thresholds.md`.
+- Heavy-route enforcement: the packaged Release Sub Prep visual-state probe
+  now evaluates both comparisons and writes the target/ceiling classification
+  into its retained manifest. All four populated visual routes and the empty
+  route currently remain above the final target at their retained peak
+  checkpoints while staying below the temporary transient ceiling; this is an
+  intentional current-product finding, not a Phase 0 failure or a v2 pass.
+  The highest retained visual-route peak was `410,849,280` bytes, and the
+  previously retained heavy Sub Prep output peak was `489,000,960` bytes, both
+  below the temporary transient ceiling.
+- Evaluation impact: the Phase 0 budget requirement is now explicit and
+  machine-recorded on a real packaged Release heavy route. The contract does
+  not authorize accepting the current full widget graph, and it does not move
+  remediation work into Phase 0. Each later phase must avoid regressions and
+  should lower the affected heavy-route measurements. Phase 0 remains open
+  for the remaining output/parity references, per-resource decoded/resident
+  traces, and Windows ARM64/macOS universal/Linux Release evidence.
+- Decision and next heavy slice: retain the threshold-classified visual
+  artifacts as the before-state budget oracle and continue with the next
+  heavy Phase 0 evidence gap; do not begin v2 remediation or Phase 1 yet.
