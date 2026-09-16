@@ -767,8 +767,9 @@ store the JSON startup trace beside the PNG files.
   `visual-baseline/release/workflow-five-minute/`, and the Sub Prep, Classes,
   and Speaking Evaluation lifecycle boundaries are retained under their
   large-fixture directories.
-- macOS universal Release baseline; Windows ARM64 and Linux are deferred ports
-  and are not Phase 0 blockers.
+- Windows ARM64 and Linux Release baselines; these unofficial ports are
+  deferred and are not Phase 0 blockers. The macOS universal Release baseline
+  is retained below.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution; the
   populated Classes entry/selection/re-entry frames, Schedule Import loading
@@ -811,16 +812,58 @@ usage, including gate-enforced validation, is documented in the
 [automation README](../../scripts/phase0/README.md).
 
 - The runner passed a PowerShell parse check and no-write all-route plan under
-  Windows PowerShell 5.1. PowerShell 7 and actual route execution were not run.
+  Windows PowerShell 5.1. PowerShell 7 and actual orchestrated route execution
+  were not run.
 - The validator's nine standard-library self-tests passed. An independent
   Tester validated all 24 runner mappings and safety behavior; unsafe project/
   build output roots and non-empty run collisions were rejected without writes.
 - The historical retained Release tree passed artifact-integrity checks for
-  28 manifests, 81 PNGs, 29 PDFs, and one ZIP. It contains no new orchestrated
-  route manifests, so it contributes 0/24 route coverage on each platform and
-  does not pass the exit gate. No fresh full 24-route orchestrated build/run
-  occurred, and no macOS evidence is available.
+  28 manifests, 81 PNGs, 29 PDFs, and one ZIP. It contains no orchestrated
+  route manifests and contributes 0/24 route-matrix coverage per platform.
+  The separate 12-route macOS workflow below is baseline evidence, not a
+  substitute for all 24 orchestrated route IDs. No fresh full 24-route run
+  occurred on either required platform.
 - Next: produce all 24 routes in a fresh Windows x64 run and produce/ingest all
   24 macOS universal routes.
 - Native Office automation was not run. Visual and generated-output semantic
   approval remains a human review; Phase 0 remains In progress.
+
+## macOS universal Release baseline (2026-09-17)
+
+The universal Release app and versioned DMG were rebuilt after setting the
+macOS deployment minimum to 14.4. The Qt 6.12.0 kit used here also targets
+14.4. A release validation pass inspected every embedded Mach-O: all 115
+contained both `arm64` and `x86_64` slices and none requires a newer macOS
+version. The staged app declares `LSMinimumSystemVersion=14.4`, its main binary
+has a 14.4 minimum, its code signature verifies, and only `libqsqlite.dylib`
+is present in the SQL plugin directory. The disk image checksum verified.
+
+Build host: macOS 26.6.2, Apple Silicon arm64, Xcode 26.6 / AppleClang 21.0.0,
+CMake 4.3.3, Ninja 1.13.2, and Qt 6.12.0 universal (`arm64;x86_64`). The clean
+Release installer build used `macos-clang-release-installer`; the universal
+Debug startup and dialog test targets were configured at the same 14.4
+deployment target. The packaged app was exercised on this host, not on a
+macOS 14.4 machine.
+
+Empty-workspace startup completed in 2,906 ms with a 235,356,160-byte working
+set, 237,273,088-byte peak working set, and 123,815,016-byte macOS physical
+footprint. The populated 96-class startup completed in 3,137 ms at
+235,470,848 bytes working set, then the complete 12-route workflow completed
+in 9,407 ms. Its peak working set was 508,624,896 bytes; at the workflow
+checkpoint it retained 9,678 widgets and all 11 registered pages. The route
+performed 96 Sub Prep class-information, teacher, and roster lookups; loaded,
+rendered, and released two PDFs; and returned to My Workspace. At the 1-second
+settled checkpoint, the working set was 505,069,568 bytes and the physical
+footprint was 402,179,512 bytes. These are legacy before-state measurements,
+not v2 memory acceptance results.
+
+Retained artifacts are in
+`docs/qt-rewrite/visual-baseline/macos-universal/release/`: the
+`manifest.json`, empty-startup profile, and 96-class workflow profile, trace,
+startup frame, and settled frame. The empty-startup frame was not retained
+because the initial setup page displays prefilled campus Wi-Fi credentials.
+The 96-class source fixture is shared with the existing
+`release/large-classes-visual-states/` fixture. The verified DMG SHA-256 is
+`6ebc6d71e7fb9188d606999b6ab5e479e14422ca9e133126527c8ca2adf653ec`.
+For reproduction, copy that `.tps` fixture before launching the workflow: the
+application writes workspace state on exit.

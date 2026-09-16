@@ -96,50 +96,36 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(APPLE)
+    find_program(CLASSMNGR_CODESIGN_EXECUTABLE codesign REQUIRED)
     set(CLASSMNGR_QT_DEPLOY_EXECUTABLE "ClassMngr.app")
-    string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE [=[
+    string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
+        "    NO_APP_STORE_COMPLIANCE\n"
+    )
+    string(APPEND CLASSMNGR_QT_DEPLOY_POSTAMBLE
+        "set(CLASSMNGR_CODESIGN_EXECUTABLE [[${CLASSMNGR_CODESIGN_EXECUTABLE}]])\n"
+        [=[
 set(CLASSMNGR_BAD_SQL_DRIVERS
     libqsqlmimer.dylib
     libqsqlodbc.dylib
     libqsqlpsql.dylib
 )
-set(CLASSMNGR_STAGED_SQL_DRIVERS "")
-set(CLASSMNGR_QT_SQL_DRIVER_DIR "${__QT_DEPLOY_QT_INSTALL_PREFIX}/${__QT_DEPLOY_QT_INSTALL_PLUGINS}/sqldrivers")
-set(CLASSMNGR_SQL_DRIVER_STAGING_DIR "${CMAKE_CURRENT_LIST_DIR}/classmngr-deploy-sqldrivers")
-file(MAKE_DIRECTORY "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
-foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
-    if(EXISTS "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}" AND NOT EXISTS "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
-        file(RENAME "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}" "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
-    endif()
-endforeach()
-foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
-    if(EXISTS "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
-        file(RENAME "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}" "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}")
-        list(APPEND CLASSMNGR_STAGED_SQL_DRIVERS "${driver}")
-    endif()
-endforeach()
 set(CLASSMNGR_APP_SQL_DRIVER_DIR "${QT_DEPLOY_PREFIX}/ClassMngr.app/Contents/PlugIns/sqldrivers")
 foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
     if(EXISTS "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
         file(REMOVE "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
     endif()
 endforeach()
-]=])
-    string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
-        "    NO_APP_STORE_COMPLIANCE\n"
-    )
-    string(APPEND CLASSMNGR_QT_DEPLOY_POSTAMBLE [=[
-foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
-    if(EXISTS "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
-        file(REMOVE "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
-    endif()
-endforeach()
-foreach(driver IN LISTS CLASSMNGR_STAGED_SQL_DRIVERS)
-    if(EXISTS "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}")
-        file(RENAME "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}" "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
-    endif()
-endforeach()
-file(REMOVE_RECURSE "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
+execute_process(
+    COMMAND "${CLASSMNGR_CODESIGN_EXECUTABLE}"
+        --force
+        --deep
+        --sign -
+        "${QT_DEPLOY_PREFIX}/ClassMngr.app"
+    RESULT_VARIABLE CLASSMNGR_CODESIGN_RESULT
+)
+if(NOT CLASSMNGR_CODESIGN_RESULT EQUAL 0)
+    message(FATAL_ERROR "Unable to re-sign the deployed ClassMngr.app")
+endif()
 ]=])
 endif()
 

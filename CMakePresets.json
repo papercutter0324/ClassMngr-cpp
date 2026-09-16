@@ -167,7 +167,7 @@
         "BUILD_TESTING": "ON",
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0"
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4"
       }
     },
     {

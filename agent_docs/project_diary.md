@@ -86,8 +86,9 @@
   ignored, and build/dist artifacts are preserved.
 - The Phase 0 platform contract is Windows x64 plus macOS universal. By user
   decision, Windows ARM64 and Linux are unofficial ports deferred to later;
-  do not list them as Phase 0 blockers. A Windows x64 per-run validation pass
-  is not the full Phase 0 exit gate while macOS evidence is missing.
+  do not list them as Phase 0 blockers. The exit gate requires all 24 routes
+  for both supported targets; neither a single-platform run nor the retained
+  macOS packaging baseline alone satisfies it.
 - The `scripts/phase0/` runner uses existing opt-in packaged Qt routes and a
   fresh caller-selected evidence run directory; its plan mode is non-mutating.
   The validator checks artifacts, JSON/manifests, lifecycle checkpoints and

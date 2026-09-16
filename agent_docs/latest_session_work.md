@@ -1,8 +1,12 @@
 # Latest Session Work
 
-Qt Rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. Current Heavy
-deployment: `qt0_evidence_automation_20260917`. Phase 1 must not begin until
-the supported-platform Phase 0 exit gate and remaining evidence are complete.
+Qt Rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. The latest
+completed slice is the macOS universal Release baseline at a 14.4 deployment
+target. The local evidence automation adds a distinct 24-route exit gate that
+still requires full Windows x64 and macOS universal route runs. Current Heavy
+deployment: `qt0_merge_conflicts_20260917`; the preceding automation deployment
+was `qt0_evidence_automation_20260917`. Phase 1 must not begin until the
+supported-platform Phase 0 exit gate and remaining evidence are complete.
 
 ## Current Deployment Handoff
 
@@ -33,11 +37,12 @@ the supported-platform Phase 0 exit gate and remaining evidence are complete.
   is missing. The 24 fresh routes were not run in this deployment;
   PowerShell 7 and a macOS run remain unverified. The final route message
   explicitly distinguishes those statuses.
-- Remaining Phase 0 gaps include obtaining packaged macOS universal evidence,
-  human review of visual/output fidelity, remaining golden report/substitute/
-  roster references, and any feature states not covered by the current routes.
-  Native Office automation was not run. Do not begin Phase 1 or v2 memory
-  remediation.
+- Remaining Phase 0 gaps include running the required 24-route matrix on both
+  Windows x64 and macOS universal, human review of visual/output fidelity,
+  remaining golden report/substitute/roster references, and any feature states
+  not covered by the current routes. The retained macOS baseline does not by
+  itself satisfy the route matrix. Native Office automation was not run. Do not
+  begin Phase 1 or v2 memory remediation.
 
 ## Prior Session Detail (superseded by the current handoff above)
 
@@ -50,7 +55,7 @@ the supported-platform Phase 0 exit gate and remaining evidence are complete.
   working set. The temporary `<512 MiB` ceiling is diagnostic only.
 - Phase 0 is not complete and Phase 1 must not begin yet. Remaining gaps
   include remaining feature loading/error states, generated-output references,
-  cross-platform Release evidence, and the eventual v2 memory/ownership
+  Windows ARM64 and Linux Release evidence, and the eventual v2 memory/ownership
   remediation. Populated Classes visual states are retained for both
   language/theme axes.
 - The CMake configuration cleanup deployment is complete and independent of the
@@ -60,7 +65,36 @@ the supported-platform Phase 0 exit gate and remaining evidence are complete.
   only the empty root-generated `CMakeFiles/` residue was removed. The tracked
   `cmake/` modules, `build/`, and `dist/` were preserved.
 
-## Prior Session Changes
+## Latest Completed Slice: macOS Universal Release Baseline (2026-09-17)
+
+- The macOS deployment minimum is now 14.4 in the configure preset and build
+  documentation, matching the selected universal Qt 6.12.0 kit.
+- Release packaging no longer moves SQL drivers out of the external Qt kit;
+  it removes unwanted SQL plugins only from the app bundle and re-signs after
+  deployment. The release validator checks both architectures and minimum OS
+  versions for every embedded Mach-O.
+- A clean universal Release build produced
+  `dist/ClassMngr-0.19.0-macos-universal.dmg`. The staged app reports 14.4 in
+  both `Info.plist` and the main executable; all 115 bundled Mach-O files are
+  arm64/x86_64 and target no later than 14.4. Signature and disk-image
+  checksums passed; `libqsqlite.dylib` is the only bundled SQL driver.
+- The packaged app ran on macOS 26.6.2 through empty startup and a 96-class,
+  12-route workflow including two PDF render/release cycles. Fresh universal
+  Debug startup-performance and dialog-services CTest targets passed with a
+  14.4 deployment target.
+- Evidence, profiles, trace, screenshots, DMG hash, and host/toolchain details
+  are in `docs/qt-rewrite/visual-baseline/macos-universal/release/`. The empty
+  startup profile is retained without its screenshot because that frame
+  exposes seeded campus Wi-Fi credentials. The minimum macOS 14.4 runtime was
+  not directly exercised on this macOS 26.6.2 host.
+- The large `.tps` workflow can write workspace state on exit. Its final run
+  used a byte-identical temporary copy; the tracked source fixture was restored
+  to its baseline and remains unchanged.
+- Overall Phase 0 remains in progress. Fresh 24-route evidence for Windows x64
+  and macOS universal, human review, and remaining feature-state/output
+  evidence stay open. Windows ARM64 and Linux remain deferred unofficial ports.
+
+## Earlier Session Changes
 
 - Accepted Calendar Import parser-failure reference: the implementation is
   based on `ded8b5dc`, and the evidence-only follow-up scrolls Calendar
@@ -115,7 +149,7 @@ the supported-platform Phase 0 exit gate and remaining evidence are complete.
   import button, and a non-empty screenshot. The focused route and full
   startup-performance suite passed with a `416,694,272`-byte working-set and
   `457,310,208`-byte private-usage peak.
-- Final current-session slice — `Phase 0: retain Schedule Import conflict
+- Previously completed slice — `Phase 0: retain Schedule Import conflict
   warning` (commit created after the cutoff): the packaged large Schedule
   Import cancel route now retains the real conflict-warning modal, including
   visible warning text, disabled Import, and a validated screenshot. The
@@ -170,9 +204,9 @@ the supported-platform Phase 0 exit gate and remaining evidence are complete.
 ## Prior Pending Work and Blockers
 
 - Phase 0 remains active for remaining feature loading/error states,
-  generated-output coverage, cross-platform Release evidence, and the eventual
-  v2 ownership/memory work. The Calendar Import failure boundary is no longer a
-  blocker.
+  generated-output coverage, Windows ARM64 and Linux Release evidence, and the
+  eventual v2 ownership/memory work. The Calendar Import failure boundary is
+  no longer a blocker.
 - `.codex_workflow_staging_1.1.17/` is ignored workflow state. The durable
   `agent_docs/` context is tracked; preserve it for reboot/resume context.
 - Do not run native Office automation unless a suitable platform/environment

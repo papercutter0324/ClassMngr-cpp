@@ -3,6 +3,7 @@
 Active deployment plan: automate and complete the Qt rewrite Phase 0
 baseline/evidence work using the heavy route, with one commit per completed
 slice. Current automation deployment: `qt0_evidence_automation_20260917`.
+Current merge reconciliation deployment: `qt0_merge_conflicts_20260917`.
 
 ## Goal
 
@@ -15,10 +16,13 @@ final `<250 MiB` RAM target applies to the completed rewrite; it is not a Phase
 
 ## Overall Progress
 
-The packaged Windows x64 Release heavy route has retained startup, lifecycle,
+The packaged Windows x64 Release route has retained startup, lifecycle,
 resource-trace, PDF-viewer, Sub Prep, Classes, Speaking Evaluation, import,
-transfer, staff-directory, and generated-output evidence. Recent slices added
-a Speaking Evaluation PowerPoint renderer-selection reference, a Sub Prep
+transfer, staff-directory, and generated-output evidence. The macOS universal
+Release baseline is now also retained at a 14.4 deployment target, including
+native packaged startup, all-page workflow, PDF lifecycle, and visual evidence.
+Recent Windows slices added a Speaking Evaluation PowerPoint renderer-selection
+reference, a Sub Prep
 output-dialog validation-error reference, a Sub Prep editing/read-only
 reference, populated Classes visual references across English/Korean and
 light/dark variants, real Schedule Import loading references for both cancel
@@ -37,7 +41,17 @@ blockers.
 
 ## Current Position
 
-The Calendar Import parser-failure boundary is now accepted. Its implementation
+The macOS universal Phase 0 slice is now complete. The deployment minimum is
+14.4, aligned with the selected Qt 6.12.0 kit. The packaged arm64/x86_64
+Release app and DMG passed signature/checksum checks; all 115 embedded Mach-O
+files were verified universal and no newer than the target. Packaged startup
+and the 96-class all-route workflow completed on macOS 26.6.2, and the fresh
+14.4-target universal Debug startup-performance and dialog-services CTest
+targets passed. Evidence is under
+`docs/qt-rewrite/visual-baseline/macos-universal/release/`. The host did not
+provide macOS 14.4 for a direct oldest-version runtime check.
+
+The Calendar Import parser-failure boundary remains accepted. Its implementation
 is based on `ded8b5dc`, with the evidence-only error capture scroll fix and fresh
 Release artifacts completed in deployment `qt0_calendar_verify_20260917`.
 The 69-byte malformed response produced the real missing
@@ -64,8 +78,9 @@ CMake output is now ignored; `build/` and `dist/` were not cleaned.
 
 ## Next Milestone
 
-Run the new Windows x64 route matrix with an explicit evidence parent, address
-the remaining generated-output/visual review gaps, and obtain packaged macOS
-universal evidence for exit-gate consolidation. Preserve Windows ARM64/Linux as
-deferred unofficial ports. Do not begin Phase 1 or make v2 memory claims from
-the legacy widget graph.
+Run the new 24-route matrix on both required platforms with explicit evidence
+parents, address remaining generated-output and visual-review gaps, and
+consolidate the evidence with the exit-gate validator. The packaged macOS
+universal baseline is retained, but the route matrix remains incomplete.
+Preserve Windows ARM64 and Linux as deferred unofficial ports. Do not begin
+Phase 1 or make v2 memory claims from the legacy widget graph.
