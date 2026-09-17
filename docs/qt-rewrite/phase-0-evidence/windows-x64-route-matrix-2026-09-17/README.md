@@ -37,3 +37,16 @@ The retained run manifest and validation summary are byte-identical copies of
 the original files. The full generated-output references for catalog PDFs,
 roster layouts, and Speaking Evaluation reports are retained separately under
 `docs/qt-rewrite/visual-baseline/release/windows-output-reference/`.
+
+## Revalidation - 2026-09-17
+
+The original run root was revalidated from this Windows workspace at
+`2026-09-17T14:04:36Z`. The validator returned exit code `0` with `pass=true`,
+24 routes, zero failures, and all 151 required artifacts present. Its single
+warning remains the legacy memory trend: 495 samples at or above 250 MiB; this
+is not a Phase 0 failure. The combined exit gate remains incomplete until the
+macOS universal route matrix is complete.
+
+The SHA-256 inventory was checked against all 331 files in the original run
+root (147,732,123 bytes); every path, size, and digest matched. The committed
+run manifest and validation summary also match their originals byte-for-byte.
