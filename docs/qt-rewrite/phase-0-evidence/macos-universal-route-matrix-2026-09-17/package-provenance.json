@@ -1,0 +1,21 @@
+{
+  "sourceEvidenceRoot": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z",
+  "sourceRunManifestPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/run-manifest.json",
+  "sourceRunManifestSha256": "2a751962ca634fc357f4b05225651e9cd0db5ae65a034eec8a06d22d2cb42c98",
+  "sourcePackagingAuditSummaryPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/summary.json",
+  "sourcePackagingAuditSummarySha256": "8e3cab1f9c8aae71fe959349e632a29f50d0452e858bfd4c4c1aed5e074f04ec",
+  "sourceCommit": "c5dd6e6b96f630d776165b9dbf61917ad743f6dd",
+  "deploymentTarget": "14.4",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "infoPlistMinimumVersion": "14.4",
+  "embeddedMachOCount": 116,
+  "applicationSourcePath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr",
+  "applicationSha256": "ab0256fd89030eaa5580fdd5439ac68f195d512348a719979e8de0c46ecaac67",
+  "testHarnessSourcePath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/build/debug/ClassMngrStartupPerformanceTests",
+  "testHarnessSha256": "95bc0652ea402d4912462d67f7b290c2df3a7d87b8b3a3ac0b5bbb5adafabeff",
+  "applicationCopiedPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T-run2Z/package/ClassMngr.app/Contents/MacOS/ClassMngr",
+  "testHarnessCopiedPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T-run2Z/build/debug/ClassMngrStartupPerformanceTests"
+}
