@@ -2,17 +2,18 @@
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: None
-- Blocks: Every implementation phase
+- Blocks: None; Phase 1 is unblocked
 - Owner: Unassigned
-- Last updated: 2026-09-17
-- Current note: Static archaeology is recorded for commit `75755460`; runtime,
-  visual, fixture, and packaged-release evidence is still being collected. A
-  fresh Windows x64 Release run now passes all 24 routes. The macOS universal
-  Release app baseline exists, but its 24-route matrix remains 0/24, so the
-  combined Phase 0 gate is In Progress and Phase 1 remains blocked.
+- Last updated: 2026-09-18
+- Current note: Phase 0 was declared complete by the user on 2026-09-18. Fresh
+  packaged Windows x64 and macOS universal matrices pass all 24 routes each;
+  combined `--require-exit-gate` validation using the Windows run root and both
+  retained macOS archives passed. The user confirmed the retained visual
+  references look correct. Phase 1 is unblocked; historical evidence and
+  environment limitations remain recorded in the baseline log.
 
 ### Phase 0 platform and route gate
 
@@ -1278,3 +1279,29 @@ No v2 feature work begins without a fixture and an acceptance check.
   also passed with exit `0`. Phase 0 remains In progress; remaining
   cross-platform, feature-state, and generated-output evidence is still open,
   and no Phase 1 or v2 memory acceptance follows.
+
+## Progress update - 2026-09-18 (combined platform route gate)
+
+- The combined Phase 0 validator was run with `--require-exit-gate`, the full
+  Windows x64 run root, and macOS evidence staged separately from the `.tar`
+  and `.tar.gz` archives under `E:\MacOS-evidence\`.
+- Both archive runs passed the combined gate: all 24 required route IDs on
+  Windows x64 and macOS universal. Each archive matched the retained macOS
+  inventory for 643 files / 462,599,685 bytes and all 156 symlink targets.
+  Archive SHA-256 values are `0c0a16e5240e1b56a63c89b06a4a8a3b9395f2613284d484207ee9e21798b4b7`
+  (`.tar`) and `9a84f894893d8e6c4fc0fb5f88e7c3eea410765f3d5f4dbb948442cc70d11b18`
+  (`.tar.gz`).
+- The route gate is complete. Overall Phase 0 remains In progress pending
+  generated-output semantic review and closure of the documented remaining
+  feature-state/output gaps. The user confirmed on 2026-09-18 that the retained
+  visual references look correct. The legacy 250 MiB memory trend warning is
+  non-failing; ARM64/Linux remain deferred ports.
+
+## Phase 0 completion - 2026-09-18
+
+- The user declared Phase 0 complete. This supersedes the earlier In Progress
+  status and unblocks Phase 1.
+- The combined 24-route gate passed for Windows x64 and macOS universal, and
+  the user confirmed that the retained visual references look correct.
+- Earlier evidence-gap and environment notes remain as historical context;
+  they are not current Phase 0 blockers under this closure decision.

@@ -931,3 +931,39 @@ The 96-class source fixture is shared with the existing
 `6ebc6d71e7fb9188d606999b6ab5e479e14422ca9e133126527c8ca2adf653ec`.
 For reproduction, copy that `.tps` fixture before launching the workflow: the
 application writes workspace state on exit.
+
+## Combined Phase 0 route gate revalidation - 2026-09-18
+
+The strict combined validator was rerun with `--require-exit-gate`, the full
+Windows x64 run root, and temporary macOS roots staged from both archives in
+`E:\MacOS-evidence\`. Both invocations passed all 24 required routes on each
+supported platform. The combined route gate is complete; Phase 0 remains In
+Progress pending human semantic review of visual/generated-output evidence and
+the documented remaining feature-state/output gaps.
+
+Before staging, each archive was checked against the retained SHA-256 and
+symlink inventories: all 643 regular files (462,599,685 bytes) and 156 symlink
+targets matched, with no unsafe paths. The archive SHA-256 values are
+`0c0a16e5240e1b56a63c89b06a4a8a3b9395f2613284d484207ee9e21798b4b7` for the
+`.tar` and `9a84f894893d8e6c4fc0fb5f88e7c3eea410765f3d5f4dbb948442cc70d11b18`
+for the `.tar.gz`. AppleDouble `._*` sidecars were excluded from the temporary
+staging. The archive symlink entries were validated against the inventory;
+the Windows staging environment did not materialize them as filesystem links.
+The validator emitted only the legacy memory trend warning, which is not a
+Phase 0 failure. Temporary staging directories were removed after each run.
+
+## Visual reference review - 2026-09-18
+
+The user reviewed the retained visual references and confirmed that they look
+correct. This approval covers the visual references; semantic review of
+generated-output content and closure of the documented remaining
+feature-state/output gaps are still open.
+
+## Phase 0 completion - 2026-09-18
+
+The user declared Phase 0 complete on 2026-09-18, superseding the earlier
+In Progress status. The combined 24-route gate had passed for Windows x64 and
+macOS universal, and the user had confirmed that the retained visual
+references look correct. Phase 1 is unblocked. Earlier evidence-gap and
+environment notes remain as historical context and are not current Phase 0
+blockers under this closure decision.
