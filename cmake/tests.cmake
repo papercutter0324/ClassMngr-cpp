@@ -1,5 +1,56 @@
 include_guard(GLOBAL)
 
+# Shared schedule test doubles have one explicit owner each. Linking their
+# object libraries keeps the test executables' source lists non-overlapping.
+add_library(ClassMngrScheduleWidgetTestSupport OBJECT
+    tests/schedule_widget_test_stubs.cpp
+)
+target_compile_features(ClassMngrScheduleWidgetTestSupport
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrScheduleWidgetTestSupport
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+target_link_libraries(ClassMngrScheduleWidgetTestSupport
+    PRIVATE
+        ClassMngrBuildSettings
+        Qt6::Concurrent
+        Qt6::Gui
+        Qt6::Pdf
+        Qt6::PrintSupport
+        Qt6::Sql
+        Qt6::Widgets
+)
+
+add_library(ClassMngrScheduleWidgetResourcePackTestSupport OBJECT
+    tests/schedule_widget_resource_pack_manager_test_stub.cpp
+)
+target_compile_features(ClassMngrScheduleWidgetResourcePackTestSupport
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrScheduleWidgetResourcePackTestSupport
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+target_link_libraries(ClassMngrScheduleWidgetResourcePackTestSupport
+    PRIVATE
+        ClassMngrBuildSettings
+)
+
+set_property(GLOBAL APPEND PROPERTY CLASSMNGR_TEST_SUPPORT_TARGETS
+    ClassMngrScheduleWidgetTestSupport
+    ClassMngrScheduleWidgetResourcePackTestSupport
+)
+set_property(GLOBAL APPEND PROPERTY CLASSMNGR_TEST_OVERRIDE_SUPPORT_TARGETS
+    ClassMngrScheduleWidgetTestSupport
+    ClassMngrScheduleWidgetResourcePackTestSupport
+)
+
 # Declare a QtTest executable with the project-wide target and CTest defaults.
 # Feature-specific resources and platform libraries remain next to the call site.
 function(classmngr_add_qt_test)
@@ -144,8 +195,23 @@ function(classmngr_finalize_test_targets)
         endif()
 
         get_target_property(target_sources "${test_name}" SOURCES)
+        get_target_property(test_libraries "${test_name}" LINK_LIBRARIES)
+        if(NOT test_libraries OR test_libraries MATCHES "-NOTFOUND$")
+            set(test_libraries)
+        endif()
+
         set(test_sources)
         set(has_production_overrides FALSE)
+        get_property(test_override_support_targets GLOBAL
+            PROPERTY CLASSMNGR_TEST_OVERRIDE_SUPPORT_TARGETS
+        )
+
+        foreach(test_library IN LISTS test_libraries)
+            if(test_library IN_LIST test_override_support_targets)
+                set(has_production_overrides TRUE)
+            endif()
+        endforeach()
+
         foreach(source IN LISTS target_sources)
             if(source MATCHES "^${PROJECT_SOURCE_DIR}/src/" OR source MATCHES "^src/")
                 continue()
@@ -172,7 +238,6 @@ function(classmngr_finalize_test_targets)
         # focused production overrides; their executable definitions can then
         # interpose the shared definitions without recompiling production.
         if(APPLE AND has_production_overrides)
-            get_target_property(test_libraries "${test_name}" LINK_LIBRARIES)
             if(test_libraries)
                 list(REMOVE_ITEM test_libraries ClassMngrRuntime)
                 set_property(

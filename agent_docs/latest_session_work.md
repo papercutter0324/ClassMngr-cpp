@@ -45,6 +45,26 @@ older Phase 0 open notes in this document's history.
   directory was
   `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.3-clean-4ffa6756081f4d0bb0044b1a12758723`.
   It is local verification output, not a checked-in artifact.
+- Slice 1.4 replaces recursive production source discovery with explicit
+  manifests for the six legacy object targets, both executable entry points,
+  and the two calendar QML files. Seven included roster `.inc` fragments are
+  marked header-only and assigned to `ClassMngrFeatures`; the generated build
+  info header remains a distinct `configure_file()` input. The new configure-
+  time check treats source globs only as an inventory of handwritten `src`
+  and active test files, and requires one target owner per file. Shared
+  schedule test doubles now compile once in test-support object libraries; the
+  ResourcePackManager fake is split out because ClassesPage uses the real
+  manager.
+- A clean Ninja/MSVC Debug configure and targeted build succeeded for
+  `ClassMngr`, `ClassMngrNext`, and the five test executables using the shared
+  schedule stubs. The ownership check validated 653 handwritten files for
+  Windows x64, excluding the Apple-only PowerPoint notice test. The
+  `ClassMngrNextLaunch` probe and all five affected tests passed CTest (6/6).
+  A temporary unassigned `src/` probe was rejected by the ownership check; it
+  was removed and a clean reconfigure passed again.
+  The clean build directory was
+  `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.4-clean-5d33542afed54ad8bbefc3546133c8e2`.
+  It is local verification output, not a checked-in artifact.
 - The slice 1.1 clean build directory was
   C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.1-clean-965a9613fb8046b7bbbbd5a520b03740.
   It is local verification output, not a checked-in artifact.
@@ -58,7 +78,6 @@ older Phase 0 open notes in this document's history.
 
 ## Next Entry Point
 
-Slices 1.1 and 1.2 are committed; slice 1.3 is verified for its own commit.
-Before starting slice 1.4, finish the slice 1.3 commit. Then replace recursive
-source discovery with explicit ownership while preserving the legacy target
-and the new v2 boundaries.
+Slices 1.1-1.3 are committed. Slice 1.4 is verified and ready to commit before
+beginning slice 1.5, tooling and CI. Keep the legacy production target and the
+new v2 boundaries buildable while extending the build checks.

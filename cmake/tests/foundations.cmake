@@ -279,6 +279,8 @@ classmngr_add_qt_test(
         NAME DialogServices
         SOURCES
             tests/dialog_services_tests.cpp
+            tests/fakes/fake_file_dialog_service.h
+            tests/fakes/fake_user_prompt_service.h
         LIBRARIES
             Qt6::Core
             Qt6::Gui

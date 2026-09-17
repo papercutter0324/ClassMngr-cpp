@@ -111,7 +111,7 @@ foreach(_classmngr_next_feature IN LISTS _classmngr_next_feature_targets)
 endforeach()
 
 qt_add_executable(ClassMngrNext
-    "${PROJECT_SOURCE_DIR}/src/next/main.cpp"
+    "${PROJECT_SOURCE_DIR}/${CLASSMNGR_NEXT_MAIN_SOURCE}"
 )
 
 target_compile_features(ClassMngrNext

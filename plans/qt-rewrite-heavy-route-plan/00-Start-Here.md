@@ -81,8 +81,14 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
 - `ninja -t commands ClassMngr.exe` confirms the full legacy Qt link set,
   including `Qt6::QuickControls2`. `ClassMngrSharedPolicyTests` built after
   importing VS DevCmd, and its targeted CTest passed 1/1; `ClassMngrNext.exe`
-  launched with exit code 0. Slice 1.4, explicit source ownership, is next;
-  Phase 1 remains in progress and no later phase is complete.
+  launched with exit code 0.
+- Slice 1.4 completed: explicit source manifests and configure-time ownership
+  checks cover production, executable, QML, and test sources. A clean Windows
+  Ninja/MSVC Debug configure reported 653 handwritten files; the build passed
+  for `ClassMngr`, `ClassMngrNext`, and five affected test targets. Six
+  targeted CTests passed.
+  Cross-platform verification is not claimed. Slice 1.5 is next; Phase 1
+  remains in progress and no later phase is complete.
 
 ## Important context
 

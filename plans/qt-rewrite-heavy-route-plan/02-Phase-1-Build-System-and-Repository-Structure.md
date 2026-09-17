@@ -8,11 +8,11 @@
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
 - Last updated: 2026-09-18
-- Current note: Slices 1.1-1.3 add the Qt Core-only `ClassMngrNext` bootstrap,
-  asserted source-free layer/feature boundaries, and measured module links for
-  legacy object targets. A fresh Ninja/MSVC Debug configuration built both
-  executables in 351 steps; `ClassMngrNextLaunch` passed 1/1. Runtime-link and
-  legacy-test checks passed; slice 1.4 source ownership is next.
+- Current note: Slices 1.1-1.4 add the Qt Core-only `ClassMngrNext` bootstrap,
+  asserted layer/feature boundaries, measured legacy module links, and explicit
+  source ownership. Clean Windows Ninja/MSVC Debug configure/build and six
+  targeted CTests passed. Cross-platform verification is not claimed; slice
+  1.5, tooling and CI, is next.
 
 ## Objective
 
@@ -132,6 +132,43 @@ and keep import, report, and transfer operations behind testable boundaries.
 Replace recursive source discovery with explicit source ownership.
 
 Every source file must belong to exactly one production target or one test target. Generated files must be clearly separated from handwritten files.
+
+#### Progress update - 2026-09-18 (slice 1.4 complete)
+
+`cmake/production_sources.cmake` now explicitly lists the six legacy
+production object targets:
+
+| Target | Source entries |
+|---|---:|
+| `ClassMngrCore` | 56 |
+| `ClassMngrData` | 42 |
+| `ClassMngrDomain` | 43 |
+| `ClassMngrUiShared` | 113 |
+| `ClassMngrFeatures` | 288 |
+| `ClassMngrAppServices` | 34 |
+
+The feature manifest includes seven `.inc` fragments marked
+`HEADER_FILE_ONLY`. `ClassMngr` owns `src/main.cpp` and the two explicit
+calendar QML files; `ClassMngrNext` owns `src/next/main.cpp`. The generated
+`src/core/build_info.h.in` remains a `configure_file` input.
+
+`cmake/source_ownership.cmake` compares the handwritten `src/` and `tests/`
+inventory with explicit owners and rejects missing or duplicate ownership. It
+excludes the Apple-only PowerPoint data-access notice test from non-Apple
+inventory.
+
+The five schedule-widget test consumers share the
+`ClassMngrScheduleWidgetTestSupport` object target. The `ResourcePackManager`
+fake is split into `ClassMngrScheduleWidgetResourcePackTestSupport` for four
+consumers; `ClassMngrClassesPageTests` uses the real manager. A clean Windows
+Ninja/MSVC Debug configure reported 653 handwritten files. The build passed
+for `ClassMngr`, `ClassMngrNext`, and the five affected test targets. Six
+targeted CTests passed: `ClassMngrScheduleWidgetTests`,
+`ClassMngrTestingClassesPageTests`, `ClassMngrClassesPageTests`,
+`ClassMngrScheduleImportDialogTests`, `ClassMngrSubPrepPageTests`, and
+`ClassMngrNextLaunch`. This is Windows-only evidence; no cross-platform
+verification is claimed. Phase 1 remains in progress, with slice 1.5, tooling
+and CI, next.
 
 ### 1.5 Tooling and CI
 

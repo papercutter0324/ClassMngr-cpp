@@ -224,13 +224,13 @@ if(APPLE)
 endif()
 
 set_source_files_properties(
-    src/features/calendar/ui/qml/EventCalendar.qml
+    ${CLASSMNGR_CALENDAR_QML_EVENT_FILE}
     PROPERTIES
         QT_RESOURCE_ALIAS EventCalendar.qml
 )
 
 set_source_files_properties(
-    src/features/calendar/ui/qml/MonthGridDelegate.qml
+    ${CLASSMNGR_CALENDAR_QML_MONTH_GRID_DELEGATE_FILE}
     PROPERTIES
         QT_RESOURCE_ALIAS MonthGridDelegate.qml
 )
@@ -242,9 +242,7 @@ qt_add_qml_module(ClassMngr
         ${CMAKE_CURRENT_BINARY_DIR}/qml/ClassMngr/Calendar
     RESOURCE_PREFIX
         /qt/qml
-    QML_FILES
-        src/features/calendar/ui/qml/EventCalendar.qml
-        src/features/calendar/ui/qml/MonthGridDelegate.qml
+    QML_FILES ${CLASSMNGR_CALENDAR_QML_FILES}
 )
 
 qt_add_translations(

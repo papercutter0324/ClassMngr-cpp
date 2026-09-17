@@ -20,6 +20,10 @@
   campus/files/images assets, and resource-pack inputs.
 - `tests`: focused Qt test sources and fixtures.
 - `cmake`: source/resource/deployment/test and platform build fragments.
+- `cmake/production_sources.cmake`: explicit production, executable, and QML
+  source manifests.
+- `cmake/source_ownership.cmake`: configure-time handwritten-source ownership
+  validation against production and test target lists.
 - `cmake/next.cmake`: parallel target and interface-boundary definitions,
   configure-time dependency checks, and CTest launch check.
 - `scripts/phase0`: Phase 0 platform route-matrix runners.
@@ -53,12 +57,18 @@ configure-time checks enforce the dependency graph. The console bootstrap
 links Qt Core only and remains independent of the placeholder targets.
 (application_services.h, database_session.h, cmake/sources.cmake,
 cmake/next.cmake). See the Phase 1 plan for measured per-target dependency
-ownership.
+ownership. `src/core/build_info.h.in` is configured separately; the source
+ownership inventory checks handwritten `src/` and `tests/` files against
+explicit target owners and skips the Apple-only PowerPoint notice test off
+Apple.
 
 ## Tests and Supporting Assets
 
 Legacy tests are declared as Qt executables and registered with CTest through
-the `cmake/tests/*.cmake` fragments. The parallel `ClassMngrNextLaunch` check
-is registered in `cmake/next.cmake`. Fixtures cover workspaces, imports,
-resource packs, and other focused feature cases. Resource and visual-baseline
-material is kept under `resources` and `docs/qt-rewrite`.
+the `cmake/tests/*.cmake` fragments. Shared schedule-widget stubs are compiled
+once for five test consumers; the `ResourcePackManager` fake is separate for
+four consumers because the Classes page test uses the real manager. The
+parallel `ClassMngrNextLaunch` check is registered in `cmake/next.cmake`.
+Fixtures cover workspaces, imports, resource packs, and other focused feature
+cases. Resource and visual-baseline material is kept under `resources` and
+`docs/qt-rewrite`.

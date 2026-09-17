@@ -15,6 +15,12 @@
 - Measure Qt header dependencies per production object target before narrowing
   shared module links. Keep the legacy runtime's full required module union
   explicit for its executable, tests, and QML/resource graph.
+- For explicit ownership, keep per-target source lists as the authority and use
+  recursive globs only to detect handwritten files missing from those lists.
+  Record QML and included `.inc` fragments too, while keeping generated outputs
+  and configure templates outside the handwritten inventory. Compile reused
+  test doubles once in object libraries; split variants when test targets need
+  different compile-time behavior.
 - ApplicationServices is the preferred application boundary. DataService
   remains as a compatibility facade while callers migrate; UI/controllers
   should not add direct repository usage.

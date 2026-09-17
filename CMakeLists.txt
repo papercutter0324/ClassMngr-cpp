@@ -215,3 +215,6 @@ if(BUILD_TESTING)
 
     classmngr_finalize_test_targets()
 endif()
+
+include(cmake/source_ownership.cmake)
+classmngr_check_source_ownership()

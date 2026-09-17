@@ -32,20 +32,26 @@ target and moved those modules out of the shared build-settings target. The
 legacy runtime keeps the complete module union required to link the current
 application and tests.
 
+Slice 1.4 replaces recursive production source discovery with explicit lists
+for all six legacy object targets, the two executable entry points, and the
+calendar QML files. Included roster `.inc` fragments are explicit header-only
+inputs. A configure-time ownership check compares the handwritten `src` and
+active test inventories with their targets; shared schedule test doubles now
+have one object-library owner each.
+
 ## Current Position
 
-Slice 1.3's fresh Ninja/MSVC Debug configure and build succeeded for both
-ClassMngr and ClassMngrNext in 351 steps. `ClassMngrNextLaunch` and the existing
-runtime-backed `ClassMngrSharedPolicyTests` passed (1/1 each). The generated
-Domain compile command uses Qt Core and Gui only; the application link keeps
-the legacy Qt union including QuickControls2.
+Slice 1.4's clean Ninja/MSVC Debug configure and targeted build succeeded for
+ClassMngr, ClassMngrNext, and all five tests that consume the shared schedule
+stubs. The configure-time ownership check validated 653 handwritten files for
+the Windows configuration. `ClassMngrNextLaunch` and those five test programs
+passed CTest (6/6).
 
-Slices 1.1-1.3 are implemented and verified. Phase 1 remains in progress; the
-next slice is 1.4, explicit source ownership.
+Slices 1.1-1.4 are implemented and verified. Phase 1 remains in progress; the
+next slice is 1.5, tooling and CI.
 
 ## Next Milestone
 
-Complete the slice 1.3 commit, then begin slice 1.4 by replacing recursive
-source discovery with explicit ownership. Keep next-generation target names
+Commit slice 1.4 before starting slice 1.5. Keep next-generation target names
 distinct from legacy object targets such as ClassMngrDomain and
 ClassMngrUiShared.
