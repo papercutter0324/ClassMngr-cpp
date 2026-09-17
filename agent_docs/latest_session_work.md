@@ -1,14 +1,34 @@
 # Latest Session Work
 
 Qt Rewrite Phase 0 remains in progress on branch `Qt-Rewrite`. The latest
-completed slice is the fresh Windows x64 24-route run and compact audit record.
-Windows coverage is 24/24; macOS universal remains 0/24, so the combined Phase
-0 gate is still incomplete. Current Heavy deployment:
-`qt0_windows_completion_20260917`. Phase 1 must not begin until the supported-
-platform gate and remaining visual/output review are complete.
+completed slice is the macOS universal packaged Release route matrix: 24/24
+routes passed and independent validation exited 0. Windows x64 also has a
+24/24 run, but the combined Phase 0 gate still needs its evidence consolidated
+with the macOS result and the remaining visual/output review. Current Heavy
+deployment: `qt0_macos_route_matrix_20260917`. Phase 1 must not begin until the
+combined gate and review are complete.
 
 ## Current Deployment Handoff
 
+- The macOS universal runner and its focused tests were committed as
+  `84b45902` (`Phase 0: add macOS universal evidence runner`); all 10 focused
+  runner tests passed. The final packaged Release root is
+  `/private/tmp/ClassMngr-Phase0-macos-universal-20260917T033003Z-QT0-EXEC-02-final`;
+  all 24 route IDs completed and independent validation with
+  `--expected-platform macos-universal` exited 0. The full root remains local
+  and unmodified.
+- The earlier 22/24 root is
+  `/private/tmp/ClassMngr-Phase0-macos-universal-20260917021448372-nihtwpxo7`.
+  Its only failed routes were `lifecycle-calendar-import` and
+  `lifecycle-calendar-import-error`, both failing at
+  `QTcpServer::listen(QHostAddress::LocalHost)` in the test harness
+  (`tests/startup_performance_tests.cpp:8831`) before the packaged app launched.
+  The error was `Unknown error`; focused and final reruns passed with unchanged
+  source and binary hashes. This supports a host/loopback-bind limitation, but
+  does not prove a specific sandbox denial or a product defect.
+- The Windows x64 24/24 run remains recorded in its compact audit bundle, but
+  the combined exit gate is still pending Windows evidence consolidation and
+  human visual/output review. Windows ARM64 and Linux remain deferred ports.
 - The prior merge reconciliation is recorded in local commit `7a9cb3c`
   (parents `875159da` and `e7d05f4c`); its 17 intended paths were checked for
   unresolved paths and conflict markers. The macOS 14.4 runtime was not
@@ -42,11 +62,10 @@ platform gate and remaining visual/output review are complete.
   per-file SHA-256 inventory; it is not a substitute for the complete evidence
   root. The resource trace records 189 entries and normal completion without
   timeout.
-- The validator's overall `exitGate` is still incomplete because macOS
-  universal has no 24-route run yet. The packaged macOS baseline exists but is
-  not a replacement for its required matrix. Phase 1 and v2 memory remediation
-  remain blocked by the Phase 0 exit gate and remaining human visual/output
-  review.
+- The validator's combined `exitGate` remains incomplete pending Windows x64
+  evidence consolidation and the remaining human visual/output review. The
+  macOS universal matrix is now complete at 24/24. Phase 1 and v2 memory
+  remediation remain blocked until the Phase 0 exit gate and review are closed.
 - The opt-in output-reference commit retains 11 PDFs, 12 PNGs, and five
   manifests. In noninteractive/offscreen Windows testing, two Speaking
   Evaluation clipboard UI cases fail with `0x800401d0`; capture-specific PDF

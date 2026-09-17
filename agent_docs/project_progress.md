@@ -31,15 +31,17 @@ and apply boundaries, a real large-route Schedule Import conflict-warning
 reference, the Calendar Import Preferences loading reference, and the Calendar
 Import parser-failure boundary. Each focused route and the full
 startup-performance suite passed for the accepted Calendar Import slice.
-The `scripts/phase0/` automation now has a fresh full Windows x64 result: all 24
-packaged routes passed the runner and validator, with 151/151 required files
-present. The compact audit record and per-file hash inventory are retained at
-`docs/qt-rewrite/phase-0-evidence/windows-x64-route-matrix-2026-09-17/`; the
-147,732,123-byte full run root remains in the local temporary directory and is
-not a portable Git evidence root. The macOS universal packaged baseline is
-retained, but its 24-route matrix is still pending, so the combined Phase 0
-exit gate remains incomplete. Windows ARM64 and Linux are deferred, not
-blockers.
+The `scripts/phase0/` automation now has full 24-route packaged Release results
+for Windows x64 and macOS universal. Windows validation reported 151/151
+required files; its compact audit record and per-file hash inventory are at
+`docs/qt-rewrite/phase-0-evidence/windows-x64-route-matrix-2026-09-17/`. The
+macOS universal run completed all 24 routes and passed independent validation
+with `--expected-platform macos-universal` (exit 0). Its full evidence root is
+retained locally at
+`/private/tmp/ClassMngr-Phase0-macos-universal-20260917T033003Z-QT0-EXEC-02-final`;
+it is not a portable Git evidence bundle. The combined exit gate still needs
+the Windows x64 evidence available for consolidation and the remaining human
+visual/output review. Windows ARM64 and Linux are deferred, not blockers.
 
 ## Current Position
 
@@ -63,7 +65,13 @@ summary, and per-file hash inventory are retained in the Phase 0 evidence
 folder; the complete run root remains at the local temporary path recorded in
 that folder's README. Its 495 samples at or above 250 MiB are trend data; the
 maximum working set was 496,005,120 bytes, below the diagnostic 512 MiB ceiling.
-The macOS universal 24-route run remains pending.
+The macOS universal packaged Release matrix has now completed all 24 route IDs;
+independent validation passed. The first full attempt's two Calendar Import
+route failures were in the test harness's localhost fixture before the app
+launched. Focused and final reruns passed with unchanged source and packaged
+binary hashes; the logs support a host/loopback limitation but do not prove a
+specific sandbox denial. The combined Phase 0 exit gate remains open pending
+Windows x64 evidence consolidation and human visual/output review.
 
 The Calendar Import parser-failure boundary remains accepted. Its implementation
 is based on `ded8b5dc`, with the evidence-only error capture scroll fix and fresh
@@ -79,7 +87,8 @@ Phase 0 automation is implemented under `scripts/phase0/`. Independent checks
 confirmed all 24 runner route mappings, a no-write all-route plan, root-safety
 rejections, validator self-tests, and the full Windows x64 24-route run. The
 exit-gate report requires all 24 routes on both Windows x64 and macOS
-universal; the Windows per-run pass does not complete the combined gate.
+universal. The macOS run is complete; its local-only evidence root does not
+by itself complete cross-platform consolidation.
 
 The CMake configuration cleanup is complete. Multi-config generators now expose
 only `Debug;Release`; every Debug preset explicitly enables tests and every
@@ -91,10 +100,10 @@ CMake output is now ignored; `build/` and `dist/` were not cleaned.
 
 ## Next Milestone
 
-Run the 24-route matrix on macOS universal and enforce the combined exit gate
-with the retained Windows run root. Continue the remaining feature-state and
-golden-output review. The Windows x64 matrix and macOS packaged baseline are
-complete; Phase 0 remains open because macOS route coverage and some visual and
-output review remain. Preserve Windows ARM64 and Linux as deferred unofficial
-ports. Do not begin Phase 1 or make v2 memory claims from the legacy widget
-graph.
+Consolidate/revalidate the retained Windows x64 evidence with the completed
+macOS universal matrix, then finish the remaining feature-state and golden-
+output review. Both platform matrices have 24/24 results, but the combined
+exit gate and Phase 0 remain open until the Windows evidence is available to
+the gate and human review is complete. Preserve Windows ARM64 and Linux as
+deferred unofficial ports. Do not begin Phase 1 or make v2 memory claims from
+the legacy widget graph.

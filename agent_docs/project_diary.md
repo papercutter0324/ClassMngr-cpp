@@ -97,6 +97,17 @@
   evidence passes. Legacy 250 MiB measurements remain trend-only; 512 MiB is
   a diagnostic ceiling, not a Phase 0 pass criterion.
 
+## macOS universal route-matrix lesson - 2026-09-17
+
+- The first packaged Release matrix's only two failed routes were the Calendar
+  Import success/error cases. Both failed at the test harness's
+  `QTcpServer::listen(QHostAddress::LocalHost)` fixture before launching the
+  packaged app, with `Unknown error`. Focused and final full reruns passed with
+  unchanged source and binary hashes. This points to a transient host/loopback-
+  bind limitation rather than a demonstrated product defect; the available
+  logs do not establish a specific sandbox denial. If it recurs, investigate
+  host local-listener permissions before changing product code.
+
 ## Windows route-matrix and output-reference lessons - 2026-09-17
 
 - Run the complete 24-route Windows x64 matrix from a fresh Release package and
