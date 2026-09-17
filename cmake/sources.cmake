@@ -20,20 +20,7 @@ target_compile_definitions(ClassMngrBuildSettings
 
 target_link_libraries(ClassMngrBuildSettings
     INTERFACE
-        Qt6::Concurrent
         Qt6::Core
-        Qt6::Gui
-        Qt6::Network
-        Qt6::Pdf
-        Qt6::PdfWidgets
-        Qt6::PrintSupport
-        Qt6::Qml
-        Qt6::Quick
-        Qt6::QuickControls2
-        Qt6::QuickWidgets
-        Qt6::Sql
-        Qt6::Widgets
-        ZLIB::ZLIB
 )
 
 function(classmngr_add_production_objects target directory)
@@ -47,6 +34,7 @@ function(classmngr_add_production_objects target directory)
     target_link_libraries("${target}"
         PRIVATE
             ClassMngrBuildSettings
+            ${ARGN}
     )
     set_target_properties("${target}"
         PROPERTIES
@@ -55,12 +43,64 @@ function(classmngr_add_production_objects target directory)
     )
 endfunction()
 
-classmngr_add_production_objects(ClassMngrCore src/core)
-classmngr_add_production_objects(ClassMngrData src/data)
-classmngr_add_production_objects(ClassMngrDomain src/domain)
-classmngr_add_production_objects(ClassMngrUiShared src/ui)
-classmngr_add_production_objects(ClassMngrFeatures src/features)
-classmngr_add_production_objects(ClassMngrAppServices src/app)
+classmngr_add_production_objects(ClassMngrCore src/core
+    Qt6::Gui
+    Qt6::Network
+    Qt6::Sql
+    Qt6::Widgets
+    ZLIB::ZLIB
+)
+classmngr_add_production_objects(ClassMngrData src/data
+    Qt6::Gui
+    Qt6::Sql
+)
+classmngr_add_production_objects(ClassMngrDomain src/domain
+    Qt6::Gui
+)
+classmngr_add_production_objects(ClassMngrUiShared src/ui
+    Qt6::Gui
+    Qt6::Network
+    Qt6::Pdf
+    Qt6::PdfWidgets
+    Qt6::PrintSupport
+    Qt6::Widgets
+)
+classmngr_add_production_objects(ClassMngrFeatures src/features
+    Qt6::Concurrent
+    Qt6::Gui
+    Qt6::Network
+    Qt6::Pdf
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickWidgets
+    Qt6::Sql
+    Qt6::Widgets
+    ZLIB::ZLIB
+)
+classmngr_add_production_objects(ClassMngrAppServices src/app
+    Qt6::Gui
+    Qt6::Network
+    Qt6::Sql
+    Qt6::Widgets
+)
+
+# Keep the complete legacy runtime module set available to the application and
+# focused tests, including QuickControls2 dependencies discovered from QML.
+set(_classmngr_legacy_runtime_dependencies
+    Qt6::Concurrent
+    Qt6::Gui
+    Qt6::Network
+    Qt6::Pdf
+    Qt6::PdfWidgets
+    Qt6::PrintSupport
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickControls2
+    Qt6::QuickWidgets
+    Qt6::Sql
+    Qt6::Widgets
+    ZLIB::ZLIB
+)
 
 add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrCore>
@@ -74,6 +114,7 @@ add_library(ClassMngrRuntime STATIC
 target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrBuildSettings
+        ${_classmngr_legacy_runtime_dependencies}
 )
 
 # macOS test doubles cannot override symbols from a static archive with the
@@ -93,6 +134,7 @@ if(APPLE AND BUILD_TESTING)
     target_link_libraries(ClassMngrTestRuntime
         PUBLIC
             ClassMngrBuildSettings
+            ${_classmngr_legacy_runtime_dependencies}
     )
 
     target_link_options(ClassMngrTestRuntime

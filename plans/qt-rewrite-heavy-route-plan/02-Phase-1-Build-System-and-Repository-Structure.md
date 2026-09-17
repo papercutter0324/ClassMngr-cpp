@@ -8,11 +8,11 @@
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
 - Last updated: 2026-09-18
-- Current note: Slices 1.1-1.2 add the Qt Core-only `ClassMngrNext` bootstrap
-  and source-free layer/feature interface targets with asserted dependency
-  edges. A fresh Ninja/MSVC Debug configuration built both executables in 351
-  steps; `ClassMngrNextLaunch` passed 1/1. The existing `ClassMngr` target
-  remains buildable.
+- Current note: Slices 1.1-1.3 add the Qt Core-only `ClassMngrNext` bootstrap,
+  asserted source-free layer/feature boundaries, and measured module links for
+  legacy object targets. A fresh Ninja/MSVC Debug configuration built both
+  executables in 351 steps; `ClassMngrNextLaunch` passed 1/1. Runtime-link and
+  legacy-test checks passed; slice 1.4 source ownership is next.
 
 ## Objective
 
@@ -88,6 +88,38 @@ The intended direction is:
 - Platform adapters implement interfaces owned by application or platform layers.
 
 Remove unused Qt modules only after include and link usage has been measured.
+
+#### Progress update - 2026-09-18 (slice 1.3)
+
+`ClassMngrBuildSettings` provides shared `Qt6::Core`, C++23, the source and
+generated include directories, and the `CLASSMNGR_SOURCE_DIR` definition.
+Ninja dependency data measured these additional Qt and Zlib dependencies for
+the six legacy production object targets:
+
+| Object target | Additional dependencies |
+|---|---|
+| `ClassMngrCore` | `Qt6::Gui`, `Qt6::Network`, `Qt6::Sql`, `Qt6::Widgets`, `ZLIB::ZLIB` |
+| `ClassMngrData` | `Qt6::Gui`, `Qt6::Sql` |
+| `ClassMngrDomain` | `Qt6::Gui` |
+| `ClassMngrUiShared` | `Qt6::Gui`, `Qt6::Network`, `Qt6::Pdf`, `Qt6::PdfWidgets`, `Qt6::PrintSupport`, `Qt6::Widgets` |
+| `ClassMngrFeatures` | `Qt6::Concurrent`, `Qt6::Gui`, `Qt6::Network`, `Qt6::Pdf`, `Qt6::Qml`, `Qt6::Quick`, `Qt6::QuickWidgets`, `Qt6::Sql`, `Qt6::Widgets`, `ZLIB::ZLIB` |
+| `ClassMngrAppServices` | `Qt6::Gui`, `Qt6::Network`, `Qt6::Sql`, `Qt6::Widgets` |
+
+`ClassMngrRuntime` and the macOS `ClassMngrTestRuntime` deliberately retain
+the complete legacy union: `Qt6::Concurrent`, `Qt6::Gui`, `Qt6::Network`,
+`Qt6::Pdf`, `Qt6::PdfWidgets`, `Qt6::PrintSupport`, `Qt6::Qml`, `Qt6::Quick`,
+`Qt6::QuickControls2`, `Qt6::QuickWidgets`, `Qt6::Sql`, `Qt6::Widgets`, and
+`ZLIB::ZLIB`. `Qt6::QuickControls2` remains for the QML/resource dependency
+graph. A compile command confirmed `ClassMngrDomain` has only QtCore and QtGui
+include directories, with no Widgets, Sql, or Network includes.
+
+A fresh Ninja/MSVC Debug configure/build succeeded for `ClassMngr` and
+`ClassMngrNext` in 351 steps; `ClassMngrNextLaunch` passed 1/1. Independent
+`ninja -t commands ClassMngr.exe` inspection confirmed the full legacy Qt link
+set, including `Qt6::QuickControls2`. `ClassMngrSharedPolicyTests` built after
+importing VS DevCmd, and its targeted CTest passed 1/1. A direct
+`ClassMngrNext.exe` launch exited 0. Phase 1 remains in progress; slice 1.4,
+explicit source ownership, is next.
 
 The [Qt Rewrite Memory Hotspot Remediation
 Plan](memory-hotspot-remediation-plan.md) is the allocation and ownership

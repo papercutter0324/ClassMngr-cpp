@@ -32,19 +32,33 @@ older Phase 0 open notes in this document's history.
   build directory was
   `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.2-clean-13839b2038864e939f913007c0b33405`.
   It is local verification output, not a checked-in artifact.
+- Slice 1.3 moves Qt modules out of `ClassMngrBuildSettings` and assigns the
+  measured module sets to the six existing legacy production object targets.
+  `ClassMngrRuntime` and the macOS `ClassMngrTestRuntime` retain the complete
+  legacy module union, including QuickControls2 for the QML/resource graph.
+  The Phase 1 plan records the per-target module map.
+- A fresh Ninja/MSVC Debug configure and build for slice 1.3 passed for both
+  executables in 351 steps; `ClassMngrNextLaunch` passed (1/1). Independent
+  inspection confirmed the Domain compile command has only QtCore/QtGui
+  include paths, the `ClassMngr.exe` link command retains the full legacy Qt
+  set, and `ClassMngrSharedPolicyTests` built and passed (1/1). The clean build
+  directory was
+  `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.3-clean-4ffa6756081f4d0bb0044b1a12758723`.
+  It is local verification output, not a checked-in artifact.
 - The slice 1.1 clean build directory was
   C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.1-clean-965a9613fb8046b7bbbbd5a520b03740.
   It is local verification output, not a checked-in artifact.
 - A direct clean configure with the Visual Studio 18 generator from the normal
   PowerShell environment could not identify its C++ compiler. The clean Ninja
   configure/build under VsDevCmd succeeded; use that route on this host.
-- The slice 1.2 working change is limited to `cmake/next.cmake`; slice 1.1
-  changed `CMakeLists.txt`, `cmake/next.cmake`, and `src/next/main.cpp`.
+- Slice 1.3 changes `cmake/sources.cmake`; slice 1.2 changes
+  `cmake/next.cmake`; slice 1.1 changed `CMakeLists.txt`, `cmake/next.cmake`,
+  and `src/next/main.cpp`.
 - Phase 1 is not complete. No cross-platform v2 build has been verified yet.
 
 ## Next Entry Point
 
-Slice 1.1 is committed and slice 1.2 is verified for its own commit. Before
-starting slice 1.3, finish the slice 1.2 commit. Then inspect the current Qt
-usage and shared build-settings targets to define target-specific dependency
-ownership without disturbing ClassMngr or copying the monolithic target graph.
+Slices 1.1 and 1.2 are committed; slice 1.3 is verified for its own commit.
+Before starting slice 1.4, finish the slice 1.3 commit. Then replace recursive
+source discovery with explicit ownership while preserving the legacy target
+and the new v2 boundaries.

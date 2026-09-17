@@ -72,14 +72,17 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
 
 - Phase 0 is complete at commit `f8bb5954`: the combined Windows x64 and macOS
   universal 24-route exit gate passed, and the user confirmed the visual review.
-- Phase 1 slices 1.1 and 1.2 establish the parallel Qt Core-only
-  `ClassMngrNext` console bootstrap and its initial layer/feature target
-  boundaries. Configure-time assertions check the declared dependency edges;
-  the executable remains independent of those source-free placeholders.
-- A fresh Ninja/MSVC Debug configuration built both `ClassMngr` and
-  `ClassMngrNext` in 351 steps; `ClassMngrNextLaunch` passed 1/1.
-- Remaining Phase 1 work is recorded in the phase plan; no later phase is
-  complete.
+- Phase 1 slices 1.1-1.3 establish the parallel Qt Core-only `ClassMngrNext`
+  bootstrap, source-free layer/feature boundaries, and per-target dependencies
+  measured from Ninja data. The legacy runtime retains its full Qt module set.
+- A fresh Ninja/MSVC Debug configuration built both executables in 351 steps;
+  `ClassMngrNextLaunch` passed 1/1. The `ClassMngrDomain` compile command has
+  only QtCore/QtGui include paths, with no Widgets, Sql, or Network paths.
+- `ninja -t commands ClassMngr.exe` confirms the full legacy Qt link set,
+  including `Qt6::QuickControls2`. `ClassMngrSharedPolicyTests` built after
+  importing VS DevCmd, and its targeted CTest passed 1/1; `ClassMngrNext.exe`
+  launched with exit code 0. Slice 1.4, explicit source ownership, is next;
+  Phase 1 remains in progress and no later phase is complete.
 
 ## Important context
 

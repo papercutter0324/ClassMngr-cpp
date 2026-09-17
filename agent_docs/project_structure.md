@@ -40,16 +40,20 @@ contains reusable Qt widgets and presentation infrastructure.
 `ApplicationServices` owns the data service and exposes settings, teacher,
 class, schedule, calendar, roster, speaking-evaluation, theme, and document
 services. `DatabaseSession` owns the `QSqlDatabase` connection and repository
-instances. `ClassMngrBuildSettings` supplies common include paths, C++23
-settings, Qt/zlib links, and generated definitions; CMake aggregates the
-production object libraries into the existing `ClassMngrRuntime`, which
-remains the legacy application structure. In parallel, `cmake/next.cmake`
+instances. `ClassMngrBuildSettings` supplies `Qt6::Core`, C++23, common source
+and generated include directories, and `CLASSMNGR_SOURCE_DIR`. The six legacy
+production object targets link their measured additional Qt modules; CMake
+aggregates them into the existing `ClassMngrRuntime`, which remains the legacy
+application structure. The runtime and macOS `ClassMngrTestRuntime` retain the
+full legacy module union, including `Qt6::QuickControls2` for the QML/resource
+graph. In parallel, `cmake/next.cmake`
 defines the `ClassMngrNext` executable from `src/next/main.cpp` and source-free
 layer/feature interface targets with `ClassMngrNext::<Name>` aliases. Its
 configure-time checks enforce the dependency graph. The console bootstrap
 links Qt Core only and remains independent of the placeholder targets.
 (application_services.h, database_session.h, cmake/sources.cmake,
-cmake/next.cmake)
+cmake/next.cmake). See the Phase 1 plan for measured per-target dependency
+ownership.
 
 ## Tests and Supporting Assets
 

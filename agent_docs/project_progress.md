@@ -27,18 +27,25 @@ targets in `cmake/next.cmake`. Configure-time assertions enforce the planned
 dependency edges. The targets are intentionally source-free at this stage;
 `ClassMngrNext` remains independently linked only to Qt Core.
 
+Slice 1.3 measured Qt/Zlib header dependencies per legacy production object
+target and moved those modules out of the shared build-settings target. The
+legacy runtime keeps the complete module union required to link the current
+application and tests.
+
 ## Current Position
 
-Slice 1.2's fresh Ninja/MSVC Debug configure passed its dependency assertions,
-and both ClassMngr and ClassMngrNext built successfully in 351 steps.
-ClassMngrNextLaunch passed (1/1). This validates the boundary declarations
-without changing production sources or the legacy target graph.
+Slice 1.3's fresh Ninja/MSVC Debug configure and build succeeded for both
+ClassMngr and ClassMngrNext in 351 steps. `ClassMngrNextLaunch` and the existing
+runtime-backed `ClassMngrSharedPolicyTests` passed (1/1 each). The generated
+Domain compile command uses Qt Core and Gui only; the application link keeps
+the legacy Qt union including QuickControls2.
 
-Slices 1.1 and 1.2 are implemented and verified. Phase 1 remains in progress;
-the next slice is 1.3, target-specific dependency cleanup.
+Slices 1.1-1.3 are implemented and verified. Phase 1 remains in progress; the
+next slice is 1.4, explicit source ownership.
 
 ## Next Milestone
 
-Complete the slice 1.2 commit, then begin slice 1.3. Keep the next-generation
-target names distinct from legacy object targets such as ClassMngrDomain and
+Complete the slice 1.3 commit, then begin slice 1.4 by replacing recursive
+source discovery with explicit ownership. Keep next-generation target names
+distinct from legacy object targets such as ClassMngrDomain and
 ClassMngrUiShared.

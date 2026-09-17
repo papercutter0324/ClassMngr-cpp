@@ -12,6 +12,9 @@
   Keep their target names separate from legacy object targets, encode allowed
   dependency edges in CMake, and leave source-free interface targets out of the
   bootstrap's link graph until a later slice needs them.
+- Measure Qt header dependencies per production object target before narrowing
+  shared module links. Keep the legacy runtime's full required module union
+  explicit for its executable, tests, and QML/resource graph.
 - ApplicationServices is the preferred application boundary. DataService
   remains as a compatibility facade while callers migrate; UI/controllers
   should not add direct repository usage.
