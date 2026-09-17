@@ -18,6 +18,7 @@
   campus/files/images assets, and resource-pack inputs.
 - `tests`: focused Qt test sources and fixtures.
 - `cmake`: source/resource/deployment/test and platform build fragments.
+- `scripts/phase0`: Phase 0 platform route-matrix runners.
 - `docs`, `plans`, `BUILDING.md`: project references, rewrite planning, and
   build/release guidance.
 
