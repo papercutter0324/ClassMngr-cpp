@@ -816,21 +816,21 @@ usage, including gate-enforced validation, is documented in the
   runner safety checks also passed.
 - The historical retained Release tree passed artifact-integrity checks for
   28 manifests, 81 PNGs, 29 PDFs, and one ZIP. It contains no orchestrated
-  route manifests. The 12-route macOS workflow below is baseline evidence and
-  does not replace the required 24-route matrix.
-- The fresh Windows x64 matrix passed, but macOS universal route evidence is
-  still missing. Native Office automation did not complete in this Windows
-  logon environment. Visual and generated-output semantic approval remains a
-  human review; Phase 0 remains In Progress.
+  route manifests. The 12-route macOS workflow below is historical baseline
+  evidence and does not replace the required 24-route matrix.
+- Fresh Windows x64 and macOS universal route runs each passed all 24 required
+  route IDs, with zero validator failures and 151/151 required artifacts.
+  Native Office automation did not complete in the Windows logon environment.
+  Visual and generated-output semantic approval remains a human review; Phase 0
+  remains In Progress.
 
 ## Fresh Windows x64 route matrix - 2026-09-17
 
 The fresh packaged Release run completed all 30 commands (five build/package,
 24 route, and one final validation) with exit code 0 and no timeouts. The
-independent audit confirmed the validator's per-run `pass=true`,
-zero failures, and 151/151 required artifacts. Its sole warning is the legacy
-memory trend. The separate combined exit gate remains `incomplete` because the
-macOS universal matrix is still 0/24; Phase 1 remains blocked.
+independent audit confirmed the validator's per-run `pass=true`, zero
+failures, and 151/151 required artifacts. Its sole warning is the legacy
+memory trend.
 
 The resource trace contains 189 entries, ended with `processFinished=true`,
 `exitCode=0`, and `timedOut=false`, and recorded a maximum working set of
@@ -847,6 +847,40 @@ compact bundle is an audit record, not a validator evidence root; rerunning the
 validator requires the full root. The run used Windows PowerShell 5.1.26100.9444,
 MSVC 19.51.36257/toolset 14.51.36231, CMake 4.4.2, Ninja 1.13.2, Python
 3.14.7, and Qt 6.12.0 MSVC x64.
+
+## Fresh macOS universal route matrix - 2026-09-17
+
+The final packaged Release matrix completed all 24 route IDs across the same
+five categories as Windows x64. All 27 recorded commands exited 0 without
+timing out, and the validator passed with zero failures and 151/151 required
+artifacts. Its 70 JSON files, 84 PNGs, 27 PDFs, and one ZIP include the route
+manifests, visual captures, generated output, and lifecycle traces.
+
+The source build used macOS 27.0 on Apple Silicon, Xcode 27.0, SDK 27.0,
+Qt 6.12.0, CMake 4.3.3, and Ninja 1.13.2. Its clean Release app and Debug
+startup harness target macOS 14.4 and contain `arm64` and `x86_64` slices. The
+package audit checked 116 Mach-O files in the app bundle, and code-signature
+verification passed. The final matrix run reused these audited artifacts,
+verified the signature again, and exercised the packaged Release app.
+
+The memory trend warning reports 404 of 1,433 samples at or above the legacy
+250 MiB comparison. Maximum compared working set was 516,521,984 bytes
+(492.594 MiB), and no sample reached the temporary 512 MiB diagnostic
+ceiling. These thresholds are trend evidence, not Phase 0 failure gates.
+
+The [compact macOS run record](phase-0-evidence/macos-universal-route-matrix-2026-09-17/)
+contains the final run manifest and validation summary, package provenance,
+source build audit, and integrity inventories. The complete successful run
+root is `/private/tmp/classmngr-qt0-macos-universal-20260917T-run2Z` (643
+regular files / 462,599,685 bytes plus 156 symlinks); the clean build/audit
+root is `/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z`. The full
+roots remain outside Git. The compact bundle is not itself a validator
+evidence root.
+
+The committed Windows and macOS per-run summaries now each show complete
+24-route coverage. The combined `--require-exit-gate` invocation was not run
+because the original Windows raw evidence root is not available on this Mac.
+Visual and generated-output semantic approval remains a human review step.
 
 The output-reference capture added 11 PDFs, 12 white-composited RGB PNG page
 renders, and five manifests (8,504,264 bytes) under
