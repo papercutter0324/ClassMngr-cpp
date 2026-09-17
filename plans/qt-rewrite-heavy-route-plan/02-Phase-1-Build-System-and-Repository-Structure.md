@@ -8,10 +8,11 @@
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
 - Last updated: 2026-09-18
-- Current note: Slice 1.1 adds a Qt Core-only `ClassMngrNext` console bootstrap
-  and CTest launch check. A clean Ninja/MSVC Debug configuration built both
-  executables in 351 steps; `ClassMngrNextLaunch` passed. The existing
-  `ClassMngr` target remains buildable.
+- Current note: Slices 1.1-1.2 add the Qt Core-only `ClassMngrNext` bootstrap
+  and source-free layer/feature interface targets with asserted dependency
+  edges. A fresh Ninja/MSVC Debug configuration built both executables in 351
+  steps; `ClassMngrNextLaunch` passed 1/1. The existing `ClassMngr` target
+  remains buildable.
 
 ## Objective
 
@@ -48,6 +49,30 @@ Create explicit targets for:
 - ClassMngrNext.
 
 Production resources, test resources, and developer-only assets must be separate.
+
+#### Progress update - 2026-09-18 (slice 1.2)
+
+`cmake/next.cmake` now defines six source-free layer interface targets:
+`ClassMngrNextDomain`, `ClassMngrNextApplication`,
+`ClassMngrNextPersistence`, `ClassMngrNextResources`,
+`ClassMngrNextPlatform`, and `ClassMngrNextUiShared`. It also defines eleven
+source-free feature interface targets: `ClassMngrNextCalendar`,
+`ClassMngrNextCampus`, `ClassMngrNextClasses`, `ClassMngrNextDocuments`,
+`ClassMngrNextMyInfo`, `ClassMngrNextRoster`, `ClassMngrNextSchedule`,
+`ClassMngrNextSetup`, `ClassMngrNextSpeakingEvaluation`,
+`ClassMngrNextSubPrep`, and `ClassMngrNextTeacher`. Each has a
+`ClassMngrNext::<Name>` alias.
+
+The declared edges are `Application` to `Domain` and `Persistence`,
+`Persistence` to `Domain`, `Platform` to `Application`, and `UiShared` to
+`Application` and `Resources`. Each feature depends on `Application`,
+`Resources`, and `UiShared`; `Domain` and `Resources` have no dependencies.
+Features have no cross-feature edges. Configure-time assertions check these
+exact relationships. The `ClassMngrNext` executable still links only Qt Core
+and is independent of the placeholder targets.
+
+A fresh Ninja/MSVC Debug configuration built `ClassMngr` and `ClassMngrNext`
+in 351 steps; `ClassMngrNextLaunch` passed 1/1. Phase 1 remains in progress.
 
 ### 1.3 Dependency cleanup
 

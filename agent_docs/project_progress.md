@@ -22,20 +22,23 @@ Phase 1 slice 1.1 adds a Qt Core-only ClassMngrNext console bootstrap and a
 focused CTest launch probe. It has no window and does not link the legacy
 runtime.
 
+Slice 1.2 establishes explicit next-generation layer and feature interface
+targets in `cmake/next.cmake`. Configure-time assertions enforce the planned
+dependency edges. The targets are intentionally source-free at this stage;
+`ClassMngrNext` remains independently linked only to Qt Core.
+
 ## Current Position
 
-A clean Ninja/MSVC Debug configure in a fresh temporary directory built both
-ClassMngr and ClassMngrNext in 351 steps. ClassMngrNextLaunch passed (1/1).
-Independent link inspection confirmed that ClassMngrNext links Qt Core and
-platform runtime libraries, without ClassMngrRuntime, legacy resources, or
-deployment rules.
+Slice 1.2's fresh Ninja/MSVC Debug configure passed its dependency assertions,
+and both ClassMngr and ClassMngrNext built successfully in 351 steps.
+ClassMngrNextLaunch passed (1/1). This validates the boundary declarations
+without changing production sources or the legacy target graph.
 
-The code is scoped to CMakeLists.txt, cmake/next.cmake, and src/next/main.cpp.
-Slice 1.1 is the current committed milestone; slice 1.2 is next and starts
-after this commit.
+Slices 1.1 and 1.2 are implemented and verified. Phase 1 remains in progress;
+the next slice is 1.3, target-specific dependency cleanup.
 
 ## Next Milestone
 
-Commit slice 1.1, then establish v2 target boundaries for slice 1.2. Account
-for the existing legacy object targets that already use ClassMngrDomain and
-ClassMngrUiShared before selecting v2 library names.
+Complete the slice 1.2 commit, then begin slice 1.3. Keep the next-generation
+target names distinct from legacy object targets such as ClassMngrDomain and
+ClassMngrUiShared.

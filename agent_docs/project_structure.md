@@ -20,7 +20,8 @@
   campus/files/images assets, and resource-pack inputs.
 - `tests`: focused Qt test sources and fixtures.
 - `cmake`: source/resource/deployment/test and platform build fragments.
-- `cmake/next.cmake`: `ClassMngrNext` target and its CTest launch check.
+- `cmake/next.cmake`: parallel target and interface-boundary definitions,
+  configure-time dependency checks, and CTest launch check.
 - `scripts/phase0`: Phase 0 platform route-matrix runners.
 - `docs`, `plans`, `BUILDING.md`: project references, rewrite planning, and
   build/release guidance.
@@ -43,9 +44,12 @@ instances. `ClassMngrBuildSettings` supplies common include paths, C++23
 settings, Qt/zlib links, and generated definitions; CMake aggregates the
 production object libraries into the existing `ClassMngrRuntime`, which
 remains the legacy application structure. In parallel, `cmake/next.cmake`
-defines `ClassMngrNext` from `src/next/main.cpp`; this initial console
-bootstrap links Qt Core and has a CTest launch check. (application_services.h,
-database_session.h, cmake/sources.cmake, cmake/next.cmake)
+defines the `ClassMngrNext` executable from `src/next/main.cpp` and source-free
+layer/feature interface targets with `ClassMngrNext::<Name>` aliases. Its
+configure-time checks enforce the dependency graph. The console bootstrap
+links Qt Core only and remains independent of the placeholder targets.
+(application_services.h, database_session.h, cmake/sources.cmake,
+cmake/next.cmake)
 
 ## Tests and Supporting Assets
 

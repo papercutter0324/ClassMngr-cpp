@@ -8,6 +8,10 @@
 - ClassMngrNext starts as a separate QCoreApplication console bootstrap. Keep
   it outside ClassMngrRuntime and avoid adding a second UI or legacy resource
   and deployment links; UI work belongs in the later shared-UI phase.
+- Define next-generation build boundaries before assigning migrated sources.
+  Keep their target names separate from legacy object targets, encode allowed
+  dependency edges in CMake, and leave source-free interface targets out of the
+  bootstrap's link graph until a later slice needs them.
 - ApplicationServices is the preferred application boundary. DataService
   remains as a compatibility facade while callers migrate; UI/controllers
   should not add direct repository usage.
