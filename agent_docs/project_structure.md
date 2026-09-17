@@ -3,6 +3,8 @@
 ## Directory Layout
 
 - `src/main.cpp`: executable entry point.
+- `src/next/main.cpp`: entry point for the parallel `ClassMngrNext` console
+  bootstrap.
 - `src/app`: main-window wiring, controllers, and application feature
   services.
 - `src/core`: application settings, language/theme services, networking,
@@ -18,6 +20,7 @@
   campus/files/images assets, and resource-pack inputs.
 - `tests`: focused Qt test sources and fixtures.
 - `cmake`: source/resource/deployment/test and platform build fragments.
+- `cmake/next.cmake`: `ClassMngrNext` target and its CTest launch check.
 - `scripts/phase0`: Phase 0 platform route-matrix runners.
 - `docs`, `plans`, `BUILDING.md`: project references, rewrite planning, and
   build/release guidance.
@@ -38,13 +41,16 @@ class, schedule, calendar, roster, speaking-evaluation, theme, and document
 services. `DatabaseSession` owns the `QSqlDatabase` connection and repository
 instances. `ClassMngrBuildSettings` supplies common include paths, C++23
 settings, Qt/zlib links, and generated definitions; CMake aggregates the
-production object libraries into `ClassMngrRuntime`. (application_services.h,
-database_session.h, cmake/sources.cmake)
+production object libraries into the existing `ClassMngrRuntime`, which
+remains the legacy application structure. In parallel, `cmake/next.cmake`
+defines `ClassMngrNext` from `src/next/main.cpp`; this initial console
+bootstrap links Qt Core and has a CTest launch check. (application_services.h,
+database_session.h, cmake/sources.cmake, cmake/next.cmake)
 
 ## Tests and Supporting Assets
 
-Tests are declared as Qt executables and registered with CTest through the
-`cmake/tests/*.cmake` fragments. Fixtures cover workspaces, imports, resource
-packs, and other focused feature cases. Resource and visual-baseline material
-is kept under `resources` and `docs/qt-rewrite`. No build or test was run as
-part of this documentation bootstrap.
+Legacy tests are declared as Qt executables and registered with CTest through
+the `cmake/tests/*.cmake` fragments. The parallel `ClassMngrNextLaunch` check
+is registered in `cmake/next.cmake`. Fixtures cover workspaces, imports,
+resource packs, and other focused feature cases. Resource and visual-baseline
+material is kept under `resources` and `docs/qt-rewrite`.

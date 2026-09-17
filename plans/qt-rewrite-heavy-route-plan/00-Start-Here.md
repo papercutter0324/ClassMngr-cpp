@@ -5,19 +5,17 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-09-16
-- Current milestone: Phase 0 — product contract, source archaeology, and baseline
-- Current blocker: No external blocker. Phase 0 evidence collection continues
-  for large-feature workflows, generated outputs, and cross-platform Release
-  baselines.
+- Last updated: 2026-09-18
+- Current milestone: Phase 1 — build system and repository structure
+- Current blocker: None. Phase 0 is complete; Phase 1 is in progress.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
 
 | Phase | File | Status | Default route | Depends on |
 |---|---|---|---|---|
-| 0 | 01-Phase-0-Product-Contract-and-Baseline.md | In progress | Heavy | None |
-| 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Not started | Heavy | 0 |
+| 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
+| 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | In progress | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Not started | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Not started | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
@@ -69,6 +67,17 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
   released. Generated and print-output PDFs remain operation-scoped.
 - Phase 0 records the startup-negative, on-demand-open, and release-memory
   evidence still required; later phases now carry the same lifecycle contract.
+
+## Phase 1 update - 2026-09-18
+
+- Phase 0 is complete at commit `f8bb5954`: the combined Windows x64 and macOS
+  universal 24-route exit gate passed, and the user confirmed the visual review.
+- Phase 1 slice 1.1 adds the parallel Qt Core-only `ClassMngrNext` console
+  bootstrap and a CTest launch check. A clean Ninja/MSVC Debug configuration
+  built both `ClassMngr` and `ClassMngrNext` in 351 steps; `ClassMngrNextLaunch`
+  passed.
+- Remaining Phase 1 work is recorded in the phase plan; no later phase is
+  complete.
 
 ## Important context
 

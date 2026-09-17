@@ -2,13 +2,16 @@
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phase 0
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
-- Last updated: 2026-09-15
-- Current note: Establish explicit target ownership before moving behavior.
+- Last updated: 2026-09-18
+- Current note: Slice 1.1 adds a Qt Core-only `ClassMngrNext` console bootstrap
+  and CTest launch check. A clean Ninja/MSVC Debug configuration built both
+  executables in 351 steps; `ClassMngrNextLaunch` passed. The existing
+  `ClassMngr` target remains buildable.
 
 ## Objective
 
@@ -21,6 +24,15 @@ Create a v2 build structure that reflects architectural boundaries and supports 
 Add a v2 executable target named ClassMngrNext or ClassMngrV2.
 
 Keep the current executable target buildable. Do not replace the production target until Phase 12.
+
+#### Progress update - 2026-09-18
+
+`ClassMngrNext` is introduced as a Qt Core-only console bootstrap in
+`src/next/main.cpp`, with its target and `ClassMngrNextLaunch` CTest check
+defined in `cmake/next.cmake`. A clean Ninja/MSVC Debug configuration built
+both `ClassMngr` and `ClassMngrNext` in 351 steps, and
+`ClassMngrNextLaunch` passed. This records the initial slice implementation;
+the rest of Phase 1 remains in progress.
 
 ### 1.2 Target boundaries
 

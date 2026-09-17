@@ -199,6 +199,7 @@ include(cmake/resources.cmake)
 include(cmake/deployment.cmake)
 include(cmake/platform/macos.cmake)
 include(cmake/platform/windows.cmake)
+include(cmake/next.cmake)
 if(BUILD_TESTING)
     find_package(Qt6 6.12.0 REQUIRED COMPONENTS
         Test
