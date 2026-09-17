@@ -19,6 +19,8 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
+      - "scripts/check_resource_pack_references.py"
+      - "scripts/write_build_report.py"
       - "src/**"
   pull_request:
     paths:
@@ -28,6 +30,8 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
+      - "scripts/check_resource_pack_references.py"
+      - "scripts/write_build_report.py"
       - "src/**"
 
 permissions:
@@ -153,6 +157,21 @@ jobs:
             sha256sum ClassMngr-linux-x86_64.tar.gz > checksums-linux.txt
           )
 
+      - name: Check packaged resource references and write build report
+        shell: bash
+        run: |
+          build_dir="build/linux-gcc-release"
+          package_root="dist/ClassMngr-linux-x86_64"
+          python scripts/check_resource_pack_references.py \
+            --repository . \
+            --build-dir "${build_dir}" \
+            --pack-directory "${package_root}/bin/resources/resource-packs" \
+            --output artifacts/build-reports/linux-x86_64-resource-pack-references.json
+          python scripts/write_build_report.py \
+            --package-root "${package_root}" \
+            --build-dir "${build_dir}" \
+            --output artifacts/build-reports/linux-x86_64.json
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
         with:
@@ -160,4 +179,6 @@ jobs:
           path: |
             dist/ClassMngr-linux-x86_64.tar.gz
             dist/checksums-linux.txt
+            artifacts/build-reports/linux-x86_64.json
+            artifacts/build-reports/linux-x86_64-resource-pack-references.json
           if-no-files-found: error

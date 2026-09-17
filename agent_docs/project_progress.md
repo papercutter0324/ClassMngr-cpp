@@ -39,19 +39,30 @@ inputs. A configure-time ownership check compares the handwritten `src` and
 active test inventories with their targets; shared schedule test doubles now
 have one object-library owner each.
 
+Slice 1.5 adds scoped formatting/static-analysis CI for `src/next`, compile
+database validation, a configure-time Qt Core-only link assertion for
+`ClassMngrNext`, generated Qt-module and resource-pack reports, resource
+reference checks, staged-package build reports in the Release workflows, and
+startup/memory/performance CTest labels. A clean Windows Ninja/MSVC Debug
+configure and full build passed (351 steps); `ClassMngrNextLaunch` passed
+(1/1). The module report lists only `Qt6::Core` for `ClassMngrNext`; the
+resource check passed for six generated RCC packs and seven runtime IDs, and
+the staged-package report probe passed. Cross-platform CI and local
+`clang-format`/`clang-tidy` were not run.
+
 ## Current Position
 
 Slice 1.4's clean Ninja/MSVC Debug configure and targeted build succeeded for
 ClassMngr, ClassMngrNext, and all five tests that consume the shared schedule
 stubs. The configure-time ownership check validated 653 handwritten files for
 the Windows configuration. `ClassMngrNextLaunch` and those five test programs
-passed CTest (6/6).
-
-Slices 1.1-1.4 are implemented and verified. Phase 1 remains in progress; the
-next slice is 1.5, tooling and CI.
+passed CTest (6/6). Slice 1.5 is implemented and locally verified on Windows;
+its cross-platform CI and clang checks remain unverified. Phase 1 remains in
+progress, and slice 1.6, build configurations, follows only after committing
+slice 1.5.
 
 ## Next Milestone
 
-Commit slice 1.4 before starting slice 1.5. Keep next-generation target names
+Commit slice 1.5 before starting slice 1.6. Keep next-generation target names
 distinct from legacy object targets such as ClassMngrDomain and
 ClassMngrUiShared.

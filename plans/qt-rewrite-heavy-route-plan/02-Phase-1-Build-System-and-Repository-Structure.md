@@ -8,11 +8,11 @@
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
 - Last updated: 2026-09-18
-- Current note: Slices 1.1-1.4 add the Qt Core-only `ClassMngrNext` bootstrap,
-  asserted layer/feature boundaries, measured legacy module links, and explicit
-  source ownership. Clean Windows Ninja/MSVC Debug configure/build and six
-  targeted CTests passed. Cross-platform verification is not claimed; slice
-  1.5, tooling and CI, is next.
+- Current note: Slices 1.1-1.5 establish the parallel executable, asserted
+  target boundaries, explicit source ownership, compile database, scoped
+  quality CI, and build/package reports. Clean Windows Ninja/MSVC Debug
+  configure/build and local report checks passed. Cross-platform CI and local
+  clang tools were not run; Phase 1 remains in progress.
 
 ## Objective
 
@@ -184,6 +184,32 @@ Add:
 - Linked Qt module reports.
 - Resource-pack reference checks.
 - Startup and memory test entry points.
+
+#### Progress update - 2026-09-18 (slice 1.5)
+
+`CMAKE_EXPORT_COMPILE_COMMANDS` provides the compile database. Configure fails
+if `ClassMngrNext` links beyond Qt Core or the handwritten source-ownership
+inventory has unassigned or multiply owned files.
+`.github/workflows/phase1-quality.yml` scopes `clang-format` and `clang-tidy`
+to `src/next`, verifies the compile database, builds `ClassMngr` and
+`ClassMngrNext`, runs the resource-reference/report checks, and invokes
+`ClassMngrNextLaunch`.
+
+`cmake/build_reports.cmake` emits the Qt module-link report and
+`cmake/resources.cmake` emits the resource-pack manifest. The reference checker
+validates manager declarations, source references, runtime IDs, and generated
+or staged RCC files; the build-report script reports executable, RCC, and Qt
+module data. Windows, macOS, and Linux packaged Release workflows are wired to
+invoke these checks on staged packages. `ClassMngrStartupPerformanceTests` is
+the labeled CTest entry point for startup, memory, and performance
+(`startup;memory;performance`).
+
+Local evidence is a clean Ninja/MSVC Debug configure, the full 351-step build
+of `ClassMngr` and `ClassMngrNext`, and `ClassMngrNextLaunch` passing 1/1. The
+resource-reference check passed for six generated RCCs and seven runtime IDs;
+the staged-package build report passed. Cross-platform CI and local
+`clang-format`/`clang-tidy` were not run, so those checks remain unverified.
+Phase 1 remains in progress.
 
 ### 1.6 Build configurations
 

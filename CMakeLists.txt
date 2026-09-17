@@ -218,3 +218,5 @@ endif()
 
 include(cmake/source_ownership.cmake)
 classmngr_check_source_ownership()
+
+include(cmake/build_reports.cmake)

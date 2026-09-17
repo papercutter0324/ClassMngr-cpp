@@ -65,6 +65,21 @@ older Phase 0 open notes in this document's history.
   The clean build directory was
   `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.4-clean-5d33542afed54ad8bbefc3546133c8e2`.
   It is local verification output, not a checked-in artifact.
+- Slice 1.5 adds formatting and static-analysis checks scoped to `src/next`,
+  asserts that `ClassMngrNext` links only Qt Core, writes Qt module and
+  resource-pack reports, checks runtime resource references, and adds staged
+  package checks and size reports to the Windows, macOS, and Linux Release
+  workflows. Startup performance CTest is labeled
+  `startup;memory;performance`.
+- A clean Ninja/MSVC Debug configure and full build passed for `ClassMngr` and
+  `ClassMngrNext` (351 steps); `ClassMngrNextLaunch` passed (1/1). The Qt module
+  report listed only `Qt6::Core` for `ClassMngrNext`; the resource checker
+  passed for six generated RCC packs and seven runtime IDs/references; a
+  staged-package report probe passed. Startup/memory labels were discovered,
+  but the performance test was not built or run. Cross-platform CI and local
+  `clang-format`/`clang-tidy` were not run. The clean build directory was
+  `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.5-clean`.
+  It is local verification output, not a checked-in artifact.
 - The slice 1.1 clean build directory was
   C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.1-clean-965a9613fb8046b7bbbbd5a520b03740.
   It is local verification output, not a checked-in artifact.
@@ -78,6 +93,7 @@ older Phase 0 open notes in this document's history.
 
 ## Next Entry Point
 
-Slices 1.1-1.3 are committed. Slice 1.4 is verified and ready to commit before
-beginning slice 1.5, tooling and CI. Keep the legacy production target and the
-new v2 boundaries buildable while extending the build checks.
+Slices 1.1-1.4 are committed. Slice 1.5 is verified on Windows and ready to
+commit before beginning slice 1.6, build configurations. Keep the legacy
+production target and the new v2 boundaries buildable while validating the
+platform/configuration matrix.

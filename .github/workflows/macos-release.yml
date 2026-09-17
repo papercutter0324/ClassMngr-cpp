@@ -19,8 +19,10 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
+      - "scripts/check_resource_pack_references.py"
       - "scripts/build_release_macos.sh"
       - "scripts/deploy_release_macos.sh"
+      - "scripts/write_build_report.py"
       - "src/**"
   pull_request:
     paths:
@@ -30,8 +32,10 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
+      - "scripts/check_resource_pack_references.py"
       - "scripts/build_release_macos.sh"
       - "scripts/deploy_release_macos.sh"
+      - "scripts/write_build_report.py"
       - "src/**"
 
 permissions:
@@ -77,6 +81,21 @@ jobs:
         shell: bash
         run: bash scripts/build_release_macos.sh
 
+      - name: Check packaged resource references and write build report
+        shell: bash
+        run: |
+          build_dir="build/macos-clang-release"
+          package_root="build/macos-clang-release/installer-stage/ClassMngr.app"
+          python scripts/check_resource_pack_references.py \
+            --repository . \
+            --build-dir "${build_dir}" \
+            --pack-directory "${package_root}/Contents/Resources/resource-packs" \
+            --output artifacts/build-reports/macos-universal-resource-pack-references.json
+          python scripts/write_build_report.py \
+            --package-root "${package_root}" \
+            --build-dir "${build_dir}" \
+            --output artifacts/build-reports/macos-universal.json
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
         with:
@@ -84,4 +103,6 @@ jobs:
           path: |
             dist/ClassMngr-*-macos-universal.dmg
             dist/checksums-macos.txt
+            artifacts/build-reports/macos-universal.json
+            artifacts/build-reports/macos-universal-resource-pack-references.json
           if-no-files-found: error

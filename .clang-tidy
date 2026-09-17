@@ -1,0 +1,7 @@
+Checks: >-
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/src/next/.*'
+FormatStyle: file

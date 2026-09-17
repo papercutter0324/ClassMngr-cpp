@@ -34,7 +34,9 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
+      - "scripts/check_resource_pack_references.py"
       - "scripts/installer/**"
+      - "scripts/write_build_report.py"
       - "src/**"
 
 permissions:
@@ -399,6 +401,31 @@ jobs:
           $checksumPath = "dist\\checksums-windows-$architecture.txt"
           "$hash  $($installers[0].Name)" | Set-Content -LiteralPath $checksumPath -Encoding utf8NoBOM
 
+      - name: Check packaged resource references and write build report
+        shell: pwsh
+        run: |
+          $architecture = "${{ matrix.architecture }}"
+          $buildDirectory = "build\windows-$architecture-release"
+          $packageRoot = Join-Path `
+            $Env:GITHUB_WORKSPACE `
+            "build\windows-$architecture-release\installer-stage\ClassMngr-windows-$architecture"
+          $packDirectory = Join-Path $packageRoot "resources\resource-packs"
+          $referenceReport = "artifacts\build-reports\windows-$architecture-resource-pack-references.json"
+          $buildReport = "artifacts\build-reports\windows-$architecture.json"
+
+          python scripts/check_resource_pack_references.py `
+            --repository . `
+            --build-dir $buildDirectory `
+            --pack-directory $packDirectory `
+            --output $referenceReport
+          if ($LASTEXITCODE -ne 0) { throw "Resource-pack reference check failed." }
+
+          python scripts/write_build_report.py `
+            --package-root $packageRoot `
+            --build-dir $buildDirectory `
+            --output $buildReport
+          if ($LASTEXITCODE -ne 0) { throw "Build report generation failed." }
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
         with:
@@ -406,4 +433,6 @@ jobs:
           path: |
             dist/ClassMngr-*-win-${{ matrix.architecture }}.exe
             dist/checksums-windows-${{ matrix.architecture }}.txt
+            artifacts/build-reports/windows-${{ matrix.architecture }}.json
+            artifacts/build-reports/windows-${{ matrix.architecture }}-resource-pack-references.json
           if-no-files-found: error

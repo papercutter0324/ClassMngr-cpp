@@ -1,0 +1,157 @@
+name: Phase 1 Build Quality
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".clang-format"
+      - ".clang-tidy"
+      - ".github/workflows/phase1-quality.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/**"
+      - "scripts/check_resource_pack_references.py"
+      - "scripts/write_build_report.py"
+      - "src/next/**"
+      - "src/core/resource_packs/**"
+      - "src/core/resource_paths.h"
+      - "src/main.cpp"
+  pull_request:
+    paths:
+      - ".clang-format"
+      - ".clang-tidy"
+      - ".github/workflows/phase1-quality.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/**"
+      - "scripts/check_resource_pack_references.py"
+      - "scripts/write_build_report.py"
+      - "src/next/**"
+      - "src/core/resource_packs/**"
+      - "src/core/resource_paths.h"
+      - "src/main.cpp"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.12.0"
+  QT_ROOT: ${{ github.workspace }}/Qt
+  QT_LINUX_PREFIX: ${{ github.workspace }}/Qt/6.12.0/gcc_64
+
+jobs:
+  quality:
+    name: Linux x64 source and resource checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install build and analysis tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential \
+            clang-format \
+            clang-tidy \
+            libcups2-dev \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-dev \
+            libxcb1-dev \
+            libxcb-cursor-dev \
+            libxcb-icccm4-dev \
+            libxcb-image0-dev \
+            libxcb-keysyms1-dev \
+            libxcb-randr0-dev \
+            libxcb-render-util0-dev \
+            libxcb-shape0-dev \
+            libxcb-sync-dev \
+            libxcb-xfixes0-dev \
+            libxcb-xinerama0-dev \
+            libxcb-xkb-dev \
+            ninja-build \
+            zlib1g-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Qt
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
+            --outputdir "${QT_ROOT}" \
+            --modules qtpdf
+
+      - name: Configure with compile commands
+        shell: bash
+        run: cmake --fresh --preset linux-gcc-debug
+
+      - name: Verify compile database
+        shell: bash
+        run: |
+          test -s build/linux-gcc-debug/compile_commands.json
+
+      - name: Check formatting and static analysis
+        shell: bash
+        run: |
+          mapfile -d '' sources < <(
+            find src/next -type f \( -name '*.cpp' -o -name '*.h' \) -print0 | sort -z
+          )
+          if ((${#sources[@]} == 0)); then
+            echo "No ClassMngrNext C++ files were found." >&2
+            exit 1
+          fi
+          clang-format --dry-run --Werror "${sources[@]}"
+
+          mapfile -d '' cpp_sources < <(
+            find src/next -type f -name '*.cpp' -print0 | sort -z
+          )
+          clang-tidy --quiet --warnings-as-errors='*' \
+            -p build/linux-gcc-debug "${cpp_sources[@]}"
+
+      - name: Build application targets
+        shell: bash
+        run: |
+          cmake --build --preset linux-gcc-debug \
+            --target ClassMngr ClassMngrNext --parallel 2
+
+      - name: Check resource-pack references and build reports
+        shell: bash
+        run: |
+          python scripts/check_resource_pack_references.py \
+            --repository . \
+            --build-dir build/linux-gcc-debug \
+            --output artifacts/phase1/resource-pack-references-linux-x86_64.json
+          python scripts/write_build_report.py \
+            --package-root build/linux-gcc-debug \
+            --build-dir build/linux-gcc-debug \
+            --output artifacts/phase1/build-linux-x86_64.json
+
+      - name: Launch ClassMngrNext
+        shell: bash
+        run: ctest --test-dir build/linux-gcc-debug --output-on-failure -R '^ClassMngrNextLaunch$'
+
+      - name: Upload Phase 1 reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase1-linux-x86_64-reports
+          path: |
+            artifacts/phase1/*.json
+            build/linux-gcc-debug/reports/*.json
+          if-no-files-found: warn

@@ -21,6 +21,10 @@
   and configure templates outside the handwritten inventory. Compile reused
   test doubles once in object libraries; split variants when test targets need
   different compile-time behavior.
+- Keep formatter and static-analysis enforcement scoped to the new code until
+  legacy code has been migrated. Generate module/resource reports only after
+  targets and resource-pack declarations are finalized. Treat the update-only
+  `roster-designs` pack as an optional runtime resource with no baseline RCC.
 - ApplicationServices is the preferred application boundary. DataService
   remains as a compatibility facade while callers migrate; UI/controllers
   should not add direct repository usage.

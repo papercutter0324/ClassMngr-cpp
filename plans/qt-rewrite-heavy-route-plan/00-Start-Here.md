@@ -87,8 +87,12 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
   Ninja/MSVC Debug configure reported 653 handwritten files; the build passed
   for `ClassMngr`, `ClassMngrNext`, and five affected test targets. Six
   targeted CTests passed.
-  Cross-platform verification is not claimed. Slice 1.5 is next; Phase 1
-  remains in progress and no later phase is complete.
+- Slice 1.5 adds the compile database, v2-scoped format/tidy CI, configure-time
+  gates, module/resource/package reports and checks, packaged Release workflow
+  integration, and a startup/memory-labeled CTest entry point. Local resource
+  checks passed for six generated RCCs and seven runtime IDs; the staged
+  package report passed. Cross-platform CI and local clang tools were not run.
+- Phase 1 remains in progress; no later phase is complete.
 
 ## Important context
 

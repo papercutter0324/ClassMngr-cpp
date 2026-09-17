@@ -25,6 +25,7 @@ set(CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR
     "${CMAKE_CURRENT_BINARY_DIR}/resource-packs"
 )
 set(CLASSMNGR_RESOURCE_PACK_FILES)
+set(CLASSMNGR_RESOURCE_PACK_IDS)
 
 function(classmngr_add_scoped_resource_pack pack_id asset_directory)
     file(GLOB_RECURSE pack_files CONFIGURE_DEPENDS
@@ -66,8 +67,13 @@ function(classmngr_add_scoped_resource_pack pack_id asset_directory)
     )
     add_dependencies(ClassMngr "ClassMngr${pack_id}ResourcePack")
     list(APPEND CLASSMNGR_RESOURCE_PACK_FILES "${pack_file}")
+    list(APPEND CLASSMNGR_RESOURCE_PACK_IDS "${pack_id}")
     set(CLASSMNGR_RESOURCE_PACK_FILES
         "${CLASSMNGR_RESOURCE_PACK_FILES}"
+        PARENT_SCOPE
+    )
+    set(CLASSMNGR_RESOURCE_PACK_IDS
+        "${CLASSMNGR_RESOURCE_PACK_IDS}"
         PARENT_SCOPE
     )
 endfunction()
@@ -143,6 +149,45 @@ add_custom_target(ClassMngrtemplatesResourcePack
 )
 add_dependencies(ClassMngr ClassMngrtemplatesResourcePack)
 list(APPEND CLASSMNGR_RESOURCE_PACK_FILES "${CLASSMNGR_TEMPLATES_PACK_FILE}")
+list(APPEND CLASSMNGR_RESOURCE_PACK_IDS templates)
+
+# roster-designs is an optional update-only pack. It has no checked-in asset
+# directory or baseline RCC; startup reports it as unavailable until installed.
+set(CLASSMNGR_OPTIONAL_RESOURCE_PACK_IDS roster-designs)
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/reports")
+set(_classmngr_resource_pack_manifest
+    "{\"schema_version\":1,\"packs\":["
+)
+set(_classmngr_first_resource_pack TRUE)
+foreach(_classmngr_resource_pack_id IN LISTS CLASSMNGR_RESOURCE_PACK_IDS)
+    if(NOT _classmngr_first_resource_pack)
+        string(APPEND _classmngr_resource_pack_manifest ",")
+    endif()
+    set(_classmngr_first_resource_pack FALSE)
+    string(APPEND _classmngr_resource_pack_manifest
+        "{\"id\":\"${_classmngr_resource_pack_id}\","
+        "\"path\":\"resource-packs/${_classmngr_resource_pack_id}.rcc\"}"
+    )
+endforeach()
+string(APPEND _classmngr_resource_pack_manifest
+    "],\"optional_runtime_ids\":["
+)
+set(_classmngr_first_optional_runtime_pack TRUE)
+foreach(_classmngr_optional_pack_id IN LISTS CLASSMNGR_OPTIONAL_RESOURCE_PACK_IDS)
+    if(NOT _classmngr_first_optional_runtime_pack)
+        string(APPEND _classmngr_resource_pack_manifest ",")
+    endif()
+    set(_classmngr_first_optional_runtime_pack FALSE)
+    string(APPEND _classmngr_resource_pack_manifest
+        "\"${_classmngr_optional_pack_id}\""
+    )
+endforeach()
+string(APPEND _classmngr_resource_pack_manifest "]}\n")
+file(WRITE
+    "${CMAKE_CURRENT_BINARY_DIR}/reports/resource-pack-manifest.json"
+    "${_classmngr_resource_pack_manifest}"
+)
 
 list(
     FILTER CLASSMNGR_EMBEDDED_PACK_FILES

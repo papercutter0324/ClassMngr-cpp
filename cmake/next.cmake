@@ -134,6 +134,18 @@ target_link_libraries(ClassMngrNext
         Qt6::Core
 )
 
+get_target_property(_classmngr_next_executable_dependencies
+    ClassMngrNext
+    LINK_LIBRARIES
+)
+list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
+if(NOT "${_classmngr_next_executable_dependencies}" STREQUAL "Qt6::Core")
+    message(FATAL_ERROR
+        "ClassMngrNext must link only Qt6::Core; found "
+        "[${_classmngr_next_executable_dependencies}]"
+    )
+endif()
+
 if(BUILD_TESTING)
     add_test(
         NAME ClassMngrNextLaunch

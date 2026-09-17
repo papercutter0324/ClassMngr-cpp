@@ -70,6 +70,45 @@ def find_application(build_dir: Path) -> Path | None:
     return max(candidates, key=lambda path: path.stat().st_mtime_ns)
 
 
+def find_executable(build_dir: Path, stem: str) -> Path | None:
+    names = {stem, f"{stem}.exe"}
+    candidates = [
+        path
+        for path in build_dir.rglob(f"{stem}*")
+        if path.is_file() and path.name in names
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+
+
+def resource_pack_metrics(build_dir: Path) -> dict[str, Any]:
+    entries = []
+    pack_directory = build_dir / "resource-packs"
+    if pack_directory.is_dir():
+        for path in sorted(pack_directory.glob("*.rcc")):
+            if path.is_file():
+                entries.append(
+                    {
+                        "id": path.stem,
+                        "path": str(path.relative_to(build_dir)),
+                        "size_bytes": path.stat().st_size,
+                    }
+                )
+    return {
+        "packs": entries,
+        "total_size_bytes": sum(entry["size_bytes"] for entry in entries),
+    }
+
+
+def qt_module_metrics(build_dir: Path) -> dict[str, Any] | None:
+    report_path = build_dir / "reports" / "qt-module-links.json"
+    if not report_path.is_file():
+        return None
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    return report.get("targets") if isinstance(report, dict) else None
+
+
 def compilation_metrics(repository: Path, build_dir: Path) -> dict[str, Any]:
     database = build_dir / "compile_commands.json"
     if not database.exists():
@@ -209,6 +248,7 @@ def main() -> int:
         test_code, test_seconds = run(test_command, repository)
 
     executable = find_application(build_dir) if build_code == 0 else None
+    next_executable = find_executable(build_dir, "ClassMngrNext") if build_code == 0 else None
     commit_end = capture(["git", "rev-parse", "HEAD"], repository)
     dirty_end = bool(capture(["git", "status", "--porcelain"], repository))
     fingerprint_end = source_fingerprint(repository)
@@ -248,6 +288,16 @@ def main() -> int:
             "path": str(executable.relative_to(repository)) if executable else None,
             "size_bytes": executable.stat().st_size if executable else None,
         },
+        "next_executable": {
+            "path": str(next_executable.relative_to(repository))
+            if next_executable
+            else None,
+            "size_bytes": next_executable.stat().st_size
+            if next_executable
+            else None,
+        },
+        "resource_packs": resource_pack_metrics(build_dir),
+        "linked_qt_modules": qt_module_metrics(build_dir),
         "compilation": compilation_metrics(repository, build_dir),
     }
     write_report(output, report)

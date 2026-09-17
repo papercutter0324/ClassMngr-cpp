@@ -24,9 +24,16 @@
   source manifests.
 - `cmake/source_ownership.cmake`: configure-time handwritten-source ownership
   validation against production and test target lists.
+- `cmake/build_reports.cmake` and `cmake/resources.cmake`: Qt module-link and
+  resource-pack manifest reports.
 - `cmake/next.cmake`: parallel target and interface-boundary definitions,
   configure-time dependency checks, and CTest launch check.
 - `scripts/phase0`: Phase 0 platform route-matrix runners.
+- `scripts/check_resource_pack_references.py` and `scripts/write_build_report.py`:
+  packaged RCC-reference checks and executable/resource/module reports.
+- `.github/workflows/phase1-quality.yml`: compile database, `src/next`
+  formatting/static analysis, reports, and launch checks; release workflows
+  invoke the report and reference scripts for staged packages.
 - `docs`, `plans`, `BUILDING.md`: project references, rewrite planning, and
   build/release guidance.
 
@@ -68,7 +75,8 @@ Legacy tests are declared as Qt executables and registered with CTest through
 the `cmake/tests/*.cmake` fragments. Shared schedule-widget stubs are compiled
 once for five test consumers; the `ResourcePackManager` fake is separate for
 four consumers because the Classes page test uses the real manager. The
-parallel `ClassMngrNextLaunch` check is registered in `cmake/next.cmake`.
-Fixtures cover workspaces, imports, resource packs, and other focused feature
-cases. Resource and visual-baseline material is kept under `resources` and
-`docs/qt-rewrite`.
+parallel `ClassMngrNextLaunch` check is registered in `cmake/next.cmake`, and
+`ClassMngrStartupPerformanceTests` carries the `startup;memory;performance`
+CTest labels. Fixtures cover workspaces, imports, resource packs, and other
+focused feature cases. Resource and visual-baseline material is kept under
+`resources` and `docs/qt-rewrite`.
