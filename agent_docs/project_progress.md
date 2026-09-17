@@ -52,17 +52,23 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-Slice 1.4's clean Ninja/MSVC Debug configure and targeted build succeeded for
-ClassMngr, ClassMngrNext, and all five tests that consume the shared schedule
-stubs. The configure-time ownership check validated 653 handwritten files for
-the Windows configuration. `ClassMngrNextLaunch` and those five test programs
-passed CTest (6/6). Slice 1.5 is implemented and locally verified on Windows;
-its cross-platform CI and clang checks remain unverified. Phase 1 remains in
-progress, and slice 1.6, build configurations, follows only after committing
-slice 1.5.
+Slice 1.6 makes the existing Debug baseline workflow run for relevant pull
+requests and covers Windows x64, Windows ARM64, macOS universal, and Linux.
+Native jobs run the baseline build/tests including the `ClassMngrNext` launch
+probe; the ARM64 job cross-builds `ClassMngr` and `ClassMngrNext` without
+executing them on its x64 runner. Release package workflows remain unchanged
+and use the production install/deployment paths. Slice 1.6 is committed.
+Independent static review and preset checks passed; hosted CI has not run.
+
+Slices 1.1-1.6 are implemented and committed. Windows Debug build and targeted
+CTest evidence is recorded above for slices 1.4 and 1.5. Slice 1.6 passed
+static workflow/preset review, but the hosted jobs have not run from this local
+branch. Phase 1 remains in progress; the cross-platform exit gate requires
+actual workflow results.
 
 ## Next Milestone
 
-Commit slice 1.5 before starting slice 1.6. Keep next-generation target names
-distinct from legacy object targets such as ClassMngrDomain and
-ClassMngrUiShared.
+Collect hosted Debug matrix and production Packaged Release results, then
+evaluate the Phase 1 exit gate. Do not claim cross-platform validation from
+static workflow checks alone. Keep next-generation target names distinct from
+legacy object targets such as ClassMngrDomain and ClassMngrUiShared.

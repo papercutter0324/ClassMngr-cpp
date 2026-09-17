@@ -80,6 +80,23 @@ older Phase 0 open notes in this document's history.
   `clang-format`/`clang-tidy` were not run. The clean build directory was
   `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.5-clean`.
   It is local verification output, not a checked-in artifact.
+- Slice 1.5 was committed as `65cd76fb` (`Phase1 - Add tooling and CI build
+  reports`). Its Windows build, launch probe, resource checks, and staged
+  package report passed; hosted CI and local clang tools were not run.
+- Slice 1.6 updates `.github/workflows/refactoring-baseline.yml` to run on
+  relevant pull requests and validate the existing Debug presets for Windows
+  x64, Windows ARM64, macOS universal, and Linux. Native jobs run the baseline
+  build/tests including the `ClassMngrNext` launch probe. Windows ARM64
+  cross-builds `ClassMngr` and `ClassMngrNext` on an x64 runner without
+  executing the target binaries. The Windows installer, macOS DMG, and Linux
+  install-tree archive workflows were left unchanged as the Packaged Release
+  paths.
+- An independent static review passed the four-preset matrix, PR path filters,
+  Qt host/target setup, and native-versus-cross execution rules. CMake preset
+  listing/JSON assertions and `git diff --check` passed. The hosted jobs,
+  Windows ARM64 cross-build, and workflow YAML parser/actionlint were not
+  available for local execution; no hosted run result is claimed. Slice 1.6
+  was committed (`Phase1 - Validate build configuration matrix`).
 - The slice 1.1 clean build directory was
   C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.1-clean-965a9613fb8046b7bbbbd5a520b03740.
   It is local verification output, not a checked-in artifact.
@@ -93,7 +110,7 @@ older Phase 0 open notes in this document's history.
 
 ## Next Entry Point
 
-Slices 1.1-1.4 are committed. Slice 1.5 is verified on Windows and ready to
-commit before beginning slice 1.6, build configurations. Keep the legacy
-production target and the new v2 boundaries buildable while validating the
-platform/configuration matrix.
+Slices 1.1-1.6 are committed; slice 1.5's commit is `65cd76fb`. Phase 1 is
+paused pending actual hosted Debug matrix and Packaged Release results. The
+commits are local and the hosted workflows have not run; preserve this as the
+next entry point before closing Phase 1.

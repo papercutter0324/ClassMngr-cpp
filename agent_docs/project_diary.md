@@ -31,6 +31,9 @@
 - Feature-scoped assets are produced as standalone RCC resource packs. Do not
   assume every asset belongs in the main executable bundle; follow
   cmake/resources.cmake when changing packaging.
+- Treat Packaged Release as each platform's actual distribution output from its
+  Release install/deploy workflow; do not create a parallel package path.
+  Cross-build ARM64 on the Windows x64 runner without executing its binaries.
 - Build evidence must be checked against CMake: the project, BUILDING.md,
   active CI workflows, and release helper now agree on Qt 6.12.0. Keep future
   examples aligned with that minimum.

@@ -31,9 +31,11 @@
 - `scripts/phase0`: Phase 0 platform route-matrix runners.
 - `scripts/check_resource_pack_references.py` and `scripts/write_build_report.py`:
   packaged RCC-reference checks and executable/resource/module reports.
-- `.github/workflows/phase1-quality.yml`: compile database, `src/next`
-  formatting/static analysis, reports, and launch checks; release workflows
-  invoke the report and reference scripts for staged packages.
+- `.github/workflows/phase1-quality.yml` checks the compile database,
+  `src/next` formatting/static analysis, reports, and launch. The
+  `refactoring-baseline.yml` PR workflow adds Debug validation for Windows
+  x64, Windows ARM64, macOS universal, and Linux; release workflows invoke
+  report and resource-reference checks for staged packages.
 - `docs`, `plans`, `BUILDING.md`: project references, rewrite planning, and
   build/release guidance.
 

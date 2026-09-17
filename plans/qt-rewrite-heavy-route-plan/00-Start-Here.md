@@ -7,7 +7,8 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-09-18
 - Current milestone: Phase 1 — build system and repository structure
-- Current blocker: None. Phase 0 is complete; Phase 1 is in progress.
+- Current blocker: Hosted Debug matrix and Packaged Release results are
+  pending. Phase 0 is complete; Phase 1 is in progress.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
@@ -92,7 +93,12 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
   integration, and a startup/memory-labeled CTest entry point. Local resource
   checks passed for six generated RCCs and seven runtime IDs; the staged
   package report passed. Cross-platform CI and local clang tools were not run.
-- Phase 1 remains in progress; no later phase is complete.
+- Slice 1.6 adds PR-triggered Debug validation for Windows x64, Windows ARM64,
+  macOS universal, and Linux. ARM64 cross-builds on x64 without execution;
+  existing platform packaging workflows remain the Packaged Release paths.
+  Static review passed, but hosted jobs and ARM64 cross-builds have not run.
+- Phase 1 remains in progress. Next, review hosted Debug matrix and Packaged
+  Release results against the exit gate; no later phase is complete.
 
 ## Important context
 

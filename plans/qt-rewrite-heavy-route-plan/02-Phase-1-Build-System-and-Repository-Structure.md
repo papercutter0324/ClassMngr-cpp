@@ -8,11 +8,10 @@
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
 - Last updated: 2026-09-18
-- Current note: Slices 1.1-1.5 establish the parallel executable, asserted
-  target boundaries, explicit source ownership, compile database, scoped
-  quality CI, and build/package reports. Clean Windows Ninja/MSVC Debug
-  configure/build and local report checks passed. Cross-platform CI and local
-  clang tools were not run; Phase 1 remains in progress.
+- Current note: Slices 1.1-1.6 establish the parallel executable, asserted
+  target boundaries, explicit source ownership, tooling/reports, and a PR
+  Debug matrix. Independent static review of that matrix passed. Hosted Debug
+  and Packaged Release results are pending; Phase 1 remains in progress.
 
 ## Objective
 
@@ -224,6 +223,22 @@ Define and validate:
 - Linux.
 
 The packaged Release configuration must use the same deployment process that will be used for real distribution.
+
+#### Progress update - 2026-09-18 (slice 1.6)
+
+`.github/workflows/refactoring-baseline.yml` now runs PR-triggered Debug
+validation for Windows x64, Windows ARM64, macOS universal, and Linux. Native
+jobs use the existing baseline build/test script, including
+`ClassMngrNextLaunch`; the ARM64 job cross-builds both executables on x64 and
+does not run them. Existing Windows installer, macOS DMG, and Linux install
+tree archive workflows remain the Packaged Release paths.
+
+Independent static review passed the four-preset matrix, path filters, Qt
+host/target setup, execution policy, and preset-list/JSON assertions. No
+hosted job, ARM64 cross-build, actionlint/YAML parser, or new cross-platform
+build has run. Phase 1 remains in progress. Resume/close only after hosted
+Debug matrix and Packaged Release results are available and the Phase 1 exit
+gate is reviewed.
 
 ## Architectural rules
 
