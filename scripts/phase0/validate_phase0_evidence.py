@@ -2,12 +2,12 @@
 """Validate packaged Phase 0 evidence without changing it.
 
 The validator deliberately treats the retained 250 MiB and temporary 512 MiB
-memory comparisons as trend data.  Missing files, malformed JSON, abnormal
-process completion, and lifecycle-contract violations are failures; evidence
-for unofficial ports is reported as deferred metadata instead.  By default,
-the process exit code represents the supplied run(s), not the whole Phase 0
-gate.  Use --require-exit-gate when automation must fail until every supported
-platform has passing evidence.
+memory comparisons as trend data. Missing files, malformed JSON, abnormal
+process completion, and lifecycle-contract violations are failures. Linux x64
+is accepted as supplemental evidence but does not change the official Windows
+and macOS Phase 0 exit gate. By default, the process exit code represents the
+supplied run(s), not the whole Phase 0 gate. Use --require-exit-gate when
+automation must fail until every official platform has passing evidence.
 """
 
 from __future__ import annotations
@@ -31,6 +31,8 @@ SUMMARY_SCHEMA = "classmngr-phase0-exit-gate-summary-v1"
 VALIDATOR_VERSION = "1.0.0"
 SUPPORTED_PLATFORM = "windows-x64"
 SUPPORTED_PLATFORMS = ("windows-x64", "macos-universal")
+SUPPLEMENTAL_PLATFORMS = ("linux-x64",)
+VALIDATED_PLATFORMS = (*SUPPORTED_PLATFORMS, *SUPPLEMENTAL_PLATFORMS)
 DEFERRED_PLATFORMS = ("windows-arm64", "linux")
 LEGACY_RESIDENT_TARGET_BYTES = 250 * 1024 * 1024
 TEMPORARY_DIAGNOSTIC_CEILING_BYTES = 512 * 1024 * 1024
@@ -885,6 +887,220 @@ def _validate_process_record(
     return valid
 
 
+def _validate_linux_package_launch_smoke(
+    root: Path,
+    run_manifest: dict[str, Any],
+    failures: list[dict[str, Any]],
+    counts: dict[str, Any],
+) -> dict[str, Any]:
+    smoke = run_manifest.get("packageLaunchSmoke")
+    if not isinstance(smoke, dict):
+        _append_issue(
+            failures,
+            "missing-package-launch-smoke",
+            "A completed Linux x64 run must record its installed-package launch smoke.",
+            root / "run-manifest.json",
+        )
+        return {"status": "missing"}
+
+    smoke_status = smoke.get("status")
+    if smoke_status != "completed":
+        _append_issue(
+            failures,
+            "package-launch-smoke-failed",
+            f"Linux installed-package launch smoke status is {smoke_status!r}.",
+            root / "run-manifest.json",
+        )
+
+    paths = run_manifest.get("paths")
+    if not isinstance(paths, dict):
+        paths = {}
+    package_root_value = paths.get("packageRoot")
+    application_path = paths.get("applicationPath")
+    expected_plugin_directory: Path | None = None
+    if not isinstance(package_root_value, str) or not isinstance(application_path, str):
+        _append_issue(
+            failures,
+            "invalid-package-launch-smoke",
+            "Linux run paths must record packageRoot and applicationPath.",
+            root / "run-manifest.json",
+        )
+    else:
+        package_root = Path(package_root_value)
+        expected_application = (Path(package_root_value) / "bin" / "ClassMngr").resolve()
+        if Path(application_path).resolve() != expected_application:
+            _append_issue(
+                failures,
+                "invalid-package-launch-smoke",
+                "applicationPath must identify packageRoot/bin/ClassMngr.",
+                root / "run-manifest.json",
+            )
+        if smoke.get("applicationPath") != application_path:
+            _append_issue(
+                failures,
+                "invalid-package-launch-smoke",
+                "Package launch smoke applicationPath does not match the staged package executable.",
+                root / "run-manifest.json",
+            )
+        expected_plugin_directory = package_root / "plugins" / "platforms"
+        expected_plugin = expected_plugin_directory / "libqxcb.so"
+        package_audit = run_manifest.get("packageAudit")
+        if not isinstance(package_audit, dict):
+            _append_issue(
+                failures,
+                "invalid-package-launch-smoke",
+                "Linux run must record the staged xcb plugin package audit.",
+                root / "run-manifest.json",
+            )
+        elif (
+            package_audit.get("platformPluginBackend") != "xcb"
+            or package_audit.get("platformPluginPath") != str(expected_plugin)
+            or package_audit.get("platformPluginArchitecture") != "x86_64"
+            or not isinstance(package_audit.get("platformPluginSha256"), str)
+            or len(package_audit["platformPluginSha256"]) != 64
+            or any(char not in "0123456789abcdef" for char in package_audit["platformPluginSha256"])
+        ):
+            _append_issue(
+                failures,
+                "invalid-package-launch-smoke",
+                "Linux package audit must identify the staged x86_64 libqxcb.so and its SHA-256.",
+                root / "run-manifest.json",
+            )
+
+    invocation = smoke.get("invocation")
+    if not isinstance(invocation, dict):
+        _append_issue(
+            failures,
+            "invalid-package-launch-smoke",
+            "Linux package launch smoke has no process invocation record.",
+            root / "run-manifest.json",
+        )
+        invocation = {}
+    elif _validate_process_record(
+        invocation,
+        failures,
+        "Linux installed-package launch smoke",
+        root / "run-manifest.json",
+    ):
+        counts["normalProcesses"] += 1
+
+    command = invocation.get("command")
+    environment = invocation.get("environment")
+    if not isinstance(command, list) or not command or not all(isinstance(item, str) for item in command):
+        _append_issue(
+            failures,
+            "invalid-package-launch-smoke",
+            "Linux package launch smoke command must be a non-empty string array.",
+            root / "run-manifest.json",
+        )
+    elif (
+        Path(command[0]).name != "xvfb-run"
+        or command[1:3] != ["--auto-servernum", "--server-args=-screen 0 1920x1080x24"]
+        or not isinstance(application_path, str)
+        or application_path not in command[3:]
+    ):
+        _append_issue(
+            failures,
+            "invalid-package-launch-smoke",
+            "Linux package launch smoke must run the staged binary under the configured Xvfb server.",
+            root / "run-manifest.json",
+        )
+    if (
+        not isinstance(environment, dict)
+        or environment.get("QT_QPA_PLATFORM") != "xcb"
+    ):
+        _append_issue(
+            failures,
+            "invalid-package-launch-smoke",
+            "Linux package launch smoke must record QT_QPA_PLATFORM=xcb.",
+            root / "run-manifest.json",
+        )
+    elif expected_plugin_directory is not None:
+        plugin_path = environment.get("QT_QPA_PLATFORM_PLUGIN_PATH")
+        if not isinstance(plugin_path, str) or plugin_path != str(expected_plugin_directory):
+            _append_issue(
+                failures,
+                "invalid-package-launch-smoke",
+                "Linux package launch smoke must use the staged package platforms plugin path.",
+                root / "run-manifest.json",
+            )
+    if (
+        smoke.get("platformPluginBackend") != "xcb"
+        or expected_plugin_directory is None
+        or smoke.get("platformPluginPath") != str(expected_plugin_directory)
+    ):
+        _append_issue(
+            failures,
+            "invalid-package-launch-smoke",
+            "Linux package launch smoke must record the staged xcb backend path.",
+            root / "run-manifest.json",
+        )
+
+    metrics_value = smoke.get("metricsPath")
+    metrics_path = (
+        _resolve_inside(root, metrics_value)
+        if isinstance(metrics_value, str)
+        else None
+    )
+    if metrics_path is None:
+        _append_issue(
+            failures,
+            "unsafe-artifact-path",
+            f"Linux package launch smoke metricsPath escapes the evidence root: {metrics_value!r}.",
+            root / "run-manifest.json",
+        )
+    elif not metrics_path.is_file():
+        _append_issue(
+            failures,
+            "missing-artifact",
+            f"Linux package launch smoke metrics report is missing: {metrics_value}.",
+            metrics_path,
+        )
+    else:
+        report = _load_json(
+            metrics_path,
+            failures,
+            counts.setdefault("jsonErrors", []),
+        )
+        counts["jsonFiles"] += 1
+        if not isinstance(report, dict):
+            _append_issue(
+                failures,
+                "invalid-metrics",
+                "Linux package launch smoke metrics must be a JSON object.",
+                metrics_path,
+            )
+        else:
+            if report.get("format") not in {None, "classmngr-startup-profile-v2"}:
+                _append_issue(
+                    failures,
+                    "invalid-metrics",
+                    f"Unexpected Linux package smoke metrics format: {report.get('format')!r}.",
+                    metrics_path,
+                )
+            names, _, _ = _checkpoint_names(report, failures, metrics_path)
+            if "startup-complete" not in names:
+                _append_issue(
+                    failures,
+                    "package-launch-smoke-incomplete",
+                    "Linux package launch smoke metrics do not include startup-complete.",
+                    metrics_path,
+                )
+            counts["metricsReports"] += 1
+
+    return {
+        "status": smoke_status,
+        "applicationPath": application_path,
+        "platformPluginBackend": smoke.get("platformPluginBackend"),
+        "platformPluginPath": smoke.get("platformPluginPath"),
+        "metricsPath": metrics_value,
+        "processFinished": invocation.get("processFinished"),
+        "exitStatus": invocation.get("exitStatus"),
+        "exitCode": invocation.get("exitCode"),
+        "timedOut": invocation.get("timedOut"),
+    }
+
+
 def _validate_route(
     root: Path,
     record: dict[str, Any],
@@ -893,6 +1109,8 @@ def _validate_route(
     warnings: list[dict[str, Any]],
     counts: dict[str, int],
     memory_samples: list[dict[str, Any]],
+    qpa_platform: str = "offscreen",
+    platform_plugin_path: str | None = None,
 ) -> dict[str, Any]:
     route_summary: dict[str, Any] = {
         "routeId": spec.route_id,
@@ -949,10 +1167,36 @@ def _validate_route(
                 environment = invocation.get("environment")
                 if not isinstance(command, list) or not command or not all(isinstance(item, str) for item in command):
                     _append_issue(failures, "invalid-route-record", "Invocation command is missing or not a string array.", route_manifest_path)
+                elif qpa_platform == "xcb" and (
+                    Path(command[0]).name != "xvfb-run"
+                    or command[1:3] != ["--auto-servernum", "--server-args=-screen 0 1920x1080x24"]
+                ):
+                    _append_issue(
+                        failures,
+                        "invalid-route-record",
+                        "Linux route invocation must run under the configured Xvfb server.",
+                        route_manifest_path,
+                    )
                 if not isinstance(environment, dict):
                     _append_issue(failures, "invalid-route-record", "Invocation environment is missing.", route_manifest_path)
-                elif environment.get("QT_QPA_PLATFORM") != "offscreen":
-                    _append_issue(failures, "invalid-route-record", "Invocation must record QT_QPA_PLATFORM=offscreen.", route_manifest_path)
+                else:
+                    if environment.get("QT_QPA_PLATFORM") != qpa_platform:
+                        _append_issue(
+                            failures,
+                            "invalid-route-record",
+                            f"Invocation must record QT_QPA_PLATFORM={qpa_platform}.",
+                            route_manifest_path,
+                        )
+                    if (
+                        platform_plugin_path is not None
+                        and environment.get("QT_QPA_PLATFORM_PLUGIN_PATH") != platform_plugin_path
+                    ):
+                        _append_issue(
+                            failures,
+                            "invalid-route-record",
+                            "Linux invocation must use the staged package platforms plugin path.",
+                            route_manifest_path,
+                        )
     else:
         _append_issue(failures, "missing-artifact", "Runner route-manifest.json is missing.", route_manifest_path)
 
@@ -1297,21 +1541,31 @@ def _attach_exit_gate(
         }
         for platform in SUPPORTED_PLATFORMS
     }
+    supplemental_evidence: dict[str, dict[str, Any]] = {}
     validated = summary.get("platformStatus", {}).get("validated")
     if validated in evidence:
         evidence[validated] = platform_record(summary)
+    elif validated in SUPPLEMENTAL_PLATFORMS:
+        supplemental_evidence[validated] = platform_record(summary)
+        supplemental_evidence[validated]["supplemental"] = True
     for platform, other in (additional or {}).items():
-        if platform not in evidence:
-            continue
-        evidence[platform] = platform_record(other)
-        evidence[platform]["failures"] = other.get("failures", [])
-        evidence[platform]["warnings"] = other.get("warnings", [])
+        if platform in evidence:
+            evidence[platform] = platform_record(other)
+            evidence[platform]["failures"] = other.get("failures", [])
+            evidence[platform]["warnings"] = other.get("warnings", [])
+        elif platform in SUPPLEMENTAL_PLATFORMS:
+            supplemental_evidence[platform] = platform_record(other)
+            supplemental_evidence[platform]["supplemental"] = True
+            supplemental_evidence[platform]["failures"] = other.get("failures", [])
+            supplemental_evidence[platform]["warnings"] = other.get("warnings", [])
     statuses = {item["status"] for item in evidence.values()}
     gate_status = "failed" if "failed" in statuses else "passed" if statuses == {"passed"} else "incomplete"
     pending = [platform for platform, item in evidence.items() if item["status"] != "passed"]
     summary["supportedPlatforms"] = list(SUPPORTED_PLATFORMS)
+    summary["supplementalPlatforms"] = list(SUPPLEMENTAL_PLATFORMS)
     summary["deferredPlatforms"] = list(DEFERRED_PLATFORMS)
     summary["platformEvidence"] = evidence
+    summary["supplementalPlatformEvidence"] = supplemental_evidence
     summary["exitGate"] = {
         "status": gate_status,
         "pass": gate_status == "passed",
@@ -1515,6 +1769,7 @@ def validate_evidence(
     expected_platform: str = SUPPORTED_PLATFORM,
     run_manifest_path: Path | None = None,
 ) -> dict[str, Any]:
+    supplemental_platform = expected_platform in SUPPLEMENTAL_PLATFORMS
     root = evidence_root.resolve()
     failures: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
@@ -1574,6 +1829,21 @@ def validate_evidence(
         supported = run_manifest.get("supportedPlatform")
         if supported != expected_platform:
             _append_issue(failures, "unsupported-platform", f"Run manifest supportedPlatform is {supported!r}; expected {expected_platform!r}.", manifest_path)
+        if supplemental_platform:
+            if run_manifest.get("supportedPlatforms") != list(SUPPORTED_PLATFORMS):
+                _append_issue(
+                    failures,
+                    "invalid-platform-metadata",
+                    f"supportedPlatforms must remain the official gate list {list(SUPPORTED_PLATFORMS)!r}.",
+                    manifest_path,
+                )
+            if run_manifest.get("supplementalPlatforms") != list(SUPPLEMENTAL_PLATFORMS):
+                _append_issue(
+                    failures,
+                    "invalid-platform-metadata",
+                    f"supplementalPlatforms must be exactly {list(SUPPLEMENTAL_PLATFORMS)!r}.",
+                    manifest_path,
+                )
         raw_deferred = run_manifest.get("deferredPlatforms")
         if not isinstance(raw_deferred, list) or not all(isinstance(item, str) for item in raw_deferred):
             _append_issue(failures, "invalid-platform-metadata", "deferredPlatforms must be a string array.", manifest_path)
@@ -1585,7 +1855,7 @@ def validate_evidence(
                     f"deferredPlatforms must be exactly {list(DEFERRED_PLATFORMS)!r}; got {deferred_platforms!r}.",
                     manifest_path,
                 )
-            if expected_platform in deferred_platforms:
+            if expected_platform in deferred_platforms and not supplemental_platform:
                 _append_issue(failures, "invalid-platform-metadata", f"Supported platform is incorrectly listed as deferred: {expected_platform}.", manifest_path)
         platform_info = run_manifest.get("platform")
         if not isinstance(platform_info, dict):
@@ -1595,6 +1865,13 @@ def validate_evidence(
                 _append_issue(failures, "invalid-platform-metadata", f"platform.name is {platform_info.get('name')!r}; expected {expected_platform!r}.", manifest_path)
             if top_status == "completed" and platform_info.get("supported") is not True:
                 _append_issue(failures, "unsupported-platform", "A completed run must record platform.supported=true.", manifest_path)
+            if supplemental_platform and top_status == "completed" and platform_info.get("supplemental") is not True:
+                _append_issue(
+                    failures,
+                    "invalid-platform-metadata",
+                    "A completed Linux x64 run must identify itself as supplemental evidence.",
+                    manifest_path,
+                )
         if not requested:
             raw_requested = run_manifest.get("requestedRoutes")
             if isinstance(raw_requested, list) and all(isinstance(item, str) for item in raw_requested):
@@ -1615,6 +1892,14 @@ def validate_evidence(
     for route_id in unknown_routes:
         _append_issue(failures, "unknown-route", f"No validator contract exists for route {route_id!r}.", manifest_path)
     route_summaries: list[dict[str, Any]] = []
+    run_paths = run_manifest.get("paths") if isinstance(run_manifest, dict) else None
+    package_root_value = run_paths.get("packageRoot") if isinstance(run_paths, dict) else None
+    linux_platform_plugin_path = (
+        str(Path(package_root_value) / "plugins" / "platforms")
+        if expected_platform == "linux-x64" and isinstance(package_root_value, str)
+        else None
+    )
+    route_qpa_platform = "xcb" if expected_platform == "linux-x64" else "offscreen"
     if top_status == "completed" and not unknown_routes:
         for route_id in requested:
             record = route_by_id.get(route_id)
@@ -1622,9 +1907,30 @@ def validate_evidence(
                 _append_issue(failures, "missing-route", f"Run manifest has no record for requested route {route_id!r}.", manifest_path)
                 continue
             spec = ROUTE_BY_ID[route_id]
-            route_summaries.append(_validate_route(root, record, spec, failures, warnings, counts, memory_samples))
+            route_summaries.append(
+                _validate_route(
+                    root,
+                    record,
+                    spec,
+                    failures,
+                    warnings,
+                    counts,
+                    memory_samples,
+                    route_qpa_platform,
+                    linux_platform_plugin_path,
+                )
+            )
             if record.get("status") != "completed":
                 _append_issue(failures, "route-failed", f"Route {route_id} has status {record.get('status')!r}.", manifest_path)
+
+    package_launch_smoke: dict[str, Any] | None = None
+    if supplemental_platform and top_status == "completed":
+        package_launch_smoke = _validate_linux_package_launch_smoke(
+            root,
+            run_manifest or {},
+            failures,
+            counts,
+        )
 
     if run_manifest is not None:
         raw_commands = run_manifest.get("commands")
@@ -1653,14 +1959,15 @@ def validate_evidence(
         "pass": status == "pass",
         "layout": "orchestrated-run",
         "scenario": "phase0-packaged-release-evidence",
-        "fixture": "packaged-release-windows-x64",
+        "fixture": f"packaged-release-{expected_platform}",
         "artifactPath": str(root),
         "supportedPlatform": expected_platform,
         "deferredPlatforms": deferred_platforms,
         "platformStatus": {
             "required": list(SUPPORTED_PLATFORMS),
             "validated": expected_platform,
-            "supported": expected_platform in SUPPORTED_PLATFORMS,
+            "supported": expected_platform in VALIDATED_PLATFORMS,
+            "supplemental": supplemental_platform,
             "deferred": deferred_platforms,
         },
         "routeSummary": route_summaries,
@@ -1689,6 +1996,8 @@ def validate_evidence(
         "failures": failures,
         "warnings": warnings,
     }
+    if package_launch_smoke is not None:
+        summary["packageLaunchSmoke"] = package_launch_smoke
     return _attach_exit_gate(summary)
 
 
@@ -1850,6 +2159,101 @@ def run_self_test() -> int:
         ]
         _write_json(manifest_path, manifest)
 
+    def add_linux_package_smoke(root: Path) -> None:
+        manifest_path = root / "run-manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        package_root = root / "synthetic-package"
+        application_path = package_root / "bin" / "ClassMngr"
+        plugin_directory = package_root / "plugins" / "platforms"
+        plugin_path = plugin_directory / "libqxcb.so"
+        metrics_path = root / "package-launch-smoke" / "startup-metrics.json"
+        _write_json(
+            metrics_path,
+            {
+                "format": "classmngr-startup-profile-v2",
+                "checkpoints": [{"name": "startup-complete", "elapsedMs": 10}],
+            },
+        )
+        manifest.update(
+            {
+                "supportedPlatform": "linux-x64",
+                "supportedPlatforms": list(SUPPORTED_PLATFORMS),
+                "supplementalPlatforms": list(SUPPLEMENTAL_PLATFORMS),
+                "deferredPlatforms": list(DEFERRED_PLATFORMS),
+                "platform": {
+                    "name": "linux-x64",
+                    "supported": True,
+                    "supplemental": True,
+                    "acceptanceScope": "Supplemental Linux x86_64 Release baseline.",
+                },
+                "paths": {
+                    "packageRoot": str(package_root),
+                    "applicationPath": str(application_path),
+                },
+                "packageAudit": {
+                    "platformPluginBackend": "xcb",
+                    "platformPluginPath": str(plugin_path),
+                    "platformPluginArchitecture": "x86_64",
+                    "platformPluginSha256": "a" * 64,
+                },
+                "packageLaunchSmoke": {
+                    "status": "completed",
+                    "applicationPath": str(application_path),
+                    "platformPluginBackend": "xcb",
+                    "platformPluginPath": str(plugin_directory),
+                    "metricsPath": "package-launch-smoke/startup-metrics.json",
+                    "invocation": {
+                        "command": [
+                            "/usr/bin/xvfb-run",
+                            "--auto-servernum",
+                            "--server-args=-screen 0 1920x1080x24",
+                            str(application_path),
+                            "--startup-performance-test",
+                            "--startup-performance-output",
+                            str(metrics_path),
+                        ],
+                        "environment": {
+                            "QT_QPA_PLATFORM": "xcb",
+                            "QT_QPA_PLATFORM_PLUGIN_PATH": str(plugin_directory),
+                        },
+                        "processFinished": True,
+                        "exitStatus": "normal",
+                        "exitCode": 0,
+                        "timedOut": False,
+                    },
+                },
+            }
+        )
+        for route in manifest.get("routes", []):
+            if not isinstance(route, dict):
+                continue
+            route_root = root.joinpath(*str(route.get("artifactPath", "")).split("/"))
+            route_manifest_path = route_root / "route-manifest.json"
+            if not route_manifest_path.is_file():
+                continue
+            route_manifest = json.loads(route_manifest_path.read_text(encoding="utf-8"))
+            invocation = route_manifest.get("invocation")
+            if not isinstance(invocation, dict):
+                continue
+            arguments = invocation.get("command", [])[1:]
+            invocation["command"] = [
+                "/usr/bin/xvfb-run",
+                "--auto-servernum",
+                "--server-args=-screen 0 1920x1080x24",
+                str(application_path),
+                *arguments,
+            ]
+            invocation["environment"] = {
+                "QT_QPA_PLATFORM": "xcb",
+                "QT_QPA_PLATFORM_PLUGIN_PATH": str(plugin_directory),
+                "CLASSMNGR_TEST_APP_PATH": str(application_path),
+            }
+            _write_json(route_manifest_path, route_manifest)
+        manifest.setdefault("commands", []).append(
+            {"id": "linux-package-launch-smoke", "kind": "smoke", "status": "completed"}
+        )
+        _write_json(manifest_path, manifest)
+
     class ValidatorSelfTest(unittest.TestCase):
         def test_valid_fixture_passes(self) -> None:
             with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:
@@ -1902,11 +2306,109 @@ def run_self_test() -> int:
 
             windows = complete_summary("windows-x64")
             macos = complete_summary("macos-universal")
-            _attach_exit_gate(windows, {"macos-universal": macos})
+            linux = complete_summary("linux-x64")
+            _attach_exit_gate(
+                windows,
+                {"macos-universal": macos, "linux-x64": linux},
+            )
             self.assertEqual(windows["exitGate"]["status"], "passed")
             self.assertEqual(windows["exitGate"]["requiredRouteCount"], 24)
             self.assertFalse(windows["exitGate"]["pendingPlatforms"])
             self.assertTrue(all(item["routeCoverageComplete"] for item in windows["platformEvidence"].values()))
+            self.assertEqual(
+                windows["supplementalPlatformEvidence"]["linux-x64"]["status"],
+                "passed",
+            )
+
+        def test_linux_evidence_is_accepted_and_reported_outside_official_gate(self) -> None:
+            with tempfile.TemporaryDirectory(prefix="phase0-validator-linux-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                add_linux_package_smoke(root)
+
+                summary = validate_evidence(root, expected_platform="linux-x64")
+
+                self.assertEqual(summary["status"], "pass", summary["failures"])
+                self.assertTrue(summary["platformStatus"]["supplemental"])
+                self.assertEqual(summary["exitGate"]["status"], "incomplete")
+                self.assertEqual(
+                    summary["exitGate"]["pendingPlatforms"],
+                    list(SUPPORTED_PLATFORMS),
+                )
+                linux = summary["supplementalPlatformEvidence"]["linux-x64"]
+                self.assertEqual(linux["status"], "incomplete")
+                self.assertEqual(linux["presentRouteIds"], ["workflow-representative"])
+                self.assertEqual(len(linux["missingRouteIds"]), 23)
+                self.assertEqual(summary["packageLaunchSmoke"]["exitCode"], 0)
+
+        def test_linux_package_smoke_must_record_the_staged_xcb_plugin_path(self) -> None:
+            with tempfile.TemporaryDirectory(prefix="phase0-validator-linux-plugin-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                add_linux_package_smoke(root)
+                manifest_path = root / "run-manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["packageLaunchSmoke"]["invocation"]["environment"][
+                    "QT_QPA_PLATFORM_PLUGIN_PATH"
+                ] = "/unrelated/platforms"
+                _write_json(manifest_path, manifest)
+
+                summary = validate_evidence(root, expected_platform="linux-x64")
+
+                self.assertEqual(summary["status"], "fail")
+                self.assertTrue(
+                    any(
+                        issue["code"] == "invalid-package-launch-smoke"
+                        and "staged package platforms plugin path" in issue["message"]
+                        for issue in summary["failures"]
+                    )
+                )
+
+        def test_linux_route_must_use_staged_xcb_under_xvfb(self) -> None:
+            with tempfile.TemporaryDirectory(prefix="phase0-validator-linux-route-xcb-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                add_linux_package_smoke(root)
+                route_manifest_path = root / "workflow" / "representative" / "route-manifest.json"
+                route_manifest = json.loads(route_manifest_path.read_text(encoding="utf-8"))
+                route_manifest["invocation"]["environment"][
+                    "QT_QPA_PLATFORM_PLUGIN_PATH"
+                ] = "/unrelated/platforms"
+                _write_json(route_manifest_path, route_manifest)
+
+                summary = validate_evidence(root, expected_platform="linux-x64")
+
+                self.assertEqual(summary["status"], "fail")
+                self.assertTrue(
+                    any(
+                        issue["code"] == "invalid-route-record"
+                        and "staged package platforms plugin path" in issue["message"]
+                        for issue in summary["failures"]
+                    )
+                )
+
+        def test_linux_skipped_route_is_not_counted_as_supplemental_pass(self) -> None:
+            with tempfile.TemporaryDirectory(prefix="phase0-validator-linux-skipped-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                add_linux_package_smoke(root)
+                manifest_path = root / "run-manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                skipped = ROUTE_BY_ID["startup-empty"]
+                manifest["requestedRoutes"].append(skipped.route_id)
+                skipped_record = self_test_route_record(skipped)
+                skipped_record["status"] = "skipped"
+                manifest["routes"].append(skipped_record)
+                _write_json(manifest_path, manifest)
+
+                summary = validate_evidence(root, expected_platform="linux-x64")
+
+                self.assertEqual(summary["status"], "fail")
+                linux = summary["supplementalPlatformEvidence"]["linux-x64"]
+                self.assertEqual(linux["status"], "failed")
+                self.assertNotIn(skipped.route_id, linux["presentRouteIds"])
+                self.assertIn(skipped.route_id, linux["missingRouteIds"])
+                self.assertTrue(any(item["code"] == "route-failed" for item in summary["failures"]))
 
         def test_deferred_platforms_are_exact(self) -> None:
             with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:
@@ -2170,7 +2672,7 @@ def main(argv: list[str] | None = None) -> int:
         help="return exit code 3 unless exitGate.status is passed (default exit status validates supplied runs only)",
     )
     parser.add_argument("--run-manifest", type=Path, help="explicit orchestrated run manifest (defaults to EVIDENCE_ROOT/run-manifest.json)")
-    parser.add_argument("--expected-platform", choices=SUPPORTED_PLATFORMS, default=SUPPORTED_PLATFORM)
+    parser.add_argument("--expected-platform", choices=VALIDATED_PLATFORMS, default=SUPPORTED_PLATFORM)
     parser.add_argument("--macos-evidence-root", type=Path, help="optional macOS universal evidence root to consolidate into the Phase 0 exit gate")
     parser.add_argument("--macos-run-manifest", type=Path, help="explicit manifest for --macos-evidence-root")
     parser.add_argument("--routes", nargs="*", help="route IDs or categories to validate")
@@ -2196,7 +2698,7 @@ def main(argv: list[str] | None = None) -> int:
         if expected_routes is not None:
             parser.error("--routes requires an orchestrated run manifest")
         if args.expected_platform != SUPPORTED_PLATFORM:
-            parser.error("macos-universal evidence requires an orchestrated run manifest")
+            parser.error(f"{args.expected_platform} evidence requires an orchestrated run manifest")
         summary = validate_retained_evidence(args.evidence_root)
     macos_summary: dict[str, Any] | None = None
     if args.macos_run_manifest is not None and args.macos_evidence_root is None:

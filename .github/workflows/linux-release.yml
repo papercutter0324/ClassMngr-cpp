@@ -8,7 +8,18 @@ on:
         required: false
         default: ""
         type: string
+      run_phase0_baseline:
+        description: Run supplemental Linux x64 packaged Release Phase 0 evidence
+        required: false
+        default: false
+        type: boolean
   workflow_dispatch:
+    inputs:
+      run_phase0_baseline:
+        description: Run supplemental Linux x64 packaged Release Phase 0 evidence
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -21,6 +32,7 @@ on:
       - "resources/**"
       - "scripts/check_resource_pack_references.py"
       - "scripts/write_build_report.py"
+      - "scripts/phase0/**"
       - "src/**"
   pull_request:
     paths:
@@ -32,6 +44,7 @@ on:
       - "resources/**"
       - "scripts/check_resource_pack_references.py"
       - "scripts/write_build_report.py"
+      - "scripts/phase0/**"
       - "src/**"
 
 permissions:
@@ -48,7 +61,7 @@ jobs:
   build:
     name: Linux x86_64
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.run_phase0_baseline && 180 || 60 }}
     env:
       QT_ROOT: ${{ github.workspace }}/Qt
       QT_LINUX_PREFIX: ${{ github.workspace }}/Qt/6.12.0/gcc_64
@@ -182,3 +195,40 @@ jobs:
             artifacts/build-reports/linux-x86_64.json
             artifacts/build-reports/linux-x86_64-resource-pack-references.json
           if-no-files-found: error
+
+      - name: Check Linux Phase 0 runner and validator contracts
+        shell: bash
+        run: |
+          python scripts/phase0/test_phase0_linux_runner.py
+          python scripts/phase0/validate_phase0_evidence.py --self-test
+
+      - name: Install Xvfb for supplemental Phase 0
+        if: ${{ inputs.run_phase0_baseline }}
+        shell: bash
+        run: |
+          sudo apt-get install --yes --no-install-recommends xauth xvfb
+
+      - name: Run supplemental Linux x64 Phase 0 baseline
+        if: ${{ inputs.run_phase0_baseline }}
+        shell: bash
+        env:
+          PHASE0_EVIDENCE_ROOT: ${{ runner.temp }}/ClassMngr-phase0-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python scripts/phase0/run_phase0_evidence_linux.py \
+            --evidence-root "${PHASE0_EVIDENCE_ROOT}" \
+            --package-root "dist/ClassMngr-linux-x86_64" \
+            --qt-prefix "${QT_LINUX_PREFIX}" \
+            --timeout-seconds 900 \
+            --parallel 4
+
+      - name: Upload supplemental Linux Phase 0 evidence
+        if: ${{ always() && inputs.run_phase0_baseline }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ClassMngr-linux-x86_64-phase0-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ClassMngr-phase0-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}/
+            !${{ runner.temp }}/ClassMngr-phase0-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}/tmp/**
+            !${{ runner.temp }}/ClassMngr-phase0-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}/tools/**
+          if-no-files-found: error
+          retention-days: 90
