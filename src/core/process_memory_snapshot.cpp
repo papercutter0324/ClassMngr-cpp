@@ -1,6 +1,7 @@
 #include "process_memory_snapshot.h"
 
 #include <limits>
+#include <utility>
 
 #if defined(Q_OS_WIN)
 #include <windows.h>
@@ -28,9 +29,17 @@ quint64 procKiBValue(
         return 0;
     }
 
-    while (!file.atEnd())
+    // Some procfs pseudo-files report a size of zero even though they still
+    // produce data. QFile::atEnd() checks that size and can therefore be true
+    // before the first read. Read until readLine() returns no bytes instead.
+    while (true)
     {
         const QByteArray line = file.readLine();
+        if (line.isEmpty())
+        {
+            break;
+        }
+
         if (!line.startsWith(key))
         {
             continue;
@@ -64,6 +73,14 @@ quint64 procEntryCount(const QString& path)
 }
 #endif
 }
+
+#if defined(Q_OS_LINUX)
+PlatformProcessMemorySnapshotProvider
+    ::PlatformProcessMemorySnapshotProvider(QString procRoot)
+    : m_procRoot(std::move(procRoot))
+{
+}
+#endif
 
 ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
 {
@@ -155,9 +172,18 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
     }
 #elif defined(Q_OS_LINUX)
     result.platform = QStringLiteral("linux");
+    const QDir procDirectory(m_procRoot);
+    const QString statusPath =
+        procDirectory.filePath(QStringLiteral("self/status"));
+    const QString smapsRollupPath =
+        procDirectory.filePath(QStringLiteral("self/smaps_rollup"));
+    const QString fileDescriptorsPath =
+        procDirectory.filePath(QStringLiteral("self/fd"));
+    const QString tasksPath =
+        procDirectory.filePath(QStringLiteral("self/task"));
 
     const quint64 rss = procKiBValue(
-        QStringLiteral("/proc/self/status"),
+        statusPath,
         QByteArrayLiteral("VmRSS:")
         );
     if (rss == 0)
@@ -168,15 +194,15 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
     result.isAvailable = true;
     result.workingSetBytes = rss;
     result.peakWorkingSetBytes = procKiBValue(
-        QStringLiteral("/proc/self/status"),
+        statusPath,
         QByteArrayLiteral("VmHWM:")
         );
     result.privateWorkingSetBytes = procKiBValue(
-        QStringLiteral("/proc/self/status"),
+        statusPath,
         QByteArrayLiteral("RssAnon:")
         );
     result.privateUsageBytes = procKiBValue(
-        QStringLiteral("/proc/self/smaps_rollup"),
+        smapsRollupPath,
         QByteArrayLiteral("Pss:")
         );
     if (result.privateUsageBytes == 0)
@@ -185,21 +211,21 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
     }
 
     const quint64 privateClean = procKiBValue(
-        QStringLiteral("/proc/self/smaps_rollup"),
+        smapsRollupPath,
         QByteArrayLiteral("Private_Clean:")
         );
     const quint64 privateDirty = procKiBValue(
-        QStringLiteral("/proc/self/smaps_rollup"),
+        smapsRollupPath,
         QByteArrayLiteral("Private_Dirty:")
         );
     result.privateDirtyBytes = privateDirty;
     result.pagefileUsageBytes = privateClean + privateDirty;
     result.handleCount = static_cast<quint32>(qMin<quint64>(
-        procEntryCount(QStringLiteral("/proc/self/fd")),
+        procEntryCount(fileDescriptorsPath),
         std::numeric_limits<quint32>::max()
         ));
     result.threadCount = static_cast<quint32>(qMin<quint64>(
-        procEntryCount(QStringLiteral("/proc/self/task")),
+        procEntryCount(tasksPath),
         std::numeric_limits<quint32>::max()
         ));
 #endif

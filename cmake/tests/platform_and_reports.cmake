@@ -327,6 +327,16 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
     )
 
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        classmngr_add_qt_test(
+            NAME ProcessMemorySnapshot
+            SOURCES
+                tests/process_memory_snapshot_tests.cpp
+            LIBRARIES
+                Qt6::Test
+        )
+    endif()
+
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
         src/features/classes/services/class_transfer_json_codec.cpp
