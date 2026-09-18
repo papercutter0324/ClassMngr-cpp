@@ -110,11 +110,16 @@ while IFS= read -r -d '' BINARY; do
     while IFS= read -r BINARY_MINIMUM_VERSION; do
         if awk -F. -v found="${BINARY_MINIMUM_VERSION}" -v target="${TARGET_MINIMUM_VERSION}" '
             BEGIN {
-                split(found, actual_parts, ".")
-                split(target, target_parts, ".")
-                if ((actual_parts[1] + 0) > (target_parts[1] + 0)
-                    || ((actual_parts[1] + 0) == (target_parts[1] + 0)
-                        && (actual_parts[2] + 0) > (target_parts[2] + 0))) {
+                split(found, actual_parts, "[.]")
+                split(target, target_parts, "[.]")
+                found_major = actual_parts[1] + 0
+                found_minor = actual_parts[2] + 0
+                target_major = target_parts[1] + 0
+                target_minor = target_parts[2] + 0
+                if (found_major > target_major) {
+                    exit 0
+                }
+                if (found_major == target_major && found_minor > target_minor) {
                     exit 0
                 }
                 exit 1

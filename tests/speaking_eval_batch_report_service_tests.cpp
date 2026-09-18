@@ -2764,10 +2764,10 @@ void SpeakingEvalBatchReportServiceTests::
     }
 
     WindowsOutputReferenceCapture::OutputDirectory referenceDirectory;
-#ifdef Q_OS_WIN
     const bool isAdvancedTemplate =
         reportTemplateValue
         == static_cast<int>(SpeakingEvalReportTemplate::Advanced);
+#ifdef Q_OS_WIN
     const QString captureVariant =
         isAdvancedTemplate
             ? (includeSignature
