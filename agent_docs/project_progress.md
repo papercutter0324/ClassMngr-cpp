@@ -70,18 +70,29 @@ checks. This is supplemental local evidence: the Windows 2022/VS17 generator
 could not find a VS2022 instance, so the local run does not prove the hosted
 shipping toolchain.
 
-Phase 1 remains in progress. GitHub could not be queried from this environment;
-at the last remote check, the two Phase 1 implementation commits were ahead of
-cached `origin/Qt-Rewrite` at `567117fa`. This continuation is adding a local
-evidence-handoff documentation commit. Hosted run status is unknown, not
-confirmed absent. No Linux or macOS toolchain is available locally. The
-cross-platform exit gate requires actual hosted workflow results.
+A local macOS 27.0 arm64 / Qt 6.12 Debug universal validation passed for
+ClassMngr and ClassMngrNext; the source ownership check passed for 654
+handwritten files, both executables passed arm64/x86_64 and macOS 14.4 minimum
+checks, and ClassMngrNext links only Qt Core. Release installer/DMG creation,
+signature and hdiutil verification, 92 bundled Mach-O compatibility checks,
+the resource check (6 RCC packs, 7 runtime IDs, 7 references), and build report
+passed. The initial full macOS CTest run under restricted Codex execution
+reported 62/67. Individual reruns passed the three UI tests and updater, and
+InitialSetupWizard CTest later passed 4/4 with normal macOS service access.
+The earlier abort came from the restricted environment's LaunchServices
+lookup; the full 67-test suite has not been rerun outside the restriction, so
+no aggregate macOS CTest pass is claimed.
+
+Phase 1 remains in progress. GitHub workflow results were not checked during
+this validation. The cached `origin/Qt-Rewrite` ref currently matches local
+HEAD `7a26f56c`; hosted run status remains unverified. Linux toolchains remain
+unavailable locally. The cross-platform exit gate still requires hosted
+workflow results.
 
 ## Next Milestone
 
-Publish the local commits to a GitHub PR or otherwise make them available to
-the hosted runners, collect Debug matrix and production Packaged Release
-results, then evaluate the Phase 1 exit gate. Do not claim cross-platform
-validation from static workflow checks or the local VS2026 run alone. Keep
-next-generation target names distinct from legacy object targets such as
-ClassMngrDomain and ClassMngrUiShared.
+Collect hosted Debug matrix and production Packaged Release results, then
+evaluate the Phase 1 exit gate. Local Windows and macOS evidence is
+supplemental; do not claim cross-platform acceptance until hosted results are
+verified. Keep next-generation target names distinct from legacy object
+targets such as ClassMngrDomain and ClassMngrUiShared.

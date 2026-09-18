@@ -155,3 +155,13 @@
   is generated (0x80070520), and clipboard-dependent UI tests can fail while
   opening the system clipboard (0x800401d0). Record these as environment
   limits; do not claim native Office output or suppress the failing checks.
+
+## macOS QtTest sandbox lesson - 2026-09-18
+
+- Qt 6.12's macOS QWizard loads its default background through an
+  NSWorkspace/LaunchServices lookup for com.apple.KeyboardSetupAssistant. In a
+  restricted test process that lookup can return a nil URL, causing
+  NSBundle to throw before test assertions run. Rerun the focused CTest target
+  with normal macOS service access before treating this as an application
+  regression; in this case the offscreen target passed 4/4 outside the
+  restriction, and the user confirmed the app flow works.

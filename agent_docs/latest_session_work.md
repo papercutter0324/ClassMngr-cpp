@@ -112,12 +112,12 @@ older Phase 0 open notes in this document's history.
   The exact VS17 preset failed because no VS2022 instance is installed; local
   VS18 generator attempts also hit Windows FileTracker access errors before an
   elevated Ninja/MSVC run succeeded.
-- At the last remote check, the two Phase 1 implementation commits were ahead
-  of cached `origin/Qt-Rewrite` at `567117fa`. The current continuation adds a
-  separate local evidence-handoff documentation commit. `git ls-remote` could
-  not reach GitHub, `gh` is unavailable, and browser fetch failed. No hosted
-  run IDs or PR status could be confirmed; this does not establish that no runs
-  exist. WSL, Docker, Podman, and Apple toolchains are unavailable locally.
+- The cached `origin/Qt-Rewrite` ref currently matches local HEAD at `7a26f56c`.
+  No fresh GitHub Actions or PR query was made during this validation, so
+  hosted run status remains unverified. Earlier `git ls-remote` and browser
+  queries could not reach GitHub, and `gh` was unavailable. WSL, Docker, and
+  Podman are unavailable locally; a macOS toolchain is available and was used
+  for the validation below.
 - The slice 1.1 clean build directory was
   C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.1-clean-965a9613fb8046b7bbbbd5a520b03740.
   It is local verification output, not a checked-in artifact.
@@ -129,10 +129,36 @@ older Phase 0 open notes in this document's history.
   and `src/next/main.cpp`.
 - Phase 1 is not complete. No cross-platform v2 build has been verified yet.
 
+## Local macOS Phase 1 Validation — 2026-09-18
+
+- On macOS 27.0 arm64 with Qt 6.12.0, the Debug universal build passed for
+  ClassMngr and ClassMngrNext. Source ownership passed for 654 handwritten
+  files; both executables passed arm64/x86_64 and macOS 14.4 minimum-version
+  checks, and ClassMngrNext remained linked only to Qt Core.
+- The Release installer command completed and created the universal DMG.
+  Signing, hdiutil verification, 92 bundled Mach-O architecture/minimum-version
+  checks, the resource check (6 RCC packs, 7 runtime IDs, 7 references), and
+  the build report passed. Qt's deployment scan printed missing dependency
+  paths for optional Mimer, ODBC, and PostgreSQL SQL drivers; the deployment
+  postamble removes those drivers, and the staged app contains only
+  libqsqlite.dylib. Signature replacement notices and hdiutil's deprecation
+  warning were nonfatal.
+- The first full CTest run in the restricted Codex environment reported
+  62/67. Three UI tests passed on focused reruns, and the updater test passed
+  with normal loopback access. The InitialSetupWizard target then passed 4/4
+  under CTest with normal macOS service access, retaining its offscreen
+  platform. In the restricted run, its first test aborted at wizard.show()
+  with NSInvalidArgumentException (`NSBundle initWithURL:nil`, SIGABRT 6):
+  Qt's macOS QWizard background lookup asks LaunchServices for
+  com.apple.KeyboardSetupAssistant, and the restricted process receives a nil
+  URL. The full 67-test suite has not been rerun outside the restriction, so
+  no aggregate macOS CTest pass is claimed. The user manually confirmed the
+  application setup flow works.
+
 ## Next Entry Point
 
 Slices 1.1-1.6 are committed; slice 1.5's commit is `65cd76fb`. Phase 1 is
-paused pending hosted Debug matrix and Packaged Release results. The local
-VS2026 Windows evidence is supplemental, and the branch has not been confirmed
-on GitHub. Next, make the commits available to hosted workflows, then review
-their results against the Phase 1 exit gate.
+paused pending hosted Debug matrix and Packaged Release results. Local VS2026
+Windows and macOS results are supplemental. The cached remote-tracking ref
+matches HEAD, but hosted run status remains unverified. Next, collect hosted
+results and review them against the Phase 1 exit gate.
