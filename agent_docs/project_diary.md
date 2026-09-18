@@ -34,6 +34,9 @@
 - Treat Packaged Release as each platform's actual distribution output from its
   Release install/deploy workflow; do not create a parallel package path.
   Cross-build ARM64 on the Windows x64 runner without executing its binaries.
+- Validate the exact compiler/generator used by the shipping workflow. A local
+  VS2026/MSVC build with Qt's VS2022 kit is supplemental evidence and does not
+  replace a hosted VS2022 result.
 - Build evidence must be checked against CMake: the project, BUILDING.md,
   active CI workflows, and release helper now agree on Qt 6.12.0. Keep future
   examples aligned with that minimum.

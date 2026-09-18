@@ -10,8 +10,12 @@
 - Last updated: 2026-09-18
 - Current note: Slices 1.1-1.6 establish the parallel executable, asserted
   target boundaries, explicit source ownership, tooling/reports, and a PR
-  Debug matrix. Independent static review of that matrix passed. Hosted Debug
-  and Packaged Release results are pending; Phase 1 remains in progress.
+  Debug matrix. On clean snapshot `6f2f5fb0`, elevated Windows x64 Debug
+  configure/build and CTest passed 66/66; a local Windows x64 Release run also
+  built and staged the production installer path. These VS 2026/MSVC 19.51
+  results are supplemental: the exact VS2022 configure failed because no
+  VS2022 instance is installed. Hosted Debug and Packaged Release results are
+  unknown/pending; Phase 1 remains in progress.
 
 ## Objective
 
@@ -234,11 +238,26 @@ does not run them. Existing Windows installer, macOS DMG, and Linux install
 tree archive workflows remain the Packaged Release paths.
 
 Independent static review passed the four-preset matrix, path filters, Qt
-host/target setup, execution policy, and preset-list/JSON assertions. No
-hosted job, ARM64 cross-build, actionlint/YAML parser, or new cross-platform
-build has run. Phase 1 remains in progress. Resume/close only after hosted
-Debug matrix and Packaged Release results are available and the Phase 1 exit
-gate is reviewed.
+host/target setup, execution policy, and preset-list/JSON assertions. From a
+clean source snapshot at `6f2f5fb0`, an elevated local Windows x64 Debug
+configure/build and CTest passed 66/66, including `ClassMngrNextLaunch` and
+`ClassMngrStartupPerformanceTests`.
+
+A local Windows x64 Release run with VS 2026/MSVC 19.51 and Qt 6.12 built
+`ClassMngr`, ran `windeployqt`, installed the staged tree, and compiled the
+production Inno installer. Staged startup exited 0 in 3.6 seconds with
+`finalProgress=100`; resource/report checks passed for six RCCs, seven runtime
+IDs, and seven references. The staged tree contained 129 files (207,477,952
+bytes), and the installer was 93,160,351 bytes. These VS 2026 results are
+supplemental and do not validate the VS2022 shipping toolchain: the exact VS17
+configure failed because no VS2022 instance is installed; VS18 generator
+attempts hit FileTracker access failures. Elevated Ninja/MSVC succeeded.
+
+Hosted Debug matrix and Packaged Release results remain unknown/pending. GitHub
+could not be queried from this environment, so no PR or hosted-run absence is
+confirmed. No local ARM64 cross-build, macOS/Linux build, or actionlint/YAML
+parser check is claimed. Phase 1 remains in progress; review hosted Debug and
+Packaged Release results against the exit gate before closing it.
 
 ## Architectural rules
 

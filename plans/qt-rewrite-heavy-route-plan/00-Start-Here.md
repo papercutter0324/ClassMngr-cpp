@@ -8,7 +8,11 @@
 - Last updated: 2026-09-18
 - Current milestone: Phase 1 — build system and repository structure
 - Current blocker: Hosted Debug matrix and Packaged Release results are
-  pending. Phase 0 is complete; Phase 1 is in progress.
+  unknown/pending. Local Windows x64 Debug configure/build and CTest passed
+  66/66, and a supplemental VS 2026/MSVC 19.51 Windows x64 Release run built
+  and staged the production installer path. The exact VS2022 configure failed
+  because no VS2022 instance is installed, so hosted shipping-toolchain results
+  are still required. Phase 0 is complete; Phase 1 is in progress.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
@@ -96,9 +100,16 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
 - Slice 1.6 adds PR-triggered Debug validation for Windows x64, Windows ARM64,
   macOS universal, and Linux. ARM64 cross-builds on x64 without execution;
   existing platform packaging workflows remain the Packaged Release paths.
-  Static review passed, but hosted jobs and ARM64 cross-builds have not run.
-- Phase 1 remains in progress. Next, review hosted Debug matrix and Packaged
-  Release results against the exit gate; no later phase is complete.
+  Independent static review passed. On a clean snapshot at `6f2f5fb0`, local
+  Windows x64 Debug configure/build and CTest passed 66/66, including the v2
+  launch and startup performance tests. The local VS 2026/MSVC 19.51 + Qt 6.12
+  Windows x64 Release packaged-installer path also succeeded, but is
+  supplemental because the exact VS2022 configure failed: no VS2022 instance
+  is installed.
+- Hosted Debug and Packaged Release results remain unknown/pending. GitHub
+  could not be queried, so no PR or hosted-run absence is confirmed. Phase 1
+  remains in progress; review hosted matrix and packaging results against the
+  exit gate before closing it. No later phase is complete.
 
 ## Important context
 

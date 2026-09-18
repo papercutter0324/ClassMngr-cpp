@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 1 — Build System and Repository Structure.
-Current deployment: qt1_build_structure_20260918. Route: Heavy. Commit each
+Current deployment: qt1_phase1_resume_20260918. Route: Heavy. Commit each
 completed slice before starting the next.
 
 ## Goal
@@ -58,17 +58,30 @@ Native jobs run the baseline build/tests including the `ClassMngrNext` launch
 probe; the ARM64 job cross-builds `ClassMngr` and `ClassMngrNext` without
 executing them on its x64 runner. Release package workflows remain unchanged
 and use the production install/deployment paths. Slice 1.6 is committed.
-Independent static review and preset checks passed; hosted CI has not run.
+Independent static review and preset checks passed.
 
-Slices 1.1-1.6 are implemented and committed. Windows Debug build and targeted
-CTest evidence is recorded above for slices 1.4 and 1.5. Slice 1.6 passed
-static workflow/preset review, but the hosted jobs have not run from this local
-branch. Phase 1 remains in progress; the cross-platform exit gate requires
-actual workflow results.
+On clean source snapshot `6f2f5fb0`, local Windows x64 Debug baseline configure,
+build, and CTest passed 66/66, including `ClassMngrNextLaunch` and the startup
+performance test. A Release configure/build, CMake install, and Inno Setup
+installer target also passed under Visual Studio 2026/MSVC 19.51 with Qt 6.12.
+The staged installer launched with exit 0 and `finalProgress=100`; six RCC
+packs, seven runtime IDs, and seven references passed the resource/report
+checks. This is supplemental local evidence: the Windows 2022/VS17 generator
+could not find a VS2022 instance, so the local run does not prove the hosted
+shipping toolchain.
+
+Phase 1 remains in progress. GitHub could not be queried from this environment;
+at the last remote check, the two Phase 1 implementation commits were ahead of
+cached `origin/Qt-Rewrite` at `567117fa`. This continuation is adding a local
+evidence-handoff documentation commit. Hosted run status is unknown, not
+confirmed absent. No Linux or macOS toolchain is available locally. The
+cross-platform exit gate requires actual hosted workflow results.
 
 ## Next Milestone
 
-Collect hosted Debug matrix and production Packaged Release results, then
-evaluate the Phase 1 exit gate. Do not claim cross-platform validation from
-static workflow checks alone. Keep next-generation target names distinct from
-legacy object targets such as ClassMngrDomain and ClassMngrUiShared.
+Publish the local commits to a GitHub PR or otherwise make them available to
+the hosted runners, collect Debug matrix and production Packaged Release
+results, then evaluate the Phase 1 exit gate. Do not claim cross-platform
+validation from static workflow checks or the local VS2026 run alone. Keep
+next-generation target names distinct from legacy object targets such as
+ClassMngrDomain and ClassMngrUiShared.

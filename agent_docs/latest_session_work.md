@@ -8,7 +8,7 @@ older Phase 0 open notes in this document's history.
 
 ## Current Deployment Handoff
 
-- Deployment: qt1_build_structure_20260918, Heavy route.
+- Deployment: qt1_phase1_resume_20260918, Heavy route.
 - User requirement: commit each completed slice before starting the next.
 - Slice 1.1 adds ClassMngrNext as a console bootstrap implemented with
   QCoreApplication. Its target links only Qt Core and has an explicit CTest
@@ -97,6 +97,27 @@ older Phase 0 open notes in this document's history.
   Windows ARM64 cross-build, and workflow YAML parser/actionlint were not
   available for local execution; no hosted run result is claimed. Slice 1.6
   was committed (`Phase1 - Validate build configuration matrix`).
+- Continuation validation used a clean source snapshot of commit `6f2f5fb0`.
+  The local Windows x64 Debug baseline configure/build and CTest passed 66/66,
+  including `ClassMngrNextLaunch` and `ClassMngrStartupPerformanceTests`. JUnit,
+  `LastTest.log`, and the baseline JSON are preserved under
+  `build/phase1-windows-x64-20260918-d01027708c2f4cb792b7e6bb13ce5c8a/`.
+- The local Windows x64 Release preset configured and built `ClassMngr`, ran
+  `windeployqt`, installed to a staged tree, and compiled the production Inno
+  target. The packaged startup smoke exited 0 in 3.6 seconds with
+  `finalProgress=100`. Resource/report checks passed for six RCC packs, seven
+  runtime IDs, and seven references. The staged tree measured 129 files and
+  207,477,952 bytes; the installer measured 93,160,351 bytes. These runs used
+  Visual Studio 2026 / MSVC 19.51 with Qt 6.12, not the hosted VS2022 toolchain.
+  The exact VS17 preset failed because no VS2022 instance is installed; local
+  VS18 generator attempts also hit Windows FileTracker access errors before an
+  elevated Ninja/MSVC run succeeded.
+- At the last remote check, the two Phase 1 implementation commits were ahead
+  of cached `origin/Qt-Rewrite` at `567117fa`. The current continuation adds a
+  separate local evidence-handoff documentation commit. `git ls-remote` could
+  not reach GitHub, `gh` is unavailable, and browser fetch failed. No hosted
+  run IDs or PR status could be confirmed; this does not establish that no runs
+  exist. WSL, Docker, Podman, and Apple toolchains are unavailable locally.
 - The slice 1.1 clean build directory was
   C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.1-clean-965a9613fb8046b7bbbbd5a520b03740.
   It is local verification output, not a checked-in artifact.
@@ -111,6 +132,7 @@ older Phase 0 open notes in this document's history.
 ## Next Entry Point
 
 Slices 1.1-1.6 are committed; slice 1.5's commit is `65cd76fb`. Phase 1 is
-paused pending actual hosted Debug matrix and Packaged Release results. The
-commits are local and the hosted workflows have not run; preserve this as the
-next entry point before closing Phase 1.
+paused pending hosted Debug matrix and Packaged Release results. The local
+VS2026 Windows evidence is supplemental, and the branch has not been confirmed
+on GitHub. Next, make the commits available to hosted workflows, then review
+their results against the Phase 1 exit gate.
