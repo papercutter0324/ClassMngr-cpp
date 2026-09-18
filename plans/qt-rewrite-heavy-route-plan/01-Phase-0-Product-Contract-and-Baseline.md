@@ -7,19 +7,22 @@
 - Depends on: None
 - Blocks: None; Phase 1 is unblocked
 - Owner: Unassigned
-- Last updated: 2026-09-18
+- Last updated: 2026-09-19
 - Current note: Phase 0 was declared complete by the user on 2026-09-18. Fresh
   packaged Windows x64 and macOS universal matrices pass all 24 routes each;
   combined `--require-exit-gate` validation using the Windows run root and both
   retained macOS archives passed. The user confirmed the retained visual
-  references look correct. Phase 1 is unblocked; historical evidence and
-  environment limitations remain recorded in the baseline log.
+  references look correct. Linux now has supplemental opt-in automation, but
+  its local run failed before startup in the sandbox and hosted evidence is
+  pending; this does not alter the official gate or reopen Phase 0. Phase 1 is
+  unblocked; details are in the baseline log.
 
 ### Phase 0 platform and route gate
 
 - Required packaged Release evidence: Windows x64 and macOS universal.
-- Windows ARM64 and Linux are unofficial ports deferred to later work; they do
-  not block Phase 0.
+- Windows ARM64 and Linux are outside the official gate and do not block
+  Phase 0. Linux has a supplemental opt-in runner; see the [baseline
+  evidence](../../docs/qt-rewrite/phase-0-baseline.md#supplemental-linux-phase-0-automation).
 - The exit gate requires all 24 route IDs on each required platform. A valid
   subset per-run result is not gate completion; use `--require-exit-gate` with
   the Windows evidence root and `--macos-evidence-root` to enforce complete
@@ -1305,3 +1308,11 @@ No v2 feature work begins without a fixture and an acceptance check.
   the user confirmed that the retained visual references look correct.
 - Earlier evidence-gap and environment notes remain as historical context;
   they are not current Phase 0 blockers under this closure decision.
+
+## Supplemental Linux automation - 2026-09-19
+
+The Linux x86_64 packaged Release runner, validator support, and manual
+workflow are available for informational evidence. The only local run built
+the package and Debug harness but failed all 24 routes before application
+startup because sandbox Xvfb could not create `/tmp/.X11-unix`; the hosted run
+is pending. The official Windows x64/macOS universal gate remains complete.

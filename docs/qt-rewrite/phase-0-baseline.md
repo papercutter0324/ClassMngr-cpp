@@ -1,6 +1,6 @@
 # Qt Rewrite Phase 0 - Baseline and Evidence Log
 
-Status: In progress
+Status: Complete
 Snapshot: `892d51c` (application snapshot used for the current packaged run)
 Date started: `2026-09-15`
 
@@ -767,9 +767,11 @@ store the JSON startup trace beside the PNG files.
   `visual-baseline/release/workflow-five-minute/`, and the Sub Prep, Classes,
   and Speaking Evaluation lifecycle boundaries are retained under their
   large-fixture directories.
-- Windows ARM64 and Linux Release baselines; these unofficial ports are
-  deferred and are not Phase 0 blockers. The macOS universal Release baseline
-  is retained below.
+- Windows ARM64 and Linux Release baselines. Windows ARM64 remains deferred;
+  Linux now has an opt-in supplemental runner, but its local 2026-09-19 run
+  failed before application startup in the sandbox and hosted evidence is
+  pending. Neither port is part of the official Phase 0 gate. The macOS
+  universal Release baseline is retained below.
 - Packaged Release language/theme variants and visual references for editing,
   read-only, dialogs, loading, errors, and import conflict resolution; the
   populated Classes entry/selection/re-entry frames, Schedule Import loading
@@ -967,3 +969,19 @@ macOS universal, and the user had confirmed that the retained visual
 references look correct. Phase 1 is unblocked. Earlier evidence-gap and
 environment notes remain as historical context and are not current Phase 0
 blockers under this closure decision.
+
+## Supplemental Linux Phase 0 automation
+
+Added 2026-09-19: Linux x86_64 now has an opt-in packaged Release runner,
+validator support, and a manual GitHub Actions workflow. The Windows x64/macOS
+universal gate above remains complete; this supplemental Linux work does not
+change it.
+The runner's nine tests and validator's 17 self-tests passed.
+
+The local attempt built the Linux x64 Release package and Debug harness, but
+all 24 route attempts stopped before application startup: sandbox Xvfb could
+not create the root-owned `/tmp/.X11-unix` socket directory. Validation found
+0 passing, 24 failed, and 0 skipped routes. This is not Linux baseline
+evidence. The hosted manual workflow has not run; its result remains pending.
+It installs `xauth` and `xvfb`, uses the staged package's xcb plugin, and
+uploads bounded evidence for 90 days while excluding `tmp/**` and `tools/**`.

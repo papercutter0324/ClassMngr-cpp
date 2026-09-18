@@ -1,12 +1,15 @@
 # Phase 0 packaged evidence automation
 
-This folder contains a Windows PowerShell runner and a Python standard-library
-evidence validator for the existing Qt startup/visual/lifecycle test harness.
+This folder contains the Windows PowerShell runner, macOS and Linux Python
+runners, and a standard-library evidence validator for the existing Qt
+startup/visual/lifecycle test harness.
 The Phase 0 exit gate requires packaged Release evidence on Windows x64 and
-macOS universal. Windows ARM64 and Linux are unofficial ports deferred to later
-work; their missing evidence is not a Phase 0 failure. The runner produces
-Windows x64 evidence only. No source, C++ test, retained baseline, or existing
-`build/`/`dist/` output is changed by the default plan.
+macOS universal. Windows ARM64 and Linux are outside that official gate; Linux
+has a supplemental, opt-in x86_64 Release baseline workflow. A local Linux run
+failed before application startup because sandbox Xvfb could not create
+`/tmp/.X11-unix`; a hosted manual run is pending. The Windows PowerShell
+runner's default plan does not change source, tests, retained baselines, or
+existing `build/`/`dist/` output.
 
 ## Plan and run
 
@@ -109,7 +112,39 @@ of the overall gate. The strict `<250 MiB` normal-resident target is for the
 future end-of-rewrite state; legacy measurements are trend-only. The temporary
 512 MiB ceiling is diagnostic. Neither is a Phase 0 failure gate.
 
-The full default route set covers empty and representative startup, all four
+## Supplemental Linux x86_64 baseline
+
+The Linux runner uses a staged packaged Release application and the same 24
+route contract. Its evidence is informational and does not satisfy or change
+the Windows x64/macOS universal exit gate. To inspect the plan without writing
+evidence or starting processes, provide a staged package containing
+`bin/ClassMngr`:
+
+```sh
+python scripts/phase0/run_phase0_evidence_linux.py \
+  --plan \
+  --evidence-root /tmp/classmngr-phase0-linux-plan \
+  --package-root dist/ClassMngr-linux-x86_64
+```
+
+For a local run, use a fresh evidence directory outside the repository and
+the same staged package:
+
+```sh
+python scripts/phase0/run_phase0_evidence_linux.py \
+  --evidence-root /tmp/classmngr-phase0-linux-run \
+  --package-root dist/ClassMngr-linux-x86_64
+```
+
+The runner requires CMake, Ninja, Git, `xvfb-run`, Xvfb, and `xauth`; it uses
+the staged package's xcb platform plugin. For hosted evidence, manually run
+the **Supplemental Linux x64 Phase 0 Baseline** workflow and optionally set
+`source_ref`. It builds the Linux Release package, runs the matrix, and uploads
+the bounded evidence artifact for 90 days, excluding `tmp/**` and `tools/**`.
+As of 2026-09-19, the hosted workflow has not run.
+
+The shared 24-route contract used by both runners covers empty and
+representative startup, all four
 empty and populated language/theme variants already supported by the harness,
 Classes/Sub Prep/PDF visual states, navigation/PDF lifecycle, Schedule and
 Classes lifecycle, Schedule/Calendar imports, Class Transfer, Speaking

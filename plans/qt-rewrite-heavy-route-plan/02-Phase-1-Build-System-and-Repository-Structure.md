@@ -7,7 +7,7 @@
 - Depends on: Phase 0
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
-- Last updated: 2026-09-18
+- Last updated: 2026-09-19
 - Current note: Slices 1.1-1.6 establish the parallel executable, asserted
   target boundaries, explicit source ownership, tooling/reports, and a PR
   Debug matrix. The Windows Packaged Release workflow now also runs on
@@ -23,10 +23,11 @@
   `available=false`. Windows and macOS Packaged Release workflows passed;
   Windows ARM64 cross-build and packaging passed as informational results.
   A later local macOS universal Debug build and full 67/67 CTest run also
-  passed with normal macOS service access. Phase 1 remains open for the
-  unrecorded hosted Phase 1 Build Quality workflow. A bounded retry for a
-  failed macOS run without a result artifact has been added in the working
-  tree and has not yet run on hosted CI.
+  passed with normal macOS service access. Linux procfs memory sampling is
+  fixed and targeted tests pass locally; full local CTest remains 66/67 because
+  updater listener tests receive `EPERM` when creating sockets in the sandbox.
+  No fresh hosted Linux or quality run has been verified. Phase 1 remains open
+  for the hosted Phase 1 Build Quality workflow.
 
 ## Objective
 
@@ -278,10 +279,10 @@ also passed as informational evidence.
 
 The Phase 1 Build Quality workflow has no recorded run, so hosted
 formatting/static-analysis and its platform-independent checks remain
-unverified. The remaining Phase 1 gate is that workflow. Linux memory-snapshot
-failure and native Windows ARM64 launch are deferred with those unofficial
-builds. Preserve test coverage and assertions while resolving the quality
-gate.
+unverified. The remaining Phase 1 gate is that workflow. The Linux
+memory-snapshot fix has not yet been verified by a fresh hosted run; native
+Windows ARM64 launch remains deferred with that unofficial build. Preserve
+test coverage and assertions while resolving the quality gate.
 
 The `Qt-Rewrite` push triggers for `refactoring-baseline.yml` and
 `windows-release.yml` were committed and pushed in `2154d56d`. A matching push
@@ -289,6 +290,28 @@ to the baseline workflow runs its full platform matrix; the Windows Release
 workflow builds x64 and ARM64. The hosted results above used source commit
 `57f5dff6`. The bounded macOS retry and isolated local rerun changes below are
 not yet part of the pushed branch.
+
+#### Linux memory snapshot follow-up - 2026-09-19
+
+The earlier hosted [Refactoring baseline run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334835542),
+on commit `57f5dff6`, remains historical: its Linux x64 Debug job passed 65/66
+and `/proc/self/status` RSS sampling reported unavailable. The cause was
+`QFile::atEnd()` treating zero-sized procfs pseudo-files as exhausted. Commit
+`898cd3fc` reads status lines until `readLine()` returns empty and supports an
+injected procfs root. `ClassMngrProcessMemorySnapshotTests` and
+`ClassMngrStartupPerformanceTests` passed locally (startup target 1/1,
+43.44 seconds). Snapshot tests cover parsing and units, fallback behavior,
+unavailable RSS, and live sampling. Full local CTest passed 66/67; 11
+`ClassMngrUpdaterTests` listener failures were caused by sandbox socket
+creation returning `EPERM`.
+
+The separate Linux Phase 0 runner and workflow are in commit `749c9ba6`;
+their local Xvfb limitation is recorded in the [Phase 0 baseline
+log](../../docs/qt-rewrite/phase-0-baseline.md#supplemental-linux-phase-0-automation).
+Local build, resource-reference/report, and `ClassMngrNextLaunch` checks passed.
+`clang-format`, `clang-tidy`, and `actionlint` were unavailable; PyYAML parsed
+the workflows. No hosted run after the earlier result is verified. Phase 1
+remains open for the hosted Build Quality gate.
 
 ### 1.6 Build configurations
 

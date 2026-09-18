@@ -183,3 +183,16 @@
 - Keep the startup performance CTest serial. Running it alongside the large
   batch-report test raised measured startup from about 3 seconds to 8 seconds
   and made the threshold-sensitive run fail; the isolated serial run passed.
+
+## Linux Phase 0/1 follow-up — 2026-09-19
+
+- On Linux, `/proc` pseudo-files report size zero. `QFile::atEnd()` may then
+  report end-of-file before reading `/proc/self/status`; read lines until
+  `readLine()` returns empty, and test the parser with an injected procfs root.
+- Keep the Phase 0 Linux baseline supplemental to its completed Windows/macOS
+  exit gate. A headless packaged run must use the staged package's Qt xcb
+  plugin under Xvfb; an external development Qt plugin changes the runtime
+  under measurement. Record sandbox X11 socket failures as failed evidence.
+- The local updater test's loopback listener failures were caused by socket
+  creation returning `EPERM` in the sandbox. Preserve those assertions and
+  rerun on a host that permits loopback instead of skipping the tests.

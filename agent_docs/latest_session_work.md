@@ -194,3 +194,47 @@ Linux job. Phase 1 remains open for the hosted Phase 1 Build Quality run. The
 new bounded macOS retry has not yet run on GitHub. Packaged Release workflows
 passed on the previously recorded hosted run. Next, run the quality check and
 review results against the Phase 1 exit gate.
+
+## Current Deployment Handoff — linux_phase0_phase1_20260919 (paused)
+
+The user requested Linux Phase 0 and Phase 1 follow-up. The original Phase 0
+official exit gate remains Windows x64 plus macOS universal; this work adds a
+supplemental Linux x64 baseline without changing that gate.
+
+- Commit `749c9ba6` adds `scripts/phase0/run_phase0_evidence_linux.py`, Linux
+  validator support, runner tests, and an opt-in hosted workflow. The workflow
+  installs `xauth`/`xvfb` when requested, consumes the staged Release package,
+  and uploads bounded evidence. Runner tests passed 9/9; validator self-tests
+  passed 17/17; Python compilation, workflow YAML parsing, and diff checks
+  passed.
+- The local Linux x64 Release package and Debug route harness built. The
+  packaged run used the staged Qt xcb plugin. This sandbox cannot create the
+  root-owned `/tmp/.X11-unix` directory required by Xvfb, so the package smoke
+  and all 24 route attempts exited before app startup. Validation reports
+  0/24 passing, 24 failed, 0 skipped. No Linux route baseline pass is claimed.
+  The hosted opt-in workflow was not run because GitHub access was unavailable.
+- Commit `898cd3fc` fixes Linux process-memory snapshots. `QFile::atEnd()`
+  treated procfs files reporting size zero as exhausted, so the parser did not
+  read `/proc/self/status`. The implementation now reads until `readLine()`
+  returns empty; tests cover an injected procfs root, conversions/fallbacks,
+  unavailable RSS, and live sampling.
+- Independent checks passed `ClassMngrProcessMemorySnapshotTests` and
+  `ClassMngrStartupPerformanceTests` (1/1, 43.44 seconds). Full Linux CTest
+  passed 66/67; `ClassMngrUpdaterTests` had 11 loopback listener failures
+  because local socket creation returns `EPERM` in this sandbox. Build,
+  resource checks, build report, and `ClassMngrNextLaunch` passed. The local
+  `clang-format`, `clang-tidy`, and `actionlint` tools were unavailable; PyYAML
+  parsed the changed workflows. These results are local, not hosted CI.
+- The last repository-recorded hosted Linux Debug run was 65/66 on commit
+  `57f5dff6`; it failed the same startup memory availability check. GitHub
+  queries could not verify runs after the current September 19 source. The
+  previous hosted Linux Release run is historical evidence only.
+
+## Next Entry Point
+
+Push the two code commits only with user authorization. On a host with a
+working Xvfb display socket, manually run the Linux Phase 0 baseline workflow
+and retain its evidence artifact. Rerun the Linux Debug CTest suite on a host
+that permits local sockets, then record hosted results separately. Do not
+revise the completed Windows/macOS Phase 0 gate based on the supplemental
+Linux attempt.

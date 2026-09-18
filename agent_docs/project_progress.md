@@ -1,8 +1,9 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 1 — Build System and Repository Structure.
-Current deployment: qt1_phase1_resume_20260918. Route: Heavy. Commit each
-completed slice before starting the next.
+Current deployment: linux_phase0_phase1_20260919. Route: Heavy. Commit each
+completed slice before starting the next. Deployment closure is paused pending
+Linux hosted verification on a host with Xvfb and loopback access.
 
 ## Goal
 
@@ -108,13 +109,37 @@ do not replace or invalidate the successful local Windows x64 Debug
 configure/build and 66/66 CTest pass on source commit `4dbe3ca7` using VS
 2026/MSVC 19.51 and Qt 6.12.
 
+## Linux Phase 0/1 follow-up — 2026-09-19
+
+The user requested Linux follow-up while preserving Phase 0's completed
+Windows x64 and macOS universal official gate. Commit `749c9ba6` adds a Linux
+x64 packaged Release route runner, validator support, runner tests, and an
+opt-in hosted workflow. Python runner tests passed 9/9; validator self-tests
+passed 17/17; Python compilation and workflow YAML parsing passed.
+
+The local packaged run built the Release package and harness, then attempted
+all 24 routes. Xvfb could not create its display socket because the sandbox
+does not permit the required root-owned `/tmp/.X11-unix` directory. No route
+passed; the validator correctly records the supplemental Linux baseline as
+failed. The hosted workflow installs Xvfb and uses the staged package's xcb
+plugin, but no hosted run was available from this environment. This attempt
+does not revise the original Phase 0 official gate.
+
+Commit `898cd3fc` fixes Linux process-memory sampling. Qt's `QFile::atEnd()`
+treated zero-sized procfs pseudo-files as exhausted, so `/proc/self/status`
+was not read. The provider now reads until `readLine()` returns no data and
+has Linux tests for injected procfs input and live sampling. The snapshot and
+startup-performance tests passed. Full local CTest passed 66/67; the updater
+listener tests failed because this sandbox denies socket creation with
+`EPERM`. Build/resource reports and `ClassMngrNextLaunch` passed. Local
+format/tidy/actionlint tools were unavailable; YAML parsing passed. The
+hosted Linux rerun remains unverified.
+
 ## Next Milestone
 
-Run the Phase 1 Build Quality workflow and verify its formatting/static-analysis
-and report checks. The latest hosted Windows x64 and macOS universal Debug
-matrix passed its official targets; the new bounded macOS retry is still
-unexercised on GitHub. The Linux application build/launch and Windows ARM64
-execution are deferred with those unofficial builds. Keep local passes
-recorded separately from hosted outcomes. Keep next-generation target names
-distinct from legacy object targets such as ClassMngrDomain and
-ClassMngrUiShared.
+Run the opt-in Linux Phase 0 workflow on a host where Xvfb can create its
+display socket, and rerun the Linux Debug suite where loopback sockets are
+permitted. Record hosted evidence separately from these local checks. The
+Windows x64 and macOS universal official Phase 1 results remain separate from
+the supplemental Linux work. Keep next-generation target names distinct from
+legacy object targets such as ClassMngrDomain and ClassMngrUiShared.
