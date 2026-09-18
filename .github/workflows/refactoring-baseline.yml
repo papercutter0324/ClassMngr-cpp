@@ -2,6 +2,18 @@ name: Refactoring baseline
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - Qt-Rewrite
+    paths:
+      - ".github/workflows/refactoring-baseline.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/**"
+      - "scripts/record_refactoring_baseline.py"
+      - "src/**"
+      - "tests/**"
   pull_request:
     paths:
       - ".github/workflows/refactoring-baseline.yml"

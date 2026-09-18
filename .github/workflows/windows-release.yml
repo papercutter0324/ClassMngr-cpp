@@ -27,6 +27,7 @@ on:
   push:
     branches:
       - main
+      - Qt-Rewrite
     paths:
       - ".github/workflows/windows-release.yml"
       - "CMakeLists.txt"

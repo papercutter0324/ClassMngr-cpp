@@ -15,14 +15,14 @@
   Windows x64 Ninja/MSVC Debug configure/build and CTest passed 66/66 on source
   commit `4dbe3ca7` under VS 2026/MSVC 19.51; keep this as passing local
   evidence independently of hosted results. On hosted commit `57f5dff6`,
-  the official Windows x64 Debug job passed 66/66. The macOS universal Debug
-  job failed after its hosted runner lost
-  communication with GitHub. The user had observed `ClassMngrUpdaterTests`,
-  but no macOS test log or JUnit artifact was retained, so the updater test is
-  not confirmed as the cause. Windows and macOS Packaged Release workflow runs
-  passed. Linux and Windows ARM64 are unofficial builds; their workflow
-  results are informational for Phase 1, with fixes deferred to later work.
-  Phase 1 remains open for official macOS test evidence and the quality check.
+  the latest baseline results are Windows x64 Debug 66/66 and macOS universal
+  Debug 67/67. Windows and macOS Packaged Release workflows passed. The
+  baseline run remains red only because the informational Linux x64 Debug job
+  passed 65/66; its startup checkpoint memory snapshot reported
+  `available=false`. Windows ARM64 Debug cross-build and packaging passed as
+  informational results. The earlier macOS runner communication loss was
+  cleared by a later complete run with JUnit evidence. Phase 1 remains open
+  for the unrecorded hosted Phase 1 Build Quality workflow.
 
 ## Objective
 
@@ -247,39 +247,45 @@ Qt 6.12. It passed 66/66 tests in 179.41 seconds. This remains valid local
 evidence and is separate from the hosted run below.
 
 The [Refactoring baseline run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334835542)
-used hosted commit `57f5dff6`:
+used hosted commit `57f5dff6`. Its latest attempt (attempt 3) completed with an
+overall failure because the informational Linux job failed:
 
-- Official target: Windows x64 Debug passed 66/66 tests.
+- Official target: Windows x64 Debug passed 66/66 tests on the rerun,
+  including `ClassMngrNextLaunch` and `ClassMngrStartupPerformanceTests`.
+- Official target: macOS universal Debug passed 67/67 in attempt 2, with the
+  JUnit artifact uploaded. Attempt 1 had lost runner communication; no test
+  failure was established as its cause. The successful macOS result was
+  retained in attempt 3.
 - Unofficial target: Windows ARM64 Debug cross-build passed; the ARM64
   executables were not run. This result is informational and deferred.
 - Unofficial target: Linux x64 Debug configure/build passed, but CTest passed
-  65/66. The failure
-  was `ClassMngrStartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds`:
+  65/66. The failure was
+  `ClassMngrStartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds`:
   the checkpoint memory snapshot reported `available=false` at
-  `tests/startup_performance_tests.cpp:2515`. The Linux updater suite passed.
-  This result is informational and deferred.
-- Official target: macOS universal Debug failed while the combined baseline step was running.
-  GitHub's check annotation reports that the hosted runner lost communication
-  with the server. The user observed `ClassMngrUpdaterTests` running, but the
-  job log and JUnit artifact are unavailable, so no test case is confirmed as
-  the cause.
+  `tests/startup_performance_tests.cpp:2515`. This result is informational and
+  deferred.
 
-The [Windows](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334838494)
-and [macOS](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334841306)
-official Packaged Release workflow runs passed. The [Linux Packaged Release
-run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334844253)
-also passed, as informational evidence for an unofficial build. The official
-macOS Debug baseline needs a rerun that completes and uploads test evidence;
-verify whether the observed updater test is related to runner communication.
-The Phase 1 Build Quality workflow has no recorded run and is absent from the
-default branch, so its hosted formatting/static-analysis checks remain
-unverified. Run those platform-independent checks through an eligible PR or
-verify them directly. Its Linux application build/launch is informational, not
-an official-target gate. The remaining Phase 1 gates are the Windows x64 and
-macOS universal Debug tests/launch checks plus the platform-independent
-quality checks. Linux memory-snapshot failure and native Windows ARM64 launch
-are deferred with those unofficial builds. Preserve test coverage and
-assertions while resolving the official-target gaps.
+The [Windows Packaged Release run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334838494)
+passed in attempt 2 for x64 and ARM64. The x64 run included the packaged
+startup smoke test, architecture check, resource-reference check, and build
+report. The [macOS Packaged Release run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334841306)
+passed. The [Linux Packaged Release run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334844253)
+also passed as informational evidence.
+
+The Phase 1 Build Quality workflow has no recorded run, so hosted
+formatting/static-analysis and its platform-independent checks remain
+unverified. The remaining Phase 1 gate is that workflow. Linux memory-snapshot
+failure and native Windows ARM64 launch are deferred with those unofficial
+builds. Preserve test coverage and assertions while resolving the quality
+gate.
+
+Local workflow changes add a `Qt-Rewrite` push trigger, with the existing
+relevant-path filters, to `refactoring-baseline.yml` and
+`windows-release.yml`. A matching push to the baseline workflow runs its full
+platform matrix; the Windows Release workflow builds x64 and ARM64. These
+changes take effect on GitHub after they are committed and pushed. The hosted
+reruns above used `57f5dff6`; current branch head `c93cebb` changes only
+documentation relative to that source commit.
 
 ### 1.6 Build configurations
 
