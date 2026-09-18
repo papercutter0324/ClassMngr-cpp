@@ -35,6 +35,9 @@ dist/
 *.prl
 *.qmlls.ini
 
+# Python cache folders
+__pycache__/
+
 # Qt unit tests
 target_wrapper.*
 
