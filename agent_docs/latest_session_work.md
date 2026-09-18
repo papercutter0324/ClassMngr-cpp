@@ -238,3 +238,30 @@ and retain its evidence artifact. Rerun the Linux Debug CTest suite on a host
 that permits local sockets, then record hosted results separately. Do not
 revise the completed Windows/macOS Phase 0 gate based on the supplemental
 Linux attempt.
+
+## Current Deployment Handoff — windows_macos_recent_commit_repair_20260919
+
+- The user reported Windows and macOS builds failing after a recent commit.
+  The failing hosted run logs were unavailable: the local GitHub token was
+  invalid, network access blocked run queries, and no matching artifacts were
+  present locally.
+- Root cause: commit `898cd3fc` added
+  `tests/process_memory_snapshot_tests.cpp` to a Linux-only test target, while
+  `cmake/source_ownership.cmake` inventoried all test sources on Windows and
+  macOS. CMake then failed configure with that file reported unassigned.
+- The fix excludes the Linux-only source from non-Linux ownership inventory;
+  Linux still inventories and assigns it to `ClassMngrProcessMemorySnapshotTests`.
+- Local Windows x64 Ninja/MSVC Debug configure validated 653 source owners; a
+  clean build passed 649/649 steps, and CTest passed 66/66 in 112.05 seconds
+  with VS18/MSVC 19.51 and Qt 6.12. Independent clean configure validation
+  passed and `git diff --check` passed. The VS17/VS2022 shipping toolchain was
+  unavailable locally.
+- Darwin follows the same non-Linux inventory branch by source inspection,
+  but no native macOS/Xcode build or post-fix hosted run was available. The
+  repair is committed locally; no push was made.
+
+## Next Entry Point
+
+Run the Windows x64 and macOS universal baseline on the repaired source and
+retain both hosted reports. Continue the paused Linux follow-up separately on a
+host with Xvfb and loopback access.

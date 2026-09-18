@@ -119,6 +119,15 @@ function(classmngr_check_source_ownership)
                 "[/\\\\]powerpoint_data_access_notice_tests[.]cpp$"
             )
         endif()
+
+        # This test target is declared only on Linux. Keep its source in the
+        # ownership inventory there, while excluding it on platforms that do
+        # not compile the Linux-only target.
+        if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            list(FILTER test_inventory EXCLUDE REGEX
+                "[/\\\\]process_memory_snapshot_tests[.]cpp$"
+            )
+        endif()
         list(APPEND handwritten_sources ${test_inventory})
     endif()
 

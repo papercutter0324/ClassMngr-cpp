@@ -1,9 +1,10 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 1 — Build System and Repository Structure.
-Current deployment: linux_phase0_phase1_20260919. Route: Heavy. Commit each
-completed slice before starting the next. Deployment closure is paused pending
-Linux hosted verification on a host with Xvfb and loopback access.
+Current deployment: windows_macos_recent_commit_repair_20260919. Route: Heavy.
+The local fix and Windows x64 validation are complete. Hosted Windows/macOS
+confirmation remains pending because GitHub run access is unavailable here
+and no macOS/Xcode toolchain is installed.
 
 ## Goal
 
@@ -52,6 +53,17 @@ the staged-package report probe passed. Cross-platform CI and local
 `clang-format`/`clang-tidy` were not run.
 
 ## Current Position
+
+### Windows/macOS source ownership regression — 2026-09-19
+
+Commit `898cd3fc` added a Linux-only process-memory test, but the cross-platform
+source-ownership inventory included its file on Windows and macOS without an
+owner. `cmake/source_ownership.cmake` now excludes that source from non-Linux
+inventory while retaining Linux ownership validation. Windows x64 Debug
+configuration passed with 653 source owners; a clean build passed 649/649
+steps and CTest passed 66/66 using VS18/MSVC 19.51 and Qt 6.12. An independent
+fresh configure also passed. This is supplemental to the VS2022 hosted gate;
+macOS and post-fix hosted checks remain unverified.
 
 Slice 1.6 makes the existing Debug baseline workflow run for relevant pull
 requests and covers Windows x64, Windows ARM64, macOS universal, and Linux.
@@ -137,9 +149,10 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Run the opt-in Linux Phase 0 workflow on a host where Xvfb can create its
-display socket, and rerun the Linux Debug suite where loopback sockets are
-permitted. Record hosted evidence separately from these local checks. The
-Windows x64 and macOS universal official Phase 1 results remain separate from
-the supplemental Linux work. Keep next-generation target names distinct from
-legacy object targets such as ClassMngrDomain and ClassMngrUiShared.
+Run the Windows x64 and macOS universal Debug baseline on the repaired source
+and retain both hosted reports. The repair is committed locally; GitHub run
+access is unavailable here, and the local Windows run is supplemental to the
+VS2022/macOS hosted gate. Then resume the Linux Phase 0 workflow on a host with
+Xvfb and loopback access, recording that supplemental evidence separately.
+Keep next-generation target names distinct from legacy object targets such as
+ClassMngrDomain and ClassMngrUiShared.

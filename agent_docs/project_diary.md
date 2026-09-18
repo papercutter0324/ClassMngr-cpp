@@ -20,7 +20,10 @@
   Record QML and included `.inc` fragments too, while keeping generated outputs
   and configure templates outside the handwritten inventory. Compile reused
   test doubles once in object libraries; split variants when test targets need
-  different compile-time behavior.
+  different compile-time behavior. Keep platform-specific test inventory
+  aligned with platform-conditional target declarations: exclude inactive test
+  sources on other platforms while retaining explicit ownership on the target
+  platform.
 - Keep formatter and static-analysis enforcement scoped to the new code until
   legacy code has been migrated. Generate module/resource reports only after
   targets and resource-pack declarations are finalized. Treat the update-only
