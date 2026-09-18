@@ -12,6 +12,8 @@ on:
       - "cmake/**"
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
+      - "scripts/retry_macos_baseline_if_missing_report.py"
+      - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "src/**"
       - "tests/**"
   pull_request:
@@ -22,6 +24,8 @@ on:
       - "cmake/**"
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
+      - "scripts/retry_macos_baseline_if_missing_report.py"
+      - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "src/**"
       - "tests/**"
 
@@ -81,6 +85,11 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+
+      - name: Test macOS baseline retry decision
+        if: matrix.name == 'macOS universal Debug'
+        shell: bash
+        run: python3 scripts/test_retry_macos_baseline_if_missing_report.py
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -224,3 +233,29 @@ jobs:
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log
           if-no-files-found: warn
+
+  retry-macos-baseline-without-evidence:
+    name: Retry macOS baseline once when no result artifact was published
+    needs: [baseline]
+    if: ${{ always() && needs.baseline.result == 'failure' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Retry macOS baseline only when its result artifact is missing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GH_API_URL: ${{ github.api_url }}
+        run: python3 scripts/retry_macos_baseline_if_missing_report.py

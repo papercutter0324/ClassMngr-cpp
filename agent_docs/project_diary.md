@@ -163,8 +163,10 @@
   restricted test process that lookup can return a nil URL, causing
   NSBundle to throw before test assertions run. Rerun the focused CTest target
   with normal macOS service access before treating this as an application
-  regression; in this case the offscreen target passed 4/4 outside the
-  restriction, and the user confirmed the app flow works.
+  regression. A later full macOS universal run with normal service access
+  passed 67/67, including the wizard, updater, clipboard, and UI tests that
+  failed under restriction. The user also confirmed the application setup flow
+  works.
 
 ## Qt 6.12 Windows toolchain validation - 2026-09-18
 

@@ -16,13 +16,17 @@
   commit `4dbe3ca7` under VS 2026/MSVC 19.51; keep this as passing local
   evidence independently of hosted results. On hosted commit `57f5dff6`,
   the latest baseline results are Windows x64 Debug 66/66 and macOS universal
-  Debug 67/67. Windows and macOS Packaged Release workflows passed. The
-  baseline run remains red only because the informational Linux x64 Debug job
-  passed 65/66; its startup checkpoint memory snapshot reported
-  `available=false`. Windows ARM64 Debug cross-build and packaging passed as
-  informational results. The earlier macOS runner communication loss was
-  cleared by a later complete run with JUnit evidence. Phase 1 remains open
-  for the unrecorded hosted Phase 1 Build Quality workflow.
+  Debug 67/67 in attempt 2 with JUnit evidence. Attempt 1 lost runner
+  communication; no test failure was established as its cause. Attempt 3
+  completed with an overall failure only because the informational Linux x64
+  Debug job passed 65/66 and its startup checkpoint memory snapshot reported
+  `available=false`. Windows and macOS Packaged Release workflows passed;
+  Windows ARM64 cross-build and packaging passed as informational results.
+  A later local macOS universal Debug build and full 67/67 CTest run also
+  passed with normal macOS service access. Phase 1 remains open for the
+  unrecorded hosted Phase 1 Build Quality workflow. A bounded retry for a
+  failed macOS run without a result artifact has been added in the working
+  tree and has not yet run on hosted CI.
 
 ## Objective
 
@@ -279,13 +283,12 @@ failure and native Windows ARM64 launch are deferred with those unofficial
 builds. Preserve test coverage and assertions while resolving the quality
 gate.
 
-Local workflow changes add a `Qt-Rewrite` push trigger, with the existing
-relevant-path filters, to `refactoring-baseline.yml` and
-`windows-release.yml`. A matching push to the baseline workflow runs its full
-platform matrix; the Windows Release workflow builds x64 and ARM64. These
-changes take effect on GitHub after they are committed and pushed. The hosted
-reruns above used `57f5dff6`; current branch head `c93cebb` changes only
-documentation relative to that source commit.
+The `Qt-Rewrite` push triggers for `refactoring-baseline.yml` and
+`windows-release.yml` were committed and pushed in `2154d56d`. A matching push
+to the baseline workflow runs its full platform matrix; the Windows Release
+workflow builds x64 and ARM64. The hosted results above used source commit
+`57f5dff6`. The bounded macOS retry and isolated local rerun changes below are
+not yet part of the pushed branch.
 
 ### 1.6 Build configurations
 
@@ -328,7 +331,8 @@ At this earlier local checkpoint, macOS 27.0 arm64 validation built the
 universal Debug targets and
 packaged Release DMG, verified architecture/minimum-version constraints,
 resource references, and reports. Its restricted full CTest run was 62/67;
-focused reruns passed, but no aggregate macOS suite pass is claimed. Linux and
+focused reruns passed, and no aggregate macOS suite pass was claimed at that
+checkpoint. The later full-suite follow-up is recorded below. Linux and
 Windows ARM64 are unofficial and deferred; no local builds for those targets
 are claimed. The latest detailed macOS evidence and environment findings are
 in `agent_docs/latest_session_work.md`.
@@ -360,7 +364,34 @@ test and `ClassMngrNextLaunch`, instead of depending on the machine's global
 startup performance test runs serially because concurrent heavy tests pushed
 its measured startup from about three to eight seconds and caused its first
 full-suite run to fail. Focused reruns passed, followed by the complete 66/66
-CTest pass. Hosted Debug and Packaged Release outcomes remain pending.
+CTest pass. At this checkpoint, hosted results remained pending; later hosted
+Packaged Release runs passed, while the official Debug matrix remains open.
+
+#### Progress update - 2026-09-18 (macOS baseline recovery and local full-suite run)
+
+The baseline runner now configures and builds in the explicit `--build-dir`,
+allowing local verification in a fresh directory without replacing existing
+CTest evidence. The macOS workflow adds a downstream job that inspects the
+failed macOS matrix job and its report artifact. On the first workflow attempt,
+it requests one rerun with runner debug logging only when the failed macOS job
+published no result artifact. A published baseline artifact preserves the
+original outcome without retry. If GitHub denies the rerun, the original
+baseline remains failed for manual review. Five local unit tests cover the
+retry decision. This automation has not yet been exercised on a hosted run.
+
+On macOS 27.0 arm64 with Qt 6.12.0, a clean universal Debug configure passed
+the explicit source-ownership check for 654 handwritten files, and the full
+build passed all 656 steps for `ClassMngr`, `ClassMngrNext`, and the tests.
+Both executables contain arm64 and x86_64 slices, target macOS 14.4, and
+`ClassMngrNext` links only Qt Core. The first CTest run in the restricted
+environment passed 62/67; its five failures came from LaunchServices, display,
+pasteboard, and loopback restrictions. Running the complete suite against the
+same clean build with normal macOS service access passed 67/67 in 67.70
+seconds. The passing JUnit report is
+`build/phase1-macos-debug-local-20260918/Testing/normal-services.junit.xml`;
+the full test log is `build/phase1-macos-debug-local-20260918/Testing/Temporary/LastTest.log`.
+This is separate local evidence. The hosted macOS universal Debug gate passed
+67/67 in attempt 2 above; the new retry code itself has not yet run on GitHub.
 
 ## Architectural rules
 

@@ -165,15 +165,32 @@ older Phase 0 open notes in this document's history.
   with NSInvalidArgumentException (`NSBundle initWithURL:nil`, SIGABRT 6):
   Qt's macOS QWizard background lookup asks LaunchServices for
   com.apple.KeyboardSetupAssistant, and the restricted process receives a nil
-  URL. The full 67-test suite has not been rerun outside the restriction, so
-  no aggregate macOS CTest pass is claimed. The user manually confirmed the
-  application setup flow works.
+  URL. A later fresh isolated macOS universal Debug configure and 656-step
+  build passed on the current working tree. The complete 67-test CTest suite
+  then passed 67/67 with normal macOS service access in 67.70 seconds. The
+  restricted rerun's five failures were caused by LaunchServices, display, and
+  loopback restrictions; the corresponding tests passed in the normal-service
+  run. The passing JUnit report and CTest log are in
+  `build/phase1-macos-debug-local-20260918/Testing/normal-services.junit.xml`
+  and `Testing/Temporary/LastTest.log` under that build directory. The
+  executables both contain arm64/x86_64 slices and target macOS 14.4;
+  `ClassMngrNext` links Qt Core only.
+
+- The baseline runner now applies its explicit `--build-dir` to both CMake
+  configure and build commands. This allowed the clean local run to use an
+  isolated directory without replacing the earlier preset build's test logs.
+  The hosted workflow now has one bounded macOS rerun when a failed first
+  attempt publishes no baseline report artifact. Published test failures stay
+  failed without a retry. The workflow change has not yet run on GitHub.
 
 ## Next Entry Point
 
 Slices 1.1-1.6 are committed; slice 1.5's commit is `65cd76fb`. The Windows
 test reliability changes and current-source validation are recorded in this
-handoff. Phase 1 remains open pending hosted Debug matrix and VS2022 Packaged
-Release results. Local VS2026 Windows and macOS results are supplemental;
-hosted run status remains unverified. Next, collect hosted results and review
-them against the Phase 1 exit gate.
+handoff. Local Windows and macOS Debug suites now have passing results. The
+latest hosted run passed Windows x64 Debug 66/66 and macOS universal Debug
+67/67 with JUnit evidence; the overall run was red only on the informational
+Linux job. Phase 1 remains open for the hosted Phase 1 Build Quality run. The
+new bounded macOS retry has not yet run on GitHub. Packaged Release workflows
+passed on the previously recorded hosted run. Next, run the quality check and
+review results against the Phase 1 exit gate.

@@ -173,7 +173,6 @@ def test_summary(junit_path: Path) -> dict[str, Any] | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--configure-preset", required=True)
-    parser.add_argument("--build-preset")
     parser.add_argument("--build-dir", required=True, type=Path)
     parser.add_argument("--configuration", help="CTest configuration for multi-config generators")
     parser.add_argument(
@@ -203,13 +202,20 @@ def main() -> int:
     output = args.output
     if not output.is_absolute():
         output = repository / output
-    build_preset = args.build_preset or args.configure_preset
     commit_start = capture(["git", "rev-parse", "HEAD"], repository)
     dirty_start = bool(capture(["git", "status", "--porcelain"], repository))
     fingerprint_start = source_fingerprint(repository)
 
     configure_code, configure_seconds = run(
-        ["cmake", "--fresh", "--preset", args.configure_preset], repository
+        [
+            "cmake",
+            "--fresh",
+            "--preset",
+            args.configure_preset,
+            "-B",
+            str(build_dir),
+        ],
+        repository,
     )
     build_code = -1
     build_seconds = 0.0
@@ -219,16 +225,18 @@ def main() -> int:
     junit_path.unlink(missing_ok=True)
 
     if configure_code == 0:
+        build_command = [
+            "cmake",
+            "--build",
+            str(build_dir),
+            "--clean-first",
+            "--parallel",
+            str(args.parallel),
+        ]
+        if args.configuration:
+            build_command.extend(["--config", args.configuration])
         build_code, build_seconds = run(
-            [
-                "cmake",
-                "--build",
-                "--preset",
-                build_preset,
-                "--clean-first",
-                "--parallel",
-                str(args.parallel),
-            ],
+            build_command,
             repository,
         )
 

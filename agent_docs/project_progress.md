@@ -84,35 +84,37 @@ handwritten files, both executables passed arm64/x86_64 and macOS 14.4 minimum
 checks, and ClassMngrNext links only Qt Core. Release installer/DMG creation,
 signature and hdiutil verification, 92 bundled Mach-O compatibility checks,
 the resource check (6 RCC packs, 7 runtime IDs, 7 references), and build report
-passed. The initial full macOS CTest run under restricted Codex execution
-reported 62/67. Individual reruns passed the three UI tests and updater, and
-InitialSetupWizard CTest later passed 4/4 with normal macOS service access.
-The earlier abort came from the restricted environment's LaunchServices
-lookup; the full 67-test suite has not been rerun outside the restriction, so
-no aggregate macOS CTest pass is claimed.
+passed. A fresh isolated Debug configure and 656-step build also passed. The
+first full CTest run under restricted Codex execution reported 62/67 because
+LaunchServices, display, and loopback services were unavailable. Rerunning the
+same 67-test suite with normal macOS service access passed 67/67 in 67.70
+seconds, including `ClassMngrNextLaunch`, `InitialSetupWizard`, and the updater
+tests. Both Debug executables are universal and target macOS 14.4; `ClassMngrNext`
+links only Qt Core. The passing JUnit report and CTest log are preserved under
+`build/phase1-macos-debug-local-20260918/Testing/`.
 
 Phase 1's official acceptance targets are Windows x64 and macOS universal.
 Unofficial Linux and Windows ARM64 builds are deferred; their current workflow
 results are informational and do not block Phase 1. On hosted commit
-`57f5dff6`, Windows x64 Debug passed 66/66. The macOS universal Debug baseline
-job failed after GitHub reported that the hosted runner lost communication
-with the server. The user observed `ClassMngrUpdaterTests` during the job, but
-the job log and JUnit artifact were unavailable, so the test is not confirmed
-as the cause. The Windows and macOS Packaged Release workflow runs passed.
-The Phase 1 Build Quality workflow has no recorded run; it is absent from the
-default branch and there is no open PR to trigger it. Full run details and the
-open GitHub Actions test-reliability work are in the Phase 1 plan. These
-hosted results do not replace or invalidate the successful local Windows x64
-Debug configure/build and 66/66 CTest pass on source commit `4dbe3ca7` using VS
+`57f5dff6`, Windows x64 Debug passed 66/66 and macOS universal Debug passed
+67/67 in attempt 2 with JUnit evidence. Attempt 1 lost runner communication;
+no test failure was established as its cause. The overall attempt 3 remained
+red only because the informational Linux job passed 65/66 after a startup
+memory snapshot reported `available=false`. Windows and macOS Packaged Release
+workflow runs passed. The Phase 1 Build Quality workflow has no recorded run;
+its hosted formatting/static-analysis checks remain pending. Full run details
+and the current retry automation are in the Phase 1 plan. These hosted results
+do not replace or invalidate the successful local Windows x64 Debug
+configure/build and 66/66 CTest pass on source commit `4dbe3ca7` using VS
 2026/MSVC 19.51 and Qt 6.12.
 
 ## Next Milestone
 
-Rerun macOS Debug with usable logs and test reports, and verify the pending
-formatting/static-analysis checks through an eligible pull request or directly.
-Confirm the official Windows x64 and macOS universal test/launch checks pass
-before evaluating the Phase 1 exit gate. The Linux application build/launch
-and Windows ARM64 execution are deferred with those unofficial builds. Keep
-local passes recorded separately from hosted outcomes. Keep next-generation
-target names distinct from legacy object targets such as ClassMngrDomain and
+Run the Phase 1 Build Quality workflow and verify its formatting/static-analysis
+and report checks. The latest hosted Windows x64 and macOS universal Debug
+matrix passed its official targets; the new bounded macOS retry is still
+unexercised on GitHub. The Linux application build/launch and Windows ARM64
+execution are deferred with those unofficial builds. Keep local passes
+recorded separately from hosted outcomes. Keep next-generation target names
+distinct from legacy object targets such as ClassMngrDomain and
 ClassMngrUiShared.
