@@ -91,16 +91,28 @@ The earlier abort came from the restricted environment's LaunchServices
 lookup; the full 67-test suite has not been rerun outside the restriction, so
 no aggregate macOS CTest pass is claimed.
 
-Phase 1 remains in progress. Hosted Debug matrix and Packaged Release outcomes
-remain unverified; GitHub Actions could not be queried during this validation.
-At validation start, the cached `origin/Qt-Rewrite` ref matched source HEAD
-`4dbe3ca7`. Linux toolchains remain unavailable locally. The cross-platform
-exit gate still requires hosted workflow results.
+Phase 1's official acceptance targets are Windows x64 and macOS universal.
+Unofficial Linux and Windows ARM64 builds are deferred; their current workflow
+results are informational and do not block Phase 1. On hosted commit
+`57f5dff6`, Windows x64 Debug passed 66/66. The macOS universal Debug baseline
+job failed after GitHub reported that the hosted runner lost communication
+with the server. The user observed `ClassMngrUpdaterTests` during the job, but
+the job log and JUnit artifact were unavailable, so the test is not confirmed
+as the cause. The Windows and macOS Packaged Release workflow runs passed.
+The Phase 1 Build Quality workflow has no recorded run; it is absent from the
+default branch and there is no open PR to trigger it. Full run details and the
+open GitHub Actions test-reliability work are in the Phase 1 plan. These
+hosted results do not replace or invalidate the successful local Windows x64
+Debug configure/build and 66/66 CTest pass on source commit `4dbe3ca7` using VS
+2026/MSVC 19.51 and Qt 6.12.
 
 ## Next Milestone
 
-Collect hosted Debug matrix and production Packaged Release results, then
-evaluate the Phase 1 exit gate. Local Windows and macOS evidence is
-supplemental; do not claim cross-platform acceptance until hosted results are
-verified. Keep next-generation target names distinct from legacy object
-targets such as ClassMngrDomain and ClassMngrUiShared.
+Rerun macOS Debug with usable logs and test reports, and verify the pending
+formatting/static-analysis checks through an eligible pull request or directly.
+Confirm the official Windows x64 and macOS universal test/launch checks pass
+before evaluating the Phase 1 exit gate. The Linux application build/launch
+and Windows ARM64 execution are deferred with those unofficial builds. Keep
+local passes recorded separately from hosted outcomes. Keep next-generation
+target names distinct from legacy object targets such as ClassMngrDomain and
+ClassMngrUiShared.

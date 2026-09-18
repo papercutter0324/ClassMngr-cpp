@@ -11,12 +11,18 @@
 - Current note: Slices 1.1-1.6 establish the parallel executable, asserted
   target boundaries, explicit source ownership, tooling/reports, and a PR
   Debug matrix. The Windows Packaged Release workflow now also runs on
-  relevant pull requests using the Qt-supported VS2022 hosted runner. On clean
-  source commit `4dbe3ca7`, local Windows x64 Ninja/MSVC Debug configure/build
-  and CTest passed 66/66 under VS 2026/MSVC 19.51. Configure-time source
-  ownership validated 653 files, and resource-reference/build reports passed.
-  Hosted Debug and VS2022 Packaged Release results remain unverified; Phase 1
-  remains in progress.
+  relevant pull requests using the Qt-supported VS2022 hosted runner. Local
+  Windows x64 Ninja/MSVC Debug configure/build and CTest passed 66/66 on source
+  commit `4dbe3ca7` under VS 2026/MSVC 19.51; keep this as passing local
+  evidence independently of hosted results. On hosted commit `57f5dff6`,
+  the official Windows x64 Debug job passed 66/66. The macOS universal Debug
+  job failed after its hosted runner lost
+  communication with GitHub. The user had observed `ClassMngrUpdaterTests`,
+  but no macOS test log or JUnit artifact was retained, so the updater test is
+  not confirmed as the cause. Windows and macOS Packaged Release workflow runs
+  passed. Linux and Windows ARM64 are unofficial builds; their workflow
+  results are informational for Phase 1, with fixes deferred to later work.
+  Phase 1 remains open for official macOS test evidence and the quality check.
 
 ## Objective
 
@@ -211,9 +217,69 @@ the labeled CTest entry point for startup, memory, and performance
 Local evidence is a clean Ninja/MSVC Debug configure, the full 351-step build
 of `ClassMngr` and `ClassMngrNext`, and `ClassMngrNextLaunch` passing 1/1. The
 resource-reference check passed for six generated RCCs and seven runtime IDs;
-the staged-package build report passed. Cross-platform CI and local
-`clang-format`/`clang-tidy` were not run, so those checks remain unverified.
-Phase 1 remains in progress.
+the staged-package build report passed. Local `clang-format`/`clang-tidy` were
+not run and remain unverified.
+
+#### GitHub Actions test reliability (open)
+
+Record local and hosted results independently, with the source commit and
+toolchain/platform for each. A successful local build or test run remains
+passing local evidence even if GitHub Actions fails; a hosted failure is a
+separate issue to diagnose and resolve. Do not erase local passes or describe
+them as hosted validation. Phase 1's supported-build acceptance covers
+Windows x64 and macOS universal. Linux and Windows ARM64 are unofficial,
+informational builds and are deferred to later work; failures on those targets
+do not block this phase.
+
+For official Windows x64 and macOS universal jobs, use the job log, JUnit
+report, and runner environment to identify the exact CTest target and QtTest
+case when a test fails or stalls. Fix test or workflow assumptions while
+preserving assertions, thresholds, and coverage; do not skip failing tests or
+hide failures with `continue-on-error`. Rerun the complete affected official
+Debug job after the fix. Record Linux and Windows ARM64 results as
+informational; defer fixes for those unofficial builds.
+
+#### Hosted workflow evidence - 2026-09-18
+
+The local Windows x64 Ninja/MSVC Debug configure/build and full CTest pass
+recorded above was run on source commit `4dbe3ca7` with VS 2026/MSVC 19.51 and
+Qt 6.12. It passed 66/66 tests in 179.41 seconds. This remains valid local
+evidence and is separate from the hosted run below.
+
+The [Refactoring baseline run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334835542)
+used hosted commit `57f5dff6`:
+
+- Official target: Windows x64 Debug passed 66/66 tests.
+- Unofficial target: Windows ARM64 Debug cross-build passed; the ARM64
+  executables were not run. This result is informational and deferred.
+- Unofficial target: Linux x64 Debug configure/build passed, but CTest passed
+  65/66. The failure
+  was `ClassMngrStartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds`:
+  the checkpoint memory snapshot reported `available=false` at
+  `tests/startup_performance_tests.cpp:2515`. The Linux updater suite passed.
+  This result is informational and deferred.
+- Official target: macOS universal Debug failed while the combined baseline step was running.
+  GitHub's check annotation reports that the hosted runner lost communication
+  with the server. The user observed `ClassMngrUpdaterTests` running, but the
+  job log and JUnit artifact are unavailable, so no test case is confirmed as
+  the cause.
+
+The [Windows](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334838494)
+and [macOS](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334841306)
+official Packaged Release workflow runs passed. The [Linux Packaged Release
+run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35334844253)
+also passed, as informational evidence for an unofficial build. The official
+macOS Debug baseline needs a rerun that completes and uploads test evidence;
+verify whether the observed updater test is related to runner communication.
+The Phase 1 Build Quality workflow has no recorded run and is absent from the
+default branch, so its hosted formatting/static-analysis checks remain
+unverified. Run those platform-independent checks through an eligible PR or
+verify them directly. Its Linux application build/launch is informational, not
+an official-target gate. The remaining Phase 1 gates are the Windows x64 and
+macOS universal Debug tests/launch checks plus the platform-independent
+quality checks. Linux memory-snapshot failure and native Windows ARM64 launch
+are deferred with those unofficial builds. Preserve test coverage and
+assertions while resolving the official-target gaps.
 
 ### 1.6 Build configurations
 
@@ -222,10 +288,8 @@ Define and validate:
 - Debug.
 - Release.
 - Packaged Release.
-- Windows x64.
-- Windows ARM64.
-- macOS universal.
-- Linux.
+- Official Phase 1 targets: Windows x64 and macOS universal.
+- Unofficial builds deferred to later work: Windows ARM64 and Linux.
 
 The packaged Release configuration must use the same deployment process that will be used for real distribution.
 
@@ -254,13 +318,14 @@ supplemental and do not validate the VS2022 shipping toolchain: the exact VS17
 configure failed because no VS2022 instance is installed; VS18 generator
 attempts hit FileTracker access failures. Elevated Ninja/MSVC succeeded.
 
-Hosted Debug matrix and Packaged Release results remain pending. A local macOS
-27.0 arm64 validation subsequently built the universal Debug targets and
+At this earlier local checkpoint, macOS 27.0 arm64 validation built the
+universal Debug targets and
 packaged Release DMG, verified architecture/minimum-version constraints,
 resource references, and reports. Its restricted full CTest run was 62/67;
-focused reruns passed, but no aggregate macOS suite pass is claimed. No local
-Linux build or Windows ARM64 cross-build is claimed. The latest detailed
-macOS evidence and environment findings are in `agent_docs/latest_session_work.md`.
+focused reruns passed, but no aggregate macOS suite pass is claimed. Linux and
+Windows ARM64 are unofficial and deferred; no local builds for those targets
+are claimed. The latest detailed macOS evidence and environment findings are
+in `agent_docs/latest_session_work.md`.
 
 #### Progress update - 2026-09-18 (packaged Release pull-request coverage)
 
@@ -268,9 +333,10 @@ The Windows Release workflow now has the same relevant-source pull-request
 coverage as the macOS and Linux package workflows. Its `windows-2022` jobs use
 Visual Studio 2022 and Qt 6.12, build x64 and ARM64 installers, and upload the
 checksums, build reports, and resource-reference reports. The PR Debug matrix
-and quality workflow already cover native builds/tests, the ARM64 cross-build,
-formatting/static analysis, and `ClassMngrNextLaunch`. Phase 1 remains in
-progress until the hosted results are green and checked against the exit gate.
+and quality workflow cover native builds/tests, the ARM64 cross-build,
+formatting/static analysis, and `ClassMngrNextLaunch`. Phase 1 acceptance is
+gated on official Windows x64 and macOS universal results; Linux and Windows
+ARM64 remain informational and deferred.
 
 #### Progress update - 2026-09-18 (Qt update retry and Windows test reliability)
 
@@ -315,7 +381,10 @@ CTest pass. Hosted Debug and Packaged Release outcomes remain pending.
 
 ## Exit gate
 
-The v2 shell builds and launches on all supported platforms. The current application still builds, and existing tests remain runnable.
+The v2 shell builds and launches on the official Phase 1 platforms: Windows
+x64 and macOS universal. The current application still builds, and existing
+tests remain runnable. Unofficial Linux and Windows ARM64 builds are outside
+this phase's acceptance gate and are deferred.
 
 The build can identify which target owns every production source file and which Qt modules each target actually requires.
 

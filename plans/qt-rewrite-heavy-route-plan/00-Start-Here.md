@@ -7,12 +7,17 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-09-18
 - Current milestone: Phase 1 — build system and repository structure
-- Current blocker: Hosted Debug matrix and Packaged Release results are
-  unknown/pending. Local Windows x64 Debug configure/build and CTest passed
-  66/66, and a supplemental VS 2026/MSVC 19.51 Windows x64 Release run built
-  and staged the production installer path. The exact VS2022 configure failed
-  because no VS2022 instance is installed, so hosted shipping-toolchain results
-  are still required. Phase 0 is complete; Phase 1 is in progress.
+- Current blocker: official Phase 1 targets are Windows x64 and macOS
+  universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
+  after GitHub reported runner communication loss. The user observed the
+  updater test, but no job log or JUnit artifact confirms it as the cause.
+  Windows and macOS Packaged Release runs passed. Local Windows x64 Debug
+  configure/build and CTest passed 66/66 on `4dbe3ca7`; that remains valid
+  evidence independent of hosted results. Phase 1 Build Quality has not run.
+  Linux and Windows ARM64 are unofficial and deferred; their current failures
+  or missing native launch evidence are not Phase 1 blockers. See the Phase 1
+  plan's GitHub Actions test-reliability section. Phase 0 is complete; Phase 1
+  remains in progress.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
@@ -106,10 +111,17 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
   Windows x64 Release packaged-installer path also succeeded, but is
   supplemental because the exact VS2022 configure failed: no VS2022 instance
   is installed.
-- Hosted Debug and Packaged Release results remain unknown/pending. GitHub
-  could not be queried, so no PR or hosted-run absence is confirmed. Phase 1
-  remains in progress; review hosted matrix and packaging results against the
-  exit gate before closing it. No later phase is complete.
+- Hosted workflow results have now been queried on source commit `57f5dff6`:
+  the official Windows x64 Debug job passed 66/66, and the macOS Debug job
+  failed after the hosted runner lost communication with GitHub. The user saw
+  `ClassMngrUpdaterTests` running, but no log or test report confirms it as the
+  cause. The Windows and macOS Packaged Release runs passed. The local Windows
+  x64 Debug pass of 66/66 on `4dbe3ca7` using VS 2026/MSVC 19.51 remains
+  independent passing evidence. Phase 1 Build Quality still needs a hosted
+  run. Linux and Windows ARM64 are unofficial, deferred builds; their tests
+  and native launch are not Phase 1 blockers. Phase 1 remains open for the
+  official Windows/macOS checks and quality workflow. No later phase is
+  complete.
 
 ## Important context
 
