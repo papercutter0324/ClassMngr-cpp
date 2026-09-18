@@ -38,6 +38,18 @@ on:
       - "scripts/installer/**"
       - "scripts/write_build_report.py"
       - "src/**"
+  pull_request:
+    paths:
+      - ".github/workflows/windows-release.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "licenses/**"
+      - "resources/**"
+      - "scripts/check_resource_pack_references.py"
+      - "scripts/installer/**"
+      - "scripts/write_build_report.py"
+      - "src/**"
 
 permissions:
   contents: read
