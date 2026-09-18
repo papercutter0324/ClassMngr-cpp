@@ -367,6 +367,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     set_tests_properties(ClassMngrStartupPerformanceTests
         PROPERTIES
             LABELS "startup;memory;performance"
+            RUN_SERIAL TRUE
     )
 
     qt_add_executable(ClassMngrDatabaseFileFormatTests

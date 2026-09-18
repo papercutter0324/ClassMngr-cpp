@@ -70,6 +70,14 @@ checks. This is supplemental local evidence: the Windows 2022/VS17 generator
 could not find a VS2022 instance, so the local run does not prove the hosted
 shipping toolchain.
 
+After the local Qt 6.12 update completed, a fresh Windows x64 Ninja/MSVC Debug
+configure and full build passed on the working tree based on source commit
+`4dbe3ca7`. Configure-time ownership validated 653 handwritten source files;
+CTest passed 66/66 in 179.41 seconds. The resource-reference check passed for
+six RCC packs, seven runtime IDs, and seven references, and the build report
+was generated. These local results use VS 2026/MSVC 19.51 and remain
+supplemental to the VS2022 hosted toolchain.
+
 A local macOS 27.0 arm64 / Qt 6.12 Debug universal validation passed for
 ClassMngr and ClassMngrNext; the source ownership check passed for 654
 handwritten files, both executables passed arm64/x86_64 and macOS 14.4 minimum
@@ -83,11 +91,11 @@ The earlier abort came from the restricted environment's LaunchServices
 lookup; the full 67-test suite has not been rerun outside the restriction, so
 no aggregate macOS CTest pass is claimed.
 
-Phase 1 remains in progress. GitHub workflow results were not checked during
-this validation. The cached `origin/Qt-Rewrite` ref currently matches local
-HEAD `7a26f56c`; hosted run status remains unverified. Linux toolchains remain
-unavailable locally. The cross-platform exit gate still requires hosted
-workflow results.
+Phase 1 remains in progress. Hosted Debug matrix and Packaged Release outcomes
+remain unverified; GitHub Actions could not be queried during this validation.
+At validation start, the cached `origin/Qt-Rewrite` ref matched source HEAD
+`4dbe3ca7`. Linux toolchains remain unavailable locally. The cross-platform
+exit gate still requires hosted workflow results.
 
 ## Next Milestone
 

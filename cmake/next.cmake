@@ -157,4 +157,11 @@ if(BUILD_TESTING)
             PASS_REGULAR_EXPRESSION
                 "ClassMngrNext launch version=${PROJECT_VERSION}"
     )
+    if(WIN32)
+        set_tests_properties(ClassMngrNextLaunch
+            PROPERTIES
+                ENVIRONMENT_MODIFICATION
+                    "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
 endif()

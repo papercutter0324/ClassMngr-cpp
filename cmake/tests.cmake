@@ -184,6 +184,26 @@ function(classmngr_finalize_test_targets)
             continue()
         endif()
 
+        if(WIN32)
+            get_property(test_environment_modifications
+                TEST "${test_name}"
+                PROPERTY ENVIRONMENT_MODIFICATION
+            )
+            list(FIND test_environment_modifications
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+                qt_runtime_path_index
+            )
+            if(qt_runtime_path_index EQUAL -1)
+                list(APPEND test_environment_modifications
+                    "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+                )
+                set_property(TEST "${test_name}"
+                    PROPERTY ENVIRONMENT_MODIFICATION
+                        "${test_environment_modifications}"
+                )
+            endif()
+        endif()
+
         get_target_property(test_qml_module_uri
             "${test_name}"
             QT_QML_MODULE_URI

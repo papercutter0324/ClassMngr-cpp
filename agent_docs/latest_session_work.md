@@ -112,12 +112,26 @@ older Phase 0 open notes in this document's history.
   The exact VS17 preset failed because no VS2022 instance is installed; local
   VS18 generator attempts also hit Windows FileTracker access errors before an
   elevated Ninja/MSVC run succeeded.
-- The cached `origin/Qt-Rewrite` ref currently matches local HEAD at `7a26f56c`.
-  No fresh GitHub Actions or PR query was made during this validation, so
-  hosted run status remains unverified. Earlier `git ls-remote` and browser
-  queries could not reach GitHub, and `gh` was unavailable. WSL, Docker, and
-  Podman are unavailable locally; a macOS toolchain is available and was used
-  for the validation below.
+- After the local Qt 6.12 update completed, a fresh Windows x64 Ninja/MSVC
+  Debug configure and full build passed on the working tree based on source
+  commit `4dbe3ca7`. Configure-time source ownership validated 653 handwritten
+  files, and the full CTest suite passed 66/66 in 179.41 seconds. The resource
+  reference report passed for six RCC packs, seven runtime IDs, and seven
+  references; the build report recorded a 44,797,952-byte executable and
+  39,331,047 bytes across six RCC packs. Local compilation used VS
+  2026/MSVC 19.51, so it is supplemental to the hosted VS2022 toolchain.
+- The CTest follow-up makes Windows test executables prepend the selected Qt
+  `bin` path, including `ClassMngrNextLaunch`, and gives
+  `StartupVisualSettingsTests` a build-local settings root. The startup
+  performance test now runs serially: its initial full-suite run overlapped a
+  heavy batch-report test and measured 7.9 seconds; an isolated run measured
+  about 3 seconds and passed. Focused reruns and the final full suite passed.
+- At validation start, the cached `origin/Qt-Rewrite` ref matched source HEAD
+  at `4dbe3ca7`. No fresh GitHub Actions or PR query was made during this
+  validation, so hosted run status remains unverified. Earlier `git ls-remote`
+  and browser queries could not reach GitHub, and `gh` was unavailable. WSL,
+  Docker, and Podman are unavailable locally; a macOS toolchain is available
+  and was used for the validation below.
 - The slice 1.1 clean build directory was
   C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase1-1.1-clean-965a9613fb8046b7bbbbd5a520b03740.
   It is local verification output, not a checked-in artifact.
@@ -157,8 +171,9 @@ older Phase 0 open notes in this document's history.
 
 ## Next Entry Point
 
-Slices 1.1-1.6 are committed; slice 1.5's commit is `65cd76fb`. Phase 1 is
-paused pending hosted Debug matrix and Packaged Release results. Local VS2026
-Windows and macOS results are supplemental. The cached remote-tracking ref
-matches HEAD, but hosted run status remains unverified. Next, collect hosted
-results and review them against the Phase 1 exit gate.
+Slices 1.1-1.6 are committed; slice 1.5's commit is `65cd76fb`. The Windows
+test reliability changes and current-source validation are recorded in this
+handoff. Phase 1 remains open pending hosted Debug matrix and VS2022 Packaged
+Release results. Local VS2026 Windows and macOS results are supplemental;
+hosted run status remains unverified. Next, collect hosted results and review
+them against the Phase 1 exit gate.

@@ -10,12 +10,13 @@
 - Last updated: 2026-09-18
 - Current note: Slices 1.1-1.6 establish the parallel executable, asserted
   target boundaries, explicit source ownership, tooling/reports, and a PR
-  Debug matrix. On clean snapshot `6f2f5fb0`, elevated Windows x64 Debug
-  configure/build and CTest passed 66/66; a local Windows x64 Release run also
-  built and staged the production installer path. These VS 2026/MSVC 19.51
-  results are supplemental: the exact VS2022 configure failed because no
-  VS2022 instance is installed. Hosted Debug and Packaged Release results are
-  unknown/pending; Phase 1 remains in progress.
+  Debug matrix. The Windows Packaged Release workflow now also runs on
+  relevant pull requests using the Qt-supported VS2022 hosted runner. On clean
+  source commit `4dbe3ca7`, local Windows x64 Ninja/MSVC Debug configure/build
+  and CTest passed 66/66 under VS 2026/MSVC 19.51. Configure-time source
+  ownership validated 653 files, and resource-reference/build reports passed.
+  Hosted Debug and VS2022 Packaged Release results remain unverified; Phase 1
+  remains in progress.
 
 ## Objective
 
@@ -253,11 +254,41 @@ supplemental and do not validate the VS2022 shipping toolchain: the exact VS17
 configure failed because no VS2022 instance is installed; VS18 generator
 attempts hit FileTracker access failures. Elevated Ninja/MSVC succeeded.
 
-Hosted Debug matrix and Packaged Release results remain unknown/pending. GitHub
-could not be queried from this environment, so no PR or hosted-run absence is
-confirmed. No local ARM64 cross-build, macOS/Linux build, or actionlint/YAML
-parser check is claimed. Phase 1 remains in progress; review hosted Debug and
-Packaged Release results against the exit gate before closing it.
+Hosted Debug matrix and Packaged Release results remain pending. A local macOS
+27.0 arm64 validation subsequently built the universal Debug targets and
+packaged Release DMG, verified architecture/minimum-version constraints,
+resource references, and reports. Its restricted full CTest run was 62/67;
+focused reruns passed, but no aggregate macOS suite pass is claimed. No local
+Linux build or Windows ARM64 cross-build is claimed. The latest detailed
+macOS evidence and environment findings are in `agent_docs/latest_session_work.md`.
+
+#### Progress update - 2026-09-18 (packaged Release pull-request coverage)
+
+The Windows Release workflow now has the same relevant-source pull-request
+coverage as the macOS and Linux package workflows. Its `windows-2022` jobs use
+Visual Studio 2022 and Qt 6.12, build x64 and ARM64 installers, and upload the
+checksums, build reports, and resource-reference reports. The PR Debug matrix
+and quality workflow already cover native builds/tests, the ARM64 cross-build,
+formatting/static analysis, and `ClassMngrNextLaunch`. Phase 1 remains in
+progress until the hosted results are green and checked against the exit gate.
+
+#### Progress update - 2026-09-18 (Qt update retry and Windows test reliability)
+
+After the local Qt update completed, a fresh Windows x64 Ninja/MSVC Debug
+configure and full build passed on the working tree based on source commit
+`4dbe3ca7`. CMake's explicit ownership check passed for 653 handwritten files,
+and CTest passed 66/66 in 179.41 seconds. The resource-reference check passed
+for six RCC packs, seven runtime IDs, and seven references; a build report was
+generated. The local compiler was VS 2026/MSVC 19.51, so the result supplements
+the VS2022 hosted validation.
+
+Windows CTest now prepends the selected Qt runtime directory for each target
+test and `ClassMngrNextLaunch`, instead of depending on the machine's global
+`PATH`. `StartupVisualSettingsTests` uses a build-local settings root. The
+startup performance test runs serially because concurrent heavy tests pushed
+its measured startup from about three to eight seconds and caused its first
+full-suite run to fail. Focused reruns passed, followed by the complete 66/66
+CTest pass. Hosted Debug and Packaged Release outcomes remain pending.
 
 ## Architectural rules
 

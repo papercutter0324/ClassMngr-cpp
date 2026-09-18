@@ -165,3 +165,19 @@
   with normal macOS service access before treating this as an application
   regression; in this case the offscreen target passed 4/4 outside the
   restriction, and the user confirmed the app flow works.
+
+## Qt 6.12 Windows toolchain validation - 2026-09-18
+
+- Qt 6.12's supported Windows compiler is Visual Studio 2022. The local host
+  has Visual Studio 2026 only, so use the `windows-2022` hosted runner with
+  the matching MSVC 2022 Qt kit for shipping-toolchain acceptance. Local
+  VS2026 results remain supplemental. Keep the Windows packaged Release
+  workflow on relevant pull requests so this check runs automatically.
+- Windows CTest executables need the selected Qt `bin` directory in their
+  runtime path even when a developer's machine already has it globally. Add
+  that path through CTest environment modifications, and give settings tests
+  a build-local `CLASSMNGR_SETTINGS_ROOT` so they do not read or change a
+  developer's saved profile.
+- Keep the startup performance CTest serial. Running it alongside the large
+  batch-report test raised measured startup from about 3 seconds to 8 seconds
+  and made the threshold-sensitive run fail; the isolated serial run passed.

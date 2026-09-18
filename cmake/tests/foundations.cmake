@@ -226,6 +226,8 @@ classmngr_add_qt_test(
             Qt6::Gui
             Qt6::Test
             Qt6::Widgets
+        ENVIRONMENT
+            "CLASSMNGR_SETTINGS_ROOT=${PROJECT_BINARY_DIR}/test-settings/startup-visual"
         OFFSCREEN
     )
 
