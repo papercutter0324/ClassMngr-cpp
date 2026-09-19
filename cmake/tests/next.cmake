@@ -35,3 +35,12 @@ classmngr_add_qt_test(
         ClassMngrNext::Application
         Qt6::Test
 )
+
+classmngr_add_qt_test(
+    NAME NextApplicationImportJob
+    SOURCES
+        tests/next_application_import_job_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)

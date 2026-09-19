@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, and explicit current-selection state owner are implemented; broader state and use-case contracts remain next.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, and import-job lifecycle contract are implemented; broader state and use-case contracts remain next.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -94,9 +94,31 @@ external lifetime or object identity dependency. `NextApplicationSelectionTests`
 covers no selection, all supported categories, replacement, clearing, value
 copy/equality, and compile-time category distinction without a `QApplication`.
 
-Next Phase 2 state contracts remain import-job state, report/export-job state,
-document-content session state, cancellation behavior, and thread ownership,
-followed by the later application-to-legacy adapter mapping.
+#### Progress update - 2026-09-19 (import-job state and cancellation slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`ImportJobSnapshot`/`ImportJobState` contract. The snapshot exposes the compact
+`Idle`, `Running`, `Completed`, `Failed`, and `Canceled` lifecycle, total and
+completed item counts, a cancellation-requested flag, and an optional
+structured failure. `ImportJobState` accepts a new job from any non-running
+phase, rejects duplicate starts with recoverable `Conflict`, rejects progress
+above the total with `InvalidInput`, and only completes after all items are
+reported. Terminal snapshots do not change in response to late worker events;
+`start` is the explicit reset boundary for a later job.
+
+Cancellation requests are idempotent while running. A worker cancellation
+acknowledgement (or the equivalent `cancel()` event) transitions the running
+job to `Canceled` and preserves its counts; a completion event wins if final
+progress arrives before cancellation is acknowledged. One application owner
+serializes worker events and owns this state; worker code emits events and does
+not mutate the state object directly. `NextApplicationImportJobTests` covers
+the lifecycle, structured failure, cancellation, terminal immutability, and
+copy/equality behavior without constructing a `QApplication`.
+
+The remaining Phase 2 state contracts are report/export-job state and
+document-content session state, followed by the later application-to-legacy
+adapter mapping. Compact import-review projections remain a later Phase 2.6
+memory-safe projection slice.
 
 ## Objective
 
