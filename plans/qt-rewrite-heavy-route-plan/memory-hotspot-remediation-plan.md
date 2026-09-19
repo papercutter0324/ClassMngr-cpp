@@ -2,14 +2,15 @@
 
 ## Status
 
-- Status: Not started
+- Status: Phase A closed; Phases B-H open
 - Route: Heavy
 - Plan type: Cross-cutting execution plan
 - Related phases: 0, 2, 3, 5, 6, 7, 8, 9, 11, 12, and 13
 - Depends on: Phase 0 measurements and the v2 ownership boundaries
 - Blocks: The Phase 9 Windows memory gate and final cutover
 - Owner: Unassigned
-- Last updated: 2026-09-16
+- Last updated: 2026-09-20
+- Current note: Phase 2 gateway work continues; this memory plan remains open.
 
 This document turns the Phase 0 memory audit into an ordered implementation
 plan. It does not create a new numbered rewrite phase or replace the existing
@@ -109,6 +110,25 @@ not a reason to weaken the heavy route.
 - The large fixture remains the required stress input.
 - The measurement report distinguishes a real bounded implementation from a
   route that merely terminates successfully.
+
+### Phase A / existing Phase 0 closure — 2026-09-18
+
+Phase A is closed as the existing Phase 0 baseline and ownership step. The user
+closed Phase 0 after the combined packaged Release gate passed all 24 routes on
+Windows x64 and macOS universal and the retained visual references were
+reviewed and confirmed. See the [Phase 0 baseline and evidence
+log](../../docs/qt-rewrite/phase-0-baseline.md) and [Phase 0 memory
+thresholds](../../docs/qt-rewrite/phase-0-memory-thresholds.md).
+
+The retained [Phase 0 route records](../../docs/qt-rewrite/phase-0-evidence/)
+and [packaged Release artifacts](../../docs/qt-rewrite/visual-baseline/release/)
+cover the ten hotspot rows and the large fixtures/routes. The final
+normal-resident target is strictly `<262,144,000` bytes (`250 MiB`); the
+transient diagnostic ceiling is strictly `<536,870,912` bytes (`512 MiB`).
+Legacy high-memory results remain before-state trend evidence, and non-blocking
+deferred platform/state gaps are historical and non-gating under the closure
+decision. Only Phase A is closed: Phases B-H remain open, and Phase 2
+continues.
 
 ## Phase B — Compact contracts and lifetime boundaries
 
