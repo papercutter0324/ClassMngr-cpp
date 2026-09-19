@@ -221,6 +221,6 @@
 - Attach header-only contracts to `ClassMngrNextDomain`, record them in the
   explicit source-ownership manifest, and test them through an app-less QtTest
   target before introducing application services.
-- Keep Phase 1 hosted closure separate from Phase 2 implementation: the
-  macOS action and quality evidence must still be recorded before declaring
-  Phase 1 complete.
+- Keep Phase 1 hosted closure separate from Phase 2 implementation. The
+  macOS action, quality, dialog-policy, and release evidence are now recorded
+  as green on commit `0883009d`; Phase 1 is closed and Phase 2 may proceed.

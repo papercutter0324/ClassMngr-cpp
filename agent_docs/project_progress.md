@@ -1,10 +1,9 @@
 # Project Progress
 
-Active deployment plan: Qt Rewrite Phase 1 — Build System and Repository Structure.
-Current deployment: windows_macos_recent_commit_repair_20260919. Route: Heavy.
-The local fix and Windows x64 validation are complete. Hosted Windows/macOS
-confirmation remains pending because GitHub run access is unavailable here
-and no macOS/Xcode toolchain is installed.
+Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
+Current deployment: phase2_domain_contract_kickoff_20260919. Route: Heavy.
+Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
+the first Phase 2 domain-contract slice on top of that verified baseline.
 
 ## Goal
 
@@ -106,20 +105,14 @@ tests. Both Debug executables are universal and target macOS 14.4; `ClassMngrNex
 links only Qt Core. The passing JUnit report and CTest log are preserved under
 `build/phase1-macos-debug-local-20260918/Testing/`.
 
-Phase 1's official acceptance targets are Windows x64 and macOS universal.
-Unofficial Linux and Windows ARM64 builds are deferred; their current workflow
-results are informational and do not block Phase 1. On hosted commit
-`57f5dff6`, Windows x64 Debug passed 66/66 and macOS universal Debug passed
-67/67 in attempt 2 with JUnit evidence. Attempt 1 lost runner communication;
-no test failure was established as its cause. The overall attempt 3 remained
-red only because the informational Linux job passed 65/66 after a startup
-memory snapshot reported `available=false`. Windows and macOS Packaged Release
-workflow runs passed. The Phase 1 Build Quality workflow has no recorded run;
-its hosted formatting/static-analysis checks remain pending. Full run details
-and the current retry automation are in the Phase 1 plan. These hosted results
-do not replace or invalidate the successful local Windows x64 Debug
-configure/build and 66/66 CTest pass on source commit `4dbe3ca7` using VS
-2026/MSVC 19.51 and Qt 6.12.
+Phase 1's official acceptance targets were Windows x64 and macOS universal.
+The hosted `Refactoring baseline` run `35424488211` passed Windows x64 Debug
+66/66 and macOS universal Debug 67/67 on commit `0883009d`; the informational
+Linux x64 and Windows ARM64 jobs also completed successfully. The hosted Phase
+1 Build Quality run `35424488214`, Dialog policy run `35424488244`, and
+Windows, macOS, and Linux Release runs `35424488203`, `35424488198`, and
+`35424488209` all passed. This closes the Phase 1 hosted gate; Linux and
+Windows ARM64 remain informational for this phase.
 
 ## Linux Phase 0/1 follow-up — 2026-09-19
 
@@ -149,13 +142,11 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Record the in-progress macOS universal Debug result against the repaired
-source, then close the Phase 1 hosted evidence gate and update the plan status.
-The first Phase 2 domain-contract slice is underway in parallel; its next
-milestone is the first application use-case input/output contract. The Linux
-Phase 0 follow-up remains supplemental and should continue separately on a
-host with Xvfb and loopback access. Keep next-generation target names distinct
-from legacy object targets such as ClassMngrDomain and ClassMngrUiShared.
+Continue Phase 2 with the first application use-case input/output contract over
+the new domain types. The Linux Phase 0 follow-up remains supplemental and
+should continue separately on a host with Xvfb and loopback access. Keep
+next-generation target names distinct from legacy object targets such as
+ClassMngrDomain and ClassMngrUiShared.
 
 ### Phase 2 kickoff — 2026-09-19
 
@@ -166,9 +157,8 @@ empty-ID rejection, type separation, value/error results, and void success
 results without constructing a `QApplication`. Local Windows Debug configure,
 build, the new contract test, and `ClassMngrNextLaunch` passed.
 
-Phase 1 remains administratively open only for current hosted evidence and its
-quality-workflow record; no Phase 1 production implementation is being
-reopened while Phase 2 contracts begin.
+Phase 1 hosted acceptance is closed; no Phase 1 production implementation is
+being reopened while Phase 2 contracts begin.
 
 ### Async prompt title repair — 2026-09-19
 

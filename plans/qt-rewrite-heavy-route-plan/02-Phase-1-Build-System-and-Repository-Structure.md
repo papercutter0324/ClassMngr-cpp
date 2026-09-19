@@ -2,32 +2,19 @@
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phase 0
 - Blocks: Domain, persistence, resource, and UI implementation
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Current note: Slices 1.1-1.6 establish the parallel executable, asserted
-  target boundaries, explicit source ownership, tooling/reports, and a PR
-  Debug matrix. The Windows Packaged Release workflow now also runs on
-  relevant pull requests using the Qt-supported VS2022 hosted runner. Local
-  Windows x64 Ninja/MSVC Debug configure/build and CTest passed 66/66 on source
-  commit `4dbe3ca7` under VS 2026/MSVC 19.51; keep this as passing local
-  evidence independently of hosted results. On hosted commit `57f5dff6`,
-  the latest baseline results are Windows x64 Debug 66/66 and macOS universal
-  Debug 67/67 in attempt 2 with JUnit evidence. Attempt 1 lost runner
-  communication; no test failure was established as its cause. Attempt 3
-  completed with an overall failure only because the informational Linux x64
-  Debug job passed 65/66 and its startup checkpoint memory snapshot reported
-  `available=false`. Windows and macOS Packaged Release workflows passed;
-  Windows ARM64 cross-build and packaging passed as informational results.
-  A later local macOS universal Debug build and full 67/67 CTest run also
-  passed with normal macOS service access. Linux procfs memory sampling is
-  fixed and targeted tests pass locally; full local CTest remains 66/67 because
-  updater listener tests receive `EPERM` when creating sockets in the sandbox.
-  No fresh hosted Linux or quality run has been verified. Phase 1 remains open
-  for the hosted Phase 1 Build Quality workflow.
+- Current note: Slices 1.1-1.6 established the parallel executable, asserted
+  target boundaries, explicit source ownership, tooling/reports, and the PR
+  Debug matrix. Hosted commit `0883009d` passed the Windows x64, macOS
+  universal, Linux x64, and Windows ARM64 baseline jobs; the Phase 1 Build
+  Quality, Dialog policy, and Windows/macOS/Linux Release workflows also
+  passed. Phase 1's hosted acceptance gate is closed. The additive Phase 2
+  domain-contract slice is locally verified on top of that baseline.
 
 ## Objective
 
@@ -441,10 +428,26 @@ widening its allowlist. Local Windows verification passed the affected dialog,
 schedule-import, and Sub Prep tests, both `ClassMngr` targets, the resource and
 build-report checks, and `ClassMngrNextLaunch`.
 
-The initial Phase 2 domain-contract slice has now started in parallel with the
-final hosted macOS universal Debug confirmation. Phase 1 remains open until
-the current hosted evidence and any separately required quality-workflow
-result are recorded against the current source commit.
+The initial Phase 2 domain-contract slice started in parallel with the final
+hosted macOS universal Debug confirmation. That hosted confirmation and the
+separate quality-workflow result are now recorded in the closure update below.
+
+#### Closure update - 2026-09-19
+
+The hosted `Refactoring baseline` run [35424488211](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35424488211)
+passed all matrix jobs, including `macOS universal Debug`, `Windows 11 x64
+Debug`, `Linux x64 Debug`, and the informational `Windows ARM64 Debug
+cross-build`, on commit `0883009d`.
+
+The hosted `Phase 1 Build Quality` run [35424488214](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35424488214)
+passed its compile-database, `src/next` formatting/static-analysis,
+ClassMngr/ClassMngrNext build, resource/report, and `ClassMngrNextLaunch`
+checks. The hosted [Dialog policy](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35424488244)
+and packaged [Windows](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35424488203),
+[macOS](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35424488198),
+and [Linux](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/35424488209)
+release workflows also passed. The Phase 1 exit gate is satisfied; Linux and
+Windows ARM64 remain informational for this phase.
 
 ## Architectural rules
 

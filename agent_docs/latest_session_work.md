@@ -185,15 +185,12 @@ older Phase 0 open notes in this document's history.
 
 ## Next Entry Point
 
-Slices 1.1-1.6 are committed; slice 1.5's commit is `65cd76fb`. The Windows
-test reliability changes and current-source validation are recorded in this
-handoff. Local Windows and macOS Debug suites now have passing results. The
-latest hosted run passed Windows x64 Debug 66/66 and macOS universal Debug
-67/67 with JUnit evidence; the overall run was red only on the informational
-Linux job. Phase 1 remains open for the hosted Phase 1 Build Quality run. The
-new bounded macOS retry has not yet run on GitHub. Packaged Release workflows
-passed on the previously recorded hosted run. Next, run the quality check and
-review results against the Phase 1 exit gate.
+Slices 1.1-1.6 are committed; the latest hosted baseline run
+`35424488211` passed Windows x64 Debug 66/66, macOS universal Debug 67/67,
+Linux x64 Debug, and the informational Windows ARM64 cross-build on commit
+`0883009d`. The Phase 1 Build Quality, Dialog policy, and Release workflows
+also passed. Phase 1 is closed; the next entry point is the Phase 2
+application use-case contract over the new domain types.
 
 ## Current Deployment Handoff — linux_phase0_phase1_20260919 (paused)
 
@@ -262,16 +259,17 @@ Linux attempt.
 
 ## Next Entry Point
 
-Run the Windows x64 and macOS universal baseline on the repaired source and
-retain both hosted reports. Continue the paused Linux follow-up separately on a
-host with Xvfb and loopback access.
+Phase 1 hosted acceptance is closed. Continue Phase 2 with the first
+application use-case input/output contract; keep the paused Linux follow-up
+separate on a host with Xvfb and loopback access.
 
 ## Current Deployment Handoff — phase2_domain_contract_kickoff_20260919
 
-- The current hosted macOS universal Debug action is the remaining official
-  platform confirmation; its result is not recorded here until GitHub reports
-  it. Phase 1 documentation remains open for that evidence and any separate
-  Phase 1 quality-workflow result.
+- The hosted `Refactoring baseline` run `35424488211` passed all matrix jobs on
+  commit `0883009d`, including macOS universal Debug 67/67 and Windows x64
+  Debug 66/66. The Phase 1 Build Quality run `35424488214`, Dialog policy run
+  `35424488244`, and the Windows, macOS, and Linux Release runs also passed.
+  Phase 1 is closed; Linux and Windows ARM64 remain informational.
 - The first Phase 2 slice is implemented locally. `ClassMngrNext::Domain`
   owns `src/next/domain/domain_types.h` and
   `src/next/domain/operation_result.h`; both are standard-library-only
@@ -280,8 +278,7 @@ host with Xvfb and loopback access.
   without constructing a `QApplication`. The Windows Debug target and
   `ClassMngrNextLaunch` passed after reconfiguration.
 - Next entry point: add the first application use-case input/output contract
-  over these domain types, then map it to a deterministic test boundary. Do not
-  claim Phase 1 complete until the hosted result is recorded.
+  over these domain types, then map it to a deterministic test boundary.
 
 ## Current Deployment Handoff — async_prompt_title_20260919
 
@@ -299,6 +296,6 @@ host with Xvfb and loopback access.
   failures were unrelated no-screen GUI and updater local-port restrictions.
   Only non-fatal `propagateSizeHints()`/font-alias warnings remained in the
   passing dialog tests.
-- Continuation: review the uncommitted one-file production diff, then commit or
-  otherwise hand off as the user prefers. If a green full-suite result is
-  required, rerun on a host with display and loopback services.
+- Commit `0883009d` records this production fix; the hosted baseline and
+  release workflows passed on that source. A later local Phase 2 contract
+  slice is recorded separately above.
