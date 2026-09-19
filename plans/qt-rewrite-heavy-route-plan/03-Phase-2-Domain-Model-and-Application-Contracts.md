@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, and concrete ApplicationServices workspace port are implemented. FileController open/close/create/initial-setup/save/save-as integration is implemented and export remains legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, and Qt runtime worker/cancellation bridge are implemented. Feature-service migration remains. Invalid-UTF-8 boundary coverage is non-blocking and remains untested.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -756,7 +756,31 @@ CTest passed 1/1, and the bounded regression selection passed 9/9
 validated 6 RCC packs, 7 runtime IDs, and 7 runtime references. `git diff
 --check` passed with only the existing LF-to-CRLF warnings.
 
-The remaining Phase 2 gates are the runtime worker-thread/cancellation bridge
-and later feature-service migration. No platform adapter, v2 contract, memory
-document, or unrelated feature changed in this slice; the worktree remains
-uncommitted.
+The remaining Phase 2 gate is later feature-service migration. No platform
+adapter, v2 contract, memory document, or unrelated feature changed in this
+slice; the worktree remains uncommitted.
+
+#### Progress update - 2026-09-20 (Qt runtime worker/cancellation bridge slice)
+
+`ClassMngrNext::Platform` now has QtCore-only `QtJobWorkerLifetime` plus typed
+`QtImportJobWorker` and `QtReportJobWorker` adapters over the existing Qt-free
+`Application` worker ports. Work runs on joined, non-detached `QThread`s;
+cancellation is cooperative and asynchronous; generation-tagged events are
+posted to bounded queues; owner coordinators remain the only state mutators;
+task, exception, and post failures are structured and observable; and
+destruction joins before releasing task/sink captures.
+
+Focused deterministic QtTest coverage for both adapters includes off-thread
+execution, completion, cancellation, failure/exception, overflow visibility,
+restart, late-cancel, and destructor join. Configure/ownership checks passed
+for 701 sources with dependency guards; `ClassMngrNextPlatform` depends on
+`ClassMngrNext::Application` and `Qt6::Core`, while `Application` remains
+Qt-free. The generated `ClassMngrNextPlatformQtJobWorkerTests` CTest target
+passed 1/1, the exact 9-target regression passed 9/9, and the resource report
+validated 6 RCC packs, 7 runtime IDs, and 7 references. `git diff --check`
+passed. An initial unsandboxed MSBuild FileTracker `E_ACCESSDENIED` required
+an elevated retry and then passed. Stress/TSAN coverage and a direct report
+queue-post-failure test remain non-blocking gaps.
+
+The remaining Phase 2 gate is later feature-service migration; the worktree
+remains uncommitted.

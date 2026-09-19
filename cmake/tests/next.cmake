@@ -191,6 +191,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformQtJobWorker
+    SOURCES
+        tests/next_platform_qt_job_worker_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME FileControllerWorkspaceLifecycle
     SOURCES
         tests/file_controller_workspace_lifecycle_tests.cpp

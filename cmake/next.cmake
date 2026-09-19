@@ -56,6 +56,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
 set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/legacy_workspace_gateway.h
     src/next/platform/application_services_workspace_port.h
+    src/next/platform/qt_job_worker_lifetime.h
+    src/next/platform/qt_job_worker_adapters.h
 )
 
 foreach(_classmngr_next_target IN LISTS
@@ -99,6 +101,7 @@ target_link_libraries(ClassMngrNextPersistence
 target_link_libraries(ClassMngrNextPlatform
     INTERFACE
         ClassMngrNext::Application
+        Qt6::Core
 )
 
 target_link_libraries(ClassMngrNextUiShared
@@ -148,6 +151,7 @@ classmngr_next_assert_dependencies(ClassMngrNextPersistence
 classmngr_next_assert_dependencies(ClassMngrNextResources)
 classmngr_next_assert_dependencies(ClassMngrNextPlatform
     ClassMngrNext::Application
+    Qt6::Core
 )
 classmngr_next_assert_dependencies(ClassMngrNextUiShared
     ClassMngrNext::Application
