@@ -55,6 +55,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationImportJobCoordinator
+    SOURCES
+        tests/next_application_import_job_coordinator_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationReportJob
     SOURCES
         tests/next_application_report_job_tests.cpp

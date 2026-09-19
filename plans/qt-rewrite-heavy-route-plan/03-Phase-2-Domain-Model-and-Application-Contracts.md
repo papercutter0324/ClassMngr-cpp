@@ -189,6 +189,18 @@ and coordinator integration for worker-thread ownership plus end-to-end
 cancellation request/acknowledgement; the current job contracts define those
 event boundaries but do not yet provide the runtime thread bridge.
 
+#### Progress update - 2026-09-19 (import-job event bridge/coordinator slice)
+
+`ClassMngrNext::Application` now owns a synchronous, Qt-free
+`ImportJobCoordinator` with an adapter-neutral worker port and a bounded,
+thread-safe FIFO event sink. Generation-tagged progress, completion,
+failure, and cancellation-acknowledgement events are applied only when pumped;
+stale generations and late terminal events cannot mutate a restarted/current
+snapshot. Queue overflow and worker-start failures retain structured errors,
+and focused app-less tests cover FIFO ordering and completion-vs-cancellation
+semantics. Actual worker implementations and legacy adapters remain outside
+this slice.
+
 #### Progress update - 2026-09-19 (workspace lifecycle coordinator slice)
 
 `ClassMngrNext::Application` now owns a synchronous, Qt-free
