@@ -109,7 +109,11 @@ private slots:
     void saveAsUsesCoordinatorForOpenWorkspace();
     void saveAsWarnsAndPreservesStaleCoordinatorState();
     void saveAsUsesLegacyFallbackForCompatibilityWorkspace();
-    void saveAsMigratesV2AndExportRemainsLegacy();
+    void exportUsesCoordinatorForOpenWorkspaceAndPreservesState();
+    void exportWarnsAndPreservesStaleCoordinatorState();
+    void exportUsesLegacyFallbackForCompatibilityWorkspace();
+    void exportPreservesDialogPolicyAndNoOpenGuard();
+    void saveAsMigratesV2AndExportUsesCoordinator();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -907,7 +911,341 @@ void FileControllerWorkspaceLifecycleTests::saveAsUsesLegacyFallbackForCompatibi
         );
 }
 
-void FileControllerWorkspaceLifecycleTests::saveAsMigratesV2AndExportRemainsLegacy()
+void FileControllerWorkspaceLifecycleTests::exportUsesCoordinatorForOpenWorkspaceAndPreservesState()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString sourcePath = workspaceRoot.filePath(
+        QStringLiteral("coordinator-export-source-내보내기.tps")
+        );
+    const QString firstRequestedDestination = workspaceRoot.filePath(
+        QStringLiteral("exports/first-export-내보내기")
+        );
+    const QString secondRequestedDestination = workspaceRoot.filePath(
+        QStringLiteral("exports/second-export-내보내기")
+        );
+    const QString firstDestination = QFileInfo(
+        firstRequestedDestination + QStringLiteral(".tps")
+        ).absoluteFilePath();
+    const QString secondDestination = QFileInfo(
+        secondRequestedDestination + QStringLiteral(".tps")
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(sourcePath));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(firstRequestedDestination)
+        );
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(secondRequestedDestination)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    controller.loadDatabaseOnStartup(sourcePath);
+    const QString normalizedSourcePath = QFileInfo(sourcePath).absoluteFilePath();
+    const QString sourceDirectory = QFileInfo(sourcePath).absoluteDir().absolutePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedSourcePath);
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedSourcePath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedSourcePath);
+    QCOMPARE(
+        SettingsManager::instance().getLastDatabaseDirectory(),
+        sourceDirectory
+        );
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+
+    actions.exportAsFile->trigger();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(QFileInfo::exists(firstDestination));
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedSourcePath);
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedSourcePath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedSourcePath);
+    QCOMPARE(
+        SettingsManager::instance().getLastDatabaseDirectory(),
+        QFileInfo(firstDestination).absoluteDir().absolutePath()
+        );
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    const SaveFileRequest firstRequest = fileDialogs.saveFileRequests.constFirst();
+    QCOMPARE(firstRequest.title, QStringLiteral("Export Teacher Profile As"));
+    QCOMPARE(
+        static_cast<int>(firstRequest.purpose),
+        static_cast<int>(FileDialogPurpose::TeacherProfile)
+        );
+    QCOMPARE(firstRequest.initialDirectory, sourceDirectory);
+    QCOMPARE(firstRequest.defaultSuffix, QStringLiteral("tps"));
+    QCOMPARE(
+        firstRequest.nameFilters,
+        QStringList{QStringLiteral("ClassMngr Teacher Profile (*.tps)")}
+        );
+
+    // The second dialog still follows the active source workspace, proving
+    // export did not replace m_currentFile with the returned destination.
+    actions.exportAsFile->trigger();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(QFileInfo::exists(secondDestination));
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedSourcePath);
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedSourcePath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedSourcePath);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 2);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.at(1).initialDirectory,
+        sourceDirectory
+        );
+
+    controller.autosave();
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(services.currentDatabasePath(), normalizedSourcePath);
+}
+
+void FileControllerWorkspaceLifecycleTests::exportWarnsAndPreservesStaleCoordinatorState()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString firstPath = workspaceRoot.filePath(
+        QStringLiteral("coordinator-export-first-내보내기.tps")
+        );
+    const QString secondPath = workspaceRoot.filePath(
+        QStringLiteral("coordinator-export-second-내보내기.tps")
+        );
+    const QString firstFailedDestination = workspaceRoot.filePath(
+        QStringLiteral("exports/failed-export-one")
+        );
+    const QString secondFailedDestination = workspaceRoot.filePath(
+        QStringLiteral("exports/failed-export-two")
+        );
+
+    ApplicationServices seedServices;
+    for (const QString& path : {firstPath, secondPath})
+    {
+        QVERIFY(seedServices.openDatabase(path));
+        seedServices.closeDatabase();
+    }
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(firstFailedDestination)
+        );
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(secondFailedDestination)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    controller.loadDatabaseOnStartup(firstPath);
+    const QString normalizedFirstPath = QFileInfo(firstPath).absoluteFilePath();
+    const QString normalizedSecondPath = QFileInfo(secondPath).absoluteFilePath();
+    const QString firstDirectory = QFileInfo(firstPath).absoluteDir().absolutePath();
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(services.openDatabase(secondPath));
+    QCOMPARE(services.currentDatabasePath(), normalizedSecondPath);
+
+    actions.exportAsFile->trigger();
+
+    QVERIFY(!QFileInfo::exists(firstFailedDestination + QStringLiteral(".tps")));
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest firstWarning = prompts.messages.constFirst();
+    QCOMPARE(firstWarning.title, QStringLiteral("Export Teacher Profile"));
+    QCOMPARE(
+        firstWarning.message,
+        QStringLiteral(
+            "Exporting the workspace received a handle for a different open workspace."
+            )
+        );
+    QCOMPARE(
+        static_cast<int>(firstWarning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedSecondPath);
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedFirstPath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedFirstPath);
+    QCOMPARE(
+        SettingsManager::instance().getLastDatabaseDirectory(),
+        firstDirectory
+        );
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+
+    // A repeated failure proves the coordinator session and controller state
+    // survived the structured export error.
+    actions.exportAsFile->trigger();
+
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(prompts.messages.constLast().title, firstWarning.title);
+    QCOMPARE(prompts.messages.constLast().message, firstWarning.message);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedSecondPath);
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedFirstPath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedFirstPath);
+    QCOMPARE(
+        SettingsManager::instance().getLastDatabaseDirectory(),
+        firstDirectory
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::exportUsesLegacyFallbackForCompatibilityWorkspace()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString sourcePath = workspaceRoot.filePath(
+        QStringLiteral("legacy-export-source-내보내기.tps")
+        );
+    const QString requestedDestination = workspaceRoot.filePath(
+        QStringLiteral("exports/legacy-export-destination-내보내기")
+        );
+    const QString destinationPath = QFileInfo(
+        requestedDestination + QStringLiteral(".tps")
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(sourcePath));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(requestedDestination)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    // This compatibility path is open before FileController can create a v2
+    // session, so export must retain the historical service call.
+    QVERIFY(services.openDatabase(sourcePath));
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    actions.exportAsFile->trigger();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(QFileInfo::exists(destinationPath));
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), QFileInfo(sourcePath).absoluteFilePath());
+    QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
+    QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+    QCOMPARE(
+        SettingsManager::instance().getLastDatabaseDirectory(),
+        QFileInfo(destinationPath).absoluteDir().absolutePath()
+        );
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().title,
+        QStringLiteral("Export Teacher Profile As")
+        );
+    QCOMPARE(
+        static_cast<int>(fileDialogs.saveFileRequests.constFirst().purpose),
+        static_cast<int>(FileDialogPurpose::TeacherProfile)
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::exportPreservesDialogPolicyAndNoOpenGuard()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString sourcePath = workspaceRoot.filePath(
+        QStringLiteral("dialog-policy-source.tps")
+        );
+    const QString firstDestination = workspaceRoot.filePath(
+        QStringLiteral("dialog-policy-export")
+        );
+    const QString secondDestination = workspaceRoot.filePath(
+        QStringLiteral("dialog-policy-no-open")
+        );
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(sourcePath));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(firstDestination)
+        );
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(secondDestination)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(sourcePath));
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    actions.exportAsFile->trigger();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(QFileInfo::exists(firstDestination + QStringLiteral(".tps")));
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().title,
+        QStringLiteral("Export Teacher Profile As")
+        );
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().defaultSuffix,
+        QStringLiteral("tps")
+        );
+
+    // The public action keeps the existing no-open guard and must not even
+    // consume a queued selection once the compatibility service is closed.
+    services.closeDatabase();
+    actions.exportAsFile->trigger();
+
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QVERIFY(!QFileInfo::exists(secondDestination + QStringLiteral(".tps")));
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::saveAsMigratesV2AndExportUsesCoordinator()
 {
     const QString source = fileControllerSource();
     QVERIFY(!source.isEmpty());
@@ -915,8 +1253,10 @@ void FileControllerWorkspaceLifecycleTests::saveAsMigratesV2AndExportRemainsLega
     QVERIFY(source.contains(QStringLiteral("m_services->saveDatabase();")));
     QVERIFY(source.contains(QStringLiteral("m_workspaceCoordinator->saveWorkspaceAs(")));
     QVERIFY(source.contains(QStringLiteral("m_services->saveDatabaseAs(normalized);")));
+    QVERIFY(source.contains(QStringLiteral("m_workspaceCoordinator->exportWorkspace(")));
     QVERIFY(source.contains(QStringLiteral("m_services->exportDatabaseAs(normalized);")));
-    QVERIFY(!source.contains(QStringLiteral("m_workspaceCoordinator->exportWorkspace")));
+    QVERIFY(source.contains(QStringLiteral("domainErrorMessage(exported.error())")));
+    QVERIFY(source.contains(QStringLiteral("rememberDatabaseDirectory(returnedDestination)")));
 }
 
 QTEST_MAIN(FileControllerWorkspaceLifecycleTests)

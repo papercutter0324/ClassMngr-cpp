@@ -984,9 +984,47 @@ bool FileController::exportDatabaseAs(
 
     if (
         !m_services
+        || !m_services->hasOpenDatabase()
         )
     {
         return false;
+    }
+
+    if (
+        m_workspaceState
+        && m_workspaceState->snapshot().session().has_value()
+        )
+    {
+        if (!m_workspaceCoordinator)
+        {
+            return false;
+        }
+
+        const auto exported =
+            m_workspaceCoordinator->exportWorkspace(
+                ClassMngr::Next::Application::WorkspaceLocation(
+                    normalized.toUtf8().toStdString()
+                    )
+                );
+
+        if (!exported)
+        {
+            DialogServices::showWarning(
+                m_window,
+                tr("Export Teacher Profile"),
+                domainErrorMessage(exported.error())
+                );
+
+            return false;
+        }
+
+        const QString returnedDestination =
+            QString::fromUtf8(
+                exported.value().value().data(),
+                static_cast<qsizetype>(exported.value().value().size())
+                );
+        rememberDatabaseDirectory(returnedDestination);
+        return true;
     }
 
     const Status exported =

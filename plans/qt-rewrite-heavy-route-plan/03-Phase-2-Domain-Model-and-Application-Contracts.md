@@ -718,3 +718,45 @@ coverage, the runtime worker-thread/cancellation bridge, and later
 feature-service migration. No export implementation, platform adapter, v2
 contract, memory document, or unrelated code changed in this slice; this slice
 is ready for a separate commit.
+
+#### Progress update - 2026-09-20 (FileController export coordinator slice)
+
+`FileController::exportDatabaseAs` now preserves native-output normalization,
+the no-service/no-open guard, the existing export dialog, the `Export Teacher
+Profile` warning title, and directory remembering. When `WorkspaceState` owns
+a session it passes an explicit UTF-8 `WorkspaceLocation` to
+`WorkspaceCoordinator::exportWorkspace`; success remembers only the returned
+normalized destination directory. It does not change `m_currentFile`,
+workspace or selection state, recent/last-file settings, or loaded UI state.
+Structured failures decode their UTF-8 message before warning. When v2 state is
+closed while `ApplicationServices` is already open, the legacy export call
+remains the compatibility fallback.
+
+`FileControllerWorkspaceLifecycleTests` retains all prior lifecycle, create,
+save, and save-as coverage and adds FakeFileDialogService/real
+ApplicationServices/fake-prompt coverage for v2 export success and
+non-mutation, repeated stale-session failure and warning preservation, legacy
+compatibility fallback, dialog policy, and the no-open guard. Source checks
+continue to assert that save and save-as remain on their migrated paths and
+that the legacy export call remains available only as the fallback branch.
+
+Verification passed: `cmake --preset windows-x64-debug` validated one
+explicit owner for 698 handwritten source files and the CMake dependency
+guards; `build/windows-x64-debug/reports/qt-module-links.json` keeps
+`ClassMngrNext` at `Qt6::Core`. The focused Debug target
+`ClassMngrFileControllerWorkspaceLifecycleTests` built successfully, focused
+CTest passed 1/1, and the bounded regression selection passed 9/9
+(`ClassMngrStartupVisualSettingsTests`,
+`ClassMngrDataServiceLifecycleTests`, `ClassMngrStartupPerformanceTests`,
+`ClassMngrNextApplicationContractTests`, `ClassMngrNextApplicationStateTests`,
+`ClassMngrNextApplicationWorkspaceCoordinatorTests`,
+`ClassMngrNextPlatformLegacyWorkspaceGatewayTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`). The resource-pack check
+validated 6 RCC packs, 7 runtime IDs, and 7 runtime references. `git diff
+--check` passed with only the existing LF-to-CRLF warnings.
+
+The remaining Phase 2 gates are the runtime worker-thread/cancellation bridge
+and later feature-service migration. No platform adapter, v2 contract, memory
+document, or unrelated feature changed in this slice; the worktree remains
+uncommitted.
