@@ -199,3 +199,16 @@
 - The local updater test's loopback listener failures were caused by socket
   creation returning `EPERM` in the sandbox. Preserve those assertions and
   rerun on a host that permits loopback instead of skipping the tests.
+
+## Async prompt title repair — 2026-09-19
+
+- Keep synchronous and asynchronous acknowledge prompts on one fully configured
+  `QMessageBox` path. On the Qt 6.12 macOS offscreen path, the requested title
+  was not reliably exposed through the message-box setup; reapply it to the
+  inherited widget after button configuration and before `exec()`/`open()`.
+- Keep `PromptSnapshot::title` sourced from the actual dialog's
+  `windowTitle()`. The focused dialog-service target passed after this repair;
+  `propagateSizeHints()` and font-alias warnings remain non-fatal.
+- A restricted full-suite result of 62/67 was caused by unrelated no-screen GUI
+  and local-port binding failures. Preserve those assertions and rerun on a
+  host with the required services rather than weakening coverage.

@@ -70,6 +70,17 @@ QString translatedUnsavedText(
         );
 }
 
+void setPromptWindowTitle(
+    QMessageBox& dialog,
+    const QString& title
+    )
+{
+    dialog.setWindowTitle(title);
+    // QMessageBox::setWindowTitle() is a no-op on macOS.  Set the inherited
+    // QWidget property so the actual dialog still exposes PromptRequest::title.
+    static_cast<QWidget&>(dialog).setWindowTitle(title);
+}
+
 QMessageBox::ButtonRole messageBoxRole(
     PromptActionRole role
     )
@@ -108,7 +119,7 @@ void configureMessageBox(
     }
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setIcon(messageBoxIcon(request.severity));
-    dialog.setWindowTitle(request.title);
+    setPromptWindowTitle(dialog, request.title);
     dialog.setText(request.message);
     dialog.setTextFormat(Qt::PlainText);
 
@@ -116,6 +127,30 @@ void configureMessageBox(
     {
         dialog.setDetailedText(request.details);
     }
+}
+
+void configureAcknowledgeMessageBox(
+    QMessageBox& dialog,
+    const PromptRequest& request
+    )
+{
+    configureMessageBox(dialog, request);
+
+    QPushButton* acknowledgeButton = dialog.addButton(
+        request.acceptText.isEmpty()
+            ? translatedButtonText(OkText)
+            : request.acceptText,
+        QMessageBox::AcceptRole
+        );
+    acknowledgeButton->setObjectName(
+        QStringLiteral("promptAcceptButton")
+        );
+    dialog.setDefaultButton(acknowledgeButton);
+    dialog.setEscapeButton(acknowledgeButton);
+
+    // Keep the title assignment at the end of the shared setup path, before
+    // either exec() or open() can make the dialog visible.
+    setPromptWindowTitle(dialog, request.title);
 }
 
 QString promptAutomationId(
@@ -174,19 +209,7 @@ void QtUserPromptService::showMessage(
     )
 {
     QMessageBox dialog(request.parent);
-    configureMessageBox(dialog, request);
-
-    QPushButton* acknowledgeButton = dialog.addButton(
-        request.acceptText.isEmpty()
-            ? translatedButtonText(OkText)
-            : request.acceptText,
-        QMessageBox::AcceptRole
-        );
-    acknowledgeButton->setObjectName(
-        QStringLiteral("promptAcceptButton")
-        );
-    dialog.setDefaultButton(acknowledgeButton);
-    dialog.setEscapeButton(acknowledgeButton);
+    configureAcknowledgeMessageBox(dialog, request);
     dialog.exec();
 }
 
@@ -195,18 +218,7 @@ void QtUserPromptService::showMessageAsync(
     )
 {
     auto* dialog = new QMessageBox(request.parent);
-    configureMessageBox(*dialog, request);
-    auto* acknowledgeButton = dialog->addButton(
-        request.acceptText.isEmpty()
-            ? translatedButtonText(OkText)
-            : request.acceptText,
-        QMessageBox::AcceptRole
-        );
-    acknowledgeButton->setObjectName(
-        QStringLiteral("promptAcceptButton")
-        );
-    dialog->setDefaultButton(acknowledgeButton);
-    dialog->setEscapeButton(acknowledgeButton);
+    configureAcknowledgeMessageBox(*dialog, request);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->open();
 }

@@ -265,3 +265,23 @@ Linux attempt.
 Run the Windows x64 and macOS universal baseline on the repaired source and
 retain both hosted reports. Continue the paused Linux follow-up separately on a
 host with Xvfb and loopback access.
+
+## Current Deployment Handoff — async_prompt_title_20260919
+
+- Goal: repair the asynchronous prompt test-driver snapshot so
+  `PromptRequest::title` is preserved in the visible `QMessageBox` without
+  changing workflows or weakening the 67-test suite.
+- The Executor changed only
+  `src/ui/shared/dialogs/user_prompt_service.cpp`: synchronous and
+  asynchronous acknowledge prompts share configuration, and the requested
+  title is reapplied to the actual widget after button setup and before
+  `exec()`/`open()`. The driver still snapshots `windowTitle()`.
+- Independent verification passed `ClassMngrDialogServicesTests` (1/1), the
+  direct async test (3/3), synchronous/shared-policy coverage, and
+  `git diff --check`. A complete local CTest run passed 62/67; the five
+  failures were unrelated no-screen GUI and updater local-port restrictions.
+  Only non-fatal `propagateSizeHints()`/font-alias warnings remained in the
+  passing dialog tests.
+- Continuation: review the uncommitted one-file production diff, then commit or
+  otherwise hand off as the user prefers. If a green full-suite result is
+  required, rerun on a host with display and loopback services.

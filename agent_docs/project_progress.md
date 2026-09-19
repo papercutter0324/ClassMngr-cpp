@@ -156,3 +156,15 @@ VS2022/macOS hosted gate. Then resume the Linux Phase 0 workflow on a host with
 Xvfb and loopback access, recording that supplemental evidence separately.
 Keep next-generation target names distinct from legacy object targets such as
 ClassMngrDomain and ClassMngrUiShared.
+
+### Async prompt title repair — 2026-09-19
+
+The asynchronous `QMessageBox` prompt title regression is fixed in
+`src/ui/shared/dialogs/user_prompt_service.cpp`. Synchronous and asynchronous
+acknowledge prompts now share the complete configuration path, and the
+requested title is preserved on the actual widget before `exec()` or `open()`.
+Independent verification passed `ClassMngrDialogServicesTests` (1/1), the
+direct async test (3/3), synchronous/shared-policy coverage, and
+`git diff --check`. A local full CTest run was 62/67 because five unrelated
+GUI/loopback tests require unavailable screen or port services; no dialog
+service test failed. No workflow files were changed.
