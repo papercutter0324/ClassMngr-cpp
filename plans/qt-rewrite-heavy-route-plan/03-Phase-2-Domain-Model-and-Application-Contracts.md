@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, and Qt-free legacy workspace gateway seam are implemented; the concrete outer adapter, FileController integration, runtime thread/cancellation bridge, and feature-service migration remain.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, and concrete ApplicationServices workspace port are implemented; FileController integration, the runtime thread/cancellation bridge, and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -552,3 +552,20 @@ the separate legacy JSON campus key: the later outer adapter owns any mapping
 between storage keys and the typed campus identifier. App-less tests cover
 defaults, all values, validation, copies/equality, value-copy access, and the
 absence of persistence, UI, singleton, and legacy-service dependencies.
+
+#### Progress update - 2026-09-20 (ApplicationServices workspace-port slice)
+
+`src/next/platform/application_services_workspace_port.h` now implements
+`ApplicationServicesWorkspacePort` behind `LegacyWorkspacePort`. UTF-8/path
+normalization, explicit non-destructive `createOrOpen`, close/open
+postconditions, the void-save postcondition, save-as through the legacy call
+plus reopen while preserving identity, export non-mutation, and legacy error
+mapping are covered by real `ApplicationServices` + `QTemporaryDir` tests in
+`tests/next_platform_application_services_workspace_port_tests.cpp`.
+
+Configure/ownership checks validated 697 files; the `ClassMngrNextPlatform`
+dependency remains limited to `ClassMngrNext::Application`. The focused
+build/CTest passed 1/1 with all 9 slots. `FileController` remains untouched.
+Invalid UTF-8 and stale/closed save-as/export boundaries are non-blocking but
+untested. FileController integration, the runtime bridge, and feature-service
+migration remain.

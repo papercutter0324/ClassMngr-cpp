@@ -55,6 +55,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
 
 set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/legacy_workspace_gateway.h
+    src/next/platform/application_services_workspace_port.h
 )
 
 foreach(_classmngr_next_target IN LISTS
