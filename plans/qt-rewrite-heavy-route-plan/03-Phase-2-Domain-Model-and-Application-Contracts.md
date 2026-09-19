@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, and report/export-job lifecycle contract are implemented; broader state and use-case contracts remain next.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, and document-content session contract are implemented; application-to-legacy mapping and thread/cancellation integration remain next.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -161,8 +161,33 @@ covers the lifecycle, validation, cancellation, output bound, terminal
 immutability, copy/equality, and worker-boundary behavior without constructing
 a `QApplication`.
 
-The remaining Phase 2 state contract is document-content session state,
-followed by the later application-to-legacy adapter mapping.
+#### Progress update - 2026-09-19 (document-content session contract slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`DocumentContentReference`, `DocumentContentSnapshot`, and
+`DocumentContentSession` contract. References contain only bounded token, path,
+or URI text; the snapshot retains the explicit `Idle`, `Requested`, `Loading`,
+`Ready`, `Failed`, and `Released` phases, optional bounded reference metadata,
+and an optional structured failure. Blank and oversized references are rejected
+without mutating the current snapshot.
+
+Requests replace only an idle, failed, or released session. Replacement while
+requested, loading, or ready returns a recoverable conflict until the caller
+releases the active session. Loading, ready, and failure events are accepted
+only from their exact predecessor phases. Failure retains only the bounded
+reference metadata and structured error. `release()` is the explicit boundary
+at which the viewer/platform adapter must release its document object and
+content bytes; the application projection then clears its reference and error.
+Requests after release are supported, while late events after released or
+other terminal phases are rejected without snapshot mutation.
+
+`NextApplicationDocumentContentTests` covers lifecycle transitions, validation,
+structured failure, release/re-request, late-event immutability, copy/equality,
+and the no-content-bytes/no-QtPdf boundary without constructing a
+`QApplication`. The remaining Phase 2 work is the application-to-legacy mapping
+and coordinator integration for worker-thread ownership plus end-to-end
+cancellation request/acknowledgement; the current job contracts define those
+event boundaries but do not yet provide the runtime thread bridge.
 
 ## Objective
 
