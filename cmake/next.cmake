@@ -32,6 +32,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
 )
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
+    src/next/application/campus_directory_projection.h
     src/next/application/class_summary_projection.h
     src/next/application/class_transfer_projection.h
     src/next/application/document_catalog_projection.h

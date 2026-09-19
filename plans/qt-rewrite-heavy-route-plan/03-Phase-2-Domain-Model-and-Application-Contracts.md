@@ -481,3 +481,18 @@ representations before projection handoff, and must paginate larger inputs.
 App-less tests cover the boundary, caps, categories, fallback, equality, and
 no external-owner/raw-source accessors; legacy transfer models and codecs are
 outside this slice.
+
+#### Progress update - 2026-09-20 (campus directory metadata projection slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`CampusDirectoryProjection` of bounded `CampusSummary` navigation metadata:
+typed `Domain::CampusId`, display name, short key, address, optional notes,
+nonnegative order, and active state. Deterministic create/validate rejects
+blank or oversized required fields, invalid optional notes, duplicate IDs or
+keys, negative order, and entry overflow with structured `InvalidInput`;
+empty directories are valid and lookup misses return `nullopt`. ID/key
+lookups return value copies. Query/adapters must paginate or stage above the
+cap and may release rich campus/location records after projection creation;
+the projection has no Qt, repository, widget/page, pointer, or raw-byte state.
+The app-less test covers 96 entries, exact-cap acceptance, validation,
+copy/equality, metadata retention, and the ownership boundary.
