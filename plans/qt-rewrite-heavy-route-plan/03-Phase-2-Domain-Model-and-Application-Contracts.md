@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, and FileController open/close integration are implemented. FileController create, save, save-as, and export remain legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, and FileController open/close/create/initial-setup integration are implemented. FileController save, save-as, and export remain legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -597,5 +597,45 @@ performance, legacy workspace gateway, ApplicationServices workspace port,
 and the workspace coordinator-related targets. Focused build, configure,
 source-ownership, and dependency checks passed, and `git diff --check` passed.
 
-Create/initial setup, save, save-as, and export remain legacy. The runtime
-bridge and feature-service slices remain open.
+Save, save-as, and export remain legacy. The runtime bridge and feature-service
+slices remain open.
+
+#### Progress update - 2026-09-20 (FileController create/initial-setup coordinator slice)
+
+`FileController` now keeps explicit ownership of normal-create replacement
+(`QFile::remove`) and initial-setup backup rename/cleanup, checks
+`closeActiveDatabase()` before either destructive preparation, and routes the
+successful prepared path through `WorkspaceCoordinator::createWorkspace` with
+an explicit UTF-8 `WorkspaceLocation`. Structured domain errors are decoded
+with `QString::fromUtf8` before the existing warning title/message policy is
+used. Initial-setup cancellation now also leaves its path and UI state intact
+when close fails. Save, save-as, and export calls remain on
+`ApplicationServices`.
+
+`FileControllerWorkspaceLifecycleTests` now uses `FakeFileDialogService`, fake
+prompts, real `ApplicationServices`, and `QTemporaryDir` to cover normal
+creation/recent updates, existing-target replacement, close-failure
+non-destructive behavior, initial-setup backup/open/finish and cancel restore,
+and structured create-error propagation while retaining the prior open/close,
+recent, warning, and null-service coverage. Source inspection confirms the
+legacy save/save-as/export call sites remain unchanged.
+
+`cmake --preset windows-x64-debug` passed and validated one explicit target
+owner for 698 handwritten source files; the CMake dependency guard and
+generated Qt-link report keep `ClassMngrNext` at `Qt6::Core`. The focused
+Debug target build passed, the focused lifecycle CTest passed 1/1, and the
+bounded regression selection passed 9/9:
+`ClassMngrStartupVisualSettingsTests`, `ClassMngrDataServiceLifecycleTests`,
+`ClassMngrStartupPerformanceTests`, `ClassMngrNextApplicationContractTests`,
+`ClassMngrNextApplicationStateTests`,
+`ClassMngrNextApplicationWorkspaceCoordinatorTests`,
+`ClassMngrNextPlatformLegacyWorkspaceGatewayTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`. The resource-pack check
+passed for six RCC packs, seven runtime IDs, and seven runtime references;
+`git diff --check` passed.
+
+The remaining gates are the legacy FileController save, save-as, and export
+paths, including their stale/closed and invalid-UTF-8 boundary coverage, plus
+the runtime worker-thread/cancellation bridge and later feature-service
+migration slices.

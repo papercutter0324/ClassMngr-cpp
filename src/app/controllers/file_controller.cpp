@@ -23,6 +23,16 @@
 namespace
 {
 constexpr int MaxRecentFiles = 10;
+
+QString domainErrorMessage(
+    const ClassMngr::Next::Domain::OperationError& error
+    )
+{
+    return QString::fromUtf8(
+        error.message.data(),
+        static_cast<qsizetype>(error.message.size())
+        );
+}
 }
 
 FileController::FileController(
@@ -261,7 +271,10 @@ bool FileController::createNewDatabaseInteractive(
         return false;
     }
 
-    closeActiveDatabase();
+    if (!closeActiveDatabase())
+    {
+        return false;
+    }
 
     if (
         QFile::exists(normalizedPath)
@@ -279,15 +292,21 @@ bool FileController::createNewDatabaseInteractive(
         return false;
     }
 
-    const Status opened =
-        m_services->openDatabase(normalizedPath);
+    const auto created =
+        m_workspaceCoordinator->createWorkspace(
+            ClassMngr::Next::Application::CreateWorkspaceRequest{
+                ClassMngr::Next::Application::WorkspaceLocation(
+                    normalizedPath.toUtf8().toStdString()
+                    )
+            }
+            );
 
-    if (!opened)
+    if (!created)
     {
         DialogServices::showWarning(
             m_window,
             tr("New Teacher Profile"),
-            opened.error()
+            domainErrorMessage(created.error())
             );
 
         enterNoDatabaseState();
@@ -321,7 +340,10 @@ bool FileController::createInitialSetupDatabase(
         return false;
     }
 
-    closeActiveDatabase();
+    if (!closeActiveDatabase())
+    {
+        return false;
+    }
 
     m_initialSetupDatabasePath = filePath;
     m_initialSetupBackupPath.clear();
@@ -344,12 +366,18 @@ bool FileController::createInitialSetupDatabase(
         }
     }
 
-    const Status opened =
-        m_services->openDatabase(filePath);
+    const auto created =
+        m_workspaceCoordinator->createWorkspace(
+            ClassMngr::Next::Application::CreateWorkspaceRequest{
+                ClassMngr::Next::Application::WorkspaceLocation(
+                    filePath.toUtf8().toStdString()
+                    )
+            }
+            );
 
-    if (!opened)
+    if (!created)
     {
-        const QString error = opened.error();
+        const QString error = domainErrorMessage(created.error());
         cancelInitialSetup();
         DialogServices::showWarning(
             m_window,
@@ -408,7 +436,10 @@ void FileController::cancelInitialSetup()
     const QString databasePath = m_initialSetupDatabasePath;
     const QString backupPath = m_initialSetupBackupPath;
 
-    closeActiveDatabase();
+    if (!closeActiveDatabase())
+    {
+        return;
+    }
 
     m_initialSetupDatabasePath.clear();
     m_initialSetupBackupPath.clear();
@@ -549,12 +580,7 @@ bool FileController::loadDatabase(
             DialogServices::showWarning(
                 m_window,
                 tr("Open Teacher Profile"),
-                QString::fromUtf8(
-                    opened.error().message.data(),
-                    static_cast<qsizetype>(
-                        opened.error().message.size()
-                        )
-                    )
+                domainErrorMessage(opened.error())
                 );
         }
 

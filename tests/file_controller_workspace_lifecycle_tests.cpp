@@ -1,13 +1,61 @@
 #include "app/controllers/file_controller.h"
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
+#include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
+
+namespace
+{
+bool writeFile(
+    const QString& path,
+    const QByteArray& contents
+    )
+{
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        return false;
+    }
+
+    return file.write(contents) == contents.size();
+}
+
+QByteArray readFile(
+    const QString& path
+    )
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+
+    return file.readAll();
+}
+
+QStringList initialSetupBackups(
+    const QTemporaryDir& workspaceRoot,
+    const QString& fileName
+    )
+{
+    return QDir(workspaceRoot.path()).entryList(
+        QStringList{
+            QStringLiteral(".%1.initial-setup-*.backup")
+                .arg(fileName)
+        },
+        QDir::Files | QDir::Hidden,
+        QDir::Name
+        );
+}
+}
 
 class FileControllerWorkspaceLifecycleTests final : public QObject
 {
@@ -17,6 +65,12 @@ private slots:
     void initTestCase();
     void cleanup();
     void nullServicesAreSafe();
+    void normalCreateUsesCoordinatorAndUpdatesRecent();
+    void normalCreateReplacesExistingTarget();
+    void createDoesNotPrepareAfterCloseFailure();
+    void initialSetupBackupIsRemovedOnFinish();
+    void initialSetupBackupIsRestoredOnCancel();
+    void createErrorUsesStructuredUtf8Message();
     void successfulStartupLoadPersistsNormalizedPath();
     void missingStartupPathUsesCapturedWarning();
     void invalidStartupDatabaseUsesLegacyErrorText();
@@ -38,7 +92,9 @@ void FileControllerWorkspaceLifecycleTests::initTestCase()
 
 void FileControllerWorkspaceLifecycleTests::cleanup()
 {
+    DialogServices::setFileDialogServiceForTesting(nullptr);
     DialogServices::setUserPromptServiceForTesting(nullptr);
+    SettingsManager::instance().clear();
 }
 
 void FileControllerWorkspaceLifecycleTests::nullServicesAreSafe()
@@ -68,6 +124,252 @@ void FileControllerWorkspaceLifecycleTests::nullServicesAreSafe()
         );
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::normalCreateUsesCoordinatorAndUpdatesRecent()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(
+            workspaceRoot.filePath(QStringLiteral("new-profile"))
+            )
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(controller.createNewDatabaseInteractive());
+
+    const QString expectedPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("new-profile.tps"))
+        ).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), expectedPath);
+    QVERIFY(QFileInfo::exists(expectedPath));
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{expectedPath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), expectedPath);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().title,
+        QStringLiteral("New Teacher Profile")
+        );
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().defaultSuffix,
+        QStringLiteral("tps")
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::normalCreateReplacesExistingTarget()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("existing-target.tps")
+        );
+    QVERIFY(writeFile(targetPath, QByteArrayLiteral("obsolete profile")));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(controller.createNewDatabaseInteractive());
+
+    const QString expectedPath = QFileInfo(targetPath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), expectedPath);
+    QVERIFY2(
+        readFile(targetPath) != QByteArrayLiteral("obsolete profile"),
+        "normal creation must remove an existing target before coordinator create"
+        );
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::createDoesNotPrepareAfterCloseFailure()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString existingPath = workspaceRoot.filePath(
+        QStringLiteral("currently-open.tps")
+        );
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(existingPath));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(existingPath);
+    QVERIFY(services.hasOpenDatabase());
+
+    const QString expectedExistingPath = QFileInfo(existingPath).absoluteFilePath();
+    QCOMPARE(SettingsManager::instance().getLastFile(), expectedExistingPath);
+
+    // Leave the coordinator session stale so its close postcondition fails.
+    services.closeDatabase();
+
+    const QString replacementPath = workspaceRoot.filePath(
+        QStringLiteral("replacement.tps")
+        );
+    QVERIFY(writeFile(replacementPath, QByteArrayLiteral("must survive")));
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(replacementPath)
+        );
+
+    QVERIFY(!controller.createNewDatabaseInteractive());
+    QCOMPARE(readFile(replacementPath), QByteArrayLiteral("must survive"));
+    QVERIFY(!services.hasOpenDatabase());
+    QCOMPARE(SettingsManager::instance().getLastFile(), expectedExistingPath);
+    QVERIFY(prompts.messages.isEmpty());
+
+    const QString initialSetupPath = workspaceRoot.filePath(
+        QStringLiteral("initial-setup.tps")
+        );
+    QVERIFY(writeFile(initialSetupPath, QByteArrayLiteral("must also survive")));
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(initialSetupPath)
+        );
+
+    QVERIFY(!controller.createInitialSetupDatabaseInteractive());
+    QCOMPARE(readFile(initialSetupPath), QByteArrayLiteral("must also survive"));
+    QVERIFY(initialSetupBackups(workspaceRoot, QStringLiteral("initial-setup.tps")).isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::initialSetupBackupIsRemovedOnFinish()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("setup-target.tps")
+        );
+    const QByteArray originalContents = QByteArrayLiteral("original profile");
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(controller.createInitialSetupDatabaseInteractive());
+    const QString expectedPath = QFileInfo(targetPath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), expectedPath);
+    QCOMPARE(SettingsManager::instance().getRecentFiles(), QStringList());
+
+    const QStringList backups = initialSetupBackups(
+        workspaceRoot,
+        QStringLiteral("setup-target.tps")
+        );
+    QCOMPARE(backups.size(), 1);
+    QCOMPARE(
+        readFile(workspaceRoot.filePath(backups.constFirst())),
+        originalContents
+        );
+
+    controller.finishInitialSetup();
+
+    QVERIFY(initialSetupBackups(workspaceRoot, QStringLiteral("setup-target.tps")).isEmpty());
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{expectedPath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), expectedPath);
+}
+
+void FileControllerWorkspaceLifecycleTests::initialSetupBackupIsRestoredOnCancel()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("cancel-target.tps")
+        );
+    const QByteArray originalContents = QByteArrayLiteral("restore this profile");
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(controller.createInitialSetupDatabaseInteractive());
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(
+        initialSetupBackups(workspaceRoot, QStringLiteral("cancel-target.tps")).size(),
+        1
+        );
+
+    controller.cancelInitialSetup();
+
+    QVERIFY(!services.hasOpenDatabase());
+    QCOMPARE(readFile(targetPath), originalContents);
+    QVERIFY(initialSetupBackups(workspaceRoot, QStringLiteral("cancel-target.tps")).isEmpty());
+    QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
+    QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::createErrorUsesStructuredUtf8Message()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString invalidPath = workspaceRoot.filePath(
+        QStringLiteral("structured-error")
+        ) + QChar::Null + QStringLiteral(".tps");
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(invalidPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(!controller.createNewDatabaseInteractive());
+    QVERIFY(!services.hasOpenDatabase());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("New Teacher Profile")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Opening the workspace returned an invalid path.")
+        );
+    QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
 }
 
 void FileControllerWorkspaceLifecycleTests::successfulStartupLoadPersistsNormalizedPath()
