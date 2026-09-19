@@ -266,6 +266,23 @@ Run the Windows x64 and macOS universal baseline on the repaired source and
 retain both hosted reports. Continue the paused Linux follow-up separately on a
 host with Xvfb and loopback access.
 
+## Current Deployment Handoff — phase2_domain_contract_kickoff_20260919
+
+- The current hosted macOS universal Debug action is the remaining official
+  platform confirmation; its result is not recorded here until GitHub reports
+  it. Phase 1 documentation remains open for that evidence and any separate
+  Phase 1 quality-workflow result.
+- The first Phase 2 slice is implemented locally. `ClassMngrNext::Domain`
+  owns `src/next/domain/domain_types.h` and
+  `src/next/domain/operation_result.h`; both are standard-library-only
+  headers and are explicitly recorded by source ownership.
+- `ClassMngrNextDomainContractTests` covers typed IDs and structured results
+  without constructing a `QApplication`. The Windows Debug target and
+  `ClassMngrNextLaunch` passed after reconfiguration.
+- Next entry point: add the first application use-case input/output contract
+  over these domain types, then map it to a deterministic test boundary. Do not
+  claim Phase 1 complete until the hosted result is recorded.
+
 ## Current Deployment Handoff — async_prompt_title_20260919
 
 - Goal: repair the asynchronous prompt test-driver snapshot so

@@ -1,7 +1,8 @@
 include_guard(GLOBAL)
 
 # Keep the next-generation layer and feature boundaries separate from the
-# existing v1 targets. These interface targets intentionally have no sources.
+# existing v1 targets. These interface targets do not compile production
+# sources; header-only contracts may be attached as interface sources.
 set(_classmngr_next_layer_targets
     Domain
     Application
@@ -25,6 +26,11 @@ set(_classmngr_next_feature_targets
     Teacher
 )
 
+set(CLASSMNGR_NEXT_DOMAIN_SOURCES
+    src/next/domain/domain_types.h
+    src/next/domain/operation_result.h
+)
+
 foreach(_classmngr_next_target IN LISTS
         _classmngr_next_layer_targets
         _classmngr_next_feature_targets)
@@ -32,6 +38,15 @@ foreach(_classmngr_next_target IN LISTS
     add_library(ClassMngrNext::${_classmngr_next_target} ALIAS
         ClassMngrNext${_classmngr_next_target})
 endforeach()
+
+target_sources(ClassMngrNextDomain
+    INTERFACE
+        ${CLASSMNGR_NEXT_DOMAIN_SOURCES}
+)
+target_include_directories(ClassMngrNextDomain
+    INTERFACE
+        "${PROJECT_SOURCE_DIR}/src"
+)
 
 target_link_libraries(ClassMngrNextApplication
     INTERFACE

@@ -2,13 +2,29 @@
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-16
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts.
+- Last updated: 2026-09-19
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The initial typed-identifier and structured-result slice is implemented in the v2 Domain boundary; use-case contracts remain next.
+
+#### Progress update - 2026-09-19 (initial domain-contract slice)
+
+`ClassMngrNext::Domain` now owns header-only, Qt-free contracts for typed
+workspace, teacher, class, campus, and calendar-event identifiers, together
+with `Result<T>`, `Result<void>`, `OperationError`, and explicit error codes.
+The contracts reject empty identifiers, keep identifier categories distinct at
+compile time, and separate successful values from recoverable or technical
+operation failures.
+
+`ClassMngrNextDomainContractTests` exercises these rules without constructing a
+`QApplication`; CMake source ownership records the new headers explicitly.
+The Windows Debug target and `ClassMngrNextLaunch` both passed locally. The
+next slice is to define the first application use-case input/output contract
+and map it to the legacy service boundary without adding widget or singleton
+dependencies.
 
 ## Objective
 

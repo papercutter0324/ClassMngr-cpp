@@ -212,6 +212,7 @@ if(BUILD_TESTING)
     include(cmake/tests/pages_and_output.cmake)
     include(cmake/tests/models_and_services.cmake)
     include(cmake/tests/platform_and_reports.cmake)
+    include(cmake/tests/next.cmake)
 
     classmngr_finalize_test_targets()
 endif()

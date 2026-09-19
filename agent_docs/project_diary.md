@@ -212,3 +212,15 @@
 - A restricted full-suite result of 62/67 was caused by unrelated no-screen GUI
   and local-port binding failures. Preserve those assertions and rerun on a
   host with the required services rather than weakening coverage.
+
+## Phase 2 domain-contract kickoff — 2026-09-19
+
+- Start v2 domain work with standard-library-only typed identifiers and
+  structured operation results. Keep the Domain target free of Qt and make
+  category mistakes compile-time errors through distinct identifier tags.
+- Attach header-only contracts to `ClassMngrNextDomain`, record them in the
+  explicit source-ownership manifest, and test them through an app-less QtTest
+  target before introducing application services.
+- Keep Phase 1 hosted closure separate from Phase 2 implementation: the
+  macOS action and quality evidence must still be recorded before declaring
+  Phase 1 complete.

@@ -431,6 +431,21 @@ the full test log is `build/phase1-macos-debug-local-20260918/Testing/Temporary/
 This is separate local evidence. The hosted macOS universal Debug gate passed
 67/67 in attempt 2 above; the new retry code itself has not yet run on GitHub.
 
+#### Progress update - 2026-09-19 (dialog boundary bridge)
+
+The legacy startup/performance prompt operations now use the temporary,
+Qt-type-free `IPromptTestDriver` boundary in commit `ff53917e`. The shared
+adapter owns all concrete `QMessageBox` operations; `src/main.cpp` contains no
+direct `QMessageBox` dependency, and the dialog policy check passed without
+widening its allowlist. Local Windows verification passed the affected dialog,
+schedule-import, and Sub Prep tests, both `ClassMngr` targets, the resource and
+build-report checks, and `ClassMngrNextLaunch`.
+
+The initial Phase 2 domain-contract slice has now started in parallel with the
+final hosted macOS universal Debug confirmation. Phase 1 remains open until
+the current hosted evidence and any separately required quality-workflow
+result are recorded against the current source commit.
+
 ## Architectural rules
 
 - No domain target links Qt Widgets.

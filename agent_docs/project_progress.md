@@ -149,13 +149,26 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Run the Windows x64 and macOS universal Debug baseline on the repaired source
-and retain both hosted reports. The repair is committed locally; GitHub run
-access is unavailable here, and the local Windows run is supplemental to the
-VS2022/macOS hosted gate. Then resume the Linux Phase 0 workflow on a host with
-Xvfb and loopback access, recording that supplemental evidence separately.
-Keep next-generation target names distinct from legacy object targets such as
-ClassMngrDomain and ClassMngrUiShared.
+Record the in-progress macOS universal Debug result against the repaired
+source, then close the Phase 1 hosted evidence gate and update the plan status.
+The first Phase 2 domain-contract slice is underway in parallel; its next
+milestone is the first application use-case input/output contract. The Linux
+Phase 0 follow-up remains supplemental and should continue separately on a
+host with Xvfb and loopback access. Keep next-generation target names distinct
+from legacy object targets such as ClassMngrDomain and ClassMngrUiShared.
+
+### Phase 2 kickoff — 2026-09-19
+
+The v2 Domain boundary now contains header-only, Qt-free typed identifiers and
+structured operation results in `src/next/domain/`. CMake records both headers
+under `ClassMngrNextDomain`, and `ClassMngrNextDomainContractTests` verifies
+empty-ID rejection, type separation, value/error results, and void success
+results without constructing a `QApplication`. Local Windows Debug configure,
+build, the new contract test, and `ClassMngrNextLaunch` passed.
+
+Phase 1 remains administratively open only for current hosted evidence and its
+quality-workflow record; no Phase 1 production implementation is being
+reopened while Phase 2 contracts begin.
 
 ### Async prompt title repair — 2026-09-19
 
