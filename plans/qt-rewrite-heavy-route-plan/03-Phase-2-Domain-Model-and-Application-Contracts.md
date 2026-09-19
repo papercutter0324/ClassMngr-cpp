@@ -496,3 +496,23 @@ cap and may release rich campus/location records after projection creation;
 the projection has no Qt, repository, widget/page, pointer, or raw-byte state.
 The app-less test covers 96 entries, exact-cap acceptance, validation,
 copy/equality, metadata retention, and the ownership boundary.
+
+#### Progress update - 2026-09-20 (calendar-event projection slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`CalendarEventProjection` of bounded `CalendarEventSummary` event-list
+metadata. The contract retains typed calendar-event IDs plus optional typed
+class/campus references, bounded title/date/time/location/notes text,
+nonnegative ordering, and an explicit all-day policy: all-day events omit
+times, while timed events may omit both unknown times but not a partial range.
+Dates and times remain opaque adapter-neutral text.
+
+Deterministic create/validate rejects blank or oversized identifiers and
+required fields, invalid optional references or time combinations, duplicate
+IDs, negative ordering, and collection overflow with structured
+`InvalidInput`; empty projections and value-copy ID lookups are explicit.
+Query/adapter owners release rich calendar records, recurrence state, and
+service data after projection creation and stage or paginate above the cap.
+`NextApplicationCalendarEventTests` covers 96-scale metadata, typed
+references, temporal policy, validation, caps, copies/equality, safe lookups,
+and the no-rich-record boundary without constructing a `QApplication`.
