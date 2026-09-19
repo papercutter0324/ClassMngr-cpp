@@ -189,6 +189,19 @@ and coordinator integration for worker-thread ownership plus end-to-end
 cancellation request/acknowledgement; the current job contracts define those
 event boundaries but do not yet provide the runtime thread bridge.
 
+#### Progress update - 2026-09-19 (workspace lifecycle coordinator slice)
+
+`ClassMngrNext::Application` now owns a synchronous, Qt-free
+`WorkspaceCoordinator` that composes the workspace use case, workspace state,
+and current-selection state. Create/open calls guard dirty replacement before
+the gateway, commit only valid gateway sessions, and clear selection after a
+successful transition. Close uses the current session, guards dirty or closed
+state before the gateway, and clears selection only after a successful close;
+gateway failures and invalid returned sessions leave both snapshots unchanged.
+`NextApplicationWorkspaceCoordinatorTests` covers these transitions with a fake
+gateway and `QTEST_APPLESS_MAIN`, without legacy service references or a
+`QApplication`.
+
 ## Objective
 
 Create a stable, testable application core that is independent of widget construction, page visibility, and the legacy data facade.

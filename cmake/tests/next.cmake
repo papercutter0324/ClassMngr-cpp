@@ -28,6 +28,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationWorkspaceCoordinator
+    SOURCES
+        tests/next_application_workspace_coordinator_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSelection
     SOURCES
         tests/next_application_selection_tests.cpp
