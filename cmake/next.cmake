@@ -53,6 +53,10 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/workspace_use_case.h
 )
 
+set(CLASSMNGR_NEXT_PLATFORM_SOURCES
+    src/next/platform/legacy_workspace_gateway.h
+)
+
 foreach(_classmngr_next_target IN LISTS
         _classmngr_next_layer_targets
         _classmngr_next_feature_targets)
@@ -73,6 +77,11 @@ target_include_directories(ClassMngrNextDomain
 target_sources(ClassMngrNextApplication
     INTERFACE
         ${CLASSMNGR_NEXT_APPLICATION_SOURCES}
+)
+
+target_sources(ClassMngrNextPlatform
+    INTERFACE
+        ${CLASSMNGR_NEXT_PLATFORM_SOURCES}
 )
 
 target_link_libraries(ClassMngrNextApplication

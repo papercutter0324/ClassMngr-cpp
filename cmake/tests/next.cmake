@@ -170,3 +170,12 @@ classmngr_add_qt_test(
         ClassMngrNext::Application
         Qt6::Test
 )
+
+classmngr_add_qt_test(
+    NAME NextPlatformLegacyWorkspaceGateway
+    SOURCES
+        tests/next_platform_legacy_workspace_gateway_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)

@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, and legacy application mapping document are implemented; the legacy adapter, FileController integration, runtime thread/cancellation bridge, and feature-service migration remain.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, and Qt-free legacy workspace gateway seam are implemented; the concrete outer adapter, FileController integration, runtime thread/cancellation bridge, and feature-service migration remain.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -293,6 +293,27 @@ contract, and returns its generation token without retaining content bytes,
 viewer objects, Qt types, or mutable projection state. App-less tests cover
 lookup/copy, no-mutation not-found paths, exact reference selection, token and
 conflict/release behavior, error propagation, and copyable metadata results.
+
+#### Progress update - 2026-09-20 (legacy workspace gateway seam slice)
+
+`ClassMngrNext::Platform` now owns an injectable, Qt-free
+`LegacyWorkspacePort` and stateless `LegacyWorkspaceGateway`. The gateway maps
+create/open/close/save/save-as/export requests and legacy text/status results
+to the existing `Application::WorkspaceGateway`, validates returned handle and
+location postconditions, and preserves typed workspace identity without
+retaining mutable sessions or service pointers. The explicit create-or-open
+hook documents that concrete outer adapters own `QString`/`QFile` conversion
+and file preparation/removal. App-less fake-port tests cover the mapping,
+failure/no-mutation behavior, and the platform dependency boundary; concrete
+legacy Qt conversion and FileController cutover remain later work.
+
+Windows x64 Debug verification passed: configure-time ownership/dependency
+checks validated 695 handwritten sources with `ClassMngrNextPlatform` limited
+to `ClassMngrNext::Application`; the focused gateway test passed 1/1 and the
+full `ClassMngrNext*` plus launch selection passed 21/21. The resource-pack
+manifest check passed for six RCC packs, seven runtime IDs, and seven runtime
+references; the generated Qt-link report keeps `ClassMngrNext` at
+`Qt6::Core`.
 
 ## Objective
 
