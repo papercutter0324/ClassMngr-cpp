@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, and concrete ApplicationServices workspace port are implemented; FileController integration, the runtime thread/cancellation bridge, and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, and FileController open/close integration are implemented. FileController create, save, save-as, and export remain legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -565,7 +565,37 @@ mapping are covered by real `ApplicationServices` + `QTemporaryDir` tests in
 
 Configure/ownership checks validated 697 files; the `ClassMngrNextPlatform`
 dependency remains limited to `ClassMngrNext::Application`. The focused
-build/CTest passed 1/1 with all 9 slots. `FileController` remains untouched.
-Invalid UTF-8 and stale/closed save-as/export boundaries are non-blocking but
-untested. FileController integration, the runtime bridge, and feature-service
-migration remain.
+build/CTest passed 1/1 with all 9 slots; at that point `FileController`
+remained untouched. Invalid UTF-8 and stale/closed save-as/export boundaries
+are non-blocking but untested. FileController integration, the runtime
+bridge, and feature-service migration remained for subsequent slices.
+
+#### Progress update - 2026-09-20 (FileController workspace lifecycle slice)
+
+`FileController` now owns the concrete
+`ApplicationServicesWorkspacePort` -> `LegacyWorkspaceGateway` ->
+`WorkspaceUseCase` -> `WorkspaceCoordinator` composition when services are
+available, with an out-of-line destructor that permits incomplete service
+types. `loadDatabase` closes the current coordinator session before opening
+the replacement and returns `false` when that close fails. `closeFile` now
+preserves the current file and UI state when coordinator close fails. The
+structured open error is converted with explicit UTF-8 decoding. A null
+`ApplicationServices` pointer remains safe, and create/initial-setup opens
+retain the legacy fallback path.
+
+`FileControllerWorkspaceLifecycleTests` is an offscreen QTest using public
+`loadDatabaseOnStartup`, real `ApplicationServices`, and valid
+`QTemporaryDir` workspaces. It asserts normalized recent/last-file settings,
+missing-file warning capture, legacy open error text, non-empty null-service
+safety, and sequential coordinator/legacy fallback. There is no direct
+injected FileController close-failure/legacy-operation integration test;
+lower-layer tests and source inspection cover that behavior.
+
+The final independent bounded Debug CTest selection passed 9/9: FileController
+lifecycle, startup visual settings, data service lifecycle, startup
+performance, legacy workspace gateway, ApplicationServices workspace port,
+and the workspace coordinator-related targets. Focused build, configure,
+source-ownership, and dependency checks passed, and `git diff --check` passed.
+
+Create/initial setup, save, save-as, and export remain legacy. The runtime
+bridge and feature-service slices remain open.

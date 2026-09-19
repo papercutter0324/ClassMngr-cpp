@@ -4,10 +4,26 @@
 #include <QObject>
 #include <QString>
 
+#include <memory>
+
 #include "ui/shared/actions/action_registry.h"
 
 class ApplicationServices;
 class MainWindow;
+
+namespace ClassMngr::Next::Application
+{
+class SelectionState;
+class WorkspaceCoordinator;
+class WorkspaceState;
+class WorkspaceUseCase;
+}
+
+namespace ClassMngr::Next::Platform
+{
+class ApplicationServicesWorkspacePort;
+class LegacyWorkspaceGateway;
+}
 
 class FileController : public QObject
 {
@@ -19,6 +35,8 @@ public:
         MainWindow* window,
         QObject* parent = nullptr
         );
+
+    ~FileController() override;
 
     void connectActions(
         ActionRegistry& actions
@@ -98,7 +116,7 @@ private:
         const QString& filePath
         ) const;
 
-    void closeActiveDatabase();
+    bool closeActiveDatabase();
 
     void enterNoDatabaseState();
 
@@ -142,6 +160,30 @@ private:
     QString m_currentFile;
     QString m_initialSetupDatabasePath;
     QString m_initialSetupBackupPath;
+
+    std::unique_ptr<
+        ClassMngr::Next::Platform::ApplicationServicesWorkspacePort
+        > m_workspacePort;
+
+    std::unique_ptr<
+        ClassMngr::Next::Platform::LegacyWorkspaceGateway
+        > m_workspaceGateway;
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::WorkspaceUseCase
+        > m_workspaceUseCase;
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::WorkspaceState
+        > m_workspaceState;
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::SelectionState
+        > m_selectionState;
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::WorkspaceCoordinator
+        > m_workspaceCoordinator;
 };
 
 #endif // FILE_CONTROLLER_H

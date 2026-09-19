@@ -7,6 +7,9 @@
 #include "core/result.h"
 #include "core/settingsmanager.h"
 #include "data/data_service.h"
+#include "next/application/workspace_coordinator.h"
+#include "next/platform/application_services_workspace_port.h"
+#include "next/platform/legacy_workspace_gateway.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QAction>
@@ -31,7 +34,47 @@ FileController::FileController(
     , m_services(services)
     , m_window(window)
 {
+    if (!m_services)
+    {
+        return;
+    }
+
+    m_workspacePort =
+        std::make_unique<
+            ClassMngr::Next::Platform::ApplicationServicesWorkspacePort
+            >(*m_services);
+
+    m_workspaceGateway =
+        std::make_unique<
+            ClassMngr::Next::Platform::LegacyWorkspaceGateway
+            >(*m_workspacePort);
+
+    m_workspaceUseCase =
+        std::make_unique<
+            ClassMngr::Next::Application::WorkspaceUseCase
+            >(*m_workspaceGateway);
+
+    m_workspaceState =
+        std::make_unique<
+            ClassMngr::Next::Application::WorkspaceState
+            >();
+
+    m_selectionState =
+        std::make_unique<
+            ClassMngr::Next::Application::SelectionState
+            >();
+
+    m_workspaceCoordinator =
+        std::make_unique<
+            ClassMngr::Next::Application::WorkspaceCoordinator
+            >(
+                *m_workspaceUseCase,
+                *m_workspaceState,
+                *m_selectionState
+                );
 }
+
+FileController::~FileController() = default;
 
 void FileController::connectActions(
     ActionRegistry& actions
@@ -485,10 +528,19 @@ bool FileController::loadDatabase(
         return false;
     }
 
-    closeActiveDatabase();
+    if (!closeActiveDatabase())
+    {
+        return false;
+    }
 
-    const Status opened =
-        m_services->openDatabase(normalizedPath);
+    const auto opened =
+        m_workspaceCoordinator->openWorkspace(
+            ClassMngr::Next::Application::OpenWorkspaceRequest{
+                ClassMngr::Next::Application::WorkspaceLocation(
+                    normalizedPath.toUtf8().toStdString()
+                    )
+            }
+            );
 
     if (!opened)
     {
@@ -497,7 +549,12 @@ bool FileController::loadDatabase(
             DialogServices::showWarning(
                 m_window,
                 tr("Open Teacher Profile"),
-                opened.error()
+                QString::fromUtf8(
+                    opened.error().message.data(),
+                    static_cast<qsizetype>(
+                        opened.error().message.size()
+                        )
+                    )
                 );
         }
 
@@ -606,7 +663,10 @@ void FileController::closeFile()
     if (!confirmUnsavedChanges())
         return;
 
-    closeActiveDatabase();
+    if (!closeActiveDatabase())
+    {
+        return;
+    }
 
     enterNoDatabaseState();
 }
@@ -851,8 +911,36 @@ bool FileController::exportDatabaseAs(
     return true;
 }
 
-void FileController::closeActiveDatabase()
+bool FileController::closeActiveDatabase()
 {
+    if (
+        m_workspaceState
+        && m_workspaceState->snapshot().session().has_value()
+        )
+    {
+        if (!m_workspaceCoordinator)
+        {
+            return false;
+        }
+
+        const auto closed =
+            m_workspaceCoordinator->closeWorkspace();
+
+        if (!closed)
+        {
+            return false;
+        }
+
+        m_currentFile.clear();
+
+        if (m_window)
+        {
+            m_window->clearDatabaseBackedState();
+        }
+
+        return true;
+    }
+
     const bool hadOpenDatabase =
         m_services
         && m_services->hasOpenDatabase();
@@ -868,6 +956,8 @@ void FileController::closeActiveDatabase()
     {
         m_window->clearDatabaseBackedState();
     }
+
+    return true;
 }
 
 QString FileController::initialSetupBackupPath(

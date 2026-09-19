@@ -189,3 +189,12 @@ classmngr_add_qt_test(
         Qt6::Test
     OFFSCREEN
 )
+
+classmngr_add_qt_test(
+    NAME FileControllerWorkspaceLifecycle
+    SOURCES
+        tests/file_controller_workspace_lifecycle_tests.cpp
+    LIBRARIES
+        Qt6::Test
+    OFFSCREEN
+)
