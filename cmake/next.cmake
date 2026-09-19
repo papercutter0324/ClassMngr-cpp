@@ -46,6 +46,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/report_job_state.h
     src/next/application/selection_state.h
     src/next/application/schedule_view_projection.h
+    src/next/application/user_preferences_state.h
     src/next/application/workspace_contracts.h
     src/next/application/workspace_coordinator.h
     src/next/application/workspace_state.h

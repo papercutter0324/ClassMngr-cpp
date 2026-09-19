@@ -516,3 +516,18 @@ service data after projection creation and stage or paginate above the cap.
 `NextApplicationCalendarEventTests` covers 96-scale metadata, typed
 references, temporal policy, validation, caps, copies/equality, safe lookups,
 and the no-rich-record boundary without constructing a `QApplication`.
+
+#### Progress update - 2026-09-20 (user-preferences state contract slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`UserPreferencesSnapshot`/`UserPreferencesState` for explicit theme and
+language preferences, sidebar display flags, teacher and PowerPoint notice
+flags, automatic update checks, supported Excel timeout values, and an
+optional validated typed `Domain::CampusId` last selection. Defaults match
+the verified legacy defaults; invalid enum, timeout, and campus updates return
+structured `InvalidInput` errors without mutating the snapshot, and campus
+selection is explicitly clearable. The contract intentionally does not retain
+the separate legacy JSON campus key: the later outer adapter owns any mapping
+between storage keys and the typed campus identifier. App-less tests cover
+defaults, all values, validation, copies/equality, value-copy access, and the
+absence of persistence, UI, singleton, and legacy-service dependencies.
