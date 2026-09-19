@@ -864,6 +864,31 @@ void FileController::saveDatabase()
         return;
     }
 
+    if (
+        m_workspaceState
+        && m_workspaceState->snapshot().session().has_value()
+        )
+    {
+        if (!m_workspaceCoordinator)
+        {
+            return;
+        }
+
+        const auto saved =
+            m_workspaceCoordinator->saveWorkspace();
+
+        if (!saved)
+        {
+            DialogServices::showWarning(
+                m_window,
+                tr("Save Teacher Profile"),
+                domainErrorMessage(saved.error())
+                );
+        }
+
+        return;
+    }
+
     m_services
         ->saveDatabase();
 }

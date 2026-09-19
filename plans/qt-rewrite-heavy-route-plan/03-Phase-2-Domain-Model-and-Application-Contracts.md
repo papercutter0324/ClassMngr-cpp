@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, and FileController open/close/create/initial-setup integration are implemented. FileController save, save-as, and export remain legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, and concrete ApplicationServices workspace port are implemented. FileController open/close/create/initial-setup/save integration is implemented and save-as/export remain legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -639,3 +639,43 @@ The remaining gates are the legacy FileController save, save-as, and export
 paths, including their stale/closed and invalid-UTF-8 boundary coverage, plus
 the runtime worker-thread/cancellation bridge and later feature-service
 migration slices.
+
+#### Progress update - 2026-09-20 (FileController save/autosave coordinator slice)
+
+`FileController::saveDatabase` now preserves the existing no-service and
+no-open early return, dispatches a coordinator-owned workspace session through
+`WorkspaceCoordinator::saveWorkspace`, and reports structured failures with
+the existing warning service/title policy (`Save Teacher Profile`). The shared
+UTF-8 decoder is used for domain error text. A failed coordinator save does
+not alter workspace state, current-file/UI state, or invoke a false clean
+transition. When the v2 state is closed but `ApplicationServices` is already
+open through the compatibility path, the historical void
+`ApplicationServices::saveDatabase` fallback remains active. Save-as and
+export remain on their legacy service calls.
+
+`FileControllerWorkspaceLifecycleTests` retains the prior lifecycle/create
+coverage and adds real `ApplicationServices`/`QTemporaryDir`/fake-prompt
+coverage for coordinator save success, stale-session structured failure with
+warning and repeated state preservation, and closed-v2 compatibility fallback.
+Source assertions keep save-as/export on the legacy calls and reject v2
+save-as/export dispatch in this slice.
+
+`cmake --preset windows-x64-debug` passed, validating one explicit owner for
+698 handwritten source files; the CMake dependency guard passed, and the
+generated Qt-link report keeps `ClassMngrNext` at `Qt6::Core`. The focused
+Debug target build passed, the focused lifecycle CTest passed 1/1, and the
+bounded regression selection passed 9/9:
+`ClassMngrStartupVisualSettingsTests`, `ClassMngrDataServiceLifecycleTests`,
+`ClassMngrStartupPerformanceTests`,
+`ClassMngrNextApplicationContractTests`,
+`ClassMngrNextApplicationStateTests`,
+`ClassMngrNextApplicationWorkspaceCoordinatorTests`,
+`ClassMngrNextPlatformLegacyWorkspaceGatewayTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`. `git diff --check` passed
+(with only the existing LF-to-CRLF warnings from Git).
+
+The remaining Phase 2 gates are FileController save-as/export migration and
+their stale/closed/invalid-UTF-8 coverage, the runtime worker-thread and
+cancellation bridge, and later feature-service migration. No feature gate or
+runtime bridge was changed here; this slice is ready for its separate commit.

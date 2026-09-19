@@ -9,6 +9,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
@@ -55,6 +56,23 @@ QStringList initialSetupBackups(
         QDir::Name
         );
 }
+
+QString fileControllerSource()
+{
+    QFile source(
+        QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+            QStringLiteral("src/app/controllers/file_controller.cpp")
+            )
+        );
+    if (!source.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+
+    QString contents = QString::fromUtf8(source.readAll());
+    contents.remove(QRegularExpression(QStringLiteral("\\s+")));
+    return contents;
+}
 }
 
 class FileControllerWorkspaceLifecycleTests final : public QObject
@@ -75,6 +93,10 @@ private slots:
     void missingStartupPathUsesCapturedWarning();
     void invalidStartupDatabaseUsesLegacyErrorText();
     void startupLoadUsesCoordinatorAndLegacyFallback();
+    void autosaveUsesCoordinatorForOpenWorkspace();
+    void autosaveWarnsAndPreservesStaleCoordinatorState();
+    void autosaveUsesLegacyFallbackForCompatibilityWorkspace();
+    void saveAsAndExportRemainLegacy();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -518,6 +540,148 @@ void FileControllerWorkspaceLifecycleTests::startupLoadUsesCoordinatorAndLegacyF
         services.currentDatabasePath(),
         QFileInfo(secondPath).absoluteFilePath()
         );
+}
+
+void FileControllerWorkspaceLifecycleTests::autosaveUsesCoordinatorForOpenWorkspace()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = workspaceRoot.filePath(
+        QStringLiteral("coordinator-save.tps")
+        );
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(workspacePath);
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(prompts.messages.isEmpty());
+
+    controller.autosave();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(
+        services.currentDatabasePath(),
+        QFileInfo(workspacePath).absoluteFilePath()
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::autosaveWarnsAndPreservesStaleCoordinatorState()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString firstPath = workspaceRoot.filePath(
+        QStringLiteral("coordinator-save-first.tps")
+        );
+    const QString secondPath = workspaceRoot.filePath(
+        QStringLiteral("coordinator-save-second.tps")
+        );
+
+    ApplicationServices seedServices;
+    for (const QString& path : {firstPath, secondPath})
+    {
+        QVERIFY(seedServices.openDatabase(path));
+        seedServices.closeDatabase();
+    }
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(firstPath);
+    QVERIFY(services.hasOpenDatabase());
+
+    // Keep the coordinator's session on the first path while the
+    // compatibility service is externally moved to a different workspace.
+    QVERIFY(services.openDatabase(secondPath));
+    QCOMPARE(
+        services.currentDatabasePath(),
+        QFileInfo(secondPath).absoluteFilePath()
+        );
+
+    controller.autosave();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest firstWarning = prompts.messages.constFirst();
+    QCOMPARE(firstWarning.title, QStringLiteral("Save Teacher Profile"));
+    QCOMPARE(
+        firstWarning.message,
+        QStringLiteral(
+            "Saving the workspace received a handle for a different open workspace."
+            )
+        );
+    QCOMPARE(
+        static_cast<int>(firstWarning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(
+        services.currentDatabasePath(),
+        QFileInfo(secondPath).absoluteFilePath()
+        );
+
+    // A second failure proves the v2 session and compatibility/UI state were
+    // not cleared or replaced after the first structured failure.
+    controller.autosave();
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        prompts.messages.constLast().message,
+        firstWarning.message
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::autosaveUsesLegacyFallbackForCompatibilityWorkspace()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = workspaceRoot.filePath(
+        QStringLiteral("legacy-save.tps")
+        );
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    // This compatibility path is open before FileController can create a v2
+    // session, so autosave must retain the historical void service call.
+    QVERIFY(services.openDatabase(workspacePath));
+    FileController controller(&services, nullptr);
+
+    controller.autosave();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(
+        services.currentDatabasePath(),
+        QFileInfo(workspacePath).absoluteFilePath()
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::saveAsAndExportRemainLegacy()
+{
+    const QString source = fileControllerSource();
+    QVERIFY(!source.isEmpty());
+    QVERIFY(source.contains(QStringLiteral("m_workspaceCoordinator->saveWorkspace()")));
+    QVERIFY(source.contains(QStringLiteral("m_services->saveDatabase();")));
+    QVERIFY(source.contains(QStringLiteral("m_services->saveDatabaseAs(normalized);")));
+    QVERIFY(source.contains(QStringLiteral("m_services->exportDatabaseAs(normalized);")));
+    QVERIFY(!source.contains(QStringLiteral("m_workspaceCoordinator->saveWorkspaceAs")));
+    QVERIFY(!source.contains(QStringLiteral("m_workspaceCoordinator->exportWorkspace")));
 }
 
 QTEST_MAIN(FileControllerWorkspaceLifecycleTests)
