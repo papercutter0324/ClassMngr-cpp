@@ -115,10 +115,34 @@ not mutate the state object directly. `NextApplicationImportJobTests` covers
 the lifecycle, structured failure, cancellation, terminal immutability, and
 copy/equality behavior without constructing a `QApplication`.
 
+#### Progress update - 2026-09-19 (Phase 2.6 import-review projection slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`ImportReviewSession` projection. It contains typed teacher/class matching
+indexes, category-specific decisions with explicit `Unresolved`, `Create`,
+`UpdateOrReplace`, and `Skip` actions, and separate warning, unmatched-value,
+and conflict collections. Teacher decisions can target only
+`Domain::TeacherId`; class decisions can target only `Domain::ClassId`.
+Decision and session factories reject empty or oversized source text and
+contradictory action/target combinations with `Domain::ErrorCode::InvalidInput`;
+explicit compact caps of 4,096 entries per index/decision/diagnostic
+collection and 256 candidates per match index preserve the large-import
+scenarios without allowing an unbounded projection. Adapters must paginate or
+stage inputs above those caps before creating a review session.
+
+The session is an operation-scoped value snapshot. The import/parser owner
+releases raw workbook bytes, decoded worksheet buffers, and other broad
+compatibility representations before or when this projection becomes
+authoritative. UI code materializes only bounded review rows from the
+snapshot, and releases its session copy when apply or cancel completes. The
+projection retains no workbook, cells, Qt types, widgets, repositories, or
+page pointers. `NextApplicationImportReviewTests` verifies these boundaries,
+typed categories, readiness/conflict behavior, invalid decisions, and
+copy/equality semantics without constructing a `QApplication`.
+
 The remaining Phase 2 state contracts are report/export-job state and
 document-content session state, followed by the later application-to-legacy
-adapter mapping. Compact import-review projections remain a later Phase 2.6
-memory-safe projection slice.
+adapter mapping.
 
 ## Objective
 
