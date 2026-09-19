@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence contracts, and explicit workspace state owner are implemented; broader state and use-case contracts remain next.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, and explicit current-selection state owner are implemented; broader state and use-case contracts remain next.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -74,9 +74,29 @@ session is open, and a successful close resets the snapshot to closed/clean.
 constructing a `QApplication`. Legacy service adapters and migration remain a
 separate outer-boundary slice.
 
-Next Phase 2 work remains current selection, import and report/export job
-state, document-content session state, cancellation, thread ownership, and
-the later application-to-legacy adapter mapping.
+#### Progress update - 2026-09-19 (current-selection application-state slice)
+
+`ClassMngrNext::Application` now owns a Qt-free `SelectionStateSnapshot` and
+`SelectionState`. A snapshot is a copyable value backed by a variant of no
+selection, `TeacherId`, `ClassId`, `CampusId`, or `CalendarEventId`. Its
+`SelectionKind` and typed accessors are derived from the same variant, so one
+selection cannot carry a category/value mismatch. Typed domain identifiers
+remain the only accepted identifier inputs; empty raw identifiers cannot enter
+this contract.
+
+`SelectionState` is the sole owner of the current application selection and
+returns copies from `snapshot()`. `setSelection` replaces the owned value and
+`clear` releases it immediately. Selection is not persisted with a workspace;
+the later application coordinator must clear it at workspace close or
+replacement boundaries so an identifier from one workspace cannot leak into
+another. This owner remains independent from workspace state and has no hidden
+external lifetime or object identity dependency. `NextApplicationSelectionTests`
+covers no selection, all supported categories, replacement, clearing, value
+copy/equality, and compile-time category distinction without a `QApplication`.
+
+Next Phase 2 state contracts remain import-job state, report/export-job state,
+document-content session state, cancellation behavior, and thread ownership,
+followed by the later application-to-legacy adapter mapping.
 
 ## Objective
 
