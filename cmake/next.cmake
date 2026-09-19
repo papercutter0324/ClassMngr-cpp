@@ -33,6 +33,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/document_catalog_projection.h
+    src/next/application/document_catalog_use_case.h
     src/next/application/document_content_session.h
     src/next/application/import_job_coordinator.h
     src/next/application/import_review_session.h

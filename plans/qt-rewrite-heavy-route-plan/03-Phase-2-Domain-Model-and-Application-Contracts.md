@@ -283,6 +283,17 @@ and export bytes plus viewer release through the content-session boundary.
 distinction, validation/duplicates, optional export state, copy/equality, and
 the adapter-neutral surface without constructing a `QApplication`.
 
+#### Progress update - 2026-09-20 (document-catalog use-case slice)
+
+`ClassMngrNext::Application` now owns a Qt-free `DocumentCatalogUseCase` that
+composes a caller-owned const `DocumentCatalogProjection` with a mutable
+`DocumentContentSession`. It returns copied metadata or structured `NotFound`,
+delegates primary and optional-export requests to the existing content-session
+contract, and returns its generation token without retaining content bytes,
+viewer objects, Qt types, or mutable projection state. App-less tests cover
+lookup/copy, no-mutation not-found paths, exact reference selection, token and
+conflict/release behavior, error propagation, and copyable metadata results.
+
 ## Objective
 
 Create a stable, testable application core that is independent of widget construction, page visibility, and the legacy data facade.

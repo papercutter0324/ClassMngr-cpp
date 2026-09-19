@@ -100,6 +100,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationDocumentCatalogUseCase
+    SOURCES
+        tests/next_application_document_catalog_use_case_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationDocumentContent
     SOURCES
         tests/next_application_document_content_tests.cpp
