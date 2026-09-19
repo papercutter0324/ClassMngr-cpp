@@ -161,6 +161,19 @@ covers the lifecycle, validation, cancellation, output bound, terminal
 immutability, copy/equality, and worker-boundary behavior without constructing
 a `QApplication`.
 
+#### Progress update - 2026-09-20 (report-job event bridge/coordinator slice)
+
+`ClassMngrNext::Application` now owns a Qt-free `ReportJobCoordinator` with a
+generation-tagged, bounded thread-safe FIFO sink and adapter-neutral worker
+port. The coordinator alone applies progress, output-bearing completion,
+cancellation acknowledgement, and failure events to `ReportJobState`; stale
+generations, invalid/incomplete completions, and late terminal events cannot
+mutate the active snapshot. Worker start/cancellation failures and exceptions
+remain structured, while renderer and legacy adapters stay outside the slice.
+`NextApplicationReportJobCoordinatorTests` covers the sink boundary, ordering,
+overflow, restart isolation, cancellation races, output validation, and
+terminal immutability without constructing a `QApplication`.
+
 #### Progress update - 2026-09-19 (document-content session contract slice)
 
 `ClassMngrNext::Application` now owns a Qt-free, copyable

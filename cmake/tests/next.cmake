@@ -73,6 +73,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationReportJobCoordinator
+    SOURCES
+        tests/next_application_report_job_coordinator_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationImportReview
     SOURCES
         tests/next_application_import_review_tests.cpp
