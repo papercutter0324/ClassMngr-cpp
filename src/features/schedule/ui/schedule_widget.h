@@ -29,6 +29,18 @@ struct ScheduleDisplayState
         ScheduleDisplayMode::Regular;
 };
 
+struct ScheduleWidgetRuntimeMetrics
+{
+    int modelRowCount = 0;
+    int modelCellCount = 0;
+    int modelEntryCount = 0;
+    int tableRowCount = 0;
+    int tableColumnCount = 0;
+    int tableItemCount = 0;
+    int tableCellWidgetCount = 0;
+    int visibleClassCount = 0;
+};
+
 class ScheduleWidget : public QWidget
 {
     Q_OBJECT
@@ -45,6 +57,7 @@ public:
     void clearDatabaseState();
     void retranslateUi();
     [[nodiscard]] ScheduleDisplayState displayState() const;
+    [[nodiscard]] ScheduleWidgetRuntimeMetrics runtimeMetrics() const;
     [[nodiscard]] ScheduleViewModel scheduleModel() const;
     [[nodiscard]] QSet<int> visibleClassIds() const;
     void setMaximumVisibleRows(

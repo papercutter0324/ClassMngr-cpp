@@ -1,7 +1,6 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
 #include "core/fontmanager.h"
-#include "core/resource_packs/resource_pack_manager.h"
 #include "core/theme_service.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
@@ -861,30 +860,6 @@ Result<QList<Teacher>> DataService::getAllTeachers()
         getTeacher(8).value_or(Teacher{})
     };
 }
-
-#ifndef CLASSMNGR_TEST_USE_REAL_RESOURCE_PACK_MANAGER
-ResourcePackManager& ResourcePackManager::instance()
-{
-    static ResourcePackManager manager;
-    return manager;
-}
-
-ResourcePackManager::ResourcePackManager(
-    QString storageDirectory,
-    QString baselineDirectory
-    )
-    : m_storageDirectory(std::move(storageDirectory))
-    , m_baselineDirectory(std::move(baselineDirectory))
-{
-}
-
-QString ResourcePackManager::activeRoot(
-    const QString&
-    ) const
-{
-    return {};
-}
-#endif
 
 Theme ThemeService::currentTheme() const
 {

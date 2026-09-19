@@ -1,5 +1,7 @@
 #include "pdf_viewer_page_p.h"
 
+#include "core/startup_profiler.h"
+
 void PdfViewerPage::applyPageInput()
 {
     const int pageCount =
@@ -56,6 +58,15 @@ void PdfViewerPage::handleDocumentStatusChanged()
 
     if (m_document->status() == QPdfDocument::Status::Ready)
     {
+        if (!m_pdfLoadRecorded && m_document->pageCount() > 0)
+        {
+            StartupProfiler::recordPdfDocumentLoaded(
+                m_currentFilePath,
+                m_document->pageCount()
+                );
+            m_pdfLoadRecorded = true;
+        }
+
         m_view->setPageMode(
             QPdfView::PageMode::MultiPage
             );
@@ -64,17 +75,6 @@ void PdfViewerPage::handleDocumentStatusChanged()
         resetZoom();
         updatePageDisplay();
         updateDocumentActionButtons();
-        notifyDocumentLoaded();
-        if (m_documentLoadTimed)
-        {
-            MemoryUsageDiagnostics::recordTimedOperation(
-                QStringLiteral("pdf-open"),
-                QStringLiteral("ready; pages=%1")
-                    .arg(m_document->pageCount()),
-                m_documentLoadTimer.elapsed()
-                );
-            m_documentLoadTimed = false;
-        }
         return;
     }
 
@@ -84,15 +84,6 @@ void PdfViewerPage::handleDocumentStatusChanged()
             tr("Failed to load PDF: %1")
                 .arg(documentErrorText())
             );
-        if (m_documentLoadTimed)
-        {
-            MemoryUsageDiagnostics::recordTimedOperation(
-                QStringLiteral("pdf-open"),
-                QStringLiteral("failed"),
-                m_documentLoadTimer.elapsed()
-                );
-            m_documentLoadTimed = false;
-        }
     }
 
     updatePageDisplay();

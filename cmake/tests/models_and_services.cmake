@@ -244,6 +244,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     qt_add_executable(ClassMngrRosterTemplatePrintServiceTests
         tests/roster_template_print_service_tests.cpp
+        tests/windows_output_reference_capture.h
         src/core/fontmanager.cpp
         src/domain/models/classroom.cpp
         src/features/roster/services/roster_template_print_service.cpp

@@ -82,6 +82,9 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     formLayout->addRow(tr("Reports:"), m_scopeSelector);
 
     m_rendererSelector = new QComboBox(this);
+    m_rendererSelector->setObjectName(
+        QStringLiteral("speakingEvalBatchRenderer")
+        );
     m_rendererSelector->addItem(
         SpeakingEvalBatchReportService::rendererDisplayName(
             SpeakingEvalBatchReportService::Renderer::Internal

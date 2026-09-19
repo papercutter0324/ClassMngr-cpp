@@ -31,7 +31,6 @@ classmngr_add_qt_test(
 
 qt_add_executable(ClassMngrClassesPageTests
         tests/classes_page_tests.cpp
-        tests/schedule_widget_test_stubs.cpp
         src/core/utils/colorutils.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
@@ -121,6 +120,7 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrClassesPageTests
         PRIVATE
+            ClassMngrScheduleWidgetTestSupport
             Qt6::Core
             Qt6::Gui
             Qt6::PrintSupport
@@ -148,9 +148,8 @@ qt_add_executable(ClassMngrClassesPageTests
             resources/assets/icons/keyboard_light.svg
     )
 
-    qt_add_executable(ClassMngrScheduleImportDialogTests
+qt_add_executable(ClassMngrScheduleImportDialogTests
         tests/schedule_import_dialog_tests.cpp
-        tests/schedule_widget_test_stubs.cpp
         src/core/settingsmanager.cpp
         src/core/utils/colorutils.cpp
         src/domain/models/classroom.cpp
@@ -196,8 +195,15 @@ qt_add_executable(ClassMngrClassesPageTests
             ${PROJECT_SOURCE_DIR}/src
     )
 
+    target_compile_definitions(ClassMngrScheduleImportDialogTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
     target_link_libraries(ClassMngrScheduleImportDialogTests
         PRIVATE
+            ClassMngrScheduleWidgetTestSupport
+            ClassMngrScheduleWidgetResourcePackTestSupport
             Qt6::Concurrent
             Qt6::Core
             Qt6::Gui
@@ -219,9 +225,8 @@ qt_add_executable(ClassMngrClassesPageTests
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
-    qt_add_executable(ClassMngrSubPrepPageTests
+qt_add_executable(ClassMngrSubPrepPageTests
         tests/sub_prep_page_tests.cpp
-        tests/schedule_widget_test_stubs.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
         src/features/campus/data/campus_json_codec.cpp
@@ -292,6 +297,8 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrSubPrepPageTests
         PRIVATE
+            ClassMngrScheduleWidgetTestSupport
+            ClassMngrScheduleWidgetResourcePackTestSupport
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf

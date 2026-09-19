@@ -4,6 +4,7 @@
 #include "academic_calendar_event_parser.h"
 #include "calendar_workbook_reader.h"
 #include "core/resource_paths.h"
+#include "core/startup_profiler.h"
 #include "features/campus/data/campus_json_repository.h"
 
 #include <QDate>
@@ -21,6 +22,14 @@ const QString ImportUrl =
         "18O05g7nlnsoUwrWhArZkptJFp3LMbSytdgKDjNaoMU4/"
         "export?format=xlsx&gid=570696063"
         );
+
+struct CalendarImportOperationReleaseGuard
+{
+    ~CalendarImportOperationReleaseGuard()
+    {
+        StartupProfiler::recordCalendarImportOperationReleased();
+    }
+};
 
 QStringList campusCodesFromDirectory()
 {
@@ -86,15 +95,33 @@ void CalendarEventImportService::importFromDefaultSource()
         return;
     }
 
-    QNetworkRequest request{
-        QUrl(ImportUrl)
-    };
+    const QString configuredUrl =
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL"
+            ).trimmed();
+    const QUrl importUrl(
+        configuredUrl.isEmpty()
+            ? ImportUrl
+            : configuredUrl
+        );
+    if (!importUrl.isValid() || importUrl.scheme().isEmpty())
+    {
+        emit importFailed(
+            tr("The calendar import source URL is invalid.")
+            );
+        return;
+    }
+
+    QNetworkRequest request{importUrl};
     request.setAttribute(
         QNetworkRequest::RedirectPolicyAttribute,
         QNetworkRequest::NoLessSafeRedirectPolicy
         );
 
     m_importing = true;
+    StartupProfiler::recordCalendarImportStarted(
+        importUrl.toString()
+        );
     m_network->get(request);
 }
 
@@ -104,33 +131,65 @@ void CalendarEventImportService::handleFinished(
 {
     reply->deleteLater();
     m_importing = false;
+    const CalendarImportOperationReleaseGuard releaseGuard;
 
     if (reply->error() != QNetworkReply::NoError)
     {
+        StartupProfiler::recordCalendarImportFailed(
+            reply->errorString()
+            );
         emit importFailed(
             reply->errorString()
             );
         return;
     }
 
+    QByteArray workbookData = reply->readAll();
+    StartupProfiler::recordCalendarImportResponseReceived(
+        workbookData.size()
+        );
+
     QString errorMessage;
     const CalendarImport::Workbook workbook =
         CalendarImport::parseWorkbook(
-            reply->readAll(),
+            workbookData,
             &errorMessage
             );
 
     if (!errorMessage.isEmpty())
     {
+        StartupProfiler::recordCalendarImportFailed(errorMessage);
         emit importFailed(errorMessage);
         return;
     }
+
+    workbookData.clear();
+    workbookData.squeeze();
+
+    int workbookCellCount = 0;
+    int workbookMergedRangeCount = 0;
+    for (const CalendarImport::Worksheet& worksheet : workbook.worksheets)
+    {
+        workbookCellCount += worksheet.cells.size();
+        workbookMergedRangeCount += worksheet.mergedRanges.size();
+    }
+    StartupProfiler::recordCalendarImportWorkbookParsed(
+        workbook.worksheets.size(),
+        workbookCellCount,
+        workbookMergedRangeCount,
+        workbook.sharedStrings.size(),
+        workbook.styles.size()
+        );
 
     CalendarImport::ParsedCalendarImport parsed =
         CalendarImport::parseCalendarEventsFromWorkbook(
             workbook,
             campusCodesFromDirectory()
             );
+    StartupProfiler::recordCalendarImportEventsPrepared(
+        parsed.events.size(),
+        parsed.skippedCount
+        );
 
     if (parsed.events.isEmpty())
     {
@@ -162,9 +221,14 @@ void CalendarEventImportService::handleFinished(
             );
     if (!existingEvents)
     {
+        StartupProfiler::recordCalendarImportFailed(existingEvents.error());
         emit importFailed(existingEvents.error());
         return;
     }
+
+    StartupProfiler::recordCalendarImportExistingEventsLoaded(
+        existingEvents->size()
+        );
 
     for (const CalendarEvent& event : *existingEvents)
     {
@@ -189,13 +253,24 @@ void CalendarEventImportService::handleFinished(
         existingSignatures.insert(signature);
     }
 
+    StartupProfiler::recordCalendarImportSavePrepared(
+        eventsToSave.size(),
+        parsed.skippedCount
+        );
+
     const Result<QList<int>> saved =
         m_calendarService->saveEvents(eventsToSave);
     if (!saved)
     {
+        StartupProfiler::recordCalendarImportFailed(saved.error());
         emit importFailed(saved.error());
         return;
     }
+
+    StartupProfiler::recordCalendarImportApplied(
+        saved->size(),
+        parsed.skippedCount
+        );
 
     emit importFinished(
         saved->size(),

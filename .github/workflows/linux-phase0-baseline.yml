@@ -1,0 +1,20 @@
+name: Supplemental Linux x64 Phase 0 Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Git ref to build and validate (blank selects the dispatched ref)
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  linux-release-phase0:
+    uses: ./.github/workflows/linux-release.yml
+    with:
+      source_ref: ${{ inputs.source_ref }}
+      run_phase0_baseline: true

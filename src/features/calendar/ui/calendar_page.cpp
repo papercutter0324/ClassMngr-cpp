@@ -213,6 +213,32 @@ AcademicCalendarProvider* CalendarPage::academicCalendarProvider() const
     return m_academicCalendarProvider;
 }
 
+CalendarPageRuntimeMetrics CalendarPage::runtimeMetrics() const
+{
+    CalendarPageRuntimeMetrics metrics;
+
+    if (m_calendarCache)
+    {
+        metrics.cacheEventCount = m_calendarCache->eventCount();
+        metrics.cacheDateBucketCount = m_calendarCache->dateBucketCount();
+        metrics.cacheLoadedRangeCount = m_calendarCache->loadedRangeCount();
+        metrics.cacheRetainedRangeCount = m_calendarCache->retainedRangeCount();
+        metrics.cacheLoading = m_calendarCache->isLoading();
+    }
+
+    metrics.loadedMonthCount = m_loadedMonths.size();
+    metrics.onDemandRetainedRangeCount = m_onDemandRetainedRanges.size();
+    metrics.modelRevision = m_calendarModel
+        ? m_calendarModel->revision()
+        : 0;
+    metrics.pageWidgetCount = findChildren<QWidget*>().size();
+    metrics.calendarViewObjectCount = m_calendarView
+        ? m_calendarView->findChildren<QObject*>().size()
+        : 0;
+
+    return metrics;
+}
+
 void CalendarPage::calendarPreferencesChanged(bool eventsChanged)
 {
     updateCalendarCampusFilter();

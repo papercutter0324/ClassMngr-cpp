@@ -38,6 +38,11 @@ qt_add_executable(ClassMngrClassTransferTests
             ${PROJECT_SOURCE_DIR}/src
     )
 
+    target_compile_definitions(ClassMngrClassTransferTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
     target_link_libraries(ClassMngrClassTransferTests
         PRIVATE
             Qt6::Core
@@ -295,7 +300,6 @@ qt_add_executable(ClassMngrClassTransferTests
 
     qt_add_executable(ClassMngrScheduleWidgetTests
         tests/schedule_widget_tests.cpp
-        tests/schedule_widget_test_stubs.cpp
         src/domain/models/classroom.cpp
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
@@ -329,6 +333,8 @@ qt_add_executable(ClassMngrClassTransferTests
 
     target_link_libraries(ClassMngrScheduleWidgetTests
         PRIVATE
+            ClassMngrScheduleWidgetTestSupport
+            ClassMngrScheduleWidgetResourcePackTestSupport
             Qt6::Core
             Qt6::Gui
             Qt6::PrintSupport
@@ -344,7 +350,6 @@ qt_add_executable(ClassMngrClassTransferTests
 
     qt_add_executable(ClassMngrTestingClassesPageTests
         tests/testing_classes_page_tests.cpp
-        tests/schedule_widget_test_stubs.cpp
         src/core/utils/colorutils.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
@@ -395,6 +400,8 @@ qt_add_executable(ClassMngrClassTransferTests
 
     target_link_libraries(ClassMngrTestingClassesPageTests
         PRIVATE
+            ClassMngrScheduleWidgetTestSupport
+            ClassMngrScheduleWidgetResourcePackTestSupport
             Qt6::Core
             Qt6::Gui
             Qt6::PrintSupport

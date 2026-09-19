@@ -9,7 +9,6 @@ ClassAnalyticsRankingModel::ClassAnalyticsRankingModel(
     )
     : QAbstractTableModel(parent)
 {
-    MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
 }
 
 void ClassAnalyticsRankingModel::setRankings(
@@ -18,7 +17,6 @@ void ClassAnalyticsRankingModel::setRankings(
 {
     beginResetModel();
     m_rankings = std::move(rankings);
-    updateEstimatedRetainedBytes();
     endResetModel();
 }
 
@@ -32,7 +30,6 @@ void ClassAnalyticsRankingModel::setHeaderLabels(
     }
 
     m_headers = labels;
-    updateEstimatedRetainedBytes();
     emit headerDataChanged(
         Qt::Horizontal,
         0,
@@ -143,53 +140,4 @@ QVariant ClassAnalyticsRankingModel::headerData(
     }
 
     return m_headers.value(section);
-}
-
-QList<MemoryBreakdownEntry> ClassAnalyticsRankingModel::memoryBreakdown() const
-{
-    return {
-        {
-            QStringLiteral("Analytics ranking model"),
-            QStringLiteral("Classes"),
-            m_estimatedRetainedBytes,
-            static_cast<quint64>(m_rankings.size()),
-            QStringLiteral("rows=%1; columns=%2")
-                .arg(m_rankings.size())
-                .arg(ColumnCount),
-            true
-        }
-    };
-}
-
-void ClassAnalyticsRankingModel::updateEstimatedRetainedBytes()
-{
-    quint64 bytes = static_cast<quint64>(m_rankings.capacity())
-        * sizeof(SpeakingAnalytics::StudentRank);
-
-    const auto addString = [&bytes](const QString& text)
-    {
-        bytes += static_cast<quint64>(text.capacity()) * sizeof(QChar);
-    };
-
-    for (const SpeakingAnalytics::StudentRank& rank : m_rankings)
-    {
-        addString(rank.englishName);
-        addString(rank.koreanName);
-        addString(rank.overallLetter);
-        bytes += static_cast<quint64>(rank.criterionLetters.capacity())
-            * sizeof(QString);
-
-        for (const QString& grade : rank.criterionLetters)
-        {
-            addString(grade);
-        }
-    }
-
-    bytes += static_cast<quint64>(m_headers.capacity()) * sizeof(QString);
-    for (const QString& header : m_headers)
-    {
-        addString(header);
-    }
-
-    m_estimatedRetainedBytes = bytes;
 }

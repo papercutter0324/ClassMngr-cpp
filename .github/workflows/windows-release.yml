@@ -27,6 +27,7 @@ on:
   push:
     branches:
       - main
+      - Qt-Rewrite
     paths:
       - ".github/workflows/windows-release.yml"
       - "CMakeLists.txt"
@@ -34,7 +35,21 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
+      - "scripts/check_resource_pack_references.py"
       - "scripts/installer/**"
+      - "scripts/write_build_report.py"
+      - "src/**"
+  pull_request:
+    paths:
+      - ".github/workflows/windows-release.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "licenses/**"
+      - "resources/**"
+      - "scripts/check_resource_pack_references.py"
+      - "scripts/installer/**"
+      - "scripts/write_build_report.py"
       - "src/**"
 
 permissions:
@@ -48,10 +63,10 @@ env:
   # Keep release builds on the Visual Studio 2022 toolchain even when a
   # future hosted image includes a newer Visual Studio release.
   CMAKE_GENERATOR: "Visual Studio 17 2022"
-  QT_VERSION: "6.11.1"
+  QT_VERSION: "6.12.0"
   QT_ROOT: "C:\\Qt"
-  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
-  QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_arm64"
+  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.12.0\\msvc2022_64"
+  QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.12.0\\msvc2022_arm64"
 
 jobs:
   build:
@@ -77,11 +92,11 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install aqtinstall with Qt 6.11 Windows support
+      - name: Install aqtinstall with Qt 6.12 Windows support
         shell: pwsh
         run: |
           cd $Env:GITHUB_WORKSPACE
-          # aqtinstall 3.3.0 predates Qt 6.11's architecture-specific
+          # aqtinstall 3.3.0 predates Qt 6.12's architecture-specific
           # Windows repository layout. Pin the upstream fix until released.
           python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
 
@@ -164,7 +179,7 @@ jobs:
             "--base", "https://download.qt.io",
             "--timeout", "30",
             # Qt Declarative and the command-line tools are included in the
-            # Qt 6.11 base package; Qt Pdf remains a separate extension.
+            # Qt 6.12 base package; Qt Pdf remains a separate extension.
             "--modules", "qtpdf"
           )
 
@@ -399,6 +414,31 @@ jobs:
           $checksumPath = "dist\\checksums-windows-$architecture.txt"
           "$hash  $($installers[0].Name)" | Set-Content -LiteralPath $checksumPath -Encoding utf8NoBOM
 
+      - name: Check packaged resource references and write build report
+        shell: pwsh
+        run: |
+          $architecture = "${{ matrix.architecture }}"
+          $buildDirectory = "build\windows-$architecture-release"
+          $packageRoot = Join-Path `
+            $Env:GITHUB_WORKSPACE `
+            "build\windows-$architecture-release\installer-stage\ClassMngr-windows-$architecture"
+          $packDirectory = Join-Path $packageRoot "resources\resource-packs"
+          $referenceReport = "artifacts\build-reports\windows-$architecture-resource-pack-references.json"
+          $buildReport = "artifacts\build-reports\windows-$architecture.json"
+
+          python scripts/check_resource_pack_references.py `
+            --repository . `
+            --build-dir $buildDirectory `
+            --pack-directory $packDirectory `
+            --output $referenceReport
+          if ($LASTEXITCODE -ne 0) { throw "Resource-pack reference check failed." }
+
+          python scripts/write_build_report.py `
+            --package-root $packageRoot `
+            --build-dir $buildDirectory `
+            --output $buildReport
+          if ($LASTEXITCODE -ne 0) { throw "Build report generation failed." }
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
         with:
@@ -406,4 +446,6 @@ jobs:
           path: |
             dist/ClassMngr-*-win-${{ matrix.architecture }}.exe
             dist/checksums-windows-${{ matrix.architecture }}.txt
+            artifacts/build-reports/windows-${{ matrix.architecture }}.json
+            artifacts/build-reports/windows-${{ matrix.architecture }}-resource-pack-references.json
           if-no-files-found: error

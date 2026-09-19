@@ -3,6 +3,8 @@
 #include <QString>
 #include <QVector>
 
+#include <optional>
+
 class QWidget;
 
 enum class PromptSeverity
@@ -31,6 +33,7 @@ struct PromptRequest
 {
     QWidget* parent = nullptr;
     QString objectName;
+    QString automationId;
     QString title;
     QString message;
     QString details;
@@ -38,6 +41,42 @@ struct PromptRequest
     QString acceptText;
     QString rejectText;
     bool destructive = false;
+};
+
+struct PromptSnapshot
+{
+    QString id;
+    QString objectName;
+    QString title;
+    QString text;
+    bool visible = false;
+};
+
+class IPromptTestDriver
+{
+public:
+    virtual ~IPromptTestDriver() = default;
+
+    [[nodiscard]] virtual std::optional<PromptSnapshot> activePrompt(
+        const QString& id = QString()
+        ) const = 0;
+
+    virtual bool accept(
+        const QString& id
+        ) = 0;
+
+    virtual bool reject(
+        const QString& id
+        ) = 0;
+
+    virtual bool clickDefault(
+        const QString& id
+        ) = 0;
+
+    virtual bool capture(
+        const QString& id,
+        const QString& path
+        ) = 0;
 };
 
 struct UnsavedChangesRequest
@@ -126,10 +165,37 @@ public:
         ) override;
 };
 
+class QtPromptTestDriver final : public IPromptTestDriver
+{
+public:
+    [[nodiscard]] std::optional<PromptSnapshot> activePrompt(
+        const QString& id = QString()
+        ) const override;
+
+    bool accept(
+        const QString& id
+        ) override;
+
+    bool reject(
+        const QString& id
+        ) override;
+
+    bool clickDefault(
+        const QString& id
+        ) override;
+
+    bool capture(
+        const QString& id,
+        const QString& path
+        ) override;
+};
+
 namespace DialogServices
 {
 
 [[nodiscard]] IUserPromptService& prompts();
+
+[[nodiscard]] IPromptTestDriver& promptTestDriver();
 
 void showInformation(
     QWidget* parent,

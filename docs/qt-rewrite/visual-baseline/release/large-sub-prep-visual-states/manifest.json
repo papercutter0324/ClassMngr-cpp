@@ -1,0 +1,129 @@
+{
+    "classCount": 96,
+    "editingReadOnlyVisualReference": true,
+    "emptyFixturePath": "generated-large-sub-prep-empty.tps",
+    "emptyState": {
+        "finalNormalWorkingSetTargetPass": false,
+        "metricsPath": "empty/metrics.json",
+        "outputDirectory": "empty",
+        "peakWorkingSetBytes": 292331520,
+        "tracePath": "empty/workflow-trace.txt",
+        "transientDiagnosticCeilingPass": true
+    },
+    "fixture": "large_startup.sql",
+    "fixturePath": "generated-large-sub-prep-visual.tps",
+    "fixtureScale": "large_sub_prep_visual_states",
+    "memoryBudgets": {
+        "comparator": "strictly-less-than",
+        "finalNormalWorkingSetTargetBytes": 262144000,
+        "finalTargetPhase": "phase-9",
+        "phase0Role": "baseline-and-trend",
+        "primaryMetric": "windows-working-set",
+        "transientDiagnosticCeilingBytes": 536870912
+    },
+    "rosterCellCount": 7200,
+    "scenario": "96-class Sub Prep editing/read-only, selected, changed-selection, empty, and language/theme visual states",
+    "teacherCount": 24,
+    "variants": [
+        {
+            "editingReadOnlyVisualReference": true,
+            "finalNormalWorkingSetTargetPass": false,
+            "language": "english",
+            "metricsPath": "english-light/metrics.json",
+            "name": "english-light",
+            "outputDirectory": "english-light",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 75,
+                "handleCount": 297,
+                "pagefileUsageBytes": 452243456,
+                "peakWorkingSetBytes": 410324992,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 452243456,
+                "privateWorkingSetBytes": 342089728,
+                "threadCount": 16,
+                "workingSetBytes": 409493504
+            },
+            "theme": "light",
+            "tracePath": "english-light/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
+        },
+        {
+            "editingReadOnlyVisualReference": true,
+            "finalNormalWorkingSetTargetPass": false,
+            "language": "english",
+            "metricsPath": "english-dark/metrics.json",
+            "name": "english-dark",
+            "outputDirectory": "english-dark",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 75,
+                "handleCount": 297,
+                "pagefileUsageBytes": 451530752,
+                "peakWorkingSetBytes": 409743360,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 451530752,
+                "privateWorkingSetBytes": 341581824,
+                "threadCount": 16,
+                "workingSetBytes": 408911872
+            },
+            "theme": "dark",
+            "tracePath": "english-dark/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
+        },
+        {
+            "editingReadOnlyVisualReference": true,
+            "finalNormalWorkingSetTargetPass": false,
+            "language": "korean",
+            "metricsPath": "korean-light/metrics.json",
+            "name": "korean-light",
+            "outputDirectory": "korean-light",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 75,
+                "handleCount": 275,
+                "pagefileUsageBytes": 452087808,
+                "peakWorkingSetBytes": 408637440,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 452087808,
+                "privateWorkingSetBytes": 342032384,
+                "threadCount": 16,
+                "workingSetBytes": 407805952
+            },
+            "theme": "light",
+            "tracePath": "korean-light/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
+        },
+        {
+            "editingReadOnlyVisualReference": true,
+            "finalNormalWorkingSetTargetPass": false,
+            "language": "korean",
+            "metricsPath": "korean-dark/metrics.json",
+            "name": "korean-dark",
+            "outputDirectory": "korean-dark",
+            "peakMemory": {
+                "available": true,
+                "capturedAt": "",
+                "checkpointSampleCount": 75,
+                "handleCount": 275,
+                "pagefileUsageBytes": 452694016,
+                "peakWorkingSetBytes": 409239552,
+                "platform": "windows",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 452694016,
+                "privateWorkingSetBytes": 342630400,
+                "threadCount": 16,
+                "workingSetBytes": 408408064
+            },
+            "theme": "dark",
+            "tracePath": "korean-dark/workflow-trace.txt",
+            "transientDiagnosticCeilingPass": true
+        }
+    ]
+}

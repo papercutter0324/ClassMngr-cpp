@@ -70,6 +70,45 @@ def find_application(build_dir: Path) -> Path | None:
     return max(candidates, key=lambda path: path.stat().st_mtime_ns)
 
 
+def find_executable(build_dir: Path, stem: str) -> Path | None:
+    names = {stem, f"{stem}.exe"}
+    candidates = [
+        path
+        for path in build_dir.rglob(f"{stem}*")
+        if path.is_file() and path.name in names
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+
+
+def resource_pack_metrics(build_dir: Path) -> dict[str, Any]:
+    entries = []
+    pack_directory = build_dir / "resource-packs"
+    if pack_directory.is_dir():
+        for path in sorted(pack_directory.glob("*.rcc")):
+            if path.is_file():
+                entries.append(
+                    {
+                        "id": path.stem,
+                        "path": str(path.relative_to(build_dir)),
+                        "size_bytes": path.stat().st_size,
+                    }
+                )
+    return {
+        "packs": entries,
+        "total_size_bytes": sum(entry["size_bytes"] for entry in entries),
+    }
+
+
+def qt_module_metrics(build_dir: Path) -> dict[str, Any] | None:
+    report_path = build_dir / "reports" / "qt-module-links.json"
+    if not report_path.is_file():
+        return None
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    return report.get("targets") if isinstance(report, dict) else None
+
+
 def compilation_metrics(repository: Path, build_dir: Path) -> dict[str, Any]:
     database = build_dir / "compile_commands.json"
     if not database.exists():
@@ -134,7 +173,6 @@ def test_summary(junit_path: Path) -> dict[str, Any] | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--configure-preset", required=True)
-    parser.add_argument("--build-preset")
     parser.add_argument("--build-dir", required=True, type=Path)
     parser.add_argument("--configuration", help="CTest configuration for multi-config generators")
     parser.add_argument(
@@ -164,13 +202,20 @@ def main() -> int:
     output = args.output
     if not output.is_absolute():
         output = repository / output
-    build_preset = args.build_preset or args.configure_preset
     commit_start = capture(["git", "rev-parse", "HEAD"], repository)
     dirty_start = bool(capture(["git", "status", "--porcelain"], repository))
     fingerprint_start = source_fingerprint(repository)
 
     configure_code, configure_seconds = run(
-        ["cmake", "--fresh", "--preset", args.configure_preset], repository
+        [
+            "cmake",
+            "--fresh",
+            "--preset",
+            args.configure_preset,
+            "-B",
+            str(build_dir),
+        ],
+        repository,
     )
     build_code = -1
     build_seconds = 0.0
@@ -180,16 +225,18 @@ def main() -> int:
     junit_path.unlink(missing_ok=True)
 
     if configure_code == 0:
+        build_command = [
+            "cmake",
+            "--build",
+            str(build_dir),
+            "--clean-first",
+            "--parallel",
+            str(args.parallel),
+        ]
+        if args.configuration:
+            build_command.extend(["--config", args.configuration])
         build_code, build_seconds = run(
-            [
-                "cmake",
-                "--build",
-                "--preset",
-                build_preset,
-                "--clean-first",
-                "--parallel",
-                str(args.parallel),
-            ],
+            build_command,
             repository,
         )
 
@@ -209,6 +256,7 @@ def main() -> int:
         test_code, test_seconds = run(test_command, repository)
 
     executable = find_application(build_dir) if build_code == 0 else None
+    next_executable = find_executable(build_dir, "ClassMngrNext") if build_code == 0 else None
     commit_end = capture(["git", "rev-parse", "HEAD"], repository)
     dirty_end = bool(capture(["git", "status", "--porcelain"], repository))
     fingerprint_end = source_fingerprint(repository)
@@ -248,6 +296,16 @@ def main() -> int:
             "path": str(executable.relative_to(repository)) if executable else None,
             "size_bytes": executable.stat().st_size if executable else None,
         },
+        "next_executable": {
+            "path": str(next_executable.relative_to(repository))
+            if next_executable
+            else None,
+            "size_bytes": next_executable.stat().st_size
+            if next_executable
+            else None,
+        },
+        "resource_packs": resource_pack_metrics(build_dir),
+        "linked_qt_modules": qt_module_metrics(build_dir),
         "compilation": compilation_metrics(repository, build_dir),
     }
     write_report(output, report)

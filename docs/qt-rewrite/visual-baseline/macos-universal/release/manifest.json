@@ -1,0 +1,116 @@
+{
+  "format": "classmngr-phase0-macos-release-evidence-v1",
+  "capturedOn": "2026-09-17",
+  "pathConventions": {
+    "evidenceFilesRelativeToManifest": true,
+    "sourceFixtureAndReleaseArtifactPathsRelativeToRepositoryRoot": true
+  },
+  "source": {
+    "commit": "dbdc81f5",
+    "workingTreeModified": true,
+    "applicationVersion": "0.19.0"
+  },
+  "host": {
+    "operatingSystem": "macOS 26.6.2",
+    "architecture": "arm64",
+    "xcode": "26.6",
+    "appleClang": "21.0.0.21000101",
+    "cmake": "4.3.3",
+    "ninja": "1.13.2"
+  },
+  "qt": {
+    "version": "6.12.0",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "minimumMacOS": "14.4"
+  },
+  "release": {
+    "preset": "macos-clang-release-installer",
+    "deploymentTarget": "14.4",
+    "appArchitectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "bundleMachOFilesValidated": 115,
+    "allBundleMachOFilesUniversal": true,
+    "allBundleMachOMinimumsAtOrBelowTarget": true,
+    "infoPlistMinimumMacOS": "14.4",
+    "appSignatureVerified": true,
+    "sqlDrivers": [
+      "libqsqlite.dylib"
+    ],
+    "diskImage": "dist/ClassMngr-0.19.0-macos-universal.dmg",
+    "checksumFile": "dist/checksums-macos.txt",
+    "diskImageSHA256": "6ebc6d71e7fb9188d606999b6ab5e479e14422ca9e133126527c8ca2adf653ec",
+    "diskImageChecksumValid": true
+  },
+  "tests": [
+    {
+      "name": "ClassMngrStartupPerformanceTests",
+      "configuration": "universal Debug, macOS 14.4 deployment target",
+      "result": "passed",
+      "elapsedSeconds": 48.42
+    },
+    {
+      "name": "ClassMngrDialogServicesTests",
+      "configuration": "universal Debug, offscreen QPA",
+      "result": "passed",
+      "elapsedSeconds": 1.08
+    }
+  ],
+  "profiles": [
+    {
+      "scenario": "empty-startup",
+      "profile": "empty/classmngr-macos-phase0-empty-metrics.json",
+      "elapsedMilliseconds": 2906,
+      "workingSetBytes": 235356160,
+      "peakWorkingSetBytes": 237273088,
+      "macOSPhysicalFootprintBytes": 123815016
+    },
+    {
+      "scenario": "representative-96-class-startup-and-all-routes",
+      "fixture": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps",
+      "fixtureSHA256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+      "fixtureIsolation": "The app received a byte-identical temporary copy because the workflow writes workspace state on exit.",
+      "profile": "large-workflow/classmngr-macos-phase0-large-workflow-metrics.json",
+      "workflowTrace": "large-workflow/classmngr-macos-phase0-large-workflow-trace.txt",
+      "startupScreenshot": "large-workflow/startup-complete.png",
+      "settledScreenshot": "large-workflow/settled-final.png",
+      "workflowPages": [
+        "my-workspace",
+        "schedule",
+        "classes",
+        "testing-classes",
+        "teacher-info",
+        "native-english-teachers",
+        "gs-team",
+        "campus-dashboard",
+        "sub-prep",
+        "my-classes",
+        "pdf-viewer",
+        "my-workspace"
+      ],
+      "startupElapsedMilliseconds": 3137,
+      "startupWorkingSetBytes": 235470848,
+      "workflowElapsedMilliseconds": 9407,
+      "workflowWorkingSetBytes": 505069568,
+      "peakWorkingSetBytes": 508624896,
+      "workflowWidgetCount": 9678,
+      "subPrepClassInformationLookups": 96,
+      "subPrepTeacherLookups": 96,
+      "subPrepRosterLookups": 96,
+      "pdfDocumentsLoaded": 2,
+      "pdfDocumentsRendered": 2,
+      "pdfDocumentsReleased": 2,
+      "settledWorkingSetBytes": 505069568,
+      "settledMacOSPhysicalFootprintBytes": 402179512
+    }
+  ],
+  "limitations": [
+    "The packaged app was run on macOS 26.6.2; a host running the minimum supported macOS 14.4 was not available for a direct oldest-OS runtime test.",
+    "Memory figures describe the legacy widget application and are Phase 0 trend evidence, not v2 memory acceptance results.",
+    "Phase 0 overall remains in progress; Windows ARM64 and Linux Release baselines and other evidence gaps remain."
+  ]
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDateTime>
+#include <QString>
 
 // A small, platform-specific process-memory sample. On Windows the values map
 // directly to PROCESS_MEMORY_COUNTERS_EX fields; unsupported platforms return
@@ -39,5 +40,18 @@ class PlatformProcessMemorySnapshotProvider final
     : public ProcessMemorySnapshotProvider
 {
 public:
+#if defined(Q_OS_LINUX)
+    // The optional procfs root keeps Linux sampling testable with isolated
+    // procfs fixtures. Production callers use the default /proc mount.
+    explicit PlatformProcessMemorySnapshotProvider(
+        QString procRoot = QStringLiteral("/proc")
+        );
+#endif
+
     [[nodiscard]] ProcessMemorySnapshot snapshot() const override;
+
+#if defined(Q_OS_LINUX)
+private:
+    QString m_procRoot;
+#endif
 };

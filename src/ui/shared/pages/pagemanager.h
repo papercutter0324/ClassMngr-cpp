@@ -1,10 +1,8 @@
 #ifndef PAGEMANAGER_H
 #define PAGEMANAGER_H
 
-#include "core/memory_usage_diagnostics.h"
 #include "core/resource_packs/resource_pack_manager.h"
 
-#include <QDateTime>
 #include <QMap>
 #include <QStackedWidget>
 
@@ -60,9 +58,7 @@ enum class PageType
 // Page Manager
 // =========================================================
 
-class PageManager : public QStackedWidget,
-                    public MemoryBreakdownProvider,
-                    public PageLifecycleProvider
+class PageManager : public QStackedWidget
 {
     Q_OBJECT
 
@@ -107,10 +103,6 @@ public:
     [[nodiscard]] static QString pageTypeIdentifier(
         PageType type
         );
-    [[nodiscard]] QList<MemoryBreakdownEntry>
-        memoryBreakdown() const override;
-    [[nodiscard]] QList<PageLifecycleEntry>
-        pageLifecycle() const override;
 
     bool confirmCurrentPageCanLeave(
         bool exiting = false
@@ -302,8 +294,6 @@ private:
 
     QMap<PageType, BasePage*> m_pages;
     QMap<PageType, std::function<BasePage*()>> m_pageFactories;
-    QMap<PageType, QDateTime> m_pageCreatedAt;
-    QMap<PageType, QDateTime> m_pageLastActivatedAt;
 };
 
 

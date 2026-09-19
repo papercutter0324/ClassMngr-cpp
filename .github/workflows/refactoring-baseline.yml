@@ -2,6 +2,32 @@ name: Refactoring baseline
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - Qt-Rewrite
+    paths:
+      - ".github/workflows/refactoring-baseline.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/**"
+      - "scripts/record_refactoring_baseline.py"
+      - "scripts/retry_macos_baseline_if_missing_report.py"
+      - "scripts/test_retry_macos_baseline_if_missing_report.py"
+      - "src/**"
+      - "tests/**"
+  pull_request:
+    paths:
+      - ".github/workflows/refactoring-baseline.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/**"
+      - "scripts/record_refactoring_baseline.py"
+      - "scripts/retry_macos_baseline_if_missing_report.py"
+      - "scripts/test_retry_macos_baseline_if_missing_report.py"
+      - "src/**"
+      - "tests/**"
 
 permissions:
   contents: read
@@ -11,7 +37,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  QT_VERSION: "6.11.1"
+  QT_VERSION: "6.12.0"
 
 jobs:
   baseline:
@@ -28,18 +54,28 @@ jobs:
             build_dir: build/windows-x64-debug
             configuration: Debug
             report: windows-x64-debug
+            run_baseline: true
+          - name: Windows ARM64 Debug cross-build
+            runner: windows-2022
+            preset: windows-arm64-debug
+            build_dir: build/windows-arm64-debug
+            configuration: Debug
+            report: windows-arm64-debug
+            run_baseline: false
           - name: Linux x64 Debug
             runner: ubuntu-24.04
             preset: linux-gcc-debug
             build_dir: build/linux-gcc-debug
             configuration: ""
             report: linux-gcc-debug
+            run_baseline: true
           - name: macOS universal Debug
             runner: macos-15-intel
             preset: macos-clang-debug
             build_dir: build/macos-clang-debug
             configuration: ""
             report: macos-clang-debug
+            run_baseline: true
 
     steps:
       - name: Check out repository
@@ -49,6 +85,11 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+
+      - name: Test macOS baseline retry decision
+        if: matrix.name == 'macOS universal Debug'
+        shell: bash
+        run: python3 scripts/test_retry_macos_baseline_if_missing_report.py
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -85,12 +126,47 @@ jobs:
           "CMAKE_GENERATOR=Visual Studio 17 2022" | Out-File -FilePath $env:GITHUB_ENV -Append
           "QT_MSVC_X64_PREFIX=C:\Qt\$env:QT_VERSION\msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Install Qt ARM64 target
+        if: matrix.preset == 'windows-arm64-debug'
+        shell: pwsh
+        run: |
+          $arguments = @(
+            "-m", "aqt",
+            "install-qt",
+            "windows", "desktop",
+            $env:QT_VERSION,
+            "win64_msvc2022_arm64_cross_compiled",
+            "--outputdir", "C:\Qt",
+            "--base", "https://download.qt.io",
+            "--timeout", "30",
+            "--modules", "qtpdf"
+          )
+
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            & python @arguments
+            $exitCode = $LASTEXITCODE
+
+            if ($exitCode -eq 0) {
+              break
+            }
+
+            if ($attempt -eq $maxAttempts) {
+              throw "aqt ARM64 target installation failed after $maxAttempts attempts (exit code $exitCode)"
+            }
+
+            Write-Warning "aqt ARM64 target installation failed on attempt $attempt (exit code $exitCode); retrying..."
+            Start-Sleep -Seconds (10 * $attempt)
+          }
+
+          "QT_MSVC_ARM64_PREFIX=C:\Qt\$env:QT_VERSION\msvc2022_arm64" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Install Qt on Linux
         if: runner.os == 'Linux'
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
-          # Qt Declarative and the command-line tools are in the Qt 6.11 base
+          # Qt Declarative and the command-line tools are in the Qt 6.12 base
           # package; Qt Pdf is the only extension required by this build.
           python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
             --outputdir "${GITHUB_WORKSPACE}/Qt" \
@@ -108,6 +184,7 @@ jobs:
           echo "QT_MACOS_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/macos" >> "${GITHUB_ENV}"
 
       - name: Record clean build and test baseline
+        if: matrix.run_baseline
         id: record
         shell: bash
         run: |
@@ -131,8 +208,22 @@ jobs:
             python scripts/record_refactoring_baseline.py "${arguments[@]}"
           fi
 
+      - name: Cross-build Windows ARM64 Debug targets
+        if: matrix.preset == 'windows-arm64-debug'
+        shell: pwsh
+        run: |
+          cmake --fresh --preset windows-arm64-debug
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows ARM64 Debug configure failed with exit code $LASTEXITCODE."
+          }
+
+          cmake --build --preset windows-arm64-debug --target ClassMngr ClassMngrNext --parallel 2
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows ARM64 Debug build failed with exit code $LASTEXITCODE."
+          }
+
       - name: Upload baseline report and JUnit results
-        if: always()
+        if: always() && matrix.run_baseline
         uses: actions/upload-artifact@v7
         with:
           name: refactoring-baseline-${{ matrix.report }}
@@ -142,3 +233,29 @@ jobs:
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log
           if-no-files-found: warn
+
+  retry-macos-baseline-without-evidence:
+    name: Retry macOS baseline once when no result artifact was published
+    needs: [baseline]
+    if: ${{ always() && needs.baseline.result == 'failure' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Retry macOS baseline only when its result artifact is missing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GH_API_URL: ${{ github.api_url }}
+        run: python3 scripts/retry_macos_baseline_if_missing_report.py

@@ -10,6 +10,7 @@
 #include "core/settingsmanager.h"
 #include "core/zip_archive_writer.h"
 #include "ui/shared/state/option_state_keys.h"
+#include "windows_output_reference_capture.h"
 
 #include <QtTest>
 
@@ -30,6 +31,9 @@
 #include <QPdfSelection>
 #include <QProcess>
 #include <QPlainTextEdit>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QSettings>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollArea>
@@ -219,6 +223,129 @@ QByteArray powerPointTestSignature()
         return {};
     }
     return data;
+}
+
+QString windowsOfficeVersionForManifest(
+    QString* versionSource,
+    QString* errorMessage
+    )
+{
+#ifdef Q_OS_WIN
+    QSettings clickToRunRegistry(
+        QStringLiteral(
+            "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\Configuration"
+            ),
+        QSettings::NativeFormat
+        );
+    const QString clickToRunVersion =
+        clickToRunRegistry.value(QStringLiteral("VersionToReport"))
+            .toString()
+            .trimmed();
+    if (!clickToRunVersion.isEmpty())
+    {
+        if (versionSource)
+        {
+            *versionSource =
+                QStringLiteral("Office Click-to-Run VersionToReport registry value");
+        }
+        return clickToRunVersion;
+    }
+
+    QString powerShellPath;
+    for (const QString& candidate : {
+             QStringLiteral("powershell.exe"),
+             QStringLiteral("powershell"),
+             QStringLiteral("pwsh.exe"),
+             QStringLiteral("pwsh")
+         })
+    {
+        powerShellPath = QStandardPaths::findExecutable(candidate);
+        if (!powerShellPath.isEmpty())
+        {
+            break;
+        }
+    }
+    if (powerShellPath.isEmpty())
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("PowerShell is required to query the registered Office version.");
+        }
+        return {};
+    }
+
+    QProcess process;
+    process.start(
+        powerShellPath,
+        {
+            QStringLiteral("-NoProfile"),
+            QStringLiteral("-NonInteractive"),
+            QStringLiteral("-Command"),
+            QStringLiteral(
+                "$ErrorActionPreference = 'Stop'; "
+                "$app = New-Object -ComObject PowerPoint.Application; "
+                "try { [Console]::WriteLine([string]$app.Version) } "
+                "finally { $app.Quit(); "
+                "[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($app) }"
+                )
+        }
+        );
+    if (!process.waitForStarted())
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("Unable to start PowerShell to query Office version: %1")
+                    .arg(process.errorString());
+        }
+        return {};
+    }
+    if (!process.waitForFinished(30000))
+    {
+        process.kill();
+        process.waitForFinished(5000);
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("The Office version query timed out.");
+        }
+        return {};
+    }
+
+    const QString standardOutput =
+        QString::fromLocal8Bit(process.readAllStandardOutput()).trimmed();
+    const QString standardError =
+        QString::fromLocal8Bit(process.readAllStandardError()).trimmed();
+    if (process.exitStatus() != QProcess::NormalExit
+        || process.exitCode() != 0
+        || standardOutput.isEmpty())
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("Unable to query Office version: %1")
+                    .arg(standardError.isEmpty()
+                             ? standardOutput
+                             : standardError);
+        }
+        return {};
+    }
+    if (versionSource)
+    {
+        *versionSource =
+            QStringLiteral("PowerPoint.Application.Version (COM)");
+    }
+    return standardOutput;
+#else
+    Q_UNUSED(versionSource);
+    if (errorMessage)
+    {
+        *errorMessage =
+            QStringLiteral("Office version evidence is available only on Windows.");
+    }
+    return {};
+#endif
 }
 
 int matchingPixelCount(
@@ -730,6 +857,20 @@ void SpeakingEvalBatchReportServiceTests::
 {
     QFETCH(SpeakingEvalReportTemplate, reportTemplate);
 
+    const bool isAdvanced =
+        reportTemplate == SpeakingEvalReportTemplate::Advanced;
+    WindowsOutputReferenceCapture::OutputDirectory referenceDirectory;
+    QVERIFY2(
+        WindowsOutputReferenceCapture::prepareOutputDirectory(
+            WindowsOutputReferenceCapture::OutputRootEnvironmentVariable,
+            isAdvanced
+                ? QStringLiteral("speaking-eval-advanced")
+                : QStringLiteral("speaking-eval-standard"),
+            &referenceDirectory
+            ),
+        qPrintable(referenceDirectory.error)
+        );
+
     QTemporaryDir outputDirectory;
     QVERIFY(outputDirectory.isValid());
     const SpeakingEvalReportData data =
@@ -774,8 +915,6 @@ void SpeakingEvalBatchReportServiceTests::
         QRectF(QPointF(), pathComparisonSize)
         );
     painter.end();
-    const bool isAdvanced =
-        reportTemplate == SpeakingEvalReportTemplate::Advanced;
     const QString previewPrefix =
         isAdvanced
             ? QStringLiteral("CLASSMNGR_ADVANCED")
@@ -828,6 +967,54 @@ void SpeakingEvalBatchReportServiceTests::
                 .arg(pathMeanError, 0, 'f', 3)
             )
         );
+
+    if (referenceDirectory.enabled)
+    {
+        WindowsOutputReferenceCapture::PdfCapture pdfCapture;
+        QString captureError;
+        QVERIFY2(
+            WindowsOutputReferenceCapture::capturePdf(
+                result.savedPdfPaths.constFirst(),
+                referenceDirectory.path,
+                isAdvanced
+                    ? QStringLiteral("speaking-eval-advanced-golden")
+                    : QStringLiteral("speaking-eval-standard-golden"),
+                document,
+                &pdfCapture,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+        document.close();
+        QCOMPARE(document.status(), QPdfDocument::Status::Null);
+
+        const QJsonObject manifest{
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("kind"), QStringLiteral("speaking-evaluation-report-pdf")},
+            {QStringLiteral("test"), QStringLiteral("internalPdfMatchesWidgetRendering")},
+            {QStringLiteral("syntheticTestContent"), true},
+            {QStringLiteral("reportTemplate"), isAdvanced
+                 ? QStringLiteral("advanced")
+                 : QStringLiteral("standard")},
+            {QStringLiteral("goldenFixture"), isAdvanced
+                 ? QStringLiteral("goldenReportData(Advanced)")
+                 : QStringLiteral("goldenReportData(Standard)")},
+            {QStringLiteral("reports"), QJsonArray{
+                 WindowsOutputReferenceCapture::pdfManifestEntry(
+                     pdfCapture,
+                     QStringLiteral("Null")
+                     )
+             }}
+        };
+        QVERIFY2(
+            WindowsOutputReferenceCapture::writeManifest(
+                referenceDirectory.path,
+                manifest,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+    }
 }
 
 void SpeakingEvalBatchReportServiceTests::overwriteExistingReportWhenAllowed()
@@ -2576,6 +2763,34 @@ void SpeakingEvalBatchReportServiceTests::
         QSKIP("PowerPoint automation is not available on this machine.");
     }
 
+    WindowsOutputReferenceCapture::OutputDirectory referenceDirectory;
+    const bool isAdvancedTemplate =
+        reportTemplateValue
+        == static_cast<int>(SpeakingEvalReportTemplate::Advanced);
+#ifdef Q_OS_WIN
+    const QString captureVariant =
+        isAdvancedTemplate
+            ? (includeSignature
+                   ? QStringLiteral("powerpoint-advanced-signature")
+                   : QStringLiteral("powerpoint-advanced"))
+            : QStringLiteral("powerpoint-standard-signature");
+    QVERIFY2(
+        WindowsOutputReferenceCapture::prepareOutputDirectory(
+            WindowsOutputReferenceCapture::OutputRootEnvironmentVariable,
+            captureVariant,
+            &referenceDirectory
+            ),
+        qPrintable(referenceDirectory.error)
+        );
+#else
+    if (qEnvironmentVariableIsSet(
+            WindowsOutputReferenceCapture::OutputRootEnvironmentVariable
+            ))
+    {
+        QSKIP("PowerPoint output references are captured on Windows only.");
+    }
+#endif
+
     QTemporaryDir outputDirectory;
     QVERIFY(outputDirectory.isValid());
 
@@ -2659,10 +2874,27 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY2(
         result.status == SpeakingEvalBatchReportService::Status::Completed,
         qPrintable(result.message)
-        );
+    );
     QCOMPARE(result.savedPdfPaths.size(), 2);
 
+    QString officeVersion;
+    QString officeVersionSource;
+    if (referenceDirectory.enabled)
+    {
+        QString officeVersionError;
+        officeVersion =
+            windowsOfficeVersionForManifest(
+                &officeVersionSource,
+                &officeVersionError
+                );
+        QVERIFY2(
+            !officeVersion.isEmpty(),
+            qPrintable(officeVersionError)
+            );
+    }
+
     QList<QImage> renderedPages;
+    QJsonArray capturedReports;
     for (int index = 0; index < result.savedPdfPaths.size(); ++index)
     {
         const SpeakingEvalReportData& expected =
@@ -2783,8 +3015,44 @@ void SpeakingEvalBatchReportServiceTests::
                                     ).signatureBounds.bottom()
                                 )
                         ) <= 2
-                    );
+                );
             }
+        }
+
+        if (referenceDirectory.enabled)
+        {
+            WindowsOutputReferenceCapture::PdfCapture pdfCapture;
+            QString captureError;
+            QVERIFY2(
+                WindowsOutputReferenceCapture::capturePdf(
+                    result.savedPdfPaths.at(index),
+                    referenceDirectory.path,
+                    index == 0
+                        ? QStringLiteral("first-student")
+                        : QStringLiteral("second-student"),
+                    document,
+                    &pdfCapture,
+                    &captureError
+                    ),
+                qPrintable(captureError)
+                );
+            document.close();
+            QCOMPARE(document.status(), QPdfDocument::Status::Null);
+
+            QJsonObject capturedReport =
+                WindowsOutputReferenceCapture::pdfManifestEntry(
+                    pdfCapture,
+                    QStringLiteral("Null")
+                    );
+            capturedReport.insert(
+                QStringLiteral("student"),
+                expected.englishName
+                );
+            capturedReport.insert(
+                QStringLiteral("includeSignature"),
+                includeSignature
+                );
+            capturedReports.append(capturedReport);
         }
     }
 
@@ -2822,6 +3090,34 @@ void SpeakingEvalBatchReportServiceTests::
         yellowPixels(renderedPages.at(1), lastGradeBounds)
         > yellowPixels(renderedPages.at(1), firstGradeBounds)
         );
+
+    if (referenceDirectory.enabled)
+    {
+        const QJsonObject manifest{
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("kind"), QStringLiteral("windows-powerpoint-rendered-reports")},
+            {QStringLiteral("test"), QStringLiteral("powerPointRendererCreatesReadablePdfWhenAvailable")},
+            {QStringLiteral("syntheticTestContent"), true},
+            {QStringLiteral("renderer"), QStringLiteral("Microsoft PowerPoint COM")},
+            {QStringLiteral("operatingSystem"), QStringLiteral("Windows")},
+            {QStringLiteral("officeVersion"), officeVersion},
+            {QStringLiteral("officeVersionSource"), officeVersionSource},
+            {QStringLiteral("reportTemplate"), isAdvancedTemplate
+                 ? QStringLiteral("advanced")
+                 : QStringLiteral("standard")},
+            {QStringLiteral("includeSignature"), includeSignature},
+            {QStringLiteral("reports"), capturedReports}
+        };
+        QString captureError;
+        QVERIFY2(
+            WindowsOutputReferenceCapture::writeManifest(
+                referenceDirectory.path,
+                manifest,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+    }
 
 #ifdef Q_OS_MACOS
     QVERIFY(!QFileInfo::exists(classMngrPowerPointWorkspace()));

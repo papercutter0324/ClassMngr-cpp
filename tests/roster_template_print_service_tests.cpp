@@ -1,4 +1,5 @@
 #include "features/roster/services/roster_template_print_service.h"
+#include "windows_output_reference_capture.h"
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
@@ -9,6 +10,8 @@
 #include <QColor>
 #include <QHash>
 #include <QImage>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QPageSize>
 #include <QPdfDocument>
 #include <QRect>
@@ -1591,6 +1594,16 @@ void RosterTemplatePrintServiceTests
 void RosterTemplatePrintServiceTests::
     dailyPdfUsesA4PortraitAndContinuesOverflowPages()
 {
+    WindowsOutputReferenceCapture::OutputDirectory referenceDirectory;
+    QVERIFY2(
+        WindowsOutputReferenceCapture::prepareOutputDirectory(
+            WindowsOutputReferenceCapture::OutputRootEnvironmentVariable,
+            QStringLiteral("roster-daily-overflow"),
+            &referenceDirectory
+            ),
+        qPrintable(referenceDirectory.error)
+        );
+
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -1639,11 +1652,63 @@ void RosterTemplatePrintServiceTests::
             classes
             );
     QVERIFY(hasCellValue(values, dailyPageKey(QStringLiteral("Monday"), 1), DailyFirstSectionRow, DailyHeaderColumn, QStringLiteral("E7 Level (4 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
+
+    if (referenceDirectory.enabled)
+    {
+        WindowsOutputReferenceCapture::PdfCapture pdfCapture;
+        QString captureError;
+        QVERIFY2(
+            WindowsOutputReferenceCapture::capturePdf(
+                path,
+                referenceDirectory.path,
+                QStringLiteral("daily-overflow-rosters"),
+                document,
+                &pdfCapture,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+        document.close();
+        QCOMPARE(document.status(), QPdfDocument::Status::Null);
+
+        const QJsonObject manifest{
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("kind"), QStringLiteral("roster-template-pdf")},
+            {QStringLiteral("test"), QStringLiteral("dailyPdfUsesA4PortraitAndContinuesOverflowPages")},
+            {QStringLiteral("syntheticTestContent"), true},
+            {QStringLiteral("template"), QStringLiteral("Daily")},
+            {QStringLiteral("pageLayout"), QStringLiteral("A4 portrait")},
+            {QStringLiteral("pdfs"), QJsonArray{
+                 WindowsOutputReferenceCapture::pdfManifestEntry(
+                     pdfCapture,
+                     QStringLiteral("Null")
+                     )
+             }}
+        };
+        QVERIFY2(
+            WindowsOutputReferenceCapture::writeManifest(
+                referenceDirectory.path,
+                manifest,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+    }
 }
 
 void RosterTemplatePrintServiceTests::
     perClassWithExtraInfoPdfHonorsPortraitAndLandscape()
 {
+    WindowsOutputReferenceCapture::OutputDirectory referenceDirectory;
+    QVERIFY2(
+        WindowsOutputReferenceCapture::prepareOutputDirectory(
+            WindowsOutputReferenceCapture::OutputRootEnvironmentVariable,
+            QStringLiteral("roster-per-class-extra-info"),
+            &referenceDirectory
+            ),
+        qPrintable(referenceDirectory.error)
+        );
+
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -1768,6 +1833,82 @@ void RosterTemplatePrintServiceTests::
                 )
             )
         );
+
+    if (referenceDirectory.enabled)
+    {
+        WindowsOutputReferenceCapture::PdfCapture portraitCapture;
+        WindowsOutputReferenceCapture::PdfCapture landscapeCapture;
+        QString captureError;
+        QVERIFY2(
+            WindowsOutputReferenceCapture::capturePdf(
+                portraitPath,
+                referenceDirectory.path,
+                QStringLiteral("per-class-extra-info-portrait"),
+                portraitDocument,
+                &portraitCapture,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+        QVERIFY2(
+            WindowsOutputReferenceCapture::capturePdf(
+                landscapePath,
+                referenceDirectory.path,
+                QStringLiteral("per-class-extra-info-landscape"),
+                landscapeDocument,
+                &landscapeCapture,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+        portraitDocument.close();
+        landscapeDocument.close();
+        QCOMPARE(portraitDocument.status(), QPdfDocument::Status::Null);
+        QCOMPARE(landscapeDocument.status(), QPdfDocument::Status::Null);
+
+        QJsonObject portraitManifestEntry =
+            WindowsOutputReferenceCapture::pdfManifestEntry(
+                portraitCapture,
+                QStringLiteral("Null")
+                );
+        portraitManifestEntry.insert(
+            QStringLiteral("orientation"),
+            QStringLiteral("portrait")
+            );
+        QJsonObject landscapeManifestEntry =
+            WindowsOutputReferenceCapture::pdfManifestEntry(
+                landscapeCapture,
+                QStringLiteral("Null")
+                );
+        landscapeManifestEntry.insert(
+            QStringLiteral("orientation"),
+            QStringLiteral("landscape")
+            );
+
+        const QJsonObject manifest{
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("kind"), QStringLiteral("roster-template-pdf")},
+            {QStringLiteral("test"), QStringLiteral("perClassWithExtraInfoPdfHonorsPortraitAndLandscape")},
+            {QStringLiteral("syntheticTestContent"), true},
+            {QStringLiteral("template"), QStringLiteral("PerClassWithExtraInfo")},
+            {QStringLiteral("extraColumns"), QJsonArray{
+                 QStringLiteral("Birthday"),
+                 QStringLiteral("Phone")
+             }},
+            {QStringLiteral("pdfs"), QJsonArray{
+                 portraitManifestEntry,
+                 landscapeManifestEntry
+             }}
+        };
+        QVERIFY2(
+            WindowsOutputReferenceCapture::writeManifest(
+                referenceDirectory.path,
+                manifest,
+                &captureError
+                ),
+            qPrintable(captureError)
+            );
+    }
 }
 
 QTEST_MAIN(RosterTemplatePrintServiceTests)

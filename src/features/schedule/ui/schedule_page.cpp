@@ -94,6 +94,13 @@ ScheduleDisplayMode SchedulePage::displayMode() const
         : ScheduleDisplayMode::Regular;
 }
 
+ScheduleWidgetRuntimeMetrics SchedulePage::runtimeMetrics() const
+{
+    return m_scheduleWidget
+        ? m_scheduleWidget->runtimeMetrics()
+        : ScheduleWidgetRuntimeMetrics{};
+}
+
 PageOutputCapabilities SchedulePage::outputCapabilities() const
 {
     const bool enabled =

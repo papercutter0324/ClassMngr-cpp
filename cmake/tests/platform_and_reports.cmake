@@ -135,18 +135,6 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
-    classmngr_add_qt_test(
-        NAME MemoryUsage
-        OFFSCREEN
-        SOURCES
-            tests/memory_usage_tests.cpp
-        LIBRARIES
-            Qt6::Core
-            Qt6::Gui
-            Qt6::Test
-            Qt6::Widgets
-    )
-
     qt_add_executable(ClassMngrSignatureImageProcessorTests
         tests/signature_image_processor_tests.cpp
         src/features/my_info/data/signature_image_processor.cpp
@@ -339,8 +327,22 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
     )
 
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        classmngr_add_qt_test(
+            NAME ProcessMemorySnapshot
+            SOURCES
+                tests/process_memory_snapshot_tests.cpp
+            LIBRARIES
+                Qt6::Test
+        )
+    endif()
+
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
+        src/features/classes/services/class_transfer_json_codec.cpp
+        src/data/database/database_schema_manager.cpp
+        src/data/database/database_transaction.cpp
+        src/data/database/sql_query_utils.cpp
     )
 
     add_dependencies(
@@ -353,15 +355,29 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             cxx_std_23
     )
 
+    target_include_directories(ClassMngrStartupPerformanceTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
     target_link_libraries(ClassMngrStartupPerformanceTests
         PRIVATE
             Qt6::Core
+            Qt6::Gui
+            Qt6::Network
+            Qt6::Sql
             Qt6::Test
     )
 
     add_test(
         NAME ClassMngrStartupPerformanceTests
         COMMAND ClassMngrStartupPerformanceTests
+    )
+
+    set_tests_properties(ClassMngrStartupPerformanceTests
+        PROPERTIES
+            LABELS "startup;memory;performance"
+            RUN_SERIAL TRUE
     )
 
     qt_add_executable(ClassMngrDatabaseFileFormatTests

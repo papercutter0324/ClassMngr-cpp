@@ -4,6 +4,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/startup_profiler.h"
 #include "core/utils/colorutils.h"
 #include "domain/models/classroom.h"
 #include "domain/rules/schedule_import_rules.h"
@@ -68,6 +69,14 @@ ScheduleImportReviewDialog::ScheduleImportReviewDialog(
     setWindowTitle(tr("Review & Reconcile"));
     setModal(true);
     buildUi();
+}
+
+ScheduleImportReviewDialog::~ScheduleImportReviewDialog()
+{
+    if (m_prepared)
+    {
+        StartupProfiler::recordScheduleImportReviewReleased();
+    }
 }
 
 void ScheduleImportReviewDialog::buildUi()
@@ -363,6 +372,10 @@ bool ScheduleImportReviewDialog::prepare()
         && m_preview.inventory.hasIntensiveHours
         );
     m_updateIntensiveRadio->setChecked(true);
+    // The preview widget is created before the import is prepared, so its
+    // normal page-entry refresh has not run yet. Load the current display
+    // preferences before building the imported schedule model.
+    m_previewWidget->refreshSchedule();
     m_previewWidget->setPreviewModel(
         previewModel(
             m_preview.user,
@@ -372,6 +385,19 @@ bool ScheduleImportReviewDialog::prepare()
         );
     rebuildResolutionControls();
     updateReviewState();
+    int previewEntryCount = 0;
+    for (const ScheduleImportClassCandidate& candidate : m_preview.user.classes)
+    {
+        previewEntryCount += candidate.times.size();
+    }
+    StartupProfiler::recordScheduleImportReviewPrepared(
+        m_preview.teachers.size(),
+        m_preview.classes.size(),
+        m_preview.user.diagnostics.size(),
+        previewEntryCount,
+        m_teacherControls.size(),
+        m_classControls.size()
+        );
     m_prepared = true;
     resizeForReviewStage();
     QTimer::singleShot(
@@ -614,6 +640,9 @@ void ScheduleImportReviewDialog::updateScheduleConflictWarning(
                 PromptRequest{
                     .parent = this,
                     .objectName = QStringLiteral("scheduleImportConflictWarning"),
+                    .automationId = QStringLiteral(
+                        "schedule-import-conflict-warning"
+                        ),
                     .title = tr("Schedule Import Conflict"),
                     .message = m_pendingScheduleConflictMessage,
                     .severity = PromptSeverity::Warning
@@ -1421,12 +1450,18 @@ void ScheduleImportReviewDialog::applyImport()
         + tr("Is this schedule valid and ready to import?");
 
     if (
-        DialogServices::confirm(
-            this,
-            tr("Confirm Schedule Import"),
-            confirmation,
-            tr("Import"),
-            tr("Cancel")
+        DialogServices::prompts().confirm(
+            PromptRequest{
+                .parent = this,
+                .automationId = QStringLiteral(
+                    "schedule-import-confirmation"
+                    ),
+                .title = tr("Confirm Schedule Import"),
+                .message = confirmation,
+                .severity = PromptSeverity::Information,
+                .acceptText = tr("Import"),
+                .rejectText = tr("Cancel")
+            }
             ) != PromptChoice::Accepted
         )
     {
@@ -1453,6 +1488,16 @@ void ScheduleImportReviewDialog::applyImport()
             );
         return;
     }
+
+    StartupProfiler::recordScheduleImportApplied(
+        summary->teachersCreated,
+        summary->teachersUpdated,
+        summary->classesCreated,
+        summary->classesUpdated,
+        summary->classesSkipped,
+        summary->schedulesCleared,
+        summary->ignoredCells
+        );
 
     DialogServices::showInformation(
         this,

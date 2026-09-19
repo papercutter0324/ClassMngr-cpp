@@ -2,9 +2,11 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QAbstractButton>
+#include <QApplication>
 #include <QCoreApplication>
 #include <QHash>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QPushButton>
 #include <QWidget>
 
@@ -68,6 +70,17 @@ QString translatedUnsavedText(
         );
 }
 
+void setPromptWindowTitle(
+    QMessageBox& dialog,
+    const QString& title
+    )
+{
+    dialog.setWindowTitle(title);
+    // QMessageBox::setWindowTitle() is a no-op on macOS.  Set the inherited
+    // QWidget property so the actual dialog still exposes PromptRequest::title.
+    static_cast<QWidget&>(dialog).setWindowTitle(title);
+}
+
 QMessageBox::ButtonRole messageBoxRole(
     PromptActionRole role
     )
@@ -97,9 +110,16 @@ void configureMessageBox(
             ? QStringLiteral("classmngrUserPrompt")
             : request.objectName
         );
+    if (!request.automationId.isEmpty())
+    {
+        dialog.setProperty(
+            "classmngrPromptAutomationId",
+            request.automationId
+            );
+    }
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setIcon(messageBoxIcon(request.severity));
-    dialog.setWindowTitle(request.title);
+    setPromptWindowTitle(dialog, request.title);
     dialog.setText(request.message);
     dialog.setTextFormat(Qt::PlainText);
 
@@ -109,13 +129,11 @@ void configureMessageBox(
     }
 }
 
-}
-
-void QtUserPromptService::showMessage(
+void configureAcknowledgeMessageBox(
+    QMessageBox& dialog,
     const PromptRequest& request
     )
 {
-    QMessageBox dialog(request.parent);
     configureMessageBox(dialog, request);
 
     QPushButton* acknowledgeButton = dialog.addButton(
@@ -129,6 +147,69 @@ void QtUserPromptService::showMessage(
         );
     dialog.setDefaultButton(acknowledgeButton);
     dialog.setEscapeButton(acknowledgeButton);
+
+    // Keep the title assignment at the end of the shared setup path, before
+    // either exec() or open() can make the dialog visible.
+    setPromptWindowTitle(dialog, request.title);
+}
+
+QString promptAutomationId(
+    const QMessageBox& dialog
+    )
+{
+    const QString automationId =
+        dialog.property("classmngrPromptAutomationId").toString();
+    return automationId.isEmpty()
+        ? dialog.objectName()
+        : automationId;
+}
+
+bool promptMatches(
+    const QMessageBox& dialog,
+    const QString& id
+    )
+{
+    return dialog.isVisible()
+        && (
+            id.isEmpty()
+            || promptAutomationId(dialog) == id
+            || dialog.objectName() == id
+            );
+}
+
+QMessageBox* findPrompt(
+    const QString& id
+    )
+{
+    if (
+        auto* active =
+            qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+        active && promptMatches(*active, id)
+        )
+    {
+        return active;
+    }
+
+    for (QWidget* widget : QApplication::topLevelWidgets())
+    {
+        auto* prompt = qobject_cast<QMessageBox*>(widget);
+        if (prompt && promptMatches(*prompt, id))
+        {
+            return prompt;
+        }
+    }
+
+    return nullptr;
+}
+
+}
+
+void QtUserPromptService::showMessage(
+    const PromptRequest& request
+    )
+{
+    QMessageBox dialog(request.parent);
+    configureAcknowledgeMessageBox(dialog, request);
     dialog.exec();
 }
 
@@ -137,20 +218,89 @@ void QtUserPromptService::showMessageAsync(
     )
 {
     auto* dialog = new QMessageBox(request.parent);
-    configureMessageBox(*dialog, request);
-    auto* acknowledgeButton = dialog->addButton(
-        request.acceptText.isEmpty()
-            ? translatedButtonText(OkText)
-            : request.acceptText,
-        QMessageBox::AcceptRole
-        );
-    acknowledgeButton->setObjectName(
-        QStringLiteral("promptAcceptButton")
-        );
-    dialog->setDefaultButton(acknowledgeButton);
-    dialog->setEscapeButton(acknowledgeButton);
+    configureAcknowledgeMessageBox(*dialog, request);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->open();
+}
+
+std::optional<PromptSnapshot> QtPromptTestDriver::activePrompt(
+    const QString& id
+    ) const
+{
+    QMessageBox* prompt = findPrompt(id);
+    if (!prompt)
+    {
+        return std::nullopt;
+    }
+
+    return PromptSnapshot{
+        .id = promptAutomationId(*prompt),
+        .objectName = prompt->objectName(),
+        .title = prompt->windowTitle(),
+        .text = prompt->text(),
+        .visible = prompt->isVisible()
+    };
+}
+
+bool QtPromptTestDriver::accept(
+    const QString& id
+    )
+{
+    if (QMessageBox* prompt = findPrompt(id))
+    {
+        prompt->accept();
+        return true;
+    }
+
+    return false;
+}
+
+bool QtPromptTestDriver::reject(
+    const QString& id
+    )
+{
+    if (QMessageBox* prompt = findPrompt(id))
+    {
+        prompt->reject();
+        return true;
+    }
+
+    return false;
+}
+
+bool QtPromptTestDriver::clickDefault(
+    const QString& id
+    )
+{
+    if (
+        QMessageBox* prompt = findPrompt(id);
+        prompt && prompt->defaultButton()
+        )
+    {
+        prompt->defaultButton()->click();
+        return true;
+    }
+
+    return false;
+}
+
+bool QtPromptTestDriver::capture(
+    const QString& id,
+    const QString& path
+    )
+{
+    if (path.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    if (QMessageBox* prompt = findPrompt(id))
+    {
+        const QPixmap capture = prompt->grab();
+        return !capture.isNull() && capture.save(path, "PNG");
+    }
+
+    return false;
 }
 
 PromptChoice QtUserPromptService::confirm(
@@ -317,6 +467,12 @@ IUserPromptService& DialogServices::prompts()
 
     static QtUserPromptService service;
     return service;
+}
+
+IPromptTestDriver& DialogServices::promptTestDriver()
+{
+    static QtPromptTestDriver driver;
+    return driver;
 }
 
 void DialogServices::setUserPromptServiceForTesting(

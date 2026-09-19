@@ -1,0 +1,2044 @@
+{
+  "recordedAtUtc": "2026-09-17T14:14:15.792Z",
+  "expectedArchitectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "deploymentTarget": "14.4",
+  "cmakeSysroot": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
+  "cmakeCache": {
+    "release": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "BUILD_TESTING": "OFF",
+      "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
+      "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+      "CMAKE_OSX_SYSROOT": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
+      "CMAKE_PREFIX_PATH": "/Users/papercutter0324/Qt/6.12.0/macos"
+    },
+    "debug": {
+      "CMAKE_BUILD_TYPE": "Debug",
+      "BUILD_TESTING": "ON",
+      "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
+      "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+      "CMAKE_OSX_SYSROOT": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
+      "CMAKE_PREFIX_PATH": "/Users/papercutter0324/Qt/6.12.0/macos"
+    }
+  },
+  "applicationPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr",
+  "testExecutable": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/build/debug/ClassMngrStartupPerformanceTests",
+  "infoPlistPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Info.plist",
+  "infoPlistMinimumVersion": "14.4",
+  "infoPlistCommandOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/info-plist/runner-stdout.txt",
+  "application": {
+    "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr",
+    "relativePath": "ClassMngr.app/Contents/MacOS/ClassMngr",
+    "kind": "Mach-O",
+    "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr (for architecture x86_64):\tMach-O 64-bit executable x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr (for architecture arm64):\tMach-O 64-bit executable arm64",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "minimumVersions": [
+      "14.4",
+      "14.4"
+    ],
+    "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_MacOS_ClassMngr/file/runner-stdout.txt",
+    "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_MacOS_ClassMngr/lipo/runner-stdout.txt",
+    "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_MacOS_ClassMngr/vtool/runner-stdout.txt",
+    "sha256": "ab0256fd89030eaa5580fdd5439ac68f195d512348a719979e8de0c46ecaac67"
+  },
+  "testHarness": {
+    "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/build/debug/ClassMngrStartupPerformanceTests",
+    "relativePath": "debug/ClassMngrStartupPerformanceTests",
+    "kind": "Mach-O",
+    "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/build/debug/ClassMngrStartupPerformanceTests (for architecture x86_64):\tMach-O 64-bit executable x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/build/debug/ClassMngrStartupPerformanceTests (for architecture arm64):\tMach-O 64-bit executable arm64",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "minimumVersions": [
+      "14.4",
+      "14.4"
+    ],
+    "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/debug_ClassMngrStartupPerformanceTests/file/runner-stdout.txt",
+    "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/debug_ClassMngrStartupPerformanceTests/lipo/runner-stdout.txt",
+    "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/debug_ClassMngrStartupPerformanceTests/vtool/runner-stdout.txt",
+    "sha256": "95bc0652ea402d4912462d67f7b290c2df3a7d87b8b3a3ac0b5bbb5adafabeff"
+  },
+  "embeddedMachOCount": 116,
+  "embeddedMachO": [
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtConcurrent.framework/Versions/A/QtConcurrent",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtConcurrent.framework/Versions/A/QtConcurrent",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtConcurrent.framework/Versions/A/QtConcurrent (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtConcurrent.framework/Versions/A/QtConcurrent (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtConcurrent.framework_Versions_A_QtConcurrent/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtConcurrent.framework_Versions_A_QtConcurrent/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtConcurrent.framework_Versions_A_QtConcurrent/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtCore.framework_Versions_A_QtCore/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtCore.framework_Versions_A_QtCore/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtCore.framework_Versions_A_QtCore/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtDBus.framework/Versions/A/QtDBus",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtDBus.framework/Versions/A/QtDBus",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtDBus.framework/Versions/A/QtDBus (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtDBus.framework/Versions/A/QtDBus (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtDBus.framework_Versions_A_QtDBus/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtDBus.framework_Versions_A_QtDBus/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtDBus.framework_Versions_A_QtDBus/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtGui.framework/Versions/A/QtGui",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtGui.framework/Versions/A/QtGui",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtGui.framework/Versions/A/QtGui (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtGui.framework/Versions/A/QtGui (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtGui.framework_Versions_A_QtGui/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtGui.framework_Versions_A_QtGui/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtGui.framework_Versions_A_QtGui/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtLabsFolderListModel.framework/Versions/A/QtLabsFolderListModel",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtLabsFolderListModel.framework/Versions/A/QtLabsFolderListModel",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtLabsFolderListModel.framework/Versions/A/QtLabsFolderListModel (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtLabsFolderListModel.framework/Versions/A/QtLabsFolderListModel (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtLabsFolderListModel.framework_Versions_A_QtLabsFolderListModel/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtLabsFolderListModel.framework_Versions_A_QtLabsFolderListModel/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtLabsFolderListModel.framework_Versions_A_QtLabsFolderListModel/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtLabsQmlModels.framework/Versions/A/QtLabsQmlModels",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtLabsQmlModels.framework/Versions/A/QtLabsQmlModels",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtLabsQmlModels.framework/Versions/A/QtLabsQmlModels (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtLabsQmlModels.framework/Versions/A/QtLabsQmlModels (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtLabsQmlModels.framework_Versions_A_QtLabsQmlModels/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtLabsQmlModels.framework_Versions_A_QtLabsQmlModels/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtLabsQmlModels.framework_Versions_A_QtLabsQmlModels/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtMultimedia.framework/Versions/A/QtMultimedia",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtMultimedia.framework/Versions/A/QtMultimedia",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtMultimedia.framework/Versions/A/QtMultimedia (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtMultimedia.framework/Versions/A/QtMultimedia (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtMultimedia.framework_Versions_A_QtMultimedia/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtMultimedia.framework_Versions_A_QtMultimedia/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtMultimedia.framework_Versions_A_QtMultimedia/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtMultimediaQuick.framework/Versions/A/QtMultimediaQuick",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtMultimediaQuick.framework/Versions/A/QtMultimediaQuick",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtMultimediaQuick.framework/Versions/A/QtMultimediaQuick (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtMultimediaQuick.framework/Versions/A/QtMultimediaQuick (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtMultimediaQuick.framework_Versions_A_QtMultimediaQuick/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtMultimediaQuick.framework_Versions_A_QtMultimediaQuick/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtMultimediaQuick.framework_Versions_A_QtMultimediaQuick/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtNetwork.framework/Versions/A/QtNetwork",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtNetwork.framework/Versions/A/QtNetwork",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtNetwork.framework/Versions/A/QtNetwork (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtNetwork.framework/Versions/A/QtNetwork (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtNetwork.framework_Versions_A_QtNetwork/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtNetwork.framework_Versions_A_QtNetwork/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtNetwork.framework_Versions_A_QtNetwork/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtOpenGL.framework/Versions/A/QtOpenGL",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtOpenGL.framework/Versions/A/QtOpenGL",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtOpenGL.framework/Versions/A/QtOpenGL (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtOpenGL.framework/Versions/A/QtOpenGL (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtOpenGL.framework_Versions_A_QtOpenGL/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtOpenGL.framework_Versions_A_QtOpenGL/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtOpenGL.framework_Versions_A_QtOpenGL/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPdf.framework/Versions/A/QtPdf",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtPdf.framework/Versions/A/QtPdf",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPdf.framework/Versions/A/QtPdf (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPdf.framework/Versions/A/QtPdf (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPdf.framework_Versions_A_QtPdf/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPdf.framework_Versions_A_QtPdf/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPdf.framework_Versions_A_QtPdf/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPdfWidgets.framework/Versions/A/QtPdfWidgets",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtPdfWidgets.framework/Versions/A/QtPdfWidgets",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPdfWidgets.framework/Versions/A/QtPdfWidgets (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPdfWidgets.framework/Versions/A/QtPdfWidgets (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPdfWidgets.framework_Versions_A_QtPdfWidgets/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPdfWidgets.framework_Versions_A_QtPdfWidgets/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPdfWidgets.framework_Versions_A_QtPdfWidgets/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPrintSupport.framework/Versions/A/QtPrintSupport",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtPrintSupport.framework/Versions/A/QtPrintSupport",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPrintSupport.framework/Versions/A/QtPrintSupport (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtPrintSupport.framework/Versions/A/QtPrintSupport (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPrintSupport.framework_Versions_A_QtPrintSupport/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPrintSupport.framework_Versions_A_QtPrintSupport/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtPrintSupport.framework_Versions_A_QtPrintSupport/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQml.framework/Versions/A/QtQml",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQml.framework/Versions/A/QtQml",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQml.framework/Versions/A/QtQml (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQml.framework/Versions/A/QtQml (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQml.framework_Versions_A_QtQml/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQml.framework_Versions_A_QtQml/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQml.framework_Versions_A_QtQml/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlMeta.framework/Versions/A/QtQmlMeta",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQmlMeta.framework/Versions/A/QtQmlMeta",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlMeta.framework/Versions/A/QtQmlMeta (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlMeta.framework/Versions/A/QtQmlMeta (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlMeta.framework_Versions_A_QtQmlMeta/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlMeta.framework_Versions_A_QtQmlMeta/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlMeta.framework_Versions_A_QtQmlMeta/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlModels.framework/Versions/A/QtQmlModels",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQmlModels.framework/Versions/A/QtQmlModels",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlModels.framework/Versions/A/QtQmlModels (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlModels.framework/Versions/A/QtQmlModels (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlModels.framework_Versions_A_QtQmlModels/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlModels.framework_Versions_A_QtQmlModels/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlModels.framework_Versions_A_QtQmlModels/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlWorkerScript.framework/Versions/A/QtQmlWorkerScript",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQmlWorkerScript.framework/Versions/A/QtQmlWorkerScript",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlWorkerScript.framework/Versions/A/QtQmlWorkerScript (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQmlWorkerScript.framework/Versions/A/QtQmlWorkerScript (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlWorkerScript.framework_Versions_A_QtQmlWorkerScript/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlWorkerScript.framework_Versions_A_QtQmlWorkerScript/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQmlWorkerScript.framework_Versions_A_QtQmlWorkerScript/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuick.framework/Versions/A/QtQuick",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuick.framework/Versions/A/QtQuick",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuick.framework/Versions/A/QtQuick (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuick.framework/Versions/A/QtQuick (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuick.framework_Versions_A_QtQuick/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuick.framework_Versions_A_QtQuick/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuick.framework_Versions_A_QtQuick/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2.framework/Versions/A/QtQuickControls2",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2.framework/Versions/A/QtQuickControls2",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2.framework/Versions/A/QtQuickControls2 (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2.framework/Versions/A/QtQuickControls2 (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2.framework_Versions_A_QtQuickControls2/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2.framework_Versions_A_QtQuickControls2/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2.framework_Versions_A_QtQuickControls2/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Basic.framework/Versions/A/QtQuickControls2Basic",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2Basic.framework/Versions/A/QtQuickControls2Basic",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Basic.framework/Versions/A/QtQuickControls2Basic (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Basic.framework/Versions/A/QtQuickControls2Basic (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Basic.framework_Versions_A_QtQuickControls2Basic/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Basic.framework_Versions_A_QtQuickControls2Basic/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Basic.framework_Versions_A_QtQuickControls2Basic/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2BasicStyleImpl.framework/Versions/A/QtQuickControls2BasicStyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2BasicStyleImpl.framework/Versions/A/QtQuickControls2BasicStyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2BasicStyleImpl.framework/Versions/A/QtQuickControls2BasicStyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2BasicStyleImpl.framework/Versions/A/QtQuickControls2BasicStyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2BasicStyleImpl.framework_Versions_A_QtQuickControls2BasicStyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2BasicStyleImpl.framework_Versions_A_QtQuickControls2BasicStyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2BasicStyleImpl.framework_Versions_A_QtQuickControls2BasicStyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3.framework/Versions/A/QtQuickControls2FluentWinUI3",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3.framework/Versions/A/QtQuickControls2FluentWinUI3",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3.framework/Versions/A/QtQuickControls2FluentWinUI3 (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3.framework/Versions/A/QtQuickControls2FluentWinUI3 (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FluentWinUI3.framework_Versions_A_QtQuickControls2FluentWinUI3/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FluentWinUI3.framework_Versions_A_QtQuickControls2FluentWinUI3/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FluentWinUI3.framework_Versions_A_QtQuickControls2FluentWinUI3/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3StyleImpl.framework/Versions/A/QtQuickControls2FluentWinUI3StyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3StyleImpl.framework/Versions/A/QtQuickControls2FluentWinUI3StyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3StyleImpl.framework/Versions/A/QtQuickControls2FluentWinUI3StyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FluentWinUI3StyleImpl.framework/Versions/A/QtQuickControls2FluentWinUI3StyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FluentWinUI3StyleImpl.framework_Versions_A_QtQuickControls2FluentWinUI3StyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FluentWinUI3StyleImpl.framework_Versions_A_QtQuickControls2FluentWinUI3StyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FluentWinUI3StyleImpl.framework_Versions_A_QtQuickControls2FluentWinUI3StyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Fusion.framework/Versions/A/QtQuickControls2Fusion",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2Fusion.framework/Versions/A/QtQuickControls2Fusion",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Fusion.framework/Versions/A/QtQuickControls2Fusion (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Fusion.framework/Versions/A/QtQuickControls2Fusion (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Fusion.framework_Versions_A_QtQuickControls2Fusion/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Fusion.framework_Versions_A_QtQuickControls2Fusion/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Fusion.framework_Versions_A_QtQuickControls2Fusion/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FusionStyleImpl.framework/Versions/A/QtQuickControls2FusionStyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2FusionStyleImpl.framework/Versions/A/QtQuickControls2FusionStyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FusionStyleImpl.framework/Versions/A/QtQuickControls2FusionStyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2FusionStyleImpl.framework/Versions/A/QtQuickControls2FusionStyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FusionStyleImpl.framework_Versions_A_QtQuickControls2FusionStyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FusionStyleImpl.framework_Versions_A_QtQuickControls2FusionStyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2FusionStyleImpl.framework_Versions_A_QtQuickControls2FusionStyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2IOS.framework/Versions/A/QtQuickControls2IOS",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2IOS.framework/Versions/A/QtQuickControls2IOS",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2IOS.framework/Versions/A/QtQuickControls2IOS (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2IOS.framework/Versions/A/QtQuickControls2IOS (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2IOS.framework_Versions_A_QtQuickControls2IOS/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2IOS.framework_Versions_A_QtQuickControls2IOS/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2IOS.framework_Versions_A_QtQuickControls2IOS/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2IOSStyleImpl.framework/Versions/A/QtQuickControls2IOSStyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2IOSStyleImpl.framework/Versions/A/QtQuickControls2IOSStyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2IOSStyleImpl.framework/Versions/A/QtQuickControls2IOSStyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2IOSStyleImpl.framework/Versions/A/QtQuickControls2IOSStyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2IOSStyleImpl.framework_Versions_A_QtQuickControls2IOSStyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2IOSStyleImpl.framework_Versions_A_QtQuickControls2IOSStyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2IOSStyleImpl.framework_Versions_A_QtQuickControls2IOSStyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Imagine.framework/Versions/A/QtQuickControls2Imagine",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2Imagine.framework/Versions/A/QtQuickControls2Imagine",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Imagine.framework/Versions/A/QtQuickControls2Imagine (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Imagine.framework/Versions/A/QtQuickControls2Imagine (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Imagine.framework_Versions_A_QtQuickControls2Imagine/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Imagine.framework_Versions_A_QtQuickControls2Imagine/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Imagine.framework_Versions_A_QtQuickControls2Imagine/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2ImagineStyleImpl.framework/Versions/A/QtQuickControls2ImagineStyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2ImagineStyleImpl.framework/Versions/A/QtQuickControls2ImagineStyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2ImagineStyleImpl.framework/Versions/A/QtQuickControls2ImagineStyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2ImagineStyleImpl.framework/Versions/A/QtQuickControls2ImagineStyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2ImagineStyleImpl.framework_Versions_A_QtQuickControls2ImagineStyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2ImagineStyleImpl.framework_Versions_A_QtQuickControls2ImagineStyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2ImagineStyleImpl.framework_Versions_A_QtQuickControls2ImagineStyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Impl.framework/Versions/A/QtQuickControls2Impl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2Impl.framework/Versions/A/QtQuickControls2Impl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Impl.framework/Versions/A/QtQuickControls2Impl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Impl.framework/Versions/A/QtQuickControls2Impl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Impl.framework_Versions_A_QtQuickControls2Impl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Impl.framework_Versions_A_QtQuickControls2Impl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Impl.framework_Versions_A_QtQuickControls2Impl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2MacOSStyleImpl.framework/Versions/A/QtQuickControls2MacOSStyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2MacOSStyleImpl.framework/Versions/A/QtQuickControls2MacOSStyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2MacOSStyleImpl.framework/Versions/A/QtQuickControls2MacOSStyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2MacOSStyleImpl.framework/Versions/A/QtQuickControls2MacOSStyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2MacOSStyleImpl.framework_Versions_A_QtQuickControls2MacOSStyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2MacOSStyleImpl.framework_Versions_A_QtQuickControls2MacOSStyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2MacOSStyleImpl.framework_Versions_A_QtQuickControls2MacOSStyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Macos.framework/Versions/A/QtQuickControls2Macos",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2Macos.framework/Versions/A/QtQuickControls2Macos",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Macos.framework/Versions/A/QtQuickControls2Macos (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Macos.framework/Versions/A/QtQuickControls2Macos (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Macos.framework_Versions_A_QtQuickControls2Macos/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Macos.framework_Versions_A_QtQuickControls2Macos/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Macos.framework_Versions_A_QtQuickControls2Macos/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Material.framework/Versions/A/QtQuickControls2Material",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2Material.framework/Versions/A/QtQuickControls2Material",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Material.framework/Versions/A/QtQuickControls2Material (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Material.framework/Versions/A/QtQuickControls2Material (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Material.framework_Versions_A_QtQuickControls2Material/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Material.framework_Versions_A_QtQuickControls2Material/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Material.framework_Versions_A_QtQuickControls2Material/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2MaterialStyleImpl.framework/Versions/A/QtQuickControls2MaterialStyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2MaterialStyleImpl.framework/Versions/A/QtQuickControls2MaterialStyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2MaterialStyleImpl.framework/Versions/A/QtQuickControls2MaterialStyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2MaterialStyleImpl.framework/Versions/A/QtQuickControls2MaterialStyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2MaterialStyleImpl.framework_Versions_A_QtQuickControls2MaterialStyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2MaterialStyleImpl.framework_Versions_A_QtQuickControls2MaterialStyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2MaterialStyleImpl.framework_Versions_A_QtQuickControls2MaterialStyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Universal.framework/Versions/A/QtQuickControls2Universal",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2Universal.framework/Versions/A/QtQuickControls2Universal",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Universal.framework/Versions/A/QtQuickControls2Universal (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2Universal.framework/Versions/A/QtQuickControls2Universal (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Universal.framework_Versions_A_QtQuickControls2Universal/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Universal.framework_Versions_A_QtQuickControls2Universal/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2Universal.framework_Versions_A_QtQuickControls2Universal/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2UniversalStyleImpl.framework/Versions/A/QtQuickControls2UniversalStyleImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickControls2UniversalStyleImpl.framework/Versions/A/QtQuickControls2UniversalStyleImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2UniversalStyleImpl.framework/Versions/A/QtQuickControls2UniversalStyleImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickControls2UniversalStyleImpl.framework/Versions/A/QtQuickControls2UniversalStyleImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2UniversalStyleImpl.framework_Versions_A_QtQuickControls2UniversalStyleImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2UniversalStyleImpl.framework_Versions_A_QtQuickControls2UniversalStyleImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickControls2UniversalStyleImpl.framework_Versions_A_QtQuickControls2UniversalStyleImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2.framework/Versions/A/QtQuickDialogs2",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickDialogs2.framework/Versions/A/QtQuickDialogs2",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2.framework/Versions/A/QtQuickDialogs2 (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2.framework/Versions/A/QtQuickDialogs2 (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2.framework_Versions_A_QtQuickDialogs2/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2.framework_Versions_A_QtQuickDialogs2/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2.framework_Versions_A_QtQuickDialogs2/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2QuickImpl.framework/Versions/A/QtQuickDialogs2QuickImpl",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickDialogs2QuickImpl.framework/Versions/A/QtQuickDialogs2QuickImpl",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2QuickImpl.framework/Versions/A/QtQuickDialogs2QuickImpl (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2QuickImpl.framework/Versions/A/QtQuickDialogs2QuickImpl (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2QuickImpl.framework_Versions_A_QtQuickDialogs2QuickImpl/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2QuickImpl.framework_Versions_A_QtQuickDialogs2QuickImpl/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2QuickImpl.framework_Versions_A_QtQuickDialogs2QuickImpl/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2Utils.framework/Versions/A/QtQuickDialogs2Utils",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickDialogs2Utils.framework/Versions/A/QtQuickDialogs2Utils",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2Utils.framework/Versions/A/QtQuickDialogs2Utils (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickDialogs2Utils.framework/Versions/A/QtQuickDialogs2Utils (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2Utils.framework_Versions_A_QtQuickDialogs2Utils/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2Utils.framework_Versions_A_QtQuickDialogs2Utils/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickDialogs2Utils.framework_Versions_A_QtQuickDialogs2Utils/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickEffects.framework/Versions/A/QtQuickEffects",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickEffects.framework/Versions/A/QtQuickEffects",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickEffects.framework/Versions/A/QtQuickEffects (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickEffects.framework/Versions/A/QtQuickEffects (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickEffects.framework_Versions_A_QtQuickEffects/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickEffects.framework_Versions_A_QtQuickEffects/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickEffects.framework_Versions_A_QtQuickEffects/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickLayouts.framework/Versions/A/QtQuickLayouts",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickLayouts.framework/Versions/A/QtQuickLayouts",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickLayouts.framework/Versions/A/QtQuickLayouts (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickLayouts.framework/Versions/A/QtQuickLayouts (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickLayouts.framework_Versions_A_QtQuickLayouts/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickLayouts.framework_Versions_A_QtQuickLayouts/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickLayouts.framework_Versions_A_QtQuickLayouts/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickNativeStyle.framework/Versions/A/QtQuickNativeStyle",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickNativeStyle.framework/Versions/A/QtQuickNativeStyle",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickNativeStyle.framework/Versions/A/QtQuickNativeStyle (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickNativeStyle.framework/Versions/A/QtQuickNativeStyle (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickNativeStyle.framework_Versions_A_QtQuickNativeStyle/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickNativeStyle.framework_Versions_A_QtQuickNativeStyle/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickNativeStyle.framework_Versions_A_QtQuickNativeStyle/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickShapes.framework/Versions/A/QtQuickShapes",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickShapes.framework/Versions/A/QtQuickShapes",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickShapes.framework/Versions/A/QtQuickShapes (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickShapes.framework/Versions/A/QtQuickShapes (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickShapes.framework_Versions_A_QtQuickShapes/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickShapes.framework_Versions_A_QtQuickShapes/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickShapes.framework_Versions_A_QtQuickShapes/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickTemplates2.framework/Versions/A/QtQuickTemplates2",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickTemplates2.framework/Versions/A/QtQuickTemplates2",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickTemplates2.framework/Versions/A/QtQuickTemplates2 (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickTemplates2.framework/Versions/A/QtQuickTemplates2 (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickTemplates2.framework_Versions_A_QtQuickTemplates2/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickTemplates2.framework_Versions_A_QtQuickTemplates2/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickTemplates2.framework_Versions_A_QtQuickTemplates2/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickTest.framework/Versions/A/QtQuickTest",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickTest.framework/Versions/A/QtQuickTest",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickTest.framework/Versions/A/QtQuickTest (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickTest.framework/Versions/A/QtQuickTest (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickTest.framework_Versions_A_QtQuickTest/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickTest.framework_Versions_A_QtQuickTest/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickTest.framework_Versions_A_QtQuickTest/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickWidgets.framework/Versions/A/QtQuickWidgets",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtQuickWidgets.framework/Versions/A/QtQuickWidgets",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickWidgets.framework/Versions/A/QtQuickWidgets (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtQuickWidgets.framework/Versions/A/QtQuickWidgets (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickWidgets.framework_Versions_A_QtQuickWidgets/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickWidgets.framework_Versions_A_QtQuickWidgets/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtQuickWidgets.framework_Versions_A_QtQuickWidgets/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtSql.framework/Versions/A/QtSql (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtSql.framework_Versions_A_QtSql/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtSql.framework_Versions_A_QtSql/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtSql.framework_Versions_A_QtSql/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtSvg.framework/Versions/A/QtSvg",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtSvg.framework/Versions/A/QtSvg",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtSvg.framework/Versions/A/QtSvg (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtSvg.framework/Versions/A/QtSvg (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtSvg.framework_Versions_A_QtSvg/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtSvg.framework_Versions_A_QtSvg/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtSvg.framework_Versions_A_QtSvg/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtTest.framework/Versions/A/QtTest",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtTest.framework/Versions/A/QtTest",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtTest.framework/Versions/A/QtTest (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtTest.framework/Versions/A/QtTest (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtTest.framework_Versions_A_QtTest/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtTest.framework_Versions_A_QtTest/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtTest.framework_Versions_A_QtTest/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtVirtualKeyboard.framework/Versions/A/QtVirtualKeyboard",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtVirtualKeyboard.framework/Versions/A/QtVirtualKeyboard",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtVirtualKeyboard.framework/Versions/A/QtVirtualKeyboard (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtVirtualKeyboard.framework/Versions/A/QtVirtualKeyboard (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtVirtualKeyboard.framework_Versions_A_QtVirtualKeyboard/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtVirtualKeyboard.framework_Versions_A_QtVirtualKeyboard/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtVirtualKeyboard.framework_Versions_A_QtVirtualKeyboard/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtVirtualKeyboardQml.framework/Versions/A/QtVirtualKeyboardQml",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtVirtualKeyboardQml.framework/Versions/A/QtVirtualKeyboardQml",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtVirtualKeyboardQml.framework/Versions/A/QtVirtualKeyboardQml (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtVirtualKeyboardQml.framework/Versions/A/QtVirtualKeyboardQml (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtVirtualKeyboardQml.framework_Versions_A_QtVirtualKeyboardQml/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtVirtualKeyboardQml.framework_Versions_A_QtVirtualKeyboardQml/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtVirtualKeyboardQml.framework_Versions_A_QtVirtualKeyboardQml/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtWidgets.framework_Versions_A_QtWidgets/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtWidgets.framework_Versions_A_QtWidgets/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_QtWidgets.framework_Versions_A_QtWidgets/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavcodec.62.dylib",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/libavcodec.62.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavcodec.62.dylib (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavcodec.62.dylib (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "12.0",
+        "12.0"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavcodec.62.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavcodec.62.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavcodec.62.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavformat.62.dylib",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/libavformat.62.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavformat.62.dylib (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavformat.62.dylib (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "12.0",
+        "12.0"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavformat.62.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavformat.62.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavformat.62.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavutil.60.dylib",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/libavutil.60.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavutil.60.dylib (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libavutil.60.dylib (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "12.0",
+        "12.0"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavutil.60.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavutil.60.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libavutil.60.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libswresample.6.dylib",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/libswresample.6.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64:Mach-O 64-bit dynamically linked shared library arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libswresample.6.dylib (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libswresample.6.dylib (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "12.0",
+        "12.0"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libswresample.6.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libswresample.6.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libswresample.6.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libswscale.9.dylib",
+      "relativePath": "ClassMngr.app/Contents/Frameworks/libswscale.9.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit dynamically linked shared library x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libswscale.9.dylib (for architecture x86_64):\tMach-O 64-bit dynamically linked shared library x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/Frameworks/libswscale.9.dylib (for architecture arm64):\tMach-O 64-bit dynamically linked shared library arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "12.0",
+        "12.0"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libswscale.9.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libswscale.9.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_Frameworks_libswscale.9.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr",
+      "relativePath": "ClassMngr.app/Contents/MacOS/ClassMngr",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr (for architecture x86_64):\tMach-O 64-bit executable x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/MacOS/ClassMngr (for architecture arm64):\tMach-O 64-bit executable arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_MacOS_ClassMngr/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_MacOS_ClassMngr/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_MacOS_ClassMngr/vtool/runner-stdout.txt",
+      "sha256": "ab0256fd89030eaa5580fdd5439ac68f195d512348a719979e8de0c46ecaac67"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/iconengines/libqsvgicon.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/iconengines/libqsvgicon.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/iconengines/libqsvgicon.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/iconengines/libqsvgicon.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_iconengines_libqsvgicon.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_iconengines_libqsvgicon.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_iconengines_libqsvgicon.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqgif.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqgif.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqgif.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqgif.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqgif.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqgif.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqgif.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqicns.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqicns.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqicns.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqicns.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqicns.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqicns.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqicns.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqico.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqico.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqico.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqico.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqico.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqico.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqico.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqjpeg.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqjpeg.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqjpeg.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqjpeg.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqjpeg.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqjpeg.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqjpeg.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqmacheif.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqmacheif.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqmacheif.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqmacheif.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqmacheif.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqmacheif.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqmacheif.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqmacjp2.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqmacjp2.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqmacjp2.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqmacjp2.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqmacjp2.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqmacjp2.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqmacjp2.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqpdf.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqpdf.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqpdf.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqpdf.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqpdf.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqpdf.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqpdf.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqtga.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqtga.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqtga.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqtga.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqtga.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqtga.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqtga.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqtiff.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqtiff.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqtiff.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqtiff.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqtiff.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqtiff.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqtiff.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqwbmp.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqwbmp.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqwbmp.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqwbmp.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqwbmp.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqwbmp.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqwbmp.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqwebp.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/imageformats/libqwebp.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqwebp.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/imageformats/libqwebp.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqwebp.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqwebp.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_imageformats_libqwebp.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libeffectsplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libeffectsplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libeffectsplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libeffectsplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libeffectsplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libeffectsplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libeffectsplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/liblabsmodelsplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/liblabsmodelsplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/liblabsmodelsplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/liblabsmodelsplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_liblabsmodelsplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_liblabsmodelsplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_liblabsmodelsplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libmodelsplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libmodelsplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libmodelsplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libmodelsplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libmodelsplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libmodelsplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libmodelsplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlfolderlistmodelplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqmlfolderlistmodelplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlfolderlistmodelplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlfolderlistmodelplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlfolderlistmodelplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlfolderlistmodelplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlfolderlistmodelplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqmlplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlshapesplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqmlshapesplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlshapesplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqmlshapesplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlshapesplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlshapesplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqmlshapesplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqquicklayoutsplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqquicklayoutsplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqquicklayoutsplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqquicklayoutsplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqquicklayoutsplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqquicklayoutsplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqquicklayoutsplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquick2plugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquick2plugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquick2plugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquick2plugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquick2plugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquick2plugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquick2plugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2basicstyleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2basicstyleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2basicstyleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2basicstyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2basicstyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2basicstyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2basicstyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fluentwinui3styleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fluentwinui3styleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fluentwinui3styleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fluentwinui3styleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fluentwinui3styleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fluentwinui3styleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fluentwinui3styleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fusionstyleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fusionstyleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fusionstyleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2fusionstyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fusionstyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fusionstyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2fusionstyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2imaginestyleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2imaginestyleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2imaginestyleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2imaginestyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2imaginestyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2imaginestyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2imaginestyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2implplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2implplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2implplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2implplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2implplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2implplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2implplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2iosstyleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2iosstyleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2iosstyleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2iosstyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2iosstyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2iosstyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2iosstyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2macosstyleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2macosstyleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2macosstyleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2macosstyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2macosstyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2macosstyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2macosstyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2materialstyleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2materialstyleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2materialstyleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2materialstyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2materialstyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2materialstyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2materialstyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2plugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2plugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2plugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2plugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2plugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2plugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2plugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2universalstyleimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2universalstyleimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2universalstyleimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickcontrols2universalstyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2universalstyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2universalstyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickcontrols2universalstyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickdialogs2quickimplplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickdialogs2quickimplplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickdialogs2quickimplplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickdialogs2quickimplplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickdialogs2quickimplplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickdialogs2quickimplplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickdialogs2quickimplplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickdialogsplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquickdialogsplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickdialogsplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquickdialogsplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickdialogsplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickdialogsplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquickdialogsplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquicknativestyleplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquicknativestyleplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquicknativestyleplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquicknativestyleplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquicknativestyleplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquicknativestyleplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquicknativestyleplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquicktemplates2plugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libqtquicktemplates2plugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquicktemplates2plugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libqtquicktemplates2plugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquicktemplates2plugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquicktemplates2plugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libqtquicktemplates2plugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquickmultimediaplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libquickmultimediaplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquickmultimediaplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquickmultimediaplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquickmultimediaplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquickmultimediaplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquickmultimediaplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquicktestplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libquicktestplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquicktestplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquicktestplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquicktestplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquicktestplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquicktestplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquicktoolingplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libquicktoolingplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquicktoolingplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquicktoolingplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquicktoolingplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquicktoolingplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquicktoolingplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquickwindowplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libquickwindowplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquickwindowplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libquickwindowplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquickwindowplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquickwindowplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libquickwindowplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libworkerscriptplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/libworkerscriptplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libworkerscriptplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/libworkerscriptplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libworkerscriptplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libworkerscriptplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_libworkerscriptplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/multimedia/libdarwinmediaplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/multimedia/libdarwinmediaplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/multimedia/libdarwinmediaplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/multimedia/libdarwinmediaplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_multimedia_libdarwinmediaplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_multimedia_libdarwinmediaplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_multimedia_libdarwinmediaplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/multimedia/libffmpegmediaplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/multimedia/libffmpegmediaplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/multimedia/libffmpegmediaplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/multimedia/libffmpegmediaplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_multimedia_libffmpegmediaplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_multimedia_libffmpegmediaplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_multimedia_libffmpegmediaplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/networkinformation/libqapplenetworkinformation.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/networkinformation/libqapplenetworkinformation.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/networkinformation/libqapplenetworkinformation.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/networkinformation/libqapplenetworkinformation.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_networkinformation_libqapplenetworkinformation.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_networkinformation_libqapplenetworkinformation.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_networkinformation_libqapplenetworkinformation.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforminputcontexts/libqtvirtualkeyboardplugin.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/platforminputcontexts/libqtvirtualkeyboardplugin.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforminputcontexts/libqtvirtualkeyboardplugin.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforminputcontexts/libqtvirtualkeyboardplugin.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforminputcontexts_libqtvirtualkeyboardplugin.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforminputcontexts_libqtvirtualkeyboardplugin.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforminputcontexts_libqtvirtualkeyboardplugin.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforms/libqcocoa.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/platforms/libqcocoa.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforms/libqcocoa.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforms/libqcocoa.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforms_libqcocoa.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforms_libqcocoa.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforms_libqcocoa.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforms/libqoffscreen.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/platforms/libqoffscreen.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforms/libqoffscreen.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/platforms/libqoffscreen.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforms_libqoffscreen.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforms_libqoffscreen.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_platforms_libqoffscreen.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/sqldrivers/libqsqlite.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/sqldrivers/libqsqlite.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/sqldrivers/libqsqlite.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/sqldrivers/libqsqlite.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_sqldrivers_libqsqlite.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_sqldrivers_libqsqlite.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_sqldrivers_libqsqlite.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/styles/libqmacstyle.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/styles/libqmacstyle.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/styles/libqmacstyle.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/styles/libqmacstyle.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_styles_libqmacstyle.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_styles_libqmacstyle.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_styles_libqmacstyle.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqcertonlybackend.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/tls/libqcertonlybackend.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqcertonlybackend.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqcertonlybackend.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqcertonlybackend.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqcertonlybackend.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqcertonlybackend.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqopensslbackend.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/tls/libqopensslbackend.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqopensslbackend.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqopensslbackend.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqopensslbackend.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqopensslbackend.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqopensslbackend.dylib/vtool/runner-stdout.txt"
+    },
+    {
+      "path": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqsecuretransportbackend.dylib",
+      "relativePath": "ClassMngr.app/Contents/PlugIns/tls/libqsecuretransportbackend.dylib",
+      "kind": "Mach-O",
+      "fileDescription": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit bundle x86_64] [arm64:Mach-O 64-bit bundle arm64]\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqsecuretransportbackend.dylib (for architecture x86_64):\tMach-O 64-bit bundle x86_64\n/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/package/ClassMngr.app/Contents/PlugIns/tls/libqsecuretransportbackend.dylib (for architecture arm64):\tMach-O 64-bit bundle arm64",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "minimumVersions": [
+        "14.4",
+        "14.4"
+      ],
+      "fileOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqsecuretransportbackend.dylib/file/runner-stdout.txt",
+      "lipoOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqsecuretransportbackend.dylib/lipo/runner-stdout.txt",
+      "vtoolOutputPath": "/private/tmp/classmngr-qt0-macos-universal-20260917T1403Z/packaging-audit/macho/ClassMngr.app_Contents_PlugIns_tls_libqsecuretransportbackend.dylib/vtool/runner-stdout.txt"
+    }
+  ]
+}

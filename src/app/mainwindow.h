@@ -32,7 +32,6 @@ QT_END_NAMESPACE
 
 class ApplicationServices;
 class CalendarPage;
-class MemoryUsageDialog;
 
 class Sidebar;
 class PageManager;
@@ -86,6 +85,7 @@ public:
     }
 
     [[nodiscard]] ApplicationServices* services() const;
+    [[nodiscard]] PageManager* pageManager() const;
 
     [[nodiscard]] CalendarPage* calendarPage() const;
     [[nodiscard]] CalendarPage* ensureCalendarPage() const;
@@ -145,7 +145,6 @@ private:
         );
 
     void updatePrintExportActions();
-    void showMemoryUsageMonitor();
 
     // =====================================================
     // UI
@@ -172,7 +171,6 @@ private:
 
     Sidebar* m_sidebar = nullptr;
     PageManager* m_pages = nullptr;
-    std::unique_ptr<MemoryUsageDialog> m_memoryUsageDialog;
 
     // =====================================================
     // Controllers

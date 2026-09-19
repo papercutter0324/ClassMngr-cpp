@@ -1,6 +1,6 @@
 #include "pdf_viewer_page_p.h"
 
-#include "core/memory_usage_diagnostics.h"
+#include "core/startup_profiler.h"
 
 #include <utility>
 
@@ -9,7 +9,6 @@ PdfViewerPage::PdfViewerPage(
     )
     : BasePage(parent)
 {
-    MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
     buildUi();
 }
 
@@ -47,6 +46,13 @@ PdfViewerPage::~PdfViewerPage()
 
     if (m_document)
     {
+        if (m_pdfLoadRecorded)
+        {
+            StartupProfiler::recordPdfDocumentReleased(
+                m_currentFilePath
+                );
+            m_pdfLoadRecorded = false;
+        }
         m_document->close();
         delete m_document;
         m_document =
@@ -171,15 +177,7 @@ bool PdfViewerPage::loadPdf(
     }
 
     m_documentReleased = false;
-    m_documentLoadRecorded = false;
-    m_documentLoadTimed = MemoryUsageDiagnostics::isEnabled();
-    if (m_documentLoadTimed)
-    {
-        m_documentLoadTimer.start();
-    }
-    m_documentByteCount = static_cast<quint64>(
-        qMax<qint64>(0, QFileInfo(filePath).size())
-        );
+    m_pdfLoadRecorded = false;
     m_currentFilePath = filePath;
     m_documentDescriptor = std::move(descriptor);
     m_view->setDocument(m_document);
@@ -189,15 +187,6 @@ bool PdfViewerPage::loadPdf(
 
     if (error != QPdfDocument::Error::None)
     {
-        if (m_documentLoadTimed)
-        {
-            MemoryUsageDiagnostics::recordTimedOperation(
-                QStringLiteral("pdf-open"),
-                QStringLiteral("failed before ready"),
-                m_documentLoadTimer.elapsed()
-                );
-            m_documentLoadTimed = false;
-        }
         updateDocumentActionButtons();
         updatePageDisplay();
         showStatusMessage(
@@ -226,28 +215,29 @@ void PdfViewerPage::releaseDocument()
         return;
     }
 
-    const bool recordTiming = MemoryUsageDiagnostics::isEnabled();
-    QElapsedTimer releaseTimer;
-    if (recordTiming)
-    {
-        releaseTimer.start();
-    }
+    const bool documentWasLoaded =
+        m_pdfLoadRecorded;
+    const QString releasedFilePath =
+        m_currentFilePath;
 
     m_documentReleased = true;
+    m_pdfLoadRecorded = false;
 
-    const bool wasLoaded = m_documentLoadRecorded;
-    m_documentLoadRecorded = false;
-    m_documentLoadTimed = false;
-
-    if (m_view && m_view->document() == m_document)
-    {
-        m_view->setDocument(nullptr);
-    }
-
+    // Keep the view attached to the document while closing it. Qt 6.12's
+    // QPdfView tears down its internal bookmark model from setDocument(nullptr)
+    // and can dereference that model during the next event-loop turn. Closing
+    // the document releases the loaded PDF pages while retaining the stable
+    // view/document pairing needed for a later reopen.
     m_document->close();
+
+    if (documentWasLoaded)
+    {
+        StartupProfiler::recordPdfDocumentReleased(
+            releasedFilePath
+            );
+    }
     m_currentFilePath.clear();
     m_documentDescriptor = {};
-    m_documentByteCount = 0;
     m_currentZoom = 1.0;
 
     if (m_view)
@@ -260,38 +250,6 @@ void PdfViewerPage::releaseDocument()
     updatePageDisplay();
     clearStatusMessage();
     updateDocumentActionButtons();
-
-    if (wasLoaded)
-    {
-        emit documentReleased();
-        MemoryUsageDiagnostics::recordEvent(QStringLiteral("pdf-released"));
-        if (recordTiming)
-        {
-            MemoryUsageDiagnostics::recordTimedOperation(
-                QStringLiteral("pdf-release"),
-                QStringLiteral("loaded document"),
-                releaseTimer.elapsed()
-                );
-        }
-    }
-}
-
-void PdfViewerPage::notifyDocumentLoaded()
-{
-    if (m_documentLoadRecorded || m_currentFilePath.trimmed().isEmpty())
-    {
-        return;
-    }
-
-    m_documentLoadRecorded = true;
-    const quint64 byteCount = static_cast<quint64>(
-        qMax<qint64>(0, QFileInfo(m_currentFilePath).size())
-        );
-    emit documentLoaded(byteCount);
-    MemoryUsageDiagnostics::recordEvent(
-        QStringLiteral("pdf-loaded"),
-        QStringLiteral("bytes=%1").arg(byteCount)
-        );
 }
 
 QString PdfViewerPage::currentFilePath() const
@@ -305,27 +263,6 @@ bool PdfViewerPage::hasLoadedDocument() const
         && m_document
         && m_document->status() == QPdfDocument::Status::Ready
         && m_document->pageCount() > 0;
-}
-
-QList<MemoryBreakdownEntry> PdfViewerPage::memoryBreakdown() const
-{
-    const bool loaded = hasLoadedDocument();
-    const int pageCount = loaded ? m_document->pageCount() : 0;
-
-    return {
-        {
-            QStringLiteral("Loaded PDF source"),
-            QStringLiteral("PDF Viewer"),
-            loaded ? m_documentByteCount : quint64{0},
-            loaded ? quint64{1} : quint64{0},
-            loaded
-                ? QStringLiteral("loaded; pages=%1; source bytes=%2")
-                      .arg(pageCount)
-                      .arg(m_documentByteCount)
-                : QStringLiteral("released"),
-            true
-        }
-    };
 }
 
 void PdfViewerPage::setDocumentPageSpacing(

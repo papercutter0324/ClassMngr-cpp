@@ -130,7 +130,6 @@ classmngr_add_qt_test(
 
     qt_add_executable(ClassMngrResourcePackTests
         tests/resource_pack_tests.cpp
-        src/core/memory_usage_diagnostics.cpp
         src/core/resource_packs/resource_pack_manager.cpp
         src/core/resource_packs/resource_pack_manifest.cpp
         src/core/updater/version.cpp
@@ -182,12 +181,16 @@ classmngr_add_qt_test(
         SOURCES
             tests/document_catalog_tests.cpp
             src/features/documents/document_catalog.cpp
-            src/core/memory_usage_diagnostics.cpp
             src/core/resource_packs/resource_pack_manager.cpp
             src/core/updater/version.cpp
+        COMPILE_DEFINITIONS
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
         LIBRARIES
             Qt6::Core
+            Qt6::Gui
+            Qt6::Pdf
             Qt6::Test
+        OFFSCREEN
     )
 
     add_dependencies(
@@ -223,6 +226,8 @@ classmngr_add_qt_test(
             Qt6::Gui
             Qt6::Test
             Qt6::Widgets
+        ENVIRONMENT
+            "CLASSMNGR_SETTINGS_ROOT=${PROJECT_BINARY_DIR}/test-settings/startup-visual"
         OFFSCREEN
     )
 
@@ -276,6 +281,8 @@ classmngr_add_qt_test(
         NAME DialogServices
         SOURCES
             tests/dialog_services_tests.cpp
+            tests/fakes/fake_file_dialog_service.h
+            tests/fakes/fake_user_prompt_service.h
         LIBRARIES
             Qt6::Core
             Qt6::Gui

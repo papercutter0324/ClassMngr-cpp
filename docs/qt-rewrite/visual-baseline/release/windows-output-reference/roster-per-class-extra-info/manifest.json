@@ -1,0 +1,49 @@
+{
+    "extraColumns": [
+        "Birthday",
+        "Phone"
+    ],
+    "kind": "roster-template-pdf",
+    "pdfs": [
+        {
+            "orientation": "portrait",
+            "pageCount": 1,
+            "pdf": "per-class-extra-info-portrait.pdf",
+            "pdfBytes": 19739,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 842,
+                    "pageWidthPoints": 595,
+                    "pixelHeight": 1684,
+                    "pixelWidth": 1190,
+                    "png": "per-class-extra-info-portrait-page-01.png",
+                    "pngBytes": 65763
+                }
+            ],
+            "statusAfterClose": "Null"
+        },
+        {
+            "orientation": "landscape",
+            "pageCount": 1,
+            "pdf": "per-class-extra-info-landscape.pdf",
+            "pdfBytes": 19739,
+            "renderedPages": [
+                {
+                    "page": 1,
+                    "pageHeightPoints": 595,
+                    "pageWidthPoints": 842,
+                    "pixelHeight": 1190,
+                    "pixelWidth": 1684,
+                    "png": "per-class-extra-info-landscape-page-01.png",
+                    "pngBytes": 65339
+                }
+            ],
+            "statusAfterClose": "Null"
+        }
+    ],
+    "schemaVersion": 1,
+    "syntheticTestContent": true,
+    "template": "PerClassWithExtraInfo",
+    "test": "perClassWithExtraInfoPdfHonorsPortraitAndLandscape"
+}

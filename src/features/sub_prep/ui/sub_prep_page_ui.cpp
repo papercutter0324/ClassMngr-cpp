@@ -151,12 +151,24 @@ void SubPrepPage::buildUi()
 
     m_officeNumberEdit =
         new QLineEdit(m_campusCard);
+    m_officeNumberEdit->setObjectName(
+        QStringLiteral("subPrepOfficeNumberEdit")
+        );
     m_officeWifiEdit =
         new QLineEdit(m_campusCard);
+    m_officeWifiEdit->setObjectName(
+        QStringLiteral("subPrepOfficeWifiEdit")
+        );
     m_officeWifiPasswordEdit =
         new QLineEdit(m_campusCard);
+    m_officeWifiPasswordEdit->setObjectName(
+        QStringLiteral("subPrepOfficeWifiPasswordEdit")
+        );
     m_photocopierCodeEdit =
         new QLineEdit(m_campusCard);
+    m_photocopierCodeEdit->setObjectName(
+        QStringLiteral("subPrepPhotocopierCodeEdit")
+        );
 
     const QList<QLineEdit*> campusEdits{
         m_officeNumberEdit,

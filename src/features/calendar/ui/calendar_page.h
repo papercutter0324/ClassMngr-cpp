@@ -26,6 +26,20 @@ class NavigationTabWidget;
 class QVBoxLayout;
 class QWidget;
 
+struct CalendarPageRuntimeMetrics
+{
+    int cacheEventCount = 0;
+    int cacheDateBucketCount = 0;
+    int cacheLoadedRangeCount = 0;
+    int cacheRetainedRangeCount = 0;
+    int loadedMonthCount = 0;
+    int onDemandRetainedRangeCount = 0;
+    int modelRevision = 0;
+    int pageWidgetCount = 0;
+    int calendarViewObjectCount = 0;
+    bool cacheLoading = false;
+};
+
 enum class UpcomingEventsScope
 {
     CurrentMonth = 0,
@@ -51,14 +65,8 @@ public:
     void setPageHeaderVisible(bool visible);
     void scrollToTop();
     [[nodiscard]] AcademicCalendarProvider* academicCalendarProvider() const;
+    [[nodiscard]] CalendarPageRuntimeMetrics runtimeMetrics() const;
     void calendarPreferencesChanged(bool eventsChanged);
-
-signals:
-    void calendarRetentionChanged(
-        int retainedRangeCount,
-        int cachedEventCount,
-        int dateBucketCount
-        );
 
 protected:
     bool eventFilter(
@@ -210,7 +218,6 @@ private:
     QDate m_nextTenSearchEnd;
     QSet<QDate> m_loadedMonths;
     QList<CalendarEventCache::DateRange> m_onDemandRetainedRanges;
-    QList<CalendarEventCache::DateRange> m_lastRecordedRetentionRanges;
     bool m_nextTenSearchComplete = false;
     bool m_nextTenLookupPending = false;
 };

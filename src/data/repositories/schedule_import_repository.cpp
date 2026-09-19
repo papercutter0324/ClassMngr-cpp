@@ -5,6 +5,7 @@
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/teacher_repository.h"
+#include "core/startup_profiler.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
@@ -296,6 +297,12 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         existingInfo.insert(classroom.id, *info);
     }
 
+    StartupProfiler::recordScheduleImportApplyInputs(
+        existingTeachers->size(),
+        existingClasses->size(),
+        existingInfo.size()
+        );
+
     const Status currentState = ScheduleImportStateValidator::validate(
         plan,
         *validatedPlan,
@@ -558,6 +565,18 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
 
         finalTimes.insert(classId, candidate.times);
     }
+
+    int finalScheduleRowCount = 0;
+    for (const QList<ClassTime>& times : finalTimes)
+    {
+        finalScheduleRowCount += times.size();
+    }
+    StartupProfiler::recordScheduleImportApplyPrepared(
+        finalTimes.size(),
+        finalScheduleRowCount,
+        teacherResolutions.size(),
+        classResolutions.size()
+        );
 
     if (!preservesAbsentIntensiveClasses)
     {

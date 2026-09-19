@@ -12,6 +12,16 @@ project(ClassMngr
     LANGUAGES CXX
 )
 
+# Keep every multi-configuration generator focused on the supported build
+# variants.  Single-configuration generators continue to use their preset's
+# CMAKE_BUILD_TYPE instead.
+if(CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING
+        "Supported ClassMngr build configurations"
+        FORCE
+    )
+endif()
+
 if(WIN32)
     enable_language(RC)
 endif()
@@ -52,7 +62,7 @@ if(DEFINED Qt6_DIR AND EXISTS "${Qt6_DIR}/Qt6Config.cmake")
     endforeach()
 endif()
 
-find_package(Qt6 6.11.1 REQUIRED COMPONENTS
+find_package(Qt6 6.12.0 REQUIRED COMPONENTS
     Concurrent
     Core
     Gui
@@ -75,7 +85,7 @@ option(CLASSMNGR_PREFER_QT_ZLIB_FALLBACK
 )
 
 macro(classmngr_try_qt_zlib_fallback)
-    find_package(Qt6ZlibPrivate 6.11.1 QUIET)
+    find_package(Qt6ZlibPrivate 6.12.0 QUIET)
     if(TARGET Qt6::ZlibPrivate AND NOT TARGET ZLIB::ZLIB)
         add_library(ZLIB::ZLIB ALIAS Qt6::ZlibPrivate)
         set(ZLIB_FOUND TRUE)
@@ -189,8 +199,9 @@ include(cmake/resources.cmake)
 include(cmake/deployment.cmake)
 include(cmake/platform/macos.cmake)
 include(cmake/platform/windows.cmake)
+include(cmake/next.cmake)
 if(BUILD_TESTING)
-    find_package(Qt6 6.11.1 REQUIRED COMPONENTS
+    find_package(Qt6 6.12.0 REQUIRED COMPONENTS
         Test
     )
 
@@ -201,6 +212,12 @@ if(BUILD_TESTING)
     include(cmake/tests/pages_and_output.cmake)
     include(cmake/tests/models_and_services.cmake)
     include(cmake/tests/platform_and_reports.cmake)
+    include(cmake/tests/next.cmake)
 
     classmngr_finalize_test_targets()
 endif()
+
+include(cmake/source_ownership.cmake)
+classmngr_check_source_ownership()
+
+include(cmake/build_reports.cmake)

@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-QT_DIR="${QT_DIR:-${QT_MACOS_PREFIX:-${HOME}/Qt/6.11.1/macos}}"
+QT_DIR="${QT_DIR:-${QT_MACOS_PREFIX:-${HOME}/Qt/6.12.0/macos}}"
 APP_BUNDLE="${PROJECT_ROOT}/dist/ClassMngr-macos/ClassMngr.app"
 QML_DIR="${QML_DIR:-${PROJECT_ROOT}/src/features/calendar/ui/qml}"
 
@@ -40,23 +40,17 @@ fi
 
 TEMP_DRIVER_DIR="$(mktemp -d "${TMPDIR:-/tmp}/classmngr-sqldrivers.XXXXXX")"
 VALIDATION_REPORT="${TEMP_DRIVER_DIR}/external-qt-dependencies.txt"
-RESTORE_NEEDED=()
 BAD_SQL_DRIVERS=(
     libqsqlmimer.dylib
     libqsqlodbc.dylib
     libqsqlpsql.dylib
 )
 
-restore_sql_drivers() {
-    for driver in "${RESTORE_NEEDED[@]}"; do
-        if [[ -e "${TEMP_DRIVER_DIR}/${driver}" ]]; then
-            mv "${TEMP_DRIVER_DIR}/${driver}" "${SQL_DRIVER_DIR}/${driver}"
-        fi
-    done
+cleanup_validation_dir() {
     rm -rf "${TEMP_DRIVER_DIR}"
 }
 
-trap restore_sql_drivers EXIT
+trap cleanup_validation_dir EXIT
 
 validate_no_external_qt_dependencies() {
     : > "${VALIDATION_REPORT}"
@@ -93,18 +87,11 @@ validate_no_external_qt_dependencies() {
     fi
 }
 
-for driver in "${BAD_SQL_DRIVERS[@]}"; do
-    if [[ -e "${SQL_DRIVER_DIR}/${driver}" ]]; then
-        mv "${SQL_DRIVER_DIR}/${driver}" "${TEMP_DRIVER_DIR}/${driver}"
-        RESTORE_NEEDED+=("${driver}")
-    fi
-done
-
 SQL_BUNDLE_DIR="${APP_BUNDLE}/Contents/PlugIns/sqldrivers"
 
 for driver in "${BAD_SQL_DRIVERS[@]}"; do
     if [[ -e "${SQL_BUNDLE_DIR}/${driver}" ]]; then
-        mv "${SQL_BUNDLE_DIR}/${driver}" "${TEMP_DRIVER_DIR}/bundled-before-${driver}"
+        rm -f "${SQL_BUNDLE_DIR}/${driver}"
     fi
 done
 
@@ -114,7 +101,7 @@ mkdir -p "${SQL_BUNDLE_DIR}"
 
 for driver in "${BAD_SQL_DRIVERS[@]}"; do
     if [[ -e "${SQL_BUNDLE_DIR}/${driver}" ]]; then
-        mv "${SQL_BUNDLE_DIR}/${driver}" "${TEMP_DRIVER_DIR}/bundled-${driver}"
+        rm -f "${SQL_BUNDLE_DIR}/${driver}"
     fi
 done
 
@@ -124,6 +111,9 @@ if [[ ! -e "${SQL_BUNDLE_DIR}/libqsqlite.dylib" ]]; then
 fi
 
 validate_no_external_qt_dependencies
+
+codesign --force --deep --sign - "${APP_BUNDLE}"
+codesign --verify --deep --strict "${APP_BUNDLE}"
 
 echo "Deployment complete: ${APP_BUNDLE}"
 echo "Kept SQL driver: ${SQL_BUNDLE_DIR}/libqsqlite.dylib"

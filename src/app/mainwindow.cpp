@@ -16,17 +16,18 @@
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
+#include "features/calendar/ui/calendar_page.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "ui/shared/dialogs/about_dialog.h"
-#include "ui/shared/dialogs/memory_usage_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QDialog>
@@ -132,6 +133,11 @@ MainWindow::MainWindow(
 ApplicationServices* MainWindow::services() const
 {
     return m_services.get();
+}
+
+PageManager* MainWindow::pageManager() const
+{
+    return m_pages;
 }
 
 CalendarPage* MainWindow::calendarPage() const
@@ -256,13 +262,149 @@ void MainWindow::initializePages()
         StartupProfiler::setActiveApplicationMetricsProvider(
             [this]()
             {
-                return StartupApplicationMetrics{
-                    .widgetCount = 0,
-                    .instantiatedPageCount =
-                        m_pages ? m_pages->instantiatedPageCount() : 0,
-                    .registeredPageCount =
-                        m_pages ? m_pages->registeredPageCount() : 0
-                };
+                StartupApplicationMetrics metrics;
+                metrics.instantiatedPageCount =
+                    m_pages ? m_pages->instantiatedPageCount() : 0;
+                metrics.registeredPageCount =
+                    m_pages ? m_pages->registeredPageCount() : 0;
+
+                if (m_pages && m_pages->subPrepPage())
+                {
+                    const SubPrepPageRuntimeMetrics subPrepMetrics =
+                        m_pages->subPrepPage()->runtimeMetrics();
+                    metrics.subPrepClassInformationWidgetCount =
+                        subPrepMetrics.classInformationWidgetCount;
+                    metrics.subPrepClassInformationTextEditCount =
+                        subPrepMetrics.classInformationTextEditCount;
+                    metrics.subPrepClassInformationNavigationRowCount =
+                        subPrepMetrics.classInformationNavigationRowCount;
+                    metrics.subPrepClassInformationSourceClassCount =
+                        subPrepMetrics.classInformationSourceClassCount;
+                    metrics.subPrepClassInformationVisibleClassCount =
+                        subPrepMetrics.classInformationVisibleClassCount;
+                    metrics.subPrepClassInformationGroupCount =
+                        subPrepMetrics.classInformationGroupCount;
+                    metrics.subPrepClassInformationClassInfoLookupCount =
+                        subPrepMetrics.classInformationClassInfoLookupCount;
+                    metrics.subPrepClassInformationTeacherLookupCount =
+                        subPrepMetrics.classInformationTeacherLookupCount;
+                    metrics.subPrepClassInformationRosterLookupCount =
+                        subPrepMetrics.classInformationRosterLookupCount;
+                    metrics.subPrepClassInformationClassQueryCount =
+                        subPrepMetrics.classInformationClassQueryCount;
+                    metrics.subPrepClassInformationClassResultRowCount =
+                        subPrepMetrics.classInformationClassResultRowCount;
+                    metrics.subPrepClassInformationClassInfoQueryCount =
+                        subPrepMetrics.classInformationClassInfoQueryCount;
+                    metrics.subPrepClassInformationClassInfoResultRowCount =
+                        subPrepMetrics.classInformationClassInfoResultRowCount;
+                    metrics.subPrepClassInformationClassInfoScheduleRowCount =
+                        subPrepMetrics.classInformationClassInfoScheduleRowCount;
+                    metrics.subPrepClassInformationTeacherQueryCount =
+                        subPrepMetrics.classInformationTeacherQueryCount;
+                    metrics.subPrepClassInformationTeacherResultRowCount =
+                        subPrepMetrics.classInformationTeacherResultRowCount;
+                    metrics.subPrepClassInformationRosterQueryCount =
+                        subPrepMetrics.classInformationRosterQueryCount;
+                    metrics.subPrepClassInformationRosterResultRowCount =
+                        subPrepMetrics.classInformationRosterResultRowCount;
+                    metrics.subPrepClassInformationRosterStudentResultCount =
+                        subPrepMetrics.classInformationRosterStudentResultCount;
+                    metrics.subPrepClassInformationRebuildCount =
+                        subPrepMetrics.classInformationRebuildCount;
+                    metrics.subPrepSelectedClassId =
+                        subPrepMetrics.selectedClassId;
+                }
+
+                if (m_pages && m_pages->classesPage())
+                {
+                    const ClassesPageRuntimeMetrics classesMetrics =
+                        m_pages->classesPage()->runtimeMetrics();
+                    metrics.classesSourceClassCount =
+                        classesMetrics.sourceClassCount;
+                    metrics.classesVisibleClassCount =
+                        classesMetrics.visibleClassCount;
+                    metrics.classesNavigationGradeGroupCount =
+                        classesMetrics.navigationGradeGroupCount;
+                    metrics.classesNavigationClassTabCount =
+                        classesMetrics.navigationClassTabCount;
+                    metrics.classesNavigationWidgetCount =
+                        classesMetrics.navigationWidgetCount;
+                    metrics.classesClassQueryCount =
+                        classesMetrics.classQueryCount;
+                    metrics.classesClassResultRowCount =
+                        classesMetrics.classResultRowCount;
+                    metrics.classesClassInfoQueryCount =
+                        classesMetrics.classInfoQueryCount;
+                    metrics.classesClassInfoResultRowCount =
+                        classesMetrics.classInfoResultRowCount;
+                    metrics.classesClassInfoScheduleRowCount =
+                        classesMetrics.classInfoScheduleRowCount;
+                    metrics.classesTeacherQueryCount =
+                        classesMetrics.teacherQueryCount;
+                    metrics.classesTeacherResultRowCount =
+                        classesMetrics.teacherResultRowCount;
+                    metrics.classesVisibleSectionCount =
+                        classesMetrics.visibleSectionCount;
+                    metrics.classesInstantiatedEditorCount =
+                        classesMetrics.instantiatedEditorCount;
+                    metrics.classesLoadedEditorClassCount =
+                        classesMetrics.loadedEditorClassCount;
+                    metrics.classesRebuildCount =
+                        classesMetrics.rebuildCount;
+                    metrics.classesSelectedClassId =
+                        classesMetrics.selectedClassId;
+                }
+
+                if (m_pages && m_pages->schedulePage())
+                {
+                    const ScheduleWidgetRuntimeMetrics scheduleMetrics =
+                        m_pages->schedulePage()->runtimeMetrics();
+                    metrics.scheduleModelRowCount =
+                        scheduleMetrics.modelRowCount;
+                    metrics.scheduleModelCellCount =
+                        scheduleMetrics.modelCellCount;
+                    metrics.scheduleModelEntryCount =
+                        scheduleMetrics.modelEntryCount;
+                    metrics.scheduleTableRowCount =
+                        scheduleMetrics.tableRowCount;
+                    metrics.scheduleTableColumnCount =
+                        scheduleMetrics.tableColumnCount;
+                    metrics.scheduleTableItemCount =
+                        scheduleMetrics.tableItemCount;
+                    metrics.scheduleTableCellWidgetCount =
+                        scheduleMetrics.tableCellWidgetCount;
+                    metrics.scheduleVisibleClassCount =
+                        scheduleMetrics.visibleClassCount;
+                }
+
+                if (m_pages && m_pages->calendarPage())
+                {
+                    const CalendarPageRuntimeMetrics calendarMetrics =
+                        m_pages->calendarPage()->runtimeMetrics();
+                    metrics.calendarCacheEventCount =
+                        calendarMetrics.cacheEventCount;
+                    metrics.calendarCacheDateBucketCount =
+                        calendarMetrics.cacheDateBucketCount;
+                    metrics.calendarCacheLoadedRangeCount =
+                        calendarMetrics.cacheLoadedRangeCount;
+                    metrics.calendarCacheRetainedRangeCount =
+                        calendarMetrics.cacheRetainedRangeCount;
+                    metrics.calendarLoadedMonthCount =
+                        calendarMetrics.loadedMonthCount;
+                    metrics.calendarOnDemandRetainedRangeCount =
+                        calendarMetrics.onDemandRetainedRangeCount;
+                    metrics.calendarModelRevision =
+                        calendarMetrics.modelRevision;
+                    metrics.calendarPageWidgetCount =
+                        calendarMetrics.pageWidgetCount;
+                    metrics.calendarViewObjectCount =
+                        calendarMetrics.calendarViewObjectCount;
+                    metrics.calendarCacheLoading =
+                        calendarMetrics.cacheLoading;
+                }
+
+                return metrics;
             }
             );
     }
@@ -435,11 +577,6 @@ void MainWindow::retranslateUi()
     if (m_pages)
     {
         m_pages->retranslatePages();
-    }
-
-    if (m_memoryUsageDialog)
-    {
-        m_memoryUsageDialog->retranslateUi();
     }
 }
 
@@ -934,34 +1071,6 @@ void MainWindow::connectSignals()
             }
             );
     }
-
-    if (m_actions.showMemoryUsageMonitor)
-    {
-        connect(
-            m_actions.showMemoryUsageMonitor,
-            &QAction::triggered,
-            this,
-            &MainWindow::showMemoryUsageMonitor
-            );
-    }
-}
-
-void MainWindow::showMemoryUsageMonitor()
-{
-    if (!m_memoryUsageDialog)
-    {
-        m_memoryUsageDialog = std::make_unique<MemoryUsageDialog>(
-            this,
-            m_pages,
-            nullptr,
-            m_services.get(),
-            m_languageService
-            );
-    }
-
-    // The dialog uses non-activating tool-window flags, so show() preserves
-    // the active editor and keyboard target in the main application.
-    m_memoryUsageDialog->show();
 }
 
 void MainWindow::updatePrintExportActions()
