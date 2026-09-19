@@ -7,8 +7,8 @@
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-19
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, and document-content session contract are implemented; application-to-legacy mapping and thread/cancellation integration remain next.
+- Last updated: 2026-09-20
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, and legacy application mapping document are implemented; the legacy adapter, FileController integration, runtime thread/cancellation bridge, and feature-service migration remain.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -253,6 +253,17 @@ files, the focused coordinator/state CTest run passed 2/2, and the full
 passed for six RCC packs, seven runtime IDs, and seven runtime references;
 the generated Qt-link manifest keeps `ClassMngrNext` limited to `Qt6::Core`.
 
+#### Progress update - 2026-09-20 (legacy application mapping slice)
+
+[`phase2-legacy-application-mapping.md`](phase2-legacy-application-mapping.md)
+records the verified `ApplicationServices`/`FileController` boundary, maps
+workspace lifecycle and persistence to the existing v2 gateway/use-case,
+coordinator, workspace-state, and selection-state contracts, and assigns the
+outer-adapter duties and reversible migration gates. No legacy adapter,
+FileController cutover, runtime Qt worker bridge, or feature-service migration
+was added. Remaining Phase 2 work is to implement and verify those outer
+boundaries, then migrate feature services as separate future slices.
+
 ## Objective
 
 Create a stable, testable application core that is independent of widget construction, page visibility, and the legacy data facade.
@@ -295,7 +306,7 @@ An import result, for example, should separately expose imported records, warnin
 
 Create use cases for:
 
-- Creating, opening, saving, and exporting a workspace.
+- Creating, opening, closing, saving, and exporting a workspace.
 - Importing a legacy database.
 - Importing teachers, schedules, calendars, rosters, and class transfers.
 - Editing teachers, classes, schedules, calendar events, rosters, and evaluations.
@@ -374,6 +385,14 @@ return widget trees, page pointers, or broad compatibility-service snapshots.
 Domain and application behavior can be tested without constructing the main window.
 
 Validation, conflict detection, import planning, and state transitions match the baseline fixtures.
+
+For the workspace boundary, acceptance includes the current
+`WorkspaceGateway::createWorkspace` contract and `WorkspaceCoordinator` create
+behavior: dirty replacement is rejected before the gateway, a successful
+session opens `WorkspaceState` and clears `SelectionState`, and gateway or
+invalid-session failures preserve both snapshots. The existing app-less
+`NextApplicationContractTests` and `NextApplicationWorkspaceCoordinatorTests`
+cover these create paths alongside open, close, save, save-as, and export.
 
 No new v2 production path depends on DataService, MainWindow, PageManager, or a widget pointer.
 
