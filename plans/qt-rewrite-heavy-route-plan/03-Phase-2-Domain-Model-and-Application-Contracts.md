@@ -467,3 +467,17 @@ visible scopes and may release rich classes, rosters, repositories, and raw
 workbook data after projection creation. App-less tests cover the 96-row /
 768-cell scale, ordering, missing references, invalid input, caps, and the
 no-rich-record contract boundary.
+
+#### Progress update - 2026-09-20 (staged class-transfer projection slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`ClassTransferProjection` with bounded flat teacher/class records, source-key
+matching, optional missing-teacher references, and separate regular/intensive
+time collections. The deterministic factory rejects blank or oversized text,
+duplicate or unknown keys, negative ordering, and teacher/class/time/package
+collection overflow with structured `InvalidInput`; lookups return value
+copies. Reader adapters stage only this compact package, release raw source
+representations before projection handoff, and must paginate larger inputs.
+App-less tests cover the boundary, caps, categories, fallback, equality, and
+no external-owner/raw-source accessors; legacy transfer models and codecs are
+outside this slice.
