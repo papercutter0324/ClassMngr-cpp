@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, and import-job lifecycle contract are implemented; broader state and use-case contracts remain next.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, and report/export-job lifecycle contract are implemented; broader state and use-case contracts remain next.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -140,9 +140,29 @@ page pointers. `NextApplicationImportReviewTests` verifies these boundaries,
 typed categories, readiness/conflict behavior, invalid decisions, and
 copy/equality semantics without constructing a `QApplication`.
 
-The remaining Phase 2 state contracts are report/export-job state and
-document-content session state, followed by the later application-to-legacy
-adapter mapping.
+#### Progress update - 2026-09-19 (report/export-job state and output contract slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`ReportJobSnapshot`/`ReportJobState` contract for report, PDF, and export
+operations. The lifecycle is explicit (`Idle`, `Running`, `Completed`,
+`Failed`, and `Canceled`) with bounded total/completed unit counts,
+cancellation-requested state, optional structured failure, and a bounded
+output reference populated only by successful completion. Duplicate starts,
+invalid progress, incomplete completion, and blank or oversized output
+references return structured errors without mutating the snapshot. Terminal
+snapshots remain immutable until an explicit restart.
+
+The state owner releases the operation-scoped render source and output
+buffers after completion, cancellation, or failure; the snapshot retains only
+the bounded successful output reference. Workers emit lifecycle events to the
+owner instead of mutating state. The actual PDF renderer and its platform or
+filesystem adapter remain outside this contract. `NextApplicationReportJobTests`
+covers the lifecycle, validation, cancellation, output bound, terminal
+immutability, copy/equality, and worker-boundary behavior without constructing
+a `QApplication`.
+
+The remaining Phase 2 state contract is document-content session state,
+followed by the later application-to-legacy adapter mapping.
 
 ## Objective
 
