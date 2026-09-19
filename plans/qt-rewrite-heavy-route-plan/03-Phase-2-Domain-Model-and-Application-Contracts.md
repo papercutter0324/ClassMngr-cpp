@@ -264,6 +264,25 @@ FileController cutover, runtime Qt worker bridge, or feature-service migration
 was added. Remaining Phase 2 work is to implement and verify those outer
 boundaries, then migrate feature services as separate future slices.
 
+#### Progress update - 2026-09-20 (document-catalog metadata projection slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`DocumentCatalogProjection` containing bounded folder metadata and document
+entries. Folder and document identifiers are distinct domain types; the
+factory rejects blank or oversized metadata and references, invalid typed ids,
+unknown folder links, duplicate ids, collection overflow, negative ordering,
+and inconsistent exportability. Optional export references preserve absent vs
+present state and use the existing `DocumentContentReference` metadata
+boundary; no content bytes, viewer objects, or legacy ownership cross it.
+
+The projection owns copied strings, identifiers, flags, and references only.
+Adapters may release parser/catalog source after construction, UI consumers may
+copy and release snapshots, and the adapter remains responsible for document
+and export bytes plus viewer release through the content-session boundary.
+`NextApplicationDocumentCatalogTests` covers valid metadata, category
+distinction, validation/duplicates, optional export state, copy/equality, and
+the adapter-neutral surface without constructing a `QApplication`.
+
 ## Objective
 
 Create a stable, testable application core that is independent of widget construction, page visibility, and the legacy data facade.
