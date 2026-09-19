@@ -89,6 +89,13 @@ After all gates pass:
 11. Update documentation and support procedures.
 12. Keep v1 available through the agreed rollback window.
 
+As part of legacy removal, delete the temporary startup/performance dialog
+compatibility driver, prompt-inspection hooks, and any legacy prompt-ID or
+object-name shims that have no remaining v2 consumer. Retain only the Qt
+dialog implementation required by the final presentation adapter, and keep
+the dialog-policy gate passing without an allowlist entry for application
+composition or feature code.
+
 ### 12.6 Safe cleanup
 
 Do not delete:

@@ -219,6 +219,13 @@ The dependency direction is:
 
 Domain code must not depend on Qt Widgets. UI code must not issue SQL. Feature pages must not know where installed resources are stored. Application code must not depend on widget ownership or visibility.
 
+Prompt inspection, dismissal, default-action activation, and screenshot capture
+used by legacy startup/performance workflows belong to a Qt presentation or
+test adapter. They must not be added to the permanent domain or application
+prompt contract. Any compatibility driver for the legacy executable must be
+explicitly temporary and removed when the corresponding v2 startup and shared
+UI slices are accepted.
+
 ## Shared status rules
 
 Each phase file contains its own Status section. Update it whenever work starts, a milestone is reached, a blocker appears, or the exit gate passes.

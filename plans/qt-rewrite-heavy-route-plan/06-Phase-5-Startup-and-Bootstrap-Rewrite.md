@@ -134,6 +134,21 @@ details, schedule/import workbooks, report data, PDF documents, or hidden child
 pages. The lifecycle and release obligations are defined in the [Qt Rewrite
 Memory Hotspot Remediation Plan](memory-hotspot-remediation-plan.md).
 
+### 5.8 Startup workflow and dialog-automation boundary
+
+Separate production startup from the startup/performance workflow driver.
+`ApplicationBootstrap` and `StartupCoordinator` must not discover, inspect, or
+activate prompts by scanning top-level widgets. They may publish typed stage,
+operation, warning, and failure results through the application boundary.
+
+The legacy executable may temporarily use the Phase 1 compatibility driver for
+visual and behavioral parity captures. That driver belongs to the Qt
+presentation/test boundary, must not return `QMessageBox*` or other widget
+types, and must not become part of `ApplicationRuntime` or domain contracts.
+When a v2 workflow is migrated, the performance harness should drive semantic
+prompt requests through a fake or test adapter and assert the resulting
+request, choice, trace, and capture rather than reintroducing widget searches.
+
 ## Deliverables
 
 - ApplicationBootstrap.
@@ -145,6 +160,7 @@ Memory Hotspot Remediation Plan](memory-hotspot-remediation-plan.md).
 - Startup-negative test proving the document catalog does not load QtPdf
   content.
 - Startup integration tests.
+- Startup/performance workflow tests with a separate dialog-automation seam.
 - Deferred application-update initialization.
 
 ## Exit gate
@@ -156,6 +172,10 @@ The main window appears with the correct theme, language, and initial page. Ever
 Startup-ready includes document-catalog metadata only: no PDF body is loaded,
 no QtPdf page is rendered, and no active viewer document exists until the user
 requests one.
+
+No v2 bootstrap or startup coordinator depends on widget ownership or
+visibility to control a prompt. Legacy prompt automation, if still present,
+is explicitly isolated and has a documented removal point.
 
 ## Heavy-route requirements
 

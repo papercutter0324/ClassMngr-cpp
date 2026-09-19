@@ -95,6 +95,19 @@ Replace direct dialog construction in feature code with:
 
 Preserve wording, buttons, default actions, and keyboard behavior.
 
+Keep the permanent user-prompt contract semantic: showing a message,
+confirming a choice, confirming unsaved changes, or choosing a named action.
+Do not add active-widget lookup, visibility, `objectName` selection, or
+button-click methods to the domain/application prompt contract.
+
+Provide a separate Qt presentation/test adapter for legacy startup and visual
+automation where necessary. Its value-only snapshot may expose prompt ID,
+title, text, and visibility, while its commands may accept/reject a prompt,
+activate its default action, or capture the prompt. It must never return a
+`QMessageBox*` or `QWidget*`. Use stable semantic prompt IDs at the adapter
+boundary; Qt object names remain implementation details. Keep the adapter
+temporary until the corresponding legacy workflow is migrated.
+
 ### 6.6 Preferences and theme
 
 Create a typed PreferencesModel.
@@ -163,6 +176,7 @@ Change ownership and loading, not visual design.
 - CommandBus.
 - DialogService.
 - NotificationService.
+- Prompt test/automation adapter with semantic request and response coverage.
 - PreferencesModel.
 - ThemePresenter.
 - Shared model/view table primitives.

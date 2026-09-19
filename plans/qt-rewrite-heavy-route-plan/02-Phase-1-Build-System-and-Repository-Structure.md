@@ -193,6 +193,7 @@ Add:
 - Formatting checks.
 - Static analysis.
 - Dependency-boundary checks.
+- Direct Qt dialog policy checks.
 - Packaged Release builds.
 - Platform deployment checks.
 - Executable and resource-size reports.
@@ -218,6 +219,20 @@ module data. Windows, macOS, and Linux packaged Release workflows are wired to
 invoke these checks on staged packages. `ClassMngrStartupPerformanceTests` is
 the labeled CTest entry point for startup, memory, and performance
 (`startup;memory;performance`).
+
+The direct Qt dialog policy is part of the Phase 1 dependency-boundary gate.
+`QMessageBox` and other concrete dialog types remain confined to the approved
+shared dialog adapters; the legacy `src/main.cpp` startup/performance
+orchestration must use a Qt-type-free compatibility driver for prompt
+inspection, dismissal, default-action activation, and required captures. Do
+not widen the policy allowlist for the composition root or feature code.
+
+The compatibility driver is a temporary legacy bridge, not a new application
+contract. Keep the semantic `IUserPromptService` operations separate from
+test/automation operations, and place any concrete Qt implementation in the
+existing shared dialog boundary. Verify the Sub Prep generation-warning,
+schedule-import conflict-warning, and schedule-import confirmation flows with
+the existing trace and screenshot assertions.
 
 Local evidence is a clean Ninja/MSVC Debug configure, the full 351-step build
 of `ClassMngr` and `ClassMngrNext`, and `ClassMngrNextLaunch` passing 1/1. The
