@@ -4,6 +4,8 @@
 #include "next/application/workspace_state.h"
 #include "next/application/workspace_use_case.h"
 
+#include <utility>
+
 namespace ClassMngr::Next::Application
 {
 
@@ -115,6 +117,81 @@ public:
 
         m_selectionState.clear();
         return result;
+    }
+
+    [[nodiscard]] Domain::Result<void> saveWorkspace()
+    {
+        const WorkspaceStateSnapshot beforeSave = m_workspaceState.snapshot();
+        if (!beforeSave.session().has_value())
+        {
+            return Domain::Result<void>::failure(
+                notFound()
+                );
+        }
+
+        const auto result = m_workspaceUseCase.saveWorkspace(
+            SaveWorkspaceRequest{*beforeSave.session()}
+            );
+        if (!result)
+        {
+            return result;
+        }
+
+        return m_workspaceState.markSaved();
+    }
+
+    [[nodiscard]] Domain::Result<WorkspaceLocation> saveWorkspaceAs(
+        WorkspaceLocation destination
+        )
+    {
+        const WorkspaceStateSnapshot beforeSave = m_workspaceState.snapshot();
+        if (!beforeSave.session().has_value())
+        {
+            return Domain::Result<WorkspaceLocation>::failure(
+                notFound()
+                );
+        }
+
+        const auto result = m_workspaceUseCase.saveWorkspaceAs(
+            SaveWorkspaceAsRequest{
+                *beforeSave.session(),
+                std::move(destination)
+            }
+            );
+        if (!result)
+        {
+            return result;
+        }
+
+        const auto stateResult = m_workspaceState.markSavedAs(result.value());
+        if (!stateResult)
+        {
+            return Domain::Result<WorkspaceLocation>::failure(
+                stateResult.error()
+                );
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] Domain::Result<WorkspaceLocation> exportWorkspace(
+        WorkspaceLocation destination
+        ) const
+    {
+        const WorkspaceStateSnapshot beforeExport = m_workspaceState.snapshot();
+        if (!beforeExport.session().has_value())
+        {
+            return Domain::Result<WorkspaceLocation>::failure(
+                notFound()
+                );
+        }
+
+        return m_workspaceUseCase.exportWorkspace(
+            ExportWorkspaceRequest{
+                *beforeExport.session(),
+                std::move(destination)
+            }
+            );
     }
 
 private:

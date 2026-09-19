@@ -67,8 +67,13 @@ public:
         const SaveWorkspaceRequest& request
         ) override
     {
-        Q_UNUSED(request)
         ++saveCalls;
+        lastSavedSession = request.session;
+        if (saveResponse.has_value())
+        {
+            return *saveResponse;
+        }
+
         return Result<void>::success();
     }
 
@@ -76,8 +81,13 @@ public:
         const SaveWorkspaceAsRequest& request
         ) override
     {
-        Q_UNUSED(request)
         ++saveAsCalls;
+        lastSaveAsRequest = request;
+        if (saveAsResponse.has_value())
+        {
+            return *saveAsResponse;
+        }
+
         return Result<WorkspaceLocation>::failure(
             gatewayFailure("Unexpected save-as call.")
             );
@@ -87,8 +97,13 @@ public:
         const ExportWorkspaceRequest& request
         ) override
     {
-        Q_UNUSED(request)
         ++exportCalls;
+        lastExportRequest = request;
+        if (exportResponse.has_value())
+        {
+            return *exportResponse;
+        }
+
         return Result<WorkspaceLocation>::failure(
             gatewayFailure("Unexpected export call.")
             );
@@ -102,10 +117,16 @@ public:
     int exportCalls = 0;
     WorkspaceLocation lastCreatedLocation;
     WorkspaceLocation lastOpenedLocation;
+    std::optional<WorkspaceSession> lastSavedSession;
+    std::optional<SaveWorkspaceAsRequest> lastSaveAsRequest;
+    std::optional<ExportWorkspaceRequest> lastExportRequest;
     std::optional<WorkspaceSession> lastClosedSession;
     std::optional<Result<WorkspaceSession>> createResponse;
     std::optional<Result<WorkspaceSession>> openResponse;
     std::optional<Result<void>> closeResponse;
+    std::optional<Result<void>> saveResponse;
+    std::optional<Result<WorkspaceLocation>> saveAsResponse;
+    std::optional<Result<WorkspaceLocation>> exportResponse;
 };
 
 }
@@ -127,6 +148,17 @@ private slots:
     void dirtyCloseIsRejectedBeforeGatewayAndPreservesState();
     void gatewayCloseFailurePreservesStateAndSelection();
     void closedCloseReturnsNotFoundWithoutGateway();
+    void saveSuccessMarksCleanAndPreservesSelection();
+    void saveFailurePreservesStateAndSelection();
+    void closedSaveReturnsNotFoundWithoutGateway();
+    void saveAsSuccessReplacesLocationAndMarksClean();
+    void saveAsFailurePreservesStateAndSelection();
+    void saveAsInvalidDestinationIsRejectedByUseCase();
+    void saveAsInvalidReturnedLocationPreservesStateAndSelection();
+    void closedSaveAsReturnsNotFoundWithoutGateway();
+    void exportSuccessPropagatesAndPreservesStateAndSelection();
+    void exportFailurePreservesStateAndSelection();
+    void closedExportReturnsNotFoundWithoutGateway();
 };
 
 void NextApplicationWorkspaceCoordinatorTests::createSuccessOpensWorkspaceAndClearsSelection()
@@ -508,6 +540,332 @@ void NextApplicationWorkspaceCoordinatorTests::closedCloseReturnsNotFoundWithout
     QCOMPARE(gateway.closeCalls, 0);
     QVERIFY(selectionState.snapshot() == selectionBefore);
     QCOMPARE(workspaceState.snapshot().lifecycle(), WorkspaceLifecycleState::Closed);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::saveSuccessMarksCleanAndPreservesSelection()
+{
+    FakeWorkspaceGateway gateway;
+    gateway.saveResponse = Result<void>::success();
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    SelectionState selectionState;
+    selectionState.setSelection(*TeacherId::fromString("teacher-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspace();
+
+    QVERIFY(result);
+    QCOMPARE(gateway.saveCalls, 1);
+    QVERIFY(gateway.lastSavedSession.has_value());
+    QVERIFY(*gateway.lastSavedSession == current);
+    QVERIFY(workspaceState.snapshot().session().has_value());
+    QVERIFY(*workspaceState.snapshot().session() == current);
+    QCOMPARE(
+        workspaceState.snapshot().unsavedState(),
+        WorkspaceUnsavedState::Clean
+        );
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::saveFailurePreservesStateAndSelection()
+{
+    FakeWorkspaceGateway gateway;
+    const OperationError expectedError = gatewayFailure(
+        "Saving the workspace failed."
+        );
+    gateway.saveResponse = Result<void>::failure(expectedError);
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    const WorkspaceStateSnapshot before = workspaceState.snapshot();
+    SelectionState selectionState;
+    selectionState.setSelection(*ClassId::fromString("class-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspace();
+
+    QVERIFY(!result);
+    QVERIFY(result.error() == expectedError);
+    QCOMPARE(gateway.saveCalls, 1);
+    QVERIFY(workspaceState.snapshot() == before);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::closedSaveReturnsNotFoundWithoutGateway()
+{
+    FakeWorkspaceGateway gateway;
+    gateway.saveResponse = Result<void>::success();
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    SelectionState selectionState;
+    selectionState.setSelection(*CampusId::fromString("campus-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspace();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QCOMPARE(gateway.saveCalls, 0);
+    QCOMPARE(workspaceState.snapshot().lifecycle(), WorkspaceLifecycleState::Closed);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::saveAsSuccessReplacesLocationAndMarksClean()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceLocation destination("C:/workspaces/saved-as.tps");
+    gateway.saveAsResponse = Result<WorkspaceLocation>::success(destination);
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    SelectionState selectionState;
+    selectionState.setSelection(*CalendarEventId::fromString("event-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspaceAs(destination);
+
+    QVERIFY(result);
+    QVERIFY(result.value() == destination);
+    QCOMPARE(gateway.saveAsCalls, 1);
+    QVERIFY(gateway.lastSaveAsRequest.has_value());
+    QVERIFY(gateway.lastSaveAsRequest->session == current);
+    QVERIFY(gateway.lastSaveAsRequest->destination == destination);
+    const WorkspaceSession expected(
+        current.workspaceId(),
+        destination
+        );
+    QVERIFY(workspaceState.snapshot().session().has_value());
+    QVERIFY(*workspaceState.snapshot().session() == expected);
+    QCOMPARE(
+        workspaceState.snapshot().unsavedState(),
+        WorkspaceUnsavedState::Clean
+        );
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::saveAsFailurePreservesStateAndSelection()
+{
+    FakeWorkspaceGateway gateway;
+    const OperationError expectedError = gatewayFailure(
+        "Saving the workspace to the new location failed."
+        );
+    gateway.saveAsResponse = Result<WorkspaceLocation>::failure(expectedError);
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    const WorkspaceStateSnapshot before = workspaceState.snapshot();
+    SelectionState selectionState;
+    selectionState.setSelection(*TeacherId::fromString("teacher-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspaceAs(
+        WorkspaceLocation("C:/workspaces/saved-as.tps")
+        );
+
+    QVERIFY(!result);
+    QVERIFY(result.error() == expectedError);
+    QCOMPARE(gateway.saveAsCalls, 1);
+    QVERIFY(workspaceState.snapshot() == before);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::saveAsInvalidDestinationIsRejectedByUseCase()
+{
+    FakeWorkspaceGateway gateway;
+    gateway.saveAsResponse = Result<WorkspaceLocation>::success(
+        WorkspaceLocation("C:/workspaces/unexpected.tps")
+        );
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    const WorkspaceStateSnapshot before = workspaceState.snapshot();
+    SelectionState selectionState;
+    selectionState.setSelection(*ClassId::fromString("class-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspaceAs(
+        WorkspaceLocation(" \t\r\n")
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(gateway.saveAsCalls, 0);
+    QVERIFY(workspaceState.snapshot() == before);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::saveAsInvalidReturnedLocationPreservesStateAndSelection()
+{
+    FakeWorkspaceGateway gateway;
+    gateway.saveAsResponse = Result<WorkspaceLocation>::success(
+        WorkspaceLocation(" \t\r\n")
+        );
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    const WorkspaceStateSnapshot before = workspaceState.snapshot();
+    SelectionState selectionState;
+    selectionState.setSelection(*CampusId::fromString("campus-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspaceAs(
+        WorkspaceLocation("C:/workspaces/saved-as.tps")
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(gateway.saveAsCalls, 1);
+    QVERIFY(workspaceState.snapshot() == before);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::closedSaveAsReturnsNotFoundWithoutGateway()
+{
+    FakeWorkspaceGateway gateway;
+    gateway.saveAsResponse = Result<WorkspaceLocation>::success(
+        WorkspaceLocation("C:/workspaces/saved-as.tps")
+        );
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    SelectionState selectionState;
+    selectionState.setSelection(*CalendarEventId::fromString("event-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.saveWorkspaceAs(
+        WorkspaceLocation("C:/workspaces/saved-as.tps")
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QCOMPARE(gateway.saveAsCalls, 0);
+    QCOMPARE(workspaceState.snapshot().lifecycle(), WorkspaceLifecycleState::Closed);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::exportSuccessPropagatesAndPreservesStateAndSelection()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceLocation destination("C:/exports/current.tps");
+    gateway.exportResponse = Result<WorkspaceLocation>::success(destination);
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    const WorkspaceStateSnapshot before = workspaceState.snapshot();
+    SelectionState selectionState;
+    selectionState.setSelection(*TeacherId::fromString("teacher-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.exportWorkspace(destination);
+
+    QVERIFY(result);
+    QVERIFY(result.value() == destination);
+    QCOMPARE(gateway.exportCalls, 1);
+    QVERIFY(gateway.lastExportRequest.has_value());
+    QVERIFY(gateway.lastExportRequest->session == current);
+    QVERIFY(gateway.lastExportRequest->destination == destination);
+    QVERIFY(workspaceState.snapshot() == before);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::exportFailurePreservesStateAndSelection()
+{
+    FakeWorkspaceGateway gateway;
+    const OperationError expectedError = gatewayFailure(
+        "Exporting the workspace failed."
+        );
+    gateway.exportResponse = Result<WorkspaceLocation>::failure(expectedError);
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    QVERIFY(workspaceState.open(current));
+    QVERIFY(workspaceState.markDirty());
+    const WorkspaceStateSnapshot before = workspaceState.snapshot();
+    SelectionState selectionState;
+    selectionState.setSelection(*ClassId::fromString("class-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.exportWorkspace(
+        WorkspaceLocation("C:/exports/current.tps")
+        );
+
+    QVERIFY(!result);
+    QVERIFY(result.error() == expectedError);
+    QCOMPARE(gateway.exportCalls, 1);
+    QVERIFY(workspaceState.snapshot() == before);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::closedExportReturnsNotFoundWithoutGateway()
+{
+    FakeWorkspaceGateway gateway;
+    gateway.exportResponse = Result<WorkspaceLocation>::success(
+        WorkspaceLocation("C:/exports/current.tps")
+        );
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    SelectionState selectionState;
+    selectionState.setSelection(*CampusId::fromString("campus-1"));
+    const SelectionStateSnapshot selectionBefore = selectionState.snapshot();
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.exportWorkspace(
+        WorkspaceLocation("C:/exports/current.tps")
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QCOMPARE(gateway.exportCalls, 0);
+    QCOMPARE(workspaceState.snapshot().lifecycle(), WorkspaceLifecycleState::Closed);
+    QVERIFY(selectionState.snapshot() == selectionBefore);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationWorkspaceCoordinatorTests)

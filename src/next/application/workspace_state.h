@@ -133,6 +133,35 @@ public:
         return Domain::Result<void>::success();
     }
 
+    [[nodiscard]] Domain::Result<void> markSavedAs(
+        WorkspaceLocation location
+        )
+    {
+        if (!m_snapshot.session().has_value())
+        {
+            return Domain::Result<void>::failure(
+                notFound("No workspace session is open.")
+                );
+        }
+
+        if (isBlank(location))
+        {
+            return Domain::Result<void>::failure(
+                invalidInput(
+                    "Workspace location must not be empty or whitespace-only."
+                    )
+                );
+        }
+
+        m_snapshot = WorkspaceStateSnapshot(
+            WorkspaceSession(
+                m_snapshot.session()->workspaceId(),
+                std::move(location)
+                )
+            );
+        return Domain::Result<void>::success();
+    }
+
     [[nodiscard]] Domain::Result<void> close()
     {
         if (!m_snapshot.session().has_value())

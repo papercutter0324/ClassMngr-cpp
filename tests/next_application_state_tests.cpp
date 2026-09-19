@@ -32,6 +32,8 @@ private slots:
     void initialStateIsClosedAndClean();
     void openCopiesAndReplacesCleanSession();
     void dirtyAndSavedTransitionsAreDeterministic();
+    void markSavedAsReplacesLocationAndCleans();
+    void invalidMarkSavedAsPreservesState();
     void closeResetsState();
     void invalidTransitionsReturnStructuredErrors();
     void dirtyReplacementAndCloseReturnConflict();
@@ -91,6 +93,44 @@ void NextApplicationStateTests::dirtyAndSavedTransitionsAreDeterministic()
 
     QVERIFY(state.markSaved());
     QCOMPARE(state.snapshot().unsavedState(), WorkspaceUnsavedState::Clean);
+}
+
+void NextApplicationStateTests::markSavedAsReplacesLocationAndCleans()
+{
+    WorkspaceState state;
+    const WorkspaceSession current = testSession(
+        "workspace-1",
+        "C:/workspaces/one.tps"
+        );
+    const WorkspaceLocation destination("C:/workspaces/one-copy.tps");
+    QVERIFY(state.open(current));
+    QVERIFY(state.markDirty());
+
+    const auto result = state.markSavedAs(destination);
+
+    QVERIFY(result);
+    const WorkspaceSession expected(current.workspaceId(), destination);
+    QVERIFY(state.snapshot().session().has_value());
+    QVERIFY(*state.snapshot().session() == expected);
+    QCOMPARE(state.snapshot().unsavedState(), WorkspaceUnsavedState::Clean);
+}
+
+void NextApplicationStateTests::invalidMarkSavedAsPreservesState()
+{
+    WorkspaceState state;
+    QVERIFY(
+        state.open(
+            testSession("workspace-1", "C:/workspaces/one.tps")
+            )
+        );
+    QVERIFY(state.markDirty());
+    const WorkspaceStateSnapshot before = state.snapshot();
+
+    const auto result = state.markSavedAs(WorkspaceLocation(" \t\r\n"));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QVERIFY(state.snapshot() == before);
 }
 
 void NextApplicationStateTests::closeResetsState()

@@ -202,6 +202,32 @@ gateway failures and invalid returned sessions leave both snapshots unchanged.
 gateway and `QTEST_APPLESS_MAIN`, without legacy service references or a
 `QApplication`.
 
+#### Progress update - 2026-09-19 (workspace persistence coordinator slice)
+
+`WorkspaceCoordinator` now exposes synchronous save, save-as, and export
+operations. Each operation requires an open session and returns structured
+`NotFound` without calling the use case when the workspace is closed. Save
+commits the clean state only after a successful gateway result. Save-as passes
+validation through `WorkspaceUseCase`, then atomically replaces only the
+current session's location and marks it clean after a valid gateway-returned
+location; gateway failures and invalid returned locations leave the workspace
+and selection snapshots unchanged. Export propagates the use-case result and
+does not mutate either snapshot.
+
+`WorkspaceState::markSavedAs` validates before assignment, preserving the
+workspace id and keeping the replacement/clean transition atomic. The
+app-less coordinator and state tests cover success, failure, closed/no-call,
+validation, invalid returned locations, selection preservation, and the
+existing lifecycle contract. No Qt, widget, singleton, legacy, thread, or
+adapter code is part of this slice.
+
+Windows x64 Debug verification passed with `cmake --preset
+windows-x64-debug`; configure-time source ownership validated 673 handwritten
+files, the focused coordinator/state CTest run passed 2/2, and the full
+`ClassMngrNext*` selection passed 10/10. The resource manifest checker also
+passed for six RCC packs, seven runtime IDs, and seven runtime references;
+the generated Qt-link manifest keeps `ClassMngrNext` limited to `Qt6::Core`.
+
 ## Objective
 
 Create a stable, testable application core that is independent of widget construction, page visibility, and the legacy data facade.
