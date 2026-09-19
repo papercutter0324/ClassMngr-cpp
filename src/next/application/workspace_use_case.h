@@ -56,8 +56,7 @@ public:
         const CloseWorkspaceRequest& request
         ) const
     {
-        if (request.session.workspaceId().value().empty()
-            || isBlank(request.session.location()))
+        if (!isValid(request.session))
         {
             return Domain::Result<void>::failure(
                 invalidInput("Workspace session must contain an id and location.")
@@ -67,7 +66,61 @@ public:
         return m_gateway.closeWorkspace(request);
     }
 
+    [[nodiscard]] Domain::Result<void> saveWorkspace(
+        const SaveWorkspaceRequest& request
+        ) const
+    {
+        if (!isValid(request.session))
+        {
+            return Domain::Result<void>::failure(
+                invalidInput("Workspace session must contain an id and location.")
+                );
+        }
+
+        return m_gateway.saveWorkspace(request);
+    }
+
+    [[nodiscard]] Domain::Result<WorkspaceLocation> saveWorkspaceAs(
+        const SaveWorkspaceAsRequest& request
+        ) const
+    {
+        if (!isValid(request.session) || isBlank(request.destination))
+        {
+            return Domain::Result<WorkspaceLocation>::failure(
+                invalidInput(
+                    "Workspace session and save-as destination must be valid."
+                    )
+                );
+        }
+
+        return m_gateway.saveWorkspaceAs(request);
+    }
+
+    [[nodiscard]] Domain::Result<WorkspaceLocation> exportWorkspace(
+        const ExportWorkspaceRequest& request
+        ) const
+    {
+        if (!isValid(request.session) || isBlank(request.destination))
+        {
+            return Domain::Result<WorkspaceLocation>::failure(
+                invalidInput(
+                    "Workspace session and export destination must be valid."
+                    )
+                );
+        }
+
+        return m_gateway.exportWorkspace(request);
+    }
+
 private:
+    [[nodiscard]] static bool isValid(
+        const WorkspaceSession& session
+        ) noexcept
+    {
+        return !session.workspaceId().value().empty()
+            && !isBlank(session.location());
+    }
+
     [[nodiscard]] static bool isBlank(
         const WorkspaceLocation& location
         ) noexcept

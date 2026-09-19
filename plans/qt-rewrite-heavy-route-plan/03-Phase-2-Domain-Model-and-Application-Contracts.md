@@ -44,6 +44,17 @@ conversion is deferred to that adapter, and legacy QString errors are mapped
 to structured `Domain::OperationError`. No Qt/DataService adapter is part of
 this slice.
 
+#### Progress update - 2026-09-19 (workspace persistence application-contract slice)
+
+The stateless workspace contract now exposes explicit save, save-as, and export
+requests, with validation of the caller-owned session and destination before
+the gateway is called. The outer adapter mapping is concise and exact:
+
+- v2 `saveWorkspace` -> `ApplicationServices::saveDatabase` (outer adapter
+  turns legacy void/postcondition into a structured result)
+- v2 `saveWorkspaceAs` -> `saveDatabaseAs(QString)`
+- v2 `exportWorkspace` -> `exportDatabaseAs(QString)`
+
 ## Objective
 
 Create a stable, testable application core that is independent of widget construction, page visibility, and the legacy data facade.

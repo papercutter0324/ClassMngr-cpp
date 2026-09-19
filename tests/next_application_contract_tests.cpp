@@ -51,15 +51,55 @@ public:
         return *closeResponse;
     }
 
+    [[nodiscard]] Result<void> saveWorkspace(
+        const SaveWorkspaceRequest& request
+        ) override
+    {
+        ++saveCalls;
+        lastSavedSession = request.session;
+        return *saveResponse;
+    }
+
+    [[nodiscard]] Result<WorkspaceLocation> saveWorkspaceAs(
+        const SaveWorkspaceAsRequest& request
+        ) override
+    {
+        ++saveAsCalls;
+        lastSaveAsSession = request.session;
+        lastSaveAsDestination = request.destination;
+        return *saveAsResponse;
+    }
+
+    [[nodiscard]] Result<WorkspaceLocation> exportWorkspace(
+        const ExportWorkspaceRequest& request
+        ) override
+    {
+        ++exportCalls;
+        lastExportedSession = request.session;
+        lastExportDestination = request.destination;
+        return *exportResponse;
+    }
+
     int createCalls = 0;
     int openCalls = 0;
     int closeCalls = 0;
+    int saveCalls = 0;
+    int saveAsCalls = 0;
+    int exportCalls = 0;
     WorkspaceLocation lastCreatedLocation;
     WorkspaceLocation lastOpenedLocation;
     std::optional<WorkspaceSession> lastClosedSession;
+    std::optional<WorkspaceSession> lastSavedSession;
+    std::optional<WorkspaceSession> lastSaveAsSession;
+    WorkspaceLocation lastSaveAsDestination;
+    std::optional<WorkspaceSession> lastExportedSession;
+    WorkspaceLocation lastExportDestination;
     std::optional<Result<WorkspaceSession>> createResponse;
     std::optional<Result<WorkspaceSession>> openResponse;
     std::optional<Result<void>> closeResponse;
+    std::optional<Result<void>> saveResponse;
+    std::optional<Result<WorkspaceLocation>> saveAsResponse;
+    std::optional<Result<WorkspaceLocation>> exportResponse;
 };
 
 }
@@ -79,6 +119,17 @@ private slots:
     void openFailurePreservesGatewayError();
     void closeSuccessUsesExplicitSession();
     void closeFailurePreservesGatewayError();
+    void invalidSaveDoesNotInvokeGateway();
+    void saveSuccessUsesExplicitSession();
+    void saveFailurePreservesGatewayError();
+    void invalidSaveAsSessionDoesNotInvokeGateway();
+    void whitespaceOnlySaveAsDestinationDoesNotInvokeGateway();
+    void saveAsSuccessUsesExplicitSessionAndDestination();
+    void saveAsFailurePreservesGatewayError();
+    void invalidExportDoesNotInvokeGateway();
+    void whitespaceOnlyExportDestinationDoesNotInvokeGateway();
+    void exportSuccessUsesExplicitSessionAndDestination();
+    void exportFailurePreservesGatewayError();
 };
 
 void NextApplicationContractTests::invalidCreateDoesNotInvokeGateway()
@@ -263,6 +314,223 @@ void NextApplicationContractTests::closeFailurePreservesGatewayError()
 
     QVERIFY(!result);
     QCOMPARE(gateway.closeCalls, 1);
+    QVERIFY(result.error() == expectedError);
+}
+
+void NextApplicationContractTests::invalidSaveDoesNotInvokeGateway()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceUseCase useCase(gateway);
+    const WorkspaceSession invalidSession(
+        *WorkspaceId::fromString("workspace-1"),
+        WorkspaceLocation(" \t\r\n")
+        );
+
+    const auto result = useCase.saveWorkspace(
+        SaveWorkspaceRequest{invalidSession}
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(gateway.saveCalls, 0);
+}
+
+void NextApplicationContractTests::saveSuccessUsesExplicitSession()
+{
+    FakeWorkspaceGateway gateway;
+    gateway.saveResponse = Result<void>::success();
+    const WorkspaceSession session = testSession();
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.saveWorkspace(
+        SaveWorkspaceRequest{session}
+        );
+
+    QVERIFY(result);
+    QCOMPARE(gateway.saveCalls, 1);
+    QVERIFY(gateway.lastSavedSession.has_value());
+    QVERIFY(*gateway.lastSavedSession == session);
+}
+
+void NextApplicationContractTests::saveFailurePreservesGatewayError()
+{
+    FakeWorkspaceGateway gateway;
+    const OperationError expectedError{
+        .code = ErrorCode::Technical,
+        .message = "Saving the workspace failed.",
+        .recoverable = false
+    };
+    gateway.saveResponse = Result<void>::failure(expectedError);
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.saveWorkspace(
+        SaveWorkspaceRequest{testSession()}
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(gateway.saveCalls, 1);
+    QVERIFY(result.error() == expectedError);
+}
+
+void NextApplicationContractTests::invalidSaveAsSessionDoesNotInvokeGateway()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceUseCase useCase(gateway);
+    const WorkspaceSession invalidSession(
+        *WorkspaceId::fromString("workspace-1"),
+        WorkspaceLocation(" \t\r\n")
+        );
+
+    const auto result = useCase.saveWorkspaceAs(
+        SaveWorkspaceAsRequest{
+            invalidSession,
+            WorkspaceLocation("C:/workspaces/two.tps")
+        }
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(gateway.saveAsCalls, 0);
+}
+
+void NextApplicationContractTests::whitespaceOnlySaveAsDestinationDoesNotInvokeGateway()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.saveWorkspaceAs(
+        SaveWorkspaceAsRequest{
+            testSession(),
+            WorkspaceLocation(" \t\r\n")
+        }
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(gateway.saveAsCalls, 0);
+}
+
+void NextApplicationContractTests::saveAsSuccessUsesExplicitSessionAndDestination()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceLocation destination("C:/workspaces/two.tps");
+    gateway.saveAsResponse = Result<WorkspaceLocation>::success(destination);
+    const WorkspaceSession session = testSession();
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.saveWorkspaceAs(
+        SaveWorkspaceAsRequest{session, destination}
+        );
+
+    QVERIFY(result);
+    QCOMPARE(gateway.saveAsCalls, 1);
+    QVERIFY(gateway.lastSaveAsSession.has_value());
+    QVERIFY(*gateway.lastSaveAsSession == session);
+    QVERIFY(gateway.lastSaveAsDestination == destination);
+    QVERIFY(result.value() == destination);
+}
+
+void NextApplicationContractTests::saveAsFailurePreservesGatewayError()
+{
+    FakeWorkspaceGateway gateway;
+    const OperationError expectedError{
+        .code = ErrorCode::Technical,
+        .message = "Saving the workspace as the requested destination failed.",
+        .recoverable = false
+    };
+    gateway.saveAsResponse = Result<WorkspaceLocation>::failure(expectedError);
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.saveWorkspaceAs(
+        SaveWorkspaceAsRequest{
+            testSession(),
+            WorkspaceLocation("C:/workspaces/two.tps")
+        }
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(gateway.saveAsCalls, 1);
+    QVERIFY(result.error() == expectedError);
+}
+
+void NextApplicationContractTests::invalidExportDoesNotInvokeGateway()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceUseCase useCase(gateway);
+    const WorkspaceSession invalidSession(
+        *WorkspaceId::fromString("workspace-1"),
+        WorkspaceLocation{}
+        );
+
+    const auto result = useCase.exportWorkspace(
+        ExportWorkspaceRequest{
+            invalidSession,
+            WorkspaceLocation("C:/exports/one.tps")
+        }
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(gateway.exportCalls, 0);
+}
+
+void NextApplicationContractTests::whitespaceOnlyExportDestinationDoesNotInvokeGateway()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.exportWorkspace(
+        ExportWorkspaceRequest{
+            testSession(),
+            WorkspaceLocation(" \t\r\n")
+        }
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(gateway.exportCalls, 0);
+}
+
+void NextApplicationContractTests::exportSuccessUsesExplicitSessionAndDestination()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceLocation destination("C:/exports/one.tps");
+    gateway.exportResponse = Result<WorkspaceLocation>::success(destination);
+    const WorkspaceSession session = testSession();
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.exportWorkspace(
+        ExportWorkspaceRequest{session, destination}
+        );
+
+    QVERIFY(result);
+    QCOMPARE(gateway.exportCalls, 1);
+    QVERIFY(gateway.lastExportedSession.has_value());
+    QVERIFY(*gateway.lastExportedSession == session);
+    QVERIFY(gateway.lastExportDestination == destination);
+    QVERIFY(result.value() == destination);
+}
+
+void NextApplicationContractTests::exportFailurePreservesGatewayError()
+{
+    FakeWorkspaceGateway gateway;
+    const OperationError expectedError{
+        .code = ErrorCode::Technical,
+        .message = "Exporting the workspace failed.",
+        .recoverable = false
+    };
+    gateway.exportResponse = Result<WorkspaceLocation>::failure(expectedError);
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.exportWorkspace(
+        ExportWorkspaceRequest{
+            testSession(),
+            WorkspaceLocation("C:/exports/one.tps")
+        }
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(gateway.exportCalls, 1);
     QVERIFY(result.error() == expectedError);
 }
 

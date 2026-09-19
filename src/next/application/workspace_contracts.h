@@ -93,6 +93,23 @@ struct CloseWorkspaceRequest final
     WorkspaceSession session;
 };
 
+struct SaveWorkspaceRequest final
+{
+    WorkspaceSession session;
+};
+
+struct SaveWorkspaceAsRequest final
+{
+    WorkspaceSession session;
+    WorkspaceLocation destination;
+};
+
+struct ExportWorkspaceRequest final
+{
+    WorkspaceSession session;
+    WorkspaceLocation destination;
+};
+
 /*
  * This is the adapter-facing seam for workspace persistence. An outer
  * adapter performs platform-path conversion and maps text-based boundary
@@ -114,6 +131,18 @@ public:
 
     [[nodiscard]] virtual Domain::Result<void> closeWorkspace(
         const CloseWorkspaceRequest& request
+        ) = 0;
+
+    [[nodiscard]] virtual Domain::Result<void> saveWorkspace(
+        const SaveWorkspaceRequest& request
+        ) = 0;
+
+    [[nodiscard]] virtual Domain::Result<WorkspaceLocation> saveWorkspaceAs(
+        const SaveWorkspaceAsRequest& request
+        ) = 0;
+
+    [[nodiscard]] virtual Domain::Result<WorkspaceLocation> exportWorkspace(
+        const ExportWorkspaceRequest& request
         ) = 0;
 };
 
