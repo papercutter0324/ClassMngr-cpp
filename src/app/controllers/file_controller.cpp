@@ -902,9 +902,59 @@ bool FileController::saveDatabaseAs(
 
     if (
         !m_services
+        || !m_services->hasOpenDatabase()
         )
     {
         return false;
+    }
+
+    if (
+        m_workspaceState
+        && m_workspaceState->snapshot().session().has_value()
+        )
+    {
+        if (!m_workspaceCoordinator)
+        {
+            return false;
+        }
+
+        const auto saved =
+            m_workspaceCoordinator->saveWorkspaceAs(
+                ClassMngr::Next::Application::WorkspaceLocation(
+                    normalized.toUtf8().toStdString()
+                    )
+                );
+
+        if (!saved)
+        {
+            DialogServices::showWarning(
+                m_window,
+                tr("Save Teacher Profile"),
+                domainErrorMessage(saved.error())
+                );
+
+            return false;
+        }
+
+        m_currentFile = normalizeInputFilePath(
+            QString::fromUtf8(
+                saved.value().value().data(),
+                static_cast<qsizetype>(saved.value().value().size())
+                )
+            );
+
+        updateRecentFiles(m_currentFile);
+
+        if (m_window)
+        {
+            m_window->applyDatabaseLoadedState();
+        }
+        else
+        {
+            setLoadedFileState();
+        }
+
+        return true;
     }
 
     const Status saved =

@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, and concrete ApplicationServices workspace port are implemented. FileController open/close/create/initial-setup/save integration is implemented and save-as/export remain legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, and concrete ApplicationServices workspace port are implemented. FileController open/close/create/initial-setup/save/save-as integration is implemented and export remains legacy; the runtime thread/cancellation bridge and feature-service migration remain. Invalid UTF-8 and stale/closed save-as/export boundary coverage is non-blocking and remains untested.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -679,3 +679,42 @@ The remaining Phase 2 gates are FileController save-as/export migration and
 their stale/closed/invalid-UTF-8 coverage, the runtime worker-thread and
 cancellation bridge, and later feature-service migration. No feature gate or
 runtime bridge was changed here; this slice is ready for its separate commit.
+
+#### Progress update - 2026-09-20 (FileController save-as coordinator slice)
+
+`FileController::saveDatabaseAs` now preserves the existing normalization,
+no-service/no-open guard, dialog request, and `Save Teacher Profile` warning
+policy. When `WorkspaceState` owns a session it passes the normalized path as
+an UTF-8 `WorkspaceLocation` to `WorkspaceCoordinator::saveWorkspaceAs`,
+decodes structured UTF-8 failures without changing workspace, selection,
+current-file, recent-file, or loaded UI state, and commits the returned
+normalized location directly to `m_currentFile`, recent/last-file settings,
+and loaded UI state. It does not reopen through `loadDatabase`. A closed v2
+state with an already-open compatibility service retains legacy
+`saveDatabaseAs` followed by `loadDatabase`; export remains on the legacy
+service call.
+
+`FileControllerWorkspaceLifecycleTests` retains the previous create/open/
+close/save coverage and now deterministically exercises v2 save-as success and
+location/recent/UI updates, stale-session structured failure and recovery,
+closed-v2 legacy fallback, dialog policy, and source assertions that export
+has not migrated.
+
+Verification passed: `cmake --preset windows-x64-debug` validated one explicit
+owner for 698 handwritten sources and the CMake dependency guards; the
+generated Qt-link report keeps `ClassMngrNext` at `Qt6::Core`. The focused
+Debug target build passed, focused CTest passed 1/1, and the bounded regression
+selection passed 9/9 (`ClassMngrStartupVisualSettingsTests`,
+`ClassMngrDataServiceLifecycleTests`, `ClassMngrStartupPerformanceTests`,
+`ClassMngrNextApplicationContractTests`, `ClassMngrNextApplicationStateTests`,
+`ClassMngrNextApplicationWorkspaceCoordinatorTests`,
+`ClassMngrNextPlatformLegacyWorkspaceGatewayTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`). `git diff --check` passed
+with only the existing LF-to-CRLF warnings.
+
+The remaining gates are FileController export migration and its boundary
+coverage, the runtime worker-thread/cancellation bridge, and later
+feature-service migration. No export implementation, platform adapter, v2
+contract, memory document, or unrelated code changed in this slice; this slice
+is ready for a separate commit.
