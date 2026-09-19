@@ -33,6 +33,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/workspace_contracts.h
+    src/next/application/workspace_state.h
     src/next/application/workspace_use_case.h
 )
 

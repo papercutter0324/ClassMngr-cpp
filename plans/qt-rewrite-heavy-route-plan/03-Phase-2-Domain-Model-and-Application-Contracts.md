@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice and initial workspace create/open/close Application contract are implemented; broader use-case contracts remain next.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence contracts, and explicit workspace state owner are implemented; broader state and use-case contracts remain next.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -54,6 +54,29 @@ the gateway is called. The outer adapter mapping is concise and exact:
   turns legacy void/postcondition into a structured result)
 - v2 `saveWorkspaceAs` -> `saveDatabaseAs(QString)`
 - v2 `exportWorkspace` -> `exportDatabaseAs(QString)`
+
+#### Progress update - 2026-09-19 (workspace application-state slice)
+
+`ClassMngrNext::Application` now owns a Qt-free `WorkspaceStateSnapshot` and
+`WorkspaceState`. A snapshot is a copyable value containing an optional
+caller-visible `WorkspaceSession`; its lifecycle is closed or open based on
+that optional session, and its unsaved state is clean or dirty. `WorkspaceState`
+owns its snapshot and returns copies, so no caller, widget, page, or singleton
+retains hidden current-workspace state.
+
+The transition policy is deterministic: opening a valid session from closed or
+replacing a clean session succeeds and resets the new session to clean;
+invalid session input returns `InvalidInput`; dirty replacement and dirty
+close return recoverable `Conflict`; dirty/saved/close operations without an
+open session return `NotFound`. Marking dirty or saved is idempotent while a
+session is open, and a successful close resets the snapshot to closed/clean.
+`NextApplicationStateTests` covers the value and transition contract without
+constructing a `QApplication`. Legacy service adapters and migration remain a
+separate outer-boundary slice.
+
+Next Phase 2 work remains current selection, import and report/export job
+state, document-content session state, cancellation, thread ownership, and
+the later application-to-legacy adapter mapping.
 
 ## Objective
 
