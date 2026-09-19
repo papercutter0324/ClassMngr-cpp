@@ -31,6 +31,11 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/operation_result.h
 )
 
+set(CLASSMNGR_NEXT_APPLICATION_SOURCES
+    src/next/application/workspace_contracts.h
+    src/next/application/workspace_use_case.h
+)
+
 foreach(_classmngr_next_target IN LISTS
         _classmngr_next_layer_targets
         _classmngr_next_feature_targets)
@@ -46,6 +51,11 @@ target_sources(ClassMngrNextDomain
 target_include_directories(ClassMngrNextDomain
     INTERFACE
         "${PROJECT_SOURCE_DIR}/src"
+)
+
+target_sources(ClassMngrNextApplication
+    INTERFACE
+        ${CLASSMNGR_NEXT_APPLICATION_SOURCES}
 )
 
 target_link_libraries(ClassMngrNextApplication

@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-19
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The initial typed-identifier and structured-result slice is implemented in the v2 Domain boundary; use-case contracts remain next.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice and initial workspace create/open/close Application contract are implemented; broader use-case contracts remain next.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -25,6 +25,24 @@ The Windows Debug target and `ClassMngrNextLaunch` both passed locally. The
 next slice is to define the first application use-case input/output contract
 and map it to the legacy service boundary without adding widget or singleton
 dependencies.
+
+#### Progress update - 2026-09-19 (workspace application-contract slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, header-only workspace
+create/open/close contract. Requests carry an adapter-neutral workspace
+location, successful create/open operations return a copyable session
+projection containing the typed `Domain::WorkspaceId` and location, and close
+accepts that caller-owned session explicitly. `WorkspaceUseCase` validates
+empty locations before invoking an injected `WorkspaceGateway`, which keeps
+the boundary stateless and makes gateway call counts deterministic in
+`NextApplicationContractTests`.
+
+The adapter-facing legacy mapping is reserved for a later outer adapter:
+v2 `openWorkspace` maps to `ApplicationServices::openDatabase(QString)` and
+v2 `closeWorkspace` maps to `ApplicationServices::closeDatabase()`; QString
+conversion is deferred to that adapter, and legacy QString errors are mapped
+to structured `Domain::OperationError`. No Qt/DataService adapter is part of
+this slice.
 
 ## Objective
 

@@ -52,6 +52,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrNextDomain
         ${CLASSMNGR_NEXT_DOMAIN_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrNextApplication
+        ${CLASSMNGR_NEXT_APPLICATION_SOURCES}
+    )
     foreach(source IN LISTS CLASSMNGR_CALENDAR_QML_FILES)
         _classmngr_record_source_owner(ClassMngr "${source}")
     endforeach()
