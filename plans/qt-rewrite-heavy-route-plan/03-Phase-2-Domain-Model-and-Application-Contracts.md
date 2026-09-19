@@ -453,3 +453,17 @@ retains no rosters, repositories, widgets, page pointers, or rich record
 graph. The query/adapter owner may release rich source data after creation;
 app-less focused tests cover the 96-class scale, metadata, validation,
 copy/equality, missing-teacher behavior, and the ownership boundary.
+
+#### Progress update - 2026-09-20 (schedule-view projection slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`ScheduleViewProjection` made of bounded visible `ScheduleViewRow` and
+`ScheduleViewCell` values. The factory validates nonnegative ordering/day/slot
+values, unique row/cell identities, bounded labels and display text, optional
+typed class/teacher references, regular/intensive mode, and row/cell caps.
+Empty snapshots, rows, and time-slot cells are explicit valid fallbacks;
+lookups return value copies. Query owners must paginate or stage larger
+visible scopes and may release rich classes, rosters, repositories, and raw
+workbook data after projection creation. App-less tests cover the 96-row /
+768-cell scale, ordering, missing references, invalid input, caps, and the
+no-rich-record contract boundary.

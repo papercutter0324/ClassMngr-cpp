@@ -125,3 +125,12 @@ classmngr_add_qt_test(
         ClassMngrNext::Application
         Qt6::Test
 )
+
+classmngr_add_qt_test(
+    NAME NextApplicationScheduleView
+    SOURCES
+        tests/next_application_schedule_view_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
