@@ -438,3 +438,18 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
   adapter owns the active document session and its release boundary.
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
+
+#### Progress update - 2026-09-20 (class-summary projection slice)
+
+`ClassMngrNext::Application` now owns a Qt-free, copyable
+`ClassSummaryProjection` with bounded `TeacherSummary` records, compact
+`ClassSummary` navigation rows, and at most one `SelectedClassDetails` value.
+The factory rejects blank or oversized required text and typed identifiers,
+duplicate IDs, unknown teacher references, invalid selected-class identity,
+collection overflow, and student-count overflow. An absent class teacher is
+an explicit supported fallback; present references must resolve in the
+`TeacherSummaryIndex`. Lookups return value copies, while the projection
+retains no rosters, repositories, widgets, page pointers, or rich record
+graph. The query/adapter owner may release rich source data after creation;
+app-less focused tests cover the 96-class scale, metadata, validation,
+copy/equality, missing-teacher behavior, and the ownership boundary.

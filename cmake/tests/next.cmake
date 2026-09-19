@@ -116,3 +116,12 @@ classmngr_add_qt_test(
         ClassMngrNext::Application
         Qt6::Test
 )
+
+classmngr_add_qt_test(
+    NAME NextApplicationClassSummary
+    SOURCES
+        tests/next_application_class_summary_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
