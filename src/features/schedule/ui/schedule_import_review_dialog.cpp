@@ -640,6 +640,9 @@ void ScheduleImportReviewDialog::updateScheduleConflictWarning(
                 PromptRequest{
                     .parent = this,
                     .objectName = QStringLiteral("scheduleImportConflictWarning"),
+                    .automationId = QStringLiteral(
+                        "schedule-import-conflict-warning"
+                        ),
                     .title = tr("Schedule Import Conflict"),
                     .message = m_pendingScheduleConflictMessage,
                     .severity = PromptSeverity::Warning
@@ -1447,12 +1450,18 @@ void ScheduleImportReviewDialog::applyImport()
         + tr("Is this schedule valid and ready to import?");
 
     if (
-        DialogServices::confirm(
-            this,
-            tr("Confirm Schedule Import"),
-            confirmation,
-            tr("Import"),
-            tr("Cancel")
+        DialogServices::prompts().confirm(
+            PromptRequest{
+                .parent = this,
+                .automationId = QStringLiteral(
+                    "schedule-import-confirmation"
+                    ),
+                .title = tr("Confirm Schedule Import"),
+                .message = confirmation,
+                .severity = PromptSeverity::Information,
+                .acceptText = tr("Import"),
+                .rejectText = tr("Cancel")
+            }
             ) != PromptChoice::Accepted
         )
     {

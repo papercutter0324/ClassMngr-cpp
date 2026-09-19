@@ -38,6 +38,7 @@
 #include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #if !defined(Q_OS_MACOS)
@@ -61,7 +62,6 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QPdfDocument>
 #include <QPointer>
@@ -752,36 +752,23 @@ void scheduleStartupPerformanceSubPrepOutputLifecycle(
 
         if (*dialogAccepted)
         {
-            QMessageBox* warning =
-                qobject_cast<QMessageBox*>(
-                    QApplication::activeModalWidget()
+            const auto warning =
+                DialogServices::promptTestDriver().activePrompt(
+                    QStringLiteral("generation-warning")
                     );
-            if (!warning)
-            {
-                for (QWidget* widget : QApplication::topLevelWidgets())
-                {
-                    if (widget->isVisible())
-                    {
-                        warning = qobject_cast<QMessageBox*>(widget);
-                        if (warning)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-
             if (warning)
             {
                 const QString detail =
                     QStringLiteral("generation-warning title=%1; text=%2")
                         .arg(
-                            warning->windowTitle().simplified(),
-                            warning->text().simplified()
+                            warning->title.simplified(),
+                            warning->text.simplified()
                             );
                 *generationWarning = detail;
                 StartupProfiler::recordSubPrepOutputFailed(detail);
-                warning->reject();
+                DialogServices::promptTestDriver().reject(
+                    QStringLiteral("generation-warning")
+                    );
                 *controllerStopped = true;
                 return;
             }
@@ -4229,32 +4216,12 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                             qEnvironmentVariable(
                                 "CLASSMNGR_STARTUP_SCHEDULE_IMPORT_OUTPUT_DIR"
                                 ).trimmed();
-                        auto* conflictWarning =
-                            review->findChild<QMessageBox*>(
+                        const auto conflictWarning =
+                            DialogServices::promptTestDriver().activePrompt(
                                 QStringLiteral(
-                                    "scheduleImportConflictWarning"
+                                    "schedule-import-conflict-warning"
                                     )
                                 );
-                        if (!conflictWarning)
-                        {
-                            for (QWidget* widget :
-                                 QApplication::topLevelWidgets())
-                            {
-                                auto* candidate =
-                                    qobject_cast<QMessageBox*>(widget);
-                                if (
-                                    candidate
-                                    && candidate->objectName()
-                                        == QStringLiteral(
-                                            "scheduleImportConflictWarning"
-                                            )
-                                    )
-                                {
-                                    conflictWarning = candidate;
-                                    break;
-                                }
-                            }
-                        }
                         if (
                             !conflictWarning
                             && !outputRoot.isEmpty()
@@ -4277,8 +4244,7 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                             {
                                 QDir().mkpath(outputRoot);
                                 const QString warningText =
-                                    conflictWarning->text()
-                                        .simplified()
+                                    conflictWarning->text.simplified()
                                         .replace(
                                             QChar(';'),
                                             QChar(',')
@@ -4289,18 +4255,20 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                                             "schedule-import-conflict-warning.png"
                                             )
                                         );
-                                const QPixmap capture =
-                                    conflictWarning->grab();
                                 const bool captured =
-                                    !capture.isNull()
-                                    && capture.save(capturePath, "PNG");
+                                    DialogServices::promptTestDriver().capture(
+                                        QStringLiteral(
+                                            "schedule-import-conflict-warning"
+                                            ),
+                                        capturePath
+                                        );
                                 const QString detail =
                                     QStringLiteral(
                                         "visible=%1; warningText=%2; "
                                         "importEnabled=%3; captured=%4"
                                         )
                                         .arg(
-                                            conflictWarning->isVisible()
+                                            conflictWarning->visible
                                                 ? QStringLiteral("true")
                                                 : QStringLiteral("false")
                                             )
@@ -4327,7 +4295,7 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                                         ).arg(detail)
                                     );
                                 if (
-                                    !conflictWarning->isVisible()
+                                    !conflictWarning->visible
                                     || warningText.isEmpty()
                                     || import->isEnabled()
                                     || !captured
@@ -4336,7 +4304,11 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                                     *workflowSucceeded = false;
                                 }
                             }
-                            conflictWarning->accept();
+                            DialogServices::promptTestDriver().accept(
+                                QStringLiteral(
+                                    "schedule-import-conflict-warning"
+                                    )
+                                );
                             app.processEvents();
                         }
 
@@ -4429,32 +4401,12 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                                 &app,
                                 []()
                                 {
-                                    for (
-                                        QWidget* widget :
-                                            QApplication::topLevelWidgets()
-                                        )
-                                    {
-                                        auto* prompt =
-                                            qobject_cast<QMessageBox*>(widget);
-                                        if (
-                                            !prompt
-                                            || !prompt->isVisible()
-                                            || prompt->objectName()
-                                                != QStringLiteral(
-                                                    "classmngrUserPrompt"
-                                                    )
-                                            )
-                                        {
-                                            continue;
-                                        }
-
-                                        if (QPushButton* button =
-                                                prompt->defaultButton())
-                                        {
-                                            button->click();
-                                            return;
-                                        }
-                                    }
+                                    DialogServices::promptTestDriver()
+                                        .clickDefault(
+                                            QStringLiteral(
+                                                "schedule-import-confirmation"
+                                                )
+                                            );
                                 }
                                 );
                             promptTimer->start();

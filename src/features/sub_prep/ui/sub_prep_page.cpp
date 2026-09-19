@@ -581,10 +581,14 @@ void SubPrepPage::generateSubPrep()
                 .arg(result.outputDirectory);
         }
 
-        DialogServices::showWarning(
-            this,
-            tr("Generate Sub Prep"),
-            message
+        DialogServices::prompts().showMessage(
+            PromptRequest{
+                .parent = this,
+                .automationId = QStringLiteral("generation-warning"),
+                .title = tr("Generate Sub Prep"),
+                .message = message,
+                .severity = PromptSeverity::Warning
+            }
             );
     }
 }

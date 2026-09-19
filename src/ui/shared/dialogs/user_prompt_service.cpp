@@ -2,9 +2,11 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QAbstractButton>
+#include <QApplication>
 #include <QCoreApplication>
 #include <QHash>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QPushButton>
 #include <QWidget>
 
@@ -97,6 +99,13 @@ void configureMessageBox(
             ? QStringLiteral("classmngrUserPrompt")
             : request.objectName
         );
+    if (!request.automationId.isEmpty())
+    {
+        dialog.setProperty(
+            "classmngrPromptAutomationId",
+            request.automationId
+            );
+    }
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setIcon(messageBoxIcon(request.severity));
     dialog.setWindowTitle(request.title);
@@ -107,6 +116,55 @@ void configureMessageBox(
     {
         dialog.setDetailedText(request.details);
     }
+}
+
+QString promptAutomationId(
+    const QMessageBox& dialog
+    )
+{
+    const QString automationId =
+        dialog.property("classmngrPromptAutomationId").toString();
+    return automationId.isEmpty()
+        ? dialog.objectName()
+        : automationId;
+}
+
+bool promptMatches(
+    const QMessageBox& dialog,
+    const QString& id
+    )
+{
+    return dialog.isVisible()
+        && (
+            id.isEmpty()
+            || promptAutomationId(dialog) == id
+            || dialog.objectName() == id
+            );
+}
+
+QMessageBox* findPrompt(
+    const QString& id
+    )
+{
+    if (
+        auto* active =
+            qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+        active && promptMatches(*active, id)
+        )
+    {
+        return active;
+    }
+
+    for (QWidget* widget : QApplication::topLevelWidgets())
+    {
+        auto* prompt = qobject_cast<QMessageBox*>(widget);
+        if (prompt && promptMatches(*prompt, id))
+        {
+            return prompt;
+        }
+    }
+
+    return nullptr;
 }
 
 }
@@ -151,6 +209,86 @@ void QtUserPromptService::showMessageAsync(
     dialog->setEscapeButton(acknowledgeButton);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->open();
+}
+
+std::optional<PromptSnapshot> QtPromptTestDriver::activePrompt(
+    const QString& id
+    ) const
+{
+    QMessageBox* prompt = findPrompt(id);
+    if (!prompt)
+    {
+        return std::nullopt;
+    }
+
+    return PromptSnapshot{
+        .id = promptAutomationId(*prompt),
+        .objectName = prompt->objectName(),
+        .title = prompt->windowTitle(),
+        .text = prompt->text(),
+        .visible = prompt->isVisible()
+    };
+}
+
+bool QtPromptTestDriver::accept(
+    const QString& id
+    )
+{
+    if (QMessageBox* prompt = findPrompt(id))
+    {
+        prompt->accept();
+        return true;
+    }
+
+    return false;
+}
+
+bool QtPromptTestDriver::reject(
+    const QString& id
+    )
+{
+    if (QMessageBox* prompt = findPrompt(id))
+    {
+        prompt->reject();
+        return true;
+    }
+
+    return false;
+}
+
+bool QtPromptTestDriver::clickDefault(
+    const QString& id
+    )
+{
+    if (
+        QMessageBox* prompt = findPrompt(id);
+        prompt && prompt->defaultButton()
+        )
+    {
+        prompt->defaultButton()->click();
+        return true;
+    }
+
+    return false;
+}
+
+bool QtPromptTestDriver::capture(
+    const QString& id,
+    const QString& path
+    )
+{
+    if (path.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    if (QMessageBox* prompt = findPrompt(id))
+    {
+        const QPixmap capture = prompt->grab();
+        return !capture.isNull() && capture.save(path, "PNG");
+    }
+
+    return false;
 }
 
 PromptChoice QtUserPromptService::confirm(
@@ -317,6 +455,12 @@ IUserPromptService& DialogServices::prompts()
 
     static QtUserPromptService service;
     return service;
+}
+
+IPromptTestDriver& DialogServices::promptTestDriver()
+{
+    static QtPromptTestDriver driver;
+    return driver;
 }
 
 void DialogServices::setUserPromptServiceForTesting(

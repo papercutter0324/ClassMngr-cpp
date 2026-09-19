@@ -51,6 +51,8 @@ private slots:
     void messageMapsSeverityDetailsAndParent_data();
     void messageMapsSeverityDetailsAndParent();
     void asynchronousMessageUsesTypedPolicy();
+    void promptTestDriverInspectsAndCapturesAsyncPrompt();
+    void promptTestDriverActivatesDefaultPrompt();
     void confirmationMapsButtonsAndResults_data();
     void confirmationMapsButtonsAndResults();
     void unsavedChangesMapsButtonsAndResults_data();
@@ -303,6 +305,75 @@ void DialogServicesTests::asynchronousMessageUsesTypedPolicy()
     QVERIFY(acceptButton);
     acceptButton->click();
     QApplication::processEvents();
+}
+
+void DialogServicesTests::promptTestDriverInspectsAndCapturesAsyncPrompt()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    QWidget parent;
+    QtUserPromptService service;
+    const QString promptId = QStringLiteral("test-async-prompt");
+    service.showMessageAsync(
+        PromptRequest{
+            .parent = &parent,
+            .automationId = promptId,
+            .title = QStringLiteral("Async warning"),
+            .message = QStringLiteral("Inspect this warning."),
+            .severity = PromptSeverity::Warning
+        }
+        );
+
+    IPromptTestDriver& driver = DialogServices::promptTestDriver();
+    QTRY_VERIFY(driver.activePrompt(promptId).has_value());
+
+    const std::optional<PromptSnapshot> snapshot =
+        driver.activePrompt(promptId);
+    QVERIFY(snapshot.has_value());
+    QCOMPARE(snapshot->id, promptId);
+    QCOMPARE(snapshot->title, QStringLiteral("Async warning"));
+    QCOMPARE(snapshot->text, QStringLiteral("Inspect this warning."));
+    QVERIFY(snapshot->visible);
+
+    const QString capturePath = temporaryDirectory.filePath(
+        QStringLiteral("prompt.png")
+        );
+    QVERIFY(driver.capture(promptId, capturePath));
+    QVERIFY(QFileInfo::exists(capturePath));
+    QVERIFY(driver.accept(promptId));
+    QTRY_VERIFY(!driver.activePrompt(promptId).has_value());
+}
+
+void DialogServicesTests::promptTestDriverActivatesDefaultPrompt()
+{
+    QWidget parent;
+    QtUserPromptService service;
+    const QString promptId = QStringLiteral("test-confirmation");
+    bool driverClicked = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            driverClicked =
+                DialogServices::promptTestDriver().clickDefault(promptId);
+        }
+        );
+
+    const PromptChoice choice = service.confirm(
+        PromptRequest{
+            .parent = &parent,
+            .automationId = promptId,
+            .title = QStringLiteral("Confirm"),
+            .message = QStringLiteral("Continue?"),
+            .severity = PromptSeverity::Information,
+            .acceptText = QStringLiteral("Continue"),
+            .rejectText = QStringLiteral("Cancel")
+        }
+        );
+
+    QVERIFY(driverClicked);
+    QCOMPARE(choice, PromptChoice::Accepted);
 }
 
 void DialogServicesTests::confirmationMapsButtonsAndResults_data()
