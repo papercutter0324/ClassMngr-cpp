@@ -15,6 +15,7 @@
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
+#include "next/platform/application_services_document_catalog_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/calendar/ui/calendar_page.h"
@@ -35,6 +36,34 @@
 #include <QMenuBar>
 #include <QScreen>
 #include <utility>
+
+namespace
+{
+ClassMngr::Next::Application::DocumentCatalogProjection
+requestDocumentCatalogProjection(
+    ApplicationServices* services,
+    const QString& localeName
+    )
+{
+    if (!services)
+    {
+        return {};
+    }
+
+    ClassMngr::Next::Platform::ApplicationServicesDocumentCatalogPort port(
+        *services
+        );
+    auto result =
+        port.projection(localeName);
+
+    if (!result)
+    {
+        return {};
+    }
+
+    return std::move(result.value());
+}
+}
 
 // =========================================================
 // Constructor
@@ -429,13 +458,17 @@ void MainWindow::initializeSidebar()
         return;
     }
 
-    ui->sidebarWidget->setDocumentCatalog(
-        m_services
-            ? m_services->documentCatalog()
-            : nullptr,
+    const QString localeName =
         m_languageService
             ? m_languageService->loadedLocaleName()
-            : QString()
+            : QString();
+
+    ui->sidebarWidget->setDocumentCatalog(
+        requestDocumentCatalogProjection(
+            m_services.get(),
+            localeName
+            ),
+        localeName
         );
 }
 
@@ -545,13 +578,17 @@ void MainWindow::retranslateUi()
 
     if (ui && ui->sidebarWidget)
     {
-        ui->sidebarWidget->setDocumentCatalog(
-            m_services
-                ? m_services->documentCatalog()
-                : nullptr,
+        const QString localeName =
             m_languageService
                 ? m_languageService->loadedLocaleName()
-                : QString()
+                : QString();
+
+        ui->sidebarWidget->setDocumentCatalog(
+            requestDocumentCatalogProjection(
+                m_services.get(),
+                localeName
+                ),
+            localeName
             );
     }
 

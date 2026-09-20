@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, and Qt runtime worker/cancellation bridge are implemented. The bounded resource/platform document resolver slice is complete: `Platform::DocumentContentResourcePort` accepts `ResourcePackManager&`, validates `resource://documents/` references, rejects malformed/empty/traversal inputs, acquires one documents-pack lease, resolves primary/optional export paths, and returns a move-only lease/path value; `NavigationController` uses it instead of direct `ResourcePaths::Documents` acquisition/parsing, while `PdfViewerPage` retains close-before-lease-release ownership and direct/no-reference compatibility. The application layer remains Qt-free. Sidebar/MainWindow catalog ownership and other feature-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, and typed Sidebar/MainWindow catalog cutover are implemented. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Remaining feature-service migrations and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -862,4 +862,31 @@ focused projection/adapter CTest passed 2/2; Qt-free application and
 standalone syntax checks passed; and `git diff --check` passed. The embedded
 fixture contains root folders only, so nested adapter transfer lacks runtime
 coverage; nested projection behavior is covered. Phase 2 remains in progress;
-UI cutover, `Sidebar`/`MainWindow`, and other feature migration remain open.
+at this prerequisite handoff, UI cutover was still pending. The subsequent
+typed `Sidebar`/`MainWindow` cutover is recorded below; other feature migration
+remains open.
+
+#### Progress update - 2026-09-20 (Sidebar/MainWindow typed catalog cutover)
+
+After baseline commit `662e5f2`, the typed document-catalog projection is now
+cut over at the Sidebar/MainWindow boundary. `Sidebar` owns a copied or
+move-assigned `Application::DocumentCatalogProjection`; it has no legacy
+`DocumentCatalog` pointer, include, or dependency. Its tree maps typed
+`parentPath`, folder IDs, keys, and display names while preserving nested
+hierarchy, order, localized labels, and empty-projection behavior.
+
+`MainWindow::initializeSidebar` and `MainWindow::retranslateUi` request
+locale-specific projections through
+`Platform::ApplicationServicesDocumentCatalogPort` and pass them to Sidebar
+by value. Projection failure supplies an empty projection. Configure,
+ownership, and dependency checks covered 705 handwritten sources; Sidebar CTest
+passed 1/1; adjacent catalog/projection/port tests passed 4/4; the exact
+nine-target regression passed 9/9; and resource validation covered 6 RCC
+packs, 7 runtime IDs, and 7 references. Application Qt-free and projection
+standalone syntax checks passed. An elevated MSBuild retry was required after
+`E_ACCESSDENIED`; the retry passed, and `git diff --check` passed.
+
+There is no live MainWindow projection-failure/retranslation integration test;
+static and production-compilation coverage is present, so this remains a
+non-blocking gap. Phase 2 remains open for the remaining feature-service
+migrations and is not complete.

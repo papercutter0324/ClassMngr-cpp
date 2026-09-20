@@ -1,8 +1,10 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/documents/document_catalog.h"
+#include "next/application/document_catalog_projection.h"
 
 #include <QApplication>
+#include <QDir>
 #include <QFontMetrics>
 #include <QMenu>
 #include <QSignalSpy>
@@ -10,9 +12,20 @@
 #include <QTreeWidget>
 #include <QtTest>
 
+#include <algorithm>
+#include <optional>
+#include <utility>
+
 namespace
 {
 constexpr int KeyRole = Qt::UserRole + 4;
+
+using DocumentCatalogProjection =
+    ClassMngr::Next::Application::DocumentCatalogProjection;
+using DocumentCatalogProjectionInput =
+    ClassMngr::Next::Application::DocumentCatalogProjectionInput;
+using DocumentContentReference =
+    ClassMngr::Next::Application::DocumentContentReference;
 
 QTreeWidgetItem* childWithKey(
     QTreeWidgetItem* parent,
@@ -58,6 +71,174 @@ QTreeWidgetItem* topLevelWithKey(
     }
 
     return nullptr;
+}
+
+QStringList subtreeKeys(
+    QTreeWidgetItem* root
+    )
+{
+    QStringList keys;
+
+    if (!root)
+    {
+        return keys;
+    }
+
+    for (int index = 0; index < root->childCount(); ++index)
+    {
+        QTreeWidgetItem* child = root->child(index);
+
+        if (!child)
+        {
+            continue;
+        }
+
+        keys.append(child->data(0, KeyRole).toString());
+        keys.append(subtreeKeys(child));
+    }
+
+    return keys;
+}
+
+int documentPageCount(
+    QTreeWidgetItem* root
+    )
+{
+    if (!root)
+    {
+        return 0;
+    }
+
+    int count = 0;
+
+    for (int index = 0; index < root->childCount(); ++index)
+    {
+        QTreeWidgetItem* child = root->child(index);
+
+        if (!child)
+        {
+            continue;
+        }
+
+        const auto type = static_cast<NodeType>(
+            child->data(0, Qt::UserRole).toInt()
+            );
+
+        count += type == NodeType::Page
+            ? 1
+            : documentPageCount(child);
+    }
+
+    return count;
+}
+
+std::optional<DocumentCatalogProjection> projectionFromCatalog(
+    const DocumentCatalog& catalog,
+    const QString& localeName
+    )
+{
+    DocumentCatalogProjectionInput input;
+
+    for (const DocumentFolderDefinition& folder : catalog.folders())
+    {
+        const auto folderId =
+            ClassMngr::Next::Domain::DocumentFolderId::fromString(
+                folder.id.toUtf8().toStdString()
+                );
+
+        if (!folderId)
+        {
+            return std::nullopt;
+        }
+
+        input.folders.push_back({
+            *folderId,
+            folder.path.toUtf8().toStdString(),
+            folder.id.toUtf8().toStdString(),
+            folder.sidebarNames.forLocale(localeName)
+                .toUtf8().toStdString(),
+            folder.order,
+            folder.parentPath.toUtf8().toStdString()
+        });
+    }
+
+    for (const DocumentDefinition& document : catalog.documents())
+    {
+        const auto documentId =
+            ClassMngr::Next::Domain::DocumentId::fromString(
+                document.id.toUtf8().toStdString()
+                );
+        const auto folder = std::find_if(
+            catalog.folders().cbegin(),
+            catalog.folders().cend(),
+            [&document](const DocumentFolderDefinition& candidate)
+            {
+                return candidate.path == document.pdf.path;
+            }
+            );
+
+        if (!documentId || folder == catalog.folders().cend())
+        {
+            return std::nullopt;
+        }
+
+        const auto folderId =
+            ClassMngr::Next::Domain::DocumentFolderId::fromString(
+                folder->id.toUtf8().toStdString()
+                );
+
+        if (!folderId)
+        {
+            return std::nullopt;
+        }
+
+        const QString relativePdfPath = QDir::fromNativeSeparators(
+            QDir(document.pdf.path).filePath(document.pdf.fileName)
+            );
+        const bool exportable =
+            document.exportingEnabled && document.exportFile.has_value();
+        std::optional<DocumentContentReference> exportReference;
+
+        if (exportable)
+        {
+            const QString relativeExportPath = QDir::fromNativeSeparators(
+                QDir(document.exportFile->path).filePath(
+                    document.exportFile->fileName
+                    )
+                );
+            exportReference.emplace(
+                "resource://documents/"
+                    + relativeExportPath.toUtf8().toStdString()
+                );
+        }
+
+        input.documents.push_back({
+            *documentId,
+            *folderId,
+            relativePdfPath.toUtf8().toStdString(),
+            document.id.toUtf8().toStdString(),
+            document.sidebarNames.forLocale(localeName)
+                .toUtf8().toStdString(),
+            document.order,
+            document.printingEnabled,
+            exportable,
+            DocumentContentReference(
+                "resource://documents/"
+                    + relativePdfPath.toUtf8().toStdString()
+                ),
+            std::move(exportReference)
+        });
+    }
+
+    const auto result =
+        DocumentCatalogProjection::create(std::move(input));
+
+    if (!result)
+    {
+        return std::nullopt;
+    }
+
+    return result.value();
 }
 }
 
@@ -334,11 +515,19 @@ void SidebarStructureTests::documentCatalogBuildsLocalizedTree()
         vacationRequest->pdf.absoluteFilePath
         );
 
-    Sidebar sidebar;
-    sidebar.setDocumentCatalog(
-        &*catalog,
+    auto koreanProjection = projectionFromCatalog(
+        *catalog,
         QStringLiteral("ko_KR")
         );
+    QVERIFY(koreanProjection.has_value());
+
+    Sidebar sidebar;
+    sidebar.setDocumentCatalog(
+        *koreanProjection,
+        QStringLiteral("ko_KR")
+        );
+    koreanProjection.reset();
+    sidebar.rebuildTree();
 
     auto* tree = sidebar.findChild<QTreeWidget*>(
         QStringLiteral("sidebarTree")
@@ -349,6 +538,8 @@ void SidebarStructureTests::documentCatalogBuildsLocalizedTree()
         topLevelWithKey(tree, QStringLiteral("document"));
     QVERIFY(documents);
     QCOMPARE(documents->childCount(), 7);
+    QCOMPARE(documentPageCount(documents), 30);
+    const QStringList koreanKeys = subtreeKeys(documents);
 
     QTreeWidgetItem* guides =
         childWithKey(
@@ -376,14 +567,24 @@ void SidebarStructureTests::documentCatalogBuildsLocalizedTree()
             );
     QVERIFY(requestForm);
 
-    sidebar.setDocumentCatalog(
-        &*catalog,
+    auto englishProjection = projectionFromCatalog(
+        *catalog,
         QStringLiteral("en_US")
         );
+    QVERIFY(englishProjection.has_value());
+
+    sidebar.setDocumentCatalog(
+        std::move(*englishProjection),
+        QStringLiteral("en_US")
+        );
+    englishProjection.reset();
 
     documents =
         topLevelWithKey(tree, QStringLiteral("document"));
     QVERIFY(documents);
+    QCOMPARE(documents->childCount(), 7);
+    QCOMPARE(documentPageCount(documents), 30);
+    QCOMPARE(subtreeKeys(documents), koreanKeys);
     vacation =
         childWithKey(
             documents,
@@ -396,6 +597,18 @@ void SidebarStructureTests::documentCatalogBuildsLocalizedTree()
             );
     QVERIFY(requestForm);
     QCOMPARE(requestForm->text(0), QStringLiteral("Vacation Request Form"));
+
+    Sidebar emptySidebar;
+    emptySidebar.setDocumentCatalog(
+        {},
+        QStringLiteral("en_US")
+        );
+    auto* emptyTree = emptySidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(emptyTree);
+    QCOMPARE(emptyTree->topLevelItemCount(), 7);
+    QVERIFY(!topLevelWithKey(emptyTree, QStringLiteral("document")));
 }
 
 QTEST_MAIN(SidebarStructureTests)

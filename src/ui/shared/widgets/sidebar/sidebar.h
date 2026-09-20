@@ -1,6 +1,7 @@
 #ifndef SIDEBAR_H
 #define SIDEBAR_H
 
+#include "next/application/document_catalog_projection.h"
 #include "sidebar_types.h"
 
 #include <QHash>
@@ -10,7 +11,6 @@
 
 class QTreeWidget;
 class QResizeEvent;
-class DocumentCatalog;
 class SidebarMarqueeDelegate;
 struct TreeNodeSpec;
 
@@ -62,7 +62,7 @@ public:
     void rebuildTree();
 
     void setDocumentCatalog(
-        const DocumentCatalog* catalog,
+        ClassMngr::Next::Application::DocumentCatalogProjection projection,
         const QString& localeName
         );
 
@@ -217,7 +217,8 @@ private:
 
     QTreeWidget *m_tree = nullptr;
 
-    const DocumentCatalog* m_documentCatalog = nullptr;
+    ClassMngr::Next::Application::DocumentCatalogProjection
+        m_documentCatalogProjection;
     QString m_documentLocaleName;
 
     SidebarMarqueeDelegate* m_marqueeDelegate = nullptr;

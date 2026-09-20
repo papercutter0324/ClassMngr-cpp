@@ -1,11 +1,15 @@
 #include "sidebar_p.h"
 
-#include "features/documents/document_catalog.h"
-
 #include <algorithm>
+#include <optional>
 
 namespace
 {
+using DocumentCatalogProjection =
+    ClassMngr::Next::Application::DocumentCatalogProjection;
+using DocumentFolderId =
+    ClassMngr::Next::Domain::DocumentFolderId;
+
 struct OrderedDocumentNode
 {
     int order = 0;
@@ -14,30 +18,25 @@ struct OrderedDocumentNode
 };
 
 QList<TreeNodeSpec> documentChildren(
-    const DocumentCatalog* catalog,
-    const QString& localeName,
-    const QString& parentPath = QString()
+    const DocumentCatalogProjection& projection,
+    const QString& parentPath = QString(),
+    const std::optional<DocumentFolderId>& parentFolderId = std::nullopt
     )
 {
-    if (!catalog)
-    {
-        return {};
-    }
-
     QList<OrderedDocumentNode> nodes;
 
-    for (const DocumentFolderDefinition& folder : catalog->folders())
+    for (const auto& folder : projection.folders())
     {
-        if (folder.parentPath != parentPath)
+        if (QString::fromUtf8(folder.parentPath.c_str()) != parentPath)
         {
             continue;
         }
 
         QList<TreeNodeSpec> children =
             documentChildren(
-                catalog,
-                localeName,
-                folder.path
+                projection,
+                QString::fromUtf8(folder.path.c_str()),
+                folder.id
                 );
 
         if (children.isEmpty())
@@ -47,29 +46,29 @@ QList<TreeNodeSpec> documentChildren(
 
         nodes.append({
             folder.order,
-            folder.id,
+            QString::fromUtf8(folder.id.value().c_str()),
             {
-                folder.id,
-                folder.sidebarNames.forLocale(localeName),
+                QString::fromUtf8(folder.key.c_str()),
+                QString::fromUtf8(folder.displayName.c_str()),
                 NodeType::Root,
                 children
             }
         });
     }
 
-    for (const DocumentDefinition& document : catalog->documents())
+    for (const auto& document : projection.documents())
     {
-        if (document.folderPath != parentPath)
+        if (!parentFolderId || document.folderId != *parentFolderId)
         {
             continue;
         }
 
         nodes.append({
             document.order,
-            document.id,
+            QString::fromUtf8(document.id.value().c_str()),
             {
-                document.id,
-                document.sidebarNames.forLocale(localeName),
+                QString::fromUtf8(document.key.c_str()),
+                QString::fromUtf8(document.displayName.c_str()),
                 NodeType::Page
             }
         });
@@ -89,7 +88,7 @@ QList<TreeNodeSpec> documentChildren(
     QList<TreeNodeSpec> result;
     result.reserve(nodes.size());
 
-    for (const OrderedDocumentNode& node : nodes)
+    for (const auto& node : nodes)
     {
         result.append(node.spec);
     }
@@ -119,8 +118,7 @@ void Sidebar::buildTree()
 
     const QList<TreeNodeSpec> documents =
         documentChildren(
-            m_documentCatalog,
-            m_documentLocaleName
+            m_documentCatalogProjection
             );
 
     auto documentsIt =
@@ -191,12 +189,12 @@ void Sidebar::rebuildTree()
 }
 
 void Sidebar::setDocumentCatalog(
-    const DocumentCatalog* catalog,
+    ClassMngr::Next::Application::DocumentCatalogProjection projection,
     const QString& localeName
     )
 {
-    m_documentCatalog =
-        catalog;
+    m_documentCatalogProjection =
+        std::move(projection);
     m_documentLocaleName =
         localeName;
 

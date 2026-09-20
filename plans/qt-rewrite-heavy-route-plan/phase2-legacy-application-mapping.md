@@ -1,13 +1,13 @@
 # Phase 2 legacy application mapping
 
 This document maps the current legacy application boundary to the committed
-v2 application contracts. The current document-folder prerequisite slice is
-after baseline commit `fd695fd`; the earlier mapping and resolver handoffs are
-retained below. The runtime worker bridge, limited document route slice, and
-bounded resource/platform document resolver are implemented. A partial
-content-session integration covers referenced `PdfViewerPage` descriptors;
-`MainWindow`/`Sidebar` catalog ownership, broader legacy ownership, and feature
-cutover remain open.
+v2 application contracts. The typed Sidebar/MainWindow catalog cutover follows
+baseline commit `662e5f2`; the earlier mapping, resolver, and document-folder
+handoffs are retained below. The runtime worker bridge, limited document route
+slice, bounded resource/platform document resolver, and typed catalog ownership
+are implemented. A partial content-session integration covers referenced
+`PdfViewerPage` descriptors; broader legacy ownership and feature cutover
+remain open.
 
 ## Authority and current boundary
 
@@ -26,9 +26,13 @@ legacy-free; the committed outer `Platform` document-catalog adapter maps
 metadata, `DocumentContentResourcePort` resolves resource-backed primary and
 optional export paths, and `NavigationController` projects the optional
 content reference to the viewer. `PdfViewerPage` now owns the partial
-content-session lifecycle for referenced descriptors. `MainWindow`/`Sidebar`
-catalog ownership and broader facade/service cutover remain outside this
-slice.
+content-session lifecycle for referenced descriptors. `Sidebar` owns a copied
+or move-assigned `Application::DocumentCatalogProjection` with no legacy
+`DocumentCatalog` pointer, include, or dependency. `MainWindow::initializeSidebar`
+and `MainWindow::retranslateUi` request locale-specific projections through
+`Platform::ApplicationServicesDocumentCatalogPort` and pass them by value;
+projection failure supplies an empty projection. Broader facade/service cutover
+remains outside this slice.
 
 ## Document-folder hierarchy metadata prerequisite
 
@@ -36,7 +40,7 @@ After baseline commit `fd695fd`, `DocumentFolderMetadata` carries bounded
 `parentPath` metadata, empty for roots, and projection validation handles it.
 `ApplicationServicesDocumentCatalogPort` copies legacy
 `DocumentFolderDefinition::parentPath`. The transfer preserves nested folder
-hierarchy for the upcoming `Sidebar`/`MainWindow` projection cutover while the
+hierarchy for the completed `Sidebar`/`MainWindow` projection cutover while the
 application layer remains Qt-free and aggregate initialization remains
 compatible.
 
@@ -44,9 +48,9 @@ Configure/ownership/dependency checks passed at 705 handwritten files;
 focused projection/adapter CTest passed 2/2; Qt-free application and
 standalone syntax checks passed; and `git diff --check` passed. The embedded
 fixture contains root folders only, so nested adapter transfer lacks runtime
-coverage; nested projection behavior is covered. This prerequisite does not
-cut over `Sidebar`/`MainWindow` or any other feature migration; Phase 2 remains
-in progress.
+coverage; nested projection behavior is covered. This prerequisite was
+preparatory and did not itself cut over `Sidebar`/`MainWindow`; the completed
+cutover is recorded below. Phase 2 remains in progress.
 
 ## Document route and content-session status
 
@@ -67,10 +71,9 @@ directly acquiring or parsing `ResourcePaths::Documents`; `PdfViewerPage`
 closes the PDF before releasing the lease, and descriptors without a reference
 retain direct-loading compatibility. The application layer remains Qt-free.
 Close-before-release is source-order verified; invalid UTF-8 and live UI
-integration lack direct coverage. `MainWindow`/`Sidebar` catalog ownership and
-other legacy service accessors and feature migrations remain separate future
-slices, so this partial content-session/resolver integration does not complete
-Phase 2.
+integration lack direct coverage. Typed `MainWindow`/`Sidebar` catalog
+ownership is now complete, but the partial content-session/resolver integration,
+other legacy service accessors, and feature migrations do not complete Phase 2.
 
 ## Legacy container construction and lifetime mapping
 
@@ -129,7 +132,7 @@ later Phase 2 slice.
 | `rosterService()` | Roster editors/printing, class pages, sub-prep, and speaking evaluation use roster operations; representative calls are [`roster_editor_widget.cpp`](../../src/features/roster/ui/roster_editor_widget.cpp#L64) and [`roster_print_dialog.cpp`](../../src/features/roster/ui/roster_print_dialog.cpp#L445). | Future roster use cases/projections; no v2 wrapper. | Legacy feature service; future roster slice. |
 | `speakingEvaluationService()` | Speaking-evaluation pages, analytics, and roster score import use it; representative calls are [`speaking_eval_page.cpp`](../../src/features/speaking_eval/ui/speaking_eval_page.cpp#L198) and [`class_analytics_page.cpp`](../../src/features/classes/ui/class_analytics_page.cpp#L526). | Future evaluation/analytics contracts; no v2 wrapper. | Legacy feature service; future evaluation slice. |
 | `themeService()` | [`MainWindow`](../../src/app/mainwindow.cpp#L480) injects it into the theme controller; schedule output also reads the current theme. | Future theme/platform contract; no v2 wrapper. | Legacy core service; future platform/UI slice. |
-| `documentCatalog()` | [`MainWindow`](../../src/app/mainwindow.cpp#L433) passes it to the sidebar; [`NavigationController`](../../src/app/controllers/navigation_controller.cpp#L377) resolves its document route from it. | `Platform::ApplicationServicesDocumentCatalogPort` maps legacy metadata, including bounded `DocumentFolderDefinition::parentPath`, into bounded typed `DocumentCatalogProjection` values, and `DocumentCatalogUseCase` supplies the optional `DocumentContentReference`. `DocumentContentResourcePort` resolves referenced resource content and optional export paths from one documents-pack lease. `NavigationController` projects the reference into `PdfViewerDocumentDescriptor` and uses the resource port instead of direct `ResourcePaths::Documents` acquisition/parsing; `PdfViewerPage` integrates `DocumentContentSession`, closes before lease release, and preserves direct no-reference loading. Confirm-leave, viewer load, and page navigation remain preserved. `MainWindow`/`Sidebar` catalog ownership and full document-service migration remain open. | Platform metadata/content-resource adapter plus v2 application use case and partial viewer session integration; legacy `ApplicationServices`/`MainWindow`/`Sidebar` ownership remains. |
+| `documentCatalog()` | [`NavigationController`](../../src/app/controllers/navigation_controller.cpp#L377) resolves its document route from the legacy catalog boundary; MainWindow no longer passes a legacy catalog pointer to Sidebar. | `Platform::ApplicationServicesDocumentCatalogPort` maps legacy metadata, including bounded `DocumentFolderDefinition::parentPath`, into bounded typed `DocumentCatalogProjection` values. `MainWindow::initializeSidebar` and `retranslateUi` request locale-specific projections and pass them by value; failure passes an empty projection. Sidebar maps typed parent paths, folder IDs, keys, and display names while preserving nested hierarchy, order, localized labels, and empty projections. `DocumentCatalogUseCase` supplies the optional `DocumentContentReference`; `DocumentContentResourcePort` resolves referenced resource content and optional export paths from one documents-pack lease. `NavigationController` projects the reference into `PdfViewerDocumentDescriptor` and uses the resource port instead of direct `ResourcePaths::Documents` acquisition/parsing; `PdfViewerPage` integrates `DocumentContentSession`, closes before lease release, and preserves direct no-reference loading. Full document-service migration remains open. | Platform metadata/content-resource adapter plus v2 application use case, typed Sidebar/MainWindow projection boundary, and partial viewer session integration. |
 
 ## Outer-adapter responsibilities
 
@@ -190,17 +193,16 @@ and the explicit adapter-neutral seams in the current v2 headers.
 
 | Stage | Change | Acceptance gate and rollback point |
 | --- | --- | --- |
-| 0. Mapping and bounded document slice | Keep uncutover legacy paths unchanged and record the committed document metadata adapter, bounded folder `parentPath` prerequisite, content-reference projection, bounded resource/platform resolver, and partial `PdfViewerPage` content-session lifecycle integration. | Configure/source-ownership/dependency checks pass; focused projection/adapter CTest passes 2/2; focused resolver/navigation CTest passes 2/2; the exact nine-target CTest passes 9/9; resource validation covers 6 RCC packs, 7 runtime IDs, and 7 references. Referenced descriptors cover request/load/Ready-or-Error/close-before-release while direct no-reference descriptors preserve legacy loading. The embedded fixture has root folders only, so nested adapter transfer remains a non-blocking runtime-coverage gap; `MainWindow`/`Sidebar` ownership remains an explicit future boundary. |
+| 0. Mapping and bounded document slice | Keep remaining uncutover legacy paths unchanged and record the committed document metadata adapter, bounded folder `parentPath` prerequisite, typed Sidebar/MainWindow projection cutover, content-reference projection, bounded resource/platform resolver, and partial `PdfViewerPage` content-session lifecycle integration. | Configure/source-ownership/dependency checks pass; focused projection/adapter CTest passes 2/2; focused resolver/navigation CTest passes 2/2; Sidebar CTest passes 1/1; adjacent catalog/projection/port tests pass 4/4; the exact nine-target CTest passes 9/9; resource validation covers 6 RCC packs, 7 runtime IDs, and 7 references. Referenced descriptors cover request/load/Ready-or-Error/close-before-release while direct no-reference descriptors preserve legacy loading. The embedded fixture has root folders only, so nested adapter transfer remains a non-blocking runtime-coverage gap; no live MainWindow projection-failure/retranslation integration test exists. |
 | 1. Workspace gateway adapter | Add one outer adapter for `WorkspaceGateway::createWorkspace` plus the listed open/close/save/save-as/export methods around `ApplicationServices`; keep the separate new/initial-setup creation decision explicit and `FileController` on its existing calls. | Existing app-less `NextApplicationContractTests` and `NextApplicationWorkspaceCoordinatorTests` remain green for create/open/close/save/save-as/export, including create validation, dirty-replacement rejection, successful state/selection commit, and failure preservation. Adapter tests cover path conversion, legacy error text, void-save result source, explicit create mapping, and failure atomicity. The adapter is removable without changing v2 headers. |
 | 2. File-controller integration | Route create/open/close/save/save-as/export one workspace action at a time through the adapter. Keep dialogs, recent files, warnings, and window/action updates in the Qt/controller layer. | Create preserves the current coordinator contract: `WorkspaceGateway::createWorkspace` is called only after guards, a successful session opens `WorkspaceState` and clears `SelectionState`, and gateway or invalid-session failures leave snapshots unchanged. The other listed actions preserve verified legacy outcomes and v2 snapshots; dirty/conflict and failure cases leave snapshots unchanged. Roll back the action entry point to the existing `ApplicationServices` call if a gate fails. |
 | 3. Worker bridge | Qt worker delivery to the existing import/report sinks and application-owner `pump()` is committed behind the worker ports. | Bounded FIFO, generation isolation, cancellation request/acknowledgement, and terminal release tests passed with no worker/widget mutation. Stress/TSAN and direct report queue-post-failure coverage remain non-blocking gaps. |
-| 4. Feature slices | Migrate settings, teachers, classes, schedule, calendar, roster, speaking evaluation, theme, and the remaining document ownership/content boundaries as separate typed contracts. The accepted document work includes metadata projection, content-reference propagation, the bounded resource/platform resolver, and the partial `PdfViewerPage` session lifecycle. | Each slice has its own owner, adapter, parity tests, and release boundary; no v2 contract exposes a legacy service pointer. `MainWindow`/`Sidebar` catalog ownership and full document-service migration remain future document slices; leave all other unstarted services on legacy accessors. |
+| 4. Feature slices | Migrate settings, teachers, classes, schedule, calendar, roster, speaking evaluation, theme, and the remaining document ownership/content boundaries as separate typed contracts. The accepted document work includes metadata projection, typed Sidebar/MainWindow catalog ownership, content-reference propagation, the bounded resource/platform resolver, and the partial `PdfViewerPage` session lifecycle. | Each slice has its own owner, adapter, parity tests, and release boundary; no v2 contract exposes a legacy service pointer. Typed `MainWindow`/`Sidebar` catalog ownership is complete; full document-service migration and other unstarted services remain future slices, with legacy accessors retained until their own cutovers. |
 
 The Phase 2 [deliverables](03-Phase-2-Domain-Model-and-Application-Contracts.md#deliverables)
 require this mapping, but the Phase 2 exit gate is not met by documentation
-alone: the accepted document slice is bounded, and MainWindow/Sidebar catalog
-ownership, full document-service migration, and the remaining feature slices
-remain work.
+alone: the accepted document slice is bounded, and full document-service
+migration plus the remaining feature slices remain work.
 
 ## Verified resolver-slice handoff
 
@@ -222,5 +224,31 @@ Qt-free application and standalone syntax checks passed; and `git diff
 `ApplicationServicesDocumentCatalogPort` copies legacy
 `DocumentFolderDefinition::parentPath`. The embedded fixture has root folders
 only, so nested adapter transfer lacks runtime coverage; nested projection
-behavior is covered. Phase 2 remains in progress, with UI cutover,
-`Sidebar`/`MainWindow`, and other feature migration still open.
+behavior is covered. The follow-on typed `Sidebar`/`MainWindow` cutover is
+recorded below; other feature migration remains open. Phase 2 remains in
+progress.
+
+## Verified Sidebar/MainWindow typed catalog cutover
+
+After baseline commit `662e5f2`, `Sidebar` owns a copied or move-assigned
+`Application::DocumentCatalogProjection`; it has no legacy `DocumentCatalog`
+pointer, include, or dependency. Its tree maps typed `parentPath`, folder IDs,
+keys, and display names while preserving nested hierarchy, order, localized
+labels, and empty-projection behavior.
+
+`MainWindow::initializeSidebar` and `MainWindow::retranslateUi` request
+locale-specific projections through
+`Platform::ApplicationServicesDocumentCatalogPort` and pass them to Sidebar by
+value. Projection failure supplies an empty projection.
+
+Configure/ownership/dependency checks passed at 705 handwritten sources;
+Sidebar CTest passed 1/1; adjacent catalog/projection/port tests passed 4/4;
+the exact nine-target regression passed 9/9; and resource validation covered 6
+RCC packs, 7 runtime IDs, and 7 references. Application Qt-free and projection
+standalone syntax checks passed. An elevated MSBuild retry was required after
+`E_ACCESSDENIED`; the retry passed, and `git diff --check` passed.
+
+No live MainWindow projection-failure/retranslation integration test exists;
+static and production-compilation coverage is present. This is a non-blocking
+gap. Phase 2 remains open for the remaining feature-service migrations and is
+not complete.
