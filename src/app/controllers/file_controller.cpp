@@ -5,12 +5,12 @@
 #include "core/application_services.h"
 #include "core/database_file_format.h"
 #include "core/result.h"
-#include "core/settingsmanager.h"
 #include "data/data_service.h"
 #include "next/application/recent_workspace_history.h"
 #include "next/application/workspace_coordinator.h"
 #include "next/platform/application_services_workspace_port.h"
 #include "next/platform/legacy_workspace_gateway.h"
+#include "next/platform/settings_manager_last_database_directory_port.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
@@ -1313,9 +1313,14 @@ QString FileController::databaseDialogDirectory() const
         }
     }
 
+    const std::string lastDirectoryValue =
+        ClassMngr::Next::Platform::
+            SettingsManagerLastDatabaseDirectoryPort().read();
     const QString lastDirectory =
-        SettingsManager::instance()
-            .getLastDatabaseDirectory();
+        QString::fromUtf8(
+            lastDirectoryValue.data(),
+            static_cast<qsizetype>(lastDirectoryValue.size())
+            );
 
     if (
         !lastDirectory.trimmed().isEmpty()
@@ -1381,8 +1386,10 @@ void FileController::rememberDatabaseDirectory(
         return;
     }
 
-    SettingsManager::instance()
-        .setLastDatabaseDirectory(directoryPath);
+    ClassMngr::Next::Platform::
+        SettingsManagerLastDatabaseDirectoryPort().write(
+            utf8Path(directoryPath)
+            );
 }
 
 void FileController::setLoadedFileState()

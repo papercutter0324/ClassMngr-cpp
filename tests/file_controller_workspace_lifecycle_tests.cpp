@@ -3,6 +3,7 @@
 #include "core/settingsmanager.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/platform/settings_manager_last_database_directory_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -94,6 +95,8 @@ private slots:
     void initTestCase();
     void cleanup();
     void nullServicesAreSafe();
+    void storedDirectoryFallbackIsUsedByFileDialogs();
+    void startupPersistsDirectoryThroughTypedPort();
     void normalCreateUsesCoordinatorAndUpdatesRecent();
     void recentFilesDeduplicateRawAndNormalizedPaths();
     void recentFilesKeepNewestFirstAndCapAtTen();
@@ -170,6 +173,68 @@ void FileControllerWorkspaceLifecycleTests::nullServicesAreSafe()
         );
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+storedDirectoryFallbackIsUsedByFileDialogs()
+{
+    QTemporaryDir storedDirectory;
+    QVERIFY(storedDirectory.isValid());
+
+    ClassMngr::Next::Platform::
+        SettingsManagerLastDatabaseDirectoryPort directoryPort;
+    directoryPort.write(
+        storedDirectory.path().toUtf8().toStdString()
+        );
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(std::nullopt);
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FileController controller(nullptr, nullptr);
+    QVERIFY(!controller.createNewDatabaseInteractive());
+
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().initialDirectory,
+        QFileInfo(storedDirectory.path()).absoluteFilePath()
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+startupPersistsDirectoryThroughTypedPort()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString requestedPath = workspaceRoot.filePath(
+        QStringLiteral("persisted-directory-workspace.tps")
+        );
+    const QString normalizedPath =
+        QFileInfo(requestedPath).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(normalizedPath));
+    seedServices.closeDatabase();
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(requestedPath);
+
+    ClassMngr::Next::Platform::
+        SettingsManagerLastDatabaseDirectoryPort directoryPort;
+    const std::string storedDirectory = directoryPort.read();
+    QCOMPARE(
+        QString::fromUtf8(
+            storedDirectory.data(),
+            static_cast<qsizetype>(storedDirectory.size())
+            ),
+        QFileInfo(normalizedPath).absoluteDir().absolutePath()
+        );
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedPath}
+        );
 }
 
 void FileControllerWorkspaceLifecycleTests::normalCreateUsesCoordinatorAndUpdatesRecent()

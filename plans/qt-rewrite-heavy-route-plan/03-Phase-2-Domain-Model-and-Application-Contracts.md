@@ -1790,3 +1790,30 @@ were noted.
 
 The typed last-selected-campus persistence seam is closed. Phase 2 remains
 open; the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed last-database-directory persistence boundary)
+
+Against baseline commit `89068539`, added the Qt-free UTF-8 typed
+`LastDatabaseDirectoryPort` and its SettingsManager adapter. The canonical
+key is exactly `SettingsManager::Keys::LAST_DATABASE_DIRECTORY`,
+`files/lastDirectory`. Missing or empty values read as empty, Unicode and
+path values round-trip, and writes retain the legacy synchronized persistence
+behavior.
+
+`FileController::databaseDialogDirectory()` prefers the active/current
+database directory, then the typed persisted directory, then the default
+directory. Remembered writes use the absolute parent directory and return
+early for blank paths; create, save-as, and export flows update the typed
+boundary. `mostRecentDatabasePath()` remains recent-history-only, recent-file
+semantics are unchanged, and `file_controller.cpp` has no direct legacy key or
+getter/setter calls for this boundary.
+
+Verification passed configure/ownership with 767 sources, a clean Debug build,
+focused tests 9/9, and the exact nine-target regression 9/9. Resource checks
+passed 6 RCC packs/7 runtime IDs/7 runtime references; dependency
+(`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff checks
+passed. The exact dirty scope was seven files. Expected Vulkan/zlib, existing
+linker, and LF/CRLF warnings were the only noted nonblocking warnings.
+
+The typed last-database-directory persistence seam is closed. Phase 2 remains
+open; the next slice is not yet selected.

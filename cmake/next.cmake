@@ -52,6 +52,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_day_filter_reset_policy.h
     src/next/application/class_selection_reset_policy.h
     src/next/application/class_visibility_preferences.h
+    src/next/application/last_database_directory_port.h
     src/next/application/last_selected_campus_port.h
     src/next/application/middle_school_analytics_preferences.h
     src/next/application/skipped_update_version_preferences.h
@@ -100,6 +101,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/settings_manager_powerpoint_data_access_notice_port.h
     src/next/platform/settings_manager_recent_workspace_history_port.h
     src/next/platform/settings_manager_sidebar_display_preferences_port.h
+    src/next/platform/settings_manager_last_database_directory_port.h
     src/next/platform/settings_manager_last_selected_campus_port.h
 )
 
