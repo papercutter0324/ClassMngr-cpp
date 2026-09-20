@@ -2,7 +2,6 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "core/settingsmanager.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/calendar/ui/calendar_preferences_panel.h"
 #include "mainwindow.h"
@@ -12,12 +11,12 @@
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
-#include "ui/shared/state/option_state_keys.h"
 
 #include <QAction>
 #include <QCheckBox>
@@ -37,6 +36,7 @@
 #include <QVBoxLayout>
 
 #include <initializer_list>
+#include <string>
 
 namespace
 {
@@ -1107,14 +1107,14 @@ void populatePreferencesDialog(
     const auto updateCustomWebsiteUrl =
         [customWebsiteUrl]()
         {
+            const std::string storedUrl =
+                ClassMngr::Next::Platform::
+                    SettingsManagerAiCommentCustomWebsitePort().read();
             const QString url =
-                SettingsManager::instance()
-                    .get(
-                        QString::fromUtf8(
-                            OptionKeys::AiCommentCustomWebsiteUrl
-                            )
-                        )
-                    .toString()
+                QString::fromUtf8(
+                    storedUrl.data(),
+                    static_cast<qsizetype>(storedUrl.size())
+                    )
                     .trimmed();
             customWebsiteUrl->setText(
                 url.isEmpty()

@@ -1,4 +1,5 @@
 #include "core/settingsmanager.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/state/option_state.h"
@@ -8,6 +9,8 @@
 
 #include <QTemporaryDir>
 
+#include <string>
+
 class AiCommentOptionsTests : public QObject
 {
     Q_OBJECT
@@ -16,6 +19,7 @@ private slots:
     void initTestCase();
     void themeDefaultsToSystemDefaultAndPersists();
     void providerAndVoiceDefaultsPersist();
+    void customWebsitePersistenceAndInvalidFallback();
     void providerUrlsAndCustomValidation();
     void updatePreferencesDefaultAndPersist();
     void sidebarDisplayDefaultsAndPersist();
@@ -115,6 +119,54 @@ void AiCommentOptionsTests::
     QCOMPARE(
         reloaded.aiCommentVoiceState->current(),
         AiCommentVoice::ThirdPerson
+        );
+}
+
+void AiCommentOptionsTests::
+    customWebsitePersistenceAndInvalidFallback()
+{
+    SettingsManager& settings =
+        SettingsManager::instance();
+    const QString providerKey =
+        QString::fromUtf8(OptionKeys::AiCommentProvider);
+    const ClassMngr::Next::Platform::
+        SettingsManagerAiCommentCustomWebsitePort websitePort;
+
+    websitePort.write(
+        std::string("https://example.ai/chat")
+        );
+    settings.set(
+        providerKey,
+        static_cast<int>(AiCommentProvider::CustomWebsite)
+        );
+
+    ActionRegistry valid;
+    valid.createActions();
+    QCOMPARE(
+        valid.aiCommentProviderState->current(),
+        AiCommentProvider::CustomWebsite
+        );
+
+    websitePort.write(std::string("not a website"));
+    settings.set(
+        providerKey,
+        static_cast<int>(AiCommentProvider::CustomWebsite)
+        );
+
+    ActionRegistry invalid;
+    invalid.createActions();
+    QCOMPARE(
+        invalid.aiCommentProviderState->current(),
+        AiCommentProvider::ChatGPT
+        );
+    const std::string storedInvalidWebsite =
+        websitePort.read();
+    QCOMPARE(
+        QString::fromUtf8(
+            storedInvalidWebsite.data(),
+            static_cast<qsizetype>(storedInvalidWebsite.size())
+            ),
+        QStringLiteral("not a website")
         );
 }
 

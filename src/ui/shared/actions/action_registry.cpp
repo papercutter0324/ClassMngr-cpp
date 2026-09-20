@@ -1,12 +1,12 @@
 #include "action_registry.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
-#include "core/settingsmanager.h"
 #include "ui/shared/state/option_state.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/styles/themed_icon_utils.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
@@ -19,6 +19,8 @@
 #include <QLineEdit>
 #include <QStyle>
 #include <QWidget>
+
+#include <string>
 
 namespace
 {
@@ -998,14 +1000,16 @@ void ActionRegistry::createOptionActions()
     aiCommentProviderState->loadFromSettings(
         AiCommentProvider::ChatGPT
         );
+    const ClassMngr::Next::Platform::
+        SettingsManagerAiCommentCustomWebsitePort
+        customWebsitePort;
+    const std::string storedCustomAiWebsiteValue =
+        customWebsitePort.read();
     const QString storedCustomAiWebsite =
-        SettingsManager::instance()
-            .get(
-                QString::fromUtf8(
-                    OptionKeys::AiCommentCustomWebsiteUrl
-                    )
-                )
-            .toString();
+        QString::fromUtf8(
+            storedCustomAiWebsiteValue.data(),
+            static_cast<qsizetype>(storedCustomAiWebsiteValue.size())
+            );
     if (
         aiCommentProviderState->current()
             == AiCommentProvider::CustomWebsite
@@ -1025,14 +1029,16 @@ void ActionRegistry::createOptionActions()
         {
             const AiCommentProvider previousProvider =
                 aiCommentProviderState->current();
-            SettingsManager& settings =
-                SettingsManager::instance();
+            const ClassMngr::Next::Platform::
+                SettingsManagerAiCommentCustomWebsitePort
+                customWebsitePort;
+            const std::string existingUrlValue =
+                customWebsitePort.read();
             const QString existingUrl =
-                settings.get(
-                    QString::fromUtf8(
-                        OptionKeys::AiCommentCustomWebsiteUrl
-                        )
-                    ).toString();
+                QString::fromUtf8(
+                    existingUrlValue.data(),
+                    static_cast<qsizetype>(existingUrlValue.size())
+                    );
             bool accepted = false;
             const QString enteredUrl =
                 QInputDialog::getText(
@@ -1065,11 +1071,8 @@ void ActionRegistry::createOptionActions()
                 return;
             }
 
-            settings.set(
-                QString::fromUtf8(
-                    OptionKeys::AiCommentCustomWebsiteUrl
-                    ),
-                enteredUrl
+            customWebsitePort.write(
+                enteredUrl.toUtf8().toStdString()
                 );
             aiCommentProviderState->set(
                 AiCommentProvider::CustomWebsite

@@ -4,6 +4,7 @@
 #include "core/settingsmanager.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -27,6 +28,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 namespace
@@ -148,15 +150,16 @@ AiCommentVoice preferredVoice()
 
 QUrl preferredProviderUrl()
 {
+    const std::string customWebsiteUrlValue =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentCustomWebsitePort().read();
+
     return aiCommentProviderUrl(
         preferredProvider(),
-        SettingsManager::instance()
-            .get(
-                QString::fromUtf8(
-                    OptionKeys::AiCommentCustomWebsiteUrl
-                    )
-                )
-            .toString()
+        QString::fromUtf8(
+            customWebsiteUrlValue.data(),
+            static_cast<qsizetype>(customWebsiteUrlValue.size())
+            )
         );
 }
 

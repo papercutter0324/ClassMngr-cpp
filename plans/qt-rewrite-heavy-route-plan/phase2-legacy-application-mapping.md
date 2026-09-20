@@ -1156,3 +1156,29 @@ linker, and LF/CRLF warnings were the only noted nonblocking warnings.
 
 The typed last-database-directory persistence seam is closed. Phase 2 remains
 open; the next slice is not yet selected.
+
+## Verified typed AI custom-website persistence handoff
+
+Against baseline commit `8579ee1f`, added the Qt-free UTF-8/empty
+`AiCommentCustomWebsitePort` and its SettingsManager adapter. The exact
+canonical key is `OptionKeys::AiCommentCustomWebsiteUrl`,
+`options/aiCommentCustomWebsiteUrl`, with typed read/write/clear behavior.
+
+ActionRegistry, the menu presentation, and both speaking-evaluation dialogs
+now use the typed boundary. Existing HTTPS trimming and validation remain
+unchanged; invalid stored URLs fall back to ChatGPT, cancel leaves the prior
+provider and URL untouched, valid custom URLs still open, and provider/voice
+settings remain unchanged.
+
+Verification passed configure/ownership with 770 sources and a clean Debug
+build. The offscreen focused suite passed 8/8, covering the adapter, AI
+options, both speaking dialog/report paths, dialog shell, launch, resources,
+and startup; the additional speaking service check passed. The exact
+nine-target regression passed 9/9; resource checks passed 6 RCC packs/7
+runtime IDs/7 runtime references; dependency (`ClassMngrNext -> Qt6::Core`),
+Qt-free, static, call-site, and diff checks passed. The exact dirty scope was
+ten files. Expected Vulkan/zlib and LF/CRLF warnings remained nonblocking; the
+default headless dialog mode required `QT_QPA_PLATFORM=offscreen`.
+
+The typed AI custom-website persistence seam is closed. Phase 2 remains open;
+the next slice is not yet selected.

@@ -4,6 +4,7 @@
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "core/settingsmanager.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -26,6 +27,7 @@
 #include <QVBoxLayout>
 
 #include <array>
+#include <string>
 
 QString speakingEvalReportDate(
     const QDate& date,
@@ -96,15 +98,16 @@ AiCommentVoice preferredAiCommentVoice()
 
 QUrl preferredAiCommentProviderUrl()
 {
+    const std::string customWebsiteUrlValue =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentCustomWebsitePort().read();
+
     return aiCommentProviderUrl(
         preferredAiCommentProvider(),
-        SettingsManager::instance()
-            .get(
-                QString::fromUtf8(
-                    OptionKeys::AiCommentCustomWebsiteUrl
-                    )
-                )
-            .toString()
+        QString::fromUtf8(
+            customWebsiteUrlValue.data(),
+            static_cast<qsizetype>(customWebsiteUrlValue.size())
+            )
         );
 }
 
