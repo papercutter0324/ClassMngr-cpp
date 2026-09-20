@@ -7,6 +7,7 @@
 #include "calendar_event_model.h"
 #include "core/application_services.h"
 #include "next/platform/application_services_calendar_event_port.h"
+#include "next/platform/application_services_calendar_event_delete_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/roles.h"
@@ -892,9 +893,21 @@ void CalendarPage::openCalendarDialog(
         }
         else
         {
-            deleted = calendarService->deleteEvent(
-                event.id
-                );
+            const auto typedEventId =
+                ClassMngr::Next::Domain::CalendarEventId::fromString(
+                    std::to_string(event.id)
+                    );
+            ClassMngr::Next::Platform::
+                ApplicationServicesCalendarEventDeletePort deletePort(
+                    *m_services
+                    );
+            const auto typedDeleted = deletePort.deleteEvent(*typedEventId);
+            if (!typedDeleted)
+            {
+                deleted = std::unexpected(
+                    projectionText(typedDeleted.error().message)
+                    );
+            }
         }
 
         if (!deleted)

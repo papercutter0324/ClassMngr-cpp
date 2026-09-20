@@ -1,6 +1,8 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "next/application/calendar_event_delete_port.h"
+#include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_port.h"
 
 #include <QSqlQuery>
@@ -18,6 +20,7 @@
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
+using ClassMngr::Next::Platform::ApplicationServicesCalendarEventDeletePort;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort;
 
 namespace
@@ -90,6 +93,10 @@ private slots:
     void initTestCase();
     void projectsOverlappingRangeAsOwnedTypedMetadata();
     void projectsByIdAsOwnedTypedMetadata();
+    void deletesValidTypedEvent();
+    void reportsInvalidDeleteIdStructurally();
+    void reportsUnavailableDeleteServiceStructurally();
+    void reportsDeleteServiceFailureStructurally();
     void preservesLegacyTitleSurroundingSpaces();
     void preservesAllDayAndUnknownTimePolicy();
     void reportsUnavailableAndInvalidRangesStructurally();
@@ -273,6 +280,105 @@ projectsByIdAsOwnedTypedMetadata()
     QVERIFY(!projected.campusId.has_value());
     QVERIFY(projected.location.empty());
     QVERIFY(projected.notes.empty());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+deletesValidTypedEvent()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    CalendarEvent event = makeEvent(
+        QStringLiteral("Delete me"),
+        QDate(2026, 12, 1),
+        QDate(2026, 12, 1)
+        );
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    const int eventId = saveEvent(*legacyService, event);
+    QVERIFY(eventId > 0);
+
+    ApplicationServicesCalendarEventDeletePort port(services);
+    const auto deleted = port.deleteEvent(calendarEventId(eventId));
+
+    QVERIFY(deleted);
+    QVERIFY(!legacyService->event(eventId));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsInvalidDeleteIdStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    ApplicationServicesCalendarEventDeletePort port(services);
+    verifyFailure(
+        port.deleteEvent(calendarEventId(0)),
+        ErrorCode::InvalidInput
+        );
+
+    const auto malformedId = CalendarEventId::fromString(
+        "not-an-integer"
+        );
+    QVERIFY(malformedId.has_value());
+    verifyFailure(
+        port.deleteEvent(*malformedId),
+        ErrorCode::InvalidInput
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsUnavailableDeleteServiceStructurally()
+{
+    ApplicationServices services;
+    ApplicationServicesCalendarEventDeletePort port(services);
+
+    verifyFailure(
+        port.deleteEvent(calendarEventId(1)),
+        ErrorCode::NotFound
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsDeleteServiceFailureStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    CalendarEvent event = makeEvent(
+        QStringLiteral("Delete failure"),
+        QDate(2026, 12, 2),
+        QDate(2026, 12, 2)
+        );
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    const int eventId = saveEvent(*legacyService, event);
+    QVERIFY(eventId > 0);
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_delete "
+        "BEFORE DELETE ON calendar_events "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected calendar delete failure'); "
+        "END"
+        )));
+
+    ApplicationServicesCalendarEventDeletePort port(services);
+    const auto deleted = port.deleteEvent(calendarEventId(eventId));
+
+    verifyFailure(deleted, ErrorCode::Technical);
+    QVERIFY(
+        deleted.error().message.find("Deleting calendar event")
+            != std::string::npos
+        );
+    QVERIFY(legacyService->event(eventId));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -573,6 +679,7 @@ void NextPlatformApplicationServicesCalendarEventPortTests::
 boundaryIsTypedAndDoesNotExposeLegacyOwnership()
 {
     using Port = ApplicationServicesCalendarEventPort;
+    using DeletePort = CalendarEventDeletePort;
     using ProjectionResult = decltype(
         std::declval<const Port&>().projection(
             std::declval<const QDate&>(),
@@ -582,6 +689,11 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     using ByIdResult = decltype(
         std::declval<const Port&>().projectionById(1)
         );
+    using DeleteResult = decltype(
+        std::declval<DeletePort&>().deleteEvent(
+            std::declval<const CalendarEventId&>()
+            )
+        );
 
     static_assert(std::is_same_v<
         ProjectionResult,
@@ -590,6 +702,20 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     static_assert(std::is_same_v<
         ByIdResult,
         Domain::Result<CalendarEventSummary>
+        >);
+    static_assert(std::is_same_v<
+        DeleteResult,
+        Domain::Result<void>
+        >);
+    static_assert(std::is_base_of_v<
+        DeletePort,
+        ApplicationServicesCalendarEventDeletePort
+        >);
+    static_assert(!std::is_copy_constructible_v<
+        ApplicationServicesCalendarEventDeletePort
+        >);
+    static_assert(!std::is_move_constructible_v<
+        ApplicationServicesCalendarEventDeletePort
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
     static_assert(!std::is_move_constructible_v<Port>);
