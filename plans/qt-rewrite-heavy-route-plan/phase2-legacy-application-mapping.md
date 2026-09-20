@@ -4,8 +4,9 @@ This document maps the current legacy application boundary to the committed
 v2 application contracts. The typed Sidebar/MainWindow catalog cutover follows
 baseline commit `662e5f2`; the earlier mapping, resolver, and document-folder
 handoffs are retained below. The runtime worker bridge, limited document route
-slice, bounded resource/platform document resolver, and typed catalog ownership
-are implemented. A partial content-session integration covers referenced
+slice, bounded resource/platform document resolver, typed catalog ownership,
+and theme preference bridge are implemented. A partial content-session
+integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
 remain open.
 
@@ -32,7 +33,8 @@ or move-assigned `Application::DocumentCatalogProjection` with no legacy
 and `MainWindow::retranslateUi` request locale-specific projections through
 `Platform::ApplicationServicesDocumentCatalogPort` and pass them by value;
 projection failure supplies an empty projection. Broader facade/service cutover
-remains outside this slice.
+remains outside this slice. The theme bridge is described in the verified
+handoff below; the schedule-output theme read remains a later legacy slice.
 
 ## Document-folder hierarchy metadata prerequisite
 
@@ -131,7 +133,7 @@ later Phase 2 slice.
 | `calendarService()` | Menu, calendar pages, and sub-prep consume calendar events; representative calls are [`menu_builder.cpp`](../../src/app/menu_builder.cpp#L391) and [`calendar_page_events.cpp`](../../src/features/calendar/ui/calendar_page_events.cpp#L40). | Future calendar use cases/projections; no v2 wrapper. | Legacy feature service; future calendar slice. |
 | `rosterService()` | Roster editors/printing, class pages, sub-prep, and speaking evaluation use roster operations; representative calls are [`roster_editor_widget.cpp`](../../src/features/roster/ui/roster_editor_widget.cpp#L64) and [`roster_print_dialog.cpp`](../../src/features/roster/ui/roster_print_dialog.cpp#L445). | Future roster use cases/projections; no v2 wrapper. | Legacy feature service; future roster slice. |
 | `speakingEvaluationService()` | Speaking-evaluation pages, analytics, and roster score import use it; representative calls are [`speaking_eval_page.cpp`](../../src/features/speaking_eval/ui/speaking_eval_page.cpp#L198) and [`class_analytics_page.cpp`](../../src/features/classes/ui/class_analytics_page.cpp#L526). | Future evaluation/analytics contracts; no v2 wrapper. | Legacy feature service; future evaluation slice. |
-| `themeService()` | [`MainWindow`](../../src/app/mainwindow.cpp#L480) injects it into the theme controller; schedule output also reads the current theme. | Future theme/platform contract; no v2 wrapper. | Legacy core service; future platform/UI slice. |
+| `themeService()` | [`MainWindow`](../../src/app/mainwindow.cpp#L480) is passed explicitly to the theme controller; schedule output also reads the current theme. | `Platform::ThemePreferencePort` maps typed `Application::ThemePreference` (`SystemDefault`, `Light`, `Dark`) to the legacy `ThemeService`. `ThemeController` owns typed `UserPreferencesState`, synchronizes the persisted `ActionRegistry` theme without reapplying at connection, and applies valid changes through the port while preserving invalid-input/state atomicity, persistence, icon refresh, and live palette behavior. The schedule-output read in `schedule_output_controller.cpp` remains legacy/open for a later slice. | Platform theme adapter plus UI controller; remaining legacy schedule read. |
 | `documentCatalog()` | [`NavigationController`](../../src/app/controllers/navigation_controller.cpp#L377) resolves its document route from the legacy catalog boundary; MainWindow no longer passes a legacy catalog pointer to Sidebar. | `Platform::ApplicationServicesDocumentCatalogPort` maps legacy metadata, including bounded `DocumentFolderDefinition::parentPath`, into bounded typed `DocumentCatalogProjection` values. `MainWindow::initializeSidebar` and `retranslateUi` request locale-specific projections and pass them by value; failure passes an empty projection. Sidebar maps typed parent paths, folder IDs, keys, and display names while preserving nested hierarchy, order, localized labels, and empty projections. `DocumentCatalogUseCase` supplies the optional `DocumentContentReference`; `DocumentContentResourcePort` resolves referenced resource content and optional export paths from one documents-pack lease. `NavigationController` projects the reference into `PdfViewerDocumentDescriptor` and uses the resource port instead of direct `ResourcePaths::Documents` acquisition/parsing; `PdfViewerPage` integrates `DocumentContentSession`, closes before lease release, and preserves direct no-reference loading. Full document-service migration remains open. | Platform metadata/content-resource adapter plus v2 application use case, typed Sidebar/MainWindow projection boundary, and partial viewer session integration. |
 
 ## Outer-adapter responsibilities
@@ -197,7 +199,7 @@ and the explicit adapter-neutral seams in the current v2 headers.
 | 1. Workspace gateway adapter | Add one outer adapter for `WorkspaceGateway::createWorkspace` plus the listed open/close/save/save-as/export methods around `ApplicationServices`; keep the separate new/initial-setup creation decision explicit and `FileController` on its existing calls. | Existing app-less `NextApplicationContractTests` and `NextApplicationWorkspaceCoordinatorTests` remain green for create/open/close/save/save-as/export, including create validation, dirty-replacement rejection, successful state/selection commit, and failure preservation. Adapter tests cover path conversion, legacy error text, void-save result source, explicit create mapping, and failure atomicity. The adapter is removable without changing v2 headers. |
 | 2. File-controller integration | Route create/open/close/save/save-as/export one workspace action at a time through the adapter. Keep dialogs, recent files, warnings, and window/action updates in the Qt/controller layer. | Create preserves the current coordinator contract: `WorkspaceGateway::createWorkspace` is called only after guards, a successful session opens `WorkspaceState` and clears `SelectionState`, and gateway or invalid-session failures leave snapshots unchanged. The other listed actions preserve verified legacy outcomes and v2 snapshots; dirty/conflict and failure cases leave snapshots unchanged. Roll back the action entry point to the existing `ApplicationServices` call if a gate fails. |
 | 3. Worker bridge | Qt worker delivery to the existing import/report sinks and application-owner `pump()` is committed behind the worker ports. | Bounded FIFO, generation isolation, cancellation request/acknowledgement, and terminal release tests passed with no worker/widget mutation. Stress/TSAN and direct report queue-post-failure coverage remain non-blocking gaps. |
-| 4. Feature slices | Migrate settings, teachers, classes, schedule, calendar, roster, speaking evaluation, theme, and the remaining document ownership/content boundaries as separate typed contracts. The accepted document work includes metadata projection, typed Sidebar/MainWindow catalog ownership, content-reference propagation, the bounded resource/platform resolver, and the partial `PdfViewerPage` session lifecycle. | Each slice has its own owner, adapter, parity tests, and release boundary; no v2 contract exposes a legacy service pointer. Typed `MainWindow`/`Sidebar` catalog ownership is complete; full document-service migration and other unstarted services remain future slices, with legacy accessors retained until their own cutovers. |
+| 4. Feature slices | Migrate settings, teachers, classes, schedule, calendar, roster, speaking evaluation, the remaining theme reads, and the remaining document ownership/content boundaries as separate typed contracts. The accepted document work includes metadata projection, typed Sidebar/MainWindow catalog ownership, content-reference propagation, the bounded resource/platform resolver, and the partial `PdfViewerPage` session lifecycle. | Each slice has its own owner, adapter, parity tests, and release boundary; no v2 contract exposes a legacy service pointer. The theme preference bridge and typed `MainWindow`/`Sidebar` catalog ownership are complete; the legacy schedule-output theme read, full document-service migration, and other unstarted services remain future slices, with legacy accessors retained until their own cutovers. |
 
 The Phase 2 [deliverables](03-Phase-2-Domain-Model-and-Application-Contracts.md#deliverables)
 require this mapping, but the Phase 2 exit gate is not met by documentation
@@ -252,3 +254,23 @@ No live MainWindow projection-failure/retranslation integration test exists;
 static and production-compilation coverage is present. This is a non-blocking
 gap. Phase 2 remains open for the remaining feature-service migrations and is
 not complete.
+
+## Verified theme preference bridge handoff
+
+After baseline commit `9f0d86d`, `Platform::ThemePreferencePort` explicitly
+maps typed `Application::ThemePreference` (`SystemDefault`, `Light`, `Dark`)
+to the legacy `ThemeService`. `ThemeController` owns typed
+`UserPreferencesState`, synchronizes the persisted `ActionRegistry` theme
+without reapplying it at connection, and applies valid changes through the
+port. Invalid-input and state transitions remain atomic; valid changes retain
+persistence, icon refresh, and live palette behavior. `MainWindow` passes an
+explicit `ThemeService` reference. `schedule_output_controller.cpp` keeps its
+legacy theme read and remains open for a later slice.
+
+Configure/ownership/dependency checks passed at 706 sources; focused
+`StartupVisualSettings` passed 1/1; next preferences/launch checks passed 2/2;
+the exact nine-target CTest passed 9/9; and resource validation covered 6 RCC
+packs, 7 runtime IDs, and 7 references. Qt-free application checks passed.
+`git diff --check` passed with CRLF warnings, and the Ninja/MSVC fallback build
+passed after the environment/FileTracker issue. No dedicated icon-pixel
+assertion exists; this is a non-blocking gap. Phase 2 remains in progress.

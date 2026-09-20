@@ -890,3 +890,25 @@ There is no live MainWindow projection-failure/retranslation integration test;
 static and production-compilation coverage is present, so this remains a
 non-blocking gap. Phase 2 remains open for the remaining feature-service
 migrations and is not complete.
+
+#### Progress update - 2026-09-20 (theme preference bridge slice)
+
+After baseline commit `9f0d86d`, `ClassMngrNext::Platform::ThemePreferencePort`
+explicitly maps typed `Application::ThemePreference`
+(`SystemDefault`, `Light`, or `Dark`) to the legacy `ThemeService`.
+`ThemeController` owns typed `UserPreferencesState`, synchronizes the
+persisted `ActionRegistry` theme without reapplying it during action
+connection, and applies valid changes through the port. Invalid input and
+state updates remain atomic; valid changes preserve persistence, icon refresh,
+and live palette behavior. `MainWindow` now passes an explicit `ThemeService`
+reference. `schedule_output_controller.cpp` continues to read the legacy
+theme and remains open for a later slice.
+
+Configure/ownership/dependency checks passed at 706 sources. Focused
+`StartupVisualSettings` passed 1/1; the next preferences/launch targets passed
+2/2; the exact nine-target CTest passed 9/9; and resource validation covered
+6 RCC packs, 7 runtime IDs, and 7 references. Qt-free application checks
+passed, and `git diff --check` passed with CRLF warnings. The Ninja/MSVC
+fallback build passed after the environment/FileTracker issue. No dedicated
+icon-pixel assertion exists; this is a non-blocking gap. Phase 2 remains in
+progress.

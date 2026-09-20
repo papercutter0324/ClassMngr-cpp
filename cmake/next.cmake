@@ -60,6 +60,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_workspace_port.h
     src/next/platform/qt_job_worker_lifetime.h
     src/next/platform/qt_job_worker_adapters.h
+    src/next/platform/theme_preference_port.h
 )
 
 foreach(_classmngr_next_target IN LISTS

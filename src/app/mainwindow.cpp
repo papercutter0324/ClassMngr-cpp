@@ -512,7 +512,7 @@ void MainWindow::connectControllers()
 
     m_themeController =
         std::make_unique<ThemeController>(
-            m_services->themeService(),
+            *m_services->themeService(),
             this
             );
     m_themeController->connectActions(m_actions);
