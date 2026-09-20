@@ -851,3 +851,31 @@ unavailable; normal warnings remain non-blocking.
 The typed sidebar display-preferences seam is closed. Residual settings
 callers, generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
+
+## Verified typed automatic-update preference handoff
+
+Against baseline commit `374461a0`, added the Qt-free
+`AutomaticUpdatePreferences` value and `AutomaticUpdatePreferencesPort`, plus
+the `SettingsManagerAutomaticUpdatePreferencesPort` adapter. It preserves the
+exact `updates/automaticChecksEnabled` key, enabled defaults for missing or
+invalid values, legacy `QVariant` boolean coercion, and round-trip behavior.
+The legacy write is void, so persistence failure is not observable and save
+failure is not applicable at this boundary.
+
+Only `src/ui/shared/actions/action_registry.cpp` and
+`src/app/controllers/update_controller.cpp` use the typed preference. Checked
+state and toggle persistence remain intact. Automatic checks retain
+`checkOnStartup` gating, while forced/manual checks, skipped-version and
+prompt suppression, and update-dialog behavior remain preserved.
+
+The executor and independent tester reported a passing Debug build, focused
+tests 6/6, the exact nine-target regression 9/9, and a passing launch check.
+Configure/ownership passed with 737 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Call-site, Qt-free,
+static, and diff checks passed. Normal warnings remained non-blocking;
+`clang-format` and `clang-tidy` were unavailable.
+
+The typed automatic-update preference seam is closed. Residual settings
+callers, generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.

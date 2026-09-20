@@ -194,15 +194,34 @@ void AiCommentOptionsTests::
     QVERIFY(
         defaults.automaticallyCheckForUpdates->isChecked()
         );
-    QVERIFY(settings.automaticUpdateChecksEnabled());
+    QVERIFY(
+        !settings.get(
+            QString::fromUtf8(
+                SettingsManager::Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED
+                )
+            ).isValid()
+        );
 
     defaults.automaticallyCheckForUpdates->setChecked(false);
-    QVERIFY(!settings.automaticUpdateChecksEnabled());
+    QVERIFY(
+        !settings.get(
+            QString::fromUtf8(
+                SettingsManager::Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED
+                )
+            ).toBool()
+        );
 
     ActionRegistry reloaded;
     reloaded.createActions();
     QVERIFY(
         !reloaded.automaticallyCheckForUpdates->isChecked()
+        );
+
+    reloaded.automaticallyCheckForUpdates->setChecked(true);
+    ActionRegistry reloadedAgain;
+    reloadedAgain.createActions();
+    QVERIFY(
+        reloadedAgain.automaticallyCheckForUpdates->isChecked()
         );
 
     settings.setSkippedUpdateVersion(

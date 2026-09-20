@@ -6,6 +6,7 @@
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/styles/themed_icon_utils.h"
+#include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
 #include <QAction>
@@ -1164,8 +1165,11 @@ void ActionRegistry::createOptionActions()
             tr("Automatically Check for Updates"),
             tr("Check GitHub Releases for a newer version when ClassMngr starts")
             );
+    const ClassMngr::Next::Platform::
+        SettingsManagerAutomaticUpdatePreferencesPort
+        automaticUpdatePreferencesPort;
     automaticallyCheckForUpdates->setChecked(
-        SettingsManager::instance().automaticUpdateChecksEnabled()
+        automaticUpdatePreferencesPort.read().automaticChecksEnabled
         );
     connect(
         automaticallyCheckForUpdates,
@@ -1173,9 +1177,11 @@ void ActionRegistry::createOptionActions()
         this,
         [](bool enabled)
         {
-            SettingsManager::instance().setAutomaticUpdateChecksEnabled(
-                enabled
-                );
+            const ClassMngr::Next::Platform::
+                SettingsManagerAutomaticUpdatePreferencesPort port;
+            port.write({
+                .automaticChecksEnabled = enabled
+            });
         }
         );
 

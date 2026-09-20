@@ -6,6 +6,7 @@
 #include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
 #include "core/updater/version.h"
+#include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
@@ -58,10 +59,12 @@ UpdateController::UpdateController(
 
 bool UpdateController::automaticChecksEnabled() const
 {
+    const ClassMngr::Next::Platform::
+        SettingsManagerAutomaticUpdatePreferencesPort
+        automaticUpdatePreferencesPort;
     return m_service
         && m_service->configuration().checkOnStartup
-        && SettingsManager::instance()
-            .automaticUpdateChecksEnabled();
+        && automaticUpdatePreferencesPort.read().automaticChecksEnabled;
 }
 
 bool UpdateController::isVersionSkipped(

@@ -190,6 +190,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformSettingsManagerAutomaticUpdatePreferencesPort
+    SOURCES
+        tests/next_platform_settings_manager_automatic_update_preferences_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformSettingsManagerSidebarDisplayPreferencesPort
     SOURCES
         tests/next_platform_settings_manager_sidebar_display_preferences_port_tests.cpp
