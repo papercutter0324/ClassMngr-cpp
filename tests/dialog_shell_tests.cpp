@@ -28,6 +28,7 @@
 #include <QTranslator>
 #include <QVBoxLayout>
 
+#include <string>
 #include <type_traits>
 
 static_assert(std::is_base_of_v<DialogShell, CalendarEventDialog>);
@@ -119,6 +120,7 @@ private slots:
     void languageChangeRetranslatesShellAndDialog();
     void persistsGeometryByStableDialogKey();
     void calendarEventDialogsExposeUntargetedKeyboard();
+    void calendarEventDialogMapsTypedEditDraft();
     void calendarEventDialogShowsInlineValidation();
 
 private:
@@ -304,6 +306,68 @@ void DialogShellTests::calendarEventDialogsExposeUntargetedKeyboard()
         QVERIFY(!keyboard->target());
         keyboard->close();
     }
+}
+
+void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
+{
+    CalendarEvent timed;
+    timed.id = 42;
+    timed.title = QStringLiteral("Timed event");
+    timed.eventType = QStringLiteral("Meeting");
+    timed.timeStatus = QStringLiteral("Timed");
+    timed.repeatSeriesId = QStringLiteral("series-42");
+    timed.startDate = QDate(2026, 9, 20);
+    timed.startTime = QTime(9, 15);
+    timed.endDate = QDate(2026, 9, 20);
+    timed.endTime = QTime(10, 45);
+
+    CalendarEventDialog timedDialog(timed, true, true);
+    const auto timedDraft = timedDialog.eventData();
+    QVERIFY(timedDraft.id.has_value());
+    QCOMPARE(timedDraft.id->value(), std::string("42"));
+    QVERIFY(timedDraft.repeatSeriesId.has_value());
+    QCOMPARE(
+        timedDraft.repeatSeriesId.value(),
+        std::string("series-42")
+        );
+    QCOMPARE(timedDraft.title, std::string("Timed event"));
+    QCOMPARE(timedDraft.startDate, std::string("2026-09-20"));
+    QCOMPARE(timedDraft.endDate, std::string("2026-09-20"));
+    QVERIFY(timedDraft.startTime.has_value());
+    QVERIFY(timedDraft.endTime.has_value());
+    QCOMPARE(timedDraft.startTime.value(), std::string("09:15"));
+    QCOMPARE(timedDraft.endTime.value(), std::string("10:45"));
+    QVERIFY(!timedDraft.allDay);
+    QCOMPARE(timedDraft.eventType, std::string("Meeting"));
+    QCOMPARE(timedDraft.timeStatus, std::string("Timed"));
+
+    CalendarEvent allDay = timed;
+    allDay.id = -1;
+    allDay.repeatSeriesId.clear();
+    allDay.allDay = true;
+    allDay.eventType = QStringLiteral("Holiday");
+    CalendarEventDialog allDayDialog(allDay, false, true);
+    const auto allDayDraft = allDayDialog.eventData();
+    QVERIFY(!allDayDraft.id.has_value());
+    QVERIFY(!allDayDraft.repeatSeriesId.has_value());
+    QVERIFY(allDayDraft.allDay);
+    QVERIFY(!allDayDraft.startTime.has_value());
+    QVERIFY(!allDayDraft.endTime.has_value());
+    QCOMPARE(allDayDraft.eventType, std::string("Holiday"));
+    QCOMPARE(allDayDraft.timeStatus, std::string("Timed"));
+
+    CalendarEvent unconfirmed = timed;
+    unconfirmed.id = -1;
+    unconfirmed.repeatSeriesId.clear();
+    unconfirmed.timeStatus = QStringLiteral("Unconfirmed");
+    unconfirmed.eventType = QStringLiteral("Workshop");
+    CalendarEventDialog unconfirmedDialog(unconfirmed, false, true);
+    const auto unconfirmedDraft = unconfirmedDialog.eventData();
+    QVERIFY(!unconfirmedDraft.allDay);
+    QVERIFY(!unconfirmedDraft.startTime.has_value());
+    QVERIFY(!unconfirmedDraft.endTime.has_value());
+    QCOMPARE(unconfirmedDraft.eventType, std::string("Workshop"));
+    QCOMPARE(unconfirmedDraft.timeStatus, std::string("Unconfirmed"));
 }
 
 void DialogShellTests::calendarEventDialogShowsInlineValidation()

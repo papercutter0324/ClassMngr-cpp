@@ -27,6 +27,7 @@
 #include <QTimeEdit>
 #include <QVBoxLayout>
 
+#include <string>
 #include <utility>
 
 namespace
@@ -80,7 +81,7 @@ CalendarEventDialog::CalendarEventDialog(
     loadEvent();
 }
 
-CalendarEvent CalendarEventDialog::eventData() const
+CalendarEvent CalendarEventDialog::legacyEventData() const
 {
     CalendarEvent event =
         m_event;
@@ -136,6 +137,48 @@ CalendarEvent CalendarEventDialog::eventData() const
     }
 
     return event;
+}
+
+ClassMngr::Next::Application::CalendarEventEditDraft
+CalendarEventDialog::eventData() const
+{
+    const CalendarEvent event = legacyEventData();
+    ClassMngr::Next::Application::CalendarEventEditDraft draft;
+
+    if (event.id > 0)
+    {
+        draft.id =
+            ClassMngr::Next::Domain::CalendarEventId::fromString(
+                std::to_string(event.id)
+                );
+    }
+
+    if (!event.repeatSeriesId.trimmed().isEmpty())
+    {
+        draft.repeatSeriesId =
+            event.repeatSeriesId.toUtf8().toStdString();
+    }
+
+    draft.title = event.title.toUtf8().toStdString();
+    draft.startDate = event.startDate.toString(Qt::ISODate).toStdString();
+    draft.endDate = event.endDate.toString(Qt::ISODate).toStdString();
+    draft.allDay = event.allDay;
+    draft.eventType = event.eventType.toUtf8().toStdString();
+    draft.timeStatus = event.timeStatus.toUtf8().toStdString();
+
+    if (!event.allDay
+        && event.startTime.isValid()
+        && event.endTime.isValid())
+    {
+        draft.startTime = event.startTime.toString(
+            QStringLiteral("HH:mm")
+            ).toStdString();
+        draft.endTime = event.endTime.toString(
+            QStringLiteral("HH:mm")
+            ).toStdString();
+    }
+
+    return draft;
 }
 
 bool CalendarEventDialog::deleteRequested() const
@@ -929,7 +972,8 @@ void CalendarEventDialog::validateForm(bool focusFirstError)
         return;
     }
 
-    const CalendarEvent event = CalendarEventValidator::normalized(eventData());
+    const CalendarEvent event =
+        CalendarEventValidator::normalized(legacyEventData());
     ValidationResult validation = CalendarEventValidator::validate(event);
 
     if (repeatEnabled())

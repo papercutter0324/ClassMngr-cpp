@@ -41,6 +41,10 @@ constexpr int UntitledCardTopMargin = 4;
 
 using CalendarEventSummary =
     ClassMngr::Next::Application::CalendarEventSummary;
+using CalendarEventEditDraft =
+    ClassMngr::Next::Application::CalendarEventEditDraft;
+using CalendarEventSaveRequest =
+    ClassMngr::Next::Application::CalendarEventSaveRequest;
 
 QString projectionText(
     const std::string& value
@@ -169,44 +173,75 @@ QDate nextRepeatDate(
     return date.addDays(7);
 }
 
-QList<CalendarEvent> repeatedCalendarEvents(
-    const CalendarEvent& event,
+CalendarEventSaveRequest saveRequestFromDraft(
+    const CalendarEventEditDraft& draft
+    )
+{
+    CalendarEventSaveRequest request;
+    request.id = draft.id;
+    request.title = draft.title;
+    request.startDate = draft.startDate;
+    request.endDate = draft.endDate;
+    request.allDay = draft.allDay;
+    request.eventType = draft.eventType;
+    request.timeStatus = draft.timeStatus;
+
+    if (!draft.allDay)
+    {
+        request.startTime = draft.startTime;
+        request.endTime = draft.endTime;
+    }
+
+    return request;
+}
+
+QList<CalendarEventEditDraft> repeatedCalendarEventDrafts(
+    const CalendarEventEditDraft& draft,
     CalendarEventRepeatFrequency frequency,
     const QDate& untilDate
     )
 {
-    QList<CalendarEvent> events;
+    const QDate startDate = QDate::fromString(
+        projectionText(draft.startDate),
+        Qt::ISODate
+        );
+    const QDate endDate = QDate::fromString(
+        projectionText(draft.endDate),
+        Qt::ISODate
+        );
+
+    QList<CalendarEventEditDraft> events;
 
     if (
-        !event.startDate.isValid()
-        || !event.endDate.isValid()
+        !startDate.isValid()
+        || !endDate.isValid()
         || !untilDate.isValid()
-        || untilDate < event.startDate
+        || untilDate < startDate
         )
     {
-        events.append(event);
+        events.append(draft);
         return events;
     }
 
     const int durationDays =
-        event.startDate.daysTo(
-            event.endDate
+        startDate.daysTo(
+            endDate
             );
 
     for (
-        QDate occurrenceDate = event.startDate;
+        QDate occurrenceDate = startDate;
         occurrenceDate.isValid() && occurrenceDate <= untilDate;
         occurrenceDate = nextRepeatDate(occurrenceDate, frequency)
         )
     {
-        CalendarEvent occurrence =
-            event;
-        occurrence.id =
-            -1;
-        occurrence.startDate =
-            occurrenceDate;
-        occurrence.endDate =
-            occurrenceDate.addDays(durationDays);
+        CalendarEventEditDraft occurrence = draft;
+        occurrence.id.reset();
+        occurrence.startDate = occurrenceDate.toString(
+            Qt::ISODate
+            ).toStdString();
+        occurrence.endDate = occurrenceDate.addDays(durationDays).toString(
+            Qt::ISODate
+            ).toStdString();
 
         events.append(occurrence);
     }
@@ -858,35 +893,31 @@ void CalendarPage::openCalendarDialog(
     }
     else
     {
-        CalendarEvent savedEvent =
+        CalendarEventEditDraft savedDraft =
             dialog.eventData();
 
         if (thisAndFollowing)
         {
+            const std::string repeatSeriesId = savedDraft.repeatSeriesId
+                ? *savedDraft.repeatSeriesId
+                : event.repeatSeriesId.toUtf8().toStdString();
             ClassMngr::Next::Application::CalendarEventSeriesEditRequest
                 request{
-                    event.repeatSeriesId.toUtf8().toStdString(),
+                    repeatSeriesId,
                     event.startDate.toString(Qt::ISODate).toStdString(),
-                    savedEvent.startDate.toString(Qt::ISODate).toStdString(),
-                    savedEvent.endDate.toString(Qt::ISODate).toStdString(),
-                    savedEvent.title.toUtf8().toStdString(),
-                    std::nullopt,
-                    std::nullopt,
-                    savedEvent.allDay,
-                    savedEvent.eventType.toUtf8().toStdString(),
-                    savedEvent.timeStatus.toUtf8().toStdString()
+                    savedDraft.startDate,
+                    savedDraft.endDate,
+                    savedDraft.title,
+                    savedDraft.allDay
+                        ? std::nullopt
+                        : savedDraft.startTime,
+                    savedDraft.allDay
+                        ? std::nullopt
+                        : savedDraft.endTime,
+                    savedDraft.allDay,
+                    savedDraft.eventType,
+                    savedDraft.timeStatus
                 };
-            if (!savedEvent.allDay
-                && savedEvent.startTime.isValid()
-                && savedEvent.endTime.isValid())
-            {
-                request.startTime = savedEvent.startTime.toString(
-                    QStringLiteral("HH:mm")
-                    ).toStdString();
-                request.endTime = savedEvent.endTime.toString(
-                    QStringLiteral("HH:mm")
-                    ).toStdString();
-            }
 
             ClassMngr::Next::Platform::
                 ApplicationServicesCalendarEventSeriesEditPort editPort(
@@ -906,35 +937,8 @@ void CalendarPage::openCalendarDialog(
         }
         else if (!repeatSeriesEvent && !dialog.repeatEnabled())
         {
-            ClassMngr::Next::Application::CalendarEventSaveRequest request;
-            if (savedEvent.id > 0)
-            {
-                request.id =
-                    ClassMngr::Next::Domain::CalendarEventId::fromString(
-                        std::to_string(savedEvent.id)
-                        );
-            }
-            request.title = savedEvent.title.toUtf8().toStdString();
-            request.startDate = savedEvent.startDate.toString(
-                Qt::ISODate
-                ).toStdString();
-            request.endDate = savedEvent.endDate.toString(
-                Qt::ISODate
-                ).toStdString();
-            request.allDay = savedEvent.allDay;
-            request.eventType = savedEvent.eventType.toUtf8().toStdString();
-            request.timeStatus = savedEvent.timeStatus.toUtf8().toStdString();
-            if (!savedEvent.allDay
-                && savedEvent.startTime.isValid()
-                && savedEvent.endTime.isValid())
-            {
-                request.startTime = savedEvent.startTime.toString(
-                    QStringLiteral("HH:mm")
-                    ).toStdString();
-                request.endTime = savedEvent.endTime.toString(
-                    QStringLiteral("HH:mm")
-                    ).toStdString();
-            }
+            CalendarEventSaveRequest request =
+                saveRequestFromDraft(savedDraft);
 
             ClassMngr::Next::Platform::
                 ApplicationServicesCalendarEventSavePort savePort(
@@ -953,37 +957,8 @@ void CalendarPage::openCalendarDialog(
         }
         else if (repeatSeriesEvent)
         {
-            savedEvent.repeatSeriesId.clear();
-
-            ClassMngr::Next::Application::CalendarEventSaveRequest request;
-            if (savedEvent.id > 0)
-            {
-                request.id =
-                    ClassMngr::Next::Domain::CalendarEventId::fromString(
-                        std::to_string(savedEvent.id)
-                        );
-            }
-            request.title = savedEvent.title.toUtf8().toStdString();
-            request.startDate = savedEvent.startDate.toString(
-                Qt::ISODate
-                ).toStdString();
-            request.endDate = savedEvent.endDate.toString(
-                Qt::ISODate
-                ).toStdString();
-            request.allDay = savedEvent.allDay;
-            request.eventType = savedEvent.eventType.toUtf8().toStdString();
-            request.timeStatus = savedEvent.timeStatus.toUtf8().toStdString();
-            if (!savedEvent.allDay
-                && savedEvent.startTime.isValid()
-                && savedEvent.endTime.isValid())
-            {
-                request.startTime = savedEvent.startTime.toString(
-                    QStringLiteral("HH:mm")
-                    ).toStdString();
-                request.endTime = savedEvent.endTime.toString(
-                    QStringLiteral("HH:mm")
-                    ).toStdString();
-            }
+            CalendarEventSaveRequest request =
+                saveRequestFromDraft(savedDraft);
 
             ClassMngr::Next::Platform::
                 ApplicationServicesCalendarEventSavePort savePort(
@@ -1004,58 +979,24 @@ void CalendarPage::openCalendarDialog(
         {
             if (dialog.repeatEnabled())
             {
-                savedEvent.repeatSeriesId =
-                    newRepeatSeriesId();
-                const QList<CalendarEvent> eventsToSave =
-                    repeatedCalendarEvents(
-                        savedEvent,
+                savedDraft.repeatSeriesId =
+                    newRepeatSeriesId().toUtf8().toStdString();
+                const QList<CalendarEventEditDraft> eventsToSave =
+                    repeatedCalendarEventDrafts(
+                        savedDraft,
                         dialog.repeatFrequency(),
                         dialog.repeatUntilDate()
                         );
 
                 ClassMngr::Next::Application::
                     CalendarEventSeriesCreateRequest request;
-                request.repeatSeriesId = savedEvent.repeatSeriesId.toUtf8()
-                    .toStdString();
+                request.repeatSeriesId = *savedDraft.repeatSeriesId;
                 request.occurrences.reserve(eventsToSave.size());
-                for (const CalendarEvent& occurrence : eventsToSave)
+                for (const CalendarEventEditDraft& occurrence : eventsToSave)
                 {
-                    ClassMngr::Next::Application::CalendarEventSaveRequest
-                        occurrenceRequest;
-                    if (occurrence.id > 0)
-                    {
-                        occurrenceRequest.id =
-                            ClassMngr::Next::Domain::CalendarEventId::fromString(
-                                std::to_string(occurrence.id)
-                                );
-                    }
-                    occurrenceRequest.title = occurrence.title.toUtf8()
-                        .toStdString();
-                    occurrenceRequest.startDate = occurrence.startDate.toString(
-                        Qt::ISODate
-                        ).toStdString();
-                    occurrenceRequest.endDate = occurrence.endDate.toString(
-                        Qt::ISODate
-                        ).toStdString();
-                    occurrenceRequest.allDay = occurrence.allDay;
-                    occurrenceRequest.eventType = occurrence.eventType.toUtf8()
-                        .toStdString();
-                    occurrenceRequest.timeStatus = occurrence.timeStatus.toUtf8()
-                        .toStdString();
-                    if (!occurrence.allDay
-                        && occurrence.startTime.isValid()
-                        && occurrence.endTime.isValid())
-                    {
-                        occurrenceRequest.startTime =
-                            occurrence.startTime.toString(
-                                QStringLiteral("HH:mm")
-                                ).toStdString();
-                        occurrenceRequest.endTime =
-                            occurrence.endTime.toString(
-                                QStringLiteral("HH:mm")
-                                ).toStdString();
-                    }
-                    request.occurrences.push_back(occurrenceRequest);
+                    request.occurrences.push_back(
+                        saveRequestFromDraft(occurrence)
+                        );
                 }
 
                 ClassMngr::Next::Platform::

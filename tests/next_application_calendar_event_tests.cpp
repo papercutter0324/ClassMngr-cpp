@@ -1,3 +1,4 @@
+#include "next/application/calendar_event_edit_draft.h"
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_series_create_port.h"
@@ -74,6 +75,22 @@ CalendarEventSaveRequest validSaveRequest()
 {
     return CalendarEventSaveRequest{
         std::nullopt,
+        "Event title",
+        "2026-09-20",
+        "2026-09-20",
+        std::string("09:00"),
+        std::string("10:00"),
+        false,
+        "Meeting",
+        "Timed"
+    };
+}
+
+CalendarEventEditDraft validEditDraft()
+{
+    return CalendarEventEditDraft{
+        calendarEventId("event-42"),
+        std::string("series-1"),
         "Event title",
         "2026-09-20",
         "2026-09-20",
@@ -184,6 +201,9 @@ private slots:
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
     void saveRequestContractHasNoQtOrLegacySurface();
+    void editDraftBoundsAndTimeStatusPolicyIsExplicit();
+    void editDraftIsCopyableEqualAndIndependentlyReleasable();
+    void editDraftContractHasNoQtOrLegacySurface();
     void seriesCreateRequestBoundsAndOccurrencesRemainTyped();
     void seriesCreateRequestContractHasNoQtOrLegacySurface();
     void seriesEditRequestBoundsAndDatesRemainTyped();
@@ -864,6 +884,145 @@ saveRequestContractHasNoQtOrLegacySurface()
         decltype(std::declval<CalendarEventSaveRequest>().title)
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
+
+    QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+editDraftBoundsAndTimeStatusPolicyIsExplicit()
+{
+    auto draft = validEditDraft();
+    QVERIFY(draft.validate());
+    QVERIFY(validateCalendarEventEditDraft(draft));
+
+    auto blankId = draft;
+    blankId.id = calendarEventId(" \t");
+    QVERIFY(!blankId.validate());
+
+    auto oversizedId = draft;
+    oversizedId.id = calendarEventId(
+        std::string(kCalendarEventEditDraftMaxIdentifierLength + 1, 'i')
+        );
+    QVERIFY(!oversizedId.validate());
+
+    auto blankSeries = draft;
+    blankSeries.repeatSeriesId = " \t";
+    QVERIFY(!blankSeries.validate());
+
+    auto oversizedSeries = draft;
+    oversizedSeries.repeatSeriesId = std::string(
+        kCalendarEventEditDraftMaxRepeatSeriesIdLength + 1,
+        'r'
+        );
+    QVERIFY(!oversizedSeries.validate());
+
+    auto exactTitle = draft;
+    exactTitle.title = std::string(
+        kCalendarEventEditDraftMaxTitleLength,
+        't'
+        );
+    QVERIFY(exactTitle.validate());
+
+    auto oversizedTitle = exactTitle;
+    oversizedTitle.title.push_back('x');
+    QVERIFY(!oversizedTitle.validate());
+
+    auto invalidDate = draft;
+    invalidDate.startDate = "2026-02-30";
+    QVERIFY(!invalidDate.validate());
+
+    auto invalidTime = draft;
+    invalidTime.startTime = "9:00";
+    invalidTime.endTime = "10:00";
+    QVERIFY(!invalidTime.validate());
+
+    auto allDay = draft;
+    allDay.allDay = true;
+    allDay.startTime.reset();
+    allDay.endTime.reset();
+    QVERIFY(allDay.validate());
+
+    auto allDayWithTime = allDay;
+    allDayWithTime.startTime = "09:00";
+    allDayWithTime.endTime = "10:00";
+    QVERIFY(!allDayWithTime.validate());
+
+    auto unconfirmed = draft;
+    unconfirmed.timeStatus = "Unconfirmed";
+    unconfirmed.startTime.reset();
+    unconfirmed.endTime.reset();
+    QVERIFY(unconfirmed.validate());
+
+    auto unconfirmedWithTime = unconfirmed;
+    unconfirmedWithTime.startTime = "09:00";
+    unconfirmedWithTime.endTime = "10:00";
+    QVERIFY(!unconfirmedWithTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+editDraftIsCopyableEqualAndIndependentlyReleasable()
+{
+    static_assert(std::is_copy_constructible_v<CalendarEventEditDraft>);
+    static_assert(std::is_copy_assignable_v<CalendarEventEditDraft>);
+    static_assert(std::is_move_constructible_v<CalendarEventEditDraft>);
+    static_assert(std::is_move_assignable_v<CalendarEventEditDraft>);
+
+    const auto draft = validEditDraft();
+    const auto copy = draft;
+    QVERIFY(copy == draft);
+
+    auto changed = copy;
+    changed.title = "Changed title";
+    QVERIFY(changed != draft);
+
+    CalendarEventEditDraft assigned;
+    assigned = draft;
+    QVERIFY(assigned == draft);
+
+    const auto moved = std::move(assigned);
+    QVERIFY(moved == draft);
+}
+
+void NextApplicationCalendarEventTests::
+editDraftContractHasNoQtOrLegacySurface()
+{
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().id),
+        std::optional<CalendarEventId>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().repeatSeriesId),
+        std::optional<std::string>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().startDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().endDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().startTime),
+        std::optional<std::string>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().endTime),
+        std::optional<std::string>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().allDay),
+        bool
+        >);
+    static_assert(!std::is_pointer_v<
+        decltype(std::declval<CalendarEventEditDraft>().title)
+        >);
+    static_assert(!std::is_pointer_v<
+        decltype(std::declval<CalendarEventEditDraft>().eventType)
+        >);
+    static_assert(!std::is_pointer_v<
+        decltype(std::declval<CalendarEventEditDraft>().timeStatus)
+        >);
 
     QVERIFY(true);
 }

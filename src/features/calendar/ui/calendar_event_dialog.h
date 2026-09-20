@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/calendar_event.h"
+#include "next/application/calendar_event_edit_draft.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
 class QDateEdit;
@@ -33,7 +34,7 @@ public:
         QWidget* parent = nullptr
         );
 
-    CalendarEvent eventData() const;
+    ClassMngr::Next::Application::CalendarEventEditDraft eventData() const;
     bool deleteRequested() const;
     bool repeatEnabled() const;
     CalendarEventRepeatFrequency repeatFrequency() const;
@@ -46,6 +47,7 @@ private slots:
 
 private:
     void buildUi();
+    CalendarEvent legacyEventData() const;
     void loadEvent();
     void validateForm(bool focusFirstError = false);
     void updateValidationIfDisplayed();
