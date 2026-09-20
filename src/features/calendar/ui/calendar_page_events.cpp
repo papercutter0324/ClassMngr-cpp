@@ -6,6 +6,7 @@
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
+#include "next/platform/application_services_calendar_event_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/roles.h"
@@ -26,10 +27,82 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <optional>
+#include <string>
 
 namespace
 {
 constexpr int UntitledCardTopMargin = 4;
+
+using CalendarEventSummary =
+    ClassMngr::Next::Application::CalendarEventSummary;
+
+QString projectionText(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+std::optional<CalendarEvent> legacyEventFromProjection(
+    const CalendarEventSummary& summary
+    )
+{
+    bool validId = false;
+    const int id = projectionText(summary.id.value()).toInt(&validId);
+    const QDate startDate = QDate::fromString(
+        projectionText(summary.startDate),
+        Qt::ISODate
+        );
+    const QDate endDate = QDate::fromString(
+        projectionText(summary.endDate),
+        Qt::ISODate
+        );
+    if (!validId
+        || id <= 0
+        || !startDate.isValid()
+        || !endDate.isValid()
+        || endDate < startDate
+        || summary.startTime.has_value() != summary.endTime.has_value()
+        || (summary.allDay
+            && (summary.startTime.has_value() || summary.endTime.has_value())))
+    {
+        return std::nullopt;
+    }
+
+    CalendarEvent event;
+    event.id = id;
+    event.title = projectionText(summary.title);
+    event.eventType = projectionText(summary.eventType);
+    event.timeStatus = projectionText(summary.timeStatus);
+    event.repeatSeriesId = summary.repeatSeriesId
+        ? projectionText(*summary.repeatSeriesId)
+        : QString();
+    event.allDay = summary.allDay;
+    event.startDate = startDate;
+    event.endDate = endDate;
+
+    if (!summary.allDay && summary.startTime && summary.endTime)
+    {
+        event.startTime = QTime::fromString(
+            projectionText(*summary.startTime),
+            QStringLiteral("HH:mm")
+            );
+        event.endTime = QTime::fromString(
+            projectionText(*summary.endTime),
+            QStringLiteral("HH:mm")
+            );
+        if (!event.startTime.isValid() || !event.endTime.isValid())
+        {
+            return std::nullopt;
+        }
+    }
+
+    return event;
+}
 
 CalendarService* openCalendarService(
     ApplicationServices* services
@@ -263,19 +336,21 @@ void CalendarPage::handleCalendarEventActivated(
     int eventId
     )
 {
-    auto* calendarService =
-        openCalendarService(m_services);
-
-    if (!calendarService || eventId <= 0)
+    if (!m_services || eventId <= 0)
     {
         return;
     }
 
-    const Result<CalendarEvent> event =
-        calendarService->event(
-            eventId
-            );
+    ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort port(
+        *m_services
+        );
+    const auto projectedEvent = port.projectionById(eventId);
+    if (!projectedEvent)
+    {
+        return;
+    }
 
+    const auto event = legacyEventFromProjection(projectedEvent.value());
     if (!event || event->id <= 0)
     {
         return;

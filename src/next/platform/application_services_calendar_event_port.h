@@ -46,6 +46,90 @@ public:
         ApplicationServicesCalendarEventPort&&
         ) = delete;
 
+    [[nodiscard]] Domain::Result<Application::CalendarEventSummary>
+    projectionById(
+        const int eventId
+        ) const
+    {
+        if (eventId <= 0)
+        {
+            return failureSummary(
+                Domain::ErrorCode::InvalidInput,
+                "Calendar event identifier must be positive."
+                );
+        }
+
+        try
+        {
+            const CalendarService* service = m_services.calendarService();
+            if (!service || !service->isAvailable())
+            {
+                return failureSummary(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar service is unavailable."
+                    );
+            }
+
+            const ::Result<CalendarEvent> loaded = service->event(eventId);
+            if (!loaded)
+            {
+                const QString legacyError = loaded.error();
+                if (!service->isAvailable())
+                {
+                    return failureSummary(
+                        Domain::ErrorCode::NotFound,
+                        "The calendar service is unavailable."
+                        );
+                }
+
+                const QString normalizedError = legacyError.toLower();
+                if (normalizedError.contains(QStringLiteral("no matching record"))
+                    || normalizedError.contains(QStringLiteral("not found"))
+                    || normalizedError.contains(QStringLiteral("does not exist")))
+                {
+                    return failureSummary(
+                        Domain::ErrorCode::NotFound,
+                        "The calendar event was not found."
+                        );
+                }
+
+                const QByteArray errorBytes = legacyError.toUtf8();
+                const std::string message = errorBytes.isEmpty()
+                    ? "Calendar event could not be loaded."
+                    : "Calendar event could not be loaded: "
+                        + errorBytes.toStdString();
+                return failureSummary(
+                    Domain::ErrorCode::Technical,
+                    message
+                    );
+            }
+
+            if (loaded->id != eventId)
+            {
+                return failureSummary(
+                    Domain::ErrorCode::InvalidInput,
+                    "The calendar event identifier does not match the requested identifier."
+                    );
+            }
+
+            return projectEvent(*loaded, 0);
+        }
+        catch (const std::exception&)
+        {
+            return failureSummary(
+                Domain::ErrorCode::Technical,
+                "Calendar event could not be projected."
+                );
+        }
+        catch (...)
+        {
+            return failureSummary(
+                Domain::ErrorCode::Technical,
+                "Calendar event could not be projected."
+                );
+        }
+    }
+
     [[nodiscard]] Domain::Result<Application::CalendarEventProjection>
     projection(
         const QDate& startDate,
@@ -117,110 +201,19 @@ public:
             for (qsizetype index = 0; index < events.size(); ++index)
             {
                 const CalendarEvent& source = events.at(index);
-                if (source.id <= 0)
+                const auto event = projectEvent(
+                    source,
+                    static_cast<std::int32_t>(index)
+                    );
+                if (!event)
                 {
                     return failure(
-                        Domain::ErrorCode::InvalidInput,
-                        "A calendar event has an invalid legacy identifier."
+                        event.error().code,
+                        event.error().message
                         );
                 }
 
-                const auto eventId = Domain::CalendarEventId::fromString(
-                    std::to_string(source.id)
-                    );
-                const auto title = boundedUtf8(
-                    source.title,
-                    Application::kCalendarEventSummaryMaxTitleLength
-                    );
-                const auto startDateText = boundedUtf8(
-                    source.startDate.toString(Qt::ISODate),
-                    Application::kCalendarEventSummaryMaxDateLength
-                    );
-                const auto endDateText = boundedUtf8(
-                    source.endDate.toString(Qt::ISODate),
-                    Application::kCalendarEventSummaryMaxDateLength
-                    );
-                const auto eventType = boundedUtf8(
-                    source.eventType,
-                    Application::kCalendarEventSummaryMaxEventTypeLength
-                    );
-                const auto timeStatus = boundedUtf8(
-                    source.timeStatus,
-                    Application::kCalendarEventSummaryMaxTimeStatusLength
-                    );
-                const QString normalizedRepeatSeriesId =
-                    source.repeatSeriesId.trimmed();
-                std::optional<std::string> repeatSeriesId;
-                if (!normalizedRepeatSeriesId.isEmpty())
-                {
-                    repeatSeriesId = boundedUtf8(
-                        normalizedRepeatSeriesId,
-                        Application::kCalendarEventSummaryMaxRepeatSeriesIdLength
-                        );
-                    if (!repeatSeriesId)
-                    {
-                        return failure(
-                            Domain::ErrorCode::InvalidInput,
-                            "A calendar event has an invalid or unbounded repeat-series identifier."
-                            );
-                    }
-                }
-
-                if (!eventId
-                    || !title
-                    || !startDateText
-                    || !endDateText
-                    || !eventType
-                    || !timeStatus)
-                {
-                    return failure(
-                        Domain::ErrorCode::InvalidInput,
-                        "A calendar event contains invalid or unbounded metadata."
-                        );
-                }
-
-                std::optional<std::string> startTime;
-                std::optional<std::string> endTime;
-                if (!source.allDay)
-                {
-                    const bool hasStartTime = source.startTime.isValid();
-                    const bool hasEndTime = source.endTime.isValid();
-                    if (hasStartTime != hasEndTime)
-                    {
-                        return failure(
-                            Domain::ErrorCode::InvalidInput,
-                            "A timed calendar event has a partial time range."
-                            );
-                    }
-
-                    if (hasStartTime)
-                    {
-                        startTime = source.startTime.toString(
-                            QStringLiteral("HH:mm")
-                            ).toStdString();
-                        endTime = source.endTime.toString(
-                            QStringLiteral("HH:mm")
-                            ).toStdString();
-                    }
-                }
-
-                input.events.push_back({
-                    *eventId,
-                    std::nullopt,
-                    std::nullopt,
-                    *title,
-                    *startDateText,
-                    *endDateText,
-                    std::move(startTime),
-                    std::move(endTime),
-                    std::string{},
-                    std::string{},
-                    static_cast<std::int32_t>(index),
-                    source.allDay,
-                    *eventType,
-                    *timeStatus,
-                    std::move(repeatSeriesId)
-                });
+                input.events.push_back(event.value());
             }
 
             return Application::CalendarEventProjection::create(
@@ -244,6 +237,133 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::Result<Application::CalendarEventSummary>
+    projectEvent(
+        const CalendarEvent& source,
+        const std::int32_t order
+        )
+    {
+        if (source.id <= 0)
+        {
+            return failureSummary(
+                Domain::ErrorCode::InvalidInput,
+                "A calendar event has an invalid legacy identifier."
+                );
+        }
+
+        const auto eventId = Domain::CalendarEventId::fromString(
+            std::to_string(source.id)
+            );
+        const auto title = boundedUtf8(
+            source.title,
+            Application::kCalendarEventSummaryMaxTitleLength
+            );
+        const auto startDateText = boundedUtf8(
+            source.startDate.toString(Qt::ISODate),
+            Application::kCalendarEventSummaryMaxDateLength
+            );
+        const auto endDateText = boundedUtf8(
+            source.endDate.toString(Qt::ISODate),
+            Application::kCalendarEventSummaryMaxDateLength
+            );
+        const auto eventType = boundedUtf8(
+            source.eventType,
+            Application::kCalendarEventSummaryMaxEventTypeLength
+            );
+        const auto timeStatus = boundedUtf8(
+            source.timeStatus,
+            Application::kCalendarEventSummaryMaxTimeStatusLength
+            );
+        const QString normalizedRepeatSeriesId =
+            source.repeatSeriesId.trimmed();
+        std::optional<std::string> repeatSeriesId;
+        if (!normalizedRepeatSeriesId.isEmpty())
+        {
+            repeatSeriesId = boundedUtf8(
+                normalizedRepeatSeriesId,
+                Application::kCalendarEventSummaryMaxRepeatSeriesIdLength
+                );
+            if (!repeatSeriesId)
+            {
+                return failureSummary(
+                    Domain::ErrorCode::InvalidInput,
+                    "A calendar event has an invalid or unbounded repeat-series identifier."
+                    );
+            }
+        }
+
+        if (!eventId
+            || !title
+            || !startDateText
+            || !endDateText
+            || !eventType
+            || !timeStatus)
+        {
+            return failureSummary(
+                Domain::ErrorCode::InvalidInput,
+                "A calendar event contains invalid or unbounded metadata."
+                );
+        }
+
+        std::optional<std::string> startTime;
+        std::optional<std::string> endTime;
+        if (!source.allDay)
+        {
+            const bool hasStartTime = source.startTime.isValid();
+            const bool hasEndTime = source.endTime.isValid();
+            if (hasStartTime != hasEndTime)
+            {
+                return failureSummary(
+                    Domain::ErrorCode::InvalidInput,
+                    "A timed calendar event has a partial time range."
+                    );
+            }
+
+            if (hasStartTime)
+            {
+                startTime = source.startTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+                endTime = source.endTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+            }
+        }
+
+        Application::CalendarEventSummary summary{
+            *eventId,
+            std::nullopt,
+            std::nullopt,
+            *title,
+            *startDateText,
+            *endDateText,
+            std::move(startTime),
+            std::move(endTime),
+            std::string{},
+            std::string{},
+            order,
+            source.allDay,
+            *eventType,
+            *timeStatus,
+            std::move(repeatSeriesId)
+        };
+
+        const auto validation = Application::CalendarEventProjection::validate(
+            summary
+            );
+        if (!validation)
+        {
+            return failureSummary(
+                validation.error().code,
+                validation.error().message
+                );
+        }
+
+        return Domain::Result<Application::CalendarEventSummary>::success(
+            std::move(summary)
+            );
+    }
+
     [[nodiscard]] static std::optional<std::string> boundedUtf8(
         const QString& value,
         const std::size_t maximumBytes
@@ -269,6 +389,19 @@ private:
         )
     {
         return Domain::Result<Application::CalendarEventProjection>::failure({
+            .code = code,
+            .message = std::move(message),
+            .recoverable = false
+        });
+    }
+
+    [[nodiscard]] static Domain::Result<Application::CalendarEventSummary>
+    failureSummary(
+        const Domain::ErrorCode code,
+        std::string message
+        )
+    {
+        return Domain::Result<Application::CalendarEventSummary>::failure({
             .code = code,
             .message = std::move(message),
             .recoverable = false

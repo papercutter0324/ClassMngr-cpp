@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, and narrow typed upcoming-events retrieval and next-ten prefetch read cutovers are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` now has typed next-ten retrieval, while edit dialogs, service calls outside the typed read paths, and integer-ID activation remain legacy. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, and the typed calendar activation-read seam are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` now has typed next-ten retrieval and typed by-ID activation reads, converting to legacy `CalendarEvent` only at the existing UI/dialog boundary. Edit dialogs, save/delete/repeat mutations, schedule settings, other legacy callers, and integer-ID activation semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -1138,6 +1138,38 @@ validation passed 6 RCC packs, 7 IDs, and 7 references; `git diff --check`
 passed with CRLF warnings only; static review passed; and exactly one file was
 dirty. No dedicated live upcoming-row UI test exists; this is non-blocking.
 
-The typed read-only calendar paths are now covered through upcoming retrieval
-and next-ten prefetch. Edit/activation and other legacy callers remain future
-work, as do generic settings and other migrations. Phase 2 remains open.
+The typed read-only calendar paths are now covered through upcoming retrieval,
+next-ten prefetch, and the activation-read seam. Dialog/mutation/repeat
+operations and other legacy callers remain future work, as do generic
+settings and other migrations. Phase 2 remains open.
+
+#### Progress update - 2026-09-20 (typed calendar activation-read boundary)
+
+Against baseline commit `a7498732`,
+`src/next/platform/application_services_calendar_event_port.h` now exposes
+typed `projectionById(int)`. It preserves ID, title, event type, status,
+repeat-series, all-day, unknown-time, date, and time fields, and returns
+structured unavailable, missing, invalid, partial-time, overflow, and
+malformed-repeat failures. `calendar_page_events.cpp` reads activation data
+through the adapter and converts the typed result to legacy `CalendarEvent`
+only at the existing UI boundary before opening the unchanged dialog.
+
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`
+covers valid by-ID field preservation, missing/unavailable/malformed cases,
+and boundary checks. No CMake changes were made. CalendarEventDialog,
+save/delete/repeat mutation operations, schedule settings, integer-ID
+semantics, and other callers remain unchanged; invalid reads cause no
+mutation.
+
+The elevated current-source VS Debug build passed; focused tests passed
+11/11; the exact nine-target regression passed 9/9 (57.90s startup, 60.68s
+total); configure/ownership passed with 714 sources; dependency assertions
+passed (9 production targets, `ClassMngrNext -> Qt6::Core`); resource
+validation passed 6 RCC packs and 7 IDs/references; diff/static checks
+passed; and exactly three scoped files were dirty. Non-blocking warnings were
+missing Vulkan headers and existing MSVC `/FORCE`/duplicate-stub linker
+warnings.
+
+The typed activation-read seam is closed. Dialog/mutation/repeat operations,
+other legacy callers, generic settings, and broader migrations remain future
+work; Phase 2 remains open.

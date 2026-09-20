@@ -67,8 +67,9 @@ CalendarEventId calendarEventId(const int id)
     return *CalendarEventId::fromString(std::to_string(id));
 }
 
+template <typename Value>
 void verifyFailure(
-    const Domain::Result<CalendarEventProjection>& result,
+    const Domain::Result<Value>& result,
     const ErrorCode expectedCode
     )
 {
@@ -88,6 +89,7 @@ class NextPlatformApplicationServicesCalendarEventPortTests final
 private slots:
     void initTestCase();
     void projectsOverlappingRangeAsOwnedTypedMetadata();
+    void projectsByIdAsOwnedTypedMetadata();
     void preservesLegacyTitleSurroundingSpaces();
     void preservesAllDayAndUnknownTimePolicy();
     void reportsUnavailableAndInvalidRangesStructurally();
@@ -215,7 +217,62 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(
         result.value().findEvent(calendarEventId(insideId))->startDate,
         std::string("2026-07-10")
+    );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+projectsByIdAsOwnedTypedMetadata()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
         );
+    query.prepare(QStringLiteral(
+        "INSERT INTO calendar_events ("
+        "title, event_type, time_status, repeat_series_id, all_day, "
+        "start_date, start_time, end_date, end_time) "
+        "VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)"
+        ));
+    query.addBindValue(QStringLiteral("Activation event"));
+    query.addBindValue(QStringLiteral("Workshop"));
+    query.addBindValue(QStringLiteral("Unconfirmed"));
+    query.addBindValue(QStringLiteral("series-activation"));
+    query.addBindValue(QStringLiteral("2026-12-24"));
+    query.addBindValue(QStringLiteral("08:05"));
+    query.addBindValue(QStringLiteral("2026-12-26"));
+    query.addBindValue(QStringLiteral("09:35"));
+    QVERIFY(query.exec());
+    const int eventId = query.lastInsertId().toInt();
+    QVERIFY(eventId > 0);
+
+    ApplicationServicesCalendarEventPort port(services);
+    const auto result = port.projectionById(eventId);
+
+    QVERIFY(result);
+    const CalendarEventSummary& projected = result.value();
+    QCOMPARE(projected.id.value(), std::to_string(eventId));
+    QCOMPARE(projected.title, std::string("Activation event"));
+    QCOMPARE(projected.eventType, std::string("Workshop"));
+    QCOMPARE(projected.timeStatus, std::string("Unconfirmed"));
+    QCOMPARE(projected.repeatSeriesId, std::optional<std::string>(
+        std::string("series-activation")
+        ));
+    QVERIFY(!projected.allDay);
+    QCOMPARE(projected.startDate, std::string("2026-12-24"));
+    QCOMPARE(projected.endDate, std::string("2026-12-26"));
+    QCOMPARE(projected.startTime, std::optional<std::string>(
+        std::string("08:05")
+        ));
+    QCOMPARE(projected.endTime, std::optional<std::string>(
+        std::string("09:35")
+        ));
+    QCOMPARE(projected.order, std::int32_t(0));
+    QVERIFY(!projected.classId.has_value());
+    QVERIFY(!projected.campusId.has_value());
+    QVERIFY(projected.location.empty());
+    QVERIFY(projected.notes.empty());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -319,6 +376,30 @@ preservesAllDayAndUnknownTimePolicy()
     QCOMPARE(unknownProjection->eventType, std::string("Holiday"));
     QCOMPARE(unknownProjection->timeStatus, std::string("Unknown"));
     QVERIFY(!unknownProjection->repeatSeriesId.has_value());
+
+    const auto allDayById = port.projectionById(allDayId);
+    QVERIFY(allDayById);
+    QCOMPARE(allDayById.value().id.value(), std::to_string(allDayId));
+    QCOMPARE(allDayById.value().startDate, std::string("2026-09-20"));
+    QCOMPARE(allDayById.value().endDate, std::string("2026-09-21"));
+    QVERIFY(allDayById.value().allDay);
+    QVERIFY(!allDayById.value().startTime.has_value());
+    QVERIFY(!allDayById.value().endTime.has_value());
+    QCOMPARE(allDayById.value().eventType, std::string("Vacation"));
+    QCOMPARE(allDayById.value().timeStatus, std::string("Timed"));
+    QCOMPARE(
+        allDayById.value().repeatSeriesId,
+        std::optional<std::string>(std::string("series-all-day"))
+        );
+
+    const auto unknownById = port.projectionById(unknownTimeId);
+    QVERIFY(unknownById);
+    QVERIFY(!unknownById.value().allDay);
+    QVERIFY(!unknownById.value().startTime.has_value());
+    QVERIFY(!unknownById.value().endTime.has_value());
+    QCOMPARE(unknownById.value().eventType, std::string("Holiday"));
+    QCOMPARE(unknownById.value().timeStatus, std::string("Unknown"));
+    QVERIFY(!unknownById.value().repeatSeriesId.has_value());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -335,10 +416,22 @@ reportsUnavailableAndInvalidRangesStructurally()
             ),
         ErrorCode::NotFound
         );
+    verifyFailure(
+        unavailablePort.projectionById(1),
+        ErrorCode::NotFound
+        );
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     ApplicationServicesCalendarEventPort port(services);
+    verifyFailure(
+        port.projectionById(0),
+        ErrorCode::InvalidInput
+        );
+    verifyFailure(
+        port.projectionById(999999),
+        ErrorCode::NotFound
+        );
     verifyFailure(
         port.projection(QDate(), QDate(2026, 9, 21)),
         ErrorCode::InvalidInput
@@ -454,6 +547,8 @@ rejectsMalformedRepeatSeriesMetadataStructurally()
     query.addBindValue(QStringLiteral("2026-10-15"));
     query.addBindValue(QStringLiteral("10:00"));
     QVERIFY(query.exec());
+    const int eventId = query.lastInsertId().toInt();
+    QVERIFY(eventId > 0);
 
     ApplicationServicesCalendarEventPort port(services);
     const auto result = port.projection(
@@ -464,6 +559,13 @@ rejectsMalformedRepeatSeriesMetadataStructurally()
     QVERIFY(
         result.error().message.find("repeat-series") != std::string::npos
         || result.error().message.find("unbounded") != std::string::npos
+        );
+
+    const auto byIdResult = port.projectionById(eventId);
+    verifyFailure(byIdResult, ErrorCode::InvalidInput);
+    QVERIFY(
+        byIdResult.error().message.find("repeat-series") != std::string::npos
+        || byIdResult.error().message.find("unbounded") != std::string::npos
         );
 }
 
@@ -477,10 +579,17 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
             std::declval<const QDate&>()
             )
         );
+    using ByIdResult = decltype(
+        std::declval<const Port&>().projectionById(1)
+        );
 
     static_assert(std::is_same_v<
         ProjectionResult,
         Domain::Result<CalendarEventProjection>
+        >);
+    static_assert(std::is_same_v<
+        ByIdResult,
+        Domain::Result<CalendarEventSummary>
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
     static_assert(!std::is_move_constructible_v<Port>);
