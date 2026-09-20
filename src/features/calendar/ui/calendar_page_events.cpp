@@ -8,6 +8,7 @@
 #include "core/application_services.h"
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
+#include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -952,6 +953,53 @@ void CalendarPage::openCalendarDialog(
                     this,
                     tr("Save Calendar Event"),
                     saved.error()
+                    );
+                return;
+            }
+        }
+        else if (!repeatSeriesEvent && !dialog.repeatEnabled())
+        {
+            ClassMngr::Next::Application::CalendarEventSaveRequest request;
+            if (savedEvent.id > 0)
+            {
+                request.id =
+                    ClassMngr::Next::Domain::CalendarEventId::fromString(
+                        std::to_string(savedEvent.id)
+                        );
+            }
+            request.title = savedEvent.title.toUtf8().toStdString();
+            request.startDate = savedEvent.startDate.toString(
+                Qt::ISODate
+                ).toStdString();
+            request.endDate = savedEvent.endDate.toString(
+                Qt::ISODate
+                ).toStdString();
+            request.allDay = savedEvent.allDay;
+            request.eventType = savedEvent.eventType.toUtf8().toStdString();
+            request.timeStatus = savedEvent.timeStatus.toUtf8().toStdString();
+            if (!savedEvent.allDay
+                && savedEvent.startTime.isValid()
+                && savedEvent.endTime.isValid())
+            {
+                request.startTime = savedEvent.startTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+                request.endTime = savedEvent.endTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+            }
+
+            ClassMngr::Next::Platform::
+                ApplicationServicesCalendarEventSavePort savePort(
+                    *m_services
+                    );
+            const auto typedSaved = savePort.saveEvent(request);
+            if (!typedSaved)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Save Calendar Event"),
+                    projectionText(typedSaved.error().message)
                     );
                 return;
             }

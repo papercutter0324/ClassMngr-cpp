@@ -1,4 +1,5 @@
 #include "next/application/calendar_event_projection.h"
+#include "next/application/calendar_event_save_port.h"
 
 #include <QtTest/QtTest>
 
@@ -65,6 +66,21 @@ CalendarEventSummary calendarEventSummary(
     }
 
     return event;
+}
+
+CalendarEventSaveRequest validSaveRequest()
+{
+    return CalendarEventSaveRequest{
+        std::nullopt,
+        "Event title",
+        "2026-09-20",
+        "2026-09-20",
+        std::string("09:00"),
+        std::string("10:00"),
+        false,
+        "Meeting",
+        "Timed"
+    };
 }
 
 CalendarEventProjectionInput validInput()
@@ -139,6 +155,9 @@ private slots:
     void orderingAndSafeValueLookupsAreDeterministic();
     void duplicateAndInvalidValuesReturnStructuredInputErrors();
     void exactCapsAreAcceptedAndOverflowIsRejected();
+    void saveRequestBoundsAndOptionalIdRemainTyped();
+    void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
+    void saveRequestContractHasNoQtOrLegacySurface();
     void recordsAndProjectionAreCopyableEqualAndIndependentlyReleasable();
     void contractHasNoMutablePointerOrRichRecordSurface();
 };
@@ -672,6 +691,150 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
         );
     QCOMPARE(exactEvent.location.size(), kCalendarEventSummaryMaxLocationLength);
     QCOMPARE(exactEvent.notes.size(), kCalendarEventSummaryMaxNotesLength);
+}
+
+void NextApplicationCalendarEventTests::
+saveRequestBoundsAndOptionalIdRemainTyped()
+{
+    auto createRequest = validSaveRequest();
+    QVERIFY(!createRequest.id.has_value());
+    QVERIFY(createRequest.validate());
+    QVERIFY(validateCalendarEventSaveRequest(createRequest));
+
+    auto updateRequest = createRequest;
+    updateRequest.id = calendarEventId("event-42");
+    QVERIFY(updateRequest.validate());
+
+    auto invalidId = createRequest;
+    invalidId.id = calendarEventId("   ");
+    QVERIFY(!invalidId.validate());
+    QCOMPARE(invalidId.validate().error().code, ErrorCode::InvalidInput);
+
+    auto oversizedId = createRequest;
+    oversizedId.id = calendarEventId(
+        std::string(kCalendarEventSaveMaxIdentifierLength + 1, 'i')
+        );
+    QVERIFY(!oversizedId.validate());
+
+    auto exactTitle = createRequest;
+    exactTitle.title = std::string(kCalendarEventSaveMaxTitleLength, 't');
+    QVERIFY(exactTitle.validate());
+
+    auto oversizedTitle = exactTitle;
+    oversizedTitle.title.push_back('x');
+    QVERIFY(!oversizedTitle.validate());
+
+    auto oversizedEventType = createRequest;
+    oversizedEventType.eventType = std::string(
+        kCalendarEventSaveMaxEventTypeLength + 1,
+        'e'
+        );
+    QVERIFY(!oversizedEventType.validate());
+
+    auto oversizedTimeStatus = createRequest;
+    oversizedTimeStatus.timeStatus = std::string(
+        kCalendarEventSaveMaxTimeStatusLength + 1,
+        's'
+        );
+    QVERIFY(!oversizedTimeStatus.validate());
+
+    auto invalidDate = createRequest;
+    invalidDate.startDate = "2026-02-30";
+    QVERIFY(!invalidDate.validate());
+
+    auto reversedDates = createRequest;
+    reversedDates.startDate = "2026-09-21";
+    QVERIFY(!reversedDates.validate());
+}
+
+void NextApplicationCalendarEventTests::
+saveRequestAllDayAndTimeStatusPolicyIsExplicit()
+{
+    auto allDay = validSaveRequest();
+    allDay.allDay = true;
+    allDay.timeStatus = "Timed";
+    allDay.startTime.reset();
+    allDay.endTime.reset();
+    QVERIFY(allDay.validate());
+
+    auto allDayWithTime = allDay;
+    allDayWithTime.startTime = "09:00";
+    allDayWithTime.endTime = "10:00";
+    QVERIFY(!allDayWithTime.validate());
+
+    auto allDayUnknown = allDay;
+    allDayUnknown.timeStatus = "Unknown";
+    QVERIFY(!allDayUnknown.validate());
+
+    auto timedWithoutTimes = validSaveRequest();
+    timedWithoutTimes.startTime.reset();
+    timedWithoutTimes.endTime.reset();
+    QVERIFY(!timedWithoutTimes.validate());
+
+    auto partialTimedRange = validSaveRequest();
+    partialTimedRange.endTime.reset();
+    QVERIFY(!partialTimedRange.validate());
+
+    auto reversedTimedRange = validSaveRequest();
+    reversedTimedRange.endTime = "08:00";
+    QVERIFY(!reversedTimedRange.validate());
+
+    auto unknownTime = validSaveRequest();
+    unknownTime.timeStatus = "Unknown";
+    unknownTime.startTime.reset();
+    unknownTime.endTime.reset();
+    QVERIFY(unknownTime.validate());
+
+    auto unconfirmedTime = unknownTime;
+    unconfirmedTime.timeStatus = "Unconfirmed";
+    QVERIFY(unconfirmedTime.validate());
+
+    auto unknownWithTime = unknownTime;
+    unknownWithTime.startTime = "09:00";
+    unknownWithTime.endTime = "10:00";
+    QVERIFY(!unknownWithTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+saveRequestContractHasNoQtOrLegacySurface()
+{
+    using Port = CalendarEventSavePort;
+    using SaveResult = decltype(
+        std::declval<Port&>().saveEvent(
+            std::declval<const CalendarEventSaveRequest&>()
+            )
+        );
+
+    static_assert(std::is_same_v<
+        SaveResult,
+        CalendarEventSaveResult
+        >);
+    static_assert(std::is_same_v<
+        CalendarEventSaveResult,
+        Domain::Result<CalendarEventId>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().id),
+        std::optional<CalendarEventId>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().startTime),
+        std::optional<std::string>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().endTime),
+        std::optional<std::string>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().allDay),
+        bool
+        >);
+    static_assert(!std::is_pointer_v<
+        decltype(std::declval<CalendarEventSaveRequest>().title)
+        >);
+    static_assert(!std::is_copy_constructible_v<Port>);
+
+    QVERIFY(true);
 }
 
 void NextApplicationCalendarEventTests::recordsAndProjectionAreCopyableEqualAndIndependentlyReleasable()

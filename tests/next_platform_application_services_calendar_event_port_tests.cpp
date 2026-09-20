@@ -2,8 +2,10 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "next/application/calendar_event_delete_port.h"
+#include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
+#include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_port.h"
 
@@ -14,6 +16,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -23,6 +26,7 @@ using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventDeletePort;
+using ClassMngr::Next::Platform::ApplicationServicesCalendarEventSavePort;
 using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventSeriesDeletePort;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort;
@@ -74,6 +78,21 @@ CalendarEventId calendarEventId(const int id)
     return *CalendarEventId::fromString(std::to_string(id));
 }
 
+CalendarEventSaveRequest validSaveRequest()
+{
+    return CalendarEventSaveRequest{
+        std::nullopt,
+        "Typed save event",
+        "2026-12-10",
+        "2026-12-10",
+        std::string("09:00"),
+        std::string("10:00"),
+        false,
+        "Meeting",
+        "Timed"
+    };
+}
+
 template <typename Value>
 void verifyFailure(
     const Domain::Result<Value>& result,
@@ -101,6 +120,10 @@ private slots:
     void reportsInvalidDeleteIdStructurally();
     void reportsUnavailableDeleteServiceStructurally();
     void reportsDeleteServiceFailureStructurally();
+    void createsAndUpdatesValidEventWithTypedIdMapping();
+    void reportsInvalidSaveRequestStructurally();
+    void reportsUnavailableSaveServiceStructurally();
+    void reportsSaveServiceFailureStructurally();
     void deletesValidRepeatSeriesSuffix();
     void reportsInvalidRepeatSeriesDeleteRequestStructurally();
     void reportsUnavailableRepeatSeriesDeleteServiceStructurally();
@@ -387,6 +410,144 @@ reportsDeleteServiceFailureStructurally()
             != std::string::npos
         );
     QVERIFY(legacyService->event(eventId));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+createsAndUpdatesValidEventWithTypedIdMapping()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    ApplicationServicesCalendarEventSavePort port(services);
+    const CalendarEventSaveRequest createRequest = validSaveRequest();
+    const auto created = port.saveEvent(createRequest);
+    QVERIFY(created);
+
+    const auto createdId = created.value();
+    QVERIFY(createdId.value().size() <= 10);
+    const bool parsedCreatedId = createdId.value() != "0";
+    QVERIFY(parsedCreatedId);
+
+    bool converted = false;
+    const int legacyId = QString::fromStdString(createdId.value()).toInt(
+        &converted
+        );
+    QVERIFY(converted);
+    QVERIFY(legacyId > 0);
+    const auto loadedCreated = legacyService->event(legacyId);
+    QVERIFY(loadedCreated);
+    QCOMPARE(loadedCreated->id, legacyId);
+    QCOMPARE(loadedCreated->title, QStringLiteral("Typed save event"));
+    QCOMPARE(loadedCreated->eventType, QStringLiteral("Meeting"));
+    QCOMPARE(loadedCreated->timeStatus, QStringLiteral("Timed"));
+    QCOMPARE(loadedCreated->startDate, QDate(2026, 12, 10));
+    QCOMPARE(loadedCreated->startTime, QTime(9, 0));
+    QCOMPARE(loadedCreated->endTime, QTime(10, 0));
+    QVERIFY(loadedCreated->repeatSeriesId.isEmpty());
+
+    auto updateRequest = createRequest;
+    updateRequest.id = createdId;
+    updateRequest.title = "Typed updated event";
+    updateRequest.startDate = "2026-12-11";
+    updateRequest.endDate = "2026-12-12";
+    updateRequest.startTime = "11:00";
+    updateRequest.endTime = "12:30";
+    const auto updated = port.saveEvent(updateRequest);
+    QVERIFY(updated);
+    QCOMPARE(updated.value(), createdId);
+
+    const auto loadedUpdated = legacyService->event(legacyId);
+    QVERIFY(loadedUpdated);
+    QCOMPARE(loadedUpdated->id, legacyId);
+    QCOMPARE(loadedUpdated->title, QStringLiteral("Typed updated event"));
+    QCOMPARE(loadedUpdated->startDate, QDate(2026, 12, 11));
+    QCOMPARE(loadedUpdated->endDate, QDate(2026, 12, 12));
+    QCOMPARE(loadedUpdated->startTime, QTime(11, 0));
+    QCOMPARE(loadedUpdated->endTime, QTime(12, 30));
+    QCOMPARE(
+        legacyService->eventsInRange(
+            QDate(2026, 12, 10),
+            QDate(2026, 12, 12)
+            )->size(),
+        1
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsInvalidSaveRequestStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    ApplicationServicesCalendarEventSavePort port(services);
+
+    auto blankTitle = validSaveRequest();
+    blankTitle.title = "   ";
+    verifyFailure(port.saveEvent(blankTitle), ErrorCode::InvalidInput);
+
+    auto invalidDate = validSaveRequest();
+    invalidDate.startDate = "2026-02-30";
+    verifyFailure(port.saveEvent(invalidDate), ErrorCode::InvalidInput);
+
+    auto invalidStatus = validSaveRequest();
+    invalidStatus.timeStatus = "Unknown";
+    verifyFailure(port.saveEvent(invalidStatus), ErrorCode::InvalidInput);
+
+    auto allDayWithTimes = validSaveRequest();
+    allDayWithTimes.allDay = true;
+    verifyFailure(
+        port.saveEvent(allDayWithTimes),
+        ErrorCode::InvalidInput
+        );
+
+    auto invalidUpdateId = validSaveRequest();
+    invalidUpdateId.id = *CalendarEventId::fromString("0");
+    verifyFailure(
+        port.saveEvent(invalidUpdateId),
+        ErrorCode::InvalidInput
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsUnavailableSaveServiceStructurally()
+{
+    ApplicationServices services;
+    ApplicationServicesCalendarEventSavePort port(services);
+
+    verifyFailure(
+        port.saveEvent(validSaveRequest()),
+        ErrorCode::NotFound
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsSaveServiceFailureStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_save "
+        "BEFORE INSERT ON calendar_events "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected calendar save failure'); "
+        "END"
+        )));
+
+    ApplicationServicesCalendarEventSavePort port(services);
+    const auto saved = port.saveEvent(validSaveRequest());
+
+    verifyFailure(saved, ErrorCode::Technical);
+    QVERIFY(
+        saved.error().message.find("Creating calendar event")
+            != std::string::npos
+        || saved.error().message.find("injected calendar save failure")
+            != std::string::npos
+        );
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -822,6 +983,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
 {
     using Port = ApplicationServicesCalendarEventPort;
     using DeletePort = CalendarEventDeletePort;
+    using SavePort = CalendarEventSavePort;
     using SeriesDeletePort = CalendarEventSeriesDeletePort;
     using ProjectionResult = decltype(
         std::declval<const Port&>().projection(
@@ -835,6 +997,11 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     using DeleteResult = decltype(
         std::declval<DeletePort&>().deleteEvent(
             std::declval<const CalendarEventId&>()
+            )
+        );
+    using SaveResult = decltype(
+        std::declval<SavePort&>().saveEvent(
+            std::declval<const CalendarEventSaveRequest&>()
             )
         );
     using SeriesDeleteResult = decltype(
@@ -856,6 +1023,10 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         Domain::Result<void>
         >);
     static_assert(std::is_same_v<
+        SaveResult,
+        Domain::Result<CalendarEventId>
+        >);
+    static_assert(std::is_same_v<
         SeriesDeleteResult,
         Domain::Result<void>
         >);
@@ -868,6 +1039,24 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(!std::is_move_constructible_v<
         ApplicationServicesCalendarEventDeletePort
+        >);
+    static_assert(std::is_base_of_v<
+        SavePort,
+        ApplicationServicesCalendarEventSavePort
+        >);
+    static_assert(!std::is_copy_constructible_v<
+        ApplicationServicesCalendarEventSavePort
+        >);
+    static_assert(!std::is_move_constructible_v<
+        ApplicationServicesCalendarEventSavePort
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().id),
+        std::optional<CalendarEventId>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().allDay),
+        bool
         >);
     static_assert(std::is_base_of_v<
         SeriesDeletePort,
