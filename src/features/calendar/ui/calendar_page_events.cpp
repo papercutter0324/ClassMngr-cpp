@@ -113,6 +113,48 @@ std::optional<CalendarEvent> legacyEventFromProjection(
     return event;
 }
 
+CalendarEventEditDraft editDraftFromLegacyEvent(
+    const CalendarEvent& event
+    )
+{
+    CalendarEventEditDraft draft;
+
+    if (event.id > 0)
+    {
+        draft.id =
+            ClassMngr::Next::Domain::CalendarEventId::fromString(
+                std::to_string(event.id)
+                );
+    }
+
+    if (!event.repeatSeriesId.trimmed().isEmpty())
+    {
+        draft.repeatSeriesId =
+            event.repeatSeriesId.toUtf8().toStdString();
+    }
+
+    draft.title = event.title.toUtf8().toStdString();
+    draft.startDate = event.startDate.toString(Qt::ISODate).toStdString();
+    draft.endDate = event.endDate.toString(Qt::ISODate).toStdString();
+    draft.allDay = event.allDay;
+    draft.eventType = event.eventType.toUtf8().toStdString();
+    draft.timeStatus = event.timeStatus.toUtf8().toStdString();
+
+    if (!event.allDay
+        && event.startTime.isValid()
+        && event.endTime.isValid())
+    {
+        draft.startTime = event.startTime.toString(
+            QStringLiteral("HH:mm")
+            ).toStdString();
+        draft.endTime = event.endTime.toString(
+            QStringLiteral("HH:mm")
+            ).toStdString();
+    }
+
+    return draft;
+}
+
 CalendarService* openCalendarService(
     ApplicationServices* services
     )
@@ -811,8 +853,10 @@ void CalendarPage::openCalendarDialog(
         return;
     }
 
+    const CalendarEventEditDraft editDraft =
+        editDraftFromLegacyEvent(event);
     CalendarEventDialog dialog(
-        event,
+        editDraft,
         existingEvent,
         settingToBool(
             settingsService

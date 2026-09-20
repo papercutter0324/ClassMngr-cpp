@@ -28,7 +28,7 @@ class CalendarEventDialog : public DialogShell
 
 public:
     explicit CalendarEventDialog(
-        const CalendarEvent& event,
+        const ClassMngr::Next::Application::CalendarEventEditDraft& draft,
         bool existingEvent,
         bool use24h,
         QWidget* parent = nullptr
@@ -55,7 +55,7 @@ private:
     void updateRepeatFieldAvailability();
 
 private:
-    CalendarEvent m_event;
+    ClassMngr::Next::Application::CalendarEventEditDraft m_draft;
     bool m_existingEvent = false;
     bool m_use24h = false;
     bool m_deleteRequested = false;

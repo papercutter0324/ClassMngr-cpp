@@ -17,13 +17,17 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
+#include <QComboBox>
+#include <QDateEdit>
 #include <QDialogButtonBox>
 #include <QApplication>
 #include <QLabel>
 #include <QLineEdit>
+#include <QRadioButton>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <QTimeEdit>
 #include <QTest>
 #include <QTranslator>
 #include <QVBoxLayout>
@@ -31,7 +35,24 @@
 #include <string>
 #include <type_traits>
 
+using CalendarEventEditDraft =
+    ClassMngr::Next::Application::CalendarEventEditDraft;
+using CalendarEventId =
+    ClassMngr::Next::Domain::CalendarEventId;
+
 static_assert(std::is_base_of_v<DialogShell, CalendarEventDialog>);
+static_assert(std::is_constructible_v<
+    CalendarEventDialog,
+    const CalendarEventEditDraft&,
+    bool,
+    bool
+    >);
+static_assert(!std::is_constructible_v<
+    CalendarEventDialog,
+    const CalendarEvent&,
+    bool,
+    bool
+    >);
 static_assert(std::is_base_of_v<DialogShell, ScheduleEditorDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleImportDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleImportReviewDialog>);
@@ -121,11 +142,34 @@ private slots:
     void persistsGeometryByStableDialogKey();
     void calendarEventDialogsExposeUntargetedKeyboard();
     void calendarEventDialogMapsTypedEditDraft();
+    void calendarEventDialogAppliesTypedDefaults();
     void calendarEventDialogShowsInlineValidation();
 
 private:
     QTemporaryDir m_settingsRoot;
 };
+
+CalendarEventId calendarEventId(
+    const char* value
+    )
+{
+    return *CalendarEventId::fromString(value);
+}
+
+CalendarEventEditDraft timedCalendarEventDraft()
+{
+    CalendarEventEditDraft draft;
+    draft.id = calendarEventId("42");
+    draft.repeatSeriesId = "series-42";
+    draft.title = "Timed event";
+    draft.startDate = "2026-09-20";
+    draft.endDate = "2026-09-20";
+    draft.startTime = "09:15";
+    draft.endTime = "10:45";
+    draft.eventType = "Meeting";
+    draft.timeStatus = "Timed";
+    return draft;
+}
 
 void DialogShellTests::initTestCase()
 {
@@ -283,11 +327,11 @@ void DialogShellTests::persistsGeometryByStableDialogKey()
 
 void DialogShellTests::calendarEventDialogsExposeUntargetedKeyboard()
 {
-    CalendarEvent event;
+    CalendarEventEditDraft draft;
 
     for (const bool existingEvent : {false, true})
     {
-        CalendarEventDialog dialog(event, existingEvent, true);
+        CalendarEventDialog dialog(draft, existingEvent, true);
         dialog.show();
         QApplication::processEvents();
 
@@ -310,16 +354,7 @@ void DialogShellTests::calendarEventDialogsExposeUntargetedKeyboard()
 
 void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
 {
-    CalendarEvent timed;
-    timed.id = 42;
-    timed.title = QStringLiteral("Timed event");
-    timed.eventType = QStringLiteral("Meeting");
-    timed.timeStatus = QStringLiteral("Timed");
-    timed.repeatSeriesId = QStringLiteral("series-42");
-    timed.startDate = QDate(2026, 9, 20);
-    timed.startTime = QTime(9, 15);
-    timed.endDate = QDate(2026, 9, 20);
-    timed.endTime = QTime(10, 45);
+    const CalendarEventEditDraft timed = timedCalendarEventDraft();
 
     CalendarEventDialog timedDialog(timed, true, true);
     const auto timedDraft = timedDialog.eventData();
@@ -341,11 +376,51 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QCOMPARE(timedDraft.eventType, std::string("Meeting"));
     QCOMPARE(timedDraft.timeStatus, std::string("Timed"));
 
-    CalendarEvent allDay = timed;
-    allDay.id = -1;
-    allDay.repeatSeriesId.clear();
+    auto* timedStartTime = timedDialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventStartTimeEdit")
+        );
+    auto* timedEndTime = timedDialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventEndTimeEdit")
+        );
+    QVERIFY(timedStartTime);
+    QVERIFY(timedEndTime);
+    QCOMPARE(timedStartTime->displayFormat(), QStringLiteral("HH:mm"));
+    QCOMPARE(timedEndTime->displayFormat(), QStringLiteral("HH:mm"));
+
+    QRadioButton* thisAndFollowingButton = nullptr;
+    QRadioButton* meetingButton = nullptr;
+    for (auto* button : timedDialog.findChildren<QRadioButton*>())
+    {
+        if (button->text() == QStringLiteral("This and following events"))
+        {
+            thisAndFollowingButton = button;
+        }
+        if (button->property("eventType").toString()
+            == QStringLiteral("Meeting"))
+        {
+            meetingButton = button;
+        }
+    }
+    QVERIFY(thisAndFollowingButton);
+    QVERIFY(meetingButton);
+    QVERIFY(meetingButton->isChecked());
+    QCOMPARE(
+        timedDialog.seriesEditScope(),
+        CalendarEventSeriesEditScope::ThisEventOnly
+        );
+    thisAndFollowingButton->click();
+    QCOMPARE(
+        timedDialog.seriesEditScope(),
+        CalendarEventSeriesEditScope::ThisAndFollowingEvents
+        );
+
+    CalendarEventEditDraft allDay = timed;
+    allDay.id.reset();
+    allDay.repeatSeriesId.reset();
     allDay.allDay = true;
-    allDay.eventType = QStringLiteral("Holiday");
+    allDay.startTime.reset();
+    allDay.endTime.reset();
+    allDay.eventType = "Holiday";
     CalendarEventDialog allDayDialog(allDay, false, true);
     const auto allDayDraft = allDayDialog.eventData();
     QVERIFY(!allDayDraft.id.has_value());
@@ -356,11 +431,26 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QCOMPARE(allDayDraft.eventType, std::string("Holiday"));
     QCOMPARE(allDayDraft.timeStatus, std::string("Timed"));
 
-    CalendarEvent unconfirmed = timed;
-    unconfirmed.id = -1;
-    unconfirmed.repeatSeriesId.clear();
-    unconfirmed.timeStatus = QStringLiteral("Unconfirmed");
-    unconfirmed.eventType = QStringLiteral("Workshop");
+    auto* allDayStartTime = allDayDialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventStartTimeEdit")
+        );
+    auto* allDayEndTime = allDayDialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventEndTimeEdit")
+        );
+    QVERIFY(allDayStartTime);
+    QVERIFY(allDayEndTime);
+    QCOMPARE(allDayStartTime->time(), QTime(0, 0));
+    QCOMPARE(allDayEndTime->time(), QTime(23, 59));
+    QVERIFY(!allDayStartTime->isEnabled());
+    QVERIFY(!allDayEndTime->isEnabled());
+
+    CalendarEventEditDraft unconfirmed = timed;
+    unconfirmed.id.reset();
+    unconfirmed.repeatSeriesId.reset();
+    unconfirmed.startTime.reset();
+    unconfirmed.endTime.reset();
+    unconfirmed.timeStatus = "Unconfirmed";
+    unconfirmed.eventType = "Workshop";
     CalendarEventDialog unconfirmedDialog(unconfirmed, false, true);
     const auto unconfirmedDraft = unconfirmedDialog.eventData();
     QVERIFY(!unconfirmedDraft.allDay);
@@ -368,11 +458,77 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QVERIFY(!unconfirmedDraft.endTime.has_value());
     QCOMPARE(unconfirmedDraft.eventType, std::string("Workshop"));
     QCOMPARE(unconfirmedDraft.timeStatus, std::string("Unconfirmed"));
+
+    auto* unconfirmedStartTime = unconfirmedDialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventStartTimeEdit")
+        );
+    auto* unconfirmedEndTime = unconfirmedDialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventEndTimeEdit")
+        );
+    QVERIFY(unconfirmedStartTime);
+    QVERIFY(unconfirmedEndTime);
+    QCOMPARE(unconfirmedStartTime->time(), QTime(9, 0));
+    QCOMPARE(unconfirmedEndTime->time(), QTime(10, 0));
+    QVERIFY(!unconfirmedStartTime->isEnabled());
+    QVERIFY(!unconfirmedEndTime->isEnabled());
+}
+
+void DialogShellTests::calendarEventDialogAppliesTypedDefaults()
+{
+    const CalendarEventEditDraft defaults;
+    CalendarEventDialog dialog(defaults, false, true);
+
+    auto* startDate = dialog.findChild<QDateEdit*>(
+        QStringLiteral("calendarEventStartDateEdit")
+        );
+    auto* endDate = dialog.findChild<QDateEdit*>(
+        QStringLiteral("calendarEventEndDateEdit")
+        );
+    auto* startTime = dialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventStartTimeEdit")
+        );
+    auto* endTime = dialog.findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventEndTimeEdit")
+        );
+    auto* repeatFrequency = dialog.findChild<QComboBox*>(
+        QStringLiteral("calendarEventRepeatFrequencyCombo")
+        );
+    QVERIFY(startDate);
+    QVERIFY(endDate);
+    QVERIFY(startTime);
+    QVERIFY(endTime);
+    QVERIFY(repeatFrequency);
+
+    const QDate today = QDate::currentDate();
+    QCOMPARE(startDate->date(), today);
+    QCOMPARE(endDate->date(), today);
+    QCOMPARE(startTime->time(), QTime(9, 0));
+    QCOMPARE(endTime->time(), QTime(10, 0));
+    QVERIFY(!dialog.repeatEnabled());
+    QCOMPARE(
+        dialog.repeatFrequency(),
+        CalendarEventRepeatFrequency::Weekly
+        );
+    QCOMPARE(repeatFrequency->currentIndex(), 1);
+
+    const auto draft = dialog.eventData();
+    const std::string todayText =
+        today.toString(Qt::ISODate).toStdString();
+    QVERIFY(!draft.id.has_value());
+    QVERIFY(!draft.repeatSeriesId.has_value());
+    QCOMPARE(draft.title, std::string());
+    QCOMPARE(draft.startDate, todayText);
+    QCOMPARE(draft.endDate, todayText);
+    QCOMPARE(draft.startTime.value(), std::string("09:00"));
+    QCOMPARE(draft.endTime.value(), std::string("10:00"));
+    QVERIFY(!draft.allDay);
+    QCOMPARE(draft.eventType, std::string("Other"));
+    QCOMPARE(draft.timeStatus, std::string("Timed"));
 }
 
 void DialogShellTests::calendarEventDialogShowsInlineValidation()
 {
-    CalendarEventDialog dialog(CalendarEvent{}, false, true);
+    CalendarEventDialog dialog(CalendarEventEditDraft{}, false, true);
     dialog.show();
     QApplication::processEvents();
 

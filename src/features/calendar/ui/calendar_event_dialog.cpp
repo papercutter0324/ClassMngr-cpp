@@ -32,9 +32,72 @@
 
 namespace
 {
+using CalendarEventEditDraft =
+    ClassMngr::Next::Application::CalendarEventEditDraft;
+
 constexpr int DateTimeFieldWidth = 140;
 constexpr int RepeatFieldWidth = 180;
 constexpr int RepeatOptionToFieldsSpacing = 24;
+
+QString draftText(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+CalendarEvent legacyEventFromDraft(
+    const CalendarEventEditDraft& draft
+    )
+{
+    CalendarEvent event;
+
+    if (draft.id)
+    {
+        bool validId = false;
+        const int id = draftText(draft.id->value()).toInt(&validId);
+        if (validId)
+        {
+            event.id = id;
+        }
+    }
+
+    event.title = draftText(draft.title);
+    event.eventType = draftText(draft.eventType);
+    event.timeStatus = draftText(draft.timeStatus);
+    event.repeatSeriesId = draft.repeatSeriesId
+        ? draftText(*draft.repeatSeriesId)
+        : QString();
+    event.allDay = draft.allDay;
+    event.startDate = QDate::fromString(
+        draftText(draft.startDate),
+        Qt::ISODate
+        );
+    event.endDate = QDate::fromString(
+        draftText(draft.endDate),
+        Qt::ISODate
+        );
+
+    if (draft.startTime)
+    {
+        event.startTime = QTime::fromString(
+            draftText(*draft.startTime),
+            QStringLiteral("HH:mm")
+            );
+    }
+    if (draft.endTime)
+    {
+        event.endTime = QTime::fromString(
+            draftText(*draft.endTime),
+            QStringLiteral("HH:mm")
+            );
+    }
+
+    return event;
+}
 
 QDate finalMatchingWeekdayInYear(
     const QDate& date
@@ -67,13 +130,13 @@ bool isRepeatSeriesEvent(
 }
 
 CalendarEventDialog::CalendarEventDialog(
-    const CalendarEvent& event,
+    const CalendarEventEditDraft& draft,
     bool existingEvent,
     bool use24h,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("calendarEvent"), parent)
-    , m_event(event)
+    , m_draft(draft)
     , m_existingEvent(existingEvent)
     , m_use24h(use24h)
 {
@@ -84,7 +147,7 @@ CalendarEventDialog::CalendarEventDialog(
 CalendarEvent CalendarEventDialog::legacyEventData() const
 {
     CalendarEvent event =
-        m_event;
+        legacyEventFromDraft(m_draft);
 
     event.title =
         m_titleEdit->text().trimmed();
@@ -142,40 +205,59 @@ CalendarEvent CalendarEventDialog::legacyEventData() const
 ClassMngr::Next::Application::CalendarEventEditDraft
 CalendarEventDialog::eventData() const
 {
-    const CalendarEvent event = legacyEventData();
-    ClassMngr::Next::Application::CalendarEventEditDraft draft;
+    CalendarEventEditDraft draft =
+        m_draft;
 
-    if (event.id > 0)
+    draft.title =
+        m_titleEdit->text().trimmed().toUtf8().toStdString();
+    draft.startDate =
+        m_startDateEdit->date().toString(Qt::ISODate).toStdString();
+    draft.endDate =
+        m_endDateEdit->date().toString(Qt::ISODate).toStdString();
+    draft.allDay =
+        m_allDayCheck
+        && m_allDayCheck->isChecked();
+    draft.timeStatus =
+        !draft.allDay
+        && m_unconfirmedTimeCheck
+        && m_unconfirmedTimeCheck->isChecked()
+            ? "Unconfirmed"
+            : "Timed";
+
+    if (draft.allDay)
     {
-        draft.id =
-            ClassMngr::Next::Domain::CalendarEventId::fromString(
-                std::to_string(event.id)
-                );
+        draft.startTime.reset();
+        draft.endTime.reset();
     }
-
-    if (!event.repeatSeriesId.trimmed().isEmpty())
+    else if (draft.timeStatus == "Unconfirmed")
     {
-        draft.repeatSeriesId =
-            event.repeatSeriesId.toUtf8().toStdString();
+        draft.startTime.reset();
+        draft.endTime.reset();
     }
-
-    draft.title = event.title.toUtf8().toStdString();
-    draft.startDate = event.startDate.toString(Qt::ISODate).toStdString();
-    draft.endDate = event.endDate.toString(Qt::ISODate).toStdString();
-    draft.allDay = event.allDay;
-    draft.eventType = event.eventType.toUtf8().toStdString();
-    draft.timeStatus = event.timeStatus.toUtf8().toStdString();
-
-    if (!event.allDay
-        && event.startTime.isValid()
-        && event.endTime.isValid())
+    else
     {
-        draft.startTime = event.startTime.toString(
+        draft.startTime = m_startTimeEdit->time().toString(
             QStringLiteral("HH:mm")
             ).toStdString();
-        draft.endTime = event.endTime.toString(
+        draft.endTime = m_endTimeEdit->time().toString(
             QStringLiteral("HH:mm")
             ).toStdString();
+    }
+
+    draft.eventType =
+        "Other";
+
+    if (m_eventTypeGroup)
+    {
+        if (const auto* checkedButton =
+                m_eventTypeGroup->checkedButton())
+        {
+            draft.eventType = checkedButton
+                ->property("eventType")
+                .toString()
+                .toUtf8()
+                .toStdString();
+        }
     }
 
     return draft;
@@ -700,7 +782,7 @@ void CalendarEventDialog::buildUi()
 
     if (
         m_existingEvent
-        && isRepeatSeriesEvent(m_event)
+        && isRepeatSeriesEvent(legacyEventFromDraft(m_draft))
         )
     {
         auto* seriesScopeLayout =
@@ -1005,38 +1087,40 @@ void CalendarEventDialog::updateValidationIfDisplayed()
 
 void CalendarEventDialog::loadEvent()
 {
+    const CalendarEvent event =
+        legacyEventFromDraft(m_draft);
     const QDate today =
         QDate::currentDate();
 
     m_titleEdit->setText(
-        m_event.title
+        event.title
         );
     m_startDateEdit->setDate(
-        m_event.startDate.isValid()
-            ? m_event.startDate
+        event.startDate.isValid()
+            ? event.startDate
             : today
         );
     m_startTimeEdit->setTime(
-        m_event.startTime.isValid()
-            ? m_event.startTime
+        event.startTime.isValid()
+            ? event.startTime
             : QTime(9, 0)
         );
     m_endDateEdit->setDate(
-        m_event.endDate.isValid()
-            ? m_event.endDate
+        event.endDate.isValid()
+            ? event.endDate
             : m_startDateEdit->date()
         );
     m_endTimeEdit->setTime(
-        m_event.endTime.isValid()
-            ? m_event.endTime
+        event.endTime.isValid()
+            ? event.endTime
             : QTime(10, 0)
         );
     m_allDayCheck->setChecked(
-        m_event.allDay
+        event.allDay
         );
     m_unconfirmedTimeCheck->setChecked(
-        !m_event.allDay
-        && normalizedCalendarEventTimeStatus(m_event.timeStatus)
+        !event.allDay
+        && normalizedCalendarEventTimeStatus(event.timeStatus)
             == QStringLiteral("Unconfirmed")
         );
     m_repeatFrequencyCombo->setCurrentIndex(1);
@@ -1051,7 +1135,7 @@ void CalendarEventDialog::loadEvent()
 
     const QString selectedEventType =
         normalizedCalendarEventType(
-            m_event.eventType
+            event.eventType
             );
 
     for (auto* button : m_eventTypeGroup->buttons())
