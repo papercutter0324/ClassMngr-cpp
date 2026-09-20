@@ -16,6 +16,7 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
@@ -569,9 +570,12 @@ void ClassesPage::refreshNavigationPreferences()
             )
         );
     setShowMiddleSchoolAnalyticsAndEvaluations(
-        ClassNavigationPreferences::showMiddleSchoolAnalyticsAndEvaluations(
-            m_services ? m_services->settingsService() : nullptr
-            )
+        m_services
+            ? ClassMngr::Next::Platform::
+                ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
+                    *m_services
+                    ).load()
+            : false
         );
 }
 

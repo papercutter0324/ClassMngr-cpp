@@ -1652,3 +1652,30 @@ static, and diff checks passed. Normal warnings remained non-blocking;
 The typed automatic-update preference seam is closed. Residual settings
 callers, generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
+
+#### Progress update - 2026-09-21 (typed middle-school analytics preference boundary)
+
+Against baseline commit `1c8122bb`, added the Qt-free boolean
+`MiddleSchoolAnalyticsPreferencesPort` and its
+`ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` adapter. The adapter
+preserves the exact
+`classes_navigation_show_middle_school_analytics_and_evaluations` key, false
+default for missing or unavailable settings, legacy `QVariant` boolean
+coercion, and round-trip persistence.
+
+Only `src/app/menu_builder.cpp` and
+`src/features/classes/ui/classes_page.cpp` use the typed preference. M1-M3
+Analytics and Evaluations tab behavior remains preserved; visibility and reset
+preference keys are untouched.
+
+The executor and independent tester reported a passing Debug build, focused
+tests 9/9 including launch, and the exact nine-target regression 9/9.
+Configure/ownership passed with 752 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Qt-free, call-site,
+static, and diff checks passed. Normal warnings remained non-blocking; a
+transient CMake regeneration issue was resolved.
+
+The typed middle-school analytics preference seam is closed. Residual settings
+callers, generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.

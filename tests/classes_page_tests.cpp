@@ -8,6 +8,7 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "domain/models/speaking_evaluation.h"
 #include "next/application/evaluation_default_policy_preferences.h"
+#include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
@@ -268,10 +269,9 @@ void ClassesPageTests
         }
     }
 
-    ClassNavigationPreferences::saveShowMiddleSchoolAnalyticsAndEvaluations(
-        services.settingsService(),
-        true
-        );
+    ClassMngr::Next::Platform::
+        ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
+    port.save(true);
     page.refreshNavigationPreferences();
 
     const QStringList enabledLabels{

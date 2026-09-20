@@ -8,6 +8,7 @@
 #include "features/classes/class_navigation_preferences.h"
 #include "mainwindow.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
+#include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/actions/action_registry.h"
@@ -488,11 +489,12 @@ void addNavigationPreferencesTab(
             )
         );
     showMiddleSchoolAnalyticsAndEvaluations->setChecked(
-        ClassNavigationPreferences::showMiddleSchoolAnalyticsAndEvaluations(
-            window && window->services()
-                ? window->services()->settingsService()
-                : nullptr
-            )
+        window && window->services()
+            ? ClassMngr::Next::Platform::
+                ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
+                    *window->services()
+                    ).load()
+            : false
         );
     navigationLayout->addWidget(showMiddleSchoolAnalyticsAndEvaluations);
 
@@ -662,12 +664,13 @@ void addNavigationPreferencesTab(
         page,
         [window](bool show)
         {
-            ClassNavigationPreferences::saveShowMiddleSchoolAnalyticsAndEvaluations(
-                window && window->services()
-                    ? window->services()->settingsService()
-                    : nullptr,
-                show
-                );
+            if (window && window->services())
+            {
+                ClassMngr::Next::Platform::
+                    ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
+                        *window->services()
+                        ).save(show);
+            }
             window->refreshNavigationPreferences();
         }
         );
