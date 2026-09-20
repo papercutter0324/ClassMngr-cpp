@@ -17,6 +17,7 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
+#include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
@@ -877,11 +878,6 @@ void ClassesPage::hideEvent(QHideEvent* event)
 {
     BasePage::hideEvent(event);
 
-    auto* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-
     if (
         m_services
         && ClassMngr::Next::Platform::
@@ -894,8 +890,11 @@ void ClassesPage::hideEvent(QHideEvent* event)
     }
 
     if (
-        ClassNavigationPreferences::classSelectionResetPolicy(settingsService)
-        == ClassNavigationPreferences::SessionResetPolicy::OnPageLeave
+        m_services
+        && ClassMngr::Next::Platform::
+            ApplicationServicesClassSelectionResetPolicyPort(*m_services).load()
+            == ClassMngr::Next::Application::
+                ClassSelectionResetPolicy::OnPageLeave
         )
     {
         discardClassSelectionState();

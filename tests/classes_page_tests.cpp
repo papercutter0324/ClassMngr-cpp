@@ -8,8 +8,10 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "domain/models/speaking_evaluation.h"
 #include "next/application/class_day_filter_reset_policy.h"
+#include "next/application/class_selection_reset_policy.h"
 #include "next/application/evaluation_default_policy_preferences.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
+#include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
@@ -129,6 +131,8 @@ private slots:
     void evaluationDefaultPolicyDefaultsToAllAndPersists();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void dayFiltersResetOnPageLeaveAfterHideAndShow();
+    void classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow();
+    void classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow();
     void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
     void allGradeTabShowsClassesAcrossGrades();
@@ -404,6 +408,118 @@ void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
     ClassMngr::Next::Platform::
         ApplicationServicesClassDayFilterResetPolicyPort policyPort(services);
     policyPort.save(
+        ClassMngr::Next::Application::
+            ClassDayFilterResetPolicy::OnPageLeave
+        );
+
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42));
+    page.show();
+    QApplication::processEvents();
+
+    auto* tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    tuesday->click();
+    QApplication::processEvents();
+    QVERIFY(tuesday->isChecked());
+    QCOMPARE(page.currentClassId(), 42);
+
+    page.hide();
+    QApplication::processEvents();
+    QCOMPARE(page.currentClassId(), 42);
+
+    page.show();
+    QApplication::processEvents();
+    QVERIFY(page.openClass(42));
+    QApplication::processEvents();
+
+    tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(!tuesday->isChecked());
+    QCOMPARE(page.currentClassId(), 42);
+}
+
+void ClassesPageTests::
+classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow()
+{
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassSelectionResetPolicyPort classSelectionPolicy(
+            services
+            );
+    classSelectionPolicy.save(
+        ClassMngr::Next::Application::
+            ClassSelectionResetPolicy::OnPageLeave
+        );
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
+            services
+            );
+    dayFilterPolicy.save(
+        ClassMngr::Next::Application::
+            ClassDayFilterResetPolicy::OnApplicationClose
+        );
+
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42));
+    page.show();
+    QApplication::processEvents();
+
+    auto* tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    tuesday->click();
+    QApplication::processEvents();
+    QVERIFY(tuesday->isChecked());
+    QCOMPARE(page.currentClassId(), 42);
+
+    page.hide();
+    QApplication::processEvents();
+    QCOMPARE(page.currentClassId(), -1);
+
+    page.show();
+    QApplication::processEvents();
+    QVERIFY(page.openClass(42));
+    QApplication::processEvents();
+
+    tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(tuesday->isChecked());
+    QCOMPARE(page.currentClassId(), 42);
+}
+
+void ClassesPageTests::
+classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow()
+{
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassSelectionResetPolicyPort classSelectionPolicy(
+            services
+            );
+    classSelectionPolicy.save(
+        ClassMngr::Next::Application::
+            ClassSelectionResetPolicy::OnApplicationClose
+        );
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
+            services
+            );
+    dayFilterPolicy.save(
         ClassMngr::Next::Application::
             ClassDayFilterResetPolicy::OnPageLeave
         );

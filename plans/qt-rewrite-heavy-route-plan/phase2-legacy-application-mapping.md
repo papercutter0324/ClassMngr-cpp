@@ -1044,3 +1044,31 @@ transient LNK1163 resolved by retry, existing linker warnings, unavailable
 
 The typed class day-filter reset-policy seam is closed. Phase 2 remains open;
 the next slice is not yet selected.
+
+## Verified typed class-selection reset-policy handoff
+
+Against baseline commit `ebc6a3f9`, added the Qt-free
+`ClassSelectionResetPolicy`/`ClassSelectionResetPolicyPort` contract and its
+platform adapter for the exact
+`classes_navigation_class_selection_reset_policy` key. It maps
+`OnApplicationClose` and `OnPageLeave`, trims and case-normalizes stored values,
+preserves round-trip persistence, and falls back to `OnApplicationClose` for
+missing, invalid, or unavailable settings.
+
+The class-selection menu radio persistence is typed independently from the
+completed day-filter policy. On `ClassesPage::hideEvent`, `OnPageLeave` clears
+only selected/current-class state; day-filter and visibility policies remain
+independent, and neither `menu_builder.cpp` nor `classes_page.cpp` directly
+calls the legacy class-selection policy functions.
+
+Verification passed configure/ownership with 758 sources; focused tests 10/10
+(new adapter, ClassesPage, day-filter, launch, and navigation/analytics/
+evaluation/startup visual checks); the exact nine-target regression 9/9;
+resources 6 RCC packs/7 runtime IDs/7 runtime references; and dependency,
+Qt-free, call-site, static, and diff checks. The exact dirty scope was eight
+files. An unrelated full-solution build-directory file-lock failure occurred
+after modified targets compiled; it was nonblocking, as were existing linker
+warnings. `clang-format`/`clang-tidy` remained unavailable.
+
+The typed class-selection reset-policy seam is closed. Phase 2 remains open;
+the next slice is not yet selected.

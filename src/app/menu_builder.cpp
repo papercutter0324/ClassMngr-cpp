@@ -8,6 +8,7 @@
 #include "features/classes/class_navigation_preferences.h"
 #include "mainwindow.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
+#include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
@@ -556,11 +557,14 @@ void addNavigationPreferencesTab(
                     : false;
             }
 
-            return ClassNavigationPreferences::classSelectionResetPolicy(
-                window && window->services()
-                    ? window->services()->settingsService()
-                    : nullptr
-                ) == ClassNavigationPreferences::SessionResetPolicy::OnPageLeave;
+            return window && window->services()
+                ? ClassMngr::Next::Platform::
+                    ApplicationServicesClassSelectionResetPolicyPort(
+                        *window->services()
+                        ).load()
+                    == ClassMngr::Next::Application::
+                        ClassSelectionResetPolicy::OnPageLeave
+                : false;
         };
     const auto addResetPolicyControls =
         [navigationGroup, navigationLayout, window, resetOnPageLeave](
@@ -602,11 +606,6 @@ void addNavigationPreferencesTab(
                     return;
                 }
 
-                auto* settingsService =
-                    window && window->services()
-                        ? window->services()->settingsService()
-                        : nullptr;
-
                 if (dayFilters)
                 {
                     if (window && window->services())
@@ -626,14 +625,20 @@ void addNavigationPreferencesTab(
                 }
                 else
                 {
-                    const auto selectedPolicy =
-                        onClose->isChecked()
-                            ? ClassNavigationPreferences::SessionResetPolicy::OnApplicationClose
-                            : ClassNavigationPreferences::SessionResetPolicy::OnPageLeave;
-                    ClassNavigationPreferences::saveClassSelectionResetPolicy(
-                        settingsService,
-                        selectedPolicy
-                        );
+                    if (window && window->services())
+                    {
+                        ClassMngr::Next::Platform::
+                            ApplicationServicesClassSelectionResetPolicyPort port(
+                                *window->services()
+                                );
+                        port.save(
+                            onClose->isChecked()
+                                ? ClassMngr::Next::Application::
+                                    ClassSelectionResetPolicy::OnApplicationClose
+                                : ClassMngr::Next::Application::
+                                    ClassSelectionResetPolicy::OnPageLeave
+                            );
+                    }
                 }
             };
             QObject::connect(onClose, &QRadioButton::toggled, group, savePolicy);
