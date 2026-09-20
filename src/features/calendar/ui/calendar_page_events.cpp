@@ -664,12 +664,14 @@ void CalendarPage::ensureNextTenEvents()
 
     const QDate today =
         QDate::currentDate();
-    const QList<CalendarEvent> visibleEvents =
+    const std::vector<
+        ClassMngr::Next::Application::CalendarEventSummary
+        > visibleEvents =
         filterUpcomingEvents(
-            m_calendarCache->eventsInRange(
+            m_calendarCache->eventProjectionInRange(
                 today,
                 m_nextTenSearchEnd
-                ),
+                ).events(),
             options
             );
 
