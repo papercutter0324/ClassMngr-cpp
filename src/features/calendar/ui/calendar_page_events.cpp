@@ -8,6 +8,7 @@
 #include "core/application_services.h"
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
+#include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/roles.h"
@@ -886,10 +887,23 @@ void CalendarPage::openCalendarDialog(
         Status deleted;
         if (thisAndFollowing)
         {
-            deleted = calendarService->deleteRepeatSeriesFromDate(
-                event.repeatSeriesId,
-                event.startDate
-                );
+            const ClassMngr::Next::Application::
+                CalendarEventSeriesDeleteRequest request{
+                    event.repeatSeriesId.toUtf8().toStdString(),
+                    event.startDate.toString(Qt::ISODate).toStdString()
+                };
+            ClassMngr::Next::Platform::
+                ApplicationServicesCalendarEventSeriesDeletePort deletePort(
+                    *m_services
+                    );
+            const auto typedDeleted =
+                deletePort.deleteRepeatSeriesFromDate(request);
+            if (!typedDeleted)
+            {
+                deleted = std::unexpected(
+                    projectionText(typedDeleted.error().message)
+                    );
+            }
         }
         else
         {

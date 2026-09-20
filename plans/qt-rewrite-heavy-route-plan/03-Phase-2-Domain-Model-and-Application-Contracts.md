@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, and the typed non-repeat single-event delete seam are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` now has typed next-ten retrieval, typed by-ID activation reads, and a typed non-repeat single-event delete call, converting to legacy `CalendarEvent` only at the existing UI/dialog boundary. Save, repeat-series deletion, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, and the typed non-repeat single-event and repeat-series suffix-delete seams are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` now has typed next-ten retrieval, typed by-ID activation reads, and typed non-repeat and repeat-series suffix-delete calls, converting to legacy `CalendarEvent` only at the existing UI/dialog boundary. Save, repeat-series edit/save, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -1200,6 +1200,39 @@ configure/ownership passed with 716 sources; dependency assertions passed
 passed. The static checker recognized the `CalendarEventDeleteResult` alias;
 no source issue was found.
 
-The non-repeat single-event delete seam is closed. Save, repeat/delete-series
-mutations, dialog ownership, generic settings, and other migrations remain
-future work; Phase 2 remains open.
+The non-repeat single-event delete seam is closed; the repeat-series
+suffix-delete boundary is recorded below. Save, repeat-series edit/save,
+dialog ownership, generic settings, and other migrations remain future work;
+Phase 2 remains open.
+
+#### Progress update - 2026-09-20 (typed repeat-series suffix-delete boundary)
+
+Against baseline commit `d4c186be`, added
+`src/next/application/calendar_event_series_delete_port.h` with a Qt-free
+bounded request carrying `repeatSeriesId` and an ISO start date plus
+`Result<void>`, and
+`src/next/platform/application_services_calendar_event_series_delete_port.h`
+over `CalendarService::deleteRepeatSeriesFromDate`. The platform header is
+registered in `cmake/next.cmake`; the existing platform-port test target is
+reused.
+
+Only the `thisAndFollowing` branch in `calendar_page_events.cpp` changed.
+Exact series/date semantics remain intact; successful deletion invalidates and
+refreshes, while failures preserve the existing state and warnings. Save,
+single-event delete, repeat-edit/save, dialog, schedule, and all other branches
+remain unchanged. Tests cover valid suffix deletion, blank or overlong IDs,
+invalid ISO dates, unavailable service, and injected legacy failure; the valid
+fixture forwards the exact series ID and `2026-12-08` and preserves the
+pre-cutoff event.
+
+The elevated Debug build passed; focused port/calendar/page tests passed
+11/11; the exact nine-target regression passed 9/9 in 59.69s (57.05s startup);
+configure/ownership/dependency passed with 718 sources and 9 production
+targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6 RCC packs,
+7 IDs, and 7 references; diff, cached-diff, trailing-whitespace, and static
+checks passed. Verification reported exactly five scoped implementation files
+dirty. Existing Vulkan, Qt-zlib, and MSVC notices are non-blocking.
+
+The typed non-repeat delete and typed repeat-series suffix-delete seams are
+closed. Save, repeat-series edit/save, dialog ownership, generic settings, and
+other migrations remain future work; Phase 2 remains open.
