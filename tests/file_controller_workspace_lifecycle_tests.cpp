@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QMenu>
 #include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
@@ -94,6 +95,12 @@ private slots:
     void cleanup();
     void nullServicesAreSafe();
     void normalCreateUsesCoordinatorAndUpdatesRecent();
+    void recentFilesDeduplicateRawAndNormalizedPaths();
+    void recentFilesKeepNewestFirstAndCapAtTen();
+    void pruningRemovesMissingPathAndClearsLastFile();
+    void clearRecentFilesClearsListAndLastFile();
+    void recentFilesPreserveUnicodePaths();
+    void startupUsesListFirstAndLastFileFallback();
     void normalCreateReplacesExistingTarget();
     void createDoesNotPrepareAfterCloseFailure();
     void initialSetupBackupIsRemovedOnFinish();
@@ -203,6 +210,200 @@ void FileControllerWorkspaceLifecycleTests::normalCreateUsesCoordinatorAndUpdate
         fileDialogs.saveFileRequests.constFirst().defaultSuffix,
         QStringLiteral("tps")
         );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+recentFilesDeduplicateRawAndNormalizedPaths()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString rawPath = workspaceRoot.filePath(
+        QStringLiteral("deduplicated-workspace")
+        );
+    const QString normalizedPath = QFileInfo(
+        rawPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+    const QString otherPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("other-workspace.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(normalizedPath));
+    seedServices.closeDatabase();
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.setRecentFiles({rawPath, normalizedPath, otherPath});
+    settings.setLastFile(rawPath);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(rawPath);
+
+    QCOMPARE(
+        settings.getRecentFiles(),
+        (QStringList{normalizedPath, otherPath})
+        );
+    QCOMPARE(settings.getLastFile(), normalizedPath);
+}
+
+void FileControllerWorkspaceLifecycleTests::
+recentFilesKeepNewestFirstAndCapAtTen()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    ApplicationServices seedServices;
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    QStringList expected;
+    for (int index = 0; index < 12; ++index)
+    {
+        const QString rawPath = workspaceRoot.filePath(
+            QStringLiteral("workspace-%1").arg(index)
+            );
+        const QString normalizedPath = QFileInfo(
+            rawPath + QStringLiteral(".tps")
+            ).absoluteFilePath();
+        QVERIFY(seedServices.openDatabase(normalizedPath));
+        seedServices.closeDatabase();
+        controller.loadDatabaseOnStartup(rawPath);
+
+        expected.prepend(normalizedPath);
+        while (expected.size() > 10)
+        {
+            expected.removeLast();
+        }
+    }
+
+    QCOMPARE(SettingsManager::instance().getRecentFiles(), expected);
+    QCOMPARE(
+        SettingsManager::instance().getLastFile(),
+        expected.constFirst()
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+pruningRemovesMissingPathAndClearsLastFile()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString rawPath = workspaceRoot.filePath(
+        QStringLiteral("missing-workspace")
+        );
+    const QString normalizedPath = QFileInfo(
+        rawPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+    const QString otherPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("retained-workspace.tps"))
+        ).absoluteFilePath();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.setRecentFiles({rawPath, normalizedPath, otherPath});
+    settings.setLastFile(rawPath);
+
+    FileController controller(nullptr, nullptr);
+    controller.loadDatabaseOnStartup(rawPath);
+
+    QCOMPARE(settings.getRecentFiles(), QStringList{otherPath});
+    QVERIFY(settings.getLastFile().isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+clearRecentFilesClearsListAndLastFile()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString directory = QStringLiteral("/keep-this-directory");
+    settings.setLastDatabaseDirectory(directory);
+    settings.setRecentFiles({QStringLiteral("recent.tps")});
+    settings.setLastFile(QStringLiteral("recent.tps"));
+
+    FileController controller(nullptr, nullptr);
+    ActionRegistry actions;
+    QMenu recentFilesMenu;
+    actions.recentFilesMenu = &recentFilesMenu;
+    connectFileActions(controller, actions);
+    controller.populateRecentMenu();
+    QVERIFY(!actions.recentFilesMenu->actions().isEmpty());
+    actions.recentFilesMenu->actions().constLast()->trigger();
+
+    QVERIFY(settings.getRecentFiles().isEmpty());
+    QVERIFY(settings.getLastFile().isEmpty());
+    QCOMPARE(settings.getLastDatabaseDirectory(), directory);
+}
+
+void FileControllerWorkspaceLifecycleTests::recentFilesPreserveUnicodePaths()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString rawPath = workspaceRoot.filePath(
+        QString::fromUtf8(
+            "\xED\x95\x99\xEA\xB5\x90-\xF0\x9F\x93\x9A"
+            )
+        );
+    const QString normalizedPath = QFileInfo(
+        rawPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(normalizedPath));
+    seedServices.closeDatabase();
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(rawPath);
+
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedPath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedPath);
+}
+
+void FileControllerWorkspaceLifecycleTests::
+startupUsesListFirstAndLastFileFallback()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString firstPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("list-first.tps"))
+        ).absoluteFilePath();
+    const QString fallbackPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("last-file-fallback.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(firstPath));
+    seedServices.closeDatabase();
+    QVERIFY(seedServices.openDatabase(fallbackPath));
+    seedServices.closeDatabase();
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.setRecentFiles({firstPath});
+    settings.setLastFile(fallbackPath);
+
+    {
+        ApplicationServices services;
+        FileController controller(&services, nullptr);
+        controller.loadMostRecentDatabase();
+        QVERIFY(services.hasOpenDatabase());
+        QCOMPARE(services.currentDatabasePath(), firstPath);
+    }
+
+    settings.clearRecentFiles();
+    settings.setLastFile(fallbackPath);
+
+    ApplicationServices fallbackServices;
+    FileController fallbackController(&fallbackServices, nullptr);
+    fallbackController.loadMostRecentDatabase();
+    QVERIFY(fallbackServices.hasOpenDatabase());
+    QCOMPARE(fallbackServices.currentDatabasePath(), fallbackPath);
 }
 
 void FileControllerWorkspaceLifecycleTests::normalCreateReplacesExistingTarget()

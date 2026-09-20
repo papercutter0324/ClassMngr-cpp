@@ -1570,6 +1570,34 @@ The typed skipped-update-version seam is closed. Residual settings callers,
 generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
 
+#### Progress update - 2026-09-21 (typed recent-workspace history boundary)
+
+Against baseline commit `3fc8ec4a`, added the Qt-free
+`RecentWorkspaceHistory` value and `RecentWorkspaceHistoryPort`, plus the
+`SettingsManagerRecentWorkspaceHistoryPort` adapter for the recent-file list
+and last-file value only. UTF-8/Unicode and path normalization are preserved;
+raw and normalized paths deduplicate, entries remain newest-first with a
+ten-entry cap, and prune/clear behavior is retained. Missing or unavailable
+storage remains empty, while `mostRecentDatabasePath()` prefers the list and
+falls back to the last file.
+
+`FileController` now routes recent/last-file reads and writes through the
+typed boundary, preserving recent-menu and startup behavior. Last-directory
+persistence and the workspace lifecycle remain unchanged; no direct raw
+recent/last-file access remains in `FileController`.
+
+The executor and independent tester reported focused tests 7/7 including
+launch/startup verification, and the exact nine-target regression 9/9.
+Configure/ownership passed with 746 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Qt-free, direct-call,
+static, and diff checks passed. Normal warnings remained non-blocking;
+`clang-format` and `clang-tidy` were unavailable.
+
+The typed recent-workspace history seam is closed. Residual settings callers,
+generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.
+
 #### Progress update - 2026-09-21 (typed automatic-update preference boundary)
 
 Against baseline commit `374461a0`, added the Qt-free

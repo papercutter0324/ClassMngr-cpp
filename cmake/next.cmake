@@ -55,6 +55,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/import_job_state.h
     src/next/application/report_job_coordinator.h
     src/next/application/report_job_state.h
+    src/next/application/recent_workspace_history.h
     src/next/application/selection_state.h
     src/next/application/schedule_display_preferences.h
     src/next/application/sidebar_display_preferences.h
@@ -86,6 +87,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/settings_manager_automatic_update_preferences_port.h
     src/next/platform/settings_manager_skipped_update_version_port.h
     src/next/platform/settings_manager_powerpoint_data_access_notice_port.h
+    src/next/platform/settings_manager_recent_workspace_history_port.h
     src/next/platform/settings_manager_sidebar_display_preferences_port.h
 )
 

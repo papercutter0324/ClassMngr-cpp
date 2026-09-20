@@ -7,12 +7,15 @@
 #include "core/result.h"
 #include "core/settingsmanager.h"
 #include "data/data_service.h"
+#include "next/application/recent_workspace_history.h"
 #include "next/application/workspace_coordinator.h"
 #include "next/platform/application_services_workspace_port.h"
 #include "next/platform/legacy_workspace_gateway.h"
+#include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QAction>
+#include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -20,10 +23,12 @@
 #include <QStandardPaths>
 #include <QUuid>
 
+#include <algorithm>
+#include <cstddef>
+#include <string>
+
 namespace
 {
-constexpr int MaxRecentFiles = 10;
-
 QString domainErrorMessage(
     const ClassMngr::Next::Domain::OperationError& error
     )
@@ -31,6 +36,27 @@ QString domainErrorMessage(
     return QString::fromUtf8(
         error.message.data(),
         static_cast<qsizetype>(error.message.size())
+        );
+}
+
+std::string utf8Path(
+    const QString& path
+    )
+{
+    const QByteArray encoded = path.toUtf8();
+    return std::string(
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+        );
+}
+
+QString qtPath(
+    const ClassMngr::Next::Application::RecentWorkspacePath& path
+    )
+{
+    return QString::fromUtf8(
+        path.value().data(),
+        static_cast<qsizetype>(path.value().size())
         );
 }
 }
@@ -197,7 +223,7 @@ void FileController::loadMostRecentDatabase()
     }
 
     if (
-        !loadDatabase(normalizedPath, false)
+        !loadDatabase(recentPath, false)
         && (!m_services || !m_services->hasOpenDatabase())
         )
     {
@@ -533,7 +559,7 @@ bool FileController::loadDatabase(
 
     if (!QFileInfo::exists(normalizedPath))
     {
-        pruneRecentFile(normalizedPath);
+        pruneRecentFile(filePath);
         populateRecentMenu();
 
         if (showErrorMessage)
@@ -591,7 +617,7 @@ bool FileController::loadDatabase(
     m_currentFile =
         m_services->currentDatabasePath();
 
-    updateRecentFiles(m_currentFile);
+    updateRecentFiles(filePath);
 
     if (m_window)
     {
@@ -709,7 +735,7 @@ void FileController::openSpecificFile(
 
     if (!QFileInfo::exists(normalizedPath))
     {
-        pruneRecentFile(normalizedPath);
+        pruneRecentFile(filePath);
         populateRecentMenu();
 
         DialogServices::showWarning(
@@ -722,7 +748,7 @@ void FileController::openSpecificFile(
         return;
     }
 
-    loadDatabase(normalizedPath);
+    loadDatabase(filePath);
 }
 
 void FileController::updateRecentFiles(
@@ -732,24 +758,48 @@ void FileController::updateRecentFiles(
     const QString normalizedPath =
         normalizeInputFilePath(filePath);
 
-    QStringList files =
-        SettingsManager::instance()
-            .getRecentFiles();
+    const ClassMngr::Next::Platform::
+        SettingsManagerRecentWorkspaceHistoryPort
+        recentWorkspaceHistoryPort;
+    ClassMngr::Next::Application::RecentWorkspaceHistory history =
+        recentWorkspaceHistoryPort.load();
 
-    files.removeAll(filePath);
-    files.removeAll(normalizedPath);
-    files.prepend(normalizedPath);
+    const ClassMngr::Next::Application::RecentWorkspacePath rawPath(
+        utf8Path(filePath)
+        );
+    const ClassMngr::Next::Application::RecentWorkspacePath normalizedPathValue(
+        utf8Path(normalizedPath)
+        );
 
-    while (files.size() > MaxRecentFiles)
+    history.paths.erase(
+        std::remove_if(
+            history.paths.begin(),
+            history.paths.end(),
+            [&rawPath, &normalizedPathValue](
+                const ClassMngr::Next::Application::RecentWorkspacePath& path
+                )
+            {
+                return path == rawPath || path == normalizedPathValue;
+            }
+            ),
+        history.paths.end()
+        );
+    history.paths.insert(
+        history.paths.begin(),
+        normalizedPathValue
+        );
+
+    while (
+        history.paths.size()
+        > ClassMngr::Next::Application::
+            kRecentWorkspaceHistoryMaximumEntries
+        )
     {
-        files.removeLast();
+        history.paths.pop_back();
     }
 
-    SettingsManager::instance()
-        .setRecentFiles(files);
-
-    SettingsManager::instance()
-        .setLastFile(normalizedPath);
+    history.lastPath = normalizedPathValue;
+    recentWorkspaceHistoryPort.save(history);
 
     rememberDatabaseDirectory(normalizedPath);
 
@@ -771,11 +821,13 @@ void FileController::populateRecentMenu()
 
     menu->clear();
 
-    const QStringList files =
-        SettingsManager::instance()
-            .getRecentFiles();
+    const ClassMngr::Next::Platform::
+        SettingsManagerRecentWorkspaceHistoryPort
+        recentWorkspaceHistoryPort;
+    const ClassMngr::Next::Application::RecentWorkspaceHistory history =
+        recentWorkspaceHistoryPort.load();
 
-    if (files.isEmpty())
+    if (history.paths.empty())
     {
         auto* emptyAction =
             menu->addAction(
@@ -786,10 +838,14 @@ void FileController::populateRecentMenu()
         return;
     }
 
-    for (int index = 0; index < files.size(); ++index)
+    for (
+        qsizetype index = 0;
+        index < static_cast<qsizetype>(history.paths.size());
+        ++index
+        )
     {
         const QString filePath =
-            files.at(index);
+            qtPath(history.paths.at(static_cast<std::size_t>(index)));
 
         const QString nativePath =
             QDir::toNativeSeparators(filePath);
@@ -840,11 +896,10 @@ void FileController::populateRecentMenu()
 
 void FileController::clearRecentFiles()
 {
-    SettingsManager::instance()
-        .clearRecentFiles();
-
-    SettingsManager::instance()
-        .setLastFile(QString());
+    const ClassMngr::Next::Platform::
+        SettingsManagerRecentWorkspaceHistoryPort
+        recentWorkspaceHistoryPort;
+    recentWorkspaceHistoryPort.clear();
 
     populateRecentMenu();
 }
@@ -1173,17 +1228,18 @@ void FileController::enterNoDatabaseState()
 
 QString FileController::mostRecentDatabasePath() const
 {
-    const QStringList recentFiles =
-        SettingsManager::instance()
-            .getRecentFiles();
+    const ClassMngr::Next::Platform::
+        SettingsManagerRecentWorkspaceHistoryPort
+        recentWorkspaceHistoryPort;
+    const ClassMngr::Next::Application::RecentWorkspaceHistory history =
+        recentWorkspaceHistoryPort.load();
 
-    if (!recentFiles.isEmpty())
-    {
-        return recentFiles.first();
-    }
-
-    return SettingsManager::instance()
-        .getLastFile();
+    const std::optional<
+        ClassMngr::Next::Application::RecentWorkspacePath
+        > recentPath = history.mostRecentDatabasePath();
+    return recentPath.has_value()
+        ? qtPath(*recentPath)
+        : QString();
 }
 
 void FileController::pruneRecentFile(
@@ -1193,28 +1249,45 @@ void FileController::pruneRecentFile(
     const QString normalizedPath =
         normalizeInputFilePath(filePath);
 
-    QStringList files =
-        SettingsManager::instance()
-            .getRecentFiles();
+    const ClassMngr::Next::Platform::
+        SettingsManagerRecentWorkspaceHistoryPort
+        recentWorkspaceHistoryPort;
+    ClassMngr::Next::Application::RecentWorkspaceHistory history =
+        recentWorkspaceHistoryPort.load();
 
-    files.removeAll(filePath);
-    files.removeAll(normalizedPath);
+    const ClassMngr::Next::Application::RecentWorkspacePath rawPath(
+        utf8Path(filePath)
+        );
+    const ClassMngr::Next::Application::RecentWorkspacePath normalizedPathValue(
+        utf8Path(normalizedPath)
+        );
 
-    SettingsManager::instance()
-        .setRecentFiles(files);
+    history.paths.erase(
+        std::remove_if(
+            history.paths.begin(),
+            history.paths.end(),
+            [&rawPath, &normalizedPathValue](
+                const ClassMngr::Next::Application::RecentWorkspacePath& path
+                )
+            {
+                return path == rawPath || path == normalizedPathValue;
+            }
+            ),
+        history.paths.end()
+        );
 
     if (
-        SettingsManager::instance()
-            .getLastFile()
-        == filePath
-        || SettingsManager::instance()
-            .getLastFile()
-        == normalizedPath
+        history.lastPath.has_value()
+        && (
+            *history.lastPath == rawPath
+            || *history.lastPath == normalizedPathValue
+            )
         )
     {
-        SettingsManager::instance()
-            .setLastFile(QString());
+        history.lastPath.reset();
     }
+
+    recentWorkspaceHistoryPort.save(history);
 }
 
 QString FileController::databaseDialogDirectory() const
