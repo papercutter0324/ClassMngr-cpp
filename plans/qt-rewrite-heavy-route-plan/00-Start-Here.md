@@ -167,6 +167,11 @@ The default route for every phase is the heavy route:
 - Treat memory, visual parity, file compatibility, and cross-platform behavior as release gates.
 - Keep Qt as the presentation framework while removing unnecessary coupling from the core.
 
+### Sub-agent check-in cadence
+
+Each sub-agent may be checked in with only once every 10 minutes. Batch questions
+and status requests so this cadence is maintained.
+
 The heavy route is not permission to remove features, change user workflows, or redesign the application. The developer-only Memory Usage Monitor and its in-app diagnostics are an explicit scope exception. Otherwise, this is a commitment to replace the underlying ownership and lifecycle model thoroughly enough to meet the memory target.
 
 ### Slice-by-slice reminder
