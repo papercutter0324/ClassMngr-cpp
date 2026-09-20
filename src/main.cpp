@@ -13,6 +13,7 @@
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "core/updater/update_service.h"
+#include "next/platform/settings_manager_font_size_preferences_port.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -6205,13 +6206,9 @@ int main(int argc, char *argv[])
             ? *startupPerformance.visualLanguageOverride
             : LanguageService::savedLanguage();
 
-    const FontSize savedFontSize =
-        fontSizeFromStoredValue(
-            SettingsManager::instance().get(
-                OptionKeys::FontSize,
-                fontSizeOffset(FontSize::Normal)
-                ).toInt()
-            );
+    const auto savedFontSize =
+        ClassMngr::Next::Platform::
+            SettingsManagerFontSizePreferencesPort().read();
 
     const Theme savedTheme =
         startupPerformance.visualCaptureEnabled
@@ -6245,7 +6242,7 @@ int main(int argc, char *argv[])
     // =====================================================
 
     FontManager::setSizeOffset(
-        fontSizeOffset(savedFontSize)
+        static_cast<int>(savedFontSize)
         );
 
     FontManager::applyGlobalFont(

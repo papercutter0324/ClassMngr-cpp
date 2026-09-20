@@ -1896,3 +1896,27 @@ and LF/CRLF warnings remained nonblocking.
 
 The typed AI-comment provider read seam is closed. Phase 2 remains open; the
 next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed font-size startup read bridge)
+
+Against baseline commit `988db2af`, added the Qt-free typed
+`FontSizePreferencesPort` and its read-only SettingsManager adapter for the
+exact canonical key `OptionKeys::FontSize`, `options/fontSize`. Stored values
+map `-2` to `Small`, `0` to `Normal`, `2` to `Large`, and `4` to `ExtraLarge`;
+missing, unknown, and unavailable values map to `Normal`.
+
+`main.cpp` now performs the typed startup read. Existing
+`FontManager::setSizeOffset` offsets and visual-capture precedence remain
+unchanged, as does the `OptionState<FontSize>` menu compatibility
+reader/writer.
+
+Verification passed configure/ownership with 779 sources and a clean Debug
+build. The offscreen focused suite passed 6/6, covering the font adapter,
+FontManager, startup visual behavior, AI options, launch, and resources.
+Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff
+checks passed. The exact dirty scope was six files. The adapter test required a
+configure refresh; expected warnings remained nonblocking.
+
+The typed font-size startup read seam is closed. Phase 2 remains open; the next
+slice is not yet selected.
