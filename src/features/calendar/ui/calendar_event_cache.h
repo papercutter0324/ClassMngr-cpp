@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/calendar_event.h"
+#include "next/application/calendar_event_projection.h"
 
 #include <QDate>
 #include <QFutureWatcher>
@@ -100,7 +101,7 @@ private:
     struct LoadResult
     {
         Request request;
-        QList<CalendarEvent> events;
+        ClassMngr::Next::Application::CalendarEventProjection projection;
         QDate nextEventDate;
         QString error;
     };

@@ -216,6 +216,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
         src/features/calendar/calendar_event_campus_filter.cpp
+        src/features/calendar/calendar_event_projection_query.cpp
         src/features/calendar/ui/calendar_event_cache.cpp
         src/features/calendar/ui/calendar_event_model.cpp
     )

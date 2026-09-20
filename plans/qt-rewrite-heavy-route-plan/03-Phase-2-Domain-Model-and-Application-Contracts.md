@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, and schedule-output direct-theme boundary are implemented. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, and calendar database-query/worker ownership separation are implemented. The calendar worker boundary uses a typed projection query while the existing cache/UI legacy API remains; any future typed UI/cache cutover is separate. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -980,9 +980,10 @@ strict UTF-8/encoding review passed; and `git diff --check` passed with only
 LF-to-CRLF warnings. The focused build passed after an environmental
 FileTracker `E_ACCESSDENIED` retry.
 
-The calendar read-projection boundary is complete, but calendar cache/UI
-cutover remains future because `CalendarEventCache` directly owns the database
-worker. The metadata enrichment and its verification are recorded below.
+The calendar read-projection boundary is complete. Calendar cache/UI cutover
+remains future; the later worker-boundary handoff separates database-query and
+worker ownership while leaving the existing cache/UI legacy API unchanged. The
+metadata enrichment and its verification are recorded below.
 Generic settings and other feature migrations remain open. Phase 2 remains in
 progress and is not complete.
 
@@ -1000,8 +1001,8 @@ whitespace for existing title/date/time and other mapped fields, and returns
 structured failures for blank, over-bounds, or malformed values. Application
 and adapter tests cover bounds, validation, copy/equality/lookups, legacy
 value/repeat-series preservation, malformed persisted input, and title
-whitespace compatibility. CMake registrations remain unchanged; calendar
-cache/UI ownership remains untouched.
+whitespace compatibility. CMake registrations remain unchanged; the typed
+cache/UI cutover remains a separate future slice.
 
 The elevated VS Debug build passed after an environmental FileTracker
 `UnauthorizedAccessException` retry. Focused application, adapter,
@@ -1012,7 +1013,39 @@ packs, 7 runtime IDs, and 7 references; `git diff --check` passed with
 LF/CRLF warnings only; and the static Qt-free/pointer review passed.
 
 Phase 2 remains open. The typed projection now contains the metadata needed
-by a future calendar cache/UI boundary, while `CalendarEventCache` still
-directly owns the database worker and the worker-safe cache
-loader/application boundary remains a separate future slice. Generic settings
+by a future calendar cache/UI boundary, and the later worker-boundary handoff
+separates calendar database-query/worker ownership while the existing cache/UI
+legacy API remains. Any typed UI/cache cutover is separate. Generic settings
 and other migrations remain open.
+
+#### Progress update - 2026-09-20 (calendar cache worker-boundary slice)
+
+Against baseline commit `0ae2f323`, added
+`src/features/calendar/calendar_event_projection_query.h/.cpp` and routed
+`CalendarEventCache` through it. Production and test sources are registered in
+`cmake/production_sources.cmake` and `cmake/tests/data_and_imports.cmake`.
+No `CalendarEventModel`, pages/next contracts, or documentation changed.
+
+The adapter takes copied database path, range, and request values, opens a
+unique SQLite connection inside the worker invocation, closes and removes it,
+and returns typed `Application::CalendarEventProjection` plus next-event date
+and error values. `CalendarEventCache` converts typed values back to legacy
+`CalendarEvent` only at its existing cache boundary. No `ApplicationServices`,
+`CalendarService`, repository, SQLite/QSql object, or legacy pointer crosses
+the worker boundary. Public generation/stale-result rejection, cancellation,
+dedupe, retention, ordering/filtering, repeat-series, all-day/unknown-time,
+and lookup behavior remain preserved.
+
+The elevated VS Debug cache-target build passed after an environmental
+FileTracker `E_ACCESSDENIED` retry. Focused cache/projection/adapter/repository
+tests passed 4/4; the exact nine-target regression passed 9/9 in 58.63s;
+configure/ownership/dependency passed with 712 handwritten sources and one
+explicit owner; resource validation passed 6 RCC packs, 7 runtime IDs, and 7
+references; `git diff --check` passed with LF/CRLF warnings only; and static
+worker-boundary review passed. Failure-path connection cleanup is statically
+verified but not runtime-injected.
+
+Phase 2 remains open. Calendar database-query/worker ownership is now
+separated while the existing cache/UI legacy API remains; any future typed
+UI/cache cutover is separate. Generic settings and other feature migrations
+remain open.

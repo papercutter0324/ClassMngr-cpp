@@ -1,18 +1,21 @@
 #include "calendar_event_cache.h"
 
-#include "data/database/database_schema_manager.h"
-#include "data/repositories/calendar_event_repository.h"
+#include "features/calendar/calendar_event_projection_query.h"
 
-#include <QSqlDatabase>
-#include <QSqlError>
 #include <QSet>
-#include <QUuid>
 #include <QtConcurrentRun>
 
 #include <algorithm>
+#include <optional>
+#include <string>
 
 namespace
 {
+using CalendarEventProjection =
+    ClassMngr::Next::Application::CalendarEventProjection;
+using CalendarEventSummary =
+    ClassMngr::Next::Application::CalendarEventSummary;
+
 bool eventComesBefore(
     const CalendarEvent& left,
     const CalendarEvent& right
@@ -100,6 +103,103 @@ QList<CalendarEventCache::DateRange> normalizedRanges(
     }
 
     return merged;
+}
+
+QString projectionText(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+std::optional<CalendarEvent> legacyEventFromProjection(
+    const CalendarEventSummary& summary
+    )
+{
+    bool validId = false;
+    const int id = projectionText(summary.id.value()).toInt(&validId);
+    const QDate startDate =
+        QDate::fromString(projectionText(summary.startDate), Qt::ISODate);
+    const QDate endDate =
+        QDate::fromString(projectionText(summary.endDate), Qt::ISODate);
+    if (
+        !validId
+        || id <= 0
+        || !startDate.isValid()
+        || !endDate.isValid()
+        || endDate < startDate
+        )
+    {
+        return std::nullopt;
+    }
+
+    CalendarEvent event;
+    event.id = id;
+    event.title = projectionText(summary.title);
+    event.eventType = projectionText(summary.eventType);
+    event.timeStatus = projectionText(summary.timeStatus);
+    event.repeatSeriesId = summary.repeatSeriesId
+        ? projectionText(*summary.repeatSeriesId)
+        : QString();
+    event.allDay = summary.allDay;
+    event.startDate = startDate;
+    event.endDate = endDate;
+
+    if (!summary.allDay && summary.startTime && summary.endTime)
+    {
+        event.startTime = QTime::fromString(
+            projectionText(*summary.startTime),
+            QStringLiteral("HH:mm")
+            );
+        event.endTime = QTime::fromString(
+            projectionText(*summary.endTime),
+            QStringLiteral("HH:mm")
+            );
+        if (!event.startTime.isValid() || !event.endTime.isValid())
+        {
+            return std::nullopt;
+        }
+    }
+
+    return event;
+}
+
+QList<CalendarEvent> legacyEventsFromProjection(
+    const CalendarEventProjection& projection
+    )
+{
+    QList<CalendarEvent> events;
+    events.reserve(
+        static_cast<qsizetype>(projection.eventCount())
+        );
+
+    for (const CalendarEventSummary& summary : projection.events())
+    {
+        const auto event = legacyEventFromProjection(summary);
+        if (event)
+        {
+            events.append(*event);
+        }
+    }
+
+    return events;
+}
+
+QString projectionErrorText(
+    const ClassMngr::Next::Domain::OperationError& error
+    )
+{
+    const QString message =
+        QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
+            );
+    return message.isEmpty()
+        ? QStringLiteral("Calendar event query failed.")
+        : message;
 }
 }
 
@@ -386,73 +486,40 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
     LoadResult result;
     result.request = request;
 
-    const QString connectionName =
-        QStringLiteral("calendar-event-cache-%1").arg(
-            QUuid::createUuid().toString(QUuid::WithoutBraces)
-            );
-
+    if (request.kind == RequestKind::Range)
     {
-        QSqlDatabase database =
-            QSqlDatabase::addDatabase(
-                QStringLiteral("QSQLITE"),
-                connectionName
+        const auto projection =
+            CalendarEventProjectionQuery::loadRange(
+                databasePath,
+                request.startDate,
+                request.endDate
                 );
-        database.setDatabaseName(databasePath);
-
-        if (!database.open())
+        if (projection)
         {
-            result.error = database.lastError().text();
-        }
-        else if (const Status foreignKeyStatus =
-                     DatabaseSchemaManager::enableForeignKeyEnforcement(
-                         database
-                         );
-                 !foreignKeyStatus)
-        {
-            result.error = foreignKeyStatus.error();
-            database.close();
+            result.projection = projection.value();
         }
         else
         {
-            CalendarEventRepository repository(database);
-
-            if (request.kind == RequestKind::Range)
-            {
-                const Result<QList<CalendarEvent>> events =
-                    repository.loadCalendarEventsInRange(
-                        request.startDate,
-                        request.endDate
-                        );
-                if (events)
-                {
-                    result.events = *events;
-                }
-                else
-                {
-                    result.error = events.error();
-                }
-            }
-            else
-            {
-                const Result<QDate> nextEventDate =
-                    repository.findNextCalendarEventStartDate(
-                        request.startDate
-                        );
-                if (nextEventDate)
-                {
-                    result.nextEventDate = *nextEventDate;
-                }
-                else
-                {
-                    result.error = nextEventDate.error();
-                }
-            }
-
-            database.close();
+            result.error = projectionErrorText(projection.error());
+        }
+    }
+    else
+    {
+        const auto nextEventDate =
+            CalendarEventProjectionQuery::findNextEventDate(
+                databasePath,
+                request.startDate
+                );
+        if (nextEventDate)
+        {
+            result.nextEventDate = nextEventDate.value();
+        }
+        else
+        {
+            result.error = projectionErrorText(nextEventDate.error());
         }
     }
 
-    QSqlDatabase::removeDatabase(connectionName);
     return result;
 }
 
@@ -544,7 +611,7 @@ void CalendarEventCache::finishActiveRequest()
             if (!loadedRanges.isEmpty())
             {
                 insertEvents(
-                    result.events,
+                    legacyEventsFromProjection(result.projection),
                     loadedRanges
                     );
 

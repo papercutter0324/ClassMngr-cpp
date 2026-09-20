@@ -278,6 +278,8 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/calendar/calendar_event_campus_filter.h"
     "src/features/calendar/calendar_event_import_service.cpp"
     "src/features/calendar/calendar_event_import_service.h"
+    "src/features/calendar/calendar_event_projection_query.cpp"
+    "src/features/calendar/calendar_event_projection_query.h"
     "src/features/calendar/calendar_settings_keys.h"
     "src/features/calendar/calendar_workbook_reader.cpp"
     "src/features/calendar/calendar_workbook_reader.h"
