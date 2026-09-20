@@ -140,7 +140,38 @@ public:
                     source.endDate.toString(Qt::ISODate),
                     Application::kCalendarEventSummaryMaxDateLength
                     );
-                if (!eventId || !title || !startDateText || !endDateText)
+                const auto eventType = boundedUtf8(
+                    source.eventType,
+                    Application::kCalendarEventSummaryMaxEventTypeLength
+                    );
+                const auto timeStatus = boundedUtf8(
+                    source.timeStatus,
+                    Application::kCalendarEventSummaryMaxTimeStatusLength
+                    );
+                const QString normalizedRepeatSeriesId =
+                    source.repeatSeriesId.trimmed();
+                std::optional<std::string> repeatSeriesId;
+                if (!normalizedRepeatSeriesId.isEmpty())
+                {
+                    repeatSeriesId = boundedUtf8(
+                        normalizedRepeatSeriesId,
+                        Application::kCalendarEventSummaryMaxRepeatSeriesIdLength
+                        );
+                    if (!repeatSeriesId)
+                    {
+                        return failure(
+                            Domain::ErrorCode::InvalidInput,
+                            "A calendar event has an invalid or unbounded repeat-series identifier."
+                            );
+                    }
+                }
+
+                if (!eventId
+                    || !title
+                    || !startDateText
+                    || !endDateText
+                    || !eventType
+                    || !timeStatus)
                 {
                     return failure(
                         Domain::ErrorCode::InvalidInput,
@@ -185,7 +216,10 @@ public:
                     std::string{},
                     std::string{},
                     static_cast<std::int32_t>(index),
-                    source.allDay
+                    source.allDay,
+                    *eventType,
+                    *timeStatus,
+                    std::move(repeatSeriesId)
                 });
             }
 

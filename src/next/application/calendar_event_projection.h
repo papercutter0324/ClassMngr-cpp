@@ -24,6 +24,10 @@ inline constexpr std::size_t kCalendarEventSummaryMaxIdentifierLength = 256;
 inline constexpr std::size_t kCalendarEventSummaryMaxTitleLength = 256;
 inline constexpr std::size_t kCalendarEventSummaryMaxDateLength = 32;
 inline constexpr std::size_t kCalendarEventSummaryMaxTimeLength = 32;
+inline constexpr std::size_t kCalendarEventSummaryMaxEventTypeLength = 64;
+inline constexpr std::size_t kCalendarEventSummaryMaxTimeStatusLength = 64;
+inline constexpr std::size_t kCalendarEventSummaryMaxRepeatSeriesIdLength =
+    128;
 inline constexpr std::size_t kCalendarEventSummaryMaxLocationLength = 256;
 inline constexpr std::size_t kCalendarEventSummaryMaxNotesLength = 2'048;
 
@@ -45,6 +49,12 @@ inline constexpr std::size_t kCalendarEventMaxDateLength =
     kCalendarEventSummaryMaxDateLength;
 inline constexpr std::size_t kCalendarEventMaxTimeLength =
     kCalendarEventSummaryMaxTimeLength;
+inline constexpr std::size_t kCalendarEventMaxEventTypeLength =
+    kCalendarEventSummaryMaxEventTypeLength;
+inline constexpr std::size_t kCalendarEventMaxTimeStatusLength =
+    kCalendarEventSummaryMaxTimeStatusLength;
+inline constexpr std::size_t kCalendarEventMaxRepeatSeriesIdLength =
+    kCalendarEventSummaryMaxRepeatSeriesIdLength;
 inline constexpr std::size_t kCalendarEventMaxLocationLength =
     kCalendarEventSummaryMaxLocationLength;
 inline constexpr std::size_t kCalendarEventMaxNotesLength =
@@ -73,6 +83,9 @@ struct CalendarEventSummary final
     std::string notes;
     std::int32_t order = 0;
     bool allDay = false;
+    std::string eventType = "Other";
+    std::string timeStatus = "Timed";
+    std::optional<std::string> repeatSeriesId;
 
     [[nodiscard]] bool hasClass() const noexcept
     {
@@ -92,6 +105,16 @@ struct CalendarEventSummary final
     [[nodiscard]] bool isAllDay() const noexcept
     {
         return allDay;
+    }
+
+    [[nodiscard]] bool hasRepeatSeries() const noexcept
+    {
+        return repeatSeriesId.has_value();
+    }
+
+    [[nodiscard]] bool hasRepeatSeriesId() const noexcept
+    {
+        return hasRepeatSeries();
     }
 
     friend bool operator==(
@@ -221,6 +244,43 @@ template <typename TypedId>
         return Domain::Result<void>::failure(
             invalidInput(
                 "Optional calendar event campus identifier must be non-blank and bounded."
+                )
+            );
+    }
+
+    if (!isRequiredText(
+            event.eventType,
+            kCalendarEventSummaryMaxEventTypeLength
+            ))
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Calendar event type must be non-blank and bounded."
+                )
+            );
+    }
+
+    if (!isRequiredText(
+            event.timeStatus,
+            kCalendarEventSummaryMaxTimeStatusLength
+            ))
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Calendar event time status must be non-blank and bounded."
+                )
+            );
+    }
+
+    if (event.repeatSeriesId.has_value()
+        && !isRequiredText(
+            *event.repeatSeriesId,
+            kCalendarEventSummaryMaxRepeatSeriesIdLength
+            ))
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Calendar event repeat-series identifier must be absent or non-blank and bounded."
                 )
             );
     }

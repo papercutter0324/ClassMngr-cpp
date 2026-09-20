@@ -5,7 +5,8 @@ v2 application contracts. The typed Sidebar/MainWindow catalog cutover follows
 baseline commit `662e5f2`; the earlier mapping, resolver, and document-folder
 handoffs are retained below. The runtime worker bridge, limited document route
 slice, bounded resource/platform document resolver, typed catalog ownership,
-calendar read-projection adapter, theme and language preference bridges are implemented. A partial content-session
+calendar read-projection adapter and its metadata enrichment, theme and
+language preference bridges are implemented. A partial content-session
 integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
 remain open, including generic settings persistence.
@@ -132,7 +133,7 @@ later Phase 2 slice.
 | `teacherService()` | Navigation, setup/import, roster, and teacher-facing UI; representative call sites are [`navigation_controller.cpp`](../../src/app/controllers/navigation_controller.cpp#L118) and [`initial_setup_wizard.cpp`](../../src/features/setup/ui/initial_setup_wizard.cpp#L154). | Future teacher use cases/projections; no v2 wrapper. | Legacy feature service; future teacher slice. |
 | `classService()` | Navigation, classes, roster, schedule, speaking evaluation, and setup use class CRUD/import data; representative calls are [`classes_page.cpp`](../../src/features/classes/ui/classes_page.cpp#L179) and [`navigation_controller.cpp`](../../src/app/controllers/navigation_controller.cpp#L234). | Future class use cases/projections; no v2 wrapper. | Legacy feature service; future class slice. |
 | `scheduleService()` | Menu, schedule UI, testing-class UI, and roster output consume schedule/testing operations; representative calls are [`menu_builder.cpp`](../../src/app/menu_builder.cpp#L195) and [`schedule_widget.cpp`](../../src/features/schedule/ui/schedule_widget.cpp#L307). | Future schedule/testing contracts; no v2 wrapper. | Legacy feature service; future schedule slice. |
-| `calendarService()` | Menu, calendar pages, and sub-prep consume calendar events; representative calls are [`menu_builder.cpp`](../../src/app/menu_builder.cpp#L391) and [`calendar_page_events.cpp`](../../src/features/calendar/ui/calendar_page_events.cpp#L40). | `Platform::ApplicationServicesCalendarEventPort` maps `CalendarService::eventsInRange` into an owned typed `Application::CalendarEventProjection`, with bounded copied metadata, typed IDs, explicit all-day/unknown-time policy, and validation of range, service, technical, ID/metadata, partial-time, and capacity failures. The read-projection boundary is complete; cache/UI cutover remains future because the projection omits `eventType`, `timeStatus`, and `repeatSeriesId`, while `CalendarEventCache` directly owns the database worker. | Platform calendar read adapter; future calendar cache/UI migration. |
+| `calendarService()` | Menu, calendar pages, and sub-prep consume calendar events; representative calls are [`menu_builder.cpp`](../../src/app/menu_builder.cpp#L391) and [`calendar_page_events.cpp`](../../src/features/calendar/ui/calendar_page_events.cpp#L40). | `Platform::ApplicationServicesCalendarEventPort` maps `CalendarService::eventsInRange` into an owned typed `Application::CalendarEventProjection`, with bounded copied metadata including `eventType`, `timeStatus`, and optional `repeatSeriesId`, typed IDs, explicit all-day/unknown-time policy, and validation of range, service, technical, ID/metadata, partial-time, and capacity failures. The port trims only `repeatSeriesId`, preserves existing mapped-field whitespace, and returns structured failures for blank, over-bounds, or malformed fields. The projection now contains the metadata needed by a future cache/UI boundary; cache/UI ownership remains future because `CalendarEventCache` directly owns the database worker and the worker-safe cache loader/application boundary is a separate future slice. | Platform calendar read adapter; future calendar cache/UI migration. |
 | `rosterService()` | Roster editors/printing, class pages, sub-prep, and speaking evaluation use roster operations; representative calls are [`roster_editor_widget.cpp`](../../src/features/roster/ui/roster_editor_widget.cpp#L64) and [`roster_print_dialog.cpp`](../../src/features/roster/ui/roster_print_dialog.cpp#L445). | Future roster use cases/projections; no v2 wrapper. | Legacy feature service; future roster slice. |
 | `speakingEvaluationService()` | Speaking-evaluation pages, analytics, and roster score import use it; representative calls are [`speaking_eval_page.cpp`](../../src/features/speaking_eval/ui/speaking_eval_page.cpp#L198) and [`class_analytics_page.cpp`](../../src/features/classes/ui/class_analytics_page.cpp#L526). | Future evaluation/analytics contracts; no v2 wrapper. | Legacy feature service; future evaluation slice. |
 | `themeService()` | [`MainWindow`](../../src/app/mainwindow.cpp#L480) is passed explicitly to the theme controller; `ScheduleWidget` resolves the current theme at the caller boundary. | `Platform::ThemePreferencePort` maps typed `Application::ThemePreference` (`SystemDefault`, `Light`, `Dark`) to the legacy `ThemeService`. `ThemeController` owns typed `UserPreferencesState`, synchronizes the persisted `ActionRegistry` theme without reapplying at connection, and applies valid changes through the port while preserving invalid-input/state atomicity, persistence, icon refresh, and live palette behavior. `ScheduleOutputController` receives resolved `Theme` explicitly and no longer includes or accesses `ThemeService`/`currentTheme`; the direct-theme accessor is closed. | Platform theme adapter plus UI controller and schedule-output boundary; generic settings/application-services seams remain open. |
@@ -344,7 +345,38 @@ LF-to-CRLF warnings. The focused build passed after an environmental
 FileTracker `E_ACCESSDENIED` retry.
 
 The calendar read-projection boundary is complete. Calendar cache/UI cutover
-is future because `CalendarEventProjection` currently omits `eventType`,
-`timeStatus`, and `repeatSeriesId`, and `CalendarEventCache` directly owns the
-database worker. Generic settings and other feature migrations remain open;
-Phase 2 remains in progress and is not complete.
+is future because `CalendarEventCache` directly owns the database worker. The
+metadata enrichment handoff is recorded below. Generic settings and other
+feature migrations remain open; Phase 2 remains in progress and is not
+complete.
+
+## Verified calendar-event projection enrichment handoff
+
+Against baseline commit `695d1065`, `CalendarEventSummary` now owns bounded
+`eventType` and `timeStatus` strings plus an optional bounded `repeatSeriesId`.
+The projection remains Qt-free, copyable, bounded, typed-ID based, ordered,
+and pointer-free. Existing all-day/unknown-time, order, ID, capacity, and
+legacy mapped-field byte semantics remain intact.
+
+`ApplicationServicesCalendarEventPort` maps and validates those fields,
+trims only `repeatSeriesId` for normalization, preserves surrounding
+whitespace for existing title/date/time/etc. fields, and returns structured
+failures for blank, over-bounds, or malformed fields. Tests extend application
+and adapter coverage for bounds, validation, copy/equality/lookups, legacy
+value/repeat-series preservation, malformed persisted input, and title
+whitespace compatibility. CMake registrations remain unchanged; calendar
+cache/UI ownership remains untouched.
+
+The elevated VS Debug build passed after an environmental FileTracker
+`UnauthorizedAccessException` retry. Focused application, adapter,
+calendar-cache, and workspace-control tests all passed 1/1; the exact
+nine-target regression passed 9/9; configure/ownership/dependency passed with
+710 handwritten sources and one explicit owner; resource validation passed 6
+RCC packs, 7 runtime IDs, and 7 references; `git diff --check` passed with
+LF/CRLF warnings only; and static Qt-free/pointer review passed.
+
+Phase 2 remains open. The typed projection now contains the metadata needed
+by a future calendar cache/UI boundary, while `CalendarEventCache` still
+directly owns the database worker and the worker-safe cache loader/application
+boundary remains a separate future slice. Generic settings and other
+migrations remain open.

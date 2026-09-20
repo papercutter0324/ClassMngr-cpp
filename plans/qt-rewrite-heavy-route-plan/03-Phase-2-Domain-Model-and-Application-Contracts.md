@@ -523,10 +523,11 @@ copy/equality, metadata retention, and the ownership boundary.
 `ClassMngrNext::Application` now owns a Qt-free, copyable
 `CalendarEventProjection` of bounded `CalendarEventSummary` event-list
 metadata. The contract retains typed calendar-event IDs plus optional typed
-class/campus references, bounded title/date/time/location/notes text,
-nonnegative ordering, and an explicit all-day policy: all-day events omit
-times, while timed events may omit both unknown times but not a partial range.
-Dates and times remain opaque adapter-neutral text.
+class/campus references, bounded title/date/time/location/notes/`eventType`/
+`timeStatus` text, an optional bounded `repeatSeriesId`, nonnegative
+ordering, and an explicit all-day policy: all-day events omit times, while
+timed events may omit both unknown times but not a partial range. Dates and
+times remain opaque adapter-neutral text.
 
 Deterministic create/validate rejects blank or oversized identifiers and
 required fields, invalid optional references or time combinations, duplicate
@@ -980,7 +981,38 @@ LF-to-CRLF warnings. The focused build passed after an environmental
 FileTracker `E_ACCESSDENIED` retry.
 
 The calendar read-projection boundary is complete, but calendar cache/UI
-cutover remains future: `CalendarEventProjection` currently omits
-`eventType`, `timeStatus`, and `repeatSeriesId`, and `CalendarEventCache`
-directly owns the database worker. Generic settings and other feature
-migrations remain open. Phase 2 remains in progress and is not complete.
+cutover remains future because `CalendarEventCache` directly owns the database
+worker. The metadata enrichment and its verification are recorded below.
+Generic settings and other feature migrations remain open. Phase 2 remains in
+progress and is not complete.
+
+#### Progress update - 2026-09-20 (calendar-event projection enrichment slice)
+
+Against baseline commit `695d1065`, `CalendarEventSummary` now owns bounded
+`eventType` and `timeStatus` strings plus an optional bounded `repeatSeriesId`.
+The projection remains Qt-free, copyable, bounded, typed-ID based, ordered,
+and pointer-free; existing all-day/unknown-time behavior, order, ID,
+capacity, and legacy mapped-field byte semantics remain intact.
+
+`ApplicationServicesCalendarEventPort` maps and validates the new fields,
+trims only `repeatSeriesId` for normalization, preserves surrounding
+whitespace for existing title/date/time and other mapped fields, and returns
+structured failures for blank, over-bounds, or malformed values. Application
+and adapter tests cover bounds, validation, copy/equality/lookups, legacy
+value/repeat-series preservation, malformed persisted input, and title
+whitespace compatibility. CMake registrations remain unchanged; calendar
+cache/UI ownership remains untouched.
+
+The elevated VS Debug build passed after an environmental FileTracker
+`UnauthorizedAccessException` retry. Focused application, adapter,
+calendar-cache, and workspace-control tests passed 1/1; the exact nine-target
+regression passed 9/9; configure/ownership/dependency checks passed with 710
+handwritten sources and one explicit owner; resource validation passed 6 RCC
+packs, 7 runtime IDs, and 7 references; `git diff --check` passed with
+LF/CRLF warnings only; and the static Qt-free/pointer review passed.
+
+Phase 2 remains open. The typed projection now contains the metadata needed
+by a future calendar cache/UI boundary, while `CalendarEventCache` still
+directly owns the database worker and the worker-safe cache
+loader/application boundary remains a separate future slice. Generic settings
+and other migrations remain open.

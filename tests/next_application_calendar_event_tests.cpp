@@ -79,11 +79,17 @@ CalendarEventProjectionInput validInput()
     input.events[0].title = "Staff meeting";
     input.events[0].startDate = "2026-09-20";
     input.events[0].endDate = "2026-09-20";
+    input.events[0].eventType = "Meeting";
+    input.events[0].timeStatus = "Timed";
+    input.events[0].repeatSeriesId = "series-1";
     input.events[0].location = "Main campus";
     input.events[0].notes = "Bring the agenda";
     input.events[1].title = "Campus holiday";
     input.events[1].startDate = "2026-09-21";
     input.events[1].endDate = "2026-09-22";
+    input.events[1].eventType = "Holiday";
+    input.events[1].timeStatus = "Timed";
+    input.events[1].repeatSeriesId.reset();
     input.events[1].location.clear();
     input.events[1].notes.clear();
     return input;
@@ -127,6 +133,7 @@ private slots:
     void valid96ScaleEventsRetainTypedMetadataAndBounds();
     void typedReferencesAndTemporalFieldsRemainExplicit();
     void allDayAndOptionalTimePolicyIsDeterministic();
+    void eventClassificationAndRepeatSeriesFieldsRemainBounded();
     void optionalReferencesAndMetadataAreRetained();
     void emptyProjectionAndMissingLookupAreExplicit();
     void orderingAndSafeValueLookupsAreDeterministic();
@@ -219,6 +226,18 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
         decltype(std::declval<CalendarEventSummary>().allDay),
         bool
         >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSummary>().eventType),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSummary>().timeStatus),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSummary>().repeatSeriesId),
+        std::optional<std::string>
+        >);
 
     const auto result = CalendarEventProjection::create(validInput());
 
@@ -233,6 +252,11 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
     QCOMPARE(event->endDate, std::string("2026-09-20"));
     QCOMPARE(event->startTime.value(), std::string("09:00"));
     QCOMPARE(event->endTime.value(), std::string("10:00"));
+    QCOMPARE(event->eventType, std::string("Meeting"));
+    QCOMPARE(event->timeStatus, std::string("Timed"));
+    QVERIFY(event->hasRepeatSeries());
+    QVERIFY(event->hasRepeatSeriesId());
+    QCOMPARE(event->repeatSeriesId.value(), std::string("series-1"));
     QVERIFY(!event->allDay);
 }
 
@@ -263,10 +287,103 @@ void NextApplicationCalendarEventTests::allDayAndOptionalTimePolicyIsDeterminist
         );
 
     auto unknownTimedEvent = calendarEventSummary("unknown-time");
+    unknownTimedEvent.timeStatus = "Unknown";
     unknownTimedEvent.startTime.reset();
     unknownTimedEvent.endTime.reset();
     QVERIFY(CalendarEventProjection::validate(unknownTimedEvent));
     QVERIFY(CalendarEventProjection::create({{std::move(unknownTimedEvent)}}));
+}
+
+void NextApplicationCalendarEventTests::
+eventClassificationAndRepeatSeriesFieldsRemainBounded()
+{
+    const auto result = CalendarEventProjection::create(validInput());
+    QVERIFY(result);
+    const auto event = result.value().events().front();
+    QCOMPARE(event.eventType, std::string("Meeting"));
+    QCOMPARE(event.timeStatus, std::string("Timed"));
+    QCOMPARE(event.repeatSeriesId.value(), std::string("series-1"));
+
+    auto exactFields = validInput();
+    auto& exactEvent = exactFields.events.front();
+    exactEvent.eventType = std::string(
+        kCalendarEventSummaryMaxEventTypeLength,
+        'e'
+        );
+    exactEvent.timeStatus = std::string(
+        kCalendarEventSummaryMaxTimeStatusLength,
+        's'
+        );
+    exactEvent.repeatSeriesId = std::string(
+        kCalendarEventSummaryMaxRepeatSeriesIdLength,
+        'r'
+        );
+    const auto exactResult = CalendarEventProjection::create(
+        std::move(exactFields)
+        );
+    QVERIFY(exactResult);
+    QCOMPARE(
+        exactResult.value().events().front().eventType.size(),
+        kCalendarEventSummaryMaxEventTypeLength
+        );
+    QCOMPARE(
+        exactResult.value().events().front().timeStatus.size(),
+        kCalendarEventSummaryMaxTimeStatusLength
+        );
+    QCOMPARE(
+        exactResult.value().events().front().repeatSeriesId->size(),
+        kCalendarEventSummaryMaxRepeatSeriesIdLength
+        );
+
+    {
+        auto input = validInput();
+        input.events.front().eventType = std::string(
+            kCalendarEventSummaryMaxEventTypeLength + 1,
+            'e'
+            );
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.events.front().timeStatus = std::string(
+            kCalendarEventSummaryMaxTimeStatusLength + 1,
+            's'
+            );
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.events.front().repeatSeriesId = std::string(
+            kCalendarEventSummaryMaxRepeatSeriesIdLength + 1,
+            'r'
+            );
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.events.front().eventType = " \t";
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.events.front().timeStatus = "\n";
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.events.front().repeatSeriesId = std::string(" ");
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    auto noRepeat = validInput().events.back();
+    noRepeat.repeatSeriesId.reset();
+    QVERIFY(CalendarEventProjection::validate(noRepeat));
+    QVERIFY(!noRepeat.hasRepeatSeries());
 }
 
 void NextApplicationCalendarEventTests::optionalReferencesAndMetadataAreRetained()
@@ -331,12 +448,16 @@ void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterminis
     eventCopy->title = "Changed outside projection";
     eventCopy->classId.reset();
     eventCopy->order = 99;
+    eventCopy->eventType = "Changed type";
+    eventCopy->repeatSeriesId.reset();
 
     const auto stored = projection.findEvent(calendarEventId("event-1"));
     QVERIFY(stored.has_value());
     QCOMPARE(stored->title, std::string("Staff meeting"));
     QVERIFY(stored->classId.has_value());
     QCOMPARE(stored->order, std::int32_t(42));
+    QCOMPARE(stored->eventType, std::string("Meeting"));
+    QCOMPARE(stored->repeatSeriesId.value(), std::string("series-1"));
     QCOMPARE(
         projection.findById(calendarEventId("event-1"))->id.value(),
         std::string("event-1")
@@ -424,6 +545,24 @@ void NextApplicationCalendarEventTests::duplicateAndInvalidValuesReturnStructure
 
     {
         auto input = validInput();
+        input.events.front().eventType.clear();
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.events.front().timeStatus = " ";
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.events.front().repeatSeriesId = std::string();
+        verifyInvalid(CalendarEventProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
         input.events.front().order = -1;
         verifyInvalid(CalendarEventProjection::create(std::move(input)));
     }
@@ -492,6 +631,18 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
     event.endDate = std::string(kCalendarEventSummaryMaxDateLength, 'e');
     event.startTime = std::string(kCalendarEventSummaryMaxTimeLength, 's');
     event.endTime = std::string(kCalendarEventSummaryMaxTimeLength, 'e');
+    event.eventType = std::string(
+        kCalendarEventSummaryMaxEventTypeLength,
+        'y'
+        );
+    event.timeStatus = std::string(
+        kCalendarEventSummaryMaxTimeStatusLength,
+        'z'
+        );
+    event.repeatSeriesId = std::string(
+        kCalendarEventSummaryMaxRepeatSeriesIdLength,
+        'r'
+        );
     event.location = std::string(kCalendarEventSummaryMaxLocationLength, 'l');
     event.notes = std::string(kCalendarEventSummaryMaxNotesLength, 'n');
 
@@ -507,6 +658,18 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
     QCOMPARE(exactEvent.title.size(), kCalendarEventSummaryMaxTitleLength);
     QCOMPARE(exactEvent.startDate.size(), kCalendarEventSummaryMaxDateLength);
     QCOMPARE(exactEvent.startTime->size(), kCalendarEventSummaryMaxTimeLength);
+    QCOMPARE(
+        exactEvent.eventType.size(),
+        kCalendarEventSummaryMaxEventTypeLength
+        );
+    QCOMPARE(
+        exactEvent.timeStatus.size(),
+        kCalendarEventSummaryMaxTimeStatusLength
+        );
+    QCOMPARE(
+        exactEvent.repeatSeriesId->size(),
+        kCalendarEventSummaryMaxRepeatSeriesIdLength
+        );
     QCOMPARE(exactEvent.location.size(), kCalendarEventSummaryMaxLocationLength);
     QCOMPARE(exactEvent.notes.size(), kCalendarEventSummaryMaxNotesLength);
 }

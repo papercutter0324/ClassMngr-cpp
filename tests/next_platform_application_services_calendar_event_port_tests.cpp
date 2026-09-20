@@ -88,9 +88,11 @@ class NextPlatformApplicationServicesCalendarEventPortTests final
 private slots:
     void initTestCase();
     void projectsOverlappingRangeAsOwnedTypedMetadata();
+    void preservesLegacyTitleSurroundingSpaces();
     void preservesAllDayAndUnknownTimePolicy();
     void reportsUnavailableAndInvalidRangesStructurally();
     void rejectsPartialSourceTimesAndProjectionOverflow();
+    void rejectsMalformedRepeatSeriesMetadataStructurally();
     void boundaryIsTypedAndDoesNotExposeLegacyOwnership();
 
 private:
@@ -118,6 +120,9 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
         );
     overlapsStart.startTime = QTime(8, 5);
     overlapsStart.endTime = QTime(9, 35);
+    overlapsStart.eventType = QStringLiteral(" Workshop ");
+    overlapsStart.timeStatus = QStringLiteral(" Timed ");
+    overlapsStart.repeatSeriesId = QStringLiteral(" series-july ");
 
     CalendarEvent inside = makeEvent(
         QStringLiteral("회의 일정"),
@@ -126,6 +131,9 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
         );
     inside.startTime = QTime(10, 0);
     inside.endTime = QTime(11, 30);
+    inside.eventType = QStringLiteral("Meeting");
+    inside.timeStatus = QStringLiteral("Timed");
+    inside.repeatSeriesId = QStringLiteral("series-july");
 
     CalendarEvent overlapsEnd = makeEvent(
         QStringLiteral("Overlap end"),
@@ -134,6 +142,8 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
         );
     overlapsEnd.startTime = QTime(12, 0);
     overlapsEnd.endTime = QTime(13, 0);
+    overlapsEnd.eventType = QStringLiteral("Holiday");
+    overlapsEnd.timeStatus = QStringLiteral("Timed");
 
     CalendarEvent outside = makeEvent(
         QStringLiteral("Outside"),
@@ -168,6 +178,10 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(0).endDate, std::string("2026-07-02"));
     QCOMPARE(events.at(0).startTime.value(), std::string("08:05"));
     QCOMPARE(events.at(0).endTime.value(), std::string("09:35"));
+    QCOMPARE(events.at(0).eventType, std::string("Workshop"));
+    QCOMPARE(events.at(0).timeStatus, std::string("Timed"));
+    QVERIFY(events.at(0).repeatSeriesId.has_value());
+    QCOMPARE(events.at(0).repeatSeriesId.value(), std::string("series-july"));
     QCOMPARE(events.at(0).order, std::int32_t(0));
     QVERIFY(!events.at(0).classId.has_value());
     QVERIFY(!events.at(0).campusId.has_value());
@@ -180,10 +194,16 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(1).endDate, std::string("2026-07-10"));
     QCOMPARE(events.at(1).startTime.value(), std::string("10:00"));
     QCOMPARE(events.at(1).endTime.value(), std::string("11:30"));
+    QCOMPARE(events.at(1).eventType, std::string("Meeting"));
+    QCOMPARE(events.at(1).timeStatus, std::string("Timed"));
+    QCOMPARE(events.at(1).repeatSeriesId.value(), std::string("series-july"));
     QCOMPARE(events.at(1).order, std::int32_t(1));
 
     QCOMPARE(events.at(2).id.value(), std::to_string(overlapsEndId));
     QCOMPARE(events.at(2).title, std::string("Overlap end"));
+    QCOMPARE(events.at(2).eventType, std::string("Holiday"));
+    QCOMPARE(events.at(2).timeStatus, std::string("Timed"));
+    QVERIFY(!events.at(2).repeatSeriesId.has_value());
     QCOMPARE(events.at(2).order, std::int32_t(2));
     QVERIFY(!result.value().findEvent(calendarEventId(outsideId)).has_value());
 
@@ -195,6 +215,41 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(
         result.value().findEvent(calendarEventId(insideId))->startDate,
         std::string("2026-07-10")
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+preservesLegacyTitleSurroundingSpaces()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    query.prepare(QStringLiteral(
+        "INSERT INTO calendar_events ("
+        "title, event_type, time_status, repeat_series_id, all_day, "
+        "start_date, start_time, end_date, end_time) "
+        "VALUES (?, 'Other', 'Timed', NULL, 0, ?, ?, ?, ?)"
+        ));
+    query.addBindValue(QStringLiteral("  Legacy title  "));
+    query.addBindValue(QStringLiteral("2026-08-15"));
+    query.addBindValue(QStringLiteral("09:00"));
+    query.addBindValue(QStringLiteral("2026-08-15"));
+    query.addBindValue(QStringLiteral("10:00"));
+    QVERIFY(query.exec());
+
+    ApplicationServicesCalendarEventPort port(services);
+    const auto result = port.projection(
+        QDate(2026, 8, 15),
+        QDate(2026, 8, 15)
+        );
+    QVERIFY(result);
+    QCOMPARE(result.value().eventCount(), std::size_t(1));
+    QCOMPARE(
+        result.value().events().front().title,
+        QStringLiteral("  Legacy title  ").toUtf8().toStdString()
         );
 }
 
@@ -215,6 +270,9 @@ preservesAllDayAndUnknownTimePolicy()
     allDay.allDay = true;
     allDay.startTime = QTime(0, 0);
     allDay.endTime = QTime(23, 59);
+    allDay.eventType = QStringLiteral(" Vacation ");
+    allDay.timeStatus = QStringLiteral("Timed");
+    allDay.repeatSeriesId = QStringLiteral(" series-all-day ");
 
     CalendarEvent unknownTime = makeEvent(
         QStringLiteral("Unknown time"),
@@ -222,6 +280,8 @@ preservesAllDayAndUnknownTimePolicy()
         QDate(2026, 9, 20)
         );
     unknownTime.timeStatus = QStringLiteral("Unknown");
+    unknownTime.eventType = QStringLiteral(" Holiday ");
+    unknownTime.repeatSeriesId = QStringLiteral(" \t ");
 
     const int allDayId = saveEvent(*legacyService, allDay);
     const int unknownTimeId = saveEvent(*legacyService, unknownTime);
@@ -242,6 +302,12 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(allDayProjection->allDay);
     QVERIFY(!allDayProjection->startTime.has_value());
     QVERIFY(!allDayProjection->endTime.has_value());
+    QCOMPARE(allDayProjection->eventType, std::string("Vacation"));
+    QCOMPARE(allDayProjection->timeStatus, std::string("Timed"));
+    QCOMPARE(
+        allDayProjection->repeatSeriesId.value(),
+        std::string("series-all-day")
+        );
 
     const auto unknownProjection = result.value().findEvent(
         calendarEventId(unknownTimeId)
@@ -250,6 +316,9 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(!unknownProjection->allDay);
     QVERIFY(!unknownProjection->startTime.has_value());
     QVERIFY(!unknownProjection->endTime.has_value());
+    QCOMPARE(unknownProjection->eventType, std::string("Holiday"));
+    QCOMPARE(unknownProjection->timeStatus, std::string("Unknown"));
+    QVERIFY(!unknownProjection->repeatSeriesId.has_value());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -361,6 +430,44 @@ rejectsPartialSourceTimesAndProjectionOverflow()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
+rejectsMalformedRepeatSeriesMetadataStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    query.prepare(QStringLiteral(
+        "INSERT INTO calendar_events ("
+        "title, event_type, time_status, repeat_series_id, all_day, "
+        "start_date, start_time, end_date, end_time) "
+        "VALUES (?, 'Other', 'Timed', ?, 0, ?, ?, ?, ?)"
+        ));
+    query.addBindValue(QStringLiteral("Oversized repeat series"));
+    query.addBindValue(QString(
+        static_cast<int>(kCalendarEventSummaryMaxRepeatSeriesIdLength + 1),
+        QChar('r')
+        ));
+    query.addBindValue(QStringLiteral("2026-10-15"));
+    query.addBindValue(QStringLiteral("09:00"));
+    query.addBindValue(QStringLiteral("2026-10-15"));
+    query.addBindValue(QStringLiteral("10:00"));
+    QVERIFY(query.exec());
+
+    ApplicationServicesCalendarEventPort port(services);
+    const auto result = port.projection(
+        QDate(2026, 10, 15),
+        QDate(2026, 10, 15)
+        );
+    verifyFailure(result, ErrorCode::InvalidInput);
+    QVERIFY(
+        result.error().message.find("repeat-series") != std::string::npos
+        || result.error().message.find("unbounded") != std::string::npos
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
 boundaryIsTypedAndDoesNotExposeLegacyOwnership()
 {
     using Port = ApplicationServicesCalendarEventPort;
@@ -377,6 +484,18 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
     static_assert(!std::is_move_constructible_v<Port>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<const CalendarEventSummary>().eventType),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<const CalendarEventSummary>().timeStatus),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<const CalendarEventSummary>().repeatSeriesId),
+        std::optional<std::string>
+        >);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventProjection>().events()),
         const std::vector<CalendarEventSummary>&
