@@ -1,5 +1,6 @@
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_save_port.h"
+#include "next/application/calendar_event_series_edit_port.h"
 
 #include <QtTest/QtTest>
 
@@ -83,6 +84,22 @@ CalendarEventSaveRequest validSaveRequest()
     };
 }
 
+CalendarEventSeriesEditRequest validSeriesEditRequest()
+{
+    return CalendarEventSeriesEditRequest{
+        "series-1",
+        "2026-09-20",
+        "2026-09-22",
+        "2026-09-23",
+        "Edited event title",
+        std::string("09:00"),
+        std::string("10:00"),
+        false,
+        "Meeting",
+        "Timed"
+    };
+}
+
 CalendarEventProjectionInput validInput()
 {
     CalendarEventProjectionInput input;
@@ -158,6 +175,9 @@ private slots:
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
     void saveRequestContractHasNoQtOrLegacySurface();
+    void seriesEditRequestBoundsAndDatesRemainTyped();
+    void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
+    void seriesEditRequestContractHasNoQtOrLegacySurface();
     void recordsAndProjectionAreCopyableEqualAndIndependentlyReleasable();
     void contractHasNoMutablePointerOrRichRecordSurface();
 };
@@ -833,6 +853,169 @@ saveRequestContractHasNoQtOrLegacySurface()
         decltype(std::declval<CalendarEventSaveRequest>().title)
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
+
+    QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+seriesEditRequestBoundsAndDatesRemainTyped()
+{
+    auto request = validSeriesEditRequest();
+    QVERIFY(request.validate());
+    QVERIFY(validateCalendarEventSeriesEditRequest(request));
+
+    auto blankSeries = request;
+    blankSeries.repeatSeriesId = " \t";
+    QVERIFY(!blankSeries.validate());
+
+    auto oversizedSeries = request;
+    oversizedSeries.repeatSeriesId = std::string(
+        kCalendarEventSeriesEditMaxRepeatSeriesIdLength + 1,
+        'r'
+        );
+    QVERIFY(!oversizedSeries.validate());
+
+    auto exactTitle = request;
+    exactTitle.title = std::string(
+        kCalendarEventSeriesEditMaxTitleLength,
+        't'
+        );
+    QVERIFY(exactTitle.validate());
+
+    auto oversizedTitle = exactTitle;
+    oversizedTitle.title.push_back('x');
+    QVERIFY(!oversizedTitle.validate());
+
+    auto invalidSourceDate = request;
+    invalidSourceDate.startDate = "2026-02-30";
+    QVERIFY(!invalidSourceDate.validate());
+
+    auto invalidEditedDate = request;
+    invalidEditedDate.editedStartDate = "2026-13-01";
+    QVERIFY(!invalidEditedDate.validate());
+
+    auto reversedEditedDates = request;
+    reversedEditedDates.editedEndDate = "2026-09-21";
+    QVERIFY(!reversedEditedDates.validate());
+
+    auto oversizedEventType = request;
+    oversizedEventType.eventType = std::string(
+        kCalendarEventSeriesEditMaxEventTypeLength + 1,
+        'e'
+        );
+    QVERIFY(!oversizedEventType.validate());
+
+    auto oversizedTimeStatus = request;
+    oversizedTimeStatus.timeStatus = std::string(
+        kCalendarEventSeriesEditMaxTimeStatusLength + 1,
+        's'
+        );
+    QVERIFY(!oversizedTimeStatus.validate());
+
+    auto invalidTime = request;
+    invalidTime.startTime = "9:00";
+    invalidTime.endTime = "10:00";
+    QVERIFY(!invalidTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit()
+{
+    auto allDay = validSeriesEditRequest();
+    allDay.allDay = true;
+    allDay.timeStatus = "Timed";
+    allDay.startTime.reset();
+    allDay.endTime.reset();
+    QVERIFY(allDay.validate());
+
+    auto allDayWithTime = allDay;
+    allDayWithTime.startTime = "09:00";
+    allDayWithTime.endTime = "10:00";
+    QVERIFY(!allDayWithTime.validate());
+
+    auto allDayUnknown = allDay;
+    allDayUnknown.timeStatus = "Unknown";
+    QVERIFY(!allDayUnknown.validate());
+
+    auto timedWithoutTimes = validSeriesEditRequest();
+    timedWithoutTimes.startTime.reset();
+    timedWithoutTimes.endTime.reset();
+    QVERIFY(!timedWithoutTimes.validate());
+
+    auto partialTimedRange = validSeriesEditRequest();
+    partialTimedRange.endTime.reset();
+    QVERIFY(!partialTimedRange.validate());
+
+    auto reversedTimedRange = validSeriesEditRequest();
+    reversedTimedRange.editedEndDate = reversedTimedRange.editedStartDate;
+    reversedTimedRange.endTime = "08:00";
+    QVERIFY(!reversedTimedRange.validate());
+
+    auto unknownTime = validSeriesEditRequest();
+    unknownTime.timeStatus = "Unknown";
+    unknownTime.startTime.reset();
+    unknownTime.endTime.reset();
+    QVERIFY(unknownTime.validate());
+
+    auto unconfirmedTime = unknownTime;
+    unconfirmedTime.timeStatus = "Unconfirmed";
+    QVERIFY(unconfirmedTime.validate());
+
+    auto unknownWithTime = unknownTime;
+    unknownWithTime.startTime = "09:00";
+    unknownWithTime.endTime = "10:00";
+    QVERIFY(!unknownWithTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+seriesEditRequestContractHasNoQtOrLegacySurface()
+{
+    using Port = CalendarEventSeriesEditPort;
+    using EditResult = decltype(
+        std::declval<Port&>().editRepeatSeriesFromDate(
+            std::declval<const CalendarEventSeriesEditRequest&>()
+            )
+        );
+
+    static_assert(std::is_same_v<
+        EditResult,
+        CalendarEventSeriesEditResult
+        >);
+    static_assert(std::is_same_v<
+        CalendarEventSeriesEditResult,
+        Domain::Result<void>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().repeatSeriesId),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().editedStartDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().editedEndDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().startTime),
+        std::optional<std::string>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().endTime),
+        std::optional<std::string>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().allDay),
+        bool
+        >);
+    static_assert(!std::is_pointer_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().title)
+        >);
 
     QVERIFY(true);
 }

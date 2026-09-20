@@ -9,6 +9,7 @@
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
+#include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -226,87 +227,6 @@ QString newRepeatSeriesId()
         );
 }
 
-Status saveRepeatSeriesFromDate(
-    CalendarService* calendarService,
-    const CalendarEvent& originalEvent,
-    const CalendarEvent& editedEvent
-    )
-{
-    if (
-        !calendarService
-        || !isRepeatSeriesEvent(originalEvent)
-        || !originalEvent.startDate.isValid()
-        || !editedEvent.startDate.isValid()
-        || !editedEvent.endDate.isValid()
-        )
-    {
-        return std::unexpected(
-            QObject::tr("The calendar repeat series is invalid.")
-            );
-    }
-
-    const QString repeatSeriesId =
-        originalEvent.repeatSeriesId.trimmed();
-    const int startDateOffset =
-        originalEvent.startDate.daysTo(
-            editedEvent.startDate
-            );
-    const int durationDays =
-        editedEvent.startDate.daysTo(
-            editedEvent.endDate
-            );
-    const Result<QList<CalendarEvent>> seriesEvents =
-        calendarService->repeatSeriesFromDate(
-            repeatSeriesId,
-            originalEvent.startDate
-            );
-    if (!seriesEvents)
-    {
-        return std::unexpected(seriesEvents.error());
-    }
-
-    QList<CalendarEvent> updatedEvents;
-    updatedEvents.reserve(seriesEvents->size());
-    for (const CalendarEvent& seriesEvent : *seriesEvents)
-    {
-        CalendarEvent updatedEvent =
-            seriesEvent;
-
-        updatedEvent.title =
-            editedEvent.title;
-        updatedEvent.eventType =
-            editedEvent.eventType;
-        updatedEvent.timeStatus =
-            editedEvent.timeStatus;
-        updatedEvent.allDay =
-            editedEvent.allDay;
-        updatedEvent.startTime =
-            editedEvent.startTime;
-        updatedEvent.endTime =
-            editedEvent.endTime;
-        updatedEvent.repeatSeriesId =
-            repeatSeriesId;
-        updatedEvent.startDate =
-            seriesEvent.startDate.addDays(
-                startDateOffset
-                );
-        updatedEvent.endDate =
-            updatedEvent.startDate.addDays(
-                durationDays
-                );
-
-        updatedEvents.append(updatedEvent);
-    }
-
-    const Result<QList<int>> saved =
-        calendarService->saveEvents(updatedEvents);
-    if (!saved)
-    {
-        return std::unexpected(saved.error());
-    }
-
-    return {};
-}
 }
 
 void CalendarPage::handleCalendarDayActivated(
@@ -942,17 +862,43 @@ void CalendarPage::openCalendarDialog(
 
         if (thisAndFollowing)
         {
-            const Status saved = saveRepeatSeriesFromDate(
-                calendarService,
-                event,
-                savedEvent
-                );
-            if (!saved)
+            ClassMngr::Next::Application::CalendarEventSeriesEditRequest
+                request{
+                    event.repeatSeriesId.toUtf8().toStdString(),
+                    event.startDate.toString(Qt::ISODate).toStdString(),
+                    savedEvent.startDate.toString(Qt::ISODate).toStdString(),
+                    savedEvent.endDate.toString(Qt::ISODate).toStdString(),
+                    savedEvent.title.toUtf8().toStdString(),
+                    std::nullopt,
+                    std::nullopt,
+                    savedEvent.allDay,
+                    savedEvent.eventType.toUtf8().toStdString(),
+                    savedEvent.timeStatus.toUtf8().toStdString()
+                };
+            if (!savedEvent.allDay
+                && savedEvent.startTime.isValid()
+                && savedEvent.endTime.isValid())
+            {
+                request.startTime = savedEvent.startTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+                request.endTime = savedEvent.endTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+            }
+
+            ClassMngr::Next::Platform::
+                ApplicationServicesCalendarEventSeriesEditPort editPort(
+                    *m_services
+                    );
+            const auto typedSaved =
+                editPort.editRepeatSeriesFromDate(request);
+            if (!typedSaved)
             {
                 DialogServices::showWarning(
                     this,
                     tr("Save Calendar Event"),
-                    saved.error()
+                    projectionText(typedSaved.error().message)
                     );
                 return;
             }
