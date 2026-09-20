@@ -49,6 +49,9 @@ int savedSlotStates = 0;
 int savedTestingBlocks = 0;
 int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
+Theme lastPrintRequestTheme = Theme::Dark;
+Theme configuredTheme = Theme::Dark;
+bool themeAvailable = false;
 bool databaseOpen = true;
 bool includeAdditionalClass = false;
 bool includeMiddleSchoolClasses = false;
@@ -71,6 +74,9 @@ void reset()
     savedTestingBlocks = 0;
     printRequestCount = 0;
     lastPrintRequestShowsEnglishNames = false;
+    lastPrintRequestTheme = Theme::Dark;
+    configuredTheme = Theme::Dark;
+    themeAvailable = false;
     databaseOpen = true;
     includeAdditionalClass = false;
     includeMiddleSchoolClasses = false;
@@ -145,6 +151,14 @@ void setIncludeAlternativeMatchingClass(
     includeAlternativeMatchingClass = include;
 }
 
+void setCurrentTheme(
+    Theme theme
+    )
+{
+    configuredTheme = theme;
+    themeAvailable = true;
+}
+
 void setSpeakingEvaluation(
     int classId,
     const QString& evaluationName,
@@ -207,7 +221,13 @@ DataService* ApplicationServices::dataService() const
 
 ThemeService* ApplicationServices::themeService() const
 {
-    return nullptr;
+    if (!ScheduleWidgetTestStubs::themeAvailable)
+    {
+        return nullptr;
+    }
+
+    static ThemeService themeService;
+    return &themeService;
 }
 
 DataService::DataService(
@@ -863,7 +883,7 @@ Result<QList<Teacher>> DataService::getAllTeachers()
 
 Theme ThemeService::currentTheme() const
 {
-    return Theme::Dark;
+    return ScheduleWidgetTestStubs::configuredTheme;
 }
 
 QFont FontManager::getUiFont(
@@ -1321,6 +1341,8 @@ SchedulePrintService::Result SchedulePrintService::printSchedule(
     ++ScheduleWidgetTestStubs::printRequestCount;
     ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames =
         request.showEnglishNames;
+    ScheduleWidgetTestStubs::lastPrintRequestTheme =
+        request.currentTheme;
 
     return {Status::Canceled, {}};
 }

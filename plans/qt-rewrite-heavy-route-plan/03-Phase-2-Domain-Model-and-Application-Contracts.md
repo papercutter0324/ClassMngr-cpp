@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, and language preference bridge are implemented. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, and schedule-output direct-theme boundary are implemented. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -901,8 +901,8 @@ persisted `ActionRegistry` theme without reapplying it during action
 connection, and applies valid changes through the port. Invalid input and
 state updates remain atomic; valid changes preserve persistence, icon refresh,
 and live palette behavior. `MainWindow` now passes an explicit `ThemeService`
-reference. `schedule_output_controller.cpp` continues to read the legacy
-theme and remains open for a later slice.
+reference. `schedule_output_controller.cpp` still read the legacy theme at
+that baseline; the follow-on direct-theme handoff is recorded below.
 
 Configure/ownership/dependency checks passed at 706 sources. Focused
 `StartupVisualSettings` passed 1/1; the next preferences/launch targets passed
@@ -934,3 +934,24 @@ language/controller CTest passed 3/3; the exact nine-target CTest passed 9/9;
 deterministically exercised, and the nullable legacy `MainWindow`
 `LanguageService` pointer has no null-construction coverage. Phase 2 remains
 in progress.
+
+#### Progress update - 2026-09-20 (schedule output explicit-theme slice)
+
+Against baseline commit `7f185ca`, `ScheduleOutputController` now receives
+the resolved `Theme` explicitly and no longer includes or accesses
+`ThemeService` or `currentTheme`. `ScheduleWidget` resolves the current theme
+at the caller boundary and preserves the legacy Dark fallback when no theme
+service is available. Existing settings-service username behavior,
+print/save action selection, style/orientation selection, and show-English-
+names behavior remain intact.
+
+Focused `ScheduleWidget` and `SchedulePrintPdf` CTest passed 2/2. Tests cover
+widget theme propagation/fallback and PDF `CurrentAppearance` Light/Dark
+behavior while preserving explicit Light/Dark/Excel styles. The exact
+nine-target regression passed 9/9; resource validation covered 6 RCC packs,
+7 runtime IDs, and 7 references; `git diff --check` passed with CRLF warnings
+only; and static controller review passed. Fresh configure could not find a
+compiler in the verifier shell, but existing configured VS Debug artifacts
+were current and passed. The schedule output direct-theme accessor is closed;
+generic settings/application-services seams and other feature migrations
+remain open. Phase 2 remains in progress and is not complete.

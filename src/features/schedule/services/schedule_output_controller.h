@@ -1,6 +1,7 @@
 #pragma once
 
 #include "features/schedule/ui/schedule_view_model.h"
+#include "ui/shared/constants/options.h"
 
 class ApplicationServices;
 class QWidget;
@@ -19,6 +20,7 @@ public:
         QWidget* parent,
         ApplicationServices* services,
         const ScheduleViewModel& model,
+        Theme currentTheme,
         bool showEnglishNames
         );
 };

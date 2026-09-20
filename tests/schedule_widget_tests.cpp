@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/theme_service.h"
 #include "data/data_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "features/schedule/ui/schedule_page.h"
@@ -38,7 +39,9 @@ namespace ScheduleWidgetTestStubs
 extern int savedSlotStates;
 extern int printRequestCount;
 extern bool lastPrintRequestShowsEnglishNames;
+extern Theme lastPrintRequestTheme;
 void reset();
+void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
 void setIncludeMiddleSchoolClasses(bool include);
 void setTestingBlock(
@@ -117,6 +120,7 @@ private slots:
     void persistsAndMirrorsEveryViewOption();
     void clearTestingLayoutUsesScheduleService();
     void printUsesSelectedTeacherNameLanguage();
+    void printPropagatesCurrentTheme();
     void importButtonRequestsScheduleImport();
     void controlsUseTextFitButtons();
     void legacyHourSettingsDoNotCarryForward();
@@ -263,6 +267,10 @@ void ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
     widget.printSchedule();
     QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1);
     QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastPrintRequestTheme,
+        Theme::Dark
+        );
 
     saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_korean_teacher_english_names"),
@@ -272,6 +280,30 @@ void ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
     widget.printSchedule();
     QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 2);
     QVERIFY(!ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastPrintRequestTheme,
+        Theme::Dark
+        );
+}
+
+void ScheduleWidgetTests::printPropagatesCurrentTheme()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    ScheduleWidgetTestStubs::setCurrentTheme(Theme::Light);
+    widget.printSchedule();
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastPrintRequestTheme,
+        Theme::Light
+        );
+
+    ScheduleWidgetTestStubs::setCurrentTheme(Theme::Dark);
+    widget.printSchedule();
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastPrintRequestTheme,
+        Theme::Dark
+        );
 }
 
 void ScheduleWidgetTests::importButtonRequestsScheduleImport()

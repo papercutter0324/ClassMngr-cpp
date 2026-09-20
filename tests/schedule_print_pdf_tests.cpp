@@ -618,7 +618,17 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
         requestFor(
             SchedulePrintStyle::CurrentAppearance,
             QPageLayout::Portrait,
+            Theme::Light
+            ),
+        requestFor(
+            SchedulePrintStyle::CurrentAppearance,
+            QPageLayout::Portrait,
             Theme::Dark
+            ),
+        requestFor(
+            SchedulePrintStyle::Excel,
+            QPageLayout::Landscape,
+            Theme::Light
             )
     };
 
@@ -645,8 +655,64 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
             scheduleTargetRect(
                 image,
                 request.model,
-                false
+                request.style == SchedulePrintStyle::Excel
                 );
+
+        const QPoint headerPoint =
+            scaledSchedulePoint(
+                targetRect,
+                TimeColumnWidth + 10.0,
+                10.0,
+                request.model
+                );
+        const QColor headerColor =
+            image.pixelColor(headerPoint);
+        if (request.style == SchedulePrintStyle::Excel)
+        {
+            QCOMPARE(headerColor, QColor(Qt::white));
+
+            const QPoint timePoint =
+                scaledSchedulePoint(
+                    targetRect,
+                    10.0,
+                    HeaderHeight + (RowHeight / 2.0),
+                    request.model
+                    );
+            QCOMPARE(
+                image.pixelColor(timePoint),
+                QColor(QStringLiteral("#D9D9D9"))
+                );
+
+            const QPoint alternatingTimePoint =
+                scaledSchedulePoint(
+                    targetRect,
+                    10.0,
+                    HeaderHeight
+                        + RowHeight
+                        + (RowHeight / 2.0),
+                    request.model
+                    );
+            QCOMPARE(
+                image.pixelColor(alternatingTimePoint),
+                QColor(QStringLiteral("#FFFF99"))
+                );
+        }
+        else
+        {
+            const bool light =
+                request.style == SchedulePrintStyle::LightTheme
+                || (
+                    request.style
+                        == SchedulePrintStyle::CurrentAppearance
+                    && request.currentTheme == Theme::Light
+                    );
+            QCOMPARE(
+                headerColor,
+                light
+                    ? QColor(QStringLiteral("#deded8"))
+                    : QColor(QStringLiteral("#303030"))
+                );
+        }
 
         const QPoint emptyCellCenter =
             scaledSchedulePoint(

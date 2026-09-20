@@ -3,7 +3,6 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "core/theme_service.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 
@@ -15,6 +14,7 @@ void ScheduleOutputController::execute(
     QWidget* parent,
     ApplicationServices* services,
     const ScheduleViewModel& model,
+    Theme currentTheme,
     bool showEnglishNames
     )
 {
@@ -36,10 +36,7 @@ void ScheduleOutputController::execute(
     request.showEnglishNames = showEnglishNames;
     request.style = dialog.selectedStyle();
     request.pageOrientation = dialog.selectedOrientation();
-    if (services && services->themeService())
-    {
-        request.currentTheme = services->themeService()->currentTheme();
-    }
+    request.currentTheme = currentTheme;
     SettingsService* settingsService =
         services
             ? services->settingsService()

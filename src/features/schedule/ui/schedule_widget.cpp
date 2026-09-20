@@ -459,6 +459,11 @@ void ScheduleWidget::outputSchedule(
     bool print
     )
 {
+    const Theme currentTheme =
+        m_services && m_services->themeService()
+            ? m_services->themeService()->currentTheme()
+            : SchedulePrintService::Request{}.currentTheme;
+
     ScheduleOutputController::execute(
         print
             ? ScheduleOutputController::Action::Print
@@ -466,6 +471,7 @@ void ScheduleWidget::outputSchedule(
         this,
         m_services,
         buildScheduleModel(),
+        currentTheme,
         m_showKoreanTeacherEnglishNames
         );
 }
