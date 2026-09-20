@@ -3,10 +3,12 @@
 #include "data/database/database_session.h"
 #include "next/application/calendar_event_delete_port.h"
 #include "next/application/calendar_event_save_port.h"
+#include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
+#include "next/platform/application_services_calendar_event_series_create_port.h"
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_port.h"
@@ -29,6 +31,8 @@ using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventDeletePort;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventSavePort;
+using ClassMngr::Next::Platform::
+    ApplicationServicesCalendarEventSeriesCreatePort;
 using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventSeriesEditPort;
 using ClassMngr::Next::Platform::
@@ -97,6 +101,42 @@ CalendarEventSaveRequest validSaveRequest()
     };
 }
 
+CalendarEventSeriesCreateRequest seriesCreateRequest(
+    const std::string& seriesId,
+    const QList<QPair<QDate, QDate>>& dateRanges,
+    const QString& title,
+    const QString& eventType,
+    const QString& timeStatus,
+    const bool allDay = false
+    )
+{
+    CalendarEventSeriesCreateRequest request;
+    request.repeatSeriesId = seriesId;
+    request.occurrences.reserve(static_cast<std::size_t>(dateRanges.size()));
+    for (const QPair<QDate, QDate>& dateRange : dateRanges)
+    {
+        CalendarEventSaveRequest occurrence;
+        occurrence.title = title.toUtf8().toStdString();
+        occurrence.startDate = dateRange.first.toString(
+            Qt::ISODate
+            ).toStdString();
+        occurrence.endDate = dateRange.second.toString(
+            Qt::ISODate
+            ).toStdString();
+        occurrence.allDay = allDay;
+        occurrence.eventType = eventType.toUtf8().toStdString();
+        occurrence.timeStatus = timeStatus.toUtf8().toStdString();
+        if (!allDay && timeStatus == QStringLiteral("Timed"))
+        {
+            occurrence.startTime = "09:15";
+            occurrence.endTime = "10:45";
+        }
+        request.occurrences.push_back(std::move(occurrence));
+    }
+
+    return request;
+}
+
 CalendarEventSeriesEditRequest validSeriesEditRequest()
 {
     return CalendarEventSeriesEditRequest{
@@ -144,6 +184,10 @@ private slots:
     void reportsInvalidSaveRequestStructurally();
     void reportsUnavailableSaveServiceStructurally();
     void reportsSaveServiceFailureStructurally();
+    void createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity();
+    void reportsInvalidSeriesCreateRequestStructurally();
+    void reportsUnavailableSeriesCreateServiceStructurally();
+    void reportsSeriesCreateBatchFailureWithoutPartialRows();
     void editsValidRepeatSeriesSuffixWithTypedParity();
     void propagatesAllDayAndUnknownTimePolicy();
     void reportsInvalidRepeatSeriesEditRequestStructurally();
@@ -573,7 +617,297 @@ reportsSaveServiceFailureStructurally()
             != std::string::npos
         || saved.error().message.find("injected calendar save failure")
             != std::string::npos
+    );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    ApplicationServicesCalendarEventSeriesCreatePort port(services);
+    const QList<CalendarEventSeriesCreateRequest> requests{
+        seriesCreateRequest(
+            "series-daily",
+            {
+                {QDate(2026, 12, 1), QDate(2026, 12, 2)},
+                {QDate(2026, 12, 2), QDate(2026, 12, 3)},
+                {QDate(2026, 12, 3), QDate(2026, 12, 4)}
+            },
+            QStringLiteral("Daily title"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed")
+            ),
+        seriesCreateRequest(
+            "series-weekly",
+            {
+                {QDate(2026, 12, 1), QDate(2026, 12, 2)},
+                {QDate(2026, 12, 8), QDate(2026, 12, 9)},
+                {QDate(2026, 12, 15), QDate(2026, 12, 16)}
+            },
+            QStringLiteral("Weekly title"),
+            QStringLiteral("Workshop"),
+            QStringLiteral("Unknown")
+            ),
+        seriesCreateRequest(
+            "series-monthly",
+            {
+                {QDate(2026, 1, 31), QDate(2026, 2, 2)},
+                {QDate(2026, 2, 28), QDate(2026, 3, 2)},
+                {QDate(2026, 3, 28), QDate(2026, 3, 30)}
+            },
+            QStringLiteral("Monthly title"),
+            QStringLiteral("Vacation"),
+            QStringLiteral("Timed"),
+            true
+            )
+    };
+
+    const QList<QString> seriesIds{
+        QStringLiteral("series-daily"),
+        QStringLiteral("series-weekly"),
+        QStringLiteral("series-monthly")
+    };
+    const QList<QString> titles{
+        QStringLiteral("Daily title"),
+        QStringLiteral("Weekly title"),
+        QStringLiteral("Monthly title")
+    };
+    const QList<QList<QPair<QDate, QDate>>> expectedRanges{
+        {
+            {QDate(2026, 12, 1), QDate(2026, 12, 2)},
+            {QDate(2026, 12, 2), QDate(2026, 12, 3)},
+            {QDate(2026, 12, 3), QDate(2026, 12, 4)}
+        },
+        {
+            {QDate(2026, 12, 1), QDate(2026, 12, 2)},
+            {QDate(2026, 12, 8), QDate(2026, 12, 9)},
+            {QDate(2026, 12, 15), QDate(2026, 12, 16)}
+        },
+        {
+            {QDate(2026, 1, 31), QDate(2026, 2, 2)},
+            {QDate(2026, 2, 28), QDate(2026, 3, 2)},
+            {QDate(2026, 3, 28), QDate(2026, 3, 30)}
+        }
+    };
+
+    for (int requestIndex = 0; requestIndex < requests.size();
+         ++requestIndex)
+    {
+        const auto created = port.createRepeatSeries(
+            requests.at(requestIndex)
+            );
+        QVERIFY(created);
+        QCOMPARE(created.value().size(), std::size_t(3));
+
+        const std::vector<CalendarEventSaveRequest>& occurrences =
+            requests.at(requestIndex).occurrences;
+        for (std::size_t occurrenceIndex = 0;
+             occurrenceIndex < created.value().size();
+             ++occurrenceIndex)
+        {
+            const CalendarEventId& typedId = created.value().at(occurrenceIndex);
+            bool converted = false;
+            const int legacyId = QString::fromStdString(typedId.value()).toInt(
+                &converted
+                );
+            QVERIFY(converted);
+            QVERIFY(legacyId > 0);
+            QVERIFY(legacyService->event(legacyId));
+
+            const auto loaded = legacyService->event(legacyId);
+            QVERIFY(loaded);
+            QCOMPARE(
+                loaded->repeatSeriesId,
+                seriesIds.at(requestIndex)
+                );
+            QCOMPARE(loaded->title, titles.at(requestIndex));
+            QCOMPARE(
+                loaded->startDate,
+                expectedRanges.at(requestIndex).at(
+                    static_cast<int>(occurrenceIndex)
+                    ).first
+                );
+            QCOMPARE(
+                loaded->endDate,
+                expectedRanges.at(requestIndex).at(
+                    static_cast<int>(occurrenceIndex)
+                    ).second
+                );
+            QCOMPARE(
+                loaded->eventType,
+                QString::fromStdString(
+                    occurrences.at(occurrenceIndex).eventType
+                    )
+                );
+            QCOMPARE(
+                loaded->timeStatus,
+                QString::fromStdString(
+                    occurrences.at(occurrenceIndex).timeStatus
+                    )
+                );
+
+            if (requestIndex == 0)
+            {
+                QCOMPARE(loaded->startTime, QTime(9, 15));
+                QCOMPARE(loaded->endTime, QTime(10, 45));
+                QVERIFY(!loaded->allDay);
+            }
+            else if (requestIndex == 1)
+            {
+                QVERIFY(!loaded->allDay);
+                QVERIFY(!loaded->startTime.isValid());
+                QVERIFY(!loaded->endTime.isValid());
+            }
+            else
+            {
+                QVERIFY(loaded->allDay);
+                QVERIFY(!loaded->startTime.isValid());
+                QVERIFY(!loaded->endTime.isValid());
+            }
+        }
+    }
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsInvalidSeriesCreateRequestStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    ApplicationServicesCalendarEventSeriesCreatePort port(services);
+
+    auto blankSeries = seriesCreateRequest(
+        "series-invalid",
+        {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+        QStringLiteral("Valid title"),
+        QStringLiteral("Meeting"),
+        QStringLiteral("Timed")
         );
+    blankSeries.repeatSeriesId = " \t";
+    verifyFailure(
+        port.createRepeatSeries(blankSeries),
+        ErrorCode::InvalidInput
+        );
+
+    auto oversizedSeries = seriesCreateRequest(
+        std::string(
+            kCalendarEventSeriesCreateMaxRepeatSeriesIdLength + 1,
+            'r'
+            ),
+        {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+        QStringLiteral("Valid title"),
+        QStringLiteral("Meeting"),
+        QStringLiteral("Timed")
+        );
+    verifyFailure(
+        port.createRepeatSeries(oversizedSeries),
+        ErrorCode::InvalidInput
+        );
+
+    auto emptySeries = blankSeries;
+    emptySeries.repeatSeriesId = "series-empty";
+    emptySeries.occurrences.clear();
+    verifyFailure(
+        port.createRepeatSeries(emptySeries),
+        ErrorCode::InvalidInput
+        );
+
+    auto invalidOccurrence = seriesCreateRequest(
+        "series-invalid-occurrence",
+        {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+        QStringLiteral("Valid title"),
+        QStringLiteral("Meeting"),
+        QStringLiteral("Timed")
+        );
+    invalidOccurrence.occurrences.front().endTime = "08:00";
+    verifyFailure(
+        port.createRepeatSeries(invalidOccurrence),
+        ErrorCode::InvalidInput
+        );
+
+    auto tooManyOccurrences = seriesCreateRequest(
+        "series-too-many",
+        {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+        QStringLiteral("Valid title"),
+        QStringLiteral("Meeting"),
+        QStringLiteral("Timed")
+        );
+    const CalendarEventSaveRequest occurrence =
+        tooManyOccurrences.occurrences.front();
+    tooManyOccurrences.occurrences.assign(
+        kCalendarEventSeriesCreateMaxOccurrences + 1,
+        occurrence
+        );
+    verifyFailure(
+        port.createRepeatSeries(tooManyOccurrences),
+        ErrorCode::InvalidInput
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsUnavailableSeriesCreateServiceStructurally()
+{
+    ApplicationServices services;
+    ApplicationServicesCalendarEventSeriesCreatePort port(services);
+
+    verifyFailure(
+        port.createRepeatSeries(seriesCreateRequest(
+            "series-unavailable",
+            {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+            QStringLiteral("Valid title"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed")
+            )),
+        ErrorCode::NotFound
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsSeriesCreateBatchFailureWithoutPartialRows()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_series_second_occurrence "
+        "BEFORE INSERT ON calendar_events "
+        "WHEN NEW.start_date = '2026-12-02' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected calendar series save failure'); "
+        "END"
+        )));
+
+    ApplicationServicesCalendarEventSeriesCreatePort port(services);
+    const auto saved = port.createRepeatSeries(seriesCreateRequest(
+        "series-atomic-failure",
+        {
+            {QDate(2026, 12, 1), QDate(2026, 12, 1)},
+            {QDate(2026, 12, 2), QDate(2026, 12, 2)},
+            {QDate(2026, 12, 3), QDate(2026, 12, 3)}
+        },
+        QStringLiteral("Atomic series"),
+        QStringLiteral("Meeting"),
+        QStringLiteral("Timed")
+        ));
+
+    verifyFailure(saved, ErrorCode::Technical);
+    QVERIFY(
+        saved.error().message.find("injected calendar series save failure")
+            != std::string::npos
+        );
+
+    const auto loaded = services.calendarService()->eventsInRange(
+        QDate(2026, 12, 1),
+        QDate(2026, 12, 3)
+        );
+    QVERIFY(loaded);
+    QVERIFY(loaded->isEmpty());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -1325,6 +1659,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     using SavePort = CalendarEventSavePort;
     using SeriesEditPort = CalendarEventSeriesEditPort;
     using SeriesDeletePort = CalendarEventSeriesDeletePort;
+    using SeriesCreatePort = CalendarEventSeriesCreatePort;
     using ProjectionResult = decltype(
         std::declval<const Port&>().projection(
             std::declval<const QDate&>(),
@@ -1354,6 +1689,11 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
             std::declval<const CalendarEventSeriesEditRequest&>()
             )
         );
+    using SeriesCreateResult = decltype(
+        std::declval<SeriesCreatePort&>().createRepeatSeries(
+            std::declval<const CalendarEventSeriesCreateRequest&>()
+            )
+        );
 
     static_assert(std::is_same_v<
         ProjectionResult,
@@ -1378,6 +1718,10 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     static_assert(std::is_same_v<
         SeriesEditResult,
         Domain::Result<void>
+        >);
+    static_assert(std::is_same_v<
+        SeriesCreateResult,
+        Domain::Result<std::vector<CalendarEventId>>
         >);
     static_assert(std::is_base_of_v<
         DeletePort,
@@ -1434,6 +1778,26 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(!std::is_move_constructible_v<
         ApplicationServicesCalendarEventSeriesEditPort
+        >);
+    static_assert(std::is_base_of_v<
+        SeriesCreatePort,
+        ApplicationServicesCalendarEventSeriesCreatePort
+        >);
+    static_assert(!std::is_copy_constructible_v<
+        ApplicationServicesCalendarEventSeriesCreatePort
+        >);
+    static_assert(!std::is_move_constructible_v<
+        ApplicationServicesCalendarEventSeriesCreatePort
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateRequest>()
+                     .repeatSeriesId),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateRequest>()
+                     .occurrences),
+        std::vector<CalendarEventSaveRequest>
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().repeatSeriesId),

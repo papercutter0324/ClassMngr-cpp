@@ -1,5 +1,6 @@
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_save_port.h"
+#include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 
 #include <QtTest/QtTest>
@@ -81,6 +82,14 @@ CalendarEventSaveRequest validSaveRequest()
         false,
         "Meeting",
         "Timed"
+    };
+}
+
+CalendarEventSeriesCreateRequest validSeriesCreateRequest()
+{
+    return CalendarEventSeriesCreateRequest{
+        "series-create",
+        {validSaveRequest()}
     };
 }
 
@@ -175,6 +184,8 @@ private slots:
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
     void saveRequestContractHasNoQtOrLegacySurface();
+    void seriesCreateRequestBoundsAndOccurrencesRemainTyped();
+    void seriesCreateRequestContractHasNoQtOrLegacySurface();
     void seriesEditRequestBoundsAndDatesRemainTyped();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
@@ -851,6 +862,92 @@ saveRequestContractHasNoQtOrLegacySurface()
         >);
     static_assert(!std::is_pointer_v<
         decltype(std::declval<CalendarEventSaveRequest>().title)
+        >);
+    static_assert(!std::is_copy_constructible_v<Port>);
+
+    QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+seriesCreateRequestBoundsAndOccurrencesRemainTyped()
+{
+    auto request = validSeriesCreateRequest();
+    QVERIFY(request.validate());
+    QVERIFY(validateCalendarEventSeriesCreateRequest(request));
+    QCOMPARE(request.occurrences.size(), std::size_t(1));
+
+    auto blankSeries = request;
+    blankSeries.repeatSeriesId = " \t";
+    QVERIFY(!blankSeries.validate());
+    QCOMPARE(blankSeries.validate().error().code, ErrorCode::InvalidInput);
+
+    auto oversizedSeries = request;
+    oversizedSeries.repeatSeriesId = std::string(
+        kCalendarEventSeriesCreateMaxRepeatSeriesIdLength + 1,
+        'r'
+        );
+    QVERIFY(!oversizedSeries.validate());
+
+    auto emptySeries = request;
+    emptySeries.occurrences.clear();
+    QVERIFY(!emptySeries.validate());
+
+    auto exactCapacity = request;
+    exactCapacity.occurrences.assign(
+        kCalendarEventSeriesCreateMaxOccurrences,
+        validSaveRequest()
+        );
+    QVERIFY(exactCapacity.validate());
+
+    auto oversizedOccurrences = exactCapacity;
+    oversizedOccurrences.occurrences.push_back(validSaveRequest());
+    QVERIFY(!oversizedOccurrences.validate());
+
+    auto invalidOccurrence = request;
+    invalidOccurrence.occurrences.front().startDate = "2026-02-30";
+    QVERIFY(!invalidOccurrence.validate());
+    QCOMPARE(
+        invalidOccurrence.validate().error().code,
+        ErrorCode::InvalidInput
+        );
+}
+
+void NextApplicationCalendarEventTests::
+seriesCreateRequestContractHasNoQtOrLegacySurface()
+{
+    using Port = CalendarEventSeriesCreatePort;
+    using CreateResult = decltype(
+        std::declval<Port&>().createRepeatSeries(
+            std::declval<const CalendarEventSeriesCreateRequest&>()
+            )
+        );
+
+    static_assert(std::is_same_v<
+        CreateResult,
+        CalendarEventSeriesCreateResult
+        >);
+    static_assert(std::is_same_v<
+        CalendarEventSeriesCreateResult,
+        Domain::Result<std::vector<CalendarEventId>>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateRequest>()
+                     .repeatSeriesId),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateRequest>()
+                     .occurrences),
+        std::vector<CalendarEventSaveRequest>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesCreateRequest>()
+                     .occurrences.front().allDay),
+        bool
+        >);
+    static_assert(!std::is_pointer_v<
+        decltype(std::declval<CalendarEventSeriesCreateRequest>()
+                     .occurrences)
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
 

@@ -9,6 +9,7 @@
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
+#include "next/platform/application_services_calendar_event_series_create_port.h"
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -1005,27 +1006,72 @@ void CalendarPage::openCalendarDialog(
             {
                 savedEvent.repeatSeriesId =
                     newRepeatSeriesId();
-            }
-
-            const QList<CalendarEvent> eventsToSave =
-                dialog.repeatEnabled()
-                    ? repeatedCalendarEvents(
+                const QList<CalendarEvent> eventsToSave =
+                    repeatedCalendarEvents(
                         savedEvent,
                         dialog.repeatFrequency(),
                         dialog.repeatUntilDate()
-                        )
-                    : QList<CalendarEvent>{savedEvent};
+                        );
 
-            const Result<QList<int>> saved =
-                calendarService->saveEvents(eventsToSave);
-            if (!saved)
-            {
-                DialogServices::showWarning(
-                    this,
-                    tr("Save Calendar Event"),
-                    saved.error()
-                    );
-                return;
+                ClassMngr::Next::Application::
+                    CalendarEventSeriesCreateRequest request;
+                request.repeatSeriesId = savedEvent.repeatSeriesId.toUtf8()
+                    .toStdString();
+                request.occurrences.reserve(eventsToSave.size());
+                for (const CalendarEvent& occurrence : eventsToSave)
+                {
+                    ClassMngr::Next::Application::CalendarEventSaveRequest
+                        occurrenceRequest;
+                    if (occurrence.id > 0)
+                    {
+                        occurrenceRequest.id =
+                            ClassMngr::Next::Domain::CalendarEventId::fromString(
+                                std::to_string(occurrence.id)
+                                );
+                    }
+                    occurrenceRequest.title = occurrence.title.toUtf8()
+                        .toStdString();
+                    occurrenceRequest.startDate = occurrence.startDate.toString(
+                        Qt::ISODate
+                        ).toStdString();
+                    occurrenceRequest.endDate = occurrence.endDate.toString(
+                        Qt::ISODate
+                        ).toStdString();
+                    occurrenceRequest.allDay = occurrence.allDay;
+                    occurrenceRequest.eventType = occurrence.eventType.toUtf8()
+                        .toStdString();
+                    occurrenceRequest.timeStatus = occurrence.timeStatus.toUtf8()
+                        .toStdString();
+                    if (!occurrence.allDay
+                        && occurrence.startTime.isValid()
+                        && occurrence.endTime.isValid())
+                    {
+                        occurrenceRequest.startTime =
+                            occurrence.startTime.toString(
+                                QStringLiteral("HH:mm")
+                                ).toStdString();
+                        occurrenceRequest.endTime =
+                            occurrence.endTime.toString(
+                                QStringLiteral("HH:mm")
+                                ).toStdString();
+                    }
+                    request.occurrences.push_back(occurrenceRequest);
+                }
+
+                ClassMngr::Next::Platform::
+                    ApplicationServicesCalendarEventSeriesCreatePort
+                    createPort(*m_services);
+                const auto typedSaved =
+                    createPort.createRepeatSeries(request);
+                if (!typedSaved)
+                {
+                    DialogServices::showWarning(
+                        this,
+                        tr("Save Calendar Event"),
+                        projectionText(typedSaved.error().message)
+                        );
+                    return;
+                }
             }
         }
     }
