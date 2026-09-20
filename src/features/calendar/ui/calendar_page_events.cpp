@@ -950,13 +950,58 @@ void CalendarPage::openCalendarDialog(
                 return;
             }
         }
+        else if (repeatSeriesEvent)
+        {
+            savedEvent.repeatSeriesId.clear();
+
+            ClassMngr::Next::Application::CalendarEventSaveRequest request;
+            if (savedEvent.id > 0)
+            {
+                request.id =
+                    ClassMngr::Next::Domain::CalendarEventId::fromString(
+                        std::to_string(savedEvent.id)
+                        );
+            }
+            request.title = savedEvent.title.toUtf8().toStdString();
+            request.startDate = savedEvent.startDate.toString(
+                Qt::ISODate
+                ).toStdString();
+            request.endDate = savedEvent.endDate.toString(
+                Qt::ISODate
+                ).toStdString();
+            request.allDay = savedEvent.allDay;
+            request.eventType = savedEvent.eventType.toUtf8().toStdString();
+            request.timeStatus = savedEvent.timeStatus.toUtf8().toStdString();
+            if (!savedEvent.allDay
+                && savedEvent.startTime.isValid()
+                && savedEvent.endTime.isValid())
+            {
+                request.startTime = savedEvent.startTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+                request.endTime = savedEvent.endTime.toString(
+                    QStringLiteral("HH:mm")
+                    ).toStdString();
+            }
+
+            ClassMngr::Next::Platform::
+                ApplicationServicesCalendarEventSavePort savePort(
+                    *m_services
+                    );
+            const auto typedSaved = savePort.saveEvent(request);
+            if (!typedSaved)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Save Calendar Event"),
+                    projectionText(typedSaved.error().message)
+                    );
+                return;
+            }
+        }
         else
         {
-            if (repeatSeriesEvent)
-            {
-                savedEvent.repeatSeriesId.clear();
-            }
-            else if (dialog.repeatEnabled())
+            if (dialog.repeatEnabled())
             {
                 savedEvent.repeatSeriesId =
                     newRepeatSeriesId();
