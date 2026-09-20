@@ -1869,3 +1869,30 @@ linker, and LF/CRLF warnings remained nonblocking.
 
 The typed AI-comment voice read seam is closed. Phase 2 remains open; the next
 slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed AI-comment provider read bridge)
+
+Against baseline commit `6a03386d`, added the Qt-free typed
+`AiCommentProviderPreferencesPort` and its read-only SettingsManager adapter
+for the exact canonical key `OptionKeys::AiCommentProvider`,
+`options/aiCommentProvider`. Stored values map `0` to `ChatGPT`, `1` to
+`Gemini`, `2` to `Claude`, `3` to `Microsoft Copilot`, and `4` to
+`CustomWebsite`; missing, unknown, and unavailable values map to `ChatGPT`.
+
+Only `src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp` and
+`src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp` use the typed
+read bridge. ActionRegistry remains the compatibility writer and the menu
+remains compatible with it; voice, custom-URL, prompt, and browser behavior
+are unchanged.
+
+Verification passed configure/ownership with 776 sources and a clean Debug
+build. The voice/AI/dialog suite passed 9/9, and the provider adapter was
+explicitly built and passed standalone 1/1. Resource checks passed 6 RCC
+packs/7 runtime IDs/7 runtime references; dependency (`ClassMngrNext ->
+Qt6::Core`), Qt-free, static, call-site, and diff checks passed. The exact
+dirty scope was seven files. The initial aggregate CTest omitted the provider
+target, but the standalone provider test passed; expected Vulkan/zlib, linker,
+and LF/CRLF warnings remained nonblocking.
+
+The typed AI-comment provider read seam is closed. Phase 2 remains open; the
+next slice is not yet selected.

@@ -1,13 +1,12 @@
 #include "speaking_eval_ai_batch_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "core/settingsmanager.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
+#include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
 #include "ui/shared/state/ai_comment_options.h"
-#include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
@@ -104,26 +103,22 @@ PrivateNotes splitPrivateNotes(
 
 AiCommentProvider preferredProvider()
 {
-    const int storedValue =
-        SettingsManager::instance()
-            .get(
-                QString::fromUtf8(
-                    OptionKeys::AiCommentProvider
-                    ),
-                std::to_underlying(
-                    AiCommentProvider::ChatGPT
-                    )
-                )
-            .toInt();
+    const auto storedProvider =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentProviderPreferencesPort().read();
 
-    switch (static_cast<AiCommentProvider>(storedValue))
+    switch (storedProvider)
     {
-    case AiCommentProvider::ChatGPT:
-    case AiCommentProvider::Gemini:
-    case AiCommentProvider::Claude:
-    case AiCommentProvider::MicrosoftCopilot:
-    case AiCommentProvider::CustomWebsite:
-        return static_cast<AiCommentProvider>(storedValue);
+    case ClassMngr::Next::Application::AiCommentProvider::ChatGPT:
+        return AiCommentProvider::ChatGPT;
+    case ClassMngr::Next::Application::AiCommentProvider::Gemini:
+        return AiCommentProvider::Gemini;
+    case ClassMngr::Next::Application::AiCommentProvider::Claude:
+        return AiCommentProvider::Claude;
+    case ClassMngr::Next::Application::AiCommentProvider::MicrosoftCopilot:
+        return AiCommentProvider::MicrosoftCopilot;
+    case ClassMngr::Next::Application::AiCommentProvider::CustomWebsite:
+        return AiCommentProvider::CustomWebsite;
     }
 
     return AiCommentProvider::ChatGPT;

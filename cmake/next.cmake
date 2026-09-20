@@ -50,6 +50,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/automatic_update_preferences.h
     src/next/application/evaluation_default_policy_preferences.h
     src/next/application/ai_comment_custom_website_port.h
+    src/next/application/ai_comment_provider_preferences.h
     src/next/application/ai_comment_voice_preferences.h
     src/next/application/class_day_filter_reset_policy.h
     src/next/application/class_selection_reset_policy.h
@@ -100,6 +101,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/settings_manager_excel_import_timeout_port.h
     src/next/platform/settings_manager_automatic_update_preferences_port.h
     src/next/platform/settings_manager_ai_comment_custom_website_port.h
+    src/next/platform/settings_manager_ai_comment_provider_preferences_port.h
     src/next/platform/settings_manager_ai_comment_voice_preferences_port.h
     src/next/platform/settings_manager_skipped_update_version_port.h
     src/next/platform/settings_manager_powerpoint_data_access_notice_port.h
