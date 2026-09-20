@@ -1283,3 +1283,26 @@ invocation was used; expected warnings remained nonblocking.
 
 The typed theme startup read seam is closed. Phase 2 remains open; the next
 slice is not yet selected.
+
+## Verified typed DialogShell geometry persistence handoff
+
+Against baseline commit `05750cda`, added the Qt-free dialog-geometry
+read/write contract and its SettingsManager adapter. The dynamic canonical key
+is `ui/dialogs/<normalizedDialogKey>/geometry`; dialog-key trimming and
+character normalization are preserved. Missing or empty reads remain empty,
+binary geometry round-trips exactly, each dialog is isolated, and an empty key
+performs no write.
+
+`DialogShell` now keeps the restore/persist lifecycle guards without singleton
+access. Derived-dialog behavior remains unchanged.
+
+Verification passed configure/ownership and a clean Debug build. The offscreen
+focused suite passed 7/7, covering the geometry adapter, DialogShell lifecycle
+and saved-size behavior, three next-application tests, launch, and resources.
+Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff
+checks passed. The exact dirty scope was six files. The adapter target
+inclusion correction was applied; expected warnings remained nonblocking.
+
+The typed DialogShell geometry persistence seam is closed. Phase 2 remains
+open; the next slice is not yet selected.

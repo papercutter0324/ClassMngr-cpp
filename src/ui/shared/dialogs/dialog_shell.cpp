@@ -1,6 +1,6 @@
 #include "dialog_shell.h"
 
-#include "core/settingsmanager.h"
+#include "next/platform/settings_manager_dialog_geometry_preferences_port.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QCloseEvent>
@@ -12,6 +12,10 @@
 #include <QScreen>
 #include <QShowEvent>
 #include <QVBoxLayout>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
 
 namespace
 {
@@ -203,14 +207,20 @@ QString DialogShell::geometrySettingsKey() const
 
 void DialogShell::restoreSavedGeometry()
 {
-    const QByteArray geometry =
-        SettingsManager::instance()
-            .get(geometrySettingsKey())
-            .toByteArray();
+    const ClassMngr::Next::Platform::SettingsManagerDialogGeometryPreferencesPort
+        port;
+    const std::string geometry = port.read(
+        m_dialogKey.toUtf8().toStdString()
+        );
 
-    if (!geometry.isEmpty())
+    if (!geometry.empty())
     {
-        restoreGeometry(geometry);
+        restoreGeometry(
+            QByteArray(
+                geometry.data(),
+                static_cast<qsizetype>(geometry.size())
+                )
+            );
     }
 }
 
@@ -221,9 +231,15 @@ void DialogShell::persistGeometry() const
         return;
     }
 
-    SettingsManager::instance().set(
-        geometrySettingsKey(),
-        saveGeometry()
+    const ClassMngr::Next::Platform::SettingsManagerDialogGeometryPreferencesPort
+        port;
+    const QByteArray geometry = saveGeometry();
+    port.write(
+        m_dialogKey.toUtf8().toStdString(),
+        std::string_view(
+            geometry.constData(),
+            static_cast<std::size_t>(geometry.size())
+            )
         );
 }
 
