@@ -16,10 +16,14 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
 #include "core/resource_paths.h"
+#include "next/application/document_catalog_use_case.h"
+#include "next/platform/application_services_document_catalog_port.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 
-#include <QDir>
+#include <QFileInfo>
+#include <QLocale>
 
+#include <string_view>
 #include <utility>
 namespace
 {
@@ -353,14 +357,38 @@ void NavigationController::handleDocument(
         return;
     }
 
-    const DocumentCatalog* catalog =
-        m_services->documentCatalog();
+    const QByteArray routeKey = data.routeKey.toUtf8();
+    if (data.routeKey.trimmed().isEmpty()
+        || static_cast<std::size_t>(routeKey.size())
+            > ClassMngr::Next::Application::kDocumentCatalogMaxIdentifierLength)
+    {
+        return;
+    }
 
-    const DocumentDefinition* document =
-        catalog
-            ? catalog->document(data.routeKey)
-            : nullptr;
+    const auto documentId =
+        ClassMngr::Next::Domain::DocumentId::fromString(
+            routeKey.toStdString()
+            );
+    if (!documentId)
+    {
+        return;
+    }
 
+    ClassMngr::Next::Platform::ApplicationServicesDocumentCatalogPort port(
+        *m_services
+        );
+    const auto projection = port.projection(QLocale().name());
+    if (!projection)
+    {
+        return;
+    }
+
+    ClassMngr::Next::Application::DocumentContentSession contentSession;
+    const ClassMngr::Next::Application::DocumentCatalogUseCase catalogUseCase(
+        projection.value(),
+        contentSession
+        );
+    const auto document = catalogUseCase.resolveDocument(*documentId);
     if (!document)
     {
         return;
@@ -381,25 +409,33 @@ void NavigationController::handleDocument(
     descriptor.pdfFilePath =
         ResourcePaths::Documents::filePath(
             *lease,
-            QDir(document->pdf.path).filePath(document->pdf.fileName)
+            QString::fromUtf8(document.value().path)
             );
     descriptor.printEnabled =
-        document->printingEnabled;
+        document.value().printable;
     descriptor.exportEnabled =
-        document->exportingEnabled
-        && document->exportFile.has_value();
+        document.value().exportable
+        && document.value().exportReference.has_value();
 
-    if (document->exportFile)
+    if (document.value().exportReference)
     {
+        constexpr std::string_view prefix = "resource://documents/";
+        const std::string& reference =
+            document.value().exportReference->value();
+        if (!reference.starts_with(prefix))
+        {
+            return;
+        }
+        const QString exportRelativePath = QString::fromUtf8(
+            reference.substr(prefix.size())
+            );
         descriptor.exportFilePath =
             ResourcePaths::Documents::filePath(
                 *lease,
-                QDir(document->exportFile->path).filePath(
-                    document->exportFile->fileName
-                    )
+                exportRelativePath
                 );
         descriptor.exportFileName =
-            document->exportFile->fileName;
+            QFileInfo(exportRelativePath).fileName();
     }
 
     descriptor.resourceLease = std::move(*lease);

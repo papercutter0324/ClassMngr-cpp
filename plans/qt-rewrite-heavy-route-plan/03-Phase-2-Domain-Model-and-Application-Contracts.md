@@ -784,3 +784,24 @@ queue-post-failure test remain non-blocking gaps.
 
 The remaining Phase 2 gate is later feature-service migration; the worktree
 remains uncommitted.
+
+#### Progress update - 2026-09-20 (document-catalog adapter and document-route slice)
+
+`ClassMngrNext::Platform` now provides an
+`ApplicationServicesDocumentCatalogPort` that maps legacy `DocumentCatalog`
+metadata into bounded, typed `DocumentCatalogProjection` values.
+`NavigationController` resolves only its document route through that port and
+`DocumentCatalogUseCase`, while preserving confirm-leave behavior, the
+`ResourcePaths` document lease, `PdfViewerDocumentDescriptor`, viewer loading,
+and page navigation. `MainWindow`/`Sidebar` catalog ownership and document
+content-byte/session loading remain legacy and open; this is not a full
+document-service migration or Phase 2 completion.
+
+Verification passed: configure/ownership checks validated 703 sources with
+dependency guards for `Platform -> Application + Qt6::Core` and
+`ClassMngrNext -> Qt6::Core`; focused CTest passed 1/1; the exact 9-target
+regression passed 9/9; the resource report validated 6 RCC packs, 7 runtime
+IDs, and 7 references; and `git diff --check` passed. A fresh MSBuild
+FileTracker access-denied was an environment/toolchain issue; the isolated
+build/regression passed. Malformed-catalog fixture injection remains a
+non-blocking gap. The worktree remains uncommitted.

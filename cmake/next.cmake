@@ -55,6 +55,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
 
 set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/legacy_workspace_gateway.h
+    src/next/platform/application_services_document_catalog_port.h
     src/next/platform/application_services_workspace_port.h
     src/next/platform/qt_job_worker_lifetime.h
     src/next/platform/qt_job_worker_adapters.h

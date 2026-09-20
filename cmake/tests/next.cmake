@@ -191,6 +191,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesDocumentCatalogPort
+    SOURCES
+        tests/next_platform_application_services_document_catalog_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformQtJobWorker
     SOURCES
         tests/next_platform_qt_job_worker_tests.cpp
