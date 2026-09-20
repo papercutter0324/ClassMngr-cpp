@@ -11,12 +11,12 @@
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
-#include "features/schedule/schedule_settings_preferences.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/services/schedule_output_controller.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
@@ -646,28 +646,35 @@ void ScheduleWidget::buildUi()
 
 void ScheduleWidget::loadSettings()
 {
-    auto* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-
-    if (!settingsService || !settingsService->isAvailable())
+    ClassMngr::Next::Application::ScheduleDisplayPreferences settings;
+    if (m_services)
     {
-        return;
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleDisplayPreferencesPort port(*m_services);
+        const auto loaded = port.load();
+        if (loaded)
+        {
+            settings = loaded.value();
+        }
     }
 
-    const ScheduleSettingsValues settings =
-        ScheduleSettingsPreferences::load(settingsService);
     m_use24h = settings.use24HourTime;
     m_showWeekends = settings.showWeekends;
     m_showKoreanTeacherEnglishNames = settings.showEnglishNames;
     m_showAllHours = settings.showAllIntensiveHours;
     m_testingAffectsM1 = settings.testingAffectsM1;
 
-    m_displayMode =
-        ScheduleDisplayModePreferences::load(
-            settingsService
-            );
+    auto* settingsService =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
+    if (settingsService && settingsService->isAvailable())
+    {
+        m_displayMode =
+            ScheduleDisplayModePreferences::load(
+                settingsService
+                );
+    }
 }
 
 void ScheduleWidget::loadSchedule()

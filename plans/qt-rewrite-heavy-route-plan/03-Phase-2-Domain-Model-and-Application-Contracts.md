@@ -1427,3 +1427,32 @@ MSVC warnings remain non-blocking.
 The typed read-only schedule display-preferences seam is closed. Residual
 `SettingsService` callers, generic settings persistence, and broader page,
 document, and feature migrations remain future work; Phase 2 remains open.
+
+#### Progress update - 2026-09-20 (typed five-key schedule-preferences persistence boundary)
+
+Against baseline commit `2ebac724`, extended the existing Qt-free schedule
+display-preferences contract and adapter to all five booleans:
+`use24HourTime`, `showEnglishNames`, `showWeekends`,
+`showAllIntensiveHours`, and `testingAffectsM1`. The port now exposes an
+atomic typed save returning `Result<void>`; the adapter maps one bundle to the
+legacy settings store and preserves rollback on failure.
+
+Only `src/app/menu_builder.cpp` and
+`src/features/schedule/ui/schedule_widget.cpp` use the five-key persistence
+boundary. The legacy `ScheduleSettingsPreferences` compatibility files and
+other callers remain intact; menu/widget rendering and controls, the existing
+calendar `use24h` read, and all formatting behavior are preserved.
+
+Serial full and focused builds passed. A transient parallel MSVC `LNK1163`
+was non-blocking and cleared on the serial rerun. Focused tests passed 10/10;
+the exact nine-target regression passed 9/9; launch passed 1/1.
+Configure/ownership passed with 728 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Five-key, atomic-rollback,
+call-site, Qt-free, and diff checks passed. `clang-format` and `clang-tidy`
+were unavailable; normal Vulkan, Qt-zlib, and MSVC warnings remain
+non-blocking.
+
+The typed five-key schedule-preferences persistence seam is closed. Residual
+settings callers, generic settings persistence, and broader page, document,
+and feature migrations remain future work; Phase 2 remains open.

@@ -5,9 +5,9 @@
 #include "fakes/fake_user_prompt_service.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_table_renderer.h"
-#include "features/schedule/schedule_settings_preferences.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "domain/models/testing_class.h"
@@ -164,16 +164,17 @@ void ScheduleWidgetTests
         QStringLiteral("intensive")
         );
 
-    ScheduleSettingsPreferences::save(
-        services.settingsService(),
-        {
-            true,
-            true,
-            true,
-            true,
-            true
-        }
-        );
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort preferencesPort(
+            services
+            );
+    QVERIFY(preferencesPort.save({
+        .use24HourTime = true,
+        .showEnglishNames = true,
+        .showWeekends = true,
+        .showAllIntensiveHours = true,
+        .testingAffectsM1 = true
+    }));
     interactive.refreshSchedule();
 
     QCOMPARE(

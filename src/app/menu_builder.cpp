@@ -6,8 +6,8 @@
 #include "features/calendar/ui/calendar_page.h"
 #include "features/calendar/ui/calendar_preferences_panel.h"
 #include "features/classes/class_navigation_preferences.h"
-#include "features/schedule/schedule_settings_preferences.h"
 #include "mainwindow.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -18,6 +18,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QDebug>
 #include <QFrame>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -241,12 +242,21 @@ void addSchedulePreferencesTab(
 {
     QWidget* page = createPreferencesPage(tabs, "preferencesScheduleTab");
     QVBoxLayout* layout = pageLayout(page);
-    auto* settingsService =
+    auto* services =
         window && window->services()
-            ? window->services()->settingsService()
+            ? window->services()
             : nullptr;
-    const ScheduleSettingsValues values =
-        ScheduleSettingsPreferences::load(settingsService);
+    ClassMngr::Next::Application::ScheduleDisplayPreferences values;
+    if (services)
+    {
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleDisplayPreferencesPort port(*services);
+        const auto loaded = port.load();
+        if (loaded)
+        {
+            values = loaded.value();
+        }
+    }
 
     auto* displayGroup = new QGroupBox(preferencesText("Display"), page);
     auto* displayLayout = new QVBoxLayout(displayGroup);
@@ -330,7 +340,7 @@ void addSchedulePreferencesTab(
 
     const auto save = [
         window,
-        settingsService,
+        services,
         use24HourTime,
         showEnglishNames,
         showWeekends,
@@ -338,16 +348,26 @@ void addSchedulePreferencesTab(
         testingAffectsM1
         ]()
     {
-        ScheduleSettingsPreferences::save(
-            settingsService,
+        if (services)
+        {
+            ClassMngr::Next::Platform::
+                ApplicationServicesScheduleDisplayPreferencesPort port(
+                    *services
+                    );
+            const auto saved = port.save({
+                .use24HourTime = use24HourTime->isChecked(),
+                .showEnglishNames = showEnglishNames->isChecked(),
+                .showWeekends = showWeekends->isChecked(),
+                .showAllIntensiveHours = showAllHours->isChecked(),
+                .testingAffectsM1 = testingAffectsM1->isChecked()
+            });
+            if (!saved)
             {
-                use24HourTime->isChecked(),
-                showEnglishNames->isChecked(),
-                showWeekends->isChecked(),
-                showAllHours->isChecked(),
-                testingAffectsM1->isChecked()
+                qWarning()
+                    << "Failed to save schedule display preferences:"
+                    << QString::fromStdString(saved.error().message);
             }
-            );
+        }
         window->refreshSchedulePreferences();
     };
     for (QCheckBox* checkBox : {
