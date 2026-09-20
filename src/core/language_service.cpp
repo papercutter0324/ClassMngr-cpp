@@ -1,8 +1,6 @@
 #include "language_service.h"
 
 #include "core/appsettings.h"
-#include "core/settingsmanager.h"
-#include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
 #include <QLocale>
@@ -65,38 +63,6 @@ Language LanguageService::currentLanguage() const
 QString LanguageService::loadedLocaleName() const
 {
     return m_loadedLocaleName;
-}
-
-Language LanguageService::savedLanguage()
-{
-    const int storedValue =
-        SettingsManager::instance()
-            .get(
-                OptionKeys::Language,
-                static_cast<int>(Language::SystemDefault)
-                )
-            .toInt();
-
-    switch (storedValue)
-    {
-    case static_cast<int>(Language::SystemDefault):
-        return Language::SystemDefault;
-
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-        SettingsManager::instance().set(
-            OptionKeys::Language,
-            static_cast<int>(Language::English)
-            );
-        return Language::English;
-
-    case static_cast<int>(Language::Korean):
-        return Language::Korean;
-    }
-
-    return Language::SystemDefault;
 }
 
 QString LanguageService::localeNameFor(

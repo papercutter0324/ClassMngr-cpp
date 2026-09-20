@@ -12,7 +12,9 @@
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "core/updater/update_service.h"
+#include "next/platform/language_preference_port.h"
 #include "next/platform/settings_manager_font_size_preferences_port.h"
+#include "next/platform/settings_manager_language_preferences_port.h"
 #include "next/platform/settings_manager_theme_preferences_port.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
@@ -6199,11 +6201,17 @@ int main(int argc, char *argv[])
 
     LanguageService languageService;
 
-    const Language savedLanguage =
+    const bool visualLanguageOverrideActive =
         startupPerformance.visualCaptureEnabled
-        && startupPerformance.visualLanguageOverride.has_value()
-            ? *startupPerformance.visualLanguageOverride
-            : LanguageService::savedLanguage();
+        && startupPerformance.visualLanguageOverride.has_value();
+    std::optional<ClassMngr::Next::Application::LanguagePreference>
+        savedLanguagePreference;
+    if (!visualLanguageOverrideActive)
+    {
+        savedLanguagePreference =
+            ClassMngr::Next::Platform::
+                SettingsManagerLanguagePreferencesPort().read();
+    }
 
     const auto savedFontSize =
         ClassMngr::Next::Platform::
@@ -6225,9 +6233,18 @@ int main(int argc, char *argv[])
         startupProfiler.checkpoint(QStringLiteral("preferences-resolved"));
     }
 
-    languageService.setLanguage(
-        savedLanguage
-        );
+    if (visualLanguageOverrideActive)
+    {
+        languageService.setLanguage(
+            *startupPerformance.visualLanguageOverride
+            );
+    }
+    else
+    {
+        const ClassMngr::Next::Platform::LanguagePreferencePort
+            languagePreferencePort(languageService);
+        (void) languagePreferencePort.apply(*savedLanguagePreference);
+    }
 
     if (startupPerformance.enabled)
     {

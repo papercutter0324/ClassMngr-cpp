@@ -1306,3 +1306,30 @@ inclusion correction was applied; expected warnings remained nonblocking.
 
 The typed DialogShell geometry persistence seam is closed. Phase 2 remains
 open; the next slice is not yet selected.
+
+## Verified typed language-preference persistence/migration bridge handoff
+
+Against baseline commit `e961016d`, added the Qt-free typed language
+preference persistence/migration bridge for the canonical
+`OptionKeys::Language == "options/language"`. Stored values map `0` to
+`SystemDefault`, `1` to `English`, and `5` to `Korean`; legacy values `2`, `3`,
+and `4` read as `English` and are rewritten as `1`. Unknown, malformed,
+missing, and unavailable values map to `SystemDefault`.
+
+`main.cpp` now performs the typed read. `LanguageService::savedLanguage`
+persistence access and stale call sites were removed. Existing
+`LanguagePreferencePort` apply behavior and the dominant visual-language
+override remain unchanged.
+
+Verification passed configure/ownership with 788 sources and an elevated clean
+Debug build. The offscreen focused suite passed 8/8, covering the language
+adapter, LanguageService, LanguagePreferencePort, startup visual/performance,
+launch, resources, and user preferences. Resource checks passed 6 RCC
+packs/7 runtime IDs/7 runtime references; dependency
+(`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff checks
+passed. The exact dirty scope was eight files. The non-elevated build required
+a FileTracker retry before the elevated pass; expected warnings remained
+nonblocking.
+
+The typed language-preference persistence/migration seam is closed. Phase 2
+remains open; the next slice is not yet selected.

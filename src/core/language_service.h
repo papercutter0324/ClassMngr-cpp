@@ -23,7 +23,6 @@ public:
     [[nodiscard]] Language currentLanguage() const;
     [[nodiscard]] QString loadedLocaleName() const;
 
-    [[nodiscard]] static Language savedLanguage();
     [[nodiscard]] static QString localeNameFor(
         Language language
         );
