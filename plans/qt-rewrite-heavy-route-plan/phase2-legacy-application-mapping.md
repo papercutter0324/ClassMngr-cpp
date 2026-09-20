@@ -937,6 +937,33 @@ The typed recent-workspace history seam is closed. Residual settings callers,
 generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
 
+## Verified typed evaluation-default-policy handoff
+
+Against baseline commit `9fe09c65`, added the Qt-free
+`EvaluationDefaultPolicy` contract with only `All` and
+`CurrentOrPreviousTerm`, plus the
+`ApplicationServicesEvaluationDefaultPolicyPort` adapter. It preserves the
+exact `classes_navigation_evaluation_default_policy` key, stores the two
+legacy values, and falls back to `All` for missing, invalid, or unavailable
+settings.
+
+Only `src/app/menu_builder.cpp` and
+`src/features/classes/evaluation_default_selection_service.cpp` use the typed
+boundary. Menu persistence and radio selection behavior remain preserved; the
+other four class-navigation preference keys are untouched.
+
+The executor and independent tester reported a passing Debug build, focused
+tests 8/8, the exact nine-target regression 9/9, and a passing launch check.
+Configure/ownership passed with 749 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Qt-free, call-site,
+static, and diff checks passed. Normal warnings remained non-blocking;
+`clang-format` and `clang-tidy` were unavailable.
+
+The typed evaluation-default-policy seam is closed. Residual settings callers,
+generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.
+
 ## Verified typed automatic-update preference handoff
 
 Against baseline commit `374461a0`, added the Qt-free

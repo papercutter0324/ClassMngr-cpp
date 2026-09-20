@@ -7,6 +7,7 @@
 #include "features/calendar/ui/calendar_preferences_panel.h"
 #include "features/classes/class_navigation_preferences.h"
 #include "mainwindow.h"
+#include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/actions/action_registry.h"
@@ -501,12 +502,14 @@ void addNavigationPreferencesTab(
         );
     auto* evaluationDefaultLayout = new QVBoxLayout(evaluationDefaultGroup);
     evaluationDefaultLayout->setSpacing(12);
-    const auto evaluationDefaultPolicy =
-        ClassNavigationPreferences::evaluationDefaultPolicy(
-            window && window->services()
-                ? window->services()->settingsService()
-                : nullptr
-            );
+    auto* services =
+        window && window->services()
+            ? window->services()
+            : nullptr;
+    const auto evaluationDefaultPolicy = services
+        ? ClassMngr::Next::Platform::
+            ApplicationServicesEvaluationDefaultPolicyPort(*services).load()
+        : ClassMngr::Next::Application::EvaluationDefaultPolicy::All;
     auto* followTermSchedule = new QRadioButton(
         preferencesText(
             "Follow term schedules (use the current term, or the previous evaluation when it is empty)"
@@ -518,7 +521,7 @@ void addNavigationPreferencesTab(
         );
     followTermSchedule->setChecked(
         evaluationDefaultPolicy
-        == ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        == ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
     evaluationDefaultLayout->addWidget(followTermSchedule);
     auto* defaultAnalyticsToAll = new QRadioButton(
@@ -530,7 +533,7 @@ void addNavigationPreferencesTab(
         );
     defaultAnalyticsToAll->setChecked(
         evaluationDefaultPolicy
-        == ClassNavigationPreferences::EvaluationDefaultPolicy::All
+        == ClassMngr::Next::Application::EvaluationDefaultPolicy::All
         );
     evaluationDefaultLayout->addWidget(defaultAnalyticsToAll);
     navigationLayout->addWidget(evaluationDefaultGroup);
@@ -669,20 +672,19 @@ void addNavigationPreferencesTab(
         }
         );
     const auto saveEvaluationDefaultPolicy =
-        [window, followTermSchedule](bool checked)
+        [services, followTermSchedule](bool checked)
         {
-            if (!checked)
+            if (!checked || !services)
             {
                 return;
             }
 
-            ClassNavigationPreferences::saveEvaluationDefaultPolicy(
-                window && window->services()
-                    ? window->services()->settingsService()
-                    : nullptr,
+            ClassMngr::Next::Platform::
+                ApplicationServicesEvaluationDefaultPolicyPort port(*services);
+            port.save(
                 followTermSchedule->isChecked()
-                    ? ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
-                    : ClassNavigationPreferences::EvaluationDefaultPolicy::All
+                    ? ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+                    : ClassMngr::Next::Application::EvaluationDefaultPolicy::All
                 );
         };
     QObject::connect(

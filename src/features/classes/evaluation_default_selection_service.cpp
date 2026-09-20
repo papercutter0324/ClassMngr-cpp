@@ -4,7 +4,7 @@
 #include "core/application_services.h"
 #include "domain/models/class_info.h"
 #include "features/calendar/ui/academic_calendar_provider.h"
-#include "features/classes/class_navigation_preferences.h"
+#include "next/platform/application_services_evaluation_default_policy_port.h"
 
 namespace
 {
@@ -34,9 +34,11 @@ QString forClass(
     }
 
     SettingsService* settingsService = services->settingsService();
+    const ClassMngr::Next::Platform::
+        ApplicationServicesEvaluationDefaultPolicyPort policyPort(*services);
     if (
-        ClassNavigationPreferences::evaluationDefaultPolicy(settingsService)
-        != ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        policyPort.load()
+        != ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         )
     {
         return {};

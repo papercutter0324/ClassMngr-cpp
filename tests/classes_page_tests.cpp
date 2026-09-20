@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "data/data_service.h"
 #include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
@@ -6,6 +7,8 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "domain/models/speaking_evaluation.h"
+#include "next/application/evaluation_default_policy_preferences.h"
+#include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -290,23 +293,25 @@ void ClassesPageTests::evaluationDefaultPolicyDefaultsToAllAndPersists()
 {
     ApplicationServices services;
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesEvaluationDefaultPolicyPort port(services);
     QCOMPARE(
-        ClassNavigationPreferences::evaluationDefaultPolicy(
-            services.settingsService()
-            ),
-        ClassNavigationPreferences::EvaluationDefaultPolicy::All
+        port.load(),
+        ClassMngr::Next::Application::EvaluationDefaultPolicy::All
         );
 
-    ClassNavigationPreferences::saveEvaluationDefaultPolicy(
-        services.settingsService(),
-        ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+    port.save(
+        ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
     QCOMPARE(
-        ClassNavigationPreferences::evaluationDefaultPolicy(
-            services.settingsService()
-            ),
-        ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        port.load(),
+        ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
+    const auto stored = services.dataService()->loadSetting(
+        QStringLiteral("classes_navigation_evaluation_default_policy")
+        );
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), QStringLiteral("current_or_previous_term"));
 }
 
 void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
