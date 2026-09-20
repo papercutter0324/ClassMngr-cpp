@@ -244,6 +244,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformSettingsManagerDocumentPageSpacingPreferencesPort
+    SOURCES
+        tests/next_platform_settings_manager_document_page_spacing_preferences_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformSettingsManagerThemePreferencesPort
     SOURCES
         tests/next_platform_settings_manager_theme_preferences_port_tests.cpp

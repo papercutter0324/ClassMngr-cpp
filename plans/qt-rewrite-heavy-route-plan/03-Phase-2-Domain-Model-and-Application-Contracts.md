@@ -2040,3 +2040,27 @@ Expected warnings remained nonblocking; stale processes were stopped.
 
 The typed document-viewer-background read seam is closed. Phase 2 remains open;
 the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed document-page-spacing read bridge)
+
+Against baseline commit `b73ffa1b`, added the Qt-free typed read bridge for the
+canonical `OptionKeys::DocumentPageSpacing ==
+"options/documentPageSpacing"`. Stored values map `0` to `None`, `1` to
+`Small`, `2` to `Medium`, and `3` to `Large`; missing, unavailable, and
+unknown numeric values map to `Small`. Malformed or non-numeric values retain
+legacy parity through unchecked `QVariant::toInt()`, yielding `0` (`None`).
+
+`ActionRegistry` now uses the typed load. The existing `OptionState` remains
+the compatibility writer and menu-persistence owner, and `PageManager`/
+`PdfViewer` behavior remains unchanged.
+
+Verification passed configure/ownership with 797 sources and an elevated clean
+Debug build. The offscreen focused suite passed 5/5, covering the adapter,
+application contract, PageManager, startup visual behavior, and startup
+performance/PDF. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime
+references; dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static,
+call-site, and diff checks passed. The exact dirty scope was six files.
+Expected warnings remained nonblocking; stale processes were stopped.
+
+The typed document-page-spacing read seam is closed. Phase 2 remains open; the
+next slice is not yet selected.
