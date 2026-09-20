@@ -1,8 +1,8 @@
 #include "speaking_eval_batch_export_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
+#include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -563,8 +563,9 @@ void SpeakingEvalBatchExportDialog::exportReports()
 bool SpeakingEvalBatchExportDialog::confirmPowerPointDataAccess()
 {
 #ifdef Q_OS_MACOS
-    if (!SettingsManager::instance()
-            .showPowerPointDataAccessNotice())
+    const ClassMngr::Next::Platform::
+        SettingsManagerPowerPointDataAccessNoticePort port;
+    if (!port.read().showPowerPointDataAccessNotice)
     {
         return true;
     }

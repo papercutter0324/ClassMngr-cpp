@@ -7,6 +7,7 @@
 #include "ui/shared/constants/options.h"
 #include "ui/shared/styles/themed_icon_utils.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
+#include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
 #include <QAction>
@@ -1191,9 +1192,12 @@ void ActionRegistry::createOptionActions()
             tr("Show Data Access Notice Before Export"),
             tr("Show a notice before PowerPoint accesses its protected workspace")
             );
+    const ClassMngr::Next::Platform::
+        SettingsManagerPowerPointDataAccessNoticePort
+        powerPointDataAccessNoticePort;
     showPowerPointDataAccessNotice->setChecked(
-        SettingsManager::instance()
-            .showPowerPointDataAccessNotice()
+        powerPointDataAccessNoticePort.read()
+            .showPowerPointDataAccessNotice
         );
     connect(
         showPowerPointDataAccessNotice,
@@ -1201,8 +1205,11 @@ void ActionRegistry::createOptionActions()
         this,
         [](bool enabled)
         {
-            SettingsManager::instance()
-                .setShowPowerPointDataAccessNotice(enabled);
+            const ClassMngr::Next::Platform::
+                SettingsManagerPowerPointDataAccessNoticePort port;
+            port.write({
+                .showPowerPointDataAccessNotice = enabled
+            });
         }
         );
 #endif

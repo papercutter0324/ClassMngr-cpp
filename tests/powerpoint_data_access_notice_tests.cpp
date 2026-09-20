@@ -1,4 +1,5 @@
 #include "core/settingsmanager.h"
+#include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
 #include "ui/shared/actions/action_registry.h"
 
 #include <QtTest>
@@ -41,6 +42,8 @@ void PowerPointDataAccessNoticeTests::
 
     ActionRegistry defaultActions;
     defaultActions.createActions();
+    const ClassMngr::Next::Platform::
+        SettingsManagerPowerPointDataAccessNoticePort preferencesPort;
     QVERIFY(defaultActions.showPowerPointDataAccessNotice);
     QVERIFY(defaultActions.showPowerPointDataAccessNotice->isChecked());
     QCOMPARE(
@@ -50,7 +53,7 @@ void PowerPointDataAccessNoticeTests::
 
     defaultActions.showPowerPointDataAccessNotice->setChecked(false);
     settings.sync();
-    QVERIFY(!settings.showPowerPointDataAccessNotice());
+    QVERIFY(!preferencesPort.read().showPowerPointDataAccessNotice);
 
     ActionRegistry reloadedActions;
     reloadedActions.createActions();
@@ -59,7 +62,7 @@ void PowerPointDataAccessNoticeTests::
 
     reloadedActions.showPowerPointDataAccessNotice->setChecked(true);
     settings.sync();
-    QVERIFY(settings.showPowerPointDataAccessNotice());
+    QVERIFY(preferencesPort.read().showPowerPointDataAccessNotice);
 }
 
 QTEST_MAIN(PowerPointDataAccessNoticeTests)

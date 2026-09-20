@@ -1513,6 +1513,35 @@ The typed sidebar display-preferences seam is closed. Residual settings
 callers, generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
 
+#### Progress update - 2026-09-21 (typed PowerPoint data-access notice boundary)
+
+Against baseline commit `f462a162`, added the Qt-free
+`PowerPointDataAccessNoticePreferences` value and
+`PowerPointDataAccessNoticePreferencesPort`, plus the
+`SettingsManagerPowerPointDataAccessNoticePort` adapter. It preserves the
+exact `options/showPowerPointDataAccessNotice` key, an enabled default for
+missing or unavailable values, legacy `QVariant` boolean coercion, and
+round-trip behavior. The legacy write is void, so persistence failure is not
+observable and save failure is not applicable at this boundary.
+
+Only `src/ui/shared/actions/action_registry.cpp` and
+`src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp` use the
+typed preference. The `Q_OS_MACOS` confirmation/bypass before PowerPoint
+export remains preserved, as does export behavior and non-Apple behavior.
+
+The executor and independent tester reported a passing Debug build, focused
+tests 9/9, the exact nine-target regression 9/9, and a passing launch check.
+Configure/ownership passed with 740 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Qt-free, call-site,
+static, and diff checks passed. The Apple-only runtime test was unavailable on
+Windows; non-Apple guards passed. Normal warnings remained non-blocking;
+`clang-format` and `clang-tidy` were unavailable.
+
+The typed PowerPoint data-access notice seam is closed. Residual settings
+callers, generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.
+
 #### Progress update - 2026-09-21 (typed automatic-update preference boundary)
 
 Against baseline commit `374461a0`, added the Qt-free
