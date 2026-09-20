@@ -94,6 +94,12 @@ public:
                     folder.path,
                     Application::kDocumentCatalogMaxPathLength
                     );
+                const auto parentPath = folder.parentPath.isEmpty()
+                    ? std::optional<std::string>{std::string{}}
+                    : boundedUtf8(
+                        folder.parentPath,
+                        Application::kDocumentCatalogMaxPathLength
+                        );
                 const auto key = boundedUtf8(
                     folder.id,
                     Application::kDocumentCatalogMaxKeyLength
@@ -102,7 +108,8 @@ public:
                     folder.sidebarNames.forLocale(localeName),
                     Application::kDocumentCatalogMaxDisplayNameLength
                     );
-                if (!path || !key || !displayName || folder.order < 0)
+                if (!path || !parentPath || !key || !displayName
+                    || folder.order < 0)
                 {
                     return failure(
                         Domain::ErrorCode::InvalidInput,
@@ -115,7 +122,8 @@ public:
                     *path,
                     *key,
                     *displayName,
-                    folder.order
+                    folder.order,
+                    *parentPath
                 });
             }
 

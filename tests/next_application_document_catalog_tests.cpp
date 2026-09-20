@@ -92,6 +92,7 @@ void NextApplicationDocumentCatalogTests::validConstructionPreservesMetadataAndO
     QCOMPARE(projection.documents().size(), std::size_t(1));
     QCOMPARE(projection.folders().front().id.value(), std::string("folder-guides"));
     QCOMPARE(projection.folders().front().path, std::string("Guides"));
+    QCOMPARE(projection.folders().front().parentPath, std::string());
     QCOMPARE(projection.folders().front().key, std::string("guides"));
     QCOMPARE(projection.folders().front().displayName, std::string("Guides"));
     QCOMPARE(projection.folders().front().order, std::int32_t(10));
@@ -119,6 +120,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     auto& folder = input.folders.front();
     folder.id = folderId("folder-curriculum");
     folder.path = "Catalog/Curriculum";
+    folder.parentPath = "Catalog";
     folder.key = "curriculum";
     folder.displayName = "Curriculum";
     folder.order = 42;
@@ -145,6 +147,7 @@ void NextApplicationDocumentCatalogTests::completeMetadataIsPreserved()
     const auto& projectedFolder = result.value().folders().front();
     QCOMPARE(projectedFolder.id.value(), std::string("folder-curriculum"));
     QCOMPARE(projectedFolder.path, std::string("Catalog/Curriculum"));
+    QCOMPARE(projectedFolder.parentPath, std::string("Catalog"));
     QCOMPARE(projectedFolder.key, std::string("curriculum"));
     QCOMPARE(projectedFolder.displayName, std::string("Curriculum"));
     QCOMPARE(projectedFolder.order, std::int32_t(42));
@@ -231,6 +234,21 @@ void NextApplicationDocumentCatalogTests::boundedValidationAndDuplicateIdsAreRej
     {
         auto input = validInput();
         input.folders.front().path = "\t\n";
+        verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.folders.front().parentPath = " \t\n";
+        verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
+    }
+
+    {
+        auto input = validInput();
+        input.folders.front().parentPath = std::string(
+            kDocumentCatalogMaxPathLength + 1,
+            'p'
+            );
         verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
     }
 

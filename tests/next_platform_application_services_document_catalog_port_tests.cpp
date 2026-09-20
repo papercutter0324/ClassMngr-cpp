@@ -81,6 +81,7 @@ projectsEmbeddedCatalogAsBoundedLocalizedMetadata()
             );
         QVERIFY(projected != projection.folders().cend());
         QCOMPARE(utf8(projected->path), source.path);
+        QCOMPARE(utf8(projected->parentPath), source.parentPath);
         QCOMPARE(utf8(projected->key), source.id);
         QCOMPARE(utf8(projected->displayName),
                  source.sidebarNames.forLocale(QStringLiteral("ko_KR")));

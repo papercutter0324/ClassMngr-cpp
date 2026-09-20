@@ -847,3 +847,19 @@ passed. Invalid UTF-8 and live UI integration lack direct coverage;
 close-before-release is source-order verified. Sidebar/MainWindow catalog
 ownership and other feature migrations remain open. Phase 2 remains in
 progress.
+
+#### Progress update - 2026-09-20 (document-folder hierarchy metadata prerequisite slice)
+
+After baseline commit `fd695fd`, `DocumentFolderMetadata` carries bounded
+`parentPath` metadata, empty for roots, and projection validation handles it.
+`ApplicationServicesDocumentCatalogPort` copies legacy
+`DocumentFolderDefinition::parentPath`. This preserves nested hierarchy for
+the upcoming `Sidebar`/`MainWindow` projection cutover while keeping the
+application layer Qt-free and aggregate initialization compatible.
+
+Configure/ownership/dependency checks passed at 705 handwritten files;
+focused projection/adapter CTest passed 2/2; Qt-free application and
+standalone syntax checks passed; and `git diff --check` passed. The embedded
+fixture contains root folders only, so nested adapter transfer lacks runtime
+coverage; nested projection behavior is covered. Phase 2 remains in progress;
+UI cutover, `Sidebar`/`MainWindow`, and other feature migration remain open.

@@ -39,6 +39,9 @@ struct DocumentFolderMetadata final
     std::string key;
     std::string displayName;
     std::int32_t order = 0;
+    // Empty for a root folder; non-root folders carry their bounded parent
+    // path. Appended to preserve existing aggregate construction.
+    std::string parentPath;
 
     friend bool operator==(
         const DocumentFolderMetadata&,
@@ -128,6 +131,13 @@ namespace DocumentCatalogProjectionDetail
         && value.size() <= kDocumentCatalogMaxPathLength;
 }
 
+[[nodiscard]] inline bool isValidParentPath(
+    const std::string& value
+    ) noexcept
+{
+    return value.empty() || isValidPath(value);
+}
+
 [[nodiscard]] inline bool isValidKey(
     const std::string& value
     ) noexcept
@@ -194,12 +204,13 @@ template <typename TypedId>
     }
 
     if (!isValidPath(folder.path)
+        || !isValidParentPath(folder.parentPath)
         || !isValidKey(folder.key)
         || !isValidDisplayName(folder.displayName))
     {
         return Domain::Result<void>::failure(
             invalidInput(
-                "Document folder path, key, and display name must be bounded and non-blank."
+                "Document folder path, parent path, key, and display name must be bounded; parent path may be empty for a root folder."
                 )
             );
     }
