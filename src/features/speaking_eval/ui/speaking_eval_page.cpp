@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 SpeakingEvalPage::SpeakingEvalPage(
@@ -87,7 +88,12 @@ void SpeakingEvalPage::loadEvaluations(
             )
         );
     setVisibilityScope(
-        ClassNavigationPreferences::load(m_services->settingsService())
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassVisibilityPreferencesPort(*m_services)
+            .load()
+            == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+            ? ClassTabNavigation::VisibilityScope::AllClasses
+            : ClassTabNavigation::VisibilityScope::ActiveSchedule
         );
 
     int classId =
@@ -171,9 +177,13 @@ void SpeakingEvalPage::setScheduleDisplayMode(
 void SpeakingEvalPage::refreshNavigationPreferences()
 {
     setVisibilityScope(
-        ClassNavigationPreferences::load(
-            m_services ? m_services->settingsService() : nullptr
-            )
+        m_services
+            && ClassMngr::Next::Platform::
+                ApplicationServicesClassVisibilityPreferencesPort(*m_services)
+                    .load()
+                == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+            ? ClassTabNavigation::VisibilityScope::AllClasses
+            : ClassTabNavigation::VisibilityScope::ActiveSchedule
         );
 }
 

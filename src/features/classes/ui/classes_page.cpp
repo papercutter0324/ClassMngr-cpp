@@ -7,7 +7,6 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
-#include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/class_notes_page.h"
@@ -18,6 +17,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
+#include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
@@ -209,7 +209,14 @@ bool ClassesPage::openClass(
             )
         );
     setVisibilityScope(
-        ClassNavigationPreferences::load(settingsService)
+        m_services
+            && ClassMngr::Next::Platform::
+                ApplicationServicesClassVisibilityPreferencesPort(
+                    *m_services
+                    ).load()
+                == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+            ? ClassTabNavigation::VisibilityScope::AllClasses
+            : ClassTabNavigation::VisibilityScope::ActiveSchedule
         );
 
     if (!commitActiveEditor())
@@ -567,9 +574,14 @@ void ClassesPage::refresh()
 void ClassesPage::refreshNavigationPreferences()
 {
     setVisibilityScope(
-        ClassNavigationPreferences::load(
-            m_services ? m_services->settingsService() : nullptr
-            )
+        m_services
+            && ClassMngr::Next::Platform::
+                ApplicationServicesClassVisibilityPreferencesPort(
+                    *m_services
+                    ).load()
+                == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+            ? ClassTabNavigation::VisibilityScope::AllClasses
+            : ClassTabNavigation::VisibilityScope::ActiveSchedule
         );
     setShowMiddleSchoolAnalyticsAndEvaluations(
         m_services

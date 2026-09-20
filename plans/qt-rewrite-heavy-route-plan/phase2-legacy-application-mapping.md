@@ -1072,3 +1072,33 @@ warnings. `clang-format`/`clang-tidy` remained unavailable.
 
 The typed class-selection reset-policy seam is closed. Phase 2 remains open;
 the next slice is not yet selected.
+
+## Verified typed class-navigation visibility-scope handoff
+
+Against baseline commit `8372fd9d`, added the Qt-free
+`ClassVisibilityScope`/`ClassVisibilityPreferencesPort` contract and its
+platform adapter for the exact `classes_navigation_visibility_scope` key.
+Stored `active_schedule` and `all_classes` map to the corresponding typed
+values; missing, invalid, and unavailable settings fall back to
+`ActiveSchedule`, with missing-key initialization and trimmed,
+case-normalized round-trip persistence preserved.
+
+Typed menu persistence now feeds the initial and refresh loads of
+`ClassesPage` and `SpeakingEvalPage`. Existing class-tab and day-filter
+semantics remain unchanged, other navigation keys are untouched, and none of
+the three callers (`menu_builder.cpp`, `classes_page.cpp`, and
+`speaking_eval_page.cpp`) directly accesses `ClassNavigationPreferences`.
+
+Verification recorded a clean Debug build PASS and configure/ownership with
+761 sources. Focused visibility/page/navigation checks were 11/12 PASS; the
+single unrelated `ClassMngrSpeakingEvalBatchReportServiceTests`
+`aiPromptPreviewCopiesAnAnonymousPrompt` case is environment-sensitive, passes
+with `QT_QPA_PLATFORM=offscreen`, and its full rerun was interrupted.
+Additional navigation checks passed 2/2; the exact nine-target regression
+passed 9/9; resources passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff
+checks passed. The exact dirty scope was nine files. Expected Vulkan/zlib and
+existing linker warnings remained nonblocking.
+
+The typed class-navigation visibility-scope seam is closed. Phase 2 remains
+open; the next slice is not yet selected.

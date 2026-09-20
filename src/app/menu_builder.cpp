@@ -5,10 +5,10 @@
 #include "core/settingsmanager.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/calendar/ui/calendar_preferences_panel.h"
-#include "features/classes/class_navigation_preferences.h"
 #include "mainwindow.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
+#include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
@@ -451,19 +451,20 @@ void addNavigationPreferencesTab(
         );
     auto* classesShownLayout = new QVBoxLayout(classesShownGroup);
     classesShownLayout->setSpacing(12);
-    const ClassTabNavigation::VisibilityScope scope =
-        ClassNavigationPreferences::load(
-            window && window->services()
-                ? window->services()->settingsService()
-                : nullptr
-            );
+    const auto scope = window && window->services()
+        ? ClassMngr::Next::Platform::
+            ApplicationServicesClassVisibilityPreferencesPort(
+                *window->services()
+                ).load()
+        : ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule;
     auto* allClasses = new QRadioButton(
         preferencesText("All Classes"),
         classesShownGroup
         );
     allClasses->setObjectName(QStringLiteral("preferencesNavigationAllClasses"));
     allClasses->setChecked(
-        scope == ClassTabNavigation::VisibilityScope::AllClasses
+        scope
+            == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
         );
     classesShownLayout->addWidget(allClasses);
     auto* activeSchedule = new QRadioButton(
@@ -474,7 +475,8 @@ void addNavigationPreferencesTab(
         QStringLiteral("preferencesNavigationActiveSchedule")
         );
     activeSchedule->setChecked(
-        scope == ClassTabNavigation::VisibilityScope::ActiveSchedule
+        scope
+            == ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
         );
     classesShownLayout->addWidget(activeSchedule);
     navigationLayout->addWidget(classesShownGroup);
@@ -666,14 +668,18 @@ void addNavigationPreferencesTab(
             return;
         }
 
-        ClassNavigationPreferences::save(
-            window && window->services()
-                ? window->services()->settingsService()
-                : nullptr,
-            allClasses->isChecked()
-                ? ClassTabNavigation::VisibilityScope::AllClasses
-                : ClassTabNavigation::VisibilityScope::ActiveSchedule
-            );
+        if (window && window->services())
+        {
+            ClassMngr::Next::Platform::
+                ApplicationServicesClassVisibilityPreferencesPort port(
+                    *window->services()
+                    );
+            port.save(
+                allClasses->isChecked()
+                    ? ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                    : ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
+                );
+        }
         window->refreshNavigationPreferences();
     };
     QObject::connect(allClasses, &QRadioButton::toggled, page, save);

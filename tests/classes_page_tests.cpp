@@ -9,9 +9,11 @@
 #include "domain/models/speaking_evaluation.h"
 #include "next/application/class_day_filter_reset_policy.h"
 #include "next/application/class_selection_reset_policy.h"
+#include "next/application/class_visibility_preferences.h"
 #include "next/application/evaluation_default_policy_preferences.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
+#include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
@@ -129,6 +131,7 @@ private slots:
     void classDetailsAndCoTeacherTabsSeparateTheirSectionCards();
     void middleSchoolAnalyticsAndEvaluationsTabsFollowPreference();
     void evaluationDefaultPolicyDefaultsToAllAndPersists();
+    void visibilityScopePortIsAppliedOnInitialLoadAndRefresh();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void dayFiltersResetOnPageLeaveAfterHideAndShow();
     void classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow();
@@ -319,6 +322,35 @@ void ClassesPageTests::evaluationDefaultPolicyDefaultsToAllAndPersists()
         );
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("current_or_previous_term"));
+}
+
+void ClassesPageTests::visibilityScopePortIsAppliedOnInitialLoadAndRefresh()
+{
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort visibilityPolicy(
+            services
+            );
+    visibilityPolicy.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
+        );
+
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+    page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
+    QCOMPARE(page.runtimeMetrics().visibleClassCount, 0);
+
+    visibilityPolicy.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+        );
+    page.refreshNavigationPreferences();
+    QCOMPARE(page.runtimeMetrics().visibleClassCount, 2);
+
+    visibilityPolicy.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
+        );
+    page.refreshNavigationPreferences();
+    QCOMPARE(page.runtimeMetrics().visibleClassCount, 0);
 }
 
 void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
