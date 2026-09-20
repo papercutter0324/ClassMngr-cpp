@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, and typed Sidebar/MainWindow catalog cutover are implemented. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Remaining feature-service migrations and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, and language preference bridge are implemented. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -912,3 +912,25 @@ passed, and `git diff --check` passed with CRLF warnings. The Ninja/MSVC
 fallback build passed after the environment/FileTracker issue. No dedicated
 icon-pixel assertion exists; this is a non-blocking gap. Phase 2 remains in
 progress.
+
+#### Progress update - 2026-09-20 (language preference bridge slice)
+
+After baseline commit `3ad3ef1`, `ClassMngrNext::Platform::LanguagePreferencePort`
+explicitly maps typed `Application::LanguagePreference`
+(`SystemDefault`, `English`, or `Korean`) to the legacy `LanguageService`.
+`LanguageController` owns typed `UserPreferencesState`, synchronizes the
+persisted `ActionRegistry` language without reapplying it during action
+connection, and applies valid changes through the port while preserving font
+refresh, retranslation, and persistence behavior. `MainWindow` now passes an
+explicit `LanguageService` reference. Generic settings persistence and other
+feature-service migrations remain open.
+
+Configure/ownership/dependency checks passed at 708 sources; focused
+language/controller CTest passed 3/3; the exact nine-target CTest passed 9/9;
+`LanguageService`/startup visual tests passed; and resource validation covered
+6 RCC packs, 7 runtime IDs, and 7 references. Qt-free/raw-pointer checks and
+`git diff --check` passed, and an elevated FileTracker retry passed. No live
+`MainWindow::retranslateUi` assertion exists, failure rollback is not
+deterministically exercised, and the nullable legacy `MainWindow`
+`LanguageService` pointer has no null-construction coverage. Phase 2 remains
+in progress.

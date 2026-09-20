@@ -524,7 +524,7 @@ void MainWindow::connectControllers()
 
     m_languageController =
         std::make_unique<LanguageController>(
-            m_languageService,
+            *m_languageService,
             this,
             this
             );

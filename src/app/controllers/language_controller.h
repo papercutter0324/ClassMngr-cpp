@@ -1,11 +1,14 @@
 #pragma once
 
+#include "next/application/user_preferences_state.h"
+#include "next/platform/language_preference_port.h"
 #include "ui/shared/constants/options.h"
 
 #include <QObject>
 
+#include <optional>
+
 class ActionRegistry;
-class LanguageService;
 class MainWindow;
 
 class LanguageController : public QObject
@@ -14,7 +17,7 @@ class LanguageController : public QObject
 
 public:
     explicit LanguageController(
-        LanguageService* languageService,
+        LanguageService& languageService,
         MainWindow* window,
         QObject* parent = nullptr
         );
@@ -23,11 +26,20 @@ public:
         ActionRegistry& actions
         );
 
-    void changeLanguage(
+    [[nodiscard]] ClassMngr::Next::Domain::Result<void> changeLanguage(
+        ClassMngr::Next::Application::LanguagePreference preference
+        );
+
+    [[nodiscard]] ClassMngr::Next::Application::UserPreferencesSnapshot
+    preferencesSnapshot() const;
+
+private:
+    static std::optional<ClassMngr::Next::Application::LanguagePreference>
+    languagePreferenceFor(
         Language language
         );
 
-private:
-    LanguageService* m_languageService = nullptr;
+    ClassMngr::Next::Platform::LanguagePreferencePort m_languagePreferencePort;
+    ClassMngr::Next::Application::UserPreferencesState m_preferencesState;
     MainWindow* m_window = nullptr;
 };

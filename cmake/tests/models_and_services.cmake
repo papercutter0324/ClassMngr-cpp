@@ -314,6 +314,30 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrLanguageServiceTests
     )
 
+    classmngr_add_qt_test(
+        NAME LanguagePreferencePort
+        SOURCES
+            tests/language_preference_port_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+        ENVIRONMENT
+            "CLASSMNGR_SETTINGS_ROOT=${PROJECT_BINARY_DIR}/test-settings/language-preference"
+        OFFSCREEN
+    )
+
+    qt_add_translations(
+        TARGETS ClassMngrLanguagePreferencePortTests
+        TS_FILES
+            resources/assets/translations/ClassMngr_en_AU.ts
+            resources/assets/translations/ClassMngr_en_CA.ts
+            resources/assets/translations/ClassMngr_en_GB.ts
+            resources/assets/translations/ClassMngr_en_US.ts
+            resources/assets/translations/ClassMngr_ko_KR.ts
+    )
+
     qt_add_executable(ClassMngrAiCommentOptionsTests
         tests/ai_comment_options_tests.cpp
         src/core/settingsmanager.cpp
