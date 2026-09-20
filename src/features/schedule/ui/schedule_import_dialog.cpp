@@ -4,13 +4,13 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
-#include "core/settingsmanager.h"
 #include "core/startup_profiler.h"
 #include "data/data_service.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
@@ -461,8 +461,10 @@ bool ScheduleImportDialog::loadWorkbook()
     }
     const quint64 requestId =
         ++m_loadRequestId;
+    const ClassMngr::Next::Platform::
+        SettingsManagerExcelImportTimeoutPort excelImportTimeoutPort;
     const int timeoutSeconds =
-        SettingsManager::instance().excelImportTimeoutSeconds();
+        excelImportTimeoutPort.read().seconds;
     setLoading(true);
 
     auto* watcher =

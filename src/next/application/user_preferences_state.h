@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/excel_import_timeout_preferences.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -11,13 +12,6 @@
 
 namespace ClassMngr::Next::Application
 {
-
-// The legacy settings store currently accepts these timeout choices. The
-// explicit bounds make the adapter-facing contract easy to validate without
-// exposing the legacy storage representation.
-inline constexpr int kMinimumExcelImportTimeoutSeconds = 30;
-inline constexpr int kMaximumExcelImportTimeoutSeconds = 300;
-inline constexpr int kDefaultExcelImportTimeoutSeconds = 120;
 
 // Descriptive aliases keep the bounds discoverable at import call sites.
 inline constexpr int kMinExcelImportTimeoutSeconds =
@@ -78,16 +72,7 @@ namespace UserPreferencesStateDetail
     const int seconds
     ) noexcept
 {
-    switch (seconds)
-    {
-    case 30:
-    case 60:
-    case 120:
-    case 300:
-        return true;
-    default:
-        return false;
-    }
+    return Application::isSupportedExcelImportTimeoutSeconds(seconds);
 }
 
 [[nodiscard]] inline bool isBlank(

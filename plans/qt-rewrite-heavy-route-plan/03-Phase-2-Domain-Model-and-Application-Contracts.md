@@ -1456,3 +1456,32 @@ non-blocking.
 The typed five-key schedule-preferences persistence seam is closed. Residual
 settings callers, generic settings persistence, and broader page, document,
 and feature migrations remain future work; Phase 2 remains open.
+
+#### Progress update - 2026-09-20 (typed excelImportTimeoutSeconds boundary)
+
+Against baseline commit `b4fca5b1`, added the Qt-free bounded
+`ExcelImportTimeoutPreferences` value and read/write
+`ExcelImportTimeoutPreferencesPort`, with the
+`SettingsManagerExcelImportTimeoutPort` adapter. The policy preserves default
+120 seconds, supports only 30/60/120/300, normalizes invalid values to 120,
+and round-trips the legacy `imports/excelTimeoutSeconds` key. Shared timeout
+policy was narrowly centralized in `user_preferences_state.h` while the
+existing Excel-specific and import-timeout APIs remain available.
+
+Only `src/app/menu_builder.cpp`,
+`src/features/teacher/ui/teacher_import_dialog.cpp`, and
+`src/features/schedule/ui/schedule_import_dialog.cpp` use the typed boundary.
+No worker or dialog workflow changed; existing import behavior and other
+settings callers remain intact.
+
+The executor and independent tester reported a passing Debug build, focused
+tests 8/8, the exact nine-target regression 9/9, and a passing launch check.
+Configure/ownership passed with 731 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Caller-scope, Qt-free,
+normalization/round-trip, and diff checks passed. Normal warnings remained
+non-blocking; `clang-format` and `clang-tidy` were unavailable.
+
+The typed Excel import-timeout seam is closed. Residual settings callers,
+generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.

@@ -46,6 +46,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/document_catalog_projection.h
     src/next/application/document_catalog_use_case.h
     src/next/application/document_content_session.h
+    src/next/application/excel_import_timeout_preferences.h
     src/next/application/import_job_coordinator.h
     src/next/application/import_review_session.h
     src/next/application/import_job_state.h
@@ -77,6 +78,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/theme_preference_port.h
     src/next/platform/language_preference_port.h
     src/next/platform/application_services_schedule_display_preferences_port.h
+    src/next/platform/settings_manager_excel_import_timeout_port.h
 )
 
 foreach(_classmngr_next_target IN LISTS

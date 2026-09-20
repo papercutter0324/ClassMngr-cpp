@@ -2,8 +2,8 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
-#include "core/settingsmanager.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
+#include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QButtonGroup>
@@ -153,8 +153,10 @@ void TeacherImportDialog::validateSelectedFile()
         m_fileEdit->text();
     const quint64 requestId =
         ++m_validationRequestId;
+    const ClassMngr::Next::Platform::
+        SettingsManagerExcelImportTimeoutPort excelImportTimeoutPort;
     const int timeoutSeconds =
-        SettingsManager::instance().excelImportTimeoutSeconds();
+        excelImportTimeoutPort.read().seconds;
 
     clearOptions();
     m_valid = false;

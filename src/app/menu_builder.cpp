@@ -8,6 +8,7 @@
 #include "features/classes/class_navigation_preferences.h"
 #include "mainwindow.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
+#include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -721,6 +722,8 @@ void populatePreferencesDialog(
     )
 {
     auto& actions = window->actions();
+    const ClassMngr::Next::Platform::
+        SettingsManagerExcelImportTimeoutPort excelImportTimeoutPort;
 
     dialog->setObjectName(
         QStringLiteral("preferencesDialog")
@@ -826,7 +829,7 @@ void populatePreferencesDialog(
         preferencesText("5 Minutes"), 300);
     excelImportTimeout->setCurrentIndex(
         excelImportTimeout->findData(
-            SettingsManager::instance().excelImportTimeoutSeconds()
+            excelImportTimeoutPort.read().seconds
             )
         );
     excelImportTimeout->setToolTip(
@@ -845,10 +848,11 @@ void populatePreferencesDialog(
     QObject::connect(
         excelImportTimeout,
         QOverload<int>::of(&QComboBox::currentIndexChanged),
-        [excelImportTimeout](int index)
+        [excelImportTimeout, excelImportTimeoutPort](int index)
         {
-            SettingsManager::instance().setExcelImportTimeoutSeconds(
-                excelImportTimeout->itemData(index).toInt()
+            excelImportTimeoutPort.write({
+                .seconds = excelImportTimeout->itemData(index).toInt()
+                }
                 );
         }
         );
