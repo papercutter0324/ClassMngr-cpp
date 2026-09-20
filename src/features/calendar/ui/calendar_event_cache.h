@@ -72,6 +72,12 @@ public:
         const QDate& date
         ) const;
 
+    ClassMngr::Next::Application::CalendarEventProjection
+    eventProjectionInRange(
+        const QDate& startDate,
+        const QDate& endDate
+        ) const;
+
     QList<CalendarEvent> eventsForDate(
         const QDate& date
         ) const;

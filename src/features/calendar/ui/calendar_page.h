@@ -13,6 +13,8 @@
 #include <QSet>
 #include <QStringList>
 
+#include <vector>
+
 class AcademicCalendarProvider;
 class ApplicationServices;
 class CalendarEventModel;
@@ -130,24 +132,37 @@ private:
     void updateCalendarCampusFilter();
     void renderUpcomingEvents(
         UpcomingEventsScope scope,
-        const QList<CalendarEvent>& events,
+        const std::vector<
+            ClassMngr::Next::Application::CalendarEventSummary
+            >& events,
         bool loading,
         bool use24HourTime,
         int dateColumnWidth,
         int timeColumnWidth,
         int eventTypeColumnWidth
         );
-    QList<CalendarEvent> upcomingEventsForScope(
+    ClassMngr::Next::Application::CalendarEventProjection
+    upcomingEventsForScope(
         UpcomingEventsScope scope
         ) const;
     [[nodiscard]] UpcomingEventsScope currentUpcomingEventsScope() const;
     bool upcomingEventsLoading(
         UpcomingEventsScope scope,
-        const QList<CalendarEvent>& events
+        const std::vector<
+            ClassMngr::Next::Application::CalendarEventSummary
+            >& events
         ) const;
     CalendarEventDisplayOptions calendarEventDisplayOptions() const;
     QList<CalendarEvent> filterUpcomingEvents(
         const QList<CalendarEvent>& events,
+        const CalendarEventDisplayOptions& options
+        ) const;
+    std::vector<
+        ClassMngr::Next::Application::CalendarEventSummary
+        > filterUpcomingEvents(
+        const std::vector<
+            ClassMngr::Next::Application::CalendarEventSummary
+            >& events,
         const CalendarEventDisplayOptions& options
         ) const;
     QStringList activeCalendarEventTypes() const;
@@ -174,18 +189,22 @@ private:
     void syncCalendarEventTypeColors();
     void syncCalendarFontSize();
     QString upcomingEventDateText(
-        const CalendarEvent& event
+        const ClassMngr::Next::Application::CalendarEventSummary& event
         ) const;
     QString upcomingEventTimeText(
-        const CalendarEvent& event,
+        const ClassMngr::Next::Application::CalendarEventSummary& event,
         bool use24HourTime
         ) const;
     bool calendarEventVisible(
         const CalendarEvent& event,
         const CalendarEventDisplayOptions& options
         ) const;
+    bool calendarEventVisible(
+        const ClassMngr::Next::Application::CalendarEventSummary& event,
+        const CalendarEventDisplayOptions& options
+        ) const;
     QWidget* createUpcomingEventRow(
-        const CalendarEvent& event,
+        const ClassMngr::Next::Application::CalendarEventSummary& event,
         int dateColumnWidth,
         int timeColumnWidth,
         int eventTypeColumnWidth,

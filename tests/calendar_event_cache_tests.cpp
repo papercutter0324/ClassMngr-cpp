@@ -279,6 +279,7 @@ private slots:
     void injectedQueryFactoryFeedsLegacyCacheBoundary();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
     void typedDateProjectionPreservesModelParityAndFiltering();
+    void typedRangeProjectionPreservesOrderingMetadataAndLegacyParity();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
     void invalidationDiscardsCompletedWorkerResult();
     void multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates();
@@ -708,6 +709,241 @@ void CalendarEventCacheTests::typedDateProjectionPreservesModelParityAndFilterin
         );
 }
 
+void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLegacyParity()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath =
+        temporaryDirectory.filePath(QStringLiteral("calendar.db"));
+    createDatabase(databasePath);
+
+    const QString connectionName =
+        QStringLiteral("calendar-event-cache-range-fixture-%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            );
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        insertRawEvent(
+            database,
+            QStringLiteral("SNU meeting"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed"),
+            QString(),
+            false,
+            QDate(2026, 7, 11),
+            QStringLiteral("09:00"),
+            QDate(2026, 7, 11),
+            QStringLiteral("10:00")
+            );
+        insertRawEvent(
+            database,
+            QStringLiteral("Repeat unknown-time"),
+            QStringLiteral("Holiday"),
+            QStringLiteral("Unknown"),
+            QStringLiteral("series-repeat"),
+            false,
+            QDate(2026, 7, 11),
+            QString(),
+            QDate(2026, 7, 11),
+            QString()
+            );
+        insertRawEvent(
+            database,
+            QStringLiteral("All-day event"),
+            QStringLiteral("Vacation"),
+            QStringLiteral("Timed"),
+            QStringLiteral("series-all-day"),
+            true,
+            QDate(2026, 7, 11),
+            QString(),
+            QDate(2026, 7, 11),
+            QString()
+            );
+        insertRawEvent(
+            database,
+            QStringLiteral("BDG meeting"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed"),
+            QStringLiteral("series-bdg"),
+            false,
+            QDate(2026, 7, 12),
+            QStringLiteral("10:00"),
+            QDate(2026, 7, 12),
+            QStringLiteral("11:00")
+            );
+        insertRawEvent(
+            database,
+            QStringLiteral("Outside range"),
+            QStringLiteral("Other"),
+            QStringLiteral("Timed"),
+            QString(),
+            false,
+            QDate(2026, 7, 13),
+            QStringLiteral("12:00"),
+            QDate(2026, 7, 13),
+            QStringLiteral("13:00")
+            );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    CalendarEventCache cache;
+    cache.setDatabasePath(databasePath);
+    cache.requestRange(
+        QDate(2026, 7, 11),
+        QDate(2026, 7, 12)
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(
+            QDate(2026, 7, 11),
+            QDate(2026, 7, 12)
+            ),
+        5000
+        );
+
+    const auto projection = cache.eventProjectionInRange(
+        QDate(2026, 7, 11),
+        QDate(2026, 7, 12)
+        );
+    QCOMPARE(projection.eventCount(), std::size_t(4));
+    QCOMPARE(
+        projection.events().at(0).title,
+        std::string("All-day event")
+        );
+    QCOMPARE(
+        projection.events().at(1).title,
+        std::string("Repeat unknown-time")
+        );
+    QCOMPARE(
+        projection.events().at(2).title,
+        std::string("SNU meeting")
+        );
+    QCOMPARE(
+        projection.events().at(3).title,
+        std::string("BDG meeting")
+        );
+    QCOMPARE(
+        projection.events().at(0).startDate,
+        std::string("2026-07-11")
+        );
+    QCOMPARE(
+        projection.events().at(3).startDate,
+        std::string("2026-07-12")
+        );
+
+    const auto& allDay = projection.events().at(0);
+    QVERIFY(allDay.allDay);
+    QCOMPARE(allDay.eventType, std::string("Vacation"));
+    QCOMPARE(
+        allDay.repeatSeriesId,
+        std::optional<std::string>(std::string("series-all-day"))
+        );
+    QVERIFY(!allDay.startTime);
+    QVERIFY(!allDay.endTime);
+
+    const auto& unknown = projection.events().at(1);
+    QVERIFY(!unknown.allDay);
+    QCOMPARE(unknown.timeStatus, std::string("Unknown"));
+    QCOMPARE(
+        unknown.repeatSeriesId,
+        std::optional<std::string>(std::string("series-repeat"))
+        );
+    QVERIFY(!unknown.startTime);
+    QVERIFY(!unknown.endTime);
+
+    QVERIFY(
+        !CalendarEventCampusFilter::eventMatchesCampus(
+            projection.events().at(2),
+            {QStringLiteral("BDG")},
+            {QStringLiteral("BDG"), QStringLiteral("SNU")},
+            false
+            )
+        );
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            projection.events().at(3),
+            {QStringLiteral("BDG")},
+            {QStringLiteral("BDG"), QStringLiteral("SNU")},
+            false
+            )
+        );
+
+    const QList<CalendarEvent> legacyEvents = cache.eventsInRange(
+        QDate(2026, 7, 11),
+        QDate(2026, 7, 12)
+        );
+    QCOMPARE(legacyEvents.size(), projection.eventCount());
+    for (int index = 0; index < legacyEvents.size(); ++index)
+    {
+        const auto& summary = projection.events().at(
+            static_cast<std::size_t>(index)
+            );
+        const CalendarEvent& legacy = legacyEvents.at(index);
+        QCOMPARE(legacy.title, projectionText(summary.title));
+        QCOMPARE(legacy.eventType, projectionText(summary.eventType));
+        QCOMPARE(legacy.timeStatus, projectionText(summary.timeStatus));
+        QCOMPARE(legacy.startDate, QDate::fromString(
+            projectionText(summary.startDate),
+            Qt::ISODate
+            ));
+        QCOMPARE(legacy.endDate, QDate::fromString(
+            projectionText(summary.endDate),
+            Qt::ISODate
+            ));
+        QCOMPARE(legacy.allDay, summary.allDay);
+        QCOMPARE(
+            legacy.repeatSeriesId,
+            summary.repeatSeriesId
+                ? projectionText(*summary.repeatSeriesId)
+                : QString()
+            );
+
+        if (summary.startTime)
+        {
+            QCOMPARE(
+                legacy.startTime,
+                QTime::fromString(
+                    projectionText(*summary.startTime),
+                    QStringLiteral("HH:mm")
+                    )
+                );
+        }
+        else
+        {
+            QVERIFY(!legacy.startTime.isValid());
+        }
+
+        if (summary.endTime)
+        {
+            QCOMPARE(
+                legacy.endTime,
+                QTime::fromString(
+                    projectionText(*summary.endTime),
+                    QStringLiteral("HH:mm")
+                    )
+                );
+        }
+        else
+        {
+            QVERIFY(!legacy.endTime.isValid());
+        }
+    }
+
+    QVERIFY(
+        cache.eventProjectionInRange(
+            QDate(2026, 7, 12),
+            QDate(2026, 7, 11)
+            ).empty()
+        );
+}
+
 void CalendarEventCacheTests::nextEventLookupUsesProjectionQueryAndDeduplicates()
 {
     QTemporaryDir temporaryDirectory;
@@ -845,6 +1081,19 @@ void CalendarEventCacheTests::multiDayEventsUseOneCanonicalRecordAndRangeDedupli
             QDate(2026, 7, 31)
             ).size(),
         2
+        );
+    const auto projection = cache.eventProjectionInRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    QCOMPARE(projection.eventCount(), std::size_t(2));
+    QCOMPARE(
+        projection.events().at(0).title,
+        std::string("Cached event")
+        );
+    QCOMPARE(
+        projection.events().at(1).title,
+        std::string("Three-day event")
         );
 }
 

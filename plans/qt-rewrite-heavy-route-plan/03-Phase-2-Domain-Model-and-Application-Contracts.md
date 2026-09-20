@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, and the narrow typed calendar cache/model boundary are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped `eventProjectionForDate`; `eventsForDate`/`eventsInRange` remain legacy compatibility conversions. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; calendar pages and upcoming-event callers remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, and narrow typed upcoming-events read cutover are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` and `ensureNextTenEvents` remain legacy compatibility paths. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp`, edit dialogs, service calls outside the upcoming-events path, and integer-ID activation remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -1088,3 +1088,32 @@ custom-build dependency warnings.
 This closes the narrow typed cache/model boundary. Phase 2 remains open:
 legacy page/upcoming callers remain, while broader typed calendar UI/page
 migration, generic settings, and other feature migrations remain future work.
+
+#### Progress update - 2026-09-20 (typed upcoming-events read cutover)
+
+Against baseline commit `88bd88dd`, `CalendarEventCache` adds a range-scoped
+typed projection accessor while `eventsInRange` and `ensureNextTenEvents`
+compatibility remain intact. `calendar_page_upcoming_events.cpp` migrates only
+upcoming-event retrieval, filtering, date-time formatting, and row rendering
+to `CalendarEventSummary`. `calendar_page_events.cpp`, edit dialogs, service
+calls outside this path, and integer-ID activation remain unchanged.
+
+Scope loading, retention, generation invalidation/stale cancellation,
+dedupe, ordering, active-type/campus/start-of-term filtering, the ten-event
+limit, display text, row IDs, edit navigation, all-day/unknown-time handling,
+repeat metadata, and legacy parity remain preserved. The projection boundary
+uses `events()`, `pop_back()`, and `empty()` correctly. Tests cover range
+projection ordering/filtering inputs, metadata, typed/legacy parity, and the
+relevant calendar/page paths; no CMake changes were made.
+
+The elevated current-source VS Debug build passed; focused calendar tests
+passed 3/3 and page tests 2/2; the exact nine-target regression passed 9/9 in
+58.77s; configure/ownership/dependency passed with 714 sources; resource
+validation passed 6 RCC packs, 7 IDs, and 7 references; `git diff --check`
+passed with CRLF warnings only; and static review passed. No dedicated live
+upcoming-page UI test exists.
+
+This closes the narrow upcoming-events typed read path. Phase 2 remains open:
+`calendar_page_events.cpp`, edit dialogs, other legacy callers, and broader
+typed page migration remain future work, as do generic settings and other
+migrations.

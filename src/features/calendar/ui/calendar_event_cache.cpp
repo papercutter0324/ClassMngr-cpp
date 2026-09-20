@@ -451,6 +451,56 @@ CalendarEventProjection CalendarEventCache::eventProjectionForDate(
     return projectionFromSummaries(std::move(summaries));
 }
 
+CalendarEventProjection CalendarEventCache::eventProjectionInRange(
+    const QDate& startDate,
+    const QDate& endDate
+    ) const
+{
+    if (
+        !startDate.isValid()
+        || !endDate.isValid()
+        || endDate < startDate
+        )
+    {
+        return {};
+    }
+
+    QSet<int> eventIds;
+    for (
+        QDate date = startDate;
+        date <= endDate;
+        date = date.addDays(1)
+        )
+    {
+        const auto dateEventIds =
+            m_eventIdsByDate.constFind(date);
+        if (dateEventIds == m_eventIdsByDate.cend())
+        {
+            continue;
+        }
+
+        for (const int eventId : *dateEventIds)
+        {
+            eventIds.insert(eventId);
+        }
+    }
+
+    std::vector<CalendarEventSummary> summaries;
+    summaries.reserve(static_cast<std::size_t>(eventIds.size()));
+    for (const int eventId : eventIds)
+    {
+        const auto event = m_eventsById.constFind(eventId);
+        if (event != m_eventsById.cend())
+        {
+            summaries.push_back(event.value());
+        }
+    }
+
+    std::sort(summaries.begin(), summaries.end(), summaryComesBefore);
+
+    return projectionFromSummaries(std::move(summaries));
+}
+
 QList<CalendarEvent> CalendarEventCache::eventsForDate(
     const QDate& date
     ) const

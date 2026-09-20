@@ -13,6 +13,8 @@
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <array>
+#include <optional>
+#include <string>
 
 #include <QColorDialog>
 #include <QDebug>
@@ -34,6 +36,11 @@
 
 namespace
 {
+using CalendarEventProjection =
+    ClassMngr::Next::Application::CalendarEventProjection;
+using CalendarEventSummary =
+    ClassMngr::Next::Application::CalendarEventSummary;
+
 constexpr int UpcomingEventsNext30Days = 30;
 constexpr int UpcomingEventColumnSpacing = 16;
 constexpr int UpcomingEventDateColumnMinimumWidth = 72;
@@ -42,6 +49,66 @@ constexpr int UpcomingEventTypeColumnMinimumWidth = 82;
 constexpr int UpcomingEventColumnTextPadding = 8;
 constexpr int UpcomingEventTagMinimumHeight = 28;
 constexpr int UpcomingEventRowMinimumHeight = 38;
+
+QString projectionText(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+QDate projectionDate(
+    const std::string& value
+    )
+{
+    return QDate::fromString(
+        projectionText(value),
+        Qt::ISODate
+        );
+}
+
+QTime projectionTime(
+    const std::optional<std::string>& value
+    )
+{
+    return value
+        ? QTime::fromString(
+            projectionText(*value),
+            QStringLiteral("HH:mm")
+            )
+        : QTime();
+}
+
+int legacyId(
+    const CalendarEventSummary& event
+    )
+{
+    bool validId = false;
+    const int id = projectionText(event.id.value()).toInt(&validId);
+    return validId && id > 0
+        ? id
+        : -1;
+}
+
+bool isStartOfTermCalendarEvent(
+    const CalendarEventSummary& event
+    )
+{
+    const QString title =
+        projectionText(event.title).simplified().toLower();
+
+    return normalizedCalendarEventType(projectionText(event.eventType))
+            == QStringLiteral("Other")
+        && (
+            title == QStringLiteral("new semester")
+            || title == QStringLiteral("start of term")
+            || title == QStringLiteral("term start")
+            || title == QStringLiteral("term starts")
+            );
+}
 
 int upcomingEventTagVerticalPadding(
     const QFont& font
@@ -515,8 +582,14 @@ void CalendarPage::refreshUpcomingEvents()
         UpcomingEventsScope::Next10Events
     };
 
-    std::array<QList<CalendarEvent>, UpcomingEventsScopeCount> eventsByScope;
-    std::array<QList<CalendarEvent>, UpcomingEventsScopeCount> filteredEventsByScope;
+    std::array<
+        CalendarEventProjection,
+        UpcomingEventsScopeCount
+        > eventsByScope;
+    std::array<
+        std::vector<CalendarEventSummary>,
+        UpcomingEventsScopeCount
+        > filteredEventsByScope;
     std::array<bool, UpcomingEventsScopeCount> loadingByScope{};
     const CalendarEventDisplayOptions options =
         calendarEventDisplayOptions();
@@ -527,7 +600,7 @@ void CalendarPage::refreshUpcomingEvents()
             upcomingEventsForScope(scope);
         filteredEventsByScope[scopeIndex(scope)] =
             filterUpcomingEvents(
-                eventsByScope[scopeIndex(scope)],
+                eventsByScope[scopeIndex(scope)].events(),
                 options
                 );
 
@@ -538,7 +611,7 @@ void CalendarPage::refreshUpcomingEvents()
                 > UpcomingEventsLimit
                 )
             {
-                filteredEventsByScope[scopeIndex(scope)].removeLast();
+                filteredEventsByScope[scopeIndex(scope)].pop_back();
             }
         }
 
@@ -572,7 +645,10 @@ void CalendarPage::refreshUpcomingEvents()
 
     for (UpcomingEventsScope scope : scopes)
     {
-        for (const CalendarEvent& event : filteredEventsByScope[scopeIndex(scope)])
+        for (
+            const CalendarEventSummary& event :
+            filteredEventsByScope[scopeIndex(scope)]
+            )
         {
             dateColumnWidth =
                 qMax(
@@ -609,7 +685,7 @@ void CalendarPage::refreshUpcomingEvents()
 }
 void CalendarPage::renderUpcomingEvents(
     UpcomingEventsScope scope,
-    const QList<CalendarEvent>& events,
+    const std::vector<CalendarEventSummary>& events,
     bool loading,
     bool use24HourTime,
     int dateColumnWidth,
@@ -635,7 +711,7 @@ void CalendarPage::renderUpcomingEvents(
         delete item;
     }
 
-    if (events.isEmpty())
+    if (events.empty())
     {
         auto* empty =
             new QLabel(
@@ -654,7 +730,7 @@ void CalendarPage::renderUpcomingEvents(
         return;
     }
 
-    for (const CalendarEvent& event : events)
+    for (const CalendarEventSummary& event : events)
     {
         layout->addWidget(
             createUpcomingEventRow(
@@ -682,7 +758,7 @@ void CalendarPage::renderUpcomingEvents(
         layout->addWidget(loadingLabel);
     }
 }
-QList<CalendarEvent> CalendarPage::upcomingEventsForScope(
+CalendarEventProjection CalendarPage::upcomingEventsForScope(
     UpcomingEventsScope scope
     ) const
 {
@@ -702,25 +778,25 @@ QList<CalendarEvent> CalendarPage::upcomingEventsForScope(
             m_calendarVisibleMonth.isValid()
                 ? m_calendarVisibleMonth
                 : QDate(today.year(), today.month(), 1);
-        return m_calendarCache->eventsInRange(
+        return m_calendarCache->eventProjectionInRange(
             firstOfMonth,
             firstOfMonth.addMonths(1).addDays(-1)
             );
     }
 
     case UpcomingEventsScope::Next30Days:
-        return m_calendarCache->eventsInRange(
+        return m_calendarCache->eventProjectionInRange(
             today,
             today.addDays(UpcomingEventsNext30Days)
             );
 
     case UpcomingEventsScope::Next10Events:
         return m_nextTenSearchEnd.isValid()
-            ? m_calendarCache->eventsInRange(
+            ? m_calendarCache->eventProjectionInRange(
             today,
             m_nextTenSearchEnd
             )
-            : QList<CalendarEvent>();
+            : CalendarEventProjection();
     }
 
     return {};
@@ -749,7 +825,7 @@ UpcomingEventsScope CalendarPage::currentUpcomingEventsScope() const
 
 bool CalendarPage::upcomingEventsLoading(
     UpcomingEventsScope scope,
-    const QList<CalendarEvent>& events
+    const std::vector<CalendarEventSummary>& events
     ) const
 {
     if (!m_calendarCache)
@@ -880,6 +956,31 @@ QList<CalendarEvent> CalendarPage::filterUpcomingEvents(
             )
         {
             filteredEvents.append(event);
+        }
+    }
+
+    return filteredEvents;
+}
+std::vector<CalendarEventSummary> CalendarPage::filterUpcomingEvents(
+    const std::vector<CalendarEventSummary>& events,
+    const CalendarEventDisplayOptions& options
+    ) const
+{
+    std::vector<CalendarEventSummary> filteredEvents;
+    filteredEvents.reserve(events.size());
+
+    for (const CalendarEventSummary& event : events)
+    {
+        if (
+            options.activeTypes.contains(
+                normalizedCalendarEventType(
+                    projectionText(event.eventType)
+                    )
+                )
+            && calendarEventVisible(event, options)
+            )
+        {
+            filteredEvents.push_back(event);
         }
     }
 
@@ -1148,37 +1249,40 @@ void CalendarPage::syncCalendarEventTypeColors()
         );
 }
 QString CalendarPage::upcomingEventDateText(
-    const CalendarEvent& event
+    const CalendarEventSummary& event
     ) const
 {
-    if (!event.startDate.isValid())
+    const QDate startDate = projectionDate(event.startDate);
+    const QDate endDate = projectionDate(event.endDate);
+
+    if (!startDate.isValid())
     {
         return QStringLiteral("-");
     }
 
     if (
-        !event.endDate.isValid()
-        || event.endDate == event.startDate
+        !endDate.isValid()
+        || endDate == startDate
         )
     {
-        return event.startDate.toString(
+        return startDate.toString(
             QStringLiteral("MMM d")
             );
     }
 
     const QString startFormat =
-        event.startDate.year() == event.endDate.year()
+        startDate.year() == endDate.year()
             ? QStringLiteral("MMM d")
             : QStringLiteral("MMM d yyyy");
 
     return QStringLiteral("%1 - %2")
         .arg(
-            event.startDate.toString(startFormat),
-            event.endDate.toString(QStringLiteral("MMM d yyyy"))
+            startDate.toString(startFormat),
+            endDate.toString(QStringLiteral("MMM d yyyy"))
             );
 }
 QString CalendarPage::upcomingEventTimeText(
-    const CalendarEvent& event,
+    const CalendarEventSummary& event,
     bool use24HourTime
     ) const
 {
@@ -1188,7 +1292,9 @@ QString CalendarPage::upcomingEventTimeText(
     }
 
     const QString timeStatus =
-        normalizedCalendarEventTimeStatus(event.timeStatus);
+        normalizedCalendarEventTimeStatus(
+            projectionText(event.timeStatus)
+            );
 
     if (timeStatus == QStringLiteral("Unknown"))
     {
@@ -1200,7 +1306,13 @@ QString CalendarPage::upcomingEventTimeText(
         return tr("Unconfirmed Time");
     }
 
-    if (!event.startTime.isValid())
+    if (!event.startTime.has_value())
+    {
+        return QString();
+    }
+
+    const QTime startTime = projectionTime(event.startTime);
+    if (!startTime.isValid())
     {
         return QString();
     }
@@ -1210,15 +1322,21 @@ QString CalendarPage::upcomingEventTimeText(
             ? QStringLiteral("HH:mm")
             : QStringLiteral("h:mm AP");
 
-    if (!event.endTime.isValid())
+    if (!event.endTime.has_value())
     {
-        return event.startTime.toString(format);
+        return startTime.toString(format);
+    }
+
+    const QTime endTime = projectionTime(event.endTime);
+    if (!endTime.isValid())
+    {
+        return QString();
     }
 
     return QStringLiteral("%1 - %2")
         .arg(
-            event.startTime.toString(format),
-            event.endTime.toString(format)
+            startTime.toString(format),
+            endTime.toString(format)
             );
 }
 bool CalendarPage::calendarEventVisible(
@@ -1241,8 +1359,28 @@ bool CalendarPage::calendarEventVisible(
         options.showAllCampuses
         );
 }
+bool CalendarPage::calendarEventVisible(
+    const CalendarEventSummary& event,
+    const CalendarEventDisplayOptions& options
+    ) const
+{
+    if (
+        options.hideStartOfTermEvents
+        && isStartOfTermCalendarEvent(event)
+        )
+    {
+        return false;
+    }
+
+    return CalendarEventCampusFilter::eventMatchesCampus(
+        event,
+        options.currentCampusCodes,
+        options.allCampusCodes,
+        options.showAllCampuses
+        );
+}
 QWidget* CalendarPage::createUpcomingEventRow(
-    const CalendarEvent& event,
+    const CalendarEventSummary& event,
     int dateColumnWidth,
     int timeColumnWidth,
     int eventTypeColumnWidth,
@@ -1288,7 +1426,7 @@ QWidget* CalendarPage::createUpcomingEventRow(
         );
     row->setProperty(
         "calendarEventId",
-        event.id
+        legacyId(event)
         );
     row->installEventFilter(this);
 
@@ -1316,7 +1454,7 @@ QWidget* CalendarPage::createUpcomingEventRow(
         );
     date->setProperty(
         "calendarEventId",
-        event.id
+        legacyId(event)
         );
 
     auto* time =
@@ -1341,12 +1479,12 @@ QWidget* CalendarPage::createUpcomingEventRow(
         );
     time->setProperty(
         "calendarEventId",
-        event.id
+        legacyId(event)
         );
 
     auto* title =
         new MarqueeLabel(row);
-    title->setText(event.title);
+    title->setText(projectionText(event.title));
     title->setFont(eventFont);
     title->setSizePolicy(
         QSizePolicy::Expanding,
@@ -1364,12 +1502,14 @@ QWidget* CalendarPage::createUpcomingEventRow(
         );
     title->setProperty(
         "calendarEventId",
-        event.id
+        legacyId(event)
         );
 
     auto* type =
         new QPushButton(
-            normalizedCalendarEventType(event.eventType),
+            normalizedCalendarEventType(
+                projectionText(event.eventType)
+                ),
             row
             );
     type->setFont(eventFont);
@@ -1386,12 +1526,14 @@ QWidget* CalendarPage::createUpcomingEventRow(
         );
     type->setToolTip(
         tr("Choose %1 color").arg(
-            normalizedCalendarEventType(event.eventType)
+            normalizedCalendarEventType(
+                projectionText(event.eventType)
+                )
             )
         );
     type->setStyleSheet(
         eventTypeBadgeStyle(
-            event.eventType,
+            projectionText(event.eventType),
             eventFont
             )
         );
@@ -1434,7 +1576,7 @@ QWidget* CalendarPage::createUpcomingEventRow(
         [this, event]()
         {
             chooseCalendarEventTypeColor(
-                event.eventType
+                projectionText(event.eventType)
                 );
         }
         );
