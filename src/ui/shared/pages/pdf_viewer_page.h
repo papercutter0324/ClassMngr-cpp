@@ -1,9 +1,12 @@
 #pragma once
 
 #include "core/resource_packs/resource_pack_manager.h"
+#include "next/application/document_content_session.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QString>
+
+#include <optional>
 
 class QLabel;
 class QLineEdit;
@@ -21,6 +24,8 @@ struct PdfViewerDocumentDescriptor
     QString exportFileName;
     bool printEnabled = false;
     ResourcePackLease resourceLease;
+    std::optional<ClassMngr::Next::Application::DocumentContentReference>
+        contentReference;
 };
 
 class PdfViewerPage : public BasePage
@@ -47,6 +52,8 @@ public:
 
     [[nodiscard]] QString currentFilePath() const;
     [[nodiscard]] bool hasLoadedDocument() const;
+    [[nodiscard]] ClassMngr::Next::Application::DocumentContentSnapshot
+        documentContentSnapshot() const;
 
     void setDocumentPageSpacing(
         DocumentPageSpacing spacing
@@ -99,6 +106,10 @@ private:
     [[nodiscard]] QString documentErrorText(
         int error
         ) const;
+    void failDocumentContentSession(
+        const QString& errorText
+        );
+    void releaseDocumentContentSession();
 
 private:
     bool m_tearingDown = false;
@@ -121,6 +132,10 @@ private:
     QString m_currentFilePath;
     qreal m_currentZoom = 1.0;
     PdfViewerDocumentDescriptor m_documentDescriptor;
+    ClassMngr::Next::Application::DocumentContentSession
+        m_documentContentSession;
+    std::optional<ClassMngr::Next::Application::DocumentContentSessionToken>
+        m_documentContentToken;
     DocumentPageSpacing m_documentPageSpacing = DocumentPageSpacing::Small;
     DocumentViewerBackground m_documentViewerBackground =
         DocumentViewerBackground::Default;

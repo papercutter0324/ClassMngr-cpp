@@ -18,6 +18,9 @@ private slots:
     void registeredPagesAreCreatedOnFirstUse();
     void preparingCalendarDoesNotActivateItsHiddenTab();
     void leavingPdfViewerReleasesTheDocument();
+    void referencedPdfLoadTracksReadyAndRelease();
+    void referencedPdfFailureCanStartANewGeneration();
+    void referencedPdfReplacementUsesTheCurrentGeneration();
 };
 
 void PageManagerTests::heavyPagesAreDeferredAndReused()
@@ -197,6 +200,202 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
     pages.showPage(PageType::PdfViewer);
     QCOMPARE(pages.pdfViewerPage(), viewer);
     QVERIFY(!viewer->hasLoadedDocument());
+}
+
+void PageManagerTests::referencedPdfLoadTracksReadyAndRelease()
+{
+    using ClassMngr::Next::Application::DocumentContentPhase;
+    using ClassMngr::Next::Application::DocumentContentReference;
+
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+
+    const QString pdfPath =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral(
+            "/resources/assets/documents/Guides/DYB Lesson Planning Guide.pdf"
+            );
+    QVERIFY(QFileInfo::exists(pdfPath));
+
+    pages.showPage(PageType::PdfViewer);
+    auto* viewer = pages.pdfViewerPage();
+    QVERIFY(viewer);
+    QCOMPARE(
+        viewer->documentContentSnapshot().phase(),
+        DocumentContentPhase::Idle
+        );
+
+    QVERIFY(
+        viewer->loadPdf(
+            {
+                .pdfFilePath = pdfPath,
+                .contentReference = DocumentContentReference(
+                    "resource://documents/lesson-planning.pdf"
+                    )
+            }
+            )
+        );
+    const auto phaseAfterLoad =
+        viewer->documentContentSnapshot().phase();
+    QVERIFY(
+        phaseAfterLoad == DocumentContentPhase::Loading
+        || phaseAfterLoad == DocumentContentPhase::Ready
+        );
+    QTRY_COMPARE_WITH_TIMEOUT(
+        viewer->documentContentSnapshot().phase(),
+        DocumentContentPhase::Ready,
+        5000
+        );
+    QVERIFY(viewer->hasLoadedDocument());
+
+    pages.showPage(PageType::MyWorkspace);
+
+    const auto released = viewer->documentContentSnapshot();
+    QCOMPARE(released.phase(), DocumentContentPhase::Released);
+    QVERIFY(!released.contentReference().has_value());
+    QVERIFY(!released.error().has_value());
+}
+
+void PageManagerTests::referencedPdfFailureCanStartANewGeneration()
+{
+    using ClassMngr::Next::Application::DocumentContentPhase;
+    using ClassMngr::Next::Application::DocumentContentReference;
+    using ClassMngr::Next::Domain::ErrorCode;
+
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.showPage(PageType::PdfViewer);
+
+    auto* viewer = pages.pdfViewerPage();
+    QVERIFY(viewer);
+
+    const DocumentContentReference failedReference(
+        "resource://documents/missing.pdf"
+        );
+    QVERIFY(
+        !viewer->loadPdf(
+            {
+                .pdfFilePath = QStringLiteral(
+                    CLASSMNGR_SOURCE_DIR "/missing-document.pdf"
+                    ),
+                .contentReference = failedReference
+            }
+            )
+        );
+
+    const auto failed = viewer->documentContentSnapshot();
+    QCOMPARE(failed.phase(), DocumentContentPhase::Failed);
+    QCOMPARE(failed.contentReference(), failedReference);
+    QVERIFY(failed.error().has_value());
+    QCOMPARE(failed.error()->code, ErrorCode::Technical);
+    QVERIFY(!failed.error()->message.empty());
+
+    const QString pdfPath =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral(
+            "/resources/assets/documents/Guides/DYB Lesson Planning Guide.pdf"
+            );
+    const DocumentContentReference replacementReference(
+        "resource://documents/replacement.pdf"
+        );
+    QVERIFY(
+        viewer->loadPdf(
+            {
+                .pdfFilePath = pdfPath,
+                .contentReference = replacementReference
+            }
+            )
+        );
+    QCOMPARE(
+        viewer->documentContentSnapshot().contentReference(),
+        replacementReference
+        );
+    QVERIFY(!viewer->documentContentSnapshot().error().has_value());
+    QTRY_COMPARE_WITH_TIMEOUT(
+        viewer->documentContentSnapshot().phase(),
+        DocumentContentPhase::Ready,
+        5000
+        );
+}
+
+void PageManagerTests::referencedPdfReplacementUsesTheCurrentGeneration()
+{
+    using ClassMngr::Next::Application::DocumentContentPhase;
+    using ClassMngr::Next::Application::DocumentContentReference;
+
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.showPage(PageType::PdfViewer);
+
+    auto* viewer = pages.pdfViewerPage();
+    QVERIFY(viewer);
+
+    const QString pdfPath =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral(
+            "/resources/assets/documents/Guides/DYB Lesson Planning Guide.pdf"
+            );
+    QVERIFY(
+        viewer->loadPdf(
+            {
+                .pdfFilePath = pdfPath,
+                .contentReference = DocumentContentReference(
+                    "resource://documents/first.pdf"
+                    )
+            }
+            )
+        );
+
+    const DocumentContentReference replacementReference(
+        "resource://documents/second.pdf"
+        );
+    QVERIFY(
+        viewer->loadPdf(
+            {
+                .pdfFilePath = pdfPath,
+                .contentReference = replacementReference
+            }
+            )
+        );
+    QTRY_COMPARE_WITH_TIMEOUT(
+        viewer->documentContentSnapshot().phase(),
+        DocumentContentPhase::Ready,
+        5000
+        );
+    QCOMPARE(
+        viewer->documentContentSnapshot().contentReference(),
+        replacementReference
+        );
+
+    viewer->releaseDocument();
+    QCOMPARE(
+        viewer->documentContentSnapshot().phase(),
+        DocumentContentPhase::Released
+        );
+
+    const DocumentContentReference reopenedReference(
+        "resource://documents/third.pdf"
+        );
+    QVERIFY(
+        viewer->loadPdf(
+            {
+                .pdfFilePath = pdfPath,
+                .contentReference = reopenedReference
+            }
+            )
+        );
+    QTRY_COMPARE_WITH_TIMEOUT(
+        viewer->documentContentSnapshot().phase(),
+        DocumentContentPhase::Ready,
+        5000
+        );
+    QCOMPARE(
+        viewer->documentContentSnapshot().contentReference(),
+        reopenedReference
+        );
 }
 
 QTEST_MAIN(PageManagerTests)

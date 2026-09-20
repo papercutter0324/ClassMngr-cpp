@@ -416,6 +416,8 @@ void NavigationController::handleDocument(
     descriptor.exportEnabled =
         document.value().exportable
         && document.value().exportReference.has_value();
+    descriptor.contentReference =
+        document.value().contentReference;
 
     if (document.value().exportReference)
     {

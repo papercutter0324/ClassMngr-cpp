@@ -54,6 +54,7 @@ PdfViewerPage::~PdfViewerPage()
             m_pdfLoadRecorded = false;
         }
         m_document->close();
+        releaseDocumentContentSession();
         delete m_document;
         m_document =
             nullptr;
@@ -168,11 +169,38 @@ bool PdfViewerPage::loadPdf(
 
     releaseDocument();
 
+    if (descriptor.contentReference)
+    {
+        auto request = m_documentContentSession.request(
+            *descriptor.contentReference
+            );
+        if (!request)
+        {
+            showStatusMessage(
+                QString::fromUtf8(request.error().message)
+                );
+            return false;
+        }
+
+        m_documentContentToken = request.value();
+        const auto loading = m_documentContentSession.beginLoading(
+            *m_documentContentToken
+            );
+        if (!loading)
+        {
+            releaseDocumentContentSession();
+            showStatusMessage(
+                QString::fromUtf8(loading.error().message)
+                );
+            return false;
+        }
+    }
+
     if (filePath.trimmed().isEmpty())
     {
-        showStatusMessage(
-            tr("No PDF file selected.")
-            );
+        const QString errorText = tr("No PDF file selected.");
+        failDocumentContentSession(errorText);
+        showStatusMessage(errorText);
         return false;
     }
 
@@ -187,15 +215,15 @@ bool PdfViewerPage::loadPdf(
 
     if (error != QPdfDocument::Error::None)
     {
+        const QString errorText = documentErrorText(
+            static_cast<int>(error)
+            );
+        failDocumentContentSession(errorText);
         updateDocumentActionButtons();
         updatePageDisplay();
         showStatusMessage(
             tr("Failed to load PDF: %1")
-                .arg(
-                    documentErrorText(
-                        static_cast<int>(error)
-                        )
-                    )
+                .arg(errorText)
             );
         return false;
     }
@@ -229,6 +257,7 @@ void PdfViewerPage::releaseDocument()
     // the document releases the loaded PDF pages while retaining the stable
     // view/document pairing needed for a later reopen.
     m_document->close();
+    releaseDocumentContentSession();
 
     if (documentWasLoaded)
     {
@@ -263,6 +292,43 @@ bool PdfViewerPage::hasLoadedDocument() const
         && m_document
         && m_document->status() == QPdfDocument::Status::Ready
         && m_document->pageCount() > 0;
+}
+
+ClassMngr::Next::Application::DocumentContentSnapshot
+PdfViewerPage::documentContentSnapshot() const
+{
+    return m_documentContentSession.snapshot();
+}
+
+void PdfViewerPage::failDocumentContentSession(
+    const QString& errorText
+    )
+{
+    if (!m_documentContentToken)
+    {
+        return;
+    }
+
+    [[maybe_unused]] const auto failed = m_documentContentSession.fail(
+        *m_documentContentToken,
+        {
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = errorText.toUtf8().toStdString(),
+            .recoverable = true
+        }
+        );
+}
+
+void PdfViewerPage::releaseDocumentContentSession()
+{
+    if (!m_documentContentToken)
+    {
+        return;
+    }
+
+    [[maybe_unused]] const auto released =
+        m_documentContentSession.release();
+    m_documentContentToken.reset();
 }
 
 void PdfViewerPage::setDocumentPageSpacing(

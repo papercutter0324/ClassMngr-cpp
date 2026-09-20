@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, and Qt runtime worker/cancellation bridge are implemented. Feature-service migration remains. Invalid-UTF-8 boundary coverage is non-blocking and remains untested.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, and Qt runtime worker/cancellation bridge are implemented. Resource/platform document adaptation, Sidebar/MainWindow ownership, and other feature-service migration remain. Invalid-UTF-8 boundary coverage is non-blocking and remains untested.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -805,3 +805,22 @@ IDs, and 7 references; and `git diff --check` passed. A fresh MSBuild
 FileTracker access-denied was an environment/toolchain issue; the isolated
 build/regression passed. Malformed-catalog fixture injection remains a
 non-blocking gap. The worktree remains uncommitted.
+
+#### Progress update - 2026-09-20 (document-content session runtime integration slice)
+
+`DocumentContentSession` is integrated into the `PdfViewerPage` lifecycle for
+descriptors carrying a content reference. `NavigationController` propagates
+the projected reference. Request and `beginLoading` precede `QPdfDocument`
+loading; Qt `Ready`/`Error` map to session state; and release follows
+`QPdfDocument::close()` on replacement, navigation, and destruction. Direct
+no-reference descriptors remain compatible with direct loading.
+
+Tests cover Ready, failure, release, replacement, and new-generation paths.
+Ownership/dependency configure passed at 703 sources; focused
+PageManager/content/catalog checks passed 6/6; the exact nine-target
+production regression passed 9/9; resource checks passed for 6 RCC packs, 7
+runtime IDs, and 7 references; and `git diff --check` passed. An initial
+MSBuild FileTracker `E_ACCESSDENIED` required an elevated rerun; the elevated
+build passed. Remaining work includes resource/platform adapter completion,
+Sidebar/MainWindow ownership, and other legacy service migration. Phase 2
+remains in progress.

@@ -58,6 +58,14 @@ void PdfViewerPage::handleDocumentStatusChanged()
 
     if (m_document->status() == QPdfDocument::Status::Ready)
     {
+        if (m_documentContentToken)
+        {
+            [[maybe_unused]] const auto ready =
+                m_documentContentSession.markReady(
+                    *m_documentContentToken
+                    );
+        }
+
         if (!m_pdfLoadRecorded && m_document->pageCount() > 0)
         {
             StartupProfiler::recordPdfDocumentLoaded(
@@ -80,9 +88,11 @@ void PdfViewerPage::handleDocumentStatusChanged()
 
     if (m_document->status() == QPdfDocument::Status::Error)
     {
+        const QString errorText = documentErrorText();
+        failDocumentContentSession(errorText);
         showStatusMessage(
             tr("Failed to load PDF: %1")
-                .arg(documentErrorText())
+                .arg(errorText)
             );
     }
 

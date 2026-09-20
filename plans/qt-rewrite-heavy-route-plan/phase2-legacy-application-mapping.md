@@ -2,7 +2,9 @@
 
 This document maps the current legacy application boundary to the committed
 v2 application contracts. The runtime worker bridge and limited document route
-slice are committed; broader legacy ownership and feature cutover remain open.
+slice are committed. A partial content-session integration covers referenced
+`PdfViewerPage` descriptors; resource/platform adaptation, broader legacy
+ownership, and feature cutover remain open.
 
 ## Authority and current boundary
 
@@ -18,8 +20,26 @@ hold the legacy data/session boundary. `FileController` owns the Qt-facing
 file dialogs, path normalization, recent-file updates, warning display, and
 window/action state around those calls. The v2 application headers remain
 legacy-free; the committed outer `Platform` document-catalog adapter maps
-metadata, while broader facade ownership and service cutover remain outside
-this slice.
+metadata, and `NavigationController` projects the optional content reference
+to the viewer. `PdfViewerPage` now owns the partial content-session lifecycle
+for referenced descriptors. Resource-path/platform adaptation,
+`MainWindow`/`Sidebar` catalog ownership, and broader facade/service cutover
+remain outside this slice.
+
+## Document route and content-session status
+
+The accepted document work is intentionally partial. `NavigationController`
+uses the projected `DocumentContentReference` when building
+`PdfViewerDocumentDescriptor`. For referenced descriptors,
+`PdfViewerPage` requests and begins loading before `QPdfDocument` loading,
+maps Qt `Ready`/`Error` to the session state, and releases the session after
+`QPdfDocument::close()` on replacement, navigation, or destruction.
+Descriptors without a content reference retain direct-loading compatibility.
+
+The remaining document boundary work is resource/platform adapter completion
+and `MainWindow`/`Sidebar` catalog ownership migration. Other legacy service
+accessors and feature migrations remain separate future slices; this partial
+content-session integration does not complete Phase 2.
 
 ## Legacy container construction and lifetime mapping
 
@@ -78,7 +98,7 @@ later Phase 2 slice.
 | `rosterService()` | Roster editors/printing, class pages, sub-prep, and speaking evaluation use roster operations; representative calls are [`roster_editor_widget.cpp`](../../src/features/roster/ui/roster_editor_widget.cpp#L64) and [`roster_print_dialog.cpp`](../../src/features/roster/ui/roster_print_dialog.cpp#L445). | Future roster use cases/projections; no v2 wrapper. | Legacy feature service; future roster slice. |
 | `speakingEvaluationService()` | Speaking-evaluation pages, analytics, and roster score import use it; representative calls are [`speaking_eval_page.cpp`](../../src/features/speaking_eval/ui/speaking_eval_page.cpp#L198) and [`class_analytics_page.cpp`](../../src/features/classes/ui/class_analytics_page.cpp#L526). | Future evaluation/analytics contracts; no v2 wrapper. | Legacy feature service; future evaluation slice. |
 | `themeService()` | [`MainWindow`](../../src/app/mainwindow.cpp#L480) injects it into the theme controller; schedule output also reads the current theme. | Future theme/platform contract; no v2 wrapper. | Legacy core service; future platform/UI slice. |
-| `documentCatalog()` | [`MainWindow`](../../src/app/mainwindow.cpp#L433) passes it to the sidebar; [`NavigationController`](../../src/app/controllers/navigation_controller.cpp#L377) resolves its document route from it. | `Platform::ApplicationServicesDocumentCatalogPort` maps legacy metadata into bounded typed `DocumentCatalogProjection` values, and the document route uses `DocumentCatalogUseCase`. Confirm-leave, the `ResourcePaths` document lease, `PdfViewerDocumentDescriptor`, viewer load, and page navigation remain preserved. `MainWindow`/`Sidebar` catalog ownership and document content-byte/session loading remain legacy/open; this is not full document-service migration. | Platform metadata adapter plus v2 application use case for the document route; legacy `ApplicationServices`/`MainWindow`/`Sidebar` ownership remains. |
+| `documentCatalog()` | [`MainWindow`](../../src/app/mainwindow.cpp#L433) passes it to the sidebar; [`NavigationController`](../../src/app/controllers/navigation_controller.cpp#L377) resolves its document route from it. | `Platform::ApplicationServicesDocumentCatalogPort` maps legacy metadata into bounded typed `DocumentCatalogProjection` values, and `DocumentCatalogUseCase` supplies the optional `DocumentContentReference`. `NavigationController` projects that reference into `PdfViewerDocumentDescriptor`; `PdfViewerPage` integrates `DocumentContentSession` for referenced descriptors, with request/`beginLoading` before `QPdfDocument` loading, `Ready`/`Error` mapping, and release after close. Direct no-reference descriptors remain compatible. Confirm-leave, the `ResourcePaths` document lease, viewer load, and page navigation remain preserved. Resource/platform adaptation and `MainWindow`/`Sidebar` catalog ownership remain open; this is not full document-service migration. | Platform metadata/content-reference adapter plus v2 application use case and partial viewer session integration; legacy `ApplicationServices`/`MainWindow`/`Sidebar` ownership remains. |
 
 ## Outer-adapter responsibilities
 
@@ -139,11 +159,11 @@ and the explicit adapter-neutral seams in the current v2 headers.
 
 | Stage | Change | Acceptance gate and rollback point |
 | --- | --- | --- |
-| 0. Mapping and bounded document slice | Keep uncutover legacy paths unchanged and record the committed document metadata adapter plus document-route call-site cutover. | Source/link checks pass; the limited document route preserves its legacy viewer/resource behavior. Revert only this documentation slice if the boundary evidence changes. |
+| 0. Mapping and bounded document slice | Keep uncutover legacy paths unchanged and record the committed document metadata adapter, content-reference projection, and partial `PdfViewerPage` content-session lifecycle integration. | Source/link checks pass; referenced descriptors cover request/load/Ready-or-Error/release lifecycle while direct no-reference descriptors preserve legacy loading. Resource/platform adaptation and `MainWindow`/`Sidebar` ownership remain explicit rollback points. |
 | 1. Workspace gateway adapter | Add one outer adapter for `WorkspaceGateway::createWorkspace` plus the listed open/close/save/save-as/export methods around `ApplicationServices`; keep the separate new/initial-setup creation decision explicit and `FileController` on its existing calls. | Existing app-less `NextApplicationContractTests` and `NextApplicationWorkspaceCoordinatorTests` remain green for create/open/close/save/save-as/export, including create validation, dirty-replacement rejection, successful state/selection commit, and failure preservation. Adapter tests cover path conversion, legacy error text, void-save result source, explicit create mapping, and failure atomicity. The adapter is removable without changing v2 headers. |
 | 2. File-controller integration | Route create/open/close/save/save-as/export one workspace action at a time through the adapter. Keep dialogs, recent files, warnings, and window/action updates in the Qt/controller layer. | Create preserves the current coordinator contract: `WorkspaceGateway::createWorkspace` is called only after guards, a successful session opens `WorkspaceState` and clears `SelectionState`, and gateway or invalid-session failures leave snapshots unchanged. The other listed actions preserve verified legacy outcomes and v2 snapshots; dirty/conflict and failure cases leave snapshots unchanged. Roll back the action entry point to the existing `ApplicationServices` call if a gate fails. |
 | 3. Worker bridge | Qt worker delivery to the existing import/report sinks and application-owner `pump()` is committed behind the worker ports. | Bounded FIFO, generation isolation, cancellation request/acknowledgement, and terminal release tests passed with no worker/widget mutation. Stress/TSAN and direct report queue-post-failure coverage remain non-blocking gaps. |
-| 4. Feature slices | Migrate settings, teachers, classes, schedule, calendar, roster, speaking evaluation, theme, and the remaining document ownership/content boundaries as separate typed contracts. The accepted document slice is limited to the metadata adapter and `NavigationController` document-route call site. | Each slice has its own owner, adapter, parity tests, and release boundary; no v2 contract exposes a legacy service pointer. MainWindow/Sidebar catalog ownership and document content-byte/session loading remain future document slices; leave all other unstarted services on legacy accessors. |
+| 4. Feature slices | Migrate settings, teachers, classes, schedule, calendar, roster, speaking evaluation, theme, and the remaining document ownership/content boundaries as separate typed contracts. The accepted document work is limited to metadata projection, content-reference propagation, and the partial `PdfViewerPage` session lifecycle. | Each slice has its own owner, adapter, parity tests, and release boundary; no v2 contract exposes a legacy service pointer. Resource/platform adaptation and `MainWindow`/`Sidebar` catalog ownership remain future document slices; leave all other unstarted services on legacy accessors. |
 
 The Phase 2 [deliverables](03-Phase-2-Domain-Model-and-Application-Contracts.md#deliverables)
 require this mapping, but the Phase 2 exit gate is not met by documentation
