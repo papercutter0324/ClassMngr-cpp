@@ -1679,3 +1679,29 @@ transient CMake regeneration issue was resolved.
 The typed middle-school analytics preference seam is closed. Residual settings
 callers, generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
+
+#### Progress update - 2026-09-21 (typed class day-filter reset-policy boundary)
+
+Against baseline commit `4be0af93`, added the Qt-free
+`ClassDayFilterResetPolicy`/`ClassDayFilterResetPolicyPort` contract and its
+platform adapter for the exact
+`classes_navigation_day_filter_reset_policy` key. It maps
+`OnApplicationClose` and `OnPageLeave`, preserves round-trip persistence, and
+falls back to `OnApplicationClose` for missing, invalid, or unavailable
+settings.
+
+Only the day-filter radio controls in `menu_builder.cpp` and the day-filter
+branch of `ClassesPage::hideEvent` use the typed port. Menu radio persistence
+is preserved; page leave clears only day-filter state when configured for
+`OnPageLeave`. Class-selection reset and visibility policies remain unchanged,
+and neither caller makes a direct legacy day-policy call.
+
+The executor reported focused tests 7/7. The independent tester reported PASS
+with configure/ownership, a final Debug build, focused tests 9/9, the exact
+nine-target regression 9/9, resource/dependency/Qt-free/static/diff checks,
+and the exact eight-file scope. Known nonblocking warnings included a
+transient LNK1163 resolved by retry, existing linker warnings, unavailable
+`clang-format`/`clang-tidy`, and LF/CRLF normalization warnings.
+
+The typed class day-filter reset-policy seam is closed. Phase 2 remains open;
+the next slice is not yet selected.
