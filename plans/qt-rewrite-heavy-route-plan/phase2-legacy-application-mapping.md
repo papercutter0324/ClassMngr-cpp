@@ -741,3 +741,28 @@ non-blocking.
 The typed calendar-dialog constructor/input ownership seam is closed. Full
 dialog ownership, generic settings, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
+
+## Verified typed read-only schedule_use_24h settings bridge handoff
+
+Against baseline commit `2d785250`, added the Qt-free
+`ScheduleDisplayPreferences` value and read-only
+`ScheduleDisplayPreferencesPort`, plus the Qt-boundary
+`ApplicationServicesScheduleDisplayPreferencesPort`. The adapter preserves
+the legacy `SettingsService` `schedule_use_24h` true/false behavior, including
+the missing or unavailable-settings false fallback and legacy `QVariant`
+coercion. Only the calendar and upcoming-event callers now use the bridge;
+there are no writes or other settings changes, and date/time formatting is
+unchanged.
+
+The executor and independent tester reported a passing Debug build, focused
+tests 14/14, the exact nine-target regression 9/9 including startup
+verification, and launch 1/1. Configure/ownership passed with 728 sources;
+dependency checks passed for 9 production targets (`ClassMngrNext ->
+Qt6::Core`); resource checks passed 6 RCC packs, 7 runtime IDs, and 7 runtime
+references; direct-read, read-only, static, and diff checks passed.
+`clang-format` and `clang-tidy` were unavailable; normal Vulkan, Qt-zlib, and
+MSVC warnings remain non-blocking.
+
+The typed read-only schedule display-preferences seam is closed. Residual
+`SettingsService` callers, generic settings persistence, and broader page,
+document, and feature migrations remain future work; Phase 2 remains open.

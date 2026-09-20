@@ -52,6 +52,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/report_job_coordinator.h
     src/next/application/report_job_state.h
     src/next/application/selection_state.h
+    src/next/application/schedule_display_preferences.h
     src/next/application/schedule_view_projection.h
     src/next/application/user_preferences_state.h
     src/next/application/workspace_contracts.h
@@ -75,6 +76,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/qt_job_worker_adapters.h
     src/next/platform/theme_preference_port.h
     src/next/platform/language_preference_port.h
+    src/next/platform/application_services_schedule_display_preferences_port.h
 )
 
 foreach(_classmngr_next_target IN LISTS

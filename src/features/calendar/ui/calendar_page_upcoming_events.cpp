@@ -9,6 +9,7 @@
 #include "features/campus/data/campus_json_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "features/calendar/calendar_settings_keys.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/widgets/marquee_label.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
@@ -893,14 +894,14 @@ CalendarPage::calendarEventDisplayOptions() const
                     ),
                 false
                 );
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleDisplayPreferencesPort
+            displayPreferencesPort(*m_services);
+        const auto displayPreferences = displayPreferencesPort.load();
         options.use24HourTime =
-            settingToBool(
-                settingsService->loadOrDefault(
-                    QStringLiteral("schedule_use_24h"),
-                    QStringLiteral("false")
-                    ),
-                false
-                );
+            displayPreferences
+                ? displayPreferences.value().use24HourTime
+                : false;
 
         const QString currentName =
             settingsService

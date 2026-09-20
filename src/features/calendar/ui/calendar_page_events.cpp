@@ -9,6 +9,7 @@
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/application_services_calendar_event_series_create_port.h"
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
@@ -28,7 +29,6 @@
 #include <QSizePolicy>
 #include <QUrl>
 #include <QUuid>
-#include <QVariant>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -167,32 +167,6 @@ CalendarService* openCalendarService(
     return calendarService && calendarService->isAvailable()
         ? calendarService
         : nullptr;
-}
-
-bool settingToBool(
-    const QVariant& value,
-    bool defaultValue
-    )
-{
-    if (!value.isValid())
-    {
-        return defaultValue;
-    }
-
-    const QString text =
-        value.toString().trimmed().toLower();
-
-    if (text == QStringLiteral("true") || text == QStringLiteral("1"))
-    {
-        return true;
-    }
-
-    if (text == QStringLiteral("false") || text == QStringLiteral("0"))
-    {
-        return false;
-    }
-
-    return value.toBool();
 }
 
 QDate nextRepeatDate(
@@ -843,11 +817,6 @@ void CalendarPage::openCalendarDialog(
 {
     auto* calendarService =
         openCalendarService(m_services);
-    auto* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-
     if (!calendarService)
     {
         return;
@@ -855,18 +824,16 @@ void CalendarPage::openCalendarDialog(
 
     const CalendarEventEditDraft editDraft =
         editDraftFromLegacyEvent(event);
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort
+        displayPreferencesPort(*m_services);
+    const auto displayPreferences = displayPreferencesPort.load();
     CalendarEventDialog dialog(
         editDraft,
         existingEvent,
-        settingToBool(
-            settingsService
-                ? settingsService->loadOrDefault(
-                QStringLiteral("schedule_use_24h"),
-                QStringLiteral("false")
-                )
-                : QVariant(QStringLiteral("false")),
-            false
-            ),
+        displayPreferences
+            ? displayPreferences.value().use24HourTime
+            : false,
         this
         );
 
