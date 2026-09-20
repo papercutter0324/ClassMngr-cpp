@@ -201,6 +201,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesCalendarEventPort
+    SOURCES
+        tests/next_platform_application_services_calendar_event_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformDocumentContentResourcePort
     SOURCES
         tests/next_platform_document_content_resource_port_tests.cpp

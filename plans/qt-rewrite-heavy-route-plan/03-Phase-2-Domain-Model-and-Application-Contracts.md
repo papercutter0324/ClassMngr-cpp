@@ -955,3 +955,32 @@ compiler in the verifier shell, but existing configured VS Debug artifacts
 were current and passed. The schedule output direct-theme accessor is closed;
 generic settings/application-services seams and other feature migrations
 remain open. Phase 2 remains in progress and is not complete.
+
+#### Progress update - 2026-09-20 (calendar read-projection adapter slice)
+
+Against baseline commit `08b86215`,
+`src/next/platform/application_services_calendar_event_port.h` maps
+`CalendarService::eventsInRange` into an owned, typed
+`Application::CalendarEventProjection`. It copies bounded metadata and typed
+IDs, and validates ordered valid ranges, unavailable service, technical
+failures, invalid IDs/metadata, partial timed ranges, and projection capacity.
+All-day and unknown-time policy remains explicit. No legacy pointers escape,
+and the Application layer remains Qt-free. The malformed partial-time fixture
+is inserted directly with `QSqlQuery` at the persistence boundary because
+`CalendarService::saveEvent` correctly rejects malformed input.
+
+The production header is registered in `cmake/next.cmake` and the focused test
+is registered in `cmake/tests/next.cmake`. Focused adapter CTest passed 1/1;
+existing `ClassMngrCalendarEventCacheTests` passed 1/1; the workspace control
+test passed 1/1; and the exact existing nine-target regression passed 9/9 in
+58.92s. Configure/ownership/dependency checks passed at 710 sources;
+resource validation passed for 6 RCC packs, 7 runtime IDs, and 7 references;
+strict UTF-8/encoding review passed; and `git diff --check` passed with only
+LF-to-CRLF warnings. The focused build passed after an environmental
+FileTracker `E_ACCESSDENIED` retry.
+
+The calendar read-projection boundary is complete, but calendar cache/UI
+cutover remains future: `CalendarEventProjection` currently omits
+`eventType`, `timeStatus`, and `repeatSeriesId`, and `CalendarEventCache`
+directly owns the database worker. Generic settings and other feature
+migrations remain open. Phase 2 remains in progress and is not complete.
