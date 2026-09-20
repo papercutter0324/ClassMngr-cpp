@@ -53,6 +53,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/ai_comment_provider_preferences.h
     src/next/application/ai_comment_voice_preferences.h
     src/next/application/font_size_preferences.h
+    src/next/application/document_viewer_background_preferences.h
     src/next/application/theme_preferences_port.h
     src/next/application/dialog_geometry_preferences_port.h
     src/next/application/language_preferences_port.h
@@ -109,6 +110,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/settings_manager_ai_comment_provider_preferences_port.h
     src/next/platform/settings_manager_ai_comment_voice_preferences_port.h
     src/next/platform/settings_manager_font_size_preferences_port.h
+    src/next/platform/settings_manager_document_viewer_background_preferences_port.h
     src/next/platform/settings_manager_theme_preferences_port.h
     src/next/platform/settings_manager_dialog_geometry_preferences_port.h
     src/next/platform/settings_manager_language_preferences_port.h

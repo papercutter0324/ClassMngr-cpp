@@ -7,6 +7,7 @@
 #include "ui/shared/styles/themed_icon_utils.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
+#include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
 #include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
@@ -949,8 +950,14 @@ void ActionRegistry::createOptionActions()
         blackDocumentViewerBackgroundAction
         );
 
-    documentViewerBackgroundState->loadFromSettings(
-        DocumentViewerBackground::Default
+    const auto storedDocumentViewerBackground =
+        ClassMngr::Next::Platform::
+            SettingsManagerDocumentViewerBackgroundPreferencesPort()
+            .read();
+    documentViewerBackgroundState->set(
+        static_cast<::DocumentViewerBackground>(
+            storedDocumentViewerBackground
+            )
         );
 
     aiCommentProviderState =

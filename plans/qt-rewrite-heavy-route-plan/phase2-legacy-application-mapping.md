@@ -1356,3 +1356,26 @@ MSBuild children were stopped.
 
 The typed upcoming-birthday dismissal write seam is closed. Phase 2 remains
 open; the next slice is not yet selected.
+
+## Verified typed document-viewer-background read bridge handoff
+
+Against baseline commit `e5bd3bce`, added the Qt-free typed read bridge for the
+canonical `OptionKeys::DocumentViewerBackground ==
+"options/documentViewerBackground"`. Stored values map `0` to `Default`, `1`
+to `White`, and `2` to `Black`; missing, invalid, unknown, and unavailable
+values map to `Default`.
+
+`ActionRegistry` now uses the typed load. The existing `OptionState` remains
+the compatibility writer and menu-persistence owner. `PageManager`/
+`PdfViewer` live and theme-derived behavior remains unchanged.
+
+Verification passed configure/ownership with 794 sources and an elevated clean
+Debug build. The offscreen focused suite passed 5/5, covering the adapter, next
+application contract, PageManager, startup visual behavior, and startup
+performance/PDF. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime
+references; dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static,
+call-site, and diff checks passed. The exact dirty scope was six files.
+Expected warnings remained nonblocking; stale processes were stopped.
+
+The typed document-viewer-background read seam is closed. Phase 2 remains open;
+the next slice is not yet selected.
