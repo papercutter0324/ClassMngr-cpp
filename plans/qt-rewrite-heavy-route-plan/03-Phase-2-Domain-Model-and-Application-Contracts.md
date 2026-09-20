@@ -1843,3 +1843,29 @@ default headless dialog mode required `QT_QPA_PLATFORM=offscreen`.
 
 The typed AI custom-website persistence seam is closed. Phase 2 remains open;
 the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed AI-comment voice read bridge)
+
+Against baseline commit `626501b5`, added the Qt-free typed
+`AiCommentVoicePreferencesPort` and its read-only SettingsManager adapter for
+the exact canonical key `OptionKeys::AiCommentVoice`,
+`options/aiCommentVoice`. Stored `0` maps to `DirectToStudent`, `1` to
+`ThirdPerson`, and missing, unknown, or unavailable values map to
+`DirectToStudent`.
+
+Only `src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp` and
+`src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp` use the typed
+read bridge. ActionRegistry remains the compatibility writer and the menu
+remains compatible with it; provider and custom-URL paths and existing prompt
+behavior are unchanged.
+
+Verification passed configure/ownership with 773 sources and a clean Debug
+build. The offscreen focused suite passed 9/9, covering the adapter, AI
+options, both dialogs, speaking service, dialog shell, launch, resources, and
+startup. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff
+checks passed. The exact dirty scope was seven files. Expected Vulkan/zlib,
+linker, and LF/CRLF warnings remained nonblocking.
+
+The typed AI-comment voice read seam is closed. Phase 2 remains open; the next
+slice is not yet selected.

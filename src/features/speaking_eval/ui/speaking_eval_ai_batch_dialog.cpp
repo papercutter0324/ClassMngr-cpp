@@ -5,6 +5,7 @@
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
+#include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -130,20 +131,12 @@ AiCommentProvider preferredProvider()
 
 AiCommentVoice preferredVoice()
 {
-    const int storedValue =
-        SettingsManager::instance()
-            .get(
-                QString::fromUtf8(
-                    OptionKeys::AiCommentVoice
-                    ),
-                std::to_underlying(
-                    AiCommentVoice::DirectToStudent
-                    )
-                )
-            .toInt();
+    const auto storedVoice =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentVoicePreferencesPort().read();
 
-    return static_cast<AiCommentVoice>(storedValue)
-            == AiCommentVoice::ThirdPerson
+    return storedVoice
+            == ClassMngr::Next::Application::AiCommentVoice::ThirdPerson
         ? AiCommentVoice::ThirdPerson
         : AiCommentVoice::DirectToStudent;
 }
