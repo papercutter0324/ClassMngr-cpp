@@ -50,7 +50,7 @@ bool containsCode(
 namespace CalendarEventCampusFilter
 {
 bool eventMatchesCampus(
-    const CalendarEvent& event,
+    const QString& title,
     const QStringList& currentCampusCodes,
     const QStringList& allCampusCodes,
     bool showAllCampuses
@@ -61,9 +61,8 @@ bool eventMatchesCampus(
         return true;
     }
 
-    const QString title =
-        event.title.trimmed();
-    if (title.isEmpty())
+    const QString normalizedTitle = title.trimmed();
+    if (normalizedTitle.isEmpty())
     {
         return true;
     }
@@ -82,7 +81,7 @@ bool eventMatchesCampus(
 
     for (const QString& code : allCodes)
     {
-        if (!containsCode(title, code))
+        if (!containsCode(normalizedTitle, code))
         {
             continue;
         }
@@ -95,5 +94,39 @@ bool eventMatchesCampus(
     }
 
     return !containsAnyKnownCampus;
+}
+
+bool eventMatchesCampus(
+    const ClassMngr::Next::Application::CalendarEventSummary& event,
+    const QStringList& currentCampusCodes,
+    const QStringList& allCampusCodes,
+    bool showAllCampuses
+    )
+{
+    const QString title = QString::fromUtf8(
+        event.title.data(),
+        static_cast<qsizetype>(event.title.size())
+        );
+    return eventMatchesCampus(
+        title,
+        currentCampusCodes,
+        allCampusCodes,
+        showAllCampuses
+        );
+}
+
+bool eventMatchesCampus(
+    const CalendarEvent& event,
+    const QStringList& currentCampusCodes,
+    const QStringList& allCampusCodes,
+    bool showAllCampuses
+    )
+{
+    return eventMatchesCampus(
+        event.title,
+        currentCampusCodes,
+        allCampusCodes,
+        showAllCampuses
+        );
 }
 }

@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, and calendar database-query/worker ownership separation are implemented. The calendar worker boundary uses a typed projection query while the existing cache/UI legacy API remains; any future typed UI/cache cutover is separate. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, and the narrow typed calendar cache/model boundary are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped `eventProjectionForDate`; `eventsForDate`/`eventsInRange` remain legacy compatibility conversions. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; calendar pages and upcoming-event callers remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -980,10 +980,12 @@ strict UTF-8/encoding review passed; and `git diff --check` passed with only
 LF-to-CRLF warnings. The focused build passed after an environmental
 FileTracker `E_ACCESSDENIED` retry.
 
-The calendar read-projection boundary is complete. Calendar cache/UI cutover
-remains future; the later worker-boundary handoff separates database-query and
-worker ownership while leaving the existing cache/UI legacy API unchanged. The
-metadata enrichment and its verification are recorded below.
+The calendar read-projection boundary is complete. The narrow typed
+cache/model boundary is recorded below; broader typed calendar UI/page
+migration remains future. The later worker-boundary handoff separates
+database-query and worker ownership while leaving the legacy compatibility
+conversions available. The metadata enrichment and its verification are
+recorded below.
 Generic settings and other feature migrations remain open. Phase 2 remains in
 progress and is not complete.
 
@@ -1001,8 +1003,9 @@ whitespace for existing title/date/time and other mapped fields, and returns
 structured failures for blank, over-bounds, or malformed values. Application
 and adapter tests cover bounds, validation, copy/equality/lookups, legacy
 value/repeat-series preservation, malformed persisted input, and title
-whitespace compatibility. CMake registrations remain unchanged; the typed
-cache/UI cutover remains a separate future slice.
+whitespace compatibility. CMake registrations remain unchanged; the narrow
+typed cache/model boundary is recorded below, while broader typed calendar
+UI/page migration remains future.
 
 The elevated VS Debug build passed after an environmental FileTracker
 `UnauthorizedAccessException` retry. Focused application, adapter,
@@ -1012,11 +1015,11 @@ handwritten sources and one explicit owner; resource validation passed 6 RCC
 packs, 7 runtime IDs, and 7 references; `git diff --check` passed with
 LF/CRLF warnings only; and the static Qt-free/pointer review passed.
 
-Phase 2 remains open. The typed projection now contains the metadata needed
-by a future calendar cache/UI boundary, and the later worker-boundary handoff
-separates calendar database-query/worker ownership while the existing cache/UI
-legacy API remains. Any typed UI/cache cutover is separate. Generic settings
-and other migrations remain open.
+Phase 2 remains open. The typed projection now feeds the completed narrow
+cache/model boundary, and the later worker-boundary handoff separates calendar
+database-query/worker ownership while legacy compatibility conversions remain
+for unchanged callers. Broader typed calendar UI/page migration, generic
+settings, and other migrations remain open.
 
 #### Progress update - 2026-09-20 (typed calendar query-port slice)
 
@@ -1038,8 +1041,9 @@ No Qt, `QObject`, service, repository, SQLite/QSql object, or legacy pointer
 crosses the application port. Query parity remains covered for repeat-series,
 multi-day membership, dedupe, retention, ordering/filtering, next-event
 lookup, cancellation-by-invalidation, generation/stale-result rejection, and
-errors. The existing cache boundary continues to convert typed results to the
-legacy public API.
+errors. Legacy `eventsForDate`/`eventsInRange` compatibility conversions
+remain for unchanged callers; the narrow typed cache/model boundary is
+recorded below.
 
 The elevated VS Debug query-port/cache build passed after an environmental
 FileTracker `E_ACCESSDENIED` retry. Focused query-port/cache tests passed 2/2;
@@ -1050,7 +1054,37 @@ IDs, and 7 references; `git diff --check` passed with LF/CRLF warnings only;
 and static Qt-free/worker review passed. Failure-path SQLite cleanup is
 statically verified but not runtime fault-injected.
 
-Phase 2 remains open. The typed worker query-port boundary is complete while
-the existing legacy calendar cache/UI API remains; any future typed cache/UI
-cutover is separate. Generic settings and other feature migrations remain
-open.
+Phase 2 remains open. The typed worker query-port and narrow cache/model
+boundaries are complete while legacy page/upcoming compatibility callers
+remain; broader typed calendar UI/page migration, generic settings, and other
+feature migrations remain open.
+
+#### Progress update - 2026-09-20 (typed calendar cache/model cutover)
+
+Against baseline commit `0b5b8eb6`, `CalendarEventCache` retains typed
+`CalendarEventSummary` values and exposes the date-scoped
+`eventProjectionForDate` accessor. `eventsForDate` and `eventsInRange` remain
+legacy compatibility conversions. `CalendarEventModel` consumes the typed
+projection and `CalendarEventSummary` for QML rows, converting dates, times,
+and `QVariant` only at the UI boundary. Calendar pages and upcoming-event
+callers remain unchanged.
+
+Campus filtering adds the typed-summary path while retaining the necessary
+legacy `CalendarEvent` compatibility wrapper for unchanged upcoming-page and
+import-test callers; filtering semantics remain preserved. Tests cover typed
+projection/model parity, ordering/filtering, all-day and unknown-time cases,
+repeat metadata, legacy compatibility, generation/stale-result behavior, and
+relevant calendar paths. No CMake changes were made.
+
+The elevated VS Debug build passed after the `constFind` fix. Focused and
+relevant tests passed 7/7; the exact nine-target regression passed 9/9 in
+57.83s, including startup performance; configure/ownership/dependency checks
+passed with 714 handwritten sources; resource validation passed for 6 RCC
+packs, 7 runtime IDs, and 7 references; `git diff --check` passed with CRLF
+warnings only; and static review passed for typed model/filter usage. The
+non-blocking warnings are missing Vulkan headers and existing MSBuild
+custom-build dependency warnings.
+
+This closes the narrow typed cache/model boundary. Phase 2 remains open:
+legacy page/upcoming callers remain, while broader typed calendar UI/page
+migration, generic settings, and other feature migrations remain future work.

@@ -1,8 +1,10 @@
 #include "data/repositories/calendar_event_repository.h"
+#include "features/calendar/calendar_event_campus_filter.h"
 #include "features/calendar/calendar_event_projection_query.h"
 #include "features/calendar/ui/calendar_event_cache.h"
 #include "features/calendar/ui/calendar_event_model.h"
 
+#include <QDateTime>
 #include <QSignalSpy>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -276,6 +278,7 @@ private slots:
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
     void injectedQueryFactoryFeedsLegacyCacheBoundary();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
+    void typedDateProjectionPreservesModelParityAndFiltering();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
     void invalidationDiscardsCompletedWorkerResult();
     void multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates();
@@ -361,6 +364,45 @@ void CalendarEventCacheTests::injectedQueryFactoryFeedsLegacyCacheBoundary()
         QStringLiteral("series-injected")
         );
     QCOMPARE(events.first().startTime, QTime(9, 0));
+
+    const auto projection = cache.eventProjectionForDate(
+        QDate(2026, 7, 10)
+        );
+    QCOMPARE(projection.eventCount(), std::size_t(1));
+    QCOMPARE(projection.events().front().id.value(), std::string("42"));
+    QCOMPARE(
+        projection.events().front().repeatSeriesId,
+        std::optional<std::string>(std::string("series-injected"))
+        );
+
+    CalendarEventModel model(&cache);
+    const QVariantList modelEvents = model.eventsForDate(2026, 7, 10);
+    QCOMPARE(modelEvents.size(), 1);
+    QCOMPARE(
+        modelEvents.first().toMap().value(QStringLiteral("id")).toInt(),
+        42
+        );
+    QCOMPARE(
+        modelEvents.first().toMap().value(QStringLiteral("title")).toString(),
+        QStringLiteral("Injected event")
+        );
+
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            projection.events().front(),
+            {QStringLiteral("BDG")},
+            {QStringLiteral("BDG"), QStringLiteral("SNU")},
+            false
+            )
+        );
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            QStringLiteral("Injected event"),
+            {QStringLiteral("BDG")},
+            {QStringLiteral("BDG"), QStringLiteral("SNU")},
+            false
+            )
+        );
 
     QSignalSpy nextEventSpy(
         &cache,
@@ -497,6 +539,173 @@ void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCle
     QVERIFY(!allDayEvents.first().startTime.isValid());
     QVERIFY(!allDayEvents.first().endTime.isValid());
     QCOMPARE(connectionNameSet(), connectionsBeforeQuery);
+}
+
+void CalendarEventCacheTests::typedDateProjectionPreservesModelParityAndFiltering()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath =
+        temporaryDirectory.filePath(QStringLiteral("calendar.db"));
+    createDatabase(databasePath);
+
+    const QDate eventDate(2026, 7, 15);
+    const QString connectionName =
+        QStringLiteral("calendar-event-cache-typed-fixture-%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            );
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        insertRawEvent(
+            database,
+            QStringLiteral("SNU meeting"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed"),
+            QStringLiteral("series-snu"),
+            false,
+            eventDate,
+            QStringLiteral("09:00"),
+            eventDate,
+            QStringLiteral("10:00")
+            );
+        insertRawEvent(
+            database,
+            QStringLiteral("BDG meeting"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed"),
+            QStringLiteral("series-bdg"),
+            false,
+            eventDate,
+            QStringLiteral("10:00"),
+            eventDate,
+            QStringLiteral("11:00")
+            );
+        insertRawEvent(
+            database,
+            QStringLiteral("General unknown"),
+            QStringLiteral("Other"),
+            QStringLiteral("Unknown"),
+            QString(),
+            false,
+            eventDate,
+            QString(),
+            eventDate,
+            QString()
+            );
+        insertRawEvent(
+            database,
+            QStringLiteral("All-day event"),
+            QStringLiteral("Vacation"),
+            QStringLiteral("Timed"),
+            QStringLiteral("series-all-day"),
+            true,
+            eventDate,
+            QStringLiteral("13:00"),
+            eventDate,
+            QStringLiteral("14:00")
+            );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    CalendarEventCache cache;
+    cache.setDatabasePath(databasePath);
+    cache.requestRange(eventDate, eventDate);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(eventDate, eventDate),
+        5000
+        );
+
+    const auto projection = cache.eventProjectionForDate(eventDate);
+    QCOMPARE(projection.eventCount(), std::size_t(4));
+    QCOMPARE(
+        projection.events().at(0).title,
+        std::string("All-day event")
+        );
+    QCOMPARE(
+        projection.events().at(1).title,
+        std::string("General unknown")
+        );
+    QCOMPARE(
+        projection.events().at(2).title,
+        std::string("SNU meeting")
+        );
+    QCOMPARE(
+        projection.events().at(3).title,
+        std::string("BDG meeting")
+        );
+    QVERIFY(projection.events().at(0).allDay);
+    QVERIFY(!projection.events().at(1).startTime.has_value());
+    QCOMPARE(
+        projection.events().at(3).repeatSeriesId,
+        std::optional<std::string>(std::string("series-bdg"))
+        );
+
+    const QList<CalendarEvent> legacyEvents =
+        cache.eventsForDate(eventDate);
+    QCOMPARE(legacyEvents.size(), projection.eventCount());
+    for (int index = 0; index < legacyEvents.size(); ++index)
+    {
+        QCOMPARE(
+            legacyEvents.at(index).title,
+            projectionText(projection.events().at(index).title)
+            );
+    }
+    QVERIFY(legacyEvents.at(0).allDay);
+    QVERIFY(!legacyEvents.at(1).startTime.isValid());
+    QCOMPARE(
+        legacyEvents.at(3).repeatSeriesId,
+        QStringLiteral("series-bdg")
+        );
+
+    CalendarEventModel model(&cache);
+    model.setCampusFilter(
+        {QStringLiteral("BDG")},
+        {QStringLiteral("BDG"), QStringLiteral("SNU")},
+        false,
+        false
+        );
+    const QVariantList visible = model.eventsForDate(
+        eventDate.year(),
+        eventDate.month(),
+        eventDate.day()
+        );
+    QCOMPARE(visible.size(), 3);
+    QCOMPARE(
+        visible.at(0).toMap().value(QStringLiteral("title")).toString(),
+        QStringLiteral("All-day event")
+        );
+    QCOMPARE(
+        visible.at(1).toMap().value(QStringLiteral("title")).toString(),
+        QStringLiteral("General unknown")
+        );
+    QCOMPARE(
+        visible.at(2).toMap().value(QStringLiteral("title")).toString(),
+        QStringLiteral("BDG meeting")
+        );
+    QVERIFY(visible.at(0).toMap().value(QStringLiteral("allDay")).toBool());
+    QCOMPARE(
+        visible.at(1).toMap().value(QStringLiteral("start")).toDateTime(),
+        QDateTime(
+            legacyEvents.at(1).startDate,
+            legacyEvents.at(1).startTime
+            )
+        );
+    QVERIFY(
+        !CalendarEventCampusFilter::eventMatchesCampus(
+            projection.events().at(2),
+            {QStringLiteral("BDG")},
+            {QStringLiteral("BDG"), QStringLiteral("SNU")},
+            false
+            )
+        );
 }
 
 void CalendarEventCacheTests::nextEventLookupUsesProjectionQueryAndDeduplicates()

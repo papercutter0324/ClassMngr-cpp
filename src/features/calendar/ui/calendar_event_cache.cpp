@@ -16,9 +16,51 @@ using CalendarEventProjection =
 using CalendarEventSummary =
     ClassMngr::Next::Application::CalendarEventSummary;
 
-bool eventComesBefore(
-    const CalendarEvent& left,
-    const CalendarEvent& right
+QString projectionText(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+std::optional<int> legacyIdFromProjection(
+    const CalendarEventSummary& summary
+    )
+{
+    bool validId = false;
+    const int id = projectionText(summary.id.value()).toInt(&validId);
+    if (!validId || id <= 0)
+    {
+        return std::nullopt;
+    }
+
+    return id;
+}
+
+bool summaryTimeComesBefore(
+    const CalendarEventSummary& left,
+    const CalendarEventSummary& right
+    )
+{
+    if (left.startTime.has_value() != right.startTime.has_value())
+    {
+        return !left.startTime.has_value();
+    }
+
+    if (left.startTime && right.startTime && *left.startTime != *right.startTime)
+    {
+        return *left.startTime < *right.startTime;
+    }
+
+    return false;
+}
+
+bool summaryComesBefore(
+    const CalendarEventSummary& left,
+    const CalendarEventSummary& right
     )
 {
     if (left.startDate != right.startDate)
@@ -26,9 +68,13 @@ bool eventComesBefore(
         return left.startDate < right.startDate;
     }
 
-    if (left.startTime != right.startTime)
+    if (summaryTimeComesBefore(left, right))
     {
-        return left.startTime < right.startTime;
+        return true;
+    }
+    if (summaryTimeComesBefore(right, left))
+    {
+        return false;
     }
 
     if (left.title != right.title)
@@ -36,17 +82,28 @@ bool eventComesBefore(
         return left.title < right.title;
     }
 
-    return left.id < right.id;
+    const auto leftId = legacyIdFromProjection(left);
+    const auto rightId = legacyIdFromProjection(right);
+    if (leftId && rightId && *leftId != *rightId)
+    {
+        return *leftId < *rightId;
+    }
+
+    return left.id.value() < right.id.value();
 }
 
-bool eventComesBeforeOnDate(
-    const CalendarEvent& left,
-    const CalendarEvent& right
+bool summaryComesBeforeOnDate(
+    const CalendarEventSummary& left,
+    const CalendarEventSummary& right
     )
 {
-    if (left.startTime != right.startTime)
+    if (summaryTimeComesBefore(left, right))
     {
-        return left.startTime < right.startTime;
+        return true;
+    }
+    if (summaryTimeComesBefore(right, left))
+    {
+        return false;
     }
 
     if (left.title != right.title)
@@ -54,7 +111,14 @@ bool eventComesBeforeOnDate(
         return left.title < right.title;
     }
 
-    return left.id < right.id;
+    const auto leftId = legacyIdFromProjection(left);
+    const auto rightId = legacyIdFromProjection(right);
+    if (leftId && rightId && *leftId != *rightId)
+    {
+        return *leftId < *rightId;
+    }
+
+    return left.id.value() < right.id.value();
 }
 
 QList<CalendarEventCache::DateRange> normalizedRanges(
@@ -105,29 +169,27 @@ QList<CalendarEventCache::DateRange> normalizedRanges(
     return merged;
 }
 
-QString projectionText(
-    const std::string& value
+CalendarEventProjection projectionFromSummaries(
+    std::vector<CalendarEventSummary> summaries
     )
 {
-    return QString::fromUtf8(
-        value.data(),
-        static_cast<qsizetype>(value.size())
-        );
+    ClassMngr::Next::Application::CalendarEventProjectionInput input;
+    input.events = std::move(summaries);
+    const auto projection = CalendarEventProjection::create(std::move(input));
+    return projection ? projection.value() : CalendarEventProjection{};
 }
 
 std::optional<CalendarEvent> legacyEventFromProjection(
     const CalendarEventSummary& summary
     )
 {
-    bool validId = false;
-    const int id = projectionText(summary.id.value()).toInt(&validId);
+    const auto id = legacyIdFromProjection(summary);
     const QDate startDate =
         QDate::fromString(projectionText(summary.startDate), Qt::ISODate);
     const QDate endDate =
         QDate::fromString(projectionText(summary.endDate), Qt::ISODate);
     if (
-        !validId
-        || id <= 0
+        !id
         || !startDate.isValid()
         || !endDate.isValid()
         || endDate < startDate
@@ -137,7 +199,7 @@ std::optional<CalendarEvent> legacyEventFromProjection(
     }
 
     CalendarEvent event;
-    event.id = id;
+    event.id = *id;
     event.title = projectionText(summary.title);
     event.eventType = projectionText(summary.eventType);
     event.timeStatus = projectionText(summary.timeStatus);
@@ -360,33 +422,42 @@ void CalendarEventCache::requestNextEventMonth(
         );
 }
 
-QList<CalendarEvent> CalendarEventCache::eventsForDate(
+CalendarEventProjection CalendarEventCache::eventProjectionForDate(
     const QDate& date
     ) const
 {
-    QList<CalendarEvent> events;
-    if (!isRangeLoaded(date, date))
+    if (!date.isValid() || !isRangeLoaded(date, date))
     {
-        return events;
+        return {};
     }
 
     const auto eventIds = m_eventIdsByDate.constFind(date);
     if (eventIds == m_eventIdsByDate.cend())
     {
-        return events;
+        return {};
     }
 
-    events.reserve(eventIds->size());
+    std::vector<CalendarEventSummary> summaries;
+    summaries.reserve(static_cast<std::size_t>(eventIds->size()));
     for (const int eventId : *eventIds)
     {
         const auto event = m_eventsById.constFind(eventId);
         if (event != m_eventsById.cend())
         {
-            events.append(*event);
+            summaries.push_back(event.value());
         }
     }
 
-    return events;
+    return projectionFromSummaries(std::move(summaries));
+}
+
+QList<CalendarEvent> CalendarEventCache::eventsForDate(
+    const QDate& date
+    ) const
+{
+    return legacyEventsFromProjection(
+        eventProjectionForDate(date)
+        );
 }
 
 QList<CalendarEvent> CalendarEventCache::eventsInRange(
@@ -425,23 +496,22 @@ QList<CalendarEvent> CalendarEventCache::eventsInRange(
         }
     }
 
-    events.reserve(eventIds.size());
+    std::vector<CalendarEventSummary> summaries;
+    summaries.reserve(static_cast<std::size_t>(eventIds.size()));
     for (const int eventId : eventIds)
     {
         const auto event = m_eventsById.constFind(eventId);
         if (event != m_eventsById.cend())
         {
-            events.append(*event);
+            summaries.push_back(event.value());
         }
     }
 
-    std::sort(
-        events.begin(),
-        events.end(),
-        eventComesBefore
-        );
+    std::sort(summaries.begin(), summaries.end(), summaryComesBefore);
 
-    return events;
+    return legacyEventsFromProjection(
+        projectionFromSummaries(std::move(summaries))
+        );
 }
 
 bool CalendarEventCache::isRangeLoaded(
@@ -682,7 +752,7 @@ void CalendarEventCache::finishActiveRequest()
             if (!loadedRanges.isEmpty())
             {
                 insertEvents(
-                    legacyEventsFromProjection(result.projection),
+                    result.projection.events(),
                     loadedRanges
                     );
 
@@ -707,7 +777,7 @@ void CalendarEventCache::finishActiveRequest()
 }
 
 void CalendarEventCache::insertEvents(
-    const QList<CalendarEvent>& events,
+    const std::vector<CalendarEventSummary>& events,
     const QList<DateRange>& loadedRanges
     )
 {
@@ -716,34 +786,43 @@ void CalendarEventCache::insertEvents(
     indexedRanges.append(loadedRanges);
     indexedRanges = normalizedRanges(indexedRanges);
 
-    for (const CalendarEvent& event : events)
+    for (const CalendarEventSummary& event : events)
     {
+        const auto eventId = legacyIdFromProjection(event);
+        const QDate startDate = QDate::fromString(
+            projectionText(event.startDate),
+            Qt::ISODate
+            );
+        const QDate endDate = QDate::fromString(
+            projectionText(event.endDate),
+            Qt::ISODate
+            );
         if (
-            event.id <= 0
-            || !event.startDate.isValid()
-            || !event.endDate.isValid()
-            || event.endDate < event.startDate
+            !eventId
+            || !startDate.isValid()
+            || !endDate.isValid()
+            || endDate < startDate
             )
         {
             continue;
         }
 
-        removeEventMemberships(event.id);
-        m_eventsById.insert(event.id, event);
+        removeEventMemberships(*eventId);
+        m_eventsById.insert(*eventId, event);
 
         for (const DateRange& range : indexedRanges)
         {
             for (
-                QDate date = qMax(event.startDate, range.startDate);
-                date <= qMin(event.endDate, range.endDate);
+                QDate date = qMax(startDate, range.startDate);
+                date <= qMin(endDate, range.endDate);
                 date = date.addDays(1)
                 )
             {
                 QList<int>& eventIds =
                     m_eventIdsByDate[date];
-                if (!eventIds.contains(event.id))
+                if (!eventIds.contains(*eventId))
                 {
-                    eventIds.append(event.id);
+                    eventIds.append(*eventId);
                     ++m_dateIndexEntryCount;
                 }
 
@@ -752,9 +831,25 @@ void CalendarEventCache::insertEvents(
                     eventIds.end(),
                     [this](int leftId, int rightId)
                     {
-                        return eventComesBeforeOnDate(
-                            m_eventsById.value(leftId),
-                            m_eventsById.value(rightId)
+                        const auto leftEvent =
+                            m_eventsById.constFind(leftId);
+                        const auto rightEvent =
+                            m_eventsById.constFind(rightId);
+                        if (
+                            leftEvent == m_eventsById.cend()
+                            || rightEvent == m_eventsById.cend()
+                            )
+                        {
+                            // The date index should only contain canonical
+                            // IDs. Keep the comparator total if a stale
+                            // membership is ever observed.
+                            return leftEvent == m_eventsById.cend()
+                                && rightEvent != m_eventsById.cend();
+                        }
+
+                        return summaryComesBeforeOnDate(
+                            leftEvent.value(),
+                            rightEvent.value()
                             );
                     }
                     );

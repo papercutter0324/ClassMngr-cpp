@@ -2,6 +2,7 @@
 
 #include "domain/models/calendar_event.h"
 #include "next/application/calendar_event_query_port.h"
+#include "next/application/calendar_event_projection.h"
 
 #include <QDate>
 #include <QFutureWatcher>
@@ -11,6 +12,7 @@
 
 #include <memory>
 #include <optional>
+#include <vector>
 
 class CalendarEventCache : public QObject
 {
@@ -64,6 +66,11 @@ public:
         const QDate& afterDate,
         Priority priority = Priority::Foreground
         );
+
+    ClassMngr::Next::Application::CalendarEventProjection
+    eventProjectionForDate(
+        const QDate& date
+        ) const;
 
     QList<CalendarEvent> eventsForDate(
         const QDate& date
@@ -129,7 +136,9 @@ private:
     void startNextRequest();
     void finishActiveRequest();
     void insertEvents(
-        const QList<CalendarEvent>& events,
+        const std::vector<
+            ClassMngr::Next::Application::CalendarEventSummary
+            >& events,
         const QList<DateRange>& loadedRanges
         );
     void markRangeLoaded(
@@ -158,7 +167,10 @@ private:
     std::shared_ptr<
         const ClassMngr::Next::Application::CalendarEventQueryPortFactory
         > m_queryFactory;
-    QHash<int, CalendarEvent> m_eventsById;
+    QHash<
+        int,
+        ClassMngr::Next::Application::CalendarEventSummary
+        > m_eventsById;
     QHash<QDate, QList<int>> m_eventIdsByDate;
     quint64 m_dateIndexEntryCount = 0;
     QList<DateRange> m_loadedRanges;

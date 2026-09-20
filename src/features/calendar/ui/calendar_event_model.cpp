@@ -7,6 +7,41 @@
 #include <QDateTime>
 #include <QVariantMap>
 
+#include <string>
+
+namespace
+{
+using CalendarEventSummary =
+    ClassMngr::Next::Application::CalendarEventSummary;
+
+QString projectionText(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+bool isStartOfTermCalendarEvent(
+    const CalendarEventSummary& event
+    )
+{
+    const QString title =
+        projectionText(event.title).simplified().toLower();
+
+    return normalizedCalendarEventType(projectionText(event.eventType))
+            == QStringLiteral("Other")
+        && (
+            title == QStringLiteral("new semester")
+            || title == QStringLiteral("start of term")
+            || title == QStringLiteral("term start")
+            || title == QStringLiteral("term starts")
+            );
+}
+}
+
 CalendarEventModel::CalendarEventModel(
     CalendarEventCache* cache,
     QObject* parent
@@ -71,10 +106,10 @@ QVariantList CalendarEventModel::eventsForDate(
         return values;
     }
 
-    const QList<CalendarEvent> events =
-        m_cache->eventsForDate(date);
+    const auto projection =
+        m_cache->eventProjectionForDate(date);
 
-    for (const CalendarEvent& event : events)
+    for (const CalendarEventSummary& event : projection.events())
     {
         if (
             m_hideStartOfTermEvents
@@ -96,23 +131,67 @@ QVariantList CalendarEventModel::eventsForDate(
             continue;
         }
 
+        bool validId = false;
+        const int id = projectionText(event.id.value()).toInt(&validId);
+        const QDate startDate = QDate::fromString(
+            projectionText(event.startDate),
+            Qt::ISODate
+            );
+        const QDate endDate = QDate::fromString(
+            projectionText(event.endDate),
+            Qt::ISODate
+            );
+        if (
+            !validId
+            || id <= 0
+            || !startDate.isValid()
+            || !endDate.isValid()
+            || endDate < startDate
+            )
+        {
+            continue;
+        }
+
+        QTime startTime;
+        QTime endTime;
+        if (event.startTime.has_value() || event.endTime.has_value())
+        {
+            if (!event.startTime.has_value() || !event.endTime.has_value())
+            {
+                continue;
+            }
+
+            startTime = QTime::fromString(
+                projectionText(*event.startTime),
+                QStringLiteral("HH:mm")
+                );
+            endTime = QTime::fromString(
+                projectionText(*event.endTime),
+                QStringLiteral("HH:mm")
+                );
+            if (!startTime.isValid() || !endTime.isValid())
+            {
+                continue;
+            }
+        }
+
         QVariantMap value;
 
         value.insert(
             QStringLiteral("id"),
-            event.id
+            id
             );
         value.insert(
             QStringLiteral("title"),
-            event.title
+            projectionText(event.title)
             );
         value.insert(
             QStringLiteral("eventType"),
-            event.eventType
+            projectionText(event.eventType)
             );
         value.insert(
             QStringLiteral("timeStatus"),
-            event.timeStatus
+            projectionText(event.timeStatus)
             );
         value.insert(
             QStringLiteral("allDay"),
@@ -120,11 +199,11 @@ QVariantList CalendarEventModel::eventsForDate(
             );
         value.insert(
             QStringLiteral("start"),
-            QDateTime(event.startDate, event.startTime)
+            QDateTime(startDate, startTime)
             );
         value.insert(
             QStringLiteral("end"),
-            QDateTime(event.endDate, event.endTime)
+            QDateTime(endDate, endTime)
             );
 
         values.append(value);
