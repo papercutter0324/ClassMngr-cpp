@@ -383,34 +383,39 @@ separates calendar database-query/worker ownership while the existing cache/UI
 legacy API remains. Any typed UI/cache cutover is separate. Generic settings
 and other migrations remain open.
 
-## Verified calendar cache worker-boundary handoff
+## Verified typed calendar query-port handoff
 
-Against baseline commit `0ae2f323`, added
-`src/features/calendar/calendar_event_projection_query.h/.cpp` and routed
-`CalendarEventCache` through it. Production and test sources are registered in
-`cmake/production_sources.cmake` and `cmake/tests/data_and_imports.cmake`.
-No `CalendarEventModel`, pages/next contracts, or documentation changed.
+Against baseline commit `0859cd82`, added
+`src/next/application/calendar_event_query_port.h`, a Qt-free, value-only
+application port for copied range/next-event requests and typed projection,
+date, and error results. Adapted
+`src/features/calendar/calendar_event_projection_query.h/.cpp` and
+`CalendarEventCache` h/cpp to use a clear per-worker port/factory lifetime
+while retaining unique SQLite ownership in the worker adapter and the existing
+cache scheduling/public API.
+Added `tests/next_application_calendar_event_query_port_tests.cpp` and
+extended `tests/calendar_event_cache_tests.cpp`; the new application/test
+sources are registered in `cmake/next.cmake` and `cmake/tests/next.cmake`,
+while production-source and `data_and_imports` registrations remain unchanged.
+UI/model/page call sites and unrelated modules remain untouched.
 
-The adapter takes copied database path, range, and request values, opens a
-unique SQLite connection inside the worker invocation, closes and removes it,
-and returns typed `Application::CalendarEventProjection` plus next-event date
-and error values. `CalendarEventCache` converts typed values back to legacy
-`CalendarEvent` only at its existing cache boundary. No `ApplicationServices`,
-`CalendarService`, repository, SQLite/QSql object, or legacy pointer crosses
-the worker boundary. Public generation/stale-result rejection, cancellation,
-dedupe, retention, ordering/filtering, repeat-series, all-day/unknown-time,
-and lookup behavior remain preserved.
+No Qt, `QObject`, service, repository, SQLite/QSql object, or legacy pointer
+crosses the application port. Query parity remains covered for repeat-series,
+multi-day membership, dedupe, retention, ordering/filtering, next-event
+lookup, cancellation-by-invalidation, generation/stale-result rejection, and
+errors. The existing cache boundary continues to convert typed results to the
+legacy public API.
 
-The elevated VS Debug cache-target build passed after an environmental
-FileTracker `E_ACCESSDENIED` retry. Focused cache/projection/adapter/repository
-tests passed 4/4; the exact nine-target regression passed 9/9 in 58.63s;
-configure/ownership/dependency passed with 712 handwritten sources and one
-explicit owner; resource validation passed 6 RCC packs, 7 runtime IDs, and 7
-references; `git diff --check` passed with LF/CRLF warnings only; and static
-worker-boundary review passed. Failure-path connection cleanup is statically
-verified but not runtime-injected.
+The elevated VS Debug query-port/cache build passed after an environmental
+FileTracker `E_ACCESSDENIED` retry. Focused query-port/cache tests passed 2/2;
+relevant calendar tests passed 4/4; the exact nine-target regression passed
+9/9 in 58.91s; configure/ownership/dependency passed with 714 handwritten
+sources and one owner each; resource validation passed 6 RCC packs, 7 runtime
+IDs, and 7 references; `git diff --check` passed with LF/CRLF warnings only;
+and static Qt-free/worker review passed. Failure-path SQLite cleanup is
+statically verified but not runtime fault-injected.
 
-Phase 2 remains open. Calendar database-query/worker ownership is now
-separated while the existing cache/UI legacy API remains; any future typed
-UI/cache cutover is separate. Generic settings and other feature migrations
-remain open.
+Phase 2 remains open. The typed worker query-port boundary is complete while
+the existing legacy calendar cache/UI API remains; any future typed cache/UI
+cutover is separate. Generic settings and other feature migrations remain
+open.

@@ -28,6 +28,16 @@ using ProjectionInput =
 using ErrorCode =
     ClassMngr::Next::Domain::ErrorCode;
 
+QString fromUtf8(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
 std::string messageText(
     const QString& message,
     const char* fallback
@@ -318,6 +328,47 @@ ClassMngr::Next::Domain::Result<Value> runWithDatabase(
 
 CalendarEventProjectionQuery::ProjectionResult
 CalendarEventProjectionQuery::loadRange(
+    const ClassMngr::Next::Application::CalendarEventRangeRequest& request
+    )
+{
+    return CalendarEventProjectionQuery::loadRange(
+        fromUtf8(request.databasePath),
+        QDate::fromString(fromUtf8(request.startDate.value()), Qt::ISODate),
+        QDate::fromString(fromUtf8(request.endDate.value()), Qt::ISODate)
+        );
+}
+
+CalendarEventProjectionQuery::QueryDateResult
+CalendarEventProjectionQuery::findNextEventDate(
+    const ClassMngr::Next::Application::CalendarEventNextEventRequest& request
+    )
+{
+    const NextEventDateResult result =
+        CalendarEventProjectionQuery::findNextEventDate(
+            fromUtf8(request.databasePath),
+            QDate::fromString(fromUtf8(request.afterDate.value()), Qt::ISODate)
+            );
+    if (!result)
+    {
+        return QueryDateResult::failure(result.error());
+    }
+
+    if (!result.value().isValid())
+    {
+        // A successful lookup with no matching event retains the legacy
+        // invalid-date sentinel while staying a typed value-only result.
+        return QueryDateResult::success(QueryDate{});
+    }
+
+    return QueryDateResult::success(
+        QueryDate(
+            result.value().toString(Qt::ISODate).toUtf8().toStdString()
+            )
+        );
+}
+
+CalendarEventProjectionQuery::ProjectionResult
+CalendarEventProjectionQuery::loadRange(
     QString databasePath,
     QDate startDate,
     QDate endDate
@@ -393,4 +444,10 @@ CalendarEventProjectionQuery::findNextEventDate(
                 );
         }
         );
+}
+
+std::unique_ptr<ClassMngr::Next::Application::CalendarEventQueryPort>
+CalendarEventProjectionQueryFactory::create() const
+{
+    return std::make_unique<CalendarEventProjectionQuery>();
 }

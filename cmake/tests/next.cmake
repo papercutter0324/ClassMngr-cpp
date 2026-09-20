@@ -154,6 +154,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationCalendarEventQueryPort
+    SOURCES
+        tests/next_application_calendar_event_query_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationCampusDirectory
     SOURCES
         tests/next_application_campus_directory_tests.cpp

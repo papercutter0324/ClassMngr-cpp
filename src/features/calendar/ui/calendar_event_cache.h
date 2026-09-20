@@ -1,7 +1,7 @@
 #pragma once
 
 #include "domain/models/calendar_event.h"
-#include "next/application/calendar_event_projection.h"
+#include "next/application/calendar_event_query_port.h"
 
 #include <QDate>
 #include <QFutureWatcher>
@@ -9,6 +9,7 @@
 #include <QList>
 #include <QObject>
 
+#include <memory>
 #include <optional>
 
 class CalendarEventCache : public QObject
@@ -33,6 +34,13 @@ public:
     };
 
     explicit CalendarEventCache(
+        QObject* parent = nullptr
+        );
+
+    explicit CalendarEventCache(
+        std::shared_ptr<
+            const ClassMngr::Next::Application::CalendarEventQueryPortFactory
+            > queryFactory,
         QObject* parent = nullptr
         );
 
@@ -107,6 +115,9 @@ private:
     };
 
     static LoadResult load(
+        const std::shared_ptr<
+            const ClassMngr::Next::Application::CalendarEventQueryPortFactory
+            >& queryFactory,
         const QString& databasePath,
         const Request& request
         );
@@ -144,6 +155,9 @@ private:
         );
 
     QString m_databasePath;
+    std::shared_ptr<
+        const ClassMngr::Next::Application::CalendarEventQueryPortFactory
+        > m_queryFactory;
     QHash<int, CalendarEvent> m_eventsById;
     QHash<QDate, QList<int>> m_eventIdsByDate;
     quint64 m_dateIndexEntryCount = 0;

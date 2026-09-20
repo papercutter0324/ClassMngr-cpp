@@ -206,8 +206,28 @@ QString projectionErrorText(
 CalendarEventCache::CalendarEventCache(
     QObject* parent
     )
-    : QObject(parent)
+    : CalendarEventCache(
+          std::make_shared<CalendarEventProjectionQueryFactory>(),
+          parent
+          )
 {
+}
+
+CalendarEventCache::CalendarEventCache(
+    std::shared_ptr<
+        const ClassMngr::Next::Application::CalendarEventQueryPortFactory
+        > queryFactory,
+    QObject* parent
+    )
+    : QObject(parent),
+      m_queryFactory(std::move(queryFactory))
+{
+    if (!m_queryFactory)
+    {
+        m_queryFactory =
+            std::make_shared<CalendarEventProjectionQueryFactory>();
+    }
+
     connect(
         &m_watcher,
         &QFutureWatcher<LoadResult>::finished,
@@ -479,6 +499,9 @@ int CalendarEventCache::retainedRangeCount() const
 }
 
 CalendarEventCache::LoadResult CalendarEventCache::load(
+    const std::shared_ptr<
+        const ClassMngr::Next::Application::CalendarEventQueryPortFactory
+        >& queryFactory,
     const QString& databasePath,
     const Request& request
     )
@@ -486,14 +509,45 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
     LoadResult result;
     result.request = request;
 
+    if (!queryFactory)
+    {
+        result.error = QStringLiteral(
+            "Calendar event query factory is unavailable."
+            );
+        return result;
+    }
+
+    const std::unique_ptr<
+        ClassMngr::Next::Application::CalendarEventQueryPort
+        > query = queryFactory->create();
+    if (!query)
+    {
+        result.error = QStringLiteral(
+            "Calendar event query port is unavailable."
+            );
+        return result;
+    }
+
+    const std::string databasePathValue =
+        databasePath.toUtf8().toStdString();
+
     if (request.kind == RequestKind::Range)
     {
-        const auto projection =
-            CalendarEventProjectionQuery::loadRange(
-                databasePath,
-                request.startDate,
-                request.endDate
-                );
+        const auto projection = query->loadRange(
+            {
+                databasePathValue,
+                ClassMngr::Next::Application::CalendarEventDate(
+                    request.startDate.toString(Qt::ISODate)
+                        .toUtf8()
+                        .toStdString()
+                    ),
+                ClassMngr::Next::Application::CalendarEventDate(
+                    request.endDate.toString(Qt::ISODate)
+                        .toUtf8()
+                        .toStdString()
+                    )
+            }
+            );
         if (projection)
         {
             result.projection = projection.value();
@@ -505,14 +559,30 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
     }
     else
     {
-        const auto nextEventDate =
-            CalendarEventProjectionQuery::findNextEventDate(
-                databasePath,
-                request.startDate
-                );
+        const auto nextEventDate = query->findNextEventDate(
+            {
+                databasePathValue,
+                ClassMngr::Next::Application::CalendarEventDate(
+                    request.startDate.toString(Qt::ISODate)
+                        .toUtf8()
+                        .toStdString()
+                    )
+            }
+            );
         if (nextEventDate)
         {
-            result.nextEventDate = nextEventDate.value();
+            if (nextEventDate.value().isValid())
+            {
+                result.nextEventDate = QDate::fromString(
+                    QString::fromUtf8(
+                        nextEventDate.value().value().data(),
+                        static_cast<qsizetype>(
+                            nextEventDate.value().value().size()
+                            )
+                        ),
+                    Qt::ISODate
+                    );
+            }
         }
         else
         {
@@ -575,12 +645,13 @@ void CalendarEventCache::startNextRequest()
     m_activeRequest = m_pendingRequests.takeFirst();
     const Request request = *m_activeRequest;
     const QString databasePath = m_databasePath;
+    const auto queryFactory = m_queryFactory;
 
     m_watcher.setFuture(
         QtConcurrent::run(
-            [databasePath, request]()
+            [queryFactory, databasePath, request]()
             {
-                return load(databasePath, request);
+                return load(queryFactory, databasePath, request);
             }
             )
         );

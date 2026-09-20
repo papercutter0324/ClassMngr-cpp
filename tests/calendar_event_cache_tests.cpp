@@ -11,6 +11,10 @@
 #include <QUuid>
 #include <QtTest>
 
+#include <memory>
+#include <optional>
+#include <string>
+
 namespace
 {
 void createCalendarEventsTable(
@@ -159,6 +163,109 @@ void createDatabase(
 
     QSqlDatabase::removeDatabase(connectionName);
 }
+
+struct InjectedQueryState final
+{
+    int createCalls = 0;
+    int rangeCalls = 0;
+    int nextEventCalls = 0;
+    std::optional<
+        ClassMngr::Next::Application::CalendarEventRangeRequest
+        > lastRangeRequest;
+    std::optional<
+        ClassMngr::Next::Application::CalendarEventNextEventRequest
+        > lastNextEventRequest;
+};
+
+ClassMngr::Next::Application::CalendarEventProjection injectedProjection()
+{
+    ClassMngr::Next::Application::CalendarEventProjectionInput input;
+    input.events.push_back({
+        *ClassMngr::Next::Domain::CalendarEventId::fromString("42"),
+        std::nullopt,
+        std::nullopt,
+        "Injected event",
+        "2026-07-10",
+        "2026-07-11",
+        std::string("09:00"),
+        std::string("10:00"),
+        {},
+        {},
+        0,
+        false,
+        "Meeting",
+        "Timed",
+        std::string("series-injected")
+    });
+    const auto projection =
+        ClassMngr::Next::Application::CalendarEventProjection::create(
+            std::move(input)
+            );
+    Q_ASSERT(projection);
+    return projection.value();
+}
+
+class InjectedQueryPort final
+    : public ClassMngr::Next::Application::CalendarEventQueryPort
+{
+public:
+    explicit InjectedQueryPort(
+        std::shared_ptr<InjectedQueryState> state
+        )
+        : m_state(std::move(state))
+    {
+    }
+
+    [[nodiscard]] ClassMngr::Next::Application::CalendarEventProjectionResult
+    loadRange(
+        const ClassMngr::Next::Application::CalendarEventRangeRequest& request
+        ) override
+    {
+        ++m_state->rangeCalls;
+        m_state->lastRangeRequest = request;
+        return ClassMngr::Next::Application::CalendarEventProjectionResult::success(
+            injectedProjection()
+            );
+    }
+
+    [[nodiscard]] ClassMngr::Next::Application::CalendarEventDateResult
+    findNextEventDate(
+        const ClassMngr::Next::Application::CalendarEventNextEventRequest& request
+        ) override
+    {
+        ++m_state->nextEventCalls;
+        m_state->lastNextEventRequest = request;
+        return ClassMngr::Next::Application::CalendarEventDateResult::success(
+            ClassMngr::Next::Application::CalendarEventDate("2026-07-10")
+            );
+    }
+
+private:
+    std::shared_ptr<InjectedQueryState> m_state;
+};
+
+class InjectedQueryFactory final
+    : public ClassMngr::Next::Application::CalendarEventQueryPortFactory
+{
+public:
+    explicit InjectedQueryFactory(
+        std::shared_ptr<InjectedQueryState> state
+        )
+        : m_state(std::move(state))
+    {
+    }
+
+    [[nodiscard]] std::unique_ptr<
+        ClassMngr::Next::Application::CalendarEventQueryPort
+        > create() const override
+    {
+        ++m_state->createCalls;
+        return std::make_unique<InjectedQueryPort>(m_state);
+    }
+
+private:
+    std::shared_ptr<InjectedQueryState> m_state;
+};
 }
 
 class CalendarEventCacheTests : public QObject
@@ -167,6 +274,7 @@ class CalendarEventCacheTests : public QObject
 
 private slots:
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
+    void injectedQueryFactoryFeedsLegacyCacheBoundary();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
     void invalidationDiscardsCompletedWorkerResult();
@@ -208,6 +316,61 @@ void CalendarEventCacheTests::rangeLoadPopulatesModelWithoutUiThreadDatabaseAcce
         QStringLiteral("Cached event")
         );
     QVERIFY(model.isMonthLoaded(2026, 7));
+}
+
+void CalendarEventCacheTests::injectedQueryFactoryFeedsLegacyCacheBoundary()
+{
+    const auto state = std::make_shared<InjectedQueryState>();
+    const auto factory = std::make_shared<InjectedQueryFactory>(state);
+    CalendarEventCache cache(factory);
+    cache.setDatabasePath(QStringLiteral("worker-calendar.db"));
+
+    cache.requestRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            ),
+        5000
+        );
+
+    QCOMPARE(state->createCalls, 1);
+    QCOMPARE(state->rangeCalls, 1);
+    QCOMPARE(
+        state->lastRangeRequest->databasePath,
+        std::string("worker-calendar.db")
+        );
+    QCOMPARE(
+        state->lastRangeRequest->startDate.value(),
+        std::string("2026-07-01")
+        );
+    QCOMPARE(
+        state->lastRangeRequest->endDate.value(),
+        std::string("2026-07-31")
+        );
+
+    const auto events = cache.eventsForDate(QDate(2026, 7, 10));
+    QCOMPARE(events.size(), 1);
+    QCOMPARE(events.first().id, 42);
+    QCOMPARE(events.first().title, QStringLiteral("Injected event"));
+    QCOMPARE(
+        events.first().repeatSeriesId,
+        QStringLiteral("series-injected")
+        );
+    QCOMPARE(events.first().startTime, QTime(9, 0));
+
+    QSignalSpy nextEventSpy(
+        &cache,
+        &CalendarEventCache::nextEventMonthFound
+        );
+    cache.requestNextEventMonth(QDate(2026, 7, 1));
+    QTRY_COMPARE_WITH_TIMEOUT(nextEventSpy.count(), 1, 5000);
+    QCOMPARE(nextEventSpy.at(0).at(0).toDate(), QDate(2026, 7, 10));
+    QCOMPARE(state->createCalls, 2);
+    QCOMPARE(state->nextEventCalls, 1);
 }
 
 void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCleansConnections()
