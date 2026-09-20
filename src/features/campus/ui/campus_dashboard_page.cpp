@@ -4,7 +4,7 @@
 #include "features/campus/ui/campus_map_preview.h"
 
 #include "core/resource_paths.h"
-#include "core/settingsmanager.h"
+#include "next/platform/settings_manager_last_selected_campus_port.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -503,8 +503,10 @@ void CampusDashboardPage::loadSelectedCampus()
     m_currentCampusComboIndex =
         m_campusCombo->currentIndex();
 
-    SettingsManager::instance().setLastCampusJsonId(
-        m_currentCampus.id
+    ClassMngr::Next::Platform::SettingsManagerLastSelectedCampusPort().write(
+        ClassMngr::Next::Domain::CampusId::fromString(
+            m_currentCampus.id.toStdString()
+            )
         );
 
     populateFields(m_currentCampus);

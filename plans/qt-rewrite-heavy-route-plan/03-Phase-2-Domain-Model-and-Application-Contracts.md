@@ -1763,3 +1763,30 @@ existing linker warnings remained nonblocking.
 
 The typed class-navigation visibility-scope seam is closed. Phase 2 remains
 open; the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed last-selected-campus persistence boundary)
+
+Against baseline commit `31db0c2d`, added the Qt-free
+`LastSelectedCampusPort` and `SettingsManagerLastSelectedCampusPort` adapter
+using `std::optional<Domain::CampusId>`. The canonical legacy key is exactly
+`campus/lastSelectedJsonId` (`SettingsManager::Keys::LAST_CAMPUS_JSON_ID`);
+blank, invalid, missing, and unavailable values read as no selection without
+rewriting, while valid IDs preserve exact text and support set/clear round-trip
+behavior.
+
+Only `src/features/campus/ui/campus_dashboard_page.cpp` and
+`src/features/campus/ui/campus_dashboard_page_data.cpp` use the typed port.
+The explicit current-campus value takes precedence over the persisted fallback.
+`UserPreferencesState`, `CampusDirectoryProjection`, and resource surfaces are
+unchanged, and the separate legacy integer campus key remains untouched.
+
+Verification passed configure/ownership with 764 sources, a clean Debug build,
+focused tests 9/9, and the exact nine-target regression 9/9. Resource checks
+passed 6 RCC packs/7 runtime IDs/7 runtime references; dependency
+(`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff checks
+passed. The hardened canonical-literal adapter assertion passed 1/1, and the
+exact dirty scope was eight files. Only existing linker and LF/CRLF warnings
+were noted.
+
+The typed last-selected-campus persistence seam is closed. Phase 2 remains
+open; the next slice is not yet selected.

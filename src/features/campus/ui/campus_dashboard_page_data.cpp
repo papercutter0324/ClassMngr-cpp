@@ -5,7 +5,7 @@
 
 #include "campus_dashboard_page_detail.h"
 #include "features/campus/ui/campus_map_preview.h"
-#include "core/settingsmanager.h"
+#include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
@@ -99,8 +99,15 @@ void CampusDashboardPage::loadCampuses()
 
     if (campusIdToSelect.isEmpty())
     {
-        campusIdToSelect =
-            SettingsManager::instance().getLastCampusJsonId();
+        const auto storedCampusId =
+            ClassMngr::Next::Platform::
+                SettingsManagerLastSelectedCampusPort().read();
+
+        if (storedCampusId.has_value())
+        {
+            campusIdToSelect =
+                QString::fromStdString(storedCampusId->value());
+        }
     }
 
     int index =
