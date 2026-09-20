@@ -1542,6 +1542,34 @@ The typed PowerPoint data-access notice seam is closed. Residual settings
 callers, generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
 
+#### Progress update - 2026-09-21 (typed skipped-update-version persistence boundary)
+
+Against baseline commit `7fdc315f`, added the Qt-free optional
+`SkippedUpdateVersionPreferences` value and typed read/write/clear
+`SkippedUpdateVersionPreferencesPort`, plus the
+`SettingsManagerSkippedUpdateVersionPort` adapter. It maps the exact
+`updates/skippedVersion` key, represents missing or empty storage as
+`std::nullopt`, trims values on read and write, round-trips non-empty values,
+and clears the setting for an empty optional.
+
+Only `src/app/controllers/update_controller.cpp` uses the typed boundary.
+`Version::parse` still validates and normalizes skipped versions before write;
+skip/unskip, reconciliation clearing, prompt suppression, dialog display, and
+the `QString` conversion boundary remain preserved.
+
+The executor and independent tester reported a passing Debug build after a
+transient MSVC `LNK1163` retry, focused tests 5/5, the exact nine-target
+regression 9/9, and a passing launch check. Configure/ownership passed with
+743 sources; dependency checks passed for 9 production targets
+(`ClassMngrNext -> Qt6::Core`); resource checks passed 6 RCC packs, 7 runtime
+IDs, and 7 runtime references. Qt-free, call-site, static, and diff checks
+passed. Normal warnings remained non-blocking; `clang-format` and
+`clang-tidy` were unavailable.
+
+The typed skipped-update-version seam is closed. Residual settings callers,
+generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.
+
 #### Progress update - 2026-09-21 (typed automatic-update preference boundary)
 
 Against baseline commit `374461a0`, added the Qt-free

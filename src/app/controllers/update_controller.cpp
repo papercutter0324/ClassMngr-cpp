@@ -1,12 +1,12 @@
 #include "update_controller.h"
 
 #include "app/mainwindow.h"
-#include "core/settingsmanager.h"
 #include "core/updater/update_configuration.h"
 #include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
 #include "core/updater/version.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
+#include "next/platform/settings_manager_skipped_update_version_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
@@ -71,8 +71,15 @@ bool UpdateController::isVersionSkipped(
     const QString& version
     ) const
 {
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    const auto skipped =
+        skippedUpdateVersionPort.read().skippedVersion;
+
     return !version.trimmed().isEmpty()
-        && SettingsManager::instance().skippedUpdateVersion()
+        && skipped.has_value()
+        && QString::fromStdString(*skipped)
             == version.trimmed();
 }
 
@@ -80,25 +87,30 @@ void UpdateController::reconcileSkippedVersion(
     const UpdateCheckResult& result
     )
 {
-    SettingsManager& settings =
-        SettingsManager::instance();
-    const QString skippedText =
-        settings.skippedUpdateVersion();
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    const auto storedSkippedVersion =
+        skippedUpdateVersionPort.read().skippedVersion;
 
-    if (skippedText.isEmpty())
+    if (!storedSkippedVersion.has_value())
     {
         return;
     }
 
-    const auto skipped =
-        Version::parse(skippedText);
+    const auto parsedSkippedVersion =
+        Version::parse(
+            QString::fromStdString(
+                *storedSkippedVersion
+                )
+            );
     if (
-        !skipped
-        || result.currentVersion >= *skipped
-        || result.latestVersion > *skipped
+        !parsedSkippedVersion
+        || result.currentVersion >= *parsedSkippedVersion
+        || result.latestVersion > *parsedSkippedVersion
         )
     {
-        settings.clearSkippedUpdateVersion();
+        skippedUpdateVersionPort.clear();
         if (m_dialog)
         {
             m_dialog->setSkippedVersion(QString());
@@ -117,16 +129,22 @@ void UpdateController::skipVersion(
         return;
     }
 
-    SettingsManager::instance().setSkippedUpdateVersion(
-        parsed->toString()
-        );
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    skippedUpdateVersionPort.write({
+        .skippedVersion = parsed->toString().toStdString()
+    });
     m_automaticPromptSuppressed =
         true;
 }
 
 void UpdateController::unskipVersion()
 {
-    SettingsManager::instance().clearSkippedUpdateVersion();
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    skippedUpdateVersionPort.clear();
     m_automaticPromptSuppressed =
         false;
 }
@@ -260,10 +278,19 @@ UpdateDialog* UpdateController::ensureDialog(
     bool automaticPrompt
     )
 {
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    const auto skipped =
+        skippedUpdateVersionPort.read().skippedVersion;
+    const QString skippedText = skipped.has_value()
+        ? QString::fromStdString(*skipped)
+        : QString();
+
     if (m_dialog)
     {
         m_dialog->setSkippedVersion(
-            SettingsManager::instance().skippedUpdateVersion()
+            skippedText
             );
         if (automaticPrompt)
         {
@@ -281,7 +308,7 @@ UpdateDialog* UpdateController::ensureDialog(
             m_service,
             m_startupComplete,
             m_startupComplete ? m_window.data() : nullptr,
-            SettingsManager::instance().skippedUpdateVersion()
+            skippedText
             );
 
     dialog->setAttribute(

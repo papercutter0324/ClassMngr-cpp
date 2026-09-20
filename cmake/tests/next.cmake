@@ -199,6 +199,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformSettingsManagerSkippedUpdateVersionPort
+    SOURCES
+        tests/next_platform_settings_manager_skipped_update_version_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformSettingsManagerPowerPointDataAccessNoticePort
     SOURCES
         tests/next_platform_settings_manager_powerpoint_data_access_notice_port_tests.cpp

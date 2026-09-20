@@ -48,6 +48,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/document_content_session.h
     src/next/application/excel_import_timeout_preferences.h
     src/next/application/automatic_update_preferences.h
+    src/next/application/skipped_update_version_preferences.h
     src/next/application/powerpoint_data_access_notice_preferences.h
     src/next/application/import_job_coordinator.h
     src/next/application/import_review_session.h
@@ -83,6 +84,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_schedule_display_preferences_port.h
     src/next/platform/settings_manager_excel_import_timeout_port.h
     src/next/platform/settings_manager_automatic_update_preferences_port.h
+    src/next/platform/settings_manager_skipped_update_version_port.h
     src/next/platform/settings_manager_powerpoint_data_access_notice_port.h
     src/next/platform/settings_manager_sidebar_display_preferences_port.h
 )
