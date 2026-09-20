@@ -210,7 +210,8 @@ navigationUsesPortAndPreservesViewerLeaseFlow()
     QVERIFY(!contents.contains("m_services->documentCatalog()"));
     QVERIFY(!contents.contains("const DocumentDefinition* document"));
     QVERIFY(contents.contains("confirmCurrentPageCanLeave"));
-    QVERIFY(contents.contains("ResourcePaths::Documents::acquire"));
+    QVERIFY(contents.contains("m_documentContentResourcePort.resolve"));
+    QVERIFY(!contents.contains("ResourcePaths::Documents::acquire"));
     QVERIFY(contents.contains("PdfViewerDocumentDescriptor"));
     QVERIFY(contents.contains("viewer->loadPdf"));
     QVERIFY(contents.contains("PageType::PdfViewer"));

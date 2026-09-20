@@ -15,7 +15,6 @@
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
-#include "core/resource_paths.h"
 #include "next/application/document_catalog_use_case.h"
 #include "next/platform/application_services_document_catalog_port.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
@@ -23,7 +22,6 @@
 #include <QFileInfo>
 #include <QLocale>
 
-#include <string_view>
 #include <utility>
 namespace
 {
@@ -60,10 +58,12 @@ NavigationController::NavigationController(
     ApplicationServices* services,
     Sidebar* sidebar,
     PageManager* pages,
+    ResourcePackManager& resourcePacks,
     QObject* parent
     )
     : QObject(parent)
     , m_services(services)
+    , m_documentContentResourcePort(resourcePacks)
     , m_sidebar(sidebar)
     , m_pages(pages)
 {
@@ -399,48 +399,35 @@ void NavigationController::handleDocument(
         return;
     }
 
-    auto lease = ResourcePaths::Documents::acquire();
-    if (!lease)
+    auto resources = m_documentContentResourcePort.resolve(
+        document.value().contentReference,
+        document.value().exportReference
+        );
+    if (!resources)
     {
         return;
     }
 
+    auto resolvedResources = std::move(resources.value());
     PdfViewerDocumentDescriptor descriptor;
-    descriptor.pdfFilePath =
-        ResourcePaths::Documents::filePath(
-            *lease,
-            QString::fromUtf8(document.value().path)
-            );
+    descriptor.pdfFilePath = std::move(resolvedResources.primaryPath);
     descriptor.printEnabled =
         document.value().printable;
     descriptor.exportEnabled =
         document.value().exportable
-        && document.value().exportReference.has_value();
+        && resolvedResources.exportPath.has_value();
     descriptor.contentReference =
         document.value().contentReference;
 
-    if (document.value().exportReference)
+    if (resolvedResources.exportPath)
     {
-        constexpr std::string_view prefix = "resource://documents/";
-        const std::string& reference =
-            document.value().exportReference->value();
-        if (!reference.starts_with(prefix))
-        {
-            return;
-        }
-        const QString exportRelativePath = QString::fromUtf8(
-            reference.substr(prefix.size())
-            );
-        descriptor.exportFilePath =
-            ResourcePaths::Documents::filePath(
-                *lease,
-                exportRelativePath
-                );
-        descriptor.exportFileName =
-            QFileInfo(exportRelativePath).fileName();
+        descriptor.exportFilePath = std::move(*resolvedResources.exportPath);
+        descriptor.exportFileName = QFileInfo(
+            descriptor.exportFilePath
+            ).fileName();
     }
 
-    descriptor.resourceLease = std::move(*lease);
+    descriptor.resourceLease = std::move(resolvedResources.resourceLease);
 
     if (auto* viewer = m_pages->ensurePdfViewerPage())
     {

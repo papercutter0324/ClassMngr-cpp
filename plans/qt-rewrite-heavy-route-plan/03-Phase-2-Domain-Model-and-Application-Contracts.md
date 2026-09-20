@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-20
-- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, and Qt runtime worker/cancellation bridge are implemented. Resource/platform document adaptation, Sidebar/MainWindow ownership, and other feature-service migration remain. Invalid-UTF-8 boundary coverage is non-blocking and remains untested.
+- Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, and Qt runtime worker/cancellation bridge are implemented. The bounded resource/platform document resolver slice is complete: `Platform::DocumentContentResourcePort` accepts `ResourcePackManager&`, validates `resource://documents/` references, rejects malformed/empty/traversal inputs, acquires one documents-pack lease, resolves primary/optional export paths, and returns a move-only lease/path value; `NavigationController` uses it instead of direct `ResourcePaths::Documents` acquisition/parsing, while `PdfViewerPage` retains close-before-lease-release ownership and direct/no-reference compatibility. The application layer remains Qt-free. Sidebar/MainWindow catalog ownership and other feature-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
 
@@ -824,3 +824,26 @@ MSBuild FileTracker `E_ACCESSDENIED` required an elevated rerun; the elevated
 build passed. Remaining work includes resource/platform adapter completion,
 Sidebar/MainWindow ownership, and other legacy service migration. Phase 2
 remains in progress.
+
+#### Progress update - 2026-09-20 (bounded resource/platform document resolver slice)
+
+Against baseline commit `e031317c`, the bounded resolver slice is complete.
+`ClassMngrNext::Platform` now provides `DocumentContentResourcePort`, which
+accepts `ResourcePackManager&`, validates `resource://documents/` references
+including malformed, empty, and traversal rejection, acquires one
+documents-pack lease, resolves primary and optional export paths, and returns
+a move-only lease/path value. `NavigationController` uses this port instead of
+directly acquiring or parsing `ResourcePaths::Documents`. `PdfViewerPage`
+retains ownership of closing the PDF before releasing the lease, and
+descriptors without a reference retain direct-loading compatibility. The
+application layer remains Qt-free.
+
+Configure/source-ownership/dependency checks passed at 705 sources; focused
+resolver/navigation CTest passed 2/2; the exact nine-target CTest passed 9/9;
+resource validation passed for 6 RCC packs, 7 runtime IDs, and 7 references;
+and `git diff --check` passed with LF-to-CRLF warnings only. An initial MSBuild
+FileTracker `E_ACCESSDENIED` required an elevated retry; the focused build/link
+passed. Invalid UTF-8 and live UI integration lack direct coverage;
+close-before-release is source-order verified. Sidebar/MainWindow catalog
+ownership and other feature migrations remain open. Phase 2 remains in
+progress.

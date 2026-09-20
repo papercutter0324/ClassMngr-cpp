@@ -201,6 +201,19 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformDocumentContentResourcePort
+    SOURCES
+        tests/next_platform_document_content_resource_port_tests.cpp
+    COMPILE_DEFINITIONS
+        CLASSMNGR_RESOURCE_PACK_DIR="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}"
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    DEPENDENCIES
+        ClassMngrdocumentsResourcePack
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformQtJobWorker
     SOURCES
         tests/next_platform_qt_job_worker_tests.cpp

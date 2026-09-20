@@ -12,6 +12,7 @@
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "core/language_service.h"
+#include "core/resource_packs/resource_pack_manager.h"
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -459,6 +460,7 @@ void MainWindow::connectControllers()
             m_services.get(),
             ui->sidebarWidget,
             m_pages,
+            ResourcePackManager::instance(),
             this
             );
 
