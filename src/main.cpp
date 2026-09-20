@@ -9,14 +9,13 @@
 #include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/resource_paths.h"
-#include "core/settingsmanager.h"
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "core/updater/update_service.h"
 #include "next/platform/settings_manager_font_size_preferences_port.h"
+#include "next/platform/settings_manager_theme_preferences_port.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
-#include "ui/shared/state/option_state_keys.h"
 #include "core/utils/platform.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/classes/services/class_transfer_json_codec.h"
@@ -6214,11 +6213,11 @@ int main(int argc, char *argv[])
         startupPerformance.visualCaptureEnabled
         && startupPerformance.visualThemeOverride.has_value()
             ? *startupPerformance.visualThemeOverride
-            : themeFromStoredValue(
-                  SettingsManager::instance().get(
-                      OptionKeys::Theme,
-                      static_cast<int>(Theme::SystemDefault)
-                      ).toInt()
+            : static_cast<Theme>(
+                  static_cast<int>(
+                      ClassMngr::Next::Platform::
+                          SettingsManagerThemePreferencesPort().read()
+                      )
                   );
 
     if (startupPerformance.enabled)

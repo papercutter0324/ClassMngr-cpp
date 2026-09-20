@@ -1259,3 +1259,27 @@ configure refresh; expected warnings remained nonblocking.
 
 The typed font-size startup read seam is closed. Phase 2 remains open; the next
 slice is not yet selected.
+
+## Verified typed theme startup read bridge handoff
+
+Against baseline commit `6e67978c`, added the Qt-free typed theme startup read
+bridge for the canonical `OptionKeys::Theme == "options/theme"`; this is not
+the legacy `SettingsManager::Keys::THEME == "ui/theme"` key. Stored values map
+`0` to `Dark`, `1` to `Light`, and `2` to `SystemDefault`; missing, unknown,
+and unavailable values map to `SystemDefault`.
+
+`main.cpp` now performs the typed read. Visual-capture precedence and the
+existing `ThemeService` values remain unchanged, as do the
+`ActionRegistry`/`ThemeController`/`ThemePreferencePort` and menu compatibility
+owners.
+
+Verification passed configure/ownership with 782 sources and a clean Debug
+build. The offscreen focused suite passed 5/5, covering the theme adapter,
+startup visual behavior, AI options, launch, and resources. Resource checks
+passed 6 RCC packs/7 runtime IDs/7 runtime references; dependency
+(`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff checks
+passed. The exact dirty scope was six files. The corrected build-target
+invocation was used; expected warnings remained nonblocking.
+
+The typed theme startup read seam is closed. Phase 2 remains open; the next
+slice is not yet selected.
