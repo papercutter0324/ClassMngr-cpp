@@ -2,6 +2,7 @@
 
 #include "app/services/feature_services.h"
 #include "features/teacher/ui/upcoming_birthdays_dialog.h"
+#include "next/platform/settings_manager_upcoming_birthday_dismissal_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 using namespace SidebarControllerPrivate;
@@ -67,9 +68,11 @@ void SidebarController::showUpcomingBirthdays()
 
     if (dialog.dismissForToday())
     {
-        SettingsManager::instance().set(
-            SettingsManager::Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE,
-            today
+        const ClassMngr::Next::Application::CalendarEventDate dismissalDate(
+            today.toString(Qt::ISODate).toUtf8().toStdString()
             );
+        ClassMngr::Next::Platform::
+            SettingsManagerUpcomingBirthdayDismissalPort()
+            .write(dismissalDate);
     }
 }

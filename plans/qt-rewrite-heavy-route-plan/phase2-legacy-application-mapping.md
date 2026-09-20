@@ -1333,3 +1333,26 @@ nonblocking.
 
 The typed language-preference persistence/migration seam is closed. Phase 2
 remains open; the next slice is not yet selected.
+
+## Verified typed upcoming-birthday dismissal write port handoff
+
+Against baseline commit `958b471a`, added the Qt-free write-only typed date
+contract for `SettingsManager::Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE ==
+"notifications/upcomingBirthdaysDismissedDate"`. The adapter performs strict
+ISO `CalendarEventDate` to legacy `QDate` conversion: valid dates are stored,
+while empty or malformed dates do not overwrite the existing value.
+
+Only the sidebar writer was cut over, and it writes only from
+`dismissForToday()`. Reminder and visibility behavior remain unchanged; the
+obsolete header dependency was removed safely.
+
+Verification passed configure/ownership and elevated clean/focused builds. The
+focused suite passed 4/4, covering the adapter, next application contract,
+UpcomingBirthdays, and sidebar. Resource checks passed 6 RCC packs/7 runtime
+IDs/7 runtime references; dependency (`ClassMngrNext -> Qt6::Core`), Qt-free,
+static, call-site, and diff checks passed. The exact dirty scope was seven
+files. Expected Vulkan/zlib and LF/CRLF warnings remained nonblocking; stale
+MSBuild children were stopped.
+
+The typed upcoming-birthday dismissal write seam is closed. Phase 2 remains
+open; the next slice is not yet selected.

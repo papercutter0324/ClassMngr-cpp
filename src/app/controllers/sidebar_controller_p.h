@@ -3,7 +3,6 @@
 #include "sidebar_controller.h"
 
 #include "core/application_services.h"
-#include "core/settingsmanager.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"

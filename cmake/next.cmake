@@ -56,6 +56,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/theme_preferences_port.h
     src/next/application/dialog_geometry_preferences_port.h
     src/next/application/language_preferences_port.h
+    src/next/application/upcoming_birthday_dismissal_port.h
     src/next/application/class_day_filter_reset_policy.h
     src/next/application/class_selection_reset_policy.h
     src/next/application/class_visibility_preferences.h
@@ -111,6 +112,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/settings_manager_theme_preferences_port.h
     src/next/platform/settings_manager_dialog_geometry_preferences_port.h
     src/next/platform/settings_manager_language_preferences_port.h
+    src/next/platform/settings_manager_upcoming_birthday_dismissal_port.h
     src/next/platform/settings_manager_skipped_update_version_port.h
     src/next/platform/settings_manager_powerpoint_data_access_notice_port.h
     src/next/platform/settings_manager_recent_workspace_history_port.h
