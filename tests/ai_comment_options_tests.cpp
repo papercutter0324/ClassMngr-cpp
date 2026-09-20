@@ -18,7 +18,7 @@ private slots:
     void providerAndVoiceDefaultsPersist();
     void providerUrlsAndCustomValidation();
     void updatePreferencesDefaultAndPersist();
-    void sidebarMarqueeDefaultAndPersists();
+    void sidebarDisplayDefaultsAndPersist();
     void excelImportTimeoutDefaultsAndPersists();
 
 private:
@@ -243,10 +243,15 @@ void AiCommentOptionsTests::excelImportTimeoutDefaultsAndPersists()
     QCOMPARE(settings.excelImportTimeoutSeconds(), 120);
 }
 
-void AiCommentOptionsTests::sidebarMarqueeDefaultAndPersists()
+void AiCommentOptionsTests::sidebarDisplayDefaultsAndPersist()
 {
     SettingsManager& settings =
         SettingsManager::instance();
+    settings.remove(
+        QString::fromUtf8(
+            SettingsManager::Keys::SIDEBAR_TOOLTIPS_ENABLED
+            )
+        );
     settings.remove(
         QString::fromUtf8(
             SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED
@@ -255,12 +260,46 @@ void AiCommentOptionsTests::sidebarMarqueeDefaultAndPersists()
 
     ActionRegistry defaults;
     defaults.createActions();
+    QVERIFY(defaults.showSidebarTooltips);
     QVERIFY(defaults.animateSidebarText);
+    QVERIFY(defaults.showSidebarTooltips->isChecked());
     QVERIFY(defaults.animateSidebarText->isChecked());
-    QVERIFY(settings.sidebarMarqueeEnabled());
+    QVERIFY(
+        !settings.get(
+            QString::fromUtf8(
+                SettingsManager::Keys::SIDEBAR_TOOLTIPS_ENABLED
+                )
+            ).isValid()
+        );
+    QVERIFY(
+        !settings.get(
+            QString::fromUtf8(
+                SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED
+                )
+            ).isValid()
+        );
 
+    defaults.showSidebarTooltips->setChecked(false);
     defaults.animateSidebarText->setChecked(false);
-    QVERIFY(!settings.sidebarMarqueeEnabled());
+    QVERIFY(
+        !settings.get(
+            QString::fromUtf8(
+                SettingsManager::Keys::SIDEBAR_TOOLTIPS_ENABLED
+                )
+            ).toBool()
+        );
+    QVERIFY(
+        !settings.get(
+            QString::fromUtf8(
+                SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED
+                )
+            ).toBool()
+        );
+
+    ActionRegistry reloaded;
+    reloaded.createActions();
+    QVERIFY(!reloaded.showSidebarTooltips->isChecked());
+    QVERIFY(!reloaded.animateSidebarText->isChecked());
 }
 
 QTEST_MAIN(AiCommentOptionsTests)

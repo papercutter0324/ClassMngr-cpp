@@ -824,3 +824,30 @@ non-blocking; `clang-format` and `clang-tidy` were unavailable.
 The typed Excel import-timeout seam is closed. Residual settings callers,
 generic settings persistence, and broader page, document, and feature
 migrations remain future work; Phase 2 remains open.
+
+## Verified typed sidebar display preferences handoff
+
+Against baseline commit `ea10176b`, added the Qt-free paired
+`SidebarDisplayPreferences` value and `SidebarDisplayPreferencesPort`, plus
+the `SettingsManagerSidebarDisplayPreferencesPort` adapter. It maps the exact
+legacy keys `options/sidebarTooltipsEnabled` and
+`options/sidebarMarqueeEnabled`, preserves enabled defaults for missing or
+invalid values, retains legacy `QVariant` boolean coercion, and round-trips
+both values. The legacy writes are void, so persistence failure is not
+observable and save failure is not applicable at this boundary.
+
+Only `src/ui/shared/actions/action_registry.cpp` is cut over. Checked states,
+toggle persistence, unrelated actions, and existing sidebar rendering/control
+behavior remain preserved; other settings callers are unchanged.
+
+The executor and independent tester reported a passing Debug build, focused
+tests 5/5, the exact nine-target regression 9/9, and launch 1/1.
+Configure/ownership passed with 734 sources; dependency checks passed for 9
+production targets (`ClassMngrNext -> Qt6::Core`); resource checks passed 6
+RCC packs, 7 runtime IDs, and 7 runtime references. Call-site, Qt-free,
+static, and diff checks passed. `clang-format` and `clang-tidy` were
+unavailable; normal warnings remain non-blocking.
+
+The typed sidebar display-preferences seam is closed. Residual settings
+callers, generic settings persistence, and broader page, document, and feature
+migrations remain future work; Phase 2 remains open.

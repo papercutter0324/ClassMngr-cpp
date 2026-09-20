@@ -6,6 +6,7 @@
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/styles/themed_icon_utils.h"
+#include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -1110,23 +1111,41 @@ void ActionRegistry::createOptionActions()
             tr("Animate overflowing sidebar names on hover")
             );
 
+    ClassMngr::Next::Application::SidebarDisplayPreferences
+        sidebarDisplayPreferences;
+    ClassMngr::Next::Platform::
+        SettingsManagerSidebarDisplayPreferencesPort
+        sidebarDisplayPreferencesPort;
+    if (const auto loaded = sidebarDisplayPreferencesPort.load(); loaded)
+    {
+        sidebarDisplayPreferences = loaded.value();
+    }
+
     showSidebarTooltips->setChecked(
-        SettingsManager::instance().sidebarTooltipsEnabled()
+        sidebarDisplayPreferences.sidebarTooltipsEnabled
         );
 
     animateSidebarText->setChecked(
-        SettingsManager::instance().sidebarMarqueeEnabled()
+        sidebarDisplayPreferences.sidebarMarqueeEnabled
         );
+
+    const auto saveSidebarDisplayPreferences = [this]()
+    {
+        ClassMngr::Next::Platform::
+            SettingsManagerSidebarDisplayPreferencesPort port;
+        (void)port.save({
+            .sidebarTooltipsEnabled = showSidebarTooltips->isChecked(),
+            .sidebarMarqueeEnabled = animateSidebarText->isChecked()
+        });
+    };
 
     connect(
         showSidebarTooltips,
         &QAction::toggled,
         this,
-        [](bool enabled)
+        [saveSidebarDisplayPreferences](const bool)
         {
-            SettingsManager::instance().setSidebarTooltipsEnabled(
-                enabled
-                );
+            saveSidebarDisplayPreferences();
         }
         );
 
@@ -1134,11 +1153,9 @@ void ActionRegistry::createOptionActions()
         animateSidebarText,
         &QAction::toggled,
         this,
-        [](bool enabled)
+        [saveSidebarDisplayPreferences](const bool)
         {
-            SettingsManager::instance().setSidebarMarqueeEnabled(
-                enabled
-                );
+            saveSidebarDisplayPreferences();
         }
         );
 

@@ -54,6 +54,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/report_job_state.h
     src/next/application/selection_state.h
     src/next/application/schedule_display_preferences.h
+    src/next/application/sidebar_display_preferences.h
     src/next/application/schedule_view_projection.h
     src/next/application/user_preferences_state.h
     src/next/application/workspace_contracts.h
@@ -79,6 +80,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/language_preference_port.h
     src/next/platform/application_services_schedule_display_preferences_port.h
     src/next/platform/settings_manager_excel_import_timeout_port.h
+    src/next/platform/settings_manager_sidebar_display_preferences_port.h
 )
 
 foreach(_classmngr_next_target IN LISTS
