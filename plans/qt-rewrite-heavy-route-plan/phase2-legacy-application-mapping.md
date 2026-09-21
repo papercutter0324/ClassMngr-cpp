@@ -1770,3 +1770,37 @@ nonblocking.
 
 This event-type color boundary is closed. Phase 2 remains open; the next
 boundary is not yet selected.
+
+## Verified typed CalendarPage current-campus read boundary handoff
+
+Against baseline commit `9413fc1d`, completed the typed CalendarPage
+current-campus read boundary for the exact key `myInfo/campus`. The adapter is
+read-only and performs no writes: it reads the exact key, returns an empty
+value when the setting is missing or unavailable, preserves verbatim
+`QVariant::toString()` behavior, and leaves unrelated settings untouched.
+
+CalendarPage preserves empty handling, current/all-campus code construction,
+case-insensitive matching, duplicate removal, filtering, and refresh behavior.
+This boundary is separate from `campus/lastSelectedJsonId`, and
+`PersonalDetailsRepository::saveCampus` remains the writer.
+
+The exact six-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/calendar/ui/calendar_page_upcoming_events.cpp`
+- `src/next/application/current_campus_preferences.h`
+- `src/next/platform/application_services_current_campus_preferences_port.h`
+- `tests/next_platform_application_services_current_campus_preferences_port_tests.cpp`
+
+Verification passed ownership validation with 816 handwritten sources and an
+elevated Debug build. Focused tests passed 7/7; the adapter passed 4/4, and
+last-selected-campus plus CampusDashboard regressions passed 2/2. The
+offscreen launch smoke passed. Resource checks passed 6 RCC packs/7 runtime
+IDs/7 runtime references; dependency, Qt-free, static, key-separation,
+call-site, and diff checks passed. Warnings were missing Vulkan headers, the
+Qt bundled-zlib fallback, existing `/FORCE`/duplicate-symbol linker warnings,
+and LF-to-CRLF normalization.
+
+This current-campus boundary is closed. Phase 2 remains open; the next
+boundary is not yet selected.

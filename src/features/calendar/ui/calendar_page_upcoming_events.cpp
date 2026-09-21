@@ -10,6 +10,7 @@
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
+#include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/widgets/marquee_label.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -864,13 +865,11 @@ CalendarPage::calendarEventDisplayOptions() const
                 ? displayPreferences.value().use24HourTime
                 : false;
 
+        ClassMngr::Next::Platform::
+            ApplicationServicesCurrentCampusPreferencesPort
+            currentCampusPreferencesPort(settingsService);
         const QString currentName =
-            settingsService
-                ->loadOrDefault(
-                    QStringLiteral("myInfo/campus"),
-                    QString()
-                    )
-                .toString();
+            projectionText(currentCampusPreferencesPort.read());
         const QList<CampusInfo> campuses =
             campusRepository().loadCampuses();
 

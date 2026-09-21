@@ -67,6 +67,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_day_filter_reset_policy.h
     src/next/application/class_selection_reset_policy.h
     src/next/application/class_visibility_preferences.h
+    src/next/application/current_campus_preferences.h
     src/next/application/last_database_directory_port.h
     src/next/application/last_selected_campus_port.h
     src/next/application/middle_school_analytics_preferences.h
@@ -115,6 +116,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_day_filter_reset_policy_port.h
     src/next/platform/application_services_class_selection_reset_policy_port.h
     src/next/platform/application_services_class_visibility_preferences_port.h
+    src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h
     src/next/platform/settings_manager_excel_import_timeout_port.h
     src/next/platform/settings_manager_automatic_update_preferences_port.h

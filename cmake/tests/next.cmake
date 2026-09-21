@@ -431,6 +431,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesCurrentCampusPreferencesPort
+    SOURCES
+        tests/next_platform_application_services_current_campus_preferences_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesScheduleDisplayPreferencesPort
     SOURCES
         tests/next_platform_application_services_schedule_display_preferences_port_tests.cpp
