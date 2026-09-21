@@ -3,10 +3,73 @@
 #include "features/calendar/ui/calendar_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "core/application_services.h"
+#include "data/data_service.h"
+#include "features/my_info/data/signature_image_processor.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
+#include <QApplication>
+#include <QBuffer>
+#include <QImage>
+#include <QLabel>
+#include <QTemporaryDir>
+#include <QUuid>
 #include <QtTest>
+
+namespace
+{
+
+constexpr auto SignatureImageKey = "myInfo/signatureImage";
+
+QString databasePath(QTemporaryDir& directory)
+{
+    return directory.filePath(
+        QStringLiteral("my-workspace-signature-%1.tps").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            )
+        );
+}
+
+bool openDatabase(
+    ApplicationServices& services,
+    QTemporaryDir& directory
+    )
+{
+    return services.openDatabase(databasePath(directory)).has_value();
+}
+
+QByteArray sourcePng()
+{
+    QImage source(2, 1, QImage::Format_RGB32);
+    source.setPixelColor(0, 0, Qt::white);
+    source.setPixelColor(1, 0, Qt::black);
+
+    QByteArray encoded;
+    QBuffer buffer(&encoded);
+    if (!buffer.open(QIODevice::WriteOnly) || !source.save(&buffer, "PNG"))
+    {
+        return {};
+    }
+
+    return encoded;
+}
+
+QLabel* signaturePreview(MyWorkspacePage& page)
+{
+    return page.personalDetailsPage()->findChild<QLabel*>(
+        QStringLiteral("signatureImagePreview"));
+}
+
+void refreshPersonalDetails(MyWorkspacePage& page)
+{
+    page.show();
+    page.openTab(WorkspaceTab::Details);
+    QApplication::processEvents();
+    page.personalDetailsPage()->refresh();
+    QApplication::processEvents();
+}
+
+} // namespace
 
 class MyWorkspacePageTests : public QObject
 {
@@ -20,6 +83,8 @@ private slots:
     void initializesCalendarWithoutChangingTheActiveWorkspaceTab();
     void isAvailableAsTheDefaultTopLevelPage();
     void receivesTheTopLevelDatabaseState();
+    void storedSignatureImageIsPreparedForPreview();
+    void missingCorruptAndUnavailableSignatureImagesStayEmpty();
 };
 
 void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
@@ -125,6 +190,90 @@ void MyWorkspacePageTests::receivesTheTopLevelDatabaseState()
 
     QVERIFY(pages.outputCapabilities().printEnabled);
     QVERIFY(pages.outputCapabilities().saveAsEnabled);
+}
+
+void MyWorkspacePageTests::storedSignatureImageIsPreparedForPreview()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(SignatureImageKey),
+            QString::fromLatin1(source.toBase64())
+            )
+        );
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    auto* preview = signaturePreview(page);
+    QVERIFY(preview);
+    QVERIFY(preview->text().isEmpty());
+    QVERIFY(!preview->pixmap().isNull());
+
+    const QByteArray expected =
+        SignatureImage::prepareForEmbedding(source);
+    QVERIFY(!expected.isEmpty());
+}
+
+void MyWorkspacePageTests::missingCorruptAndUnavailableSignatureImagesStayEmpty()
+{
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, directory));
+
+        MyWorkspacePage page(&services);
+        refreshPersonalDetails(page);
+
+        auto* preview = signaturePreview(page);
+        QVERIFY(preview);
+        QVERIFY(!preview->text().isEmpty());
+        QVERIFY(preview->pixmap().isNull());
+    }
+
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, directory));
+        QVERIFY(services.dataService());
+        QVERIFY(
+            services.dataService()->saveSetting(
+                QString::fromUtf8(SignatureImageKey),
+                QStringLiteral("%%%not-base64%%")
+                )
+            );
+
+        MyWorkspacePage page(&services);
+        refreshPersonalDetails(page);
+
+        auto* preview = signaturePreview(page);
+        QVERIFY(preview);
+        QVERIFY(!preview->text().isEmpty());
+        QVERIFY(preview->pixmap().isNull());
+    }
+
+    {
+        ApplicationServices services;
+        MyWorkspacePage page(&services);
+        refreshPersonalDetails(page);
+
+        auto* preview = signaturePreview(page);
+        QVERIFY(preview);
+        QVERIFY(!preview->text().isEmpty());
+        QVERIFY(preview->pixmap().isNull());
+    }
 }
 
 QTEST_MAIN(MyWorkspacePageTests)

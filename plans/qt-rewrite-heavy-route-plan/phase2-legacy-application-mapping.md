@@ -2139,3 +2139,35 @@ bundled-zlib fallback, and LF-to-CRLF normalization.
 
 This current-campus writer boundary is closed. Phase 2 remains open; the next
 boundary is not yet selected.
+
+## Verified typed PersonalDetailsPage signature-image read handoff
+
+Against baseline commit `f434d5b3`, completed the remaining
+PersonalDetailsPage `myInfo/signatureImage` read using the existing typed
+`PersonalSignatureImagePort` and
+`ApplicationServicesPersonalSignatureImagePort`. Prepared opaque bytes are
+converted at the Qt boundary.
+
+The exact implementation/test scope is:
+
+- `src/features/my_info/ui/personal_details_page_sections.cpp`
+- `tests/my_workspace_page_tests.cpp`
+
+Aggregate `PersonalDetailsRepository` load/save, image replacement/removal
+write behavior, no-write load semantics, name/campus/Zoom/typed signature
+fields, and guards remain preserved. No new contract, adapter, CMake change,
+or unrelated migration was introduced. Valid prepared previews work; missing,
+corrupt, or unavailable values retain the default behavior. Existing adapter
+coverage verifies exact Base64 decoding, preparation, and no-write semantics.
+
+Verification passed ownership validation with 831 handwritten sources and a
+clean-first Debug build. Focused tests passed 4/4 (MyWorkspace, signature
+adapter, current-campus adapter, and CampusDashboard); new MyWorkspace slots
+passed 2/2 and signature-adapter slots passed 4/4. Resource, dependency,
+offscreen, static, source, and diff checks passed. The page test checks a
+non-null preview; exact prepared bytes remain covered by adapter tests.
+Expected notices were Vulkan/zlib and LF-to-CRLF normalization. Three leftover
+MSBuild processes were stopped; no command remains active.
+
+This PersonalDetailsPage signature-image boundary is closed. Phase 2 remains
+open; the next boundary is not yet selected.

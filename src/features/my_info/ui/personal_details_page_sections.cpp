@@ -10,6 +10,7 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
+#include "next/platform/application_services_personal_signature_image_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/styles/roles.h"
@@ -946,7 +947,12 @@ void PersonalDetailsPage::loadStoredSettings()
             : password
         );
     m_zoomNotAvailableCheck->setChecked(details.zoomNotAvailable);
-    m_signatureImageData = details.signatureImage;
+    m_signatureImageData = QByteArray::fromStdString(
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalSignatureImagePort(
+                settingsService
+                ).read()
+        );
     m_signatureMode = details.signatureMode;
     m_typedSignatureFont =
         TypedSignature::fontFromStoredValue(details.typedSignatureFont);
