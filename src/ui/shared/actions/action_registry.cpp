@@ -10,6 +10,7 @@
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_font_size_preferences_port.h"
 #include "next/platform/settings_manager_theme_preferences_port.h"
+#include "next/platform/settings_manager_language_preferences_port.h"
 #include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -837,8 +838,25 @@ void ActionRegistry::createOptionActions()
         koreanLanguageAction
         );
 
-    languageState->loadFromSettings(
-        Language::SystemDefault
+    const auto storedLanguage =
+        ClassMngr::Next::Platform::
+            SettingsManagerLanguagePreferencesPort()
+            .read();
+    ::Language legacyLanguage = ::Language::SystemDefault;
+    switch (storedLanguage)
+    {
+    case ClassMngr::Next::Application::LanguagePreference::English:
+        legacyLanguage = ::Language::English;
+        break;
+    case ClassMngr::Next::Application::LanguagePreference::Korean:
+        legacyLanguage = ::Language::Korean;
+        break;
+    case ClassMngr::Next::Application::LanguagePreference::SystemDefault:
+    default:
+        break;
+    }
+    languageState->set(
+        legacyLanguage
         );
 
     fontSizeState =

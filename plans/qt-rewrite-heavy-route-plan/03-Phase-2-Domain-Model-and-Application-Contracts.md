@@ -2180,3 +2180,27 @@ Expected warnings remained nonblocking.
 
 The typed ActionRegistry theme read cutover is closed. Phase 2 remains open;
 the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (ActionRegistry typed language read cutover)
+
+Against baseline commit `46ef66f1`, completed the remaining ActionRegistry
+caller cutover to the existing migration-aware language port for canonical
+`OptionKeys::Language == "options/language"`. Values map `0` to
+`SystemDefault`, `1` to `English`, and `5` to `Korean`; legacy values `2`, `3`,
+and `4` read as `English` and are written back as `1`. Unknown, malformed,
+missing, and unavailable values fall back to `SystemDefault`. The caller has no
+direct raw load.
+
+The existing `OptionState` remains the compatibility writer and menu owner.
+Retranslation, font refresh, visual override, controller synchronization, and
+user writes remain unchanged.
+
+Verification passed configure/ownership with 800 sources and a clean focused
+Debug build. The offscreen focused suite passed 6/6, covering the language
+adapter, LanguagePreferencePort, LanguageService, startup visual/performance,
+and AI options. Resource, dependency (`ClassMngrNext -> Qt6::Core`), Qt-free,
+static, call-site, and diff checks passed. The exact dirty scope was one file.
+Expected warnings remained nonblocking.
+
+The typed ActionRegistry language read cutover is closed. Phase 2 remains open;
+the next slice is not yet selected.
