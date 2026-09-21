@@ -4,6 +4,7 @@
 #include "features/schedule/ui/schedule_page.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -16,9 +17,12 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest>
+
+#include <utility>
 
 namespace
 {
@@ -35,6 +39,7 @@ constexpr auto LegacyZoomNotAvailableKey = "subPrep/personalZoomNotAvailable";
 constexpr auto SignatureModeKey = "myInfo/signatureMode";
 constexpr auto TypedSignatureTextKey = "myInfo/typedSignatureText";
 constexpr auto TypedSignatureFontKey = "myInfo/typedSignatureFont";
+constexpr auto UnrelatedKey = "myInfo/unrelatedPreference";
 
 QString databasePath(QTemporaryDir& directory)
 {
@@ -118,6 +123,21 @@ QPushButton* signatureModeButton(
     return page.personalDetailsPage()->findChild<QPushButton*>(objectName);
 }
 
+bool executeSql(
+    ApplicationServices& services,
+    const QString& statement
+    )
+{
+    DataService* dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return false;
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    return query.exec(statement);
+}
+
 void refreshPersonalDetails(MyWorkspacePage& page)
 {
     page.show();
@@ -150,6 +170,8 @@ private slots:
     void missingZoomValuesUseNaFallbackAndDisableFields();
     void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
     void storedSignaturePreferencesPopulateModeTextAndFont();
+    void aggregateSavePersistsAllPersonalDetailsKeys();
+    void aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings();
 };
 
 void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
@@ -651,6 +673,295 @@ void MyWorkspacePageTests::storedSignaturePreferencesPopulateModeTextAndFont()
     {
         QCOMPARE(fontButtons.at(index)->isChecked(), index == 2);
     }
+}
+
+void MyWorkspacePageTests::aggregateSavePersistsAllPersonalDetailsKeys()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    const QString expectedName = QString::fromUtf8(
+        "  \xEA\xB0\x80\xEB\x82\x98  "
+        );
+    const QString expectedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+
+    for (const auto& setting : {
+             std::pair{QString::fromUtf8(CurrentCampusKey),
+                       QVariant(QStringLiteral("Jeongja"))},
+             std::pair{QString::fromUtf8(SignatureImageKey),
+                       QVariant(QString::fromLatin1(source.toBase64()))},
+             std::pair{QString::fromUtf8(SignatureModeKey), QVariant(1)},
+             std::pair{QString::fromUtf8(TypedSignatureTextKey),
+                       QVariant(expectedText)},
+             std::pair{QString::fromUtf8(TypedSignatureFontKey), QVariant(2)},
+             std::pair{QString::fromUtf8(ZoomLoginIdKey),
+                       QVariant(QStringLiteral("old login"))},
+             std::pair{QString::fromUtf8(ZoomPasswordKey),
+                       QVariant(QStringLiteral("old password"))},
+             std::pair{QString::fromUtf8(ZoomNotAvailableKey), QVariant(false)}
+         })
+    {
+        QVERIFY(
+            services.dataService()->saveSetting(
+                setting.first,
+                setting.second
+                )
+            );
+    }
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(UnrelatedKey),
+            QStringLiteral("preserved")
+            )
+        );
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    auto* name = personalNameEditor(page);
+    auto* campus = page.personalDetailsPage()->findChild<QComboBox*>();
+    auto* login = personalZoomLoginEditor(page);
+    auto* password = personalZoomPasswordEditor(page);
+    auto* unavailable = personalZoomUnavailableCheck(page);
+    QVERIFY(name);
+    QVERIFY(campus);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+
+    name->setText(expectedName);
+    campus->setCurrentText(QStringLiteral("Jeongja"));
+    login->setText(QStringLiteral(" teacher@example.com "));
+    password->setText(QStringLiteral(" secret "));
+    unavailable->setChecked(false);
+
+    QVERIFY(page.personalDetailsPage()->saveChanges());
+
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        expectedName
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(CurrentCampusKey))
+            ->toString(),
+        QStringLiteral("Jeongja")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomLoginIdKey))
+            ->toString(),
+        QStringLiteral(" teacher@example.com ")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomPasswordKey))
+            ->toString(),
+        QStringLiteral(" secret ")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomNotAvailableKey))
+            ->toBool(),
+        false
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureImageKey))
+            ->toString(),
+        QString::fromLatin1(
+            SignatureImage::prepareForEmbedding(
+                SignatureImage::prepareForEmbedding(source)
+                ).toBase64()
+            )
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureModeKey))
+            ->toInt(),
+        1
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureTextKey))
+            ->toString(),
+        expectedText
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureFontKey))
+            ->toInt(),
+        2
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+            ->toString(),
+        QStringLiteral("preserved")
+        );
+}
+
+void MyWorkspacePageTests::
+aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(DisplayNameKey),
+            QStringLiteral("old name")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(CurrentCampusKey),
+            QStringLiteral("Jeongja")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(ZoomLoginIdKey),
+            QStringLiteral("old login")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(ZoomPasswordKey),
+            QStringLiteral("old password")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(ZoomNotAvailableKey),
+            true
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(SignatureImageKey),
+            QStringLiteral("old-image")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(SignatureModeKey),
+            0
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(TypedSignatureTextKey),
+            QStringLiteral("old text")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(TypedSignatureFontKey),
+            1
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(UnrelatedKey),
+            QStringLiteral("preserved")
+            )
+        );
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_personal_details_page_save
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'myInfo/typedSignatureFont'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced personal details page save failure');
+            END
+        )")
+        ));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+    auto* name = personalNameEditor(page);
+    QVERIFY(name);
+    name->setText(QStringLiteral("new name"));
+
+    QVERIFY(!page.personalDetailsPage()->saveChanges());
+
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        QStringLiteral("old name")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(CurrentCampusKey))
+            ->toString(),
+        QStringLiteral("Jeongja")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomLoginIdKey))
+            ->toString(),
+        QStringLiteral("old login")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomPasswordKey))
+            ->toString(),
+        QStringLiteral("old password")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomNotAvailableKey))
+            ->toBool(),
+        true
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureImageKey))
+            ->toString(),
+        QStringLiteral("old-image")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureModeKey))
+            ->toInt(),
+        0
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureTextKey))
+            ->toString(),
+        QStringLiteral("old text")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureFontKey))
+            ->toInt(),
+        1
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+            ->toString(),
+        QStringLiteral("preserved")
+        );
 }
 
 QTEST_MAIN(MyWorkspacePageTests)

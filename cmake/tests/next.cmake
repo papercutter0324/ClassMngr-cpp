@@ -461,6 +461,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesPersonalDetailsSavePort
+    SOURCES
+        tests/next_platform_application_services_personal_details_save_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesPersonalSignatureImagePort
     SOURCES
         tests/next_platform_application_services_personal_signature_image_port_tests.cpp

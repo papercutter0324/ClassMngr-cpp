@@ -11,6 +11,7 @@
 #include "features/my_info/data/typed_signature_renderer.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
+#include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
 #include "next/platform/application_services_personal_signature_preferences_port.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
@@ -1047,7 +1048,47 @@ bool PersonalDetailsPage::saveMyInfoInternal()
     details.typedSignatureText = m_typedSignatureEdit->text();
     details.typedSignatureFont = static_cast<int>(m_typedSignatureFont);
 
-    if (!PersonalDetailsRepository(settingsService).save(details))
+    const auto toUtf8 = [](const QString& value)
+    {
+        const QByteArray encoded = value.toUtf8();
+        return std::string(
+            encoded.constData(),
+            static_cast<std::size_t>(encoded.size())
+            );
+    };
+    const auto toOpaqueBytes = [](const QByteArray& value)
+    {
+        if (value.isEmpty())
+        {
+            return std::string();
+        }
+
+        return std::string(
+            value.constData(),
+            static_cast<std::size_t>(value.size())
+            );
+    };
+
+    const auto saved =
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalDetailsSavePort(
+                settingsService
+                ).save({
+                    .name = toUtf8(details.name),
+                    .campus = toUtf8(details.campus),
+                    .zoomLoginId = toUtf8(details.zoomLoginId),
+                    .zoomPassword = toUtf8(details.zoomPassword),
+                    .zoomNotAvailable = details.zoomNotAvailable,
+                    .signatureImage = toOpaqueBytes(details.signatureImage),
+                    .signatureMode = details.signatureMode == SignatureMode::Type
+                        ? ClassMngr::Next::Application::
+                            PersonalSignatureMode::Type
+                        : ClassMngr::Next::Application::
+                            PersonalSignatureMode::Image,
+                    .typedSignatureText = toUtf8(details.typedSignatureText),
+                    .typedSignatureFont = details.typedSignatureFont
+                });
+    if (!saved)
     {
         return false;
     }

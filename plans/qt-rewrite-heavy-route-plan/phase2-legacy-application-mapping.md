@@ -2301,3 +2301,43 @@ stub-test linker notices were also nonblocking.
 
 This personal-signature-preferences boundary is closed. Phase 2 remains open;
 the next boundary is not yet selected.
+
+## Verified typed PersonalDetailsPage aggregate atomic writer handoff
+
+Against baseline commit `36773c0b`, added the Qt-free
+`PersonalDetailsSaveRequest`/`Result<void>` contract and Qt adapter for exactly
+nine keys: `myInfo/name`, `myInfo/campus`, `myInfo/zoomLoginId`,
+`myInfo/zoomPassword`, `myInfo/zoomNotAvailable`, `myInfo/signatureImage`,
+`myInfo/signatureMode`, `myInfo/typedSignatureText`, and
+`myInfo/typedSignatureFont`. The boundary preserves exact UTF-8/whitespace,
+image preparation/Base64 encoding, mode/font normalization, one atomic
+`saveAll`, unrelated-setting preservation, unavailable-service handling, and
+rollback with no partial writes.
+
+The exact seven-file implementation/test scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/my_info/ui/personal_details_page_sections.cpp`
+- `tests/my_workspace_page_tests.cpp`
+- `src/next/application/personal_details_save.h`
+- `src/next/platform/application_services_personal_details_save_port.h`
+- `tests/next_platform_application_services_personal_details_save_port_tests.cpp`
+
+PersonalDetailsPage replaces only the aggregate save. InitialSetupWizard and
+repository compatibility ownership, all typed read callers and writers, and
+guards remain unchanged. CMake registration is included; no unrelated
+migration was made.
+
+Verification recorded the executor focused Debug build and an independent
+incremental serial Debug build exiting 0. The save adapter passed 6/6,
+MyWorkspace 20/20, signature-image 6/6, current-campus 8/8, display-name 7/7,
+and Zoom 7/7. Ownership validation counted 837 handwritten sources; resource
+validation passed 6 RCC packs/7 IDs/7 references, dependency JSON was valid at
+1042 bytes, and diff checks passed. The independent serial clean-first build
+was stopped while compiling without compiler failure; incremental build/tests
+passed, and no commands remain active. Expected notices were Vulkan/zlib,
+LF-to-CRLF, and stub-linker warnings; no unrelated changes were found.
+
+This PersonalDetailsPage aggregate-writer boundary is closed. Phase 2 remains
+open; the next boundary is not yet selected.
