@@ -2452,3 +2452,26 @@ access-denied retry. Configure/ownership passed with 837 handwritten sources;
 the adapter passed 6/6, AI/ActionRegistry 10/10, and language 8/8. Static
 Qt-free, call-site, ownership, and diff checks passed, with each test using a
 unique temporary `CLASSMNGR_SETTINGS_ROOT`.
+
+## Verified typed AI-comment voice persistence slice handoff
+
+Against baseline commit `fe29d1cb` (`Phase2 - Cut ActionRegistry SaveMode
+persistence over`), added the typed AI-comment voice write contract. The
+current five-file scope is:
+
+- `src/next/application/ai_comment_voice_preferences.h`
+- `src/next/platform/settings_manager_ai_comment_voice_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_ai_comment_voice_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+Canonical `options/aiCommentVoice` values are 0=`DirectToStudent` and
+1=`ThirdPerson`. `ActionRegistry` installs `onPersist` before startup
+selection; unknown or missing reads fall back to `DirectToStudent`, while
+reload and direct persistence retain canonical values. Other option writers and
+UI behavior remain unchanged; no CMake changes were made.
+
+An independent elevated Debug rebuild passed. The voice adapter passed 7/7,
+AI/ActionRegistry 10/10, language adapter and regression 8/8 each, and
+SaveMode adapter 6/6. Static Qt-free, call-site, ownership, and diff checks
+passed; every test used a fresh temporary `CLASSMNGR_SETTINGS_ROOT`.

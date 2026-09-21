@@ -143,6 +143,8 @@ void AiCommentOptionsTests::
 
     ActionRegistry defaults;
     defaults.createActions();
+    const QString voiceKey =
+        QString::fromUtf8(OptionKeys::AiCommentVoice);
     QVERIFY(defaults.aiCommentProviderState);
     QVERIFY(defaults.aiCommentVoiceState);
     QCOMPARE(
@@ -160,6 +162,7 @@ void AiCommentOptionsTests::
     defaults.aiCommentVoiceState->set(
         AiCommentVoice::ThirdPerson
         );
+    QCOMPARE(settings.get(voiceKey).toInt(), 1);
     settings.sync();
 
     ActionRegistry reloaded;
@@ -171,6 +174,19 @@ void AiCommentOptionsTests::
     QCOMPARE(
         reloaded.aiCommentVoiceState->current(),
         AiCommentVoice::ThirdPerson
+        );
+
+    reloaded.aiCommentVoiceState->set(
+        AiCommentVoice::DirectToStudent
+        );
+    QCOMPARE(settings.get(voiceKey).toInt(), 0);
+    settings.sync();
+
+    ActionRegistry reloadedDirect;
+    reloadedDirect.createActions();
+    QCOMPARE(
+        reloadedDirect.aiCommentVoiceState->current(),
+        AiCommentVoice::DirectToStudent
         );
 }
 

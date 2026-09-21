@@ -35,6 +35,31 @@ public:
             : Application::AiCommentVoice::DirectToStudent;
     }
 
+    void write(
+        const Application::AiCommentVoice voice
+        ) const override
+    {
+        int storedValue = 0;
+        switch (voice)
+        {
+        case Application::AiCommentVoice::DirectToStudent:
+            storedValue = 0;
+            break;
+
+        case Application::AiCommentVoice::ThirdPerson:
+            storedValue = 1;
+            break;
+
+        default:
+            return;
+        }
+
+        SettingsManager::instance().set(
+            key(),
+            storedValue
+            );
+    }
+
 private:
     [[nodiscard]] static QString key()
     {

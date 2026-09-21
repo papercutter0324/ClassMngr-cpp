@@ -31,6 +31,7 @@ private slots:
     void cleanup();
     void usesTheExactLegacyKey();
     void mapsStoredVoiceValues();
+    void writesBothVoiceValuesForRoundTrip();
     void missingAndUnknownValuesDefaultToDirectToStudent();
     void unavailableSettingsDefaultToDirectToStudent();
 
@@ -95,6 +96,33 @@ mapsStoredVoiceValues()
     QCOMPARE(
         port.read(),
         AiCommentVoice::ThirdPerson
+        );
+}
+
+void NextPlatformSettingsManagerAiCommentVoicePreferencesPortTests::
+    writesBothVoiceValuesForRoundTrip()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerAiCommentVoicePreferencesPort port;
+
+    port.write(AiCommentVoice::ThirdPerson);
+    QCOMPARE(
+        settings.get(voiceKey()).toInt(),
+        1
+        );
+    QCOMPARE(
+        port.read(),
+        AiCommentVoice::ThirdPerson
+        );
+
+    port.write(AiCommentVoice::DirectToStudent);
+    QCOMPARE(
+        settings.get(voiceKey()).toInt(),
+        0
+        );
+    QCOMPARE(
+        port.read(),
+        AiCommentVoice::DirectToStudent
         );
 }
 

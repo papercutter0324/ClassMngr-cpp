@@ -17,6 +17,10 @@ public:
     virtual ~AiCommentVoicePreferencesPort() = default;
 
     [[nodiscard]] virtual AiCommentVoice read() const = 0;
+
+    virtual void write(
+        AiCommentVoice voice
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

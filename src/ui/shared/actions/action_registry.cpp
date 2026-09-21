@@ -1254,6 +1254,30 @@ void ActionRegistry::createOptionActions()
             tr("Write AI comments for a parent or guardian")
             )
         );
+    aiCommentVoiceState->onPersist = [](const ::AiCommentVoice voice)
+    {
+        ClassMngr::Next::Application::AiCommentVoice preference;
+        switch (voice)
+        {
+        case ::AiCommentVoice::DirectToStudent:
+            preference = ClassMngr::Next::Application::
+                AiCommentVoice::DirectToStudent;
+            break;
+
+        case ::AiCommentVoice::ThirdPerson:
+            preference = ClassMngr::Next::Application::
+                AiCommentVoice::ThirdPerson;
+            break;
+
+        default:
+            return;
+        }
+
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentVoicePreferencesPort().write(
+                preference
+                );
+    };
     const auto storedAiCommentVoice =
         ClassMngr::Next::Platform::
             SettingsManagerAiCommentVoicePreferencesPort()
