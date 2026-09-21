@@ -18,6 +18,7 @@ class AiCommentOptionsTests : public QObject
 private slots:
     void initTestCase();
     void themeDefaultsToSystemDefaultAndPersists();
+    void saveModeStartupAndWritesCanonicalValues();
     void providerAndVoiceDefaultsPersist();
     void customWebsitePersistenceAndInvalidFallback();
     void providerUrlsAndCustomValidation();
@@ -71,6 +72,57 @@ void AiCommentOptionsTests::themeDefaultsToSystemDefaultAndPersists()
         reloaded.themeState->current(),
         Theme::Light
         );
+}
+
+void AiCommentOptionsTests::saveModeStartupAndWritesCanonicalValues()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString saveModeKey =
+        QString::fromUtf8(OptionKeys::SaveMode);
+    const QString themeKey =
+        QString::fromUtf8(OptionKeys::Theme);
+    const QVariant savedSaveMode = settings.get(saveModeKey);
+    const QVariant savedTheme = settings.get(themeKey);
+
+    settings.set(saveModeKey, 1);
+    settings.set(themeKey, 0);
+
+    ActionRegistry manual;
+    manual.createActions();
+    QCOMPARE(manual.saveModeState->current(), SaveMode::Manual);
+    QCOMPARE(settings.get(saveModeKey).toInt(), 1);
+
+    settings.set(saveModeKey, 0);
+    ActionRegistry automatic;
+    automatic.createActions();
+    QCOMPARE(automatic.saveModeState->current(), SaveMode::Automatic);
+    QCOMPARE(settings.get(saveModeKey).toInt(), 0);
+
+    automatic.saveModeState->set(SaveMode::Manual);
+    QCOMPARE(settings.get(saveModeKey).toInt(), 1);
+    automatic.saveModeState->set(SaveMode::Automatic);
+    QCOMPARE(settings.get(saveModeKey).toInt(), 0);
+
+    automatic.themeState->set(Theme::Light);
+    QCOMPARE(settings.get(themeKey).toInt(), 1);
+
+    if (savedSaveMode.isValid())
+    {
+        settings.set(saveModeKey, savedSaveMode);
+    }
+    else
+    {
+        settings.remove(saveModeKey);
+    }
+
+    if (savedTheme.isValid())
+    {
+        settings.set(themeKey, savedTheme);
+    }
+    else
+    {
+        settings.remove(themeKey);
+    }
 }
 
 void AiCommentOptionsTests::

@@ -17,6 +17,10 @@ public:
     virtual ~SaveModePreferencesPort() = default;
 
     [[nodiscard]] virtual SaveMode read() const = 0;
+
+    virtual void write(
+        SaveMode mode
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

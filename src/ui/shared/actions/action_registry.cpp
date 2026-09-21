@@ -744,6 +744,29 @@ void ActionRegistry::createOptionActions()
     saveModeState->addOption(SaveMode::Automatic, automaticSaveAction);
     saveModeState->addOption(SaveMode::Manual, manualSaveAction);
 
+    saveModeState->onPersist = [](const SaveMode mode)
+    {
+        ClassMngr::Next::Application::SaveMode preference;
+        switch (mode)
+        {
+        case SaveMode::Automatic:
+            preference = ClassMngr::Next::Application::SaveMode::Automatic;
+            break;
+
+        case SaveMode::Manual:
+            preference = ClassMngr::Next::Application::SaveMode::Manual;
+            break;
+
+        default:
+            return;
+        }
+
+        ClassMngr::Next::Platform::
+            SettingsManagerSaveModePreferencesPort().write(
+                preference
+                );
+    };
+
     const auto storedSaveMode =
         ClassMngr::Next::Platform::
             SettingsManagerSaveModePreferencesPort()

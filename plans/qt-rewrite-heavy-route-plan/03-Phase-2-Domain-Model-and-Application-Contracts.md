@@ -3089,3 +3089,27 @@ unique `CLASSMNGR_SETTINGS_ROOT` passed the full `LanguagePreferencePortTests`
 `LanguageService`, and AI-options regressions passed, and static Qt-free and
 call-site checks passed. Earlier shared/alternate-harness 0-vs-1/5/2 failures
 were environment/order-dependent; the isolated rerun passed.
+
+#### Progress update - 2026-09-21 (typed SaveMode persistence cutover)
+
+Against baseline commit `9ad0fddb` (`Phase2 - Cut ActionRegistry language
+persistence over`), completed the typed SaveMode persistence cutover. The
+current scope is:
+
+- `src/next/application/save_mode_preferences.h`
+- `src/next/platform/settings_manager_save_mode_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_save_mode_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+The `SaveModePreferencesPort` write contract uses canonical `options/saveMode`
+values 0=`Automatic` and 1=`Manual`. `ActionRegistry` installs its `onPersist`
+cutover before startup selection, preserving `onChanged`/autosave behavior;
+malformed or unknown reads fall back to `Automatic`, and other `OptionState`
+writers remain unaffected.
+
+An independent elevated Debug rebuild passed after a non-elevated VS FileTracker
+access-denied retry. Configure/ownership passed with 837 handwritten sources;
+the adapter passed 6/6, AI/ActionRegistry 10/10, and language 8/8. Static
+Qt-free, call-site, ownership, and diff checks passed, with each test using a
+unique temporary `CLASSMNGR_SETTINGS_ROOT`.

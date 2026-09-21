@@ -42,6 +42,31 @@ public:
         }
     }
 
+    void write(
+        const Application::SaveMode mode
+        ) const override
+    {
+        int storedMode = 0;
+        switch (mode)
+        {
+        case Application::SaveMode::Automatic:
+            storedMode = 0;
+            break;
+
+        case Application::SaveMode::Manual:
+            storedMode = 1;
+            break;
+
+        default:
+            return;
+        }
+
+        SettingsManager::instance().set(
+            key(),
+            storedMode
+            );
+    }
+
 private:
     [[nodiscard]] static QString key()
     {

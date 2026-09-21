@@ -31,6 +31,7 @@ private slots:
     void cleanup();
     void usesTheExactCanonicalKey();
     void mapsBothStoredSaveModes();
+    void writesBothSaveModesForRoundTrip();
     void missingMalformedUnknownAndUnavailableDefaultToAutomatic();
 
 private:
@@ -101,6 +102,21 @@ mapsBothStoredSaveModes()
             expectedValues[index]
             );
     }
+}
+
+void NextPlatformSettingsManagerSaveModePreferencesPortTests::
+writesBothSaveModesForRoundTrip()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerSaveModePreferencesPort port;
+
+    port.write(SaveMode::Manual);
+    QCOMPARE(settings.get(saveModeKey()).toInt(), 1);
+    QCOMPARE(port.read(), SaveMode::Manual);
+
+    port.write(SaveMode::Automatic);
+    QCOMPARE(settings.get(saveModeKey()).toInt(), 0);
+    QCOMPARE(port.read(), SaveMode::Automatic);
 }
 
 void NextPlatformSettingsManagerSaveModePreferencesPortTests::
