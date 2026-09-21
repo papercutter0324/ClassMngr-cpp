@@ -10,6 +10,7 @@
 #include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
 #include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
+#include "next/platform/settings_manager_save_mode_preferences_port.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
 #include <QAction>
@@ -738,9 +739,14 @@ void ActionRegistry::createOptionActions()
     saveModeState->addOption(SaveMode::Automatic, automaticSaveAction);
     saveModeState->addOption(SaveMode::Manual, manualSaveAction);
 
-    // LOAD from settings (THIS is the correct place)
-    saveModeState->loadFromSettings(
-        SaveMode::Automatic
+    const auto storedSaveMode =
+        ClassMngr::Next::Platform::
+            SettingsManagerSaveModePreferencesPort()
+            .read();
+    saveModeState->set(
+        static_cast<::SaveMode>(
+            storedSaveMode
+            )
         );
 
 

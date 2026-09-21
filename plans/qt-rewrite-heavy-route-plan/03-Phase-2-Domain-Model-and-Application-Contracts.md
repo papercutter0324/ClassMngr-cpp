@@ -2064,3 +2064,26 @@ Expected warnings remained nonblocking; stale processes were stopped.
 
 The typed document-page-spacing read seam is closed. Phase 2 remains open; the
 next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed SaveMode preference read bridge)
+
+Against baseline commit `294c7f08`, added the Qt-free typed read bridge for the
+canonical `OptionKeys::SaveMode == "options/saveMode"`; this is not the stale
+`SettingsManager::Keys::SAVE_MODE == "app/saveMode"` key. Stored values map
+`0` to `Automatic` and `1` to `Manual`; missing, malformed, unknown, and
+unavailable values map to `Automatic`.
+
+`ActionRegistry` now uses the typed load. The existing `OptionState` remains
+the compatibility writer and menu-persistence owner. `MainWindow`,
+`PageManager`, and `FileController` behavior remains unchanged.
+
+Verification passed configure/ownership with 800 sources and an elevated clean
+Debug build. The offscreen focused suite passed 5/5, covering the adapter, next
+application contract, PageManager, startup visual behavior, and startup
+performance. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime
+references; dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static,
+call-site, and diff checks passed. The exact dirty scope was six files.
+Expected warnings remained nonblocking; stale processes were stopped.
+
+The typed SaveMode read seam is closed. Phase 2 remains open; the next slice is
+not yet selected.
