@@ -8,7 +8,7 @@
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
-#include "features/calendar/calendar_settings_keys.h"
+#include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/widgets/marquee_label.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -263,31 +263,6 @@ QString campusDisplayName(
         : campus.campusName.trimmed();
 }
 
-bool settingToBool(
-    const QVariant& value,
-    bool defaultValue
-    )
-{
-    if (!value.isValid())
-    {
-        return defaultValue;
-    }
-
-    const QString text =
-        value.toString().trimmed().toLower();
-
-    if (text == QStringLiteral("true") || text == QStringLiteral("1"))
-    {
-        return true;
-    }
-
-    if (text == QStringLiteral("false") || text == QStringLiteral("0"))
-    {
-        return false;
-    }
-
-    return value.toBool();
-}
 }
 
 bool CalendarPage::eventFilter(
@@ -878,22 +853,17 @@ CalendarPage::calendarEventDisplayOptions() const
 
     if (settingsService)
     {
-        options.showAllCampuses =
-            settingToBool(
-                settingsService->loadOrDefault(
-                    CalendarSettingsKeys::ShowEventsAtAllCampuses,
-                    false
-                    ),
-                false
-                );
-        options.hideStartOfTermEvents =
-            settingToBool(
-                settingsService->loadOrDefault(
-                    CalendarSettingsKeys::HideStartOfTermEvents,
-                    false
-                    ),
-                false
-                );
+        ClassMngr::Next::Platform::
+            ApplicationServicesCalendarEventDisplayPreferencesPort
+            eventDisplayPreferencesPort(*m_services);
+        const auto eventDisplayPreferences = eventDisplayPreferencesPort.load();
+        if (eventDisplayPreferences)
+        {
+            options.showAllCampuses =
+                eventDisplayPreferences.value().showEventsAtAllCampuses;
+            options.hideStartOfTermEvents =
+                eventDisplayPreferences.value().hideStartOfTermEvents;
+        }
         ClassMngr::Next::Platform::
             ApplicationServicesScheduleDisplayPreferencesPort
             displayPreferencesPort(*m_services);

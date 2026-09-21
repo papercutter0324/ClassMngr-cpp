@@ -1625,3 +1625,39 @@ missing Vulkan headers, and LF-to-CRLF normalization.
 
 This final schedule-display-mode seam is closed. Phase 2 remains open; the
 next boundary is not yet selected.
+
+## Verified typed two-key calendar event-display preferences boundary handoff
+
+Against baseline commit `db8c7cf1`, completed the Qt-free typed boundary for
+`calendar/showEventsAtAllCampuses` and `calendar/hideStartOfTermEvents`.
+Missing and unavailable values default to `false`; exact-key round trips,
+legacy `QVariant` boolean coercion, atomic `saveAll` failure/rollback, and
+unrelated-setting preservation are covered.
+
+`CalendarPreferencesPanel` now uses the typed port for load/save while
+preserving warning behavior. `CalendarPageUpcomingEvents` uses the typed port
+for display reads while preserving filtering. New sources are registered once,
+the contract remains Qt-free, and existing production ownership is clean.
+
+The exact seven-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/calendar/ui/calendar_page_upcoming_events.cpp`
+- `src/features/calendar/ui/calendar_preferences_panel.cpp`
+- `src/next/application/calendar_event_display_preferences.h`
+- `src/next/platform/application_services_calendar_event_display_preferences_port.h`
+- `tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp`
+
+Verification passed ownership validation with 804 handwritten sources and a
+clean Debug rebuild. Focused tests passed 7/7, including adapter,
+calendar/page/ScheduleWidget coverage; the offscreen launch smoke passed.
+Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency, Qt-free, static, call-site, and `git diff --check` checks passed.
+There is no standalone CalendarPreferencesPanel or UpcomingEvents test target;
+coverage is through compilation, smoke/surrounding tests, and static review.
+Warnings were missing Vulkan headers, the Qt bundled-zlib fallback, existing
+`/FORCE`/duplicate-symbol linker warnings, and LF-to-CRLF normalization.
+
+This calendar event-display preferences boundary is closed. Phase 2 remains
+open; the next boundary is not yet selected.

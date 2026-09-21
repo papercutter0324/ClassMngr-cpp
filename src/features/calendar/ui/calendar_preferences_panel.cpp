@@ -6,7 +6,7 @@
 #include "academic_calendar_provider.h"
 #include "core/fontmanager.h"
 #include "features/calendar/calendar_event_import_service.h"
-#include "features/calendar/calendar_settings_keys.h"
+#include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
@@ -604,14 +604,17 @@ void CalendarPreferencesPanel::loadOptions()
 {
     m_refreshing = true;
 
+    const auto displayPreferences =
+        ClassMngr::Next::Platform::
+            ApplicationServicesCalendarEventDisplayPreferencesPort(
+                m_settingsService
+                ).load();
+
     if (m_showAllCampusesCheck)
     {
         m_showAllCampusesCheck->setChecked(
-            m_settingsService && m_settingsService->isAvailable()
-                ? m_settingsService->loadOrDefault(
-                    CalendarSettingsKeys::ShowEventsAtAllCampuses,
-                    false
-                    ).toBool()
+            displayPreferences
+                ? displayPreferences.value().showEventsAtAllCampuses
                 : false
             );
     }
@@ -624,11 +627,8 @@ void CalendarPreferencesPanel::loadOptions()
     if (m_hideStartOfTermEventsCheck)
     {
         m_hideStartOfTermEventsCheck->setChecked(
-            m_settingsService && m_settingsService->isAvailable()
-                ? m_settingsService->loadOrDefault(
-                    CalendarSettingsKeys::HideStartOfTermEvents,
-                    false
-                    ).toBool()
+            displayPreferences
+                ? displayPreferences.value().hideStartOfTermEvents
                 : false
             );
     }
@@ -640,18 +640,21 @@ void CalendarPreferencesPanel::saveOptions()
 {
     if (m_settingsService && m_settingsService->isAvailable())
     {
-        if (const Status saved = m_settingsService->saveAll({
-                {
-                    CalendarSettingsKeys::ShowEventsAtAllCampuses,
-                    m_showAllCampusesCheck->isChecked()
-                },
-                {
-                    CalendarSettingsKeys::HideStartOfTermEvents,
-                    m_hideStartOfTermEventsCheck->isChecked()
-                }
-            }); !saved)
+        const auto saved =
+            ClassMngr::Next::Platform::
+                ApplicationServicesCalendarEventDisplayPreferencesPort(
+                    m_settingsService
+                    ).save({
+                        .showEventsAtAllCampuses =
+                            m_showAllCampusesCheck->isChecked(),
+                        .hideStartOfTermEvents =
+                            m_hideStartOfTermEventsCheck->isChecked()
+                    });
+        if (!saved)
         {
-            qWarning() << "Failed to save calendar preferences:" << saved.error();
+            qWarning()
+                << "Failed to save calendar preferences:"
+                << QString::fromStdString(saved.error().message);
         }
     }
 
