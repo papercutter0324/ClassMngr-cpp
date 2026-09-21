@@ -1426,3 +1426,26 @@ Expected warnings remained nonblocking; stale processes were stopped.
 
 The typed SaveMode read seam is closed. Phase 2 remains open; the next slice is
 not yet selected.
+
+## Verified ActionRegistry typed AI-comment-voice read cutover handoff
+
+Against baseline commit `9db2848f`, completed the remaining caller cutover in
+`src/ui/shared/actions/action_registry.cpp` to the existing typed voice port
+for the exact key `options/aiCommentVoice`. Values map `0` to
+`DirectToStudent` and `1` to `ThirdPerson`; missing, unknown, and unavailable
+values fall back to `DirectToStudent`. The caller has no direct raw settings
+load.
+
+The existing `OptionState` remains the compatibility writer and menu owner.
+Provider, custom-URL, prompt, and dialog behavior remain unchanged.
+
+Verification passed configure/ownership with 800 sources and a clean targeted
+Debug build. The offscreen focused suite passed 6/6, covering the voice
+adapter, stored-voice AI options, report widget, DialogShell, and startup
+visual/performance. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime
+references; dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static,
+call-site, and diff checks passed. The exact dirty scope was one file. An
+optional broad `ALL_BUILD` was stopped; no code failure was indicated.
+
+The typed AI-comment-voice read cutover is closed. Phase 2 remains open; the
+next slice is not yet selected.

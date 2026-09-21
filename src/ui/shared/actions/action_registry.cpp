@@ -9,6 +9,7 @@
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
+#include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
 #include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
 #include "next/platform/settings_manager_save_mode_preferences_port.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
@@ -1119,8 +1120,15 @@ void ActionRegistry::createOptionActions()
             tr("Write AI comments for a parent or guardian")
             )
         );
-    aiCommentVoiceState->loadFromSettings(
-        AiCommentVoice::DirectToStudent
+    const auto storedAiCommentVoice =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentVoicePreferencesPort()
+            .read();
+    aiCommentVoiceState->set(
+        storedAiCommentVoice ==
+                ClassMngr::Next::Application::AiCommentVoice::ThirdPerson
+            ? ::AiCommentVoice::ThirdPerson
+            : ::AiCommentVoice::DirectToStudent
         );
 
 
