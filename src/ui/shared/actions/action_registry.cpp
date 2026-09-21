@@ -9,6 +9,7 @@
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_font_size_preferences_port.h"
+#include "next/platform/settings_manager_theme_preferences_port.h"
 #include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -781,10 +782,26 @@ void ActionRegistry::createOptionActions()
     themeState->addOption(Theme::Dark, darkThemeAction);
     themeState->addOption(Theme::Light, lightThemeAction);
 
-    // LOAD from settings (THIS is the correct place)
-    themeState->loadFromSettings(
-        Theme::SystemDefault
-    );
+    const auto storedTheme =
+        ClassMngr::Next::Platform::
+            SettingsManagerThemePreferencesPort()
+            .read();
+    ::Theme legacyTheme = ::Theme::SystemDefault;
+    switch (storedTheme)
+    {
+    case ClassMngr::Next::Application::Theme::Dark:
+        legacyTheme = ::Theme::Dark;
+        break;
+    case ClassMngr::Next::Application::Theme::Light:
+        legacyTheme = ::Theme::Light;
+        break;
+    case ClassMngr::Next::Application::Theme::SystemDefault:
+    default:
+        break;
+    }
+    themeState->set(
+        legacyTheme
+        );
 
     languageState =
         new OptionState<Language>(OptionKeys::Language, this);

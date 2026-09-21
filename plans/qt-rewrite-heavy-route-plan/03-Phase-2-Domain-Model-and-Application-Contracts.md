@@ -2157,3 +2157,26 @@ nonblocking.
 
 The typed ActionRegistry font-size read cutover is closed. Phase 2 remains
 open; the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (ActionRegistry typed theme read cutover)
+
+Against baseline commit `50de1ce4`, completed the remaining ActionRegistry
+caller cutover to the existing typed theme port for canonical
+`OptionKeys::Theme == "options/theme"`, distinct from legacy
+`SettingsManager::Keys::THEME == "ui/theme"`. Values map `0` to `Dark`, `1`
+to `Light`, and `2` to `SystemDefault`; missing, unknown, and unavailable
+values fall back to `SystemDefault`. The caller has no direct raw load.
+
+The existing `OptionState` remains the compatibility writer and menu owner.
+ThemeController synchronization, palette/icon refresh, visual-capture
+precedence, and user writes remain unchanged.
+
+Verification passed configure/ownership with 800 sources and a clean focused
+Debug build. The offscreen focused suite passed 4/4, covering the theme
+adapter, startup visual behavior, startup performance, and AI options.
+Resource, dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static,
+call-site, and diff checks passed. The exact dirty scope was one file.
+Expected warnings remained nonblocking.
+
+The typed ActionRegistry theme read cutover is closed. Phase 2 remains open;
+the next slice is not yet selected.
