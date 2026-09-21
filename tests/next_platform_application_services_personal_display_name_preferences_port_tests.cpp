@@ -1,7 +1,9 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -34,6 +36,21 @@ bool openDatabase(
     return services.openDatabase(databasePath(directory)).has_value();
 }
 
+bool executeSql(
+    ApplicationServices& services,
+    const QString& statement
+    )
+{
+    DataService* dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return false;
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    return query.exec(statement);
+}
+
 std::string utf8(const QString& value)
 {
     const QByteArray encoded = value.toUtf8();
@@ -53,8 +70,10 @@ class NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests
 private slots:
     void initTestCase();
     void exactKeyAndUtf8WhitespaceRoundTrip();
+    void writePersistsExactKeyAndPreservesUnrelatedSettings();
     void missingAndUnavailableReadEmpty();
     void preservesUnrelatedSettingsAndDoesNotWrite();
+    void writeFailureMapsToTechnicalError();
 
 private:
     QTemporaryDir m_directory;
@@ -98,6 +117,37 @@ exactKeyAndUtf8WhitespaceRoundTrip()
 }
 
 void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
+writePersistsExactKeyAndPreservesUnrelatedSettings()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(UnrelatedKey),
+            QStringLiteral("preserved")
+            )
+        );
+
+    const QString expected = QStringLiteral("  김 선생님 / 🧭  ");
+    ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
+    QVERIFY(port.write(utf8(expected)));
+    QCOMPARE(port.read(), utf8(expected));
+
+    const auto stored = services.dataService()->loadSetting(
+        QString::fromUtf8(PersonalDisplayNameKey)
+        );
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), expected);
+
+    const auto unrelated = services.dataService()->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
+}
+
+void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
 missingAndUnavailableReadEmpty()
 {
     ApplicationServices services;
@@ -117,6 +167,10 @@ missingAndUnavailableReadEmpty()
         unavailableServices
         );
     QVERIFY(unavailablePort.read().empty());
+    QVERIFY(unavailablePort.write("ignored"));
+
+    ApplicationServicesPersonalDisplayNamePreferencesPort nullPort(nullptr);
+    QVERIFY(nullPort.write("ignored"));
 }
 
 void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
@@ -146,6 +200,48 @@ preservesUnrelatedSettingsAndDoesNotWrite()
         );
     QVERIFY(stillMissing);
     QVERIFY(!stillMissing->isValid());
+}
+
+void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
+writeFailureMapsToTechnicalError()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_personal_display_name_write
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'myInfo/name'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced personal display name failure');
+            END
+        )")
+        ));
+
+    ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
+    const auto saved = port.write("Jamie");
+
+    QVERIFY(!saved);
+    QCOMPARE(
+        saved.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!saved.error().message.empty());
+    QVERIFY(
+        saved.error().message.find("Saving application setting")
+            != std::string::npos
+        || saved.error().message.find(
+            "forced personal display name failure"
+            ) != std::string::npos
+        );
+
+    const auto stored = services.dataService()->loadSetting(
+        QString::fromUtf8(PersonalDisplayNameKey)
+        );
+    QVERIFY(stored);
+    QVERIFY(!stored->isValid());
 }
 
 QTEST_MAIN(

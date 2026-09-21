@@ -2648,3 +2648,34 @@ checks passed. Warnings were Vulkan/zlib notices, existing
 
 This personal-Zoom boundary is closed. Phase 2 remains open; the next boundary
 is not yet selected.
+
+#### Progress update - 2026-09-21 (typed personal-display-name writer extension)
+
+Against baseline commit `f4480483`, extended the existing typed `myInfo/name`
+bridge with a typed save. Successful saves persist the trimmed name; existing
+names are not overwritten, disabled folder creation performs no write,
+unavailable writes are silent no-ops, and save failures map to technical
+errors while retaining the warning. UTF-8/whitespace behavior and unrelated
+settings remain preserved.
+
+The exact four-file implementation scope is:
+
+- `src/next/application/personal_display_name_preferences.h`
+- `src/next/platform/application_services_personal_display_name_preferences_port.h`
+- `src/features/sub_prep/ui/sub_prep_print_dialog.cpp`
+- `tests/next_platform_application_services_personal_display_name_preferences_port_tests.cpp`
+
+`SubPrepPrintDialog` has no raw key or direct settings access.
+`PersonalDetailsRepository::save` remains the aggregate writer; no
+`OptionState` or full personal-details migration is included.
+
+Verification passed ownership validation with 828 handwritten sources and a
+Debug build. CTest passed 2/2; adapter slots passed 5/5, including
+`printDialogRequiresAndSavesMissingUserName`. The offscreen launch smoke
+passed. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency, Qt-free, static, call-site, writer-preservation, and diff checks
+passed. Warnings were Vulkan/zlib notices, existing `/FORCE`/duplicate-symbol
+warnings, and LF-to-CRLF normalization.
+
+This personal-display-name writer boundary is closed. Phase 2 remains open; the
+next boundary is not yet selected.

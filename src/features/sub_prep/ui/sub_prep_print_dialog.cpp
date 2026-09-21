@@ -10,6 +10,7 @@
 #include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <string>
 #include <utility>
 
@@ -798,12 +799,25 @@ void SubPrepPrintDialog::acceptGeneration()
             m_services->settingsService();
         if (settingsService && settingsService->isAvailable())
         {
-            if (const Status saved = settingsService->save(
-                    QStringLiteral("myInfo/name"),
-                    m_nameEdit->text().trimmed()
-                    ); !saved)
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalDisplayNamePreferencesPort
+                personalDisplayNamePreferencesPort(settingsService);
+            const QByteArray encodedName =
+                m_nameEdit->text().trimmed().toUtf8();
+            const auto saved =
+                personalDisplayNamePreferencesPort.write(
+                    std::string(
+                        encodedName.constData(),
+                        static_cast<std::size_t>(encodedName.size())
+                        )
+                    );
+            if (!saved)
             {
-                qWarning() << "Failed to save the Sub Prep user name:" << saved.error();
+                const QByteArray errorBytes =
+                    QByteArray::fromStdString(saved.error().message);
+                qWarning()
+                    << "Failed to save the Sub Prep user name:"
+                    << QString::fromUtf8(errorBytes);
             }
         }
     }
