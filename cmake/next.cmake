@@ -39,6 +39,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_series_edit_port.h
     src/next/application/calendar_event_series_delete_port.h
     src/next/application/calendar_event_display_preferences.h
+    src/next/application/calendar_first_day_of_week_preferences.h
     src/next/application/calendar_event_query_port.h
     src/next/application/calendar_event_projection.h
     src/next/application/campus_directory_projection.h
@@ -97,6 +98,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_calendar_event_series_edit_port.h
     src/next/platform/application_services_calendar_event_series_delete_port.h
     src/next/platform/application_services_calendar_event_display_preferences_port.h
+    src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h
     src/next/platform/document_content_resource_port.h
     src/next/platform/application_services_workspace_port.h
     src/next/platform/qt_job_worker_lifetime.h

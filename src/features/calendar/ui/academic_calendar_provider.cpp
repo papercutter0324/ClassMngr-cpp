@@ -1,7 +1,8 @@
 #include "academic_calendar_provider.h"
 
 #include "app/services/feature_services.h"
-#include "features/calendar/calendar_settings_keys.h"
+#include "next/application/calendar_first_day_of_week_preferences.h"
+#include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -34,35 +35,6 @@ int qtDayOfWeek(int qmlLocaleDay)
         : qmlLocaleDay;
 }
 
-int qmlDayOfWeek(Qt::DayOfWeek qtDay)
-{
-    return qtDay == Qt::Sunday
-        ? 0
-        : static_cast<int>(qtDay);
-}
-
-int defaultFirstDayOfWeek()
-{
-    return qmlDayOfWeek(QLocale().firstDayOfWeek());
-}
-
-int normalizedFirstDayOfWeek(const QVariant& value)
-{
-    if (!value.isValid())
-    {
-        return defaultFirstDayOfWeek();
-    }
-
-    bool ok = false;
-    const int day = value.toInt(&ok);
-
-    if (ok && day >= 0 && day <= 6)
-    {
-        return day;
-    }
-
-    return defaultFirstDayOfWeek();
-}
 }
 
 AcademicCalendarProvider::AcademicCalendarProvider(
@@ -282,15 +254,12 @@ void AcademicCalendarProvider::reload()
 
 void AcademicCalendarProvider::loadOptions()
 {
-    m_firstDayOfWeek =
-        m_settingsService && m_settingsService->isAvailable()
-            ? normalizedFirstDayOfWeek(
-                m_settingsService->loadOrDefault(
-                    CalendarSettingsKeys::FirstDayOfWeek,
-                    defaultFirstDayOfWeek()
-                    )
-                )
-            : defaultFirstDayOfWeek();
+    const auto firstDayOfWeek =
+        ClassMngr::Next::Platform::
+            ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
+                m_settingsService
+                ).load();
+    m_firstDayOfWeek = static_cast<int>(firstDayOfWeek);
 }
 
 QString AcademicCalendarProvider::termName(AcademicTerm term) const
@@ -382,16 +351,10 @@ void AcademicCalendarProvider::persist()
 
 void AcademicCalendarProvider::persistFirstDayOfWeek()
 {
-    if (!m_settingsService || !m_settingsService->isAvailable())
-    {
-        return;
-    }
-
-    if (const Status saved = m_settingsService->save(
-            CalendarSettingsKeys::FirstDayOfWeek,
-            m_firstDayOfWeek
-            ); !saved)
-    {
-        qWarning() << "Failed to save calendar first-day preference:" << saved.error();
-    }
+    using FirstDayOfWeek =
+        ClassMngr::Next::Application::CalendarFirstDayOfWeek;
+    ClassMngr::Next::Platform::
+        ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
+            m_settingsService
+            ).save(static_cast<FirstDayOfWeek>(m_firstDayOfWeek));
 }

@@ -2322,3 +2322,38 @@ Warnings were missing Vulkan headers, the Qt bundled-zlib fallback, existing
 
 This calendar event-display preferences boundary is closed. Phase 2 remains
 open; the next boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (typed AcademicCalendarProvider first-day-of-week preferences boundary)
+
+Against baseline commit `6a33df6d`, completed the typed first-day-of-week
+preferences boundary owned by `AcademicCalendarProvider` for the exact key
+`calendar/firstDayOfWeek`. Persisted values `0..6` read directly; missing or
+invalid values use the locale fallback, while an unavailable service uses the
+same fallback and makes saves no-ops. Exact-key round trips are preserved.
+
+`setFirstDayOfWeek` continues to normalize to Sunday/Monday (`0`/`1`). Provider
+revision and signal ordering and save-warning behavior remain unchanged.
+`AcademicCalendarProvider` has no direct raw key access. The
+`calendar/academicSchedule/v1` JSON, QML, panel, and compatibility key owners
+remain unchanged.
+
+The exact six-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/calendar/ui/academic_calendar_provider.cpp`
+- `src/next/application/calendar_first_day_of_week_preferences.h`
+- `src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h`
+- `tests/next_platform_application_services_calendar_first_day_of_week_preferences_port_tests.cpp`
+
+Verification passed ownership validation with 807 handwritten sources and a
+clean Debug rebuild. Focused tests passed 8/8, including the new adapter,
+`ClassMngrAcademicCalendarTests`, and calendar/page/ScheduleWidget coverage;
+the offscreen launch smoke passed. Resource checks passed 6 RCC packs/7
+runtime IDs/7 runtime references; dependency, Qt-free, static, call-site, and
+diff checks passed. Warnings were missing Vulkan headers, the Qt bundled-zlib
+fallback, existing `/FORCE`/duplicate-stub linker warnings, and LF-to-CRLF
+normalization.
+
+This narrow calendar first-day-of-week boundary is closed. Phase 2 remains
+open; the next boundary is not yet selected.
