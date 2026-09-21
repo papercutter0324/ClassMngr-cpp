@@ -72,6 +72,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/last_database_directory_port.h
     src/next/application/last_selected_campus_port.h
     src/next/application/middle_school_analytics_preferences.h
+    src/next/application/personal_display_name_preferences.h
     src/next/application/skipped_update_version_preferences.h
     src/next/application/powerpoint_data_access_notice_preferences.h
     src/next/application/import_job_coordinator.h
@@ -120,6 +121,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_visibility_preferences_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h
+    src/next/platform/application_services_personal_display_name_preferences_port.h
     src/next/platform/settings_manager_excel_import_timeout_port.h
     src/next/platform/settings_manager_automatic_update_preferences_port.h
     src/next/platform/settings_manager_ai_comment_custom_website_port.h

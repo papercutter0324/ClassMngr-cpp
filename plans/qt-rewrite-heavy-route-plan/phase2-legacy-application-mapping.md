@@ -1842,3 +1842,38 @@ normalization; no standalone ColorUtils target exists.
 
 This custom-color boundary is closed. Phase 2 remains open; the next boundary
 is not yet selected.
+
+## Verified typed personal display-name read bridge handoff
+
+Against baseline commit `4c0f891d`, completed the typed, read-only personal
+display-name bridge for the exact key `myInfo/name`. The adapter performs an
+exact-key read, returns an empty value when the setting is missing or
+unavailable, preserves UTF-8 and whitespace round-trip behavior, and leaves
+unrelated settings untouched. It performs no writes, exposes no direct reader
+key access to callers, and does not use `SettingsManager`.
+
+Schedule output consumes the raw value; ScheduleImportDialog and
+SubPrepPage retain their existing trimmed-value policies. `PersonalDetailsRepository`
+and other writers remain unchanged, as does the direct schedule-import SQL.
+The exact eight-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/schedule/services/schedule_output_controller.cpp`
+- `src/features/schedule/ui/schedule_import_dialog.cpp`
+- `src/features/sub_prep/ui/sub_prep_print_dialog.cpp`
+- `src/next/application/personal_display_name_preferences.h`
+- `src/next/platform/application_services_personal_display_name_preferences_port.h`
+- `tests/next_platform_application_services_personal_display_name_preferences_port_tests.cpp`
+
+Verification passed ownership validation with 822 handwritten sources and a
+Debug build. Focused tests passed 3/3 (adapter, ScheduleImportDialog, and
+SubPrepPage); adapter slots passed 3/3, and schedule-output coverage passed
+3/3 for ScheduleWidget, PrintModel, and PrintPdf. The offscreen launch smoke
+passed. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency, Qt-free, static, call-site, writer-preservation, and diff checks
+passed. Warnings were Vulkan/zlib configure notices, existing forced-link and
+duplicate-symbol warnings, and LF-to-CRLF normalization.
+
+This personal display-name boundary is closed. Phase 2 remains open; the next
+boundary is not yet selected.

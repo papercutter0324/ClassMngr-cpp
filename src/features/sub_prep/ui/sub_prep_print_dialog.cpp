@@ -4,11 +4,13 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
+#include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 #include <QCheckBox>
@@ -277,13 +279,15 @@ SubPrepPrintDialog::SubPrepPrintDialog(
             : nullptr;
     if (settingsService && settingsService->isAvailable())
     {
-        m_storedUserName =
-            settingsService->loadOrDefault(
-                    QStringLiteral("myInfo/name"),
-                    QString()
-                    )
-                .toString()
-                .trimmed();
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalDisplayNamePreferencesPort
+            personalDisplayNamePreferencesPort(settingsService);
+        const std::string storedUserName =
+            personalDisplayNamePreferencesPort.read();
+        m_storedUserName = QString::fromUtf8(
+            storedUserName.data(),
+            static_cast<qsizetype>(storedUserName.size())
+            ).trimmed();
     }
 
     m_vacationDates =

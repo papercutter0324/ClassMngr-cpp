@@ -5,9 +5,12 @@
 #include "core/application_services.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
+#include "next/platform/application_services_personal_display_name_preferences_port.h"
 
 #include <QDialog>
 #include <QObject>
+
+#include <string>
 
 void ScheduleOutputController::execute(
     Action action,
@@ -43,10 +46,15 @@ void ScheduleOutputController::execute(
             : nullptr;
     if (settingsService && settingsService->isAvailable())
     {
-        request.userName = settingsService->loadOrDefault(
-            QStringLiteral("myInfo/name"),
-            QString()
-            ).toString();
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalDisplayNamePreferencesPort
+            personalDisplayNamePreferencesPort(settingsService);
+        const std::string userName =
+            personalDisplayNamePreferencesPort.read();
+        request.userName = QString::fromUtf8(
+            userName.data(),
+            static_cast<qsizetype>(userName.size())
+            );
     }
 
     const SchedulePrintService::Result result = print

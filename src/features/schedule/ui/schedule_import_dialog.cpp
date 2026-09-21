@@ -10,6 +10,7 @@
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
@@ -38,6 +39,7 @@
 #include <QtConcurrentRun>
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 namespace
@@ -753,16 +755,15 @@ void ScheduleImportDialog::prepareUserSelection()
         m_services
             ? m_services->settingsService()
             : nullptr;
-    m_profileName =
-        settingsService && settingsService->isAvailable()
-            ? settingsService
-                ->loadOrDefault(
-                    QStringLiteral("myInfo/name"),
-                    QString()
-                    )
-                .toString()
-                .trimmed()
-            : QString();
+    ClassMngr::Next::Platform::
+        ApplicationServicesPersonalDisplayNamePreferencesPort
+        personalDisplayNamePreferencesPort(settingsService);
+    const std::string profileName =
+        personalDisplayNamePreferencesPort.read();
+    m_profileName = QString::fromUtf8(
+        profileName.data(),
+        static_cast<qsizetype>(profileName.size())
+        ).trimmed();
 
     if (!sheet)
     {
