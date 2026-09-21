@@ -11,7 +11,6 @@
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/classes/ui/class_analytics_page.h"
-#include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
@@ -19,6 +18,7 @@
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
+#include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
@@ -181,11 +181,6 @@ bool ClassesPage::openClass(
         m_services
             ? m_services->classService()
             : nullptr;
-    auto* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-
     if (!classService || !classService->isAvailable())
     {
         if (m_currentSection == ClassesSection::Evaluations
@@ -203,11 +198,27 @@ bool ClassesPage::openClass(
         return false;
     }
 
-    setScheduleSource(
-        scheduleSourceForMode(
-            ScheduleDisplayModePreferences::load(settingsService)
-            )
-        );
+    ScheduleDisplayMode displayMode = ScheduleDisplayMode::Regular;
+    switch (
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleDisplayModePreferencesPort(
+                *m_services
+                ).load()
+        )
+    {
+    case ClassMngr::Next::Application::ScheduleDisplayMode::Intensive:
+        displayMode = ScheduleDisplayMode::Intensive;
+        break;
+
+    case ClassMngr::Next::Application::ScheduleDisplayMode::Testing:
+        displayMode = ScheduleDisplayMode::Testing;
+        break;
+
+    case ClassMngr::Next::Application::ScheduleDisplayMode::Regular:
+    default:
+        break;
+    }
+    setScheduleSource(scheduleSourceForMode(displayMode));
     setVisibilityScope(
         m_services
             && ClassMngr::Next::Platform::

@@ -63,8 +63,6 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/roster/ui/roster_model_rows.cpp
         src/features/roster/ui/roster_model_validation.cpp
         src/features/roster/ui/roster_table_view.cpp
-        src/features/schedule/schedule_display_mode_preferences.cpp
-        src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/schedule_settings_preferences.cpp
         src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/ui/schedule_editor_dialog.h

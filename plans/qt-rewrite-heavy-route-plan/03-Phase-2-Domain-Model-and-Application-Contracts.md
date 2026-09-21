@@ -2229,3 +2229,25 @@ Expected warnings remained nonblocking.
 
 The typed ScheduleWidget display-mode persistence seam is closed. Phase 2
 remains open; the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (ClassesPage typed schedule-display-mode caller cutover)
+
+Against baseline commit `83cca837`, completed the ClassesPage caller cutover
+to the typed schedule-display-mode boundary. The canonical key is
+`schedule_display_mode`, with legacy fallback key `schedule_show_intensive`.
+Values are trimmed and case-normalized; invalid modern values do not overwrite
+the canonical setting, while a missing modern key performs the legacy-to-
+canonical migration. An unavailable service resolves to `Regular`.
+
+`Testing` preserves the existing `Regular` schedule-source behavior.
+`SpeakingEvalPage` remains the compatibility caller. The exact current
+production/test-target scope is `src/features/classes/ui/classes_page.cpp` and
+`cmake/tests/pages_and_output.cmake`.
+
+Verification passed configure/build and ownership validation with 803 sources;
+the focused suite passed 7/7. Resource, Qt-free, static, call-site, and diff
+checks passed. Known warnings were missing Vulkan headers, existing
+`/FORCE`/duplicate-stub linker warnings, and LF-to-CRLF normalization.
+
+This ClassesPage caller-cutover slice is closed. Phase 2 remains open; the next
+boundary is not yet selected.
