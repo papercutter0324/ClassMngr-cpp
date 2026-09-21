@@ -10,6 +10,7 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
+#include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
 #include "core/utils/colorutils.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -20,6 +21,8 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <algorithm>
+
+#include <cstddef>
 
 #include <QAbstractButton>
 #include <QCheckBox>
@@ -442,7 +445,47 @@ public:
             }
         }
 
-        if (!PersonalDetailsRepository(setup->settingsService()).save(details))
+        const auto toUtf8 = [](const QString& value)
+        {
+            const QByteArray encoded = value.toUtf8();
+            return std::string(
+                encoded.constData(),
+                static_cast<std::size_t>(encoded.size())
+                );
+        };
+        const auto toOpaqueBytes = [](const QByteArray& value)
+        {
+            if (value.isEmpty())
+            {
+                return std::string();
+            }
+
+            return std::string(
+                value.constData(),
+                static_cast<std::size_t>(value.size())
+                );
+        };
+
+        const auto saved =
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalDetailsSavePort(
+                    setup->settingsService()
+                    ).save({
+                        .name = toUtf8(details.name),
+                        .campus = toUtf8(details.campus),
+                        .zoomLoginId = toUtf8(details.zoomLoginId),
+                        .zoomPassword = toUtf8(details.zoomPassword),
+                        .zoomNotAvailable = details.zoomNotAvailable,
+                        .signatureImage = toOpaqueBytes(details.signatureImage),
+                        .signatureMode = details.signatureMode == SignatureMode::Type
+                            ? ClassMngr::Next::Application::
+                                PersonalSignatureMode::Type
+                            : ClassMngr::Next::Application::
+                                PersonalSignatureMode::Image,
+                        .typedSignatureText = toUtf8(details.typedSignatureText),
+                        .typedSignatureFont = details.typedSignatureFont
+                    });
+        if (!saved)
         {
             DialogServices::showWarning(
                 this, tr("Initial Setup"),

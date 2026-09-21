@@ -1,8 +1,12 @@
 #include "core/application_services.h"
+#include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "features/setup/ui/initial_setup_wizard.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "app/services/feature_services.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QApplication>
 #include <QBuffer>
@@ -10,6 +14,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest>
@@ -21,6 +26,14 @@ namespace
 
 constexpr auto SignatureImageKey = "myInfo/signatureImage";
 constexpr auto DisplayNameKey = "myInfo/name";
+constexpr auto CampusKey = "myInfo/campus";
+constexpr auto ZoomLoginIdKey = "myInfo/zoomLoginId";
+constexpr auto ZoomPasswordKey = "myInfo/zoomPassword";
+constexpr auto ZoomNotAvailableKey = "myInfo/zoomNotAvailable";
+constexpr auto SignatureModeKey = "myInfo/signatureMode";
+constexpr auto TypedSignatureTextKey = "myInfo/typedSignatureText";
+constexpr auto TypedSignatureFontKey = "myInfo/typedSignatureFont";
+constexpr auto UnrelatedKey = "myInfo/unrelatedPreference";
 
 QString databasePath(QTemporaryDir& directory)
 {
@@ -68,6 +81,21 @@ void showPersonalDetailsPage(InitialSetupWizard& wizard)
     QApplication::processEvents();
 }
 
+bool executeSql(
+    ApplicationServices& services,
+    const QString& statement
+    )
+{
+    DataService* dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return false;
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    return query.exec(statement);
+}
+
 } // namespace
 
 class InitialSetupWizardTests : public QObject
@@ -81,6 +109,8 @@ private slots:
     void missingInvalidAndUnavailableSignatureImagesStayEmpty();
     void storedDisplayNamePreservesUtf8AndWhitespace();
     void missingAndUnavailableDisplayNameStayEmpty();
+    void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
+    void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
 
 private:
     QTemporaryDir m_directory;
@@ -284,6 +314,182 @@ void InitialSetupWizardTests::missingAndUnavailableDisplayNameStayEmpty()
         QVERIFY(name);
         QVERIFY(name->text().isEmpty());
     }
+}
+
+void InitialSetupWizardTests::
+aggregateSavePreservesAllPersonalDetailsWithoutDataLoss()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    const QString typedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), QStringLiteral("Old Name")},
+        {QString::fromUtf8(CampusKey), QStringLiteral("Jeongja")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("old-login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("old-password")},
+        {QString::fromUtf8(ZoomNotAvailableKey), false},
+        {
+            QString::fromUtf8(SignatureImageKey),
+            QString::fromLatin1(source.toBase64())
+        },
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), typedText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.settingsService()->saveAll(initialValues));
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName"));
+    QVERIFY(name);
+    name->setText(QStringLiteral("  New Teacher  "));
+
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(DisplayNameKey), QVariant()
+            ).toString(),
+        QStringLiteral("New Teacher")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(CampusKey), QVariant()
+            ).toString(),
+        initialValues.value(QString::fromUtf8(CampusKey)).toString()
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(ZoomLoginIdKey), QVariant()
+            ).toString(),
+        initialValues.value(QString::fromUtf8(ZoomLoginIdKey)).toString()
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(ZoomPasswordKey), QVariant()
+            ).toString(),
+        initialValues.value(QString::fromUtf8(ZoomPasswordKey)).toString()
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(ZoomNotAvailableKey), QVariant()
+            ).toBool(),
+        false
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(SignatureImageKey), QVariant()
+            ).toString(),
+        QString::fromLatin1(
+            SignatureImage::prepareForEmbedding(source).toBase64()
+            )
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(SignatureModeKey), QVariant()
+            ).toInt(),
+        1
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(TypedSignatureTextKey), QVariant()
+            ).toString(),
+        typedText
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(TypedSignatureFontKey), QVariant()
+            ).toInt(),
+        2
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(UnrelatedKey), QVariant()
+            ).toString(),
+        QStringLiteral("preserved")
+        );
+}
+
+void InitialSetupWizardTests::
+aggregateSaveFailureLeavesAllPersonalDetailsUnchanged()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), QStringLiteral("Old Name")},
+        {QString::fromUtf8(CampusKey), QStringLiteral("Jeongja")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("old-login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("old-password")},
+        {QString::fromUtf8(ZoomNotAvailableKey), true},
+        {QString::fromUtf8(SignatureImageKey), QStringLiteral("old-image")},
+        {QString::fromUtf8(SignatureModeKey), 0},
+        {QString::fromUtf8(TypedSignatureTextKey), QStringLiteral("old text")},
+        {QString::fromUtf8(TypedSignatureFontKey), 1},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.settingsService()->saveAll(initialValues));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_initial_setup_personal_details_save
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'myInfo/typedSignatureFont'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced initial setup save failure');
+            END
+        )")
+        ));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName"));
+    QVERIFY(name);
+    name->setText(QStringLiteral("New Teacher"));
+
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Initial Setup"));
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Your personal information could not be saved.")
+        );
+
+    for (auto setting = initialValues.cbegin();
+         setting != initialValues.cend();
+         ++setting)
+    {
+        QCOMPARE(
+            services.settingsService()->loadOrDefault(
+                setting.key(), QVariant()
+                ),
+            setting.value()
+            );
+    }
+
+    DialogServices::setUserPromptServiceForTesting(nullptr);
 }
 
 QTEST_MAIN(InitialSetupWizardTests)

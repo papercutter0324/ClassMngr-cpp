@@ -2341,3 +2341,34 @@ LF-to-CRLF, and stub-linker warnings; no unrelated changes were found.
 
 This PersonalDetailsPage aggregate-writer boundary is closed. Phase 2 remains
 open; the next boundary is not yet selected.
+
+## Verified typed InitialSetupWizard aggregate-writer cutover handoff
+
+Against baseline commit `d4dc9e52`,
+`InitialSetupWizard::PersonalDetailsWizardPage::validatePage()` now uses the
+existing typed `PersonalDetailsSavePort` for all nine keys and values in one
+atomic `saveAll`. Repository loading remains for legacy Zoom fallback/migration
+and untouched-field preservation.
+
+The exact implementation/test scope is:
+
+- `src/features/setup/ui/initial_setup_wizard.cpp`
+- `tests/initial_setup_wizard_tests.cpp`
+
+Trimmed-name validation and warnings, selected/retained signature image,
+campus and Zoom fallback/availability, mode/text/font, unrelated settings, and
+the existing guards remain preserved. The wizard has no direct settings access;
+no new contract, adapter, CMake change, or unrelated migration was introduced.
+
+Configure/ownership checks passed. The executor Debug build passed, and bounded
+independent gates passed: InitialSetupWizard 10/10, MyWorkspace 20/20,
+PersonalDetailsSavePort 6/6, signature-image 6/6, current-campus 8/8,
+display-name 7/7, and Zoom 7/7. Resource validation passed 6 RCC packs/7 IDs/7
+references; dependency JSON was valid at 1042 bytes, diff checks passed, and no
+test failure or timeout occurred. No commands remain active. Clean-first
+encountered environmental MSBuild FileTracker `E_ACCESSDENIED`; bounded gates
+passed and no unrelated changes were found. Expected notices were offscreen
+Qt/font/plugin, Vulkan/zlib, LF-to-CRLF, and FileTracker notices.
+
+This InitialSetupWizard aggregate-writer boundary is closed. Phase 2 remains
+open; the next boundary is not yet selected.
