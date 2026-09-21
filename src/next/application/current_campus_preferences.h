@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 #include <string>
 
 namespace ClassMngr::Next::Application
@@ -14,6 +16,10 @@ public:
     virtual ~CurrentCampusPreferencesPort() = default;
 
     [[nodiscard]] virtual std::string read() const = 0;
+
+    [[nodiscard]] virtual Domain::Result<void> write(
+        const std::string& campus
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

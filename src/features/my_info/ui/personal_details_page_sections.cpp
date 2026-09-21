@@ -9,6 +9,7 @@
 #include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
+#include "next/platform/application_services_current_campus_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/styles/roles.h"
@@ -920,10 +921,15 @@ void PersonalDetailsPage::loadStoredSettings()
             ) != 0
         )
     {
-        [[maybe_unused]] const Status campusSaved =
-            PersonalDetailsRepository(settingsService).saveCampus(
-                m_campusCombo->currentText()
-                );
+        [[maybe_unused]] const auto campusSaved =
+            ClassMngr::Next::Platform::
+                ApplicationServicesCurrentCampusPreferencesPort(
+                    settingsService
+                    ).write(
+                        m_campusCombo->currentText()
+                            .toUtf8()
+                            .toStdString()
+                        );
     }
 
     const QString loginId = details.zoomLoginId;

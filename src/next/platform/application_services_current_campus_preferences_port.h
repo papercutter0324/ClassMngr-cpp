@@ -13,9 +13,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the read-only current-campus preference. The exact
-// legacy key and QVariant-to-UTF-8 conversion stay here; PersonalDetails
-// remains the compatibility writer.
+// Qt-boundary adapter for the current-campus preference. The exact legacy key,
+// QVariant/UTF-8 conversion, and SettingsService failure mapping stay here;
+// PersonalDetails remains the aggregate compatibility writer.
 class ApplicationServicesCurrentCampusPreferencesPort final
     : public Application::CurrentCampusPreferencesPort
 {
@@ -67,6 +67,37 @@ public:
             storedCampus.constData(),
             static_cast<std::size_t>(storedCampus.size())
             );
+    }
+
+    [[nodiscard]] Domain::Result<void> write(
+        const std::string& campus
+        ) const override
+    {
+        if (!m_settingsService || !m_settingsService->isAvailable())
+        {
+            return Domain::Result<void>::success();
+        }
+
+        const Status saved = m_settingsService->save(
+            key(),
+            QString::fromUtf8(
+                campus.data(),
+                static_cast<qsizetype>(campus.size())
+                )
+            );
+        if (!saved)
+        {
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = errorBytes.isEmpty()
+                    ? "Current campus could not be saved."
+                    : errorBytes.toStdString(),
+                .recoverable = false
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:

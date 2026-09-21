@@ -2769,3 +2769,34 @@ command remains active.
 
 This InitialSetupWizard display-name boundary is closed. Phase 2 remains open;
 the next boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (typed current-campus writer boundary)
+
+Against baseline commit `b3a90622`, extended the existing current-campus port
+with the Qt-free `write(std::string) -> Domain::Result<void>` contract. The
+adapter writes the exact key `myInfo/campus` with UTF-8 conversion and maps
+unavailable services and save failures. The PersonalDetailsPage corrective
+write now uses this port.
+
+The exact implementation/test scope is:
+
+- `src/features/my_info/ui/personal_details_page_sections.cpp`
+- `src/next/application/current_campus_preferences.h`
+- `src/next/platform/application_services_current_campus_preferences_port.h`
+- `tests/next_platform_application_services_current_campus_preferences_port_tests.cpp`
+
+Aggregate `PersonalDetailsRepository::save()`, current-campus read behavior,
+matching/filtering/fallback/refresh/guards, other callers, and CMake remain
+unchanged. Tests covered exact-key UTF-8 write, unrelated-setting
+preservation, unavailable no-op, QVariant coercion, and save failure.
+
+Verification passed ownership validation with 831 handwritten sources and a
+clean-first serial Debug build. Focused tests passed 4/4, including
+current-campus, MyWorkspace, CampusDashboard, and last-selected-campus;
+adapter slots passed 6/6. Resource, dependency, offscreen, static, source,
+and diff checks passed. Three leftover MSBuild processes were stopped; no
+command remains active. Expected notices were missing Vulkan headers, the Qt
+bundled-zlib fallback, and LF-to-CRLF normalization.
+
+This current-campus writer boundary is closed. Phase 2 remains open; the next
+boundary is not yet selected.
