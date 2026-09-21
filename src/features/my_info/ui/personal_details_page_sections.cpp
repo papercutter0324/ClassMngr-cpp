@@ -10,6 +10,7 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
+#include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -877,7 +878,13 @@ void PersonalDetailsPage::loadStoredSettings()
     const PersonalDetails details =
         PersonalDetailsRepository(settingsService).load();
 
-    m_nameEdit->setText(details.name);
+    const QByteArray storedName = QByteArray::fromStdString(
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalDisplayNamePreferencesPort(
+                settingsService
+                ).read()
+        );
+    m_nameEdit->setText(QString::fromUtf8(storedName));
 
     const QByteArray storedCampus = QByteArray::fromStdString(
         ClassMngr::Next::Platform::

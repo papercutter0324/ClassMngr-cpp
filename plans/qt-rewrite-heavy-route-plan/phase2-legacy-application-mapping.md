@@ -2203,3 +2203,32 @@ processes were stopped; no command remains active.
 
 This PersonalDetailsPage current-campus boundary is closed. Phase 2 remains
 open; the next boundary is not yet selected.
+
+## Verified typed PersonalDetailsPage display-name read handoff
+
+Against baseline commit `2b58a9c0`, completed the remaining
+`PersonalDetailsPage::loadStoredSettings()` display-name read using the
+existing typed `PersonalDisplayNamePreferencesPort` and
+`ApplicationServicesPersonalDisplayNamePreferencesPort`. UTF-8 is converted
+to `QString` with legacy `QVariant::toString()` and whitespace behavior;
+missing or unavailable values are empty, and the read path performs no writes.
+
+The exact implementation/test scope is:
+
+- `src/features/my_info/ui/personal_details_page_sections.cpp`
+- `tests/my_workspace_page_tests.cpp`
+
+Repository loading remains for Zoom and typed-signature fields, with aggregate
+save ownership preserved. Save trimming/validation, campus/signature UI state,
+guards, and unrelated writers remain unchanged. No new contract, adapter, CMake
+change, or unrelated migration was introduced.
+
+Verification passed ownership validation with 831 handwritten sources and a
+clean-first serial Debug build. CTest passed 4/4; 17/17 individual slots
+passed. Application, MyWorkspace, display-name, campus, and signature targets
+were built. Static, source, resource, dependency, offscreen, and diff checks
+all passed. Expected notices were missing Vulkan headers/zlib fallback and
+LF-to-CRLF normalization; no concrete failures or active commands remained.
+
+This PersonalDetailsPage display-name boundary is closed. Phase 2 remains open;
+the next boundary is not yet selected.

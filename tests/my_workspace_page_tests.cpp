@@ -13,6 +13,7 @@
 #include <QImage>
 #include <QComboBox>
 #include <QLabel>
+#include <QLineEdit>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest>
@@ -22,6 +23,7 @@ namespace
 
 constexpr auto SignatureImageKey = "myInfo/signatureImage";
 constexpr auto CurrentCampusKey = "myInfo/campus";
+constexpr auto DisplayNameKey = "myInfo/name";
 
 QString databasePath(QTemporaryDir& directory)
 {
@@ -62,6 +64,13 @@ QLabel* signaturePreview(MyWorkspacePage& page)
         QStringLiteral("signatureImagePreview"));
 }
 
+QLineEdit* personalNameEditor(MyWorkspacePage& page)
+{
+    const QList<QLineEdit*> editors =
+        page.personalDetailsPage()->findChildren<QLineEdit*>();
+    return editors.isEmpty() ? nullptr : editors.constFirst();
+}
+
 void refreshPersonalDetails(MyWorkspacePage& page)
 {
     page.show();
@@ -88,6 +97,8 @@ private slots:
     void storedSignatureImageIsPreparedForPreview();
     void missingCorruptAndUnavailableSignatureImagesStayEmpty();
     void storedCampusPrefillsAndCorrectsThroughTypedPort();
+    void storedDisplayNamePrefillsWithUtf8AndWhitespace();
+    void missingAndUnavailableDisplayNamePrefillEmpty();
 };
 
 void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
@@ -307,6 +318,59 @@ void MyWorkspacePageTests::storedCampusPrefillsAndCorrectsThroughTypedPort()
         );
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("Jeongja"));
+}
+
+void MyWorkspacePageTests::storedDisplayNamePrefillsWithUtf8AndWhitespace()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QString expected = QStringLiteral("  홍길동  ");
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(DisplayNameKey),
+            expected
+            )
+        );
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    auto* name = personalNameEditor(page);
+    QVERIFY(name);
+    QCOMPARE(name->text(), expected);
+}
+
+void MyWorkspacePageTests::missingAndUnavailableDisplayNamePrefillEmpty()
+{
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, directory));
+
+        MyWorkspacePage page(&services);
+        refreshPersonalDetails(page);
+
+        auto* name = personalNameEditor(page);
+        QVERIFY(name);
+        QVERIFY(name->text().isEmpty());
+    }
+
+    {
+        ApplicationServices services;
+        MyWorkspacePage page(&services);
+        refreshPersonalDetails(page);
+
+        auto* name = personalNameEditor(page);
+        QVERIFY(name);
+        QVERIFY(name->text().isEmpty());
+    }
 }
 
 QTEST_MAIN(MyWorkspacePageTests)
