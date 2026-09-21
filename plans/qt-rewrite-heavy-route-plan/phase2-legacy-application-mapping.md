@@ -2232,3 +2232,35 @@ LF-to-CRLF normalization; no concrete failures or active commands remained.
 
 This PersonalDetailsPage display-name boundary is closed. Phase 2 remains open;
 the next boundary is not yet selected.
+
+## Verified typed PersonalDetailsPage Zoom-read reuse handoff
+
+Against baseline commit `da4f8c74`, completed the three PersonalDetailsPage
+reads for `myInfo/zoomLoginId`, `myInfo/zoomPassword`, and
+`myInfo/zoomNotAvailable` using the existing typed
+`SubPrepPersonalZoomPreferencesPort` and
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort`. Qt-free values,
+primary-key precedence, legacy fallback/migration, typed defaults, UTF-8
+credentials, N/A masking, unavailable state/field enablement, and
+save/normalization behavior remain preserved.
+
+The exact implementation/test scope is:
+
+- `src/features/my_info/ui/personal_details_page_sections.cpp`
+- `tests/my_workspace_page_tests.cpp`
+
+Aggregate loading remains for typed-signature fields and aggregate save remains
+the owner; unrelated behavior is unchanged. No Zoom writer, new contract,
+adapter, CMake change, or unrelated migration was introduced.
+
+Verification passed with a serial clean-first Debug build. MyWorkspace passed
+17/17; the typed Zoom adapter passed 7/7 and the SubPrep page passed 14/14.
+Resource checks passed 6 RCC packs/7 runtime references; the dependency JSON
+was valid at 1042 bytes, and diff checks passed for the exact two-file scope.
+No commands remain active. The umbrella focused CTest/offscreen runner was
+stopped after stalling; bounded individual gates passed. Expected notices were
+offscreen `propagateSizeHints`, pre-existing `/FORCE`/duplicate-symbol linker
+warnings, and Vulkan/zlib/LF-to-CRLF notices.
+
+This PersonalDetailsPage Zoom-read boundary is closed. Phase 2 remains open;
+the next boundary is not yet selected.

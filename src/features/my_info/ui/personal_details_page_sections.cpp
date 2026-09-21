@@ -12,6 +12,7 @@
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
+#include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/styles/roles.h"
@@ -946,20 +947,35 @@ void PersonalDetailsPage::loadStoredSettings()
                         );
     }
 
-    const QString loginId = details.zoomLoginId;
-    const QString password = details.zoomPassword;
+    ClassMngr::Next::Platform::
+        ApplicationServicesSubPrepPersonalZoomPreferencesPort
+        personalZoomPreferencesPort(settingsService);
+    const auto storedPreferences = personalZoomPreferencesPort.load();
+    if (storedPreferences)
+    {
+        const auto& preferences = storedPreferences.value();
+        const auto fromUtf8 = [](const std::string& value)
+        {
+            return QString::fromUtf8(
+                value.data(),
+                static_cast<qsizetype>(value.size())
+                );
+        };
+        const QString loginId = fromUtf8(preferences.loginId);
+        const QString password = fromUtf8(preferences.password);
 
-    m_zoomLoginIdEdit->setText(
-        loginId.trimmed().isEmpty()
-            ? NotAvailableText
-            : loginId
-        );
-    m_zoomPasswordEdit->setText(
-        password.trimmed().isEmpty()
-            ? NotAvailableText
-            : password
-        );
-    m_zoomNotAvailableCheck->setChecked(details.zoomNotAvailable);
+        m_zoomLoginIdEdit->setText(
+            loginId.trimmed().isEmpty()
+                ? NotAvailableText
+                : loginId
+            );
+        m_zoomPasswordEdit->setText(
+            password.trimmed().isEmpty()
+                ? NotAvailableText
+                : password
+            );
+        m_zoomNotAvailableCheck->setChecked(preferences.unavailable);
+    }
     m_signatureImageData = QByteArray::fromStdString(
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalSignatureImagePort(

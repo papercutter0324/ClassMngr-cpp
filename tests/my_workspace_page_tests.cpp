@@ -10,6 +10,7 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QCheckBox>
 #include <QImage>
 #include <QComboBox>
 #include <QLabel>
@@ -24,6 +25,12 @@ namespace
 constexpr auto SignatureImageKey = "myInfo/signatureImage";
 constexpr auto CurrentCampusKey = "myInfo/campus";
 constexpr auto DisplayNameKey = "myInfo/name";
+constexpr auto ZoomLoginIdKey = "myInfo/zoomLoginId";
+constexpr auto ZoomPasswordKey = "myInfo/zoomPassword";
+constexpr auto ZoomNotAvailableKey = "myInfo/zoomNotAvailable";
+constexpr auto LegacyZoomLoginIdKey = "subPrep/personalZoomEmail";
+constexpr auto LegacyZoomPasswordKey = "subPrep/personalZoomPassword";
+constexpr auto LegacyZoomNotAvailableKey = "subPrep/personalZoomNotAvailable";
 
 QString databasePath(QTemporaryDir& directory)
 {
@@ -71,6 +78,34 @@ QLineEdit* personalNameEditor(MyWorkspacePage& page)
     return editors.isEmpty() ? nullptr : editors.constFirst();
 }
 
+QLineEdit* personalDetailsEditor(
+    MyWorkspacePage& page,
+    qsizetype index
+    )
+{
+    const QList<QLineEdit*> editors =
+        page.personalDetailsPage()->findChildren<QLineEdit*>();
+    return index >= 0 && index < editors.size()
+        ? editors.at(index)
+        : nullptr;
+}
+
+QLineEdit* personalZoomLoginEditor(MyWorkspacePage& page)
+{
+    return personalDetailsEditor(page, 1);
+}
+
+QLineEdit* personalZoomPasswordEditor(MyWorkspacePage& page)
+{
+    return personalDetailsEditor(page, 2);
+}
+
+QCheckBox* personalZoomUnavailableCheck(MyWorkspacePage& page)
+{
+    return page.personalDetailsPage()->findChild<QCheckBox*>(
+        QStringLiteral("zoomNotAvailableCheck"));
+}
+
 void refreshPersonalDetails(MyWorkspacePage& page)
 {
     page.show();
@@ -99,6 +134,9 @@ private slots:
     void storedCampusPrefillsAndCorrectsThroughTypedPort();
     void storedDisplayNamePrefillsWithUtf8AndWhitespace();
     void missingAndUnavailableDisplayNamePrefillEmpty();
+    void storedZoomCredentialsPrefillAndRespectUnavailableState();
+    void missingZoomValuesUseNaFallbackAndDisableFields();
+    void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
 };
 
 void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
@@ -371,6 +409,171 @@ void MyWorkspacePageTests::missingAndUnavailableDisplayNamePrefillEmpty()
         QVERIFY(name);
         QVERIFY(name->text().isEmpty());
     }
+}
+
+void MyWorkspacePageTests::storedZoomCredentialsPrefillAndRespectUnavailableState()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(ZoomLoginIdKey),
+            QStringLiteral("teacher@example.com")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(ZoomPasswordKey),
+            QStringLiteral("secret")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(ZoomNotAvailableKey),
+            false
+            )
+        );
+
+    MyWorkspacePage available(&services);
+    refreshPersonalDetails(available);
+
+    auto* login = personalZoomLoginEditor(available);
+    auto* password = personalZoomPasswordEditor(available);
+    auto* unavailable = personalZoomUnavailableCheck(available);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QCOMPARE(login->text(), QStringLiteral("teacher@example.com"));
+    QCOMPARE(password->text(), QStringLiteral("secret"));
+    QVERIFY(!unavailable->isChecked());
+    QVERIFY(login->isEnabled());
+    QVERIFY(password->isEnabled());
+
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(ZoomNotAvailableKey),
+            true
+            )
+        );
+
+    MyWorkspacePage unavailablePage(&services);
+    refreshPersonalDetails(unavailablePage);
+
+    login = personalZoomLoginEditor(unavailablePage);
+    password = personalZoomPasswordEditor(unavailablePage);
+    unavailable = personalZoomUnavailableCheck(unavailablePage);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QCOMPARE(login->text(), QStringLiteral("teacher@example.com"));
+    QCOMPARE(password->text(), QStringLiteral("secret"));
+    QVERIFY(unavailable->isChecked());
+    QVERIFY(!login->isEnabled());
+    QVERIFY(!password->isEnabled());
+}
+
+void MyWorkspacePageTests::missingZoomValuesUseNaFallbackAndDisableFields()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+
+    MyWorkspacePage available(&services);
+    refreshPersonalDetails(available);
+
+    auto* login = personalZoomLoginEditor(available);
+    auto* password = personalZoomPasswordEditor(available);
+    auto* unavailable = personalZoomUnavailableCheck(available);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QCOMPARE(login->text(), QStringLiteral("N/A"));
+    QCOMPARE(password->text(), QStringLiteral("N/A"));
+    QVERIFY(unavailable->isChecked());
+    QVERIFY(!login->isEnabled());
+    QVERIFY(!password->isEnabled());
+
+    ApplicationServices unavailableServices;
+    MyWorkspacePage unavailablePage(&unavailableServices);
+    refreshPersonalDetails(unavailablePage);
+
+    login = personalZoomLoginEditor(unavailablePage);
+    password = personalZoomPasswordEditor(unavailablePage);
+    unavailable = personalZoomUnavailableCheck(unavailablePage);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QVERIFY(login->text().isEmpty());
+    QVERIFY(password->text().isEmpty());
+    QVERIFY(!unavailable->isChecked());
+    QVERIFY(login->isEnabled());
+    QVERIFY(password->isEnabled());
+}
+
+void MyWorkspacePageTests::legacyZoomValuesMigrateDuringPersonalDetailsLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(LegacyZoomLoginIdKey),
+            QStringLiteral("legacy@example.com")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(LegacyZoomPasswordKey),
+            QStringLiteral("legacy secret")
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(LegacyZoomNotAvailableKey),
+            false
+            )
+        );
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    auto* login = personalZoomLoginEditor(page);
+    auto* password = personalZoomPasswordEditor(page);
+    auto* unavailable = personalZoomUnavailableCheck(page);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QCOMPARE(login->text(), QStringLiteral("legacy@example.com"));
+    QCOMPARE(password->text(), QStringLiteral("legacy secret"));
+    QVERIFY(!unavailable->isChecked());
+
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomLoginIdKey))
+            ->toString(),
+        QStringLiteral("legacy@example.com")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomPasswordKey))
+            ->toString(),
+        QStringLiteral("legacy secret")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomNotAvailableKey))
+            ->toBool(),
+        false
+        );
 }
 
 QTEST_MAIN(MyWorkspacePageTests)
