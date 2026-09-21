@@ -76,6 +76,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/recent_workspace_history.h
     src/next/application/selection_state.h
     src/next/application/schedule_display_preferences.h
+    src/next/application/schedule_display_mode_preferences.h
     src/next/application/sidebar_display_preferences.h
     src/next/application/schedule_view_projection.h
     src/next/application/user_preferences_state.h
@@ -101,6 +102,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/theme_preference_port.h
     src/next/platform/language_preference_port.h
     src/next/platform/application_services_schedule_display_preferences_port.h
+    src/next/platform/application_services_schedule_display_mode_preferences_port.h
     src/next/platform/application_services_evaluation_default_policy_port.h
     src/next/platform/application_services_class_day_filter_reset_policy_port.h
     src/next/platform/application_services_class_selection_reset_policy_port.h

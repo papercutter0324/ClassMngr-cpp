@@ -2204,3 +2204,28 @@ Expected warnings remained nonblocking.
 
 The typed ActionRegistry language read cutover is closed. Phase 2 remains open;
 the next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (typed ScheduleWidget display-mode persistence cutover)
+
+Against baseline commit `41859a5f`, added the Qt-free display-mode contract for
+`Regular`, `Intensive`, and `Testing`. The canonical key is
+`schedule_display_mode`; first load falls back to legacy
+`schedule_show_intensive` when the canonical value is absent, then migrates
+that result to the canonical key. Missing or invalid values fall back to
+`Regular`.
+
+Unavailable reads return `Regular` and unavailable saves are no-ops.
+`ScheduleWidget` alone now uses the typed load/save boundary. Existing
+`ClassesPage` and `SpeakingEval` compatibility callers/helper remain
+unchanged. Button refresh, reload, and `displayModeChanged` ordering remain
+unchanged.
+
+Verification passed configure/ownership with 803 sources and a clean focused
+Debug build. The offscreen focused suite passed 6/6, covering the adapter,
+ScheduleWidget, builder, print model/PDF, and existing schedule-display
+adapter. Resource, dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static,
+call-site, and diff checks passed. The exact dirty scope was six files.
+Expected warnings remained nonblocking.
+
+The typed ScheduleWidget display-mode persistence seam is closed. Phase 2
+remains open; the next slice is not yet selected.

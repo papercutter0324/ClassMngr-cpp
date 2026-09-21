@@ -10,13 +10,13 @@
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
-#include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/services/schedule_output_controller.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
+#include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
@@ -249,12 +249,30 @@ void ScheduleWidget::setDisplayMode(
 
     m_displayMode = mode;
 
-    ScheduleDisplayModePreferences::save(
-        m_services
-            ? m_services->settingsService()
-            : nullptr,
-        m_displayMode
-        );
+    if (m_services)
+    {
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleDisplayModePreferencesPort port(
+                *m_services
+                );
+        ClassMngr::Next::Application::ScheduleDisplayMode storedMode =
+            ClassMngr::Next::Application::ScheduleDisplayMode::Regular;
+        switch (m_displayMode)
+        {
+        case ::ScheduleDisplayMode::Intensive:
+            storedMode =
+                ClassMngr::Next::Application::ScheduleDisplayMode::Intensive;
+            break;
+        case ::ScheduleDisplayMode::Testing:
+            storedMode =
+                ClassMngr::Next::Application::ScheduleDisplayMode::Testing;
+            break;
+        case ::ScheduleDisplayMode::Regular:
+        default:
+            break;
+        }
+        port.save(storedMode);
+    }
 
     updateButtons();
     loadSchedule();
@@ -664,16 +682,26 @@ void ScheduleWidget::loadSettings()
     m_showAllHours = settings.showAllIntensiveHours;
     m_testingAffectsM1 = settings.testingAffectsM1;
 
-    auto* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-    if (settingsService && settingsService->isAvailable())
+    if (m_services)
     {
-        m_displayMode =
-            ScheduleDisplayModePreferences::load(
-                settingsService
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleDisplayModePreferencesPort port(
+                *m_services
                 );
+        const auto storedMode = port.load();
+        switch (storedMode)
+        {
+        case ClassMngr::Next::Application::ScheduleDisplayMode::Intensive:
+            m_displayMode = ::ScheduleDisplayMode::Intensive;
+            break;
+        case ClassMngr::Next::Application::ScheduleDisplayMode::Testing:
+            m_displayMode = ::ScheduleDisplayMode::Testing;
+            break;
+        case ClassMngr::Next::Application::ScheduleDisplayMode::Regular:
+        default:
+            m_displayMode = ::ScheduleDisplayMode::Regular;
+            break;
+        }
     }
 }
 
