@@ -1,13 +1,73 @@
 #include "core/application_services.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
+#include "features/my_info/data/signature_image_processor.h"
+#include "app/services/feature_services.h"
 
 #include <QApplication>
+#include <QBuffer>
+#include <QImage>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QTemporaryDir>
+#include <QUuid>
 #include <QtTest>
 
 #include <utility>
+
+namespace
+{
+
+constexpr auto SignatureImageKey = "myInfo/signatureImage";
+
+QString databasePath(QTemporaryDir& directory)
+{
+    return directory.filePath(
+        QStringLiteral("initial-setup-wizard-%1.tps").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            )
+        );
+}
+
+bool openDatabase(
+    ApplicationServices& services,
+    QTemporaryDir& directory
+    )
+{
+    return services.openDatabase(databasePath(directory)).has_value();
+}
+
+QByteArray sourcePng()
+{
+    QImage source(2, 1, QImage::Format_RGB32);
+    source.setPixelColor(0, 0, Qt::white);
+    source.setPixelColor(1, 0, Qt::black);
+
+    QByteArray encoded;
+    QBuffer buffer(&encoded);
+    if (!buffer.open(QIODevice::WriteOnly) || !source.save(&buffer, "PNG"))
+    {
+        return {};
+    }
+
+    return encoded;
+}
+
+QLabel* signaturePreview(InitialSetupWizard& wizard)
+{
+    return wizard.findChild<QLabel*>(
+        QStringLiteral("signatureImagePreview"));
+}
+
+void showPersonalDetailsPage(InitialSetupWizard& wizard)
+{
+    wizard.setStartId(InitialSetupWizard::PersonalDetailsPage);
+    wizard.show();
+    QApplication::processEvents();
+}
+
+} // namespace
 
 class InitialSetupWizardTests : public QObject
 {
@@ -16,6 +76,11 @@ class InitialSetupWizardTests : public QObject
 private slots:
     void keyboardIsAvailableAtTextEntryStages();
     void personalNameFieldRetainsFocusWhileTyping();
+    void storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement();
+    void missingInvalidAndUnavailableSignatureImagesStayEmpty();
+
+private:
+    QTemporaryDir m_directory;
 };
 
 void InitialSetupWizardTests::keyboardIsAvailableAtTextEntryStages()
@@ -80,6 +145,92 @@ void InitialSetupWizardTests::personalNameFieldRetainsFocusWhileTyping()
     }
 
     QCOMPARE(name->text(), QStringLiteral("alex"));
+}
+
+void InitialSetupWizardTests::
+storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    QVERIFY(
+        services.settingsService()->save(
+            QString::fromUtf8(SignatureImageKey),
+            QString::fromLatin1(source.toBase64())
+            )
+        );
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* preview = signaturePreview(wizard);
+    QVERIFY(preview);
+    QVERIFY(preview->text().isEmpty());
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName"));
+    QVERIFY(name);
+    name->setText(QStringLiteral("Stored Teacher"));
+
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    const QByteArray expected =
+        SignatureImage::prepareForEmbedding(source);
+    const QByteArray stored = services.settingsService()->loadOrDefault(
+        QString::fromUtf8(SignatureImageKey),
+        QVariant()
+        ).toString().toLatin1();
+    QCOMPARE(stored, expected.toBase64());
+}
+
+void InitialSetupWizardTests::missingInvalidAndUnavailableSignatureImagesStayEmpty()
+{
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+
+        InitialSetupWizard wizard(&services);
+        showPersonalDetailsPage(wizard);
+
+        auto* preview = signaturePreview(wizard);
+        QVERIFY(preview);
+        QVERIFY(!preview->text().isEmpty());
+    }
+
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        QVERIFY(services.settingsService());
+        QVERIFY(
+            services.settingsService()->save(
+                QString::fromUtf8(SignatureImageKey),
+                QStringLiteral("%%%not-base64%%")
+                )
+            );
+
+        InitialSetupWizard wizard(&services);
+        showPersonalDetailsPage(wizard);
+
+        auto* preview = signaturePreview(wizard);
+        QVERIFY(preview);
+        QVERIFY(!preview->text().isEmpty());
+    }
+
+    {
+        ApplicationServices services;
+        InitialSetupWizard wizard(&services);
+        showPersonalDetailsPage(wizard);
+
+        auto* preview = signaturePreview(wizard);
+        QVERIFY(preview);
+        QVERIFY(!preview->text().isEmpty());
+    }
 }
 
 QTEST_MAIN(InitialSetupWizardTests)

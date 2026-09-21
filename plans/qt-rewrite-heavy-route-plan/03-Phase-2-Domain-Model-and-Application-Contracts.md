@@ -2708,3 +2708,33 @@ zlib fallback, MSVC/build warnings, and LF-to-CRLF normalization.
 
 This personal signature-image boundary is closed. Phase 2 remains open; the
 next boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (typed InitialSetupWizard signature-image reads)
+
+Against baseline commit `039a618c`, completed the InitialSetupWizard slice:
+both remaining personal signature-image reads now use the existing typed
+`PersonalSignatureImagePort` and
+`ApplicationServicesPersonalSignatureImagePort`. The adapter retains the
+exact-key, Base64-decoding, exactly-once preparation, opaque-byte, and
+read-only semantics; no new contract, adapter, or CMake change was needed.
+
+The exact implementation/test scope is:
+
+- `src/features/setup/ui/initial_setup_wizard.cpp`
+- `tests/initial_setup_wizard_tests.cpp`
+
+PersonalDetailsRepository aggregate loading for the name and other fields,
+aggregate save, existing image file-selection replacement/write behavior,
+preview behavior, and guards remain unchanged. Temporary-database coverage
+verified valid image use, missing/unavailable/corrupt values as empty, and
+preservation of the existing image when no replacement is selected.
+
+Verification passed ownership validation with 831 handwritten sources and a
+clean-first serial Debug build. CTest passed 4/4; wizard slots passed 2/2 and
+signature-port slots passed 4/4. Resource, dependency, static, source,
+offscreen, and diff checks passed. Expected notices were missing Vulkan
+headers, the Qt bundled-zlib fallback, and LF-to-CRLF normalization. Four
+leftover MSBuild processes were stopped cleanly; no command remains active.
+
+This InitialSetupWizard boundary is closed. Phase 2 remains open; the next
+boundary is not yet selected.

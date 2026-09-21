@@ -9,6 +9,7 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "next/platform/application_services_personal_signature_image_port.h"
 #include "core/utils/colorutils.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -382,9 +383,15 @@ public:
         {
             m_name->setText(details.name);
         }
-        if (m_signature.isEmpty() && !details.signatureImage.isEmpty())
+        const QByteArray storedSignature = QByteArray::fromStdString(
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalSignatureImagePort(
+                    setup->settingsService()
+                    ).read()
+            );
+        if (m_signature.isEmpty() && !storedSignature.isEmpty())
         {
-            m_signature = details.signatureImage;
+            m_signature = storedSignature;
             updateSignaturePreview();
         }
     }
@@ -413,6 +420,19 @@ public:
         if (!m_signature.isEmpty())
         {
             details.signatureImage = m_signature;
+        }
+        else
+        {
+            const QByteArray storedSignature = QByteArray::fromStdString(
+                ClassMngr::Next::Platform::
+                    ApplicationServicesPersonalSignatureImagePort(
+                        setup->settingsService()
+                        ).read()
+                );
+            if (!storedSignature.isEmpty())
+            {
+                details.signatureImage = storedSignature;
+            }
         }
 
         if (!PersonalDetailsRepository(setup->settingsService()).save(details))
