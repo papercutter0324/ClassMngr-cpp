@@ -1,8 +1,8 @@
 #include "speaking_eval_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "features/my_info/data/personal_details_repository.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
+#include "next/platform/application_services_personal_signature_image_port.h"
 
 void SpeakingEvalPage::refresh()
 {
@@ -324,10 +324,12 @@ void SpeakingEvalPage::showReports()
         classInfo =
             m_services->classService()->classInfo(m_classroom.id)
                 .value_or(ClassInfo{});
-        signatureImage =
-            PersonalDetailsRepository(m_services->settingsService())
-                .load()
-                .signatureImage;
+        signatureImage = QByteArray::fromStdString(
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalSignatureImagePort(
+                    m_services->settingsService()
+                    ).read()
+            );
     }
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
@@ -466,10 +468,12 @@ void SpeakingEvalPage::outputReports(
         classInfo =
             m_services->classService()->classInfo(m_classroom.id)
                 .value_or(ClassInfo{});
-        signatureImage =
-            PersonalDetailsRepository(m_services->settingsService())
-                .load()
-                .signatureImage;
+        signatureImage = QByteArray::fromStdString(
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalSignatureImagePort(
+                    m_services->settingsService()
+                    ).read()
+            );
     }
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =

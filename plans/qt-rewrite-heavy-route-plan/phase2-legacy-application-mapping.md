@@ -2018,3 +2018,32 @@ warnings, and LF-to-CRLF normalization.
 
 This personal-display-name writer boundary is closed. Phase 2 remains open; the
 next boundary is not yet selected.
+
+## Verified typed personal signature-image read port handoff
+
+Against baseline commit `fa8b5193`, completed the typed personal signature-image
+read boundary for the exact key `myInfo/signatureImage`. The port Base64-decodes
+the stored value, invokes the existing `SignatureImage::prepareForEmbedding`
+exactly once, and returns opaque bytes. Missing, invalid, unavailable, or
+corrupt-Base64 values become empty; the port performs no writes.
+
+The two page-actions `PersonalDetailsRepository` calls were removed while
+report generation, PowerPoint output, and class-service guards remain
+unchanged. The exact six-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/speaking_eval/ui/speaking_eval_page_actions.cpp`
+- `src/next/application/personal_signature_image.h`
+- `src/next/platform/application_services_personal_signature_image_port.h`
+- `tests/next_platform_application_services_personal_signature_image_port_tests.cpp`
+
+Verification passed ownership validation with 831 handwritten sources and a
+clean-first full Debug build. CTest passed 3/3; adapter slots passed 4/4, and
+the offscreen launch smoke passed. Resource, Qt-free, static, exact-key,
+one-preparation-call, call-site, writer-preservation, dependency, and diff
+checks all passed. Expected notices were missing Vulkan headers, the bundled
+zlib fallback, MSVC/build warnings, and LF-to-CRLF normalization.
+
+This personal signature-image boundary is closed. Phase 2 remains open; the
+next boundary is not yet selected.
