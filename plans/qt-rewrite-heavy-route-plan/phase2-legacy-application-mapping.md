@@ -2404,3 +2404,27 @@ FileTracker environmental qualification remained nonblocking.
 
 This InitialSetupWizard typed-read composition boundary is closed. Phase 2
 remains open; the next boundary is not yet selected.
+
+## Verified typed language persistence cutover handoff
+
+Against baseline commit `641f7936` (`Phase2 - Remove InitialSetupWizard
+repository reads`), completed the typed language persistence cutover. The
+current uncommitted scope is:
+
+- `src/ui/shared/actions/action_registry.cpp`
+- `src/ui/shared/state/option_state.h`
+- `tests/language_preference_port_tests.cpp`
+
+`OptionState` now exposes the `onPersist` seam. `ActionRegistry` maps legacy
+Language `SystemDefault`/`English`/`Korean` to typed
+`LanguagePreference` through `SettingsManagerLanguagePreferencesPort`.
+Canonical persisted values remain 0/1/5; reads migrate legacy 2/3/4 to
+English. Startup selection synchronizes without reapplying presentation
+language, and other `OptionState` writers retain compatibility behavior.
+
+Acceptance passed after rebuilding runtime/test targets: an isolated run with a
+unique `CLASSMNGR_SETTINGS_ROOT` passed the full `LanguagePreferencePortTests`
+8/8, each of the three focused cases passed 3/3, typed adapter,
+`LanguageService`, and AI-options regressions passed, and static Qt-free and
+call-site checks passed. Earlier shared/alternate-harness 0-vs-1/5/2 failures
+were environment/order-dependent; the isolated rerun passed.

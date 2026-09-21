@@ -27,6 +27,7 @@ public:
     }
 
     std::function<void(T)> onChanged;
+    std::function<void(T)> onPersist;
 
     QAction* addOption(
         T value,
@@ -78,7 +79,14 @@ public:
 
         m_actions[value]->setChecked(true);
 
-        saveToSettings(value);
+        if (onPersist)
+        {
+            onPersist(value);
+        }
+        else
+        {
+            saveToSettings(value);
+        }
 
         if (onChanged)
             onChanged(value);

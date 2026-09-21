@@ -53,6 +53,7 @@ private slots:
     void invalidPreferenceDoesNotCallOrMutateTheLanguageService();
     void controllerSynchronizesStartupStateWithoutReapplyingLanguage();
     void validActionUpdatesTypedStatePersistenceFontAndPresentation();
+    void actionWritesCanonicalLanguageValuesAndKeepsOtherOptionWrites();
     void invalidOrFailedChangesPreserveTypedState();
 };
 
@@ -174,6 +175,37 @@ validActionUpdatesTypedStatePersistenceFontAndPresentation()
     QVERIFY(app->font() != englishFont);
 
     restoreSetting(settings, key, savedValue);
+}
+
+void LanguagePreferencePortTests::
+actionWritesCanonicalLanguageValuesAndKeepsOtherOptionWrites()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString languageKey = languageSettingsKey();
+    const QString saveModeKey = QString::fromUtf8(OptionKeys::SaveMode);
+    const QVariant savedLanguage = settings.get(languageKey);
+    const QVariant savedSaveMode = settings.get(saveModeKey);
+
+    settings.set(languageKey, 0);
+    settings.set(saveModeKey, 0);
+
+    ActionRegistry actions;
+    actions.createActions();
+
+    actions.languageState->set(Language::SystemDefault);
+    QCOMPARE(settings.get(languageKey).toInt(), 0);
+
+    actions.languageState->set(Language::English);
+    QCOMPARE(settings.get(languageKey).toInt(), 1);
+
+    actions.languageState->set(Language::Korean);
+    QCOMPARE(settings.get(languageKey).toInt(), 5);
+
+    actions.saveModeState->set(SaveMode::Manual);
+    QCOMPARE(settings.get(saveModeKey).toInt(), 1);
+
+    restoreSetting(settings, languageKey, savedLanguage);
+    restoreSetting(settings, saveModeKey, savedSaveMode);
 }
 
 void LanguagePreferencePortTests::invalidOrFailedChangesPreserveTypedState()

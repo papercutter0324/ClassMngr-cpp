@@ -838,6 +838,36 @@ void ActionRegistry::createOptionActions()
         koreanLanguageAction
         );
 
+    languageState->onPersist = [](const Language language)
+    {
+        ClassMngr::Next::Application::LanguagePreference preference;
+        switch (language)
+        {
+        case Language::SystemDefault:
+            preference = ClassMngr::Next::Application::
+                LanguagePreference::SystemDefault;
+            break;
+
+        case Language::English:
+            preference = ClassMngr::Next::Application::
+                LanguagePreference::English;
+            break;
+
+        case Language::Korean:
+            preference = ClassMngr::Next::Application::
+                LanguagePreference::Korean;
+            break;
+
+        default:
+            return;
+        }
+
+        ClassMngr::Next::Platform::
+            SettingsManagerLanguagePreferencesPort().write(
+                preference
+                );
+    };
+
     const auto storedLanguage =
         ClassMngr::Next::Platform::
             SettingsManagerLanguagePreferencesPort()
