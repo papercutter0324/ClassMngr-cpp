@@ -12,6 +12,7 @@
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
+#include "next/platform/application_services_personal_signature_preferences_port.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -876,9 +877,6 @@ void PersonalDetailsPage::loadStoredSettings()
     const QSignalBlocker checkBlocker(m_zoomNotAvailableCheck);
     const QSignalBlocker typedSignatureBlocker(m_typedSignatureEdit);
 
-    const PersonalDetails details =
-        PersonalDetailsRepository(settingsService).load();
-
     const QByteArray storedName = QByteArray::fromStdString(
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort(
@@ -982,10 +980,36 @@ void PersonalDetailsPage::loadStoredSettings()
                 settingsService
                 ).read()
         );
-    m_signatureMode = details.signatureMode;
-    m_typedSignatureFont =
-        TypedSignature::fontFromStoredValue(details.typedSignatureFont);
-    m_typedSignatureEdit->setText(details.typedSignatureText);
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesPersonalSignaturePreferencesPort
+        personalSignaturePreferencesPort(settingsService);
+    const auto storedSignaturePreferences =
+        personalSignaturePreferencesPort.load();
+    if (storedSignaturePreferences)
+    {
+        const auto& preferences = storedSignaturePreferences.value();
+        const auto fromUtf8 = [](const std::string& value)
+        {
+            return QString::fromUtf8(
+                value.data(),
+                static_cast<qsizetype>(value.size())
+                );
+        };
+
+        m_signatureMode =
+            preferences.mode ==
+                ClassMngr::Next::Application::PersonalSignatureMode::Type
+            ? SignatureMode::Type
+            : SignatureMode::Image;
+        m_typedSignatureFont =
+            TypedSignature::fontFromStoredValue(
+                preferences.typedSignatureFont
+                );
+        m_typedSignatureEdit->setText(
+            fromUtf8(preferences.typedSignatureText)
+            );
+    }
 
     setZoomFieldsEnabled();
     updateMyInformationFieldWidths();

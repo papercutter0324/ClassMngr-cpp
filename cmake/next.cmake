@@ -74,6 +74,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/middle_school_analytics_preferences.h
     src/next/application/personal_display_name_preferences.h
     src/next/application/personal_signature_image.h
+    src/next/application/personal_signature_preferences.h
     src/next/application/sub_prep_preferences.h
     src/next/application/sub_prep_personal_zoom_preferences.h
     src/next/application/skipped_update_version_preferences.h
@@ -126,6 +127,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_middle_school_analytics_preferences_port.h
     src/next/platform/application_services_personal_display_name_preferences_port.h
     src/next/platform/application_services_personal_signature_image_port.h
+    src/next/platform/application_services_personal_signature_preferences_port.h
     src/next/platform/application_services_sub_prep_preferences_port.h
     src/next/platform/application_services_sub_prep_personal_zoom_preferences_port.h
     src/next/platform/settings_manager_excel_import_timeout_port.h

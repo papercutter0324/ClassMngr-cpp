@@ -15,6 +15,7 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest>
@@ -31,6 +32,9 @@ constexpr auto ZoomNotAvailableKey = "myInfo/zoomNotAvailable";
 constexpr auto LegacyZoomLoginIdKey = "subPrep/personalZoomEmail";
 constexpr auto LegacyZoomPasswordKey = "subPrep/personalZoomPassword";
 constexpr auto LegacyZoomNotAvailableKey = "subPrep/personalZoomNotAvailable";
+constexpr auto SignatureModeKey = "myInfo/signatureMode";
+constexpr auto TypedSignatureTextKey = "myInfo/typedSignatureText";
+constexpr auto TypedSignatureFontKey = "myInfo/typedSignatureFont";
 
 QString databasePath(QTemporaryDir& directory)
 {
@@ -106,6 +110,14 @@ QCheckBox* personalZoomUnavailableCheck(MyWorkspacePage& page)
         QStringLiteral("zoomNotAvailableCheck"));
 }
 
+QPushButton* signatureModeButton(
+    MyWorkspacePage& page,
+    const QString& objectName
+    )
+{
+    return page.personalDetailsPage()->findChild<QPushButton*>(objectName);
+}
+
 void refreshPersonalDetails(MyWorkspacePage& page)
 {
     page.show();
@@ -137,6 +149,7 @@ private slots:
     void storedZoomCredentialsPrefillAndRespectUnavailableState();
     void missingZoomValuesUseNaFallbackAndDisableFields();
     void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
+    void storedSignaturePreferencesPopulateModeTextAndFont();
 };
 
 void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
@@ -574,6 +587,70 @@ void MyWorkspacePageTests::legacyZoomValuesMigrateDuringPersonalDetailsLoad()
             ->toBool(),
         false
         );
+}
+
+void MyWorkspacePageTests::storedSignaturePreferencesPopulateModeTextAndFont()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QString expectedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(SignatureModeKey),
+            1
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(TypedSignatureTextKey),
+            expectedText
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(TypedSignatureFontKey),
+            2
+            )
+        );
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    auto* imageMode = signatureModeButton(
+        page,
+        QStringLiteral("signatureImageModeButton")
+        );
+    auto* typeMode = signatureModeButton(
+        page,
+        QStringLiteral("signatureTypeModeButton")
+        );
+    auto* typedText = page.personalDetailsPage()->findChild<QLineEdit*>(
+        QStringLiteral("typedSignatureEdit")
+        );
+    const QList<QPushButton*> fontButtons =
+        page.personalDetailsPage()->findChildren<QPushButton*>(
+            QStringLiteral("typedSignatureFontButton")
+            );
+
+    QVERIFY(imageMode);
+    QVERIFY(typeMode);
+    QVERIFY(typedText);
+    QCOMPARE(fontButtons.size(), 4);
+    QVERIFY(!imageMode->isChecked());
+    QVERIFY(typeMode->isChecked());
+    QCOMPARE(typedText->text(), expectedText);
+    for (int index = 0; index < fontButtons.size(); ++index)
+    {
+        QCOMPARE(fontButtons.at(index)->isChecked(), index == 2);
+    }
 }
 
 QTEST_MAIN(MyWorkspacePageTests)

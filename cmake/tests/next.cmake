@@ -471,6 +471,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesPersonalSignaturePreferencesPort
+    SOURCES
+        tests/next_platform_application_services_personal_signature_preferences_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesSubPrepPreferencesPort
     SOURCES
         tests/next_platform_application_services_sub_prep_preferences_port_tests.cpp

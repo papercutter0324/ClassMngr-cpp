@@ -2264,3 +2264,40 @@ warnings, and Vulkan/zlib/LF-to-CRLF notices.
 
 This PersonalDetailsPage Zoom-read boundary is closed. Phase 2 remains open;
 the next boundary is not yet selected.
+
+## Verified typed personal-signature-preferences bundle handoff
+
+Against baseline commit `554e106b`, added the Qt-free read-only personal
+signature-preferences bundle for exact keys `myInfo/signatureMode`,
+`myInfo/typedSignatureText`, and `myInfo/typedSignatureFont`. Defaults are
+`Image`, empty text, and font `0`; invalid QVariant mode/font values normalize
+to those defaults, text preserves UTF-8/whitespace, unavailable settings return
+a failure, and the bundle performs no writes.
+
+The exact seven-file scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/next/application/personal_signature_preferences.h`
+- `src/next/platform/application_services_personal_signature_preferences_port.h`
+- `src/features/my_info/ui/personal_details_page_sections.cpp`
+- `tests/next_platform_application_services_personal_signature_preferences_port_tests.cpp`
+- `tests/my_workspace_page_tests.cpp`
+
+PersonalDetailsPage maps the typed mode, text, and font to the existing UI
+types and removes only the aggregate load from `loadStoredSettings()`. Aggregate
+save and all name/campus/Zoom/signature-image/write/guard behavior remain
+preserved. CMake registration is included; no unrelated migration was made.
+
+Verification passed ownership validation with 834 handwritten sources and a
+serial clean-first Debug build. The new adapter passed 7/7, MyWorkspace passed
+18/18, the signature-image adapter passed 6/6, the current-campus adapter
+passed 8/8, and the display-name and Zoom adapters passed 7/7 each. Resource
+checks passed 6 RCC packs/7 runtime references; dependency JSON was valid at
+1042 bytes and the final diff passed. No TIMEOUT or FAIL occurred and no
+commands remain active. Executables ran offscreen, so a separate offscreen
+launch step was skipped. Expected notices were Qt/Vulkan/zlib and LF-to-CRLF;
+stub-test linker notices were also nonblocking.
+
+This personal-signature-preferences boundary is closed. Phase 2 remains open;
+the next boundary is not yet selected.
