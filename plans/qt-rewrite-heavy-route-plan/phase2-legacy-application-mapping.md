@@ -1731,3 +1731,42 @@ missing Vulkan headers, the Qt bundled-zlib fallback, existing
 
 This remaining narrow calendar persistence boundary is closed. Phase 2 remains
 open; the next boundary is not yet selected.
+
+## Verified typed CalendarPage event-type color persistence boundary handoff
+
+Against baseline commit `c74b8a9c`, completed the typed CalendarPage
+event-type color persistence boundary. Dynamic keys are
+`calendar/eventTypeColor/<normalized-event-type>`, with the exact normalized
+event types `Vacation`, `Holiday`, `Workshop`, `CM`, `Meeting`, and `Other`.
+Event-type normalization and `QColor` conversion remain in the UI; the adapter
+owns only typed key construction and persistence.
+
+Valid `QColor::HexRgb` values round-trip and store exactly. Missing or
+unavailable values use the UI default; invalid stored colors pass through the
+adapter and fall back in the UI. Invalid colors are no-op saves, save failures
+retain their warning, and unrelated settings are preserved. `myInfo`, campus,
+`custom_colors`, and generic settings remain separate.
+
+`CalendarPage` no longer raw-accesses dynamic color keys; defaults, warning
+paths, and repaint/filter-refresh ordering remain unchanged. The exact
+six-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/calendar/ui/calendar_page_upcoming_events.cpp`
+- `src/next/application/calendar_event_type_color_preferences.h`
+- `src/next/platform/application_services_calendar_event_type_color_preferences_port.h`
+- `tests/next_platform_application_services_calendar_event_type_color_preferences_port_tests.cpp`
+
+Verification passed ownership validation with 813 handwritten sources and an
+elevated Debug focused build. Focused tests passed 7/7, including the adapter
+and calendar/page-adjacent coverage; the offscreen launch smoke passed.
+Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency, Qt-free, static, dynamic-key call-site, and diff checks passed.
+The initial stale CTest listing was resolved by target regeneration. Existing
+`/FORCE`/duplicate-symbol linker warnings, missing Vulkan headers, and
+LF-to-CRLF normalization remained nonblocking; idle MSBuild nodes were also
+nonblocking.
+
+This event-type color boundary is closed. Phase 2 remains open; the next
+boundary is not yet selected.

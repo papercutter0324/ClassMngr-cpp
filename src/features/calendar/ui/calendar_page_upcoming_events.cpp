@@ -9,6 +9,7 @@
 #include "features/campus/data/campus_json_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
+#include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/widgets/marquee_label.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -18,7 +19,6 @@
 #include <string>
 
 #include <QColorDialog>
-#include <QDebug>
 #include <QEvent>
 #include <QFontMetrics>
 #include <QFrame>
@@ -222,15 +222,6 @@ QColor defaultCalendarEventTypeColor(
     }
 
     return color;
-}
-
-QString calendarEventTypeColorSettingKey(
-    const QString& eventType
-    )
-{
-    return QStringLiteral("calendar/eventTypeColor/%1").arg(
-        normalizedCalendarEventType(eventType)
-        );
 }
 
 QString readableTextColor(
@@ -985,13 +976,18 @@ QColor CalendarPage::calendarEventTypeColor(
 
     if (settingsService)
     {
+        ClassMngr::Next::Platform::
+            ApplicationServicesCalendarEventTypeColorPreferencesPort
+            colorPreferencesPort(settingsService);
+        const std::string storedColorText =
+            colorPreferencesPort.read(
+                normalized.toUtf8().toStdString()
+                );
         const QColor storedColor(
-            settingsService
-                ->loadOrDefault(
-                    calendarEventTypeColorSettingKey(normalized),
-                    QString()
-                    )
-                .toString()
+            QString::fromUtf8(
+                storedColorText.data(),
+                static_cast<qsizetype>(storedColorText.size())
+                )
             );
 
         if (storedColor.isValid())
@@ -1020,13 +1016,13 @@ void CalendarPage::saveCalendarEventTypeColor(
         return;
     }
 
-    if (const Status saved = settingsService->save(
-            calendarEventTypeColorSettingKey(eventType),
-            color.name(QColor::HexRgb)
-            ); !saved)
-    {
-        qWarning() << "Failed to save calendar event type color:" << saved.error();
-    }
+    ClassMngr::Next::Platform::
+        ApplicationServicesCalendarEventTypeColorPreferencesPort
+        colorPreferencesPort(settingsService);
+    colorPreferencesPort.write(
+        normalizedCalendarEventType(eventType).toUtf8().toStdString(),
+        color.name(QColor::HexRgb).toUtf8().toStdString()
+        );
 }
 void CalendarPage::chooseCalendarEventTypeColor(
     const QString& eventType
