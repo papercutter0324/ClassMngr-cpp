@@ -301,8 +301,6 @@ qt_add_executable(ClassMngrClassTransferTests
     qt_add_executable(ClassMngrScheduleWidgetTests
         tests/schedule_widget_tests.cpp
         src/domain/models/classroom.cpp
-        src/features/schedule/schedule_display_mode_preferences.cpp
-        src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/schedule_settings_preferences.cpp
         src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/ui/schedule_editor_dialog.h

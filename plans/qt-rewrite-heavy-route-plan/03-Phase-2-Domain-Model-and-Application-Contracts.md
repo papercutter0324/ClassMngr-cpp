@@ -2251,3 +2251,38 @@ checks passed. Known warnings were missing Vulkan headers, existing
 
 This ClassesPage caller-cutover slice is closed. Phase 2 remains open; the next
 boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (final SpeakingEvalPage schedule-display-mode seam)
+
+Against baseline commit `01092f57`, completed the final schedule-display-mode
+compatibility caller cutover. `SpeakingEvalPage` now uses the existing typed
+`ApplicationServicesScheduleDisplayModePreferencesPort`, mapping typed
+`Regular`/`Intensive`/`Testing` to the legacy UI enum while preserving page
+lifecycle, evaluation loading, visibility, and `scheduleSourceForMode`
+behavior. `ScheduleWidget` remains the write owner.
+
+The canonical key is `schedule_display_mode`, with legacy fallback/migration
+from `schedule_show_intensive`. Reads trim and case-normalize; an invalid
+modern value does not overwrite the canonical setting, a missing modern key
+migrates the legacy value, and an unavailable service resolves to `Regular`.
+No legacy callers or source-list references remain. The exact seven-file
+implementation scope is:
+
+- `cmake/production_sources.cmake`
+- `cmake/tests/features.cmake`
+- `cmake/tests/pages_and_output.cmake`
+- `src/features/speaking_eval/ui/speaking_eval_page.cpp`
+- `src/features/speaking_eval/ui/speaking_eval_page_p.h`
+- deleted `src/features/schedule/schedule_display_mode_preferences.cpp`
+- deleted `src/features/schedule/schedule_display_mode_preferences.h`
+
+Verification passed ownership validation with 801 handwritten sources, a clean
+Debug rebuild, focused CTest 8/8, and an offscreen launch smoke test. Resource
+checks passed 6 RCC packs/7 runtime IDs/7 runtime references; dependency and
+Qt-free, static, and call-site checks passed; `git diff --check` passed.
+Warnings were limited to the nonfatal MSB8064 generated-autogen notice for
+stale deleted-helper paths, existing `/FORCE`/duplicate-stub linker warnings,
+missing Vulkan headers, and LF-to-CRLF normalization.
+
+This final schedule-display-mode seam is closed. Phase 2 remains open; the
+next boundary is not yet selected.

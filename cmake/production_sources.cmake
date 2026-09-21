@@ -397,8 +397,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/roster/ui/roster_table_view.h"
     "src/features/schedule/import/schedule_workbook_parser.cpp"
     "src/features/schedule/import/schedule_workbook_parser.h"
-    "src/features/schedule/schedule_display_mode_preferences.cpp"
-    "src/features/schedule/schedule_display_mode_preferences.h"
     "src/features/schedule/schedule_settings_preferences.cpp"
     "src/features/schedule/schedule_settings_preferences.h"
     "src/features/schedule/services/schedule_import_matcher.cpp"

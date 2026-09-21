@@ -1,5 +1,6 @@
 #include "speaking_eval_page_p.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
+#include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 SpeakingEvalPage::SpeakingEvalPage(
@@ -82,11 +83,27 @@ void SpeakingEvalPage::loadEvaluations(
     }
     m_evaluationClasses = *loadedClasses;
 
-    setScheduleSource(
-        scheduleSourceForMode(
-            ScheduleDisplayModePreferences::load(m_services->settingsService())
-            )
-        );
+    ScheduleDisplayMode displayMode = ScheduleDisplayMode::Regular;
+    switch (
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleDisplayModePreferencesPort(
+                *m_services
+                ).load()
+        )
+    {
+    case ClassMngr::Next::Application::ScheduleDisplayMode::Intensive:
+        displayMode = ScheduleDisplayMode::Intensive;
+        break;
+
+    case ClassMngr::Next::Application::ScheduleDisplayMode::Testing:
+        displayMode = ScheduleDisplayMode::Testing;
+        break;
+
+    case ClassMngr::Next::Application::ScheduleDisplayMode::Regular:
+    default:
+        break;
+    }
+    setScheduleSource(scheduleSourceForMode(displayMode));
     setVisibilityScope(
         ClassMngr::Next::Platform::
             ApplicationServicesClassVisibilityPreferencesPort(*m_services)

@@ -153,8 +153,6 @@ qt_add_executable(ClassMngrScheduleImportDialogTests
         src/domain/models/classroom.cpp
         src/features/calendar/calendar_workbook_reader.cpp
         src/features/classes/config/class_info_config.cpp
-        src/features/schedule/schedule_display_mode_preferences.cpp
-        src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/schedule_settings_preferences.cpp
         src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/import/schedule_workbook_parser.cpp
@@ -232,8 +230,6 @@ qt_add_executable(ClassMngrSubPrepPageTests
         src/features/classes/config/class_info_config.cpp
         src/features/classes/models/class_tab_navigation_model.cpp
         src/features/classes/models/class_tab_navigation_model.h
-        src/features/schedule/schedule_display_mode_preferences.cpp
-        src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/schedule_settings_preferences.cpp
         src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/ui/schedule_editor_dialog.h
@@ -266,8 +262,6 @@ qt_add_executable(ClassMngrSubPrepPageTests
         src/ui/shared/widgets/navigation_tab_widget.cpp
         src/ui/shared/widgets/navigation_tab_widget.h
         src/ui/shared/widgets/on_screen_keyboard.cpp
-        src/features/schedule/schedule_display_mode_preferences.cpp
-        src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/ui/schedule_cell_widget_factory.cpp
         src/features/schedule/ui/schedule_cell_widget_factory.h
         src/features/schedule/ui/schedule_table_renderer.cpp
