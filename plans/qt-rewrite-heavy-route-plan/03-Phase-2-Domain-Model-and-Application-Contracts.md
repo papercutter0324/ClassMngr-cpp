@@ -2577,3 +2577,36 @@ symbol warnings, LF-to-CRLF normalization, and resident MSBuild nodes.
 
 This Sub Prep saved-content boundary is closed. Phase 2 remains open; the next
 boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (typed Sub Prep current-campus read cutover)
+
+Against baseline commit `ffd1f769`, completed the Sub Prep current-campus read
+cutover by reusing the existing `CurrentCampusPreferencesPort`. The exact
+three-file implementation scope is:
+
+- `src/features/sub_prep/ui/sub_prep_page_p.h`
+- `src/features/sub_prep/ui/sub_prep_page_settings.cpp`
+- `tests/sub_prep_page_tests.cpp`
+
+The cutover removes `SettingsKeys::MyInfoCampus`, retains the settings
+availability gate, and leaves no raw `myInfo/campus` read in Sub Prep. Existing
+UTF-8 conversion, trimming, case-insensitive ID/display-name matching,
+first-campus fallback, campus-field population, and unavailable-service no-op
+behavior are preserved. `PersonalDetailsRepository::saveCampus` remains the
+writer, and other Sub Prep settings remain untouched.
+
+Verification passed ownership validation with 825 handwritten sources and a
+Debug build. CTest passed 2/2; current-campus adapter slots passed 4/4, and
+the individual Sub Prep tests passed 3/3:
+`savedCampusSelectionUsesTypedRead`,
+`freshAndExistingGradingSettingsResolveWithoutDataLoss`, and
+`clearDatabaseStateStopsAutosaveAndRemovesLoadedContent`. The offscreen launch
+smoke passed. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime
+references; dependency, Qt-free, static, exact-key, call-site,
+writer-preservation, and diff checks passed. Warnings were known Vulkan/zlib
+notices, existing `/FORCE`/duplicate-symbol warnings, and LF-to-CRLF
+normalization; initial guessed adapter slot names were corrected from the
+executable listing.
+
+This Sub Prep current-campus boundary is closed. Phase 2 remains open; the
+next boundary is not yet selected.

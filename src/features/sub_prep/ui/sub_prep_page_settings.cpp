@@ -1,5 +1,6 @@
 #include "sub_prep_page_p.h"
 
+#include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_sub_prep_preferences_port.h"
 
 #include <string>
@@ -172,13 +173,15 @@ void SubPrepPage::loadCampuses()
     m_campuses =
         campusRepository().loadCampuses();
 
-    const QString savedCampus =
-        settingsService
-            ->loadOrDefault(
-                SettingsKeys::MyInfoCampus,
-                QString()
-                )
-            .toString();
+    ClassMngr::Next::Platform::
+        ApplicationServicesCurrentCampusPreferencesPort
+        currentCampusPreferencesPort(settingsService);
+    const std::string storedCampus =
+        currentCampusPreferencesPort.read();
+    const QString savedCampus = QString::fromUtf8(
+        storedCampus.data(),
+        static_cast<qsizetype>(storedCampus.size())
+        );
 
     QString campusId;
 

@@ -97,6 +97,7 @@ private slots:
     void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
+    void savedCampusSelectionUsesTypedRead();
     void zoomUnavailableHidesStoredCredentials();
     void printDialogSelectsNextVacationBlock();
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
@@ -608,6 +609,34 @@ void SubPrepPageTests
             ->toString(),
         QStringLiteral("Updated substitute note")
         );
+}
+
+void SubPrepPageTests
+    ::savedCampusSelectionUsesTypedRead()
+{
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/campus"),
+        QStringLiteral("  BUNDANG  ")
+        );
+
+    SubPrepPage page(&services);
+    activatePage(page);
+
+    auto* officeNumber =
+        page.findChild<QLineEdit*>(
+            QStringLiteral("subPrepOfficeNumberEdit")
+            );
+    auto* officeWifi =
+        page.findChild<QLineEdit*>(
+            QStringLiteral("subPrepOfficeWifiEdit")
+            );
+
+    QVERIFY(officeNumber);
+    QVERIFY(officeWifi);
+    QCOMPARE(officeNumber->text(), QStringLiteral("418"));
+    QCOMPARE(officeWifi->text(), QStringLiteral("Native Room_5G"));
 }
 
 void SubPrepPageTests

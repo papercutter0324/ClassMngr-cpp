@@ -59,8 +59,6 @@ const QString NotAvailableText =
 
 namespace SettingsKeys
 {
-const QString MyInfoCampus =
-    QStringLiteral("myInfo/campus");
 const QString MyInfoZoomLoginId =
     QStringLiteral("myInfo/zoomLoginId");
 const QString MyInfoZoomPassword =
