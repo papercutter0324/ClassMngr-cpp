@@ -1,5 +1,9 @@
 #include "sub_prep_page_p.h"
 
+#include "next/platform/application_services_sub_prep_preferences_port.h"
+
+#include <string>
+
 void SubPrepPage::loadPageData()
 {
     m_loading = true;
@@ -33,34 +37,44 @@ void SubPrepPage::loadStoredSettings()
     const QSignalBlocker specialBlocker(m_specialInstructionsEdit);
     const QSignalBlocker notesBlocker(m_subNotesEdit);
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesSubPrepPreferencesPort
+        subPrepPreferencesPort(settingsService);
+    const auto storedPreferences =
+        subPrepPreferencesPort.load();
+    if (!storedPreferences)
+    {
+        return;
+    }
+
+    const auto& preferences =
+        storedPreferences.value();
+
     m_classMaterialsEdit->setPlainText(
-        settingsService
-            ->loadOrDefault(
-                SettingsKeys::ClassMaterials,
-                QString()
-                )
-            .toString()
+        QString::fromUtf8(
+            preferences.classMaterials.data(),
+            static_cast<qsizetype>(preferences.classMaterials.size())
+            )
         );
 
-    const QVariant storedGrading =
-        settingsService->loadOrDefault(
-            SettingsKeys::BookReportGrading,
-            QVariant()
-            );
-    const QVariant storedSpecial =
-        settingsService->loadOrDefault(
-            SettingsKeys::BookReportSpecialInstructions,
-            QVariant()
-            );
-
-    if (storedGrading.isValid())
+    if (preferences.bookReportGrading)
     {
         m_gradingInstructionsEdit->setPlainText(
-            storedGrading.toString()
+            QString::fromUtf8(
+                preferences.bookReportGrading->data(),
+                static_cast<qsizetype>(
+                    preferences.bookReportGrading->size()
+                    )
+                )
             );
         m_specialInstructionsEdit->setPlainText(
-            storedSpecial.isValid()
-                ? storedSpecial.toString()
+            preferences.bookReportSpecialInstructions
+                ? QString::fromUtf8(
+                    preferences.bookReportSpecialInstructions->data(),
+                    static_cast<qsizetype>(
+                        preferences.bookReportSpecialInstructions->size()
+                        )
+                    )
                 : QString()
             );
     }
@@ -68,21 +82,24 @@ void SubPrepPage::loadStoredSettings()
     {
         m_gradingInstructionsEdit->setPlainText(
             defaultGradingInstructions()
-            );
+        );
         m_specialInstructionsEdit->setPlainText(
-            storedSpecial.isValid()
-                ? storedSpecial.toString()
+            preferences.bookReportSpecialInstructions
+                ? QString::fromUtf8(
+                    preferences.bookReportSpecialInstructions->data(),
+                    static_cast<qsizetype>(
+                        preferences.bookReportSpecialInstructions->size()
+                        )
+                    )
                 : defaultSpecialInstructions()
             );
     }
 
     m_subNotesEdit->setPlainText(
-        settingsService
-            ->loadOrDefault(
-                SettingsKeys::SubNotes,
-                QString()
-                )
-            .toString()
+        QString::fromUtf8(
+            preferences.subComments.data(),
+            static_cast<qsizetype>(preferences.subComments.size())
+            )
         );
 }
 
@@ -294,23 +311,27 @@ bool SubPrepPage::saveSubPrepInternal()
 
     restoreGradingDefaultIfNeeded();
 
-    const Status saved = settingsService->saveAll({
-        {
-            SettingsKeys::ClassMaterials,
-            m_classMaterialsEdit->toPlainText()
-        },
-        {
-            SettingsKeys::BookReportGrading,
+    const auto toUtf8 = [](const QString& value)
+    {
+        const QByteArray encoded = value.toUtf8();
+        return std::string(
+            encoded.constData(),
+            static_cast<std::size_t>(encoded.size())
+            );
+    };
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesSubPrepPreferencesPort
+        subPrepPreferencesPort(settingsService);
+    const auto saved = subPrepPreferencesPort.save({
+        .classMaterials = toUtf8(m_classMaterialsEdit->toPlainText()),
+        .bookReportGrading = toUtf8(
             m_gradingInstructionsEdit->toPlainText()
-        },
-        {
-            SettingsKeys::BookReportSpecialInstructions,
+            ),
+        .bookReportSpecialInstructions = toUtf8(
             m_specialInstructionsEdit->toPlainText()
-        },
-        {
-            SettingsKeys::SubNotes,
-            m_subNotesEdit->toPlainText()
-        }
+            ),
+        .subComments = toUtf8(m_subNotesEdit->toPlainText())
     });
     if (!saved)
     {

@@ -1877,3 +1877,42 @@ duplicate-symbol warnings, and LF-to-CRLF normalization.
 
 This personal display-name boundary is closed. Phase 2 remains open; the next
 boundary is not yet selected.
+
+## Verified typed Sub Prep saved-content settings bundle handoff
+
+Against baseline commit `d4dc18e0`, completed the typed Sub Prep saved-content
+settings boundary for the exact keys `subPrep/classMaterials`,
+`subPrep/bookReportGrading`, `subPrep/bookReportSpecialInstructions`, and
+`subPrep/subComments`. Typed load/save replaces only these raw settings calls,
+with one atomic `saveAll`, missing-versus-present grading and special-instruction
+defaults, unavailable-service no-op load and failed-save behavior, unrelated
+setting preservation, and existing dirty/autosave/failure behavior retained.
+
+The exact seven-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/sub_prep/ui/sub_prep_page_p.h`
+- `src/features/sub_prep/ui/sub_prep_page_settings.cpp`
+- `src/next/application/sub_prep_preferences.h`
+- `src/next/platform/application_services_sub_prep_preferences_port.h`
+- `tests/next_platform_application_services_sub_prep_preferences_port_tests.cpp`
+
+Zoom, campus, name/PersonalDetails, `OptionState`, and the broader Sub Prep
+migration remain separate. A compatibility correction is recorded: missing
+`loadSetting` returns a successful result containing an invalid `QVariant`; the
+adapter test asserts both `has_value` and `!value.isValid()`.
+
+Verification passed ownership validation with 825 handwritten sources and a
+Debug build. Focused tests passed 2/2; adapter slots passed 5/5, including the
+required SubPrep regressions
+`freshAndExistingGradingSettingsResolveWithoutDataLoss` and
+`clearDatabaseStateStopsAutosaveAndRemovesLoadedContent`. The offscreen launch
+smoke passed. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime
+references; dependency, Qt-free, static, call-site, and diff checks passed.
+The initial non-elevated FileTracker access denial was resolved by elevated
+retry. Other warnings were Vulkan/zlib notices, existing `/FORCE`/duplicate-
+symbol warnings, LF-to-CRLF normalization, and resident MSBuild nodes.
+
+This Sub Prep saved-content boundary is closed. Phase 2 remains open; the next
+boundary is not yet selected.

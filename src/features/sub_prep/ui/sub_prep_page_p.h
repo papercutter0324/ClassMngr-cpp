@@ -73,14 +73,6 @@ const QString LegacyZoomPassword =
     QStringLiteral("subPrep/personalZoomPassword");
 const QString LegacyZoomNotAvailable =
     QStringLiteral("subPrep/personalZoomNotAvailable");
-const QString ClassMaterials =
-    QStringLiteral("subPrep/classMaterials");
-const QString BookReportGrading =
-    QStringLiteral("subPrep/bookReportGrading");
-const QString BookReportSpecialInstructions =
-    QStringLiteral("subPrep/bookReportSpecialInstructions");
-const QString SubNotes =
-    QStringLiteral("subPrep/subComments");
 }
 
 SettingsService* openSettingsService(
