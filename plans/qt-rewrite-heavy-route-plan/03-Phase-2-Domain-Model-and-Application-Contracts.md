@@ -2832,3 +2832,35 @@ MSBuild processes were stopped; no command remains active.
 
 This PersonalDetailsPage signature-image boundary is closed. Phase 2 remains
 open; the next boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (typed PersonalDetailsPage current-campus read)
+
+Against baseline commit `9cec8483`, completed the remaining
+`PersonalDetailsPage::loadStoredSettings()` current-campus read using the
+existing typed `CurrentCampusPreferencesPort` and
+`ApplicationServicesCurrentCampusPreferencesPort`. Exact UTF-8/verbatim
+semantics are preserved. Repository loading remains for name, Zoom, and typed
+signature fields.
+
+The exact implementation/test scope is:
+
+- `src/features/my_info/ui/personal_details_page_sections.cpp`
+- `tests/my_workspace_page_tests.cpp`
+
+Missing/unavailable behavior, combo matching, first-campus fallback,
+case-insensitive comparison, corrective typed write, refresh, guards, and
+aggregate save remain preserved. No new contract, adapter, CMake change, or
+unrelated migration was introduced.
+
+Verification passed ownership validation with 831 handwritten sources and a
+clean-first serial Debug build. Focused tests passed 4/4 (MyWorkspace,
+current-campus adapter, CampusDashboard, and last-selected-campus); MyWorkspace
+slots passed 3/3 and current-campus adapter slots passed 6/6. Resource,
+dependency, offscreen, static, source, and diff checks passed. Page
+missing/unavailable cases are covered through adapter tests and source review;
+stored-campus matching and correction are directly tested. Expected notices
+were Vulkan/zlib and LF-to-CRLF normalization. Three leftover MSBuild
+processes were stopped; no command remains active.
+
+This PersonalDetailsPage current-campus boundary is closed. Phase 2 remains
+open; the next boundary is not yet selected.

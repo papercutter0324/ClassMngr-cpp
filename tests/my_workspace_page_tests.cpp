@@ -11,6 +11,7 @@
 #include <QApplication>
 #include <QBuffer>
 #include <QImage>
+#include <QComboBox>
 #include <QLabel>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -20,6 +21,7 @@ namespace
 {
 
 constexpr auto SignatureImageKey = "myInfo/signatureImage";
+constexpr auto CurrentCampusKey = "myInfo/campus";
 
 QString databasePath(QTemporaryDir& directory)
 {
@@ -85,6 +87,7 @@ private slots:
     void receivesTheTopLevelDatabaseState();
     void storedSignatureImageIsPreparedForPreview();
     void missingCorruptAndUnavailableSignatureImagesStayEmpty();
+    void storedCampusPrefillsAndCorrectsThroughTypedPort();
 };
 
 void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
@@ -274,6 +277,36 @@ void MyWorkspacePageTests::missingCorruptAndUnavailableSignatureImagesStayEmpty(
         QVERIFY(!preview->text().isEmpty());
         QVERIFY(preview->pixmap().isNull());
     }
+}
+
+void MyWorkspacePageTests::storedCampusPrefillsAndCorrectsThroughTypedPort()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(CurrentCampusKey),
+            QStringLiteral(" J ")
+            )
+        );
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    auto* campus = page.personalDetailsPage()->findChild<QComboBox*>();
+    QVERIFY(campus);
+    QCOMPARE(campus->currentData().toString(), QStringLiteral("j"));
+    QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
+
+    const auto stored = services.dataService()->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), QStringLiteral("Jeongja"));
 }
 
 QTEST_MAIN(MyWorkspacePageTests)

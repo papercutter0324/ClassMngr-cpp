@@ -879,7 +879,13 @@ void PersonalDetailsPage::loadStoredSettings()
 
     m_nameEdit->setText(details.name);
 
-    const QString campus = details.campus;
+    const QByteArray storedCampus = QByteArray::fromStdString(
+        ClassMngr::Next::Platform::
+            ApplicationServicesCurrentCampusPreferencesPort(
+                settingsService
+                ).read()
+        );
+    const QString campus = QString::fromUtf8(storedCampus);
 
     m_campusCombo->clear();
 
