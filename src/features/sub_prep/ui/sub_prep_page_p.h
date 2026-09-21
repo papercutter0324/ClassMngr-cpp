@@ -41,7 +41,6 @@
 #include <QSizePolicy>
 #include <QTextEdit>
 #include <QTimer>
-#include <QVariant>
 #include <QVBoxLayout>
 #include <QtAssert>
 
@@ -56,22 +55,6 @@ constexpr int TeacherNotesLines = 4;
 
 const QString NotAvailableText =
     QStringLiteral("N/A");
-
-namespace SettingsKeys
-{
-const QString MyInfoZoomLoginId =
-    QStringLiteral("myInfo/zoomLoginId");
-const QString MyInfoZoomPassword =
-    QStringLiteral("myInfo/zoomPassword");
-const QString MyInfoZoomNotAvailable =
-    QStringLiteral("myInfo/zoomNotAvailable");
-const QString LegacyZoomLoginId =
-    QStringLiteral("subPrep/personalZoomEmail");
-const QString LegacyZoomPassword =
-    QStringLiteral("subPrep/personalZoomPassword");
-const QString LegacyZoomNotAvailable =
-    QStringLiteral("subPrep/personalZoomNotAvailable");
-}
 
 SettingsService* openSettingsService(
     ApplicationServices* services
@@ -169,50 +152,6 @@ QString valueOrNa(
     return trimmed.isEmpty()
         ? NotAvailableText
         : trimmed;
-}
-
-QVariant loadSettingWithLegacyFallback(
-    SettingsService* settingsService,
-    const QString& primaryKey,
-    const QString& legacyKey,
-    const QVariant& defaultValue
-    )
-{
-    if (!settingsService)
-    {
-        return defaultValue;
-    }
-
-    QVariant value =
-        settingsService->loadOrDefault(
-            primaryKey,
-            QVariant()
-            );
-
-    if (value.isValid())
-    {
-        return value;
-    }
-
-    value =
-        settingsService->loadOrDefault(
-            legacyKey,
-            QVariant()
-            );
-
-    if (!value.isValid())
-    {
-        return defaultValue;
-    }
-
-    static_cast<void>(
-        settingsService->save(
-            primaryKey,
-            value
-            )
-        );
-
-    return value;
 }
 
 int textEditHeightForLines(

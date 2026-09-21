@@ -1,6 +1,7 @@
 #include "sub_prep_page_p.h"
 
 #include "next/platform/application_services_current_campus_preferences_port.h"
+#include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 #include "next/platform/application_services_sub_prep_preferences_port.h"
 
 #include <string>
@@ -117,38 +118,37 @@ void SubPrepPage::loadPersonalZoomInformation()
     const QSignalBlocker loginBlocker(m_zoomLoginIdEdit);
     const QSignalBlocker passwordBlocker(m_zoomPasswordEdit);
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesSubPrepPersonalZoomPreferencesPort
+        personalZoomPreferencesPort(settingsService);
+    const auto storedPreferences =
+        personalZoomPreferencesPort.load();
+    if (!storedPreferences)
+    {
+        return;
+    }
+
+    const auto& preferences =
+        storedPreferences.value();
+    const auto fromUtf8 = [](const std::string& value)
+    {
+        return QString::fromUtf8(
+            value.data(),
+            static_cast<qsizetype>(value.size())
+            );
+    };
     const QString loginId =
-        loadSettingWithLegacyFallback(
-            settingsService,
-            SettingsKeys::MyInfoZoomLoginId,
-            SettingsKeys::LegacyZoomLoginId,
-            NotAvailableText
-            )
-            .toString();
+        fromUtf8(preferences.loginId);
     const QString password =
-        loadSettingWithLegacyFallback(
-            settingsService,
-            SettingsKeys::MyInfoZoomPassword,
-            SettingsKeys::LegacyZoomPassword,
-            NotAvailableText
-            )
-            .toString();
-    const bool unavailable =
-        loadSettingWithLegacyFallback(
-            settingsService,
-            SettingsKeys::MyInfoZoomNotAvailable,
-            SettingsKeys::LegacyZoomNotAvailable,
-            true
-            )
-            .toBool();
+        fromUtf8(preferences.password);
 
     m_zoomLoginIdEdit->setText(
-        unavailable
+        preferences.unavailable
             ? NotAvailableText
             : valueOrNa(loginId)
         );
     m_zoomPasswordEdit->setText(
-        unavailable
+        preferences.unavailable
             ? NotAvailableText
             : valueOrNa(password)
         );

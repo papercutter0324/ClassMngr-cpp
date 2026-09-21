@@ -1949,3 +1949,41 @@ executable listing.
 
 This Sub Prep current-campus boundary is closed. Phase 2 remains open; the
 next boundary is not yet selected.
+
+## Verified typed Sub Prep personal-Zoom read/migration boundary handoff
+
+Against baseline commit `2ae382db`, completed the typed Sub Prep personal-Zoom
+read/migration boundary. Primary keys are `myInfo/zoomLoginId`,
+`myInfo/zoomPassword`, and `myInfo/zoomNotAvailable`; legacy fallbacks are
+`subPrep/personalZoomEmail`, `subPrep/personalZoomPassword`, and
+`subPrep/personalZoomNotAvailable`.
+
+Primary values take precedence. Legacy reads are best-effort migrated to the
+primary keys; if migration save fails, the legacy values remain readable.
+Missing values retain N/A credentials and the default unavailable state, and
+unavailable-service behavior is preserved. QVariant/UTF-8 coercion,
+credential hiding, and `valueOrNa` display behavior remain unchanged. There
+are no writer changes to `PersonalDetailsRepository`, personal-details
+aggregation, `OptionState`, or unrelated Sub Prep settings.
+
+The exact seven-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/sub_prep/ui/sub_prep_page_p.h`
+- `src/features/sub_prep/ui/sub_prep_page_settings.cpp`
+- `src/next/application/sub_prep_personal_zoom_preferences.h`
+- `src/next/platform/application_services_sub_prep_personal_zoom_preferences_port.h`
+- `tests/next_platform_application_services_sub_prep_personal_zoom_preferences_port_tests.cpp`
+
+Verification passed ownership validation with 828 handwritten sources and a
+Debug build. CTest passed 2/2; adapter slots passed 5/5, and Sub Prep
+regressions passed, including `zoomUnavailableHidesStoredCredentials`, the
+grading regression, and the database-state/autosave regression. The offscreen
+launch smoke passed. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime
+references; dependency, Qt-free, static, key-ownership, call-site, and diff
+checks passed. Warnings were Vulkan/zlib notices, existing
+`/FORCE`/duplicate-symbol warnings, and LF-to-CRLF normalization.
+
+This personal-Zoom boundary is closed. Phase 2 remains open; the next boundary
+is not yet selected.
