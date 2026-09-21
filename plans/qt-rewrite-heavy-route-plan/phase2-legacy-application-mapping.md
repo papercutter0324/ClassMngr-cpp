@@ -1804,3 +1804,41 @@ and LF-to-CRLF normalization.
 
 This current-campus boundary is closed. Phase 2 remains open; the next
 boundary is not yet selected.
+
+## Verified typed custom-color palette persistence boundary handoff
+
+Against baseline commit `84e5cf70`, completed the typed custom-color palette
+persistence boundary for the exact key `custom_colors`. The typed port owns a
+fixed 16-entry palette with canonical uppercase defaults, missing/unavailable
+fallbacks, compact JSON round-trip, legacy `QStringList`/JSON/separator
+payload compatibility, invalid-entry fallback, fixed 16-entry normalization,
+canonicalization, save-failure warning, and unrelated-setting preservation.
+`QColorDialog` behavior remains unchanged.
+
+The exact six-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/core/utils/colorutils.cpp`
+- `src/next/application/custom_color_palette_preferences.h`
+- `src/next/platform/application_services_custom_color_palette_preferences_port.h`
+- `tests/next_platform_application_services_custom_color_palette_preferences_port_tests.cpp`
+
+`ColorUtils` now uses the typed port with no raw settings calls. `myInfo/name`,
+Sub Prep, `OptionState`, and unrelated settings remain separate. Compatibility
+diagnosis confirmed that valid stored colors are Qt-canonicalized lowercase on
+read, while default fallback entries remain uppercase on write. SQLite coerces
+`QStringList` settings to empty `TEXT`, so the `QStringList` parser path is
+covered directly through the adapter helper.
+
+Verification passed ownership validation with 819 handwritten sources and an
+elevated Debug build. Focused tests passed 5/5 (adapter, TestingClassesPage,
+ClassesPage, ScheduleImportDialog, and SubPrepPage); adapter slots passed 6/6,
+and the offscreen launch smoke passed. Resource checks passed 6 RCC packs/7
+runtime IDs/7 runtime references; dependency, Qt-free, static, call-site, and
+diff checks passed. Warnings were missing Vulkan headers/Qt zlib fallback,
+existing `/FORCE`/duplicate-symbol linker warnings, and LF-to-CRLF
+normalization; no standalone ColorUtils target exists.
+
+This custom-color boundary is closed. Phase 2 remains open; the next boundary
+is not yet selected.

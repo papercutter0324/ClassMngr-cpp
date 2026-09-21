@@ -1,124 +1,18 @@
 #include "colorutils.h"
 #include "app/services/feature_services.h"
+#include "next/platform/application_services_custom_color_palette_preferences_port.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
+#include <cstddef>
+#include <string>
 #include <QColor>
 #include <QColorDialog>
-#include <QDebug>
 #include <QDialog>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonValue>
 #include <QRegularExpression>
-#include <QVariant>
 
 namespace
 {
-constexpr auto CustomColorsSettingKey = "custom_colors";
-
-const std::array<QString, ColorUtils::CUSTOM_COLOR_COUNT> DefaultCustomColors =
-{
-    "#F94144",
-    "#F3722C",
-    "#F8961E",
-    "#F9C74F",
-    "#90BE6D",
-    "#43AA8B",
-    "#577590",
-    "#277DA1",
-    "#9B5DE5",
-    "#F15BB5",
-    "#00BBF9",
-    "#00F5D4",
-    "#FFFFFF",
-    "#D9D9D9",
-    "#808080",
-    "#000000",
-};
-
-QStringList defaultCustomColors()
-{
-    return QStringList(
-        DefaultCustomColors.begin(),
-        DefaultCustomColors.end()
-        );
-}
-
-QStringList colorsFromJson(
-    const QString& text
-    )
-{
-    QJsonParseError error;
-
-    const QJsonDocument document =
-        QJsonDocument::fromJson(
-            text.toUtf8(),
-            &error
-            );
-
-    if (error.error != QJsonParseError::NoError
-        || !document.isArray())
-    {
-        return {};
-    }
-
-    QStringList colors;
-
-    for (const QJsonValue& value : document.array())
-    {
-        colors.append(
-            value.toString()
-            );
-    }
-
-    return colors;
-}
-
-QStringList colorsFromSetting(
-    const QVariant& value
-    )
-{
-    const QStringList listValue =
-        value.toStringList();
-
-    if (listValue.size() > 1
-        || (listValue.size() == 1
-            && QColor(listValue.first()).isValid()))
-    {
-        return listValue;
-    }
-
-    const QString text =
-        value.toString().trimmed();
-
-    if (text.isEmpty())
-    {
-        return {};
-    }
-
-    const QStringList jsonColors =
-        colorsFromJson(text);
-
-    if (!jsonColors.isEmpty())
-    {
-        return jsonColors;
-    }
-
-    const QChar separator =
-        text.contains('\n')
-            ? QChar('\n')
-            : (text.contains(';')
-                   ? QChar(';')
-                   : QChar(','));
-
-    return text.split(
-        separator,
-        Qt::SkipEmptyParts
-        );
-}
-
 double linearizedSrgbChannel(int channel)
 {
     const double srgb = channel / 255.0;
@@ -133,34 +27,6 @@ double relativeLuminance(const QColor& color)
     return (0.2126 * linearizedSrgbChannel(color.red()))
         + (0.7152 * linearizedSrgbChannel(color.green()))
         + (0.0722 * linearizedSrgbChannel(color.blue()));
-}
-
-QStringList normalizeCustomColors(
-    const QStringList& source
-    )
-{
-    QStringList colors =
-        defaultCustomColors();
-
-    for (
-        int i = 0;
-        i < std::min(
-            static_cast<int>(source.size()),
-            ColorUtils::CUSTOM_COLOR_COUNT
-            );
-        ++i
-        )
-    {
-        const QColor color(source[i].trimmed());
-
-        if (color.isValid())
-        {
-            colors[i] =
-                color.name(QColor::HexRgb);
-        }
-    }
-
-    return colors;
 }
 
 void applyCustomColors(
@@ -183,20 +49,40 @@ void applyCustomColors(
     }
 }
 
-QString serializeCustomColors(
-    const QStringList& colors
+QStringList colorsForDialog(
+    const ClassMngr::Next::Application::CustomColorPalette& palette
     )
 {
-    QJsonArray array;
-
-    for (const QString& color : colors)
+    QStringList colors;
+    for (const std::string& color : palette.hexColors)
     {
-        array.append(color);
+        colors.append(QString::fromUtf8(
+            color.data(),
+            static_cast<qsizetype>(color.size())
+            ));
     }
+    return colors;
+}
 
-    return QString::fromUtf8(
-        QJsonDocument(array).toJson(QJsonDocument::Compact)
-        );
+ClassMngr::Next::Application::CustomColorPalette paletteFromDialog()
+{
+    auto palette =
+        ClassMngr::Next::Application::defaultCustomColorPalette();
+    for (std::size_t index = 0;
+         index < ClassMngr::Next::Application::CustomColorPalette::EntryCount;
+         ++index)
+    {
+        const QColor color = QColorDialog::customColor(
+            static_cast<int>(index)
+            );
+        if (color.isValid())
+        {
+            palette.hexColors[index] = color.name(
+                QColor::HexRgb
+                ).toStdString();
+        }
+    }
+    return palette;
 }
 }
 
@@ -321,16 +207,12 @@ QColor ColorUtils::getColor(
 
 void ColorUtils::loadCustomColors(SettingsService* settingsService)
 {
-    QStringList colors = defaultCustomColors();
-    if (settingsService)
-    {
-        colors = normalizeCustomColors(
-            colorsFromSetting(
-                settingsService->loadOrDefault(CustomColorsSettingKey, QString())
-                )
-            );
-    }
-    applyCustomColors(colors);
+    ClassMngr::Next::Platform::
+        ApplicationServicesCustomColorPalettePreferencesPort
+        palettePreferencesPort(settingsService);
+    applyCustomColors(
+        colorsForDialog(palettePreferencesPort.read())
+        );
 }
 
 void ColorUtils::saveCustomColors(SettingsService* settingsService)
@@ -338,21 +220,8 @@ void ColorUtils::saveCustomColors(SettingsService* settingsService)
     if (!settingsService)
         return;
 
-    QStringList colors;
-    for (int index = 0; index < CUSTOM_COLOR_COUNT; ++index)
-    {
-        const QColor color = QColorDialog::customColor(index);
-        colors.append(
-            color.isValid()
-                ? color.name(QColor::HexRgb)
-                : DefaultCustomColors[index]
-            );
-    }
-    if (const Status saved = settingsService->save(
-            CustomColorsSettingKey,
-            serializeCustomColors(colors)
-            ); !saved)
-    {
-        qWarning() << "Failed to save custom colors:" << saved.error();
-    }
+    ClassMngr::Next::Platform::
+        ApplicationServicesCustomColorPalettePreferencesPort
+        palettePreferencesPort(settingsService);
+    palettePreferencesPort.write(paletteFromDialog());
 }
