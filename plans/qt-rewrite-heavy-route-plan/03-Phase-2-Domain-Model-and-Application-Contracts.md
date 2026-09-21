@@ -2738,3 +2738,34 @@ leftover MSBuild processes were stopped cleanly; no command remains active.
 
 This InitialSetupWizard boundary is closed. Phase 2 remains open; the next
 boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (typed InitialSetupWizard display-name prefill)
+
+Against baseline commit `bd1e0fec`, completed the remaining InitialSetupWizard
+`myInfo/name` prefill cutover using the existing typed
+`PersonalDisplayNamePreferencesPort` and
+`ApplicationServicesPersonalDisplayNamePreferencesPort`. UTF-8 and whitespace
+behavior matches legacy `QVariant::toString()` semantics; missing or
+unavailable values are empty, and the read path performs no writes.
+
+The exact implementation/test scope is:
+
+- `src/features/setup/ui/initial_setup_wizard.cpp`
+- `tests/initial_setup_wizard_tests.cpp`
+
+PersonalDetailsRepository aggregate loading remains for `validatePage` aggregate
+save and other fields. Trimming/validation, aggregate save, the typed
+signature-image path, and guards remain preserved; no new contract, adapter,
+CMake change, or unrelated migration was introduced.
+
+Verification passed ownership validation with 831 handwritten sources and a
+clean-first Debug build. CTest passed 5/5; new wizard name slots passed 2/2,
+the display-name adapter passed 5/5, and the signature adapter passed 4/4.
+Resource, dependency, offscreen, static, source, and diff checks passed. A
+transient stale-AUTOGEN omission was resolved by forced regeneration/rebuild.
+Expected notices were missing Vulkan headers, the bundled-zlib fallback, and
+LF-to-CRLF normalization. Three leftover MSBuild processes were stopped; no
+command remains active.
+
+This InitialSetupWizard display-name boundary is closed. Phase 2 remains open;
+the next boundary is not yet selected.

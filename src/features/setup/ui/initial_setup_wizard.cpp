@@ -9,6 +9,7 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
 #include "core/utils/colorutils.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -377,11 +378,17 @@ public:
             return;
         }
 
-        const PersonalDetails details =
-            PersonalDetailsRepository(setup->settingsService()).load();
+        const std::string storedName =
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalDisplayNamePreferencesPort(
+                    setup->settingsService()
+                    ).read();
         if (m_name->text().trimmed().isEmpty())
         {
-            m_name->setText(details.name);
+            m_name->setText(QString::fromUtf8(
+                storedName.data(),
+                static_cast<qsizetype>(storedName.size())
+                ));
         }
         const QByteArray storedSignature = QByteArray::fromStdString(
             ClassMngr::Next::Platform::

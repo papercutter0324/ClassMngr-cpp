@@ -20,6 +20,7 @@ namespace
 {
 
 constexpr auto SignatureImageKey = "myInfo/signatureImage";
+constexpr auto DisplayNameKey = "myInfo/name";
 
 QString databasePath(QTemporaryDir& directory)
 {
@@ -78,6 +79,8 @@ private slots:
     void personalNameFieldRetainsFocusWhileTyping();
     void storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement();
     void missingInvalidAndUnavailableSignatureImagesStayEmpty();
+    void storedDisplayNamePreservesUtf8AndWhitespace();
+    void missingAndUnavailableDisplayNameStayEmpty();
 
 private:
     QTemporaryDir m_directory;
@@ -230,6 +233,56 @@ void InitialSetupWizardTests::missingInvalidAndUnavailableSignatureImagesStayEmp
         auto* preview = signaturePreview(wizard);
         QVERIFY(preview);
         QVERIFY(!preview->text().isEmpty());
+    }
+}
+
+void InitialSetupWizardTests::storedDisplayNamePreservesUtf8AndWhitespace()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QString storedName = QStringLiteral("  홍길동  ");
+    QVERIFY(
+        services.settingsService()->save(
+            QString::fromUtf8(DisplayNameKey),
+            storedName
+            )
+        );
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName"));
+    QVERIFY(name);
+    QCOMPARE(name->text(), storedName);
+}
+
+void InitialSetupWizardTests::missingAndUnavailableDisplayNameStayEmpty()
+{
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+
+        InitialSetupWizard wizard(&services);
+        showPersonalDetailsPage(wizard);
+
+        auto* name = wizard.findChild<QLineEdit*>(
+            QStringLiteral("setupUserName"));
+        QVERIFY(name);
+        QVERIFY(name->text().isEmpty());
+    }
+
+    {
+        ApplicationServices services;
+        InitialSetupWizard wizard(&services);
+        showPersonalDetailsPage(wizard);
+
+        auto* name = wizard.findChild<QLineEdit*>(
+            QStringLiteral("setupUserName"));
+        QVERIFY(name);
+        QVERIFY(name->text().isEmpty());
     }
 }
 
