@@ -1128,6 +1128,47 @@ void ActionRegistry::createOptionActions()
             false
             );
 
+    aiCommentProviderState->onPersist =
+        [](const ::AiCommentProvider provider)
+    {
+        ClassMngr::Next::Application::AiCommentProvider preference;
+        switch (provider)
+        {
+        case ::AiCommentProvider::ChatGPT:
+            preference = ClassMngr::Next::Application::
+                AiCommentProvider::ChatGPT;
+            break;
+
+        case ::AiCommentProvider::Gemini:
+            preference = ClassMngr::Next::Application::
+                AiCommentProvider::Gemini;
+            break;
+
+        case ::AiCommentProvider::Claude:
+            preference = ClassMngr::Next::Application::
+                AiCommentProvider::Claude;
+            break;
+
+        case ::AiCommentProvider::MicrosoftCopilot:
+            preference = ClassMngr::Next::Application::
+                AiCommentProvider::MicrosoftCopilot;
+            break;
+
+        case ::AiCommentProvider::CustomWebsite:
+            preference = ClassMngr::Next::Application::
+                AiCommentProvider::CustomWebsite;
+            break;
+
+        default:
+            return;
+        }
+
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentProviderPreferencesPort().write(
+                preference
+                );
+    };
+
     const auto storedAiCommentProvider =
         ClassMngr::Next::Platform::
             SettingsManagerAiCommentProviderPreferencesPort()

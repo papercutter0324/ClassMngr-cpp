@@ -143,6 +143,8 @@ void AiCommentOptionsTests::
 
     ActionRegistry defaults;
     defaults.createActions();
+    const QString providerKey =
+        QString::fromUtf8(OptionKeys::AiCommentProvider);
     const QString voiceKey =
         QString::fromUtf8(OptionKeys::AiCommentVoice);
     QVERIFY(defaults.aiCommentProviderState);
@@ -151,6 +153,7 @@ void AiCommentOptionsTests::
         defaults.aiCommentProviderState->current(),
         AiCommentProvider::ChatGPT
         );
+    QCOMPARE(settings.get(providerKey).toInt(), 0);
     QCOMPARE(
         defaults.aiCommentVoiceState->current(),
         AiCommentVoice::DirectToStudent
@@ -159,6 +162,7 @@ void AiCommentOptionsTests::
     defaults.aiCommentProviderState->set(
         AiCommentProvider::Claude
         );
+    QCOMPARE(settings.get(providerKey).toInt(), 2);
     defaults.aiCommentVoiceState->set(
         AiCommentVoice::ThirdPerson
         );
@@ -174,6 +178,19 @@ void AiCommentOptionsTests::
     QCOMPARE(
         reloaded.aiCommentVoiceState->current(),
         AiCommentVoice::ThirdPerson
+        );
+
+    reloaded.aiCommentProviderState->set(
+        AiCommentProvider::ChatGPT
+        );
+    QCOMPARE(settings.get(providerKey).toInt(), 0);
+    settings.sync();
+
+    ActionRegistry reloadedDefaultProvider;
+    reloadedDefaultProvider.createActions();
+    QCOMPARE(
+        reloadedDefaultProvider.aiCommentProviderState->current(),
+        AiCommentProvider::ChatGPT
         );
 
     reloaded.aiCommentVoiceState->set(

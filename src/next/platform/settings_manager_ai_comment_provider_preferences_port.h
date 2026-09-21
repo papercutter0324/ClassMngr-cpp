@@ -49,6 +49,43 @@ public:
         }
     }
 
+    void write(
+        const Application::AiCommentProvider provider
+        ) const override
+    {
+        int storedValue = 0;
+        switch (provider)
+        {
+        case Application::AiCommentProvider::ChatGPT:
+            storedValue = 0;
+            break;
+
+        case Application::AiCommentProvider::Gemini:
+            storedValue = 1;
+            break;
+
+        case Application::AiCommentProvider::Claude:
+            storedValue = 2;
+            break;
+
+        case Application::AiCommentProvider::MicrosoftCopilot:
+            storedValue = 3;
+            break;
+
+        case Application::AiCommentProvider::CustomWebsite:
+            storedValue = 4;
+            break;
+
+        default:
+            return;
+        }
+
+        SettingsManager::instance().set(
+            key(),
+            storedValue
+            );
+    }
+
 private:
     [[nodiscard]] static QString key()
     {

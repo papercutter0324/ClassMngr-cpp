@@ -20,6 +20,10 @@ public:
     virtual ~AiCommentProviderPreferencesPort() = default;
 
     [[nodiscard]] virtual AiCommentProvider read() const = 0;
+
+    virtual void write(
+        AiCommentProvider provider
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

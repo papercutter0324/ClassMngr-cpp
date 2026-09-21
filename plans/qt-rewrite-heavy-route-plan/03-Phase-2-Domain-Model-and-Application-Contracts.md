@@ -3136,3 +3136,27 @@ An independent elevated Debug rebuild passed. The voice adapter passed 7/7,
 AI/ActionRegistry 10/10, language adapter and regression 8/8 each, and
 SaveMode adapter 6/6. Static Qt-free, call-site, ownership, and diff checks
 passed; every test used a fresh temporary `CLASSMNGR_SETTINGS_ROOT`.
+
+#### Progress update - 2026-09-21 (typed AI-comment provider persistence slice)
+
+Against baseline commit `c0281217` (`Phase2 - Cut ActionRegistry AI voice
+persistence over`), added the typed AI-comment provider write contract. The
+current five-file scope is:
+
+- `src/next/application/ai_comment_provider_preferences.h`
+- `src/next/platform/settings_manager_ai_comment_provider_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_ai_comment_provider_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+Canonical `options/aiCommentProvider` values are 0=`ChatGPT`, 1=`Gemini`,
+2=`Claude`, 3=`MicrosoftCopilot`, and 4=`CustomWebsite`. `ActionRegistry`
+installs `onPersist` before startup selection; unknown or missing reads fall
+back to `ChatGPT`, while reload and direct persistence retain canonical values.
+Custom URL behavior and other option writers remain unchanged; no CMake changes
+were made.
+
+An independent elevated Debug rebuild passed. The provider adapter passed 7/7,
+AI/ActionRegistry 10/10, voice 7/7, language adapter and regression 8/8 each,
+and SaveMode 6/6. Static Qt-free, call-site, ownership, and diff checks passed;
+every test used a fresh temporary `CLASSMNGR_SETTINGS_ROOT`.

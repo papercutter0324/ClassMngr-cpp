@@ -31,6 +31,7 @@ private slots:
     void cleanup();
     void usesTheExactLegacyKey();
     void mapsAllStoredProviderValues();
+    void writesAllProviderValuesForRoundTrip();
     void missingAndUnknownValuesDefaultToChatGPT();
     void unavailableSettingsDefaultToChatGPT();
 
@@ -101,6 +102,42 @@ mapsAllStoredProviderValues()
             expectedProviders[storedValue]
             );
     }
+}
+
+void NextPlatformSettingsManagerAiCommentProviderPreferencesPortTests::
+writesAllProviderValuesForRoundTrip()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerAiCommentProviderPreferencesPort port;
+
+    const AiCommentProvider expectedProviders[] = {
+        AiCommentProvider::ChatGPT,
+        AiCommentProvider::Gemini,
+        AiCommentProvider::Claude,
+        AiCommentProvider::MicrosoftCopilot,
+        AiCommentProvider::CustomWebsite
+    };
+
+    for (int providerIndex = 0; providerIndex < 5; ++providerIndex)
+    {
+        port.write(expectedProviders[providerIndex]);
+        QCOMPARE(
+            settings.get(providerKey()).toInt(),
+            providerIndex
+            );
+        QCOMPARE(
+            port.read(),
+            expectedProviders[providerIndex]
+            );
+    }
+
+    port.write(
+        static_cast<AiCommentProvider>(99)
+        );
+    QCOMPARE(
+        settings.get(providerKey()).toInt(),
+        4
+        );
 }
 
 void NextPlatformSettingsManagerAiCommentProviderPreferencesPortTests::
