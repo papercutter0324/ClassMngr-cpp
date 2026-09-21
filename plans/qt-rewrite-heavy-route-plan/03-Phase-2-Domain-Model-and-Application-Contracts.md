@@ -2110,3 +2110,27 @@ optional broad `ALL_BUILD` was stopped; no code failure was indicated.
 
 The typed AI-comment-voice read cutover is closed. Phase 2 remains open; the
 next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (ActionRegistry typed AI-comment-provider read cutover)
+
+Against baseline commit `610e53e6`, completed the remaining ActionRegistry
+caller cutover to the existing typed provider port for the exact key
+`OptionKeys::AiCommentProvider == "options/aiCommentProvider"`. Values map `0`
+to `ChatGPT`, `1` to `Gemini`, `2` to `Claude`, `3` to `Microsoft Copilot`,
+and `4` to `CustomWebsite`; missing, unknown, and unavailable values fall back
+to `ChatGPT`. There is no direct raw provider load.
+
+The existing `OptionState` remains the compatibility writer and menu owner.
+Custom URL, provider URL, prompt, voice, and dialog behavior remain unchanged.
+
+Verification passed configure/ownership with 800 sources and a clean focused
+Debug build. The offscreen focused suite passed 7/7, covering the provider
+adapter, custom-URL adapter, AI-options provider/custom-URL cases, report
+widget, DialogShell, and startup visual/performance. Resource checks passed 6
+RCC packs/7 runtime IDs/7 runtime references; dependency
+(`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff checks
+passed. The exact dirty scope was one file. Expected warnings remained
+nonblocking; no clipboard failure occurred.
+
+The typed AI-comment-provider read cutover is closed. Phase 2 remains open; the
+next slice is not yet selected.

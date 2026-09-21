@@ -7,6 +7,7 @@
 #include "ui/shared/styles/themed_icon_utils.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
+#include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -1018,8 +1019,32 @@ void ActionRegistry::createOptionActions()
             false
             );
 
-    aiCommentProviderState->loadFromSettings(
-        AiCommentProvider::ChatGPT
+    const auto storedAiCommentProvider =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentProviderPreferencesPort()
+            .read();
+    ::AiCommentProvider legacyAiCommentProvider =
+        ::AiCommentProvider::ChatGPT;
+    switch (storedAiCommentProvider)
+    {
+    case ClassMngr::Next::Application::AiCommentProvider::Gemini:
+        legacyAiCommentProvider = ::AiCommentProvider::Gemini;
+        break;
+    case ClassMngr::Next::Application::AiCommentProvider::Claude:
+        legacyAiCommentProvider = ::AiCommentProvider::Claude;
+        break;
+    case ClassMngr::Next::Application::AiCommentProvider::MicrosoftCopilot:
+        legacyAiCommentProvider = ::AiCommentProvider::MicrosoftCopilot;
+        break;
+    case ClassMngr::Next::Application::AiCommentProvider::CustomWebsite:
+        legacyAiCommentProvider = ::AiCommentProvider::CustomWebsite;
+        break;
+    case ClassMngr::Next::Application::AiCommentProvider::ChatGPT:
+    default:
+        break;
+    }
+    aiCommentProviderState->set(
+        legacyAiCommentProvider
         );
     const ClassMngr::Next::Platform::
         SettingsManagerAiCommentCustomWebsitePort
