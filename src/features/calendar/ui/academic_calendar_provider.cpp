@@ -1,20 +1,18 @@
 #include "academic_calendar_provider.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/academic_calendar_schedule_preferences.h"
+#include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
 #include "next/application/calendar_first_day_of_week_preferences.h"
 #include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 
 #include <QDateTime>
-#include <QDebug>
 #include <QJsonDocument>
 #include <QLocale>
 #include <QVariantMap>
 
 namespace
 {
-const QString AcademicCalendarSettingsKey =
-    QStringLiteral("calendar/academicSchedule/v1");
-
 QDate firstMondayInMonth(int year, int month)
 {
     const QDate first(year, month, 1);
@@ -221,20 +219,22 @@ void AcademicCalendarProvider::reload()
     m_schedule.clear();
     loadOptions();
 
-    if (m_settingsService && m_settingsService->isAvailable())
+    const std::string json =
+        ClassMngr::Next::Platform::
+            ApplicationServicesAcademicCalendarSchedulePreferencesPort(
+                m_settingsService
+                ).read();
+    if (!json.empty())
     {
-        const QByteArray json =
-            m_settingsService
-                ->loadOrDefault(
-                    AcademicCalendarSettingsKey,
-                    QString()
-                    )
-                .toString()
-                .toUtf8();
-
         QJsonParseError error;
         const QJsonDocument document =
-            QJsonDocument::fromJson(json, &error);
+            QJsonDocument::fromJson(
+                QByteArray(
+                    json.data(),
+                    static_cast<qsizetype>(json.size())
+                    ),
+                &error
+                );
 
         if (
             error.error == QJsonParseError::NoError
@@ -330,23 +330,13 @@ QString AcademicCalendarProvider::tooltipText(
 
 void AcademicCalendarProvider::persist()
 {
-    if (!m_settingsService || !m_settingsService->isAvailable())
-    {
-        return;
-    }
-
-    const QString json =
-        QString::fromUtf8(
-            QJsonDocument(m_schedule.toJson())
-                .toJson(QJsonDocument::Compact)
-            );
-    if (const Status saved = m_settingsService->save(
-            AcademicCalendarSettingsKey,
-            json
-            ); !saved)
-    {
-        qWarning() << "Failed to save academic calendar schedule:" << saved.error();
-    }
+    const QByteArray json =
+        QJsonDocument(m_schedule.toJson())
+            .toJson(QJsonDocument::Compact);
+    ClassMngr::Next::Platform::
+        ApplicationServicesAcademicCalendarSchedulePreferencesPort(
+            m_settingsService
+            ).write(json.toStdString());
 }
 
 void AcademicCalendarProvider::persistFirstDayOfWeek()

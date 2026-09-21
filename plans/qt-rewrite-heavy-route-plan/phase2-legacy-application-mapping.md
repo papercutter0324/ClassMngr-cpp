@@ -1696,3 +1696,38 @@ normalization.
 
 This narrow calendar first-day-of-week boundary is closed. Phase 2 remains
 open; the next boundary is not yet selected.
+
+## Verified typed AcademicCalendarProvider schedule-persistence boundary handoff
+
+Against baseline commit `7a50b3e9`, completed the typed persistence boundary
+for the exact key `calendar/academicSchedule/v1`. The Qt-free contract carries
+opaque `std::string` JSON, with the adapter preserving exact-key UTF-8/
+`QVariant` round trips. Missing or unavailable services return an empty read
+and make writes no-ops; payload and unrelated settings are preserved, and save
+failure retains warning behavior.
+
+`AcademicCalendarProvider::reload()` and `persist()` now use only the typed
+port. `AcademicCalendarSchedule::toJson()`/`fromJson()`, schema/version 1,
+malformed-load clearing, defaults, provider API, revision/signal ordering,
+panel, QML, and production ownership remain unchanged.
+
+The exact six-file implementation scope is:
+
+- `cmake/next.cmake`
+- `cmake/tests/next.cmake`
+- `src/features/calendar/ui/academic_calendar_provider.cpp`
+- `src/next/application/academic_calendar_schedule_preferences.h`
+- `src/next/platform/application_services_academic_calendar_schedule_preferences_port.h`
+- `tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp`
+
+Verification passed ownership validation with 810 handwritten sources and a
+clean Debug rebuild. Focused tests passed 8/8, including the new adapter,
+`ClassMngrAcademicCalendarTests` JSON round-trip/malformed fallback coverage,
+and calendar/page/ScheduleWidget coverage; the offscreen launch smoke passed.
+Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency, Qt-free, static, call-site, and diff checks passed. Warnings were
+missing Vulkan headers, the Qt bundled-zlib fallback, existing
+`/FORCE`/duplicate-stub linker warnings, and LF-to-CRLF normalization.
+
+This remaining narrow calendar persistence boundary is closed. Phase 2 remains
+open; the next boundary is not yet selected.
