@@ -5,13 +5,15 @@
 #include "core/application_services.h"
 #include "domain/models/teacher.h"
 #include "features/classes/config/class_info_config.h"
-#include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
+#include "next/platform/application_services_personal_signature_preferences_port.h"
+#include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 #include "core/utils/colorutils.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -424,27 +426,6 @@ public:
             return false;
         }
 
-        PersonalDetails details =
-            PersonalDetailsRepository(setup->settingsService()).load();
-        details.name = m_name->text().trimmed();
-        if (!m_signature.isEmpty())
-        {
-            details.signatureImage = m_signature;
-        }
-        else
-        {
-            const QByteArray storedSignature = QByteArray::fromStdString(
-                ClassMngr::Next::Platform::
-                    ApplicationServicesPersonalSignatureImagePort(
-                        setup->settingsService()
-                        ).read()
-                );
-            if (!storedSignature.isEmpty())
-            {
-                details.signatureImage = storedSignature;
-            }
-        }
-
         const auto toUtf8 = [](const QString& value)
         {
             const QByteArray encoded = value.toUtf8();
@@ -466,24 +447,61 @@ public:
                 );
         };
 
+        const std::string campus =
+            ClassMngr::Next::Platform::
+                ApplicationServicesCurrentCampusPreferencesPort(
+                    setup->settingsService()
+                    ).read();
+
+        const auto zoomResult =
+            ClassMngr::Next::Platform::
+                ApplicationServicesSubPrepPersonalZoomPreferencesPort(
+                    setup->settingsService()
+                    ).load();
+        const auto zoom = zoomResult
+            ? zoomResult.value()
+            : ClassMngr::Next::Application::SubPrepPersonalZoomPreferences{};
+
+        const QByteArray storedSignature = QByteArray::fromStdString(
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalSignatureImagePort(
+                    setup->settingsService()
+                    ).read()
+            );
+        const QByteArray signatureImage =
+            m_signature.isEmpty()
+                ? storedSignature
+                : m_signature;
+
+        const auto signaturePreferencesResult =
+            ClassMngr::Next::Platform::
+                ApplicationServicesPersonalSignaturePreferencesPort(
+                    setup->settingsService()
+                    ).load();
+        const auto signaturePreferences = signaturePreferencesResult
+            ? signaturePreferencesResult.value()
+            : ClassMngr::Next::Application::PersonalSignaturePreferences{};
+
         const auto saved =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalDetailsSavePort(
                     setup->settingsService()
                     ).save({
-                        .name = toUtf8(details.name),
-                        .campus = toUtf8(details.campus),
-                        .zoomLoginId = toUtf8(details.zoomLoginId),
-                        .zoomPassword = toUtf8(details.zoomPassword),
-                        .zoomNotAvailable = details.zoomNotAvailable,
-                        .signatureImage = toOpaqueBytes(details.signatureImage),
-                        .signatureMode = details.signatureMode == SignatureMode::Type
+                        .name = toUtf8(m_name->text().trimmed()),
+                        .campus = campus,
+                        .zoomLoginId = zoom.loginId,
+                        .zoomPassword = zoom.password,
+                        .zoomNotAvailable = zoom.unavailable,
+                        .signatureImage = toOpaqueBytes(signatureImage),
+                        .signatureMode = signaturePreferences.mode ==
+                                ClassMngr::Next::Application::
+                                    PersonalSignatureMode::Type
                             ? ClassMngr::Next::Application::
                                 PersonalSignatureMode::Type
                             : ClassMngr::Next::Application::
                                 PersonalSignatureMode::Image,
-                        .typedSignatureText = toUtf8(details.typedSignatureText),
-                        .typedSignatureFont = details.typedSignatureFont
+                        .typedSignatureText = signaturePreferences.typedSignatureText,
+                        .typedSignatureFont = signaturePreferences.typedSignatureFont
                     });
         if (!saved)
         {

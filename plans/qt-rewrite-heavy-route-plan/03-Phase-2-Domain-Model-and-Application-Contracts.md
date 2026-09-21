@@ -3033,3 +3033,35 @@ Qt/font/plugin, Vulkan/zlib, LF-to-CRLF, and FileTracker notices.
 
 This InitialSetupWizard aggregate-writer boundary is closed. Phase 2 remains
 open; the next boundary is not yet selected.
+
+#### Progress update - 2026-09-21 (typed InitialSetupWizard read composition)
+
+Against baseline commit `5cf3d9e1`, InitialSetupWizard no longer references
+`PersonalDetailsRepository` or accesses settings directly. It composes the
+existing typed campus, SubPrep Zoom, signature-image, and
+signature-preferences reads into the existing nine-key
+`PersonalDetailsSaveRequest` and atomic writer. The name remains trimmed and
+UI-owned.
+
+The exact implementation/test scope is:
+
+- `src/features/setup/ui/initial_setup_wizard.cpp`
+- `tests/initial_setup_wizard_tests.cpp`
+
+Zoom primary/legacy fallback, migration, and defaults; campus; signature-image
+retention/replacement; mode/text/font; unavailable behavior; failure warning;
+and unrelated-setting preservation remain unchanged. No new contract, adapter,
+CMake change, or unrelated migration was introduced.
+
+Verification passed with an incremental elevated Debug build exiting 0.
+InitialSetupWizard passed 11/11, MyWorkspace 20/20, PersonalDetailsSavePort
+6/6, campus 8/8, Zoom 7/7, signature-image 6/6, signature-preferences 7/7,
+and display-name 7/7. Ownership validation counted 837 handwritten sources;
+resource validation passed 6 RCC packs/7 IDs/7 references, dependency JSON was
+valid at 1042 bytes, formal Qt-free and call-site checks passed, and the final
+diff passed. No test failure, timeout, or active command remained. Expected
+notices were `/FORCE`/duplicate-symbol, Vulkan/zlib, and LF-to-CRLF; the
+FileTracker environmental qualification remained nonblocking.
+
+This InitialSetupWizard typed-read composition boundary is closed. Phase 2
+remains open; the next boundary is not yet selected.

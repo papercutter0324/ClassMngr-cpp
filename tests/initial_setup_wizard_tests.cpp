@@ -30,6 +30,9 @@ constexpr auto CampusKey = "myInfo/campus";
 constexpr auto ZoomLoginIdKey = "myInfo/zoomLoginId";
 constexpr auto ZoomPasswordKey = "myInfo/zoomPassword";
 constexpr auto ZoomNotAvailableKey = "myInfo/zoomNotAvailable";
+constexpr auto LegacyZoomLoginIdKey = "subPrep/personalZoomEmail";
+constexpr auto LegacyZoomPasswordKey = "subPrep/personalZoomPassword";
+constexpr auto LegacyZoomNotAvailableKey = "subPrep/personalZoomNotAvailable";
 constexpr auto SignatureModeKey = "myInfo/signatureMode";
 constexpr auto TypedSignatureTextKey = "myInfo/typedSignatureText";
 constexpr auto TypedSignatureFontKey = "myInfo/typedSignatureFont";
@@ -111,6 +114,7 @@ private slots:
     void missingAndUnavailableDisplayNameStayEmpty();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
+    void aggregateSaveComposesTypedReadsWithoutDataLoss();
 
 private:
     QTemporaryDir m_directory;
@@ -490,6 +494,136 @@ aggregateSaveFailureLeavesAllPersonalDetailsUnchanged()
     }
 
     DialogServices::setUserPromptServiceForTesting(nullptr);
+}
+
+void InitialSetupWizardTests::
+aggregateSaveComposesTypedReadsWithoutDataLoss()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    const QString typedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(CampusKey), QStringLiteral("  Seoul  ")},
+        {
+            QString::fromUtf8(LegacyZoomLoginIdKey),
+            QStringLiteral("legacy@example.com")
+        },
+        {
+            QString::fromUtf8(LegacyZoomPasswordKey),
+            QStringLiteral("legacy secret")
+        },
+        {QString::fromUtf8(LegacyZoomNotAvailableKey), false},
+        {
+            QString::fromUtf8(SignatureImageKey),
+            QString::fromLatin1(source.toBase64())
+        },
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), typedText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.settingsService()->saveAll(initialValues));
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName"));
+    QVERIFY(name);
+    name->setText(QStringLiteral("  New Teacher  "));
+
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(DisplayNameKey), QVariant()
+            ).toString(),
+        QStringLiteral("New Teacher")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(CampusKey), QVariant()
+            ).toString(),
+        QStringLiteral("  Seoul  ")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(ZoomLoginIdKey), QVariant()
+            ).toString(),
+        QStringLiteral("legacy@example.com")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(ZoomPasswordKey), QVariant()
+            ).toString(),
+        QStringLiteral("legacy secret")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(ZoomNotAvailableKey), QVariant()
+            ).toBool(),
+        false
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(SignatureImageKey), QVariant()
+            ).toString(),
+        QString::fromLatin1(
+            SignatureImage::prepareForEmbedding(source).toBase64()
+            )
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(SignatureModeKey), QVariant()
+            ).toInt(),
+        1
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(TypedSignatureTextKey), QVariant()
+            ).toString(),
+        typedText
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(TypedSignatureFontKey), QVariant()
+            ).toInt(),
+        2
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(UnrelatedKey), QVariant()
+            ).toString(),
+        QStringLiteral("preserved")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(LegacyZoomLoginIdKey), QVariant()
+            ).toString(),
+        QStringLiteral("legacy@example.com")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(LegacyZoomPasswordKey), QVariant()
+            ).toString(),
+        QStringLiteral("legacy secret")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(LegacyZoomNotAvailableKey), QVariant()
+            ).toBool(),
+        false
+        );
 }
 
 QTEST_MAIN(InitialSetupWizardTests)
