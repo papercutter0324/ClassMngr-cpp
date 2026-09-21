@@ -2134,3 +2134,26 @@ nonblocking; no clipboard failure occurred.
 
 The typed AI-comment-provider read cutover is closed. Phase 2 remains open; the
 next slice is not yet selected.
+
+#### Progress update - 2026-09-21 (ActionRegistry typed font-size read cutover)
+
+Against baseline commit `bc5c90b6`, completed the remaining ActionRegistry
+caller cutover to the existing typed font-size port for the exact key
+`OptionKeys::FontSize == "options/fontSize"`. Values map `-2` to `Small`, `0`
+to `Normal`, `2` to `Large`, and `4` to `ExtraLarge`; missing, unknown, and
+unavailable values fall back to `Normal`. The caller has no direct raw load.
+
+The existing `OptionState` remains the compatibility writer and menu owner.
+`FontManager` offsets, visual-capture precedence, and startup behavior remain
+unchanged.
+
+Verification passed configure/ownership with 800 sources and a clean focused
+Debug build. The offscreen focused suite passed 5/5, covering the font
+adapter, FontManager, startup visual behavior, startup performance, and AI
+options. Resource checks passed 6 RCC packs/7 runtime IDs/7 runtime references;
+dependency (`ClassMngrNext -> Qt6::Core`), Qt-free, static, call-site, and diff
+checks passed. The exact dirty scope was one file. Expected warnings remained
+nonblocking.
+
+The typed ActionRegistry font-size read cutover is closed. Phase 2 remains
+open; the next slice is not yet selected.

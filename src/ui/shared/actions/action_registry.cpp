@@ -8,6 +8,7 @@
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
+#include "next/platform/settings_manager_font_size_preferences_port.h"
 #include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -867,8 +868,28 @@ void ActionRegistry::createOptionActions()
         extraLargeFontAction
         );
 
-    fontSizeState->loadFromSettings(
-        FontSize::Normal
+    const auto storedFontSize =
+        ClassMngr::Next::Platform::
+            SettingsManagerFontSizePreferencesPort()
+            .read();
+    ::FontSize legacyFontSize = ::FontSize::Normal;
+    switch (storedFontSize)
+    {
+    case ClassMngr::Next::Application::FontSize::Small:
+        legacyFontSize = ::FontSize::Small;
+        break;
+    case ClassMngr::Next::Application::FontSize::Large:
+        legacyFontSize = ::FontSize::Large;
+        break;
+    case ClassMngr::Next::Application::FontSize::ExtraLarge:
+        legacyFontSize = ::FontSize::ExtraLarge;
+        break;
+    case ClassMngr::Next::Application::FontSize::Normal:
+    default:
+        break;
+    }
+    fontSizeState->set(
+        legacyFontSize
         );
 
     documentPageSpacingState =
