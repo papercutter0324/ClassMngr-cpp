@@ -992,6 +992,34 @@ separate on a host with Xvfb and loopback access.
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
 
 
+### Phase 2 Sub Prep typed settings gate removal - 2026-09-24
+
+- Removed `openSettingsService` from the Sub Prep page helper and its four
+  preference paths. Saved-content and personal-Zoom reads now construct their
+  existing typed ports from `ApplicationServices&`; current-campus reads use
+  the nullable ApplicationServices port and check availability before loading
+  or mutating campus state. `saveSubPrepInternal()` returns before stopping
+  autosave or restoring grading defaults if preferences are unavailable.
+- Added page coverage that preserves saved-content, Zoom, and campus sentinels
+  during unavailable loads. The unavailable save case preserves field values,
+  dirty state, active autosave timer, blank grading text, and stored settings.
+  The test stub's database-open flag defaults to true, so the fixture explicitly
+  disables it before the unavailable checks and does not close the fake service.
+- Executor and independent fresh Ninja/MSVC x64 configure/builds each
+  validated 878 handwritten source owners and built ClassMngr, the Sub Prep
+  page tests, and all three preference adapter test targets. Both focused CTest
+  runs passed 4/4; the independent repeat build returned no work, and
+  `git diff --check HEAD` passed. No material verification gaps remain.
+- Handoff: F27 routes the My Information campus chooser's directory lookup
+  behind an Application query and Platform adapter. Preserve repository name
+  ordering, trimmed display-name fallback, original IDs stored in combo data,
+  saved ID/name matching, and correction writes. Personal Details atomic-save
+  callers, workbook decoding, generic settings, other feature services, and
+  broader document boundaries remain open. Phase 2 remains in progress.
+  Nothing was pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
 ### Phase 2 custom-color adapter caller cutover - 2026-09-24
 
 - Kept the adapter's `ApplicationServices&` constructor, added a nullable

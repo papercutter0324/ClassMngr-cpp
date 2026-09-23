@@ -55,20 +55,6 @@ constexpr int TeacherNotesLines = 4;
 const QString NotAvailableText =
     QStringLiteral("N/A");
 
-SettingsService* openSettingsService(
-    ApplicationServices* services
-    )
-{
-    auto* service =
-        services
-            ? services->settingsService()
-            : nullptr;
-
-    return service && service->isAvailable()
-        ? service
-        : nullptr;
-}
-
 CalendarService* openCalendarService(
     ApplicationServices* services
     )

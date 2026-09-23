@@ -3079,15 +3079,34 @@ constructor or call; `git diff --check HEAD` passed. Schedule Editor and Class
 Details have no picker-specific tests, though their translation units compiled
 through `ClassMngr`.
 
-## Next candidate: F26 Sub Prep typed settings-gate removal
+## Verified F26 Sub Prep typed settings-gate removal
 
-Route the four preference paths in
-`src/features/sub_prep/ui/sub_prep_page_settings.cpp` through existing typed
-ports and remove `openSettingsService` from `sub_prep_page_p.h`. Preserve
-unavailable-service no-op timing and saved-content, Zoom, and campus behavior;
-add a page test proving unavailable settings preserve fields and save side
-effects. Keep the separate full campus-directory lookup out of this slice.
-Also defer the all-date calendar query: its existing span is years 1–9999,
-beyond the typed projection's 4,096-result cap. This candidate was supported by
-two independent Explorers. Workbook, generic settings, other feature services,
-and full document boundaries remain open; Phase 2 remains in progress.
+Removed `openSettingsService` from Sub Prep. Saved-content and Zoom preference
+paths now use their existing typed ports with `ApplicationServices`; the
+nullable current-campus port checks availability before campus loading or
+mutation. The save path returns before stopping autosave or restoring grading
+when settings are unavailable. Four original preference paths and keys,
+atomic save, grading default, Zoom primary/legacy fallback and best-effort
+migration, and campus match/fallback are preserved. The full campus-detail
+lookup and all-years calendar read were not changed.
+
+Page tests verify that unavailable loading preserves sentinel fields and
+unavailable save preserves page values, dirty state, timer, blank grading, and
+stored settings. The test stub defaults to database-open; tests explicitly set
+it false before constructing an unavailable fixture and never close its fake
+service. Executor and independent fresh Ninja/MSVC x64 configures each
+validated 878 handwritten owners, built `ClassMngr`, the page, and three
+adapter targets, and passed focused CTest 4/4. The independent repeat build
+returned exit 0 with no work; diff checks were clean. There are no remaining
+verification gaps in this slice.
+
+## Next candidate: F27 My Information campus chooser query
+
+Route the campus-directory lookup in
+`src/features/my_info/ui/personal_details_page_sections.cpp` through a
+narrow Qt-free Application query and Platform adapter. Preserve repository
+name ordering, trimmed display-name fallback, original IDs in combo data,
+saved ID/name matching, and correction writes. This candidate was supported by
+paired Explorers. Workbook decoding, generic settings, personal-details atomic
+save, other feature services, and broader document work remain open; Phase 2
+remains in progress.

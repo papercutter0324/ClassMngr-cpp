@@ -365,3 +365,22 @@ current-campus preferences while preserving unavailable-service no-op
 behavior. Keep Sub Prep's full campus directory and all-dates calendar reads
 separate. Workbook, generic settings, other feature-service, and document
 boundaries remain open; Phase 2 remains In progress.
+
+### Phase 2 Sub Prep typed settings gate removal - 2026-09-24
+
+Removed Sub Prep's raw `openSettingsService` helper. Saved-content and Zoom
+paths now use their existing ApplicationServices-backed preference ports;
+current-campus reads check the nullable typed port before changing campus
+state. Saving returns before stopping autosave or restoring grading defaults
+when settings are unavailable. New page tests preserve all preference fields
+on unavailable loads and verify unavailable saves preserve dirty state, the
+active timer, blank grading text, and stored settings. Executor and independent
+fresh Ninja/MSVC x64 builds validated 878 handwritten owners, built ClassMngr,
+the page suite, and all three preference adapter suites, and passed CTest 4/4.
+Independent repeat build returned no work; `git diff --check HEAD` passed.
+The test stub's database-open flag must be set false explicitly to exercise an
+unavailable service. Next: move My Information's campus chooser directory
+lookup behind an Application query and Platform adapter. Keep Sub Prep's full
+office/Wi-Fi campus details and all-years calendar read separate. Workbook,
+generic settings, personal-details atomic save, other feature services, and
+broader document work remain open; Phase 2 remains In progress.

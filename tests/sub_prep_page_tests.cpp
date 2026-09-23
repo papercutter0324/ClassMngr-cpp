@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
@@ -26,9 +27,11 @@
 #include <QListView>
 #include <QMetaObject>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QTextEdit>
 #include <QTemporaryDir>
 #include <QStandardPaths>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <string>
@@ -226,6 +229,8 @@ private slots:
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void savedCampusSelectionUsesTypedRead();
     void zoomUnavailableHidesStoredCredentials();
+    void unavailablePreferenceLoadsPreservePageValues();
+    void unavailablePreferenceSaveHasNoSideEffects();
     void printDialogSelectsNextVacationBlock();
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
     void printDialogCombinesVacationDatesAcrossHolidayBlocks();
@@ -939,6 +944,186 @@ void SubPrepPageTests
                 )
             ->toString(),
         QStringLiteral("legacy@example.com")
+        );
+}
+
+void SubPrepPageTests
+    ::unavailablePreferenceLoadsPreservePageValues()
+{
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+    ApplicationServices services;
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+
+    auto* materials = page.findChild<QTextEdit*>(
+        QStringLiteral("subPrepClassMaterialsEdit")
+        );
+    auto* grading = page.findChild<QTextEdit*>(
+        QStringLiteral("subPrepGradingInstructionsEdit")
+        );
+    auto* special = page.findChild<QTextEdit*>(
+        QStringLiteral("subPrepSpecialInstructionsEdit")
+        );
+    auto* notes = page.findChild<QTextEdit*>(
+        QStringLiteral("subPrepNotesEdit")
+        );
+    auto* zoomLogin = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepZoomLoginIdEdit")
+        );
+    auto* zoomPassword = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepZoomPasswordEdit")
+        );
+    auto* officeNumber = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepOfficeNumberEdit")
+        );
+    auto* officeWifi = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepOfficeWifiEdit")
+        );
+    auto* officeWifiPassword = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepOfficeWifiPasswordEdit")
+        );
+    auto* photocopierCode = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepPhotocopierCodeEdit")
+        );
+
+    QVERIFY(materials && grading && special && notes);
+    QVERIFY(zoomLogin && zoomPassword);
+    QVERIFY(officeNumber && officeWifi && officeWifiPassword);
+    QVERIFY(photocopierCode);
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(!services.settingsService()->isAvailable());
+
+    {
+        const QSignalBlocker materialsBlocker(materials);
+        const QSignalBlocker gradingBlocker(grading);
+        const QSignalBlocker specialBlocker(special);
+        const QSignalBlocker notesBlocker(notes);
+        const QSignalBlocker zoomLoginBlocker(zoomLogin);
+        const QSignalBlocker zoomPasswordBlocker(zoomPassword);
+        const QSignalBlocker officeNumberBlocker(officeNumber);
+        const QSignalBlocker officeWifiBlocker(officeWifi);
+        const QSignalBlocker officeWifiPasswordBlocker(officeWifiPassword);
+        const QSignalBlocker photocopierCodeBlocker(photocopierCode);
+
+        materials->setPlainText(QStringLiteral("Keep materials"));
+        grading->setPlainText(QStringLiteral("Keep grading"));
+        special->setPlainText(QStringLiteral("Keep special rules"));
+        notes->setPlainText(QStringLiteral("Keep notes"));
+        zoomLogin->setText(QStringLiteral("keep-login@example.com"));
+        zoomPassword->setText(QStringLiteral("keep-password"));
+        officeNumber->setText(QStringLiteral("Keep office"));
+        officeWifi->setText(QStringLiteral("Keep Wi-Fi"));
+        officeWifiPassword->setText(QStringLiteral("Keep Wi-Fi password"));
+        photocopierCode->setText(QStringLiteral("Keep copier code"));
+    }
+
+    QVERIFY(!page.hasUnsavedChanges());
+    page.refresh();
+
+    QCOMPARE(materials->toPlainText(), QStringLiteral("Keep materials"));
+    QCOMPARE(grading->toPlainText(), QStringLiteral("Keep grading"));
+    QCOMPARE(special->toPlainText(), QStringLiteral("Keep special rules"));
+    QCOMPARE(notes->toPlainText(), QStringLiteral("Keep notes"));
+    QCOMPARE(zoomLogin->text(), QStringLiteral("keep-login@example.com"));
+    QCOMPARE(zoomPassword->text(), QStringLiteral("keep-password"));
+    QCOMPARE(officeNumber->text(), QStringLiteral("Keep office"));
+    QCOMPARE(officeWifi->text(), QStringLiteral("Keep Wi-Fi"));
+    QCOMPARE(
+        officeWifiPassword->text(),
+        QStringLiteral("Keep Wi-Fi password")
+        );
+    QCOMPARE(photocopierCode->text(), QStringLiteral("Keep copier code"));
+}
+
+void SubPrepPageTests
+    ::unavailablePreferenceSaveHasNoSideEffects()
+{
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("subPrep/classMaterials"),
+        QStringLiteral("Stored materials")
+        );
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("subPrep/bookReportGrading"),
+        QStringLiteral("Stored grading")
+        );
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("subPrep/bookReportSpecialInstructions"),
+        QStringLiteral("Stored special rules")
+        );
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("subPrep/subComments"),
+        QStringLiteral("Stored notes")
+        );
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+
+    auto* materials = page.findChild<QTextEdit*>(
+        QStringLiteral("subPrepClassMaterialsEdit")
+        );
+    auto* grading = page.findChild<QTextEdit*>(
+        QStringLiteral("subPrepGradingInstructionsEdit")
+        );
+    QVERIFY(materials && grading);
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(!services.settingsService()->isAvailable());
+
+    materials->setPlainText(QStringLiteral("Unsaved materials"));
+    {
+        const QSignalBlocker gradingBlocker(grading);
+        grading->clear();
+    }
+    QVERIFY(page.hasUnsavedChanges());
+
+    const QList<QTimer*> timers = page.findChildren<QTimer*>(
+        QString(),
+        Qt::FindDirectChildrenOnly
+        );
+    QVERIFY(!timers.isEmpty());
+    QVERIFY(timers.first()->isActive());
+
+    page.saveData();
+
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(timers.first()->isActive());
+    QCOMPARE(materials->toPlainText(), QStringLiteral("Unsaved materials"));
+    QVERIFY(grading->toPlainText().isEmpty());
+
+    ScheduleWidgetTestStubs::setDatabaseOpen(true);
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("subPrep/classMaterials"))
+            .value()
+            .toString(),
+        QStringLiteral("Stored materials")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("subPrep/bookReportGrading"))
+            .value()
+            .toString(),
+        QStringLiteral("Stored grading")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(
+                QStringLiteral("subPrep/bookReportSpecialInstructions")
+                )
+            .value()
+            .toString(),
+        QStringLiteral("Stored special rules")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("subPrep/subComments"))
+            .value()
+            .toString(),
+        QStringLiteral("Stored notes")
         );
 }
 

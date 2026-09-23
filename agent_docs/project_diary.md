@@ -595,3 +595,12 @@ behavior migration. Pass the ApplicationServices owner through existing typed
 adapters, and verify every caller compiles even when only a subset has direct
 picker tests. Preserve the dialog/save order and cancellation behavior by
 leaving the shared ColorUtils flow unchanged.
+
+
+## Phase 2 Sub Prep typed settings gate removal - 2026-09-24
+
+Sub Prep page tests link a `DataService::isOpen()` stub whose database-open
+flag defaults to true; setting it false exercises unavailable typed preference
+ports. The fake service has no live session, so do not call `closeDatabase()`.
+Set the stub flag before constructing or querying `ApplicationServices` and
+assert both service availability and the page-level no-op behavior.

@@ -26,10 +26,7 @@ void SubPrepPage::loadPageData()
 
 void SubPrepPage::loadStoredSettings()
 {
-    auto* settingsService =
-        openSettingsService(m_services);
-
-    if (!settingsService)
+    if (!m_services)
     {
         return;
     }
@@ -41,7 +38,7 @@ void SubPrepPage::loadStoredSettings()
 
     ClassMngr::Next::Platform::
         ApplicationServicesSubPrepPreferencesPort
-        subPrepPreferencesPort(settingsService);
+        subPrepPreferencesPort(*m_services);
     const auto storedPreferences =
         subPrepPreferencesPort.load();
     if (!storedPreferences)
@@ -107,10 +104,7 @@ void SubPrepPage::loadStoredSettings()
 
 void SubPrepPage::loadPersonalZoomInformation()
 {
-    auto* settingsService =
-        openSettingsService(m_services);
-
-    if (!settingsService)
+    if (!m_services)
     {
         return;
     }
@@ -120,7 +114,7 @@ void SubPrepPage::loadPersonalZoomInformation()
 
     ClassMngr::Next::Platform::
         ApplicationServicesSubPrepPersonalZoomPreferencesPort
-        personalZoomPreferencesPort(settingsService);
+        personalZoomPreferencesPort(*m_services);
     const auto storedPreferences =
         personalZoomPreferencesPort.load();
     if (!storedPreferences)
@@ -158,10 +152,11 @@ void SubPrepPage::loadPersonalZoomInformation()
 
 void SubPrepPage::loadCampuses()
 {
-    auto* settingsService =
-        openSettingsService(m_services);
+    ClassMngr::Next::Platform::
+        ApplicationServicesCurrentCampusPreferencesPort
+        currentCampusPreferencesPort(m_services);
 
-    if (!settingsService)
+    if (!currentCampusPreferencesPort.isAvailable())
     {
         return;
     }
@@ -173,9 +168,6 @@ void SubPrepPage::loadCampuses()
     m_campuses =
         campusRepository().loadCampuses();
 
-    ClassMngr::Next::Platform::
-        ApplicationServicesCurrentCampusPreferencesPort
-        currentCampusPreferencesPort(settingsService);
     const std::string storedCampus =
         currentCampusPreferencesPort.read();
     const QString savedCampus = QString::fromUtf8(
@@ -299,10 +291,11 @@ void SubPrepPage::updateReadOnlyFieldWidths()
 
 bool SubPrepPage::saveSubPrepInternal()
 {
-    auto* settingsService =
-        openSettingsService(m_services);
+    ClassMngr::Next::Platform::
+        ApplicationServicesCurrentCampusPreferencesPort
+        currentCampusPreferencesPort(m_services);
 
-    if (!settingsService)
+    if (!currentCampusPreferencesPort.isAvailable())
     {
         return false;
     }
@@ -325,7 +318,7 @@ bool SubPrepPage::saveSubPrepInternal()
 
     ClassMngr::Next::Platform::
         ApplicationServicesSubPrepPreferencesPort
-        subPrepPreferencesPort(settingsService);
+        subPrepPreferencesPort(*m_services);
     const auto saved = subPrepPreferencesPort.save({
         .classMaterials = toUtf8(m_classMaterialsEdit->toPlainText()),
         .bookReportGrading = toUtf8(

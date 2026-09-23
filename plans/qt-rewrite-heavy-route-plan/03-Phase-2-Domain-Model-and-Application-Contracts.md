@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F25 completes the custom-color adapter constructor cleanup after the palette behavior boundary: seven callers across five UI files now pass `ApplicationServices*`; the adapter retains `ApplicationServices&`, adds nullable `ApplicationServices*`, and removes `SettingsService*`. The `custom_colors` key, 16 slots, payload formats, defaults, unrelated settings, and getColor ordering/save-on-cancel behavior remain unchanged; ColorUtils logic did not change. The executor's fresh 382-step Ninja/MSVC x64 build and an independent fresh configure validated 878 owners; the independent repeat build exited successfully with no work, and focused CTest passed 6/6 in both runs. Phase 2 remains in progress. Next candidate: F26 Sub Prep typed settings-gate removal routes four preference paths through existing ports, removes the raw settings helper, and adds an unavailable-settings page test. Keep Sub Prep's full campus-directory lookup and all-date calendar query out of scope; the latter spans years 1–9999, beyond the typed projection's 4,096-result cap.
+- Latest slice: F26 removes Sub Prep's `openSettingsService` helper and routes saved-content and Zoom preferences through typed ports receiving `ApplicationServices`; the nullable current-campus port gates before campus load or mutation. Save exits before stopping autosave or restoring grading when settings are unavailable. Four original settings paths/keys, atomic save, grading defaults, Zoom primary/legacy fallback and best-effort migration, and campus matching/fallback remain preserved. Executor and independent fresh Ninja/MSVC x64 configures validated 878 owners, built ClassMngr, the page, and three adapters, and passed CTest 4/4; no verification gaps remain. Phase 2 remains in progress. Next candidate F27 routes My Information's campus chooser lookup through a narrow Application query and Platform adapter. Workbook decoding, generic settings, personal-details atomic save, other feature services, and broader document work remain open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -3930,5 +3930,27 @@ repeat Ninja build returned success with no work, and the same focused suites
 passed 6/6. Source scan found exactly seven callers and no `SettingsService*`
 constructor or use; `git diff --check HEAD` passed. Schedule Editor and Class
 Details have no picker-specific tests, though their translation units compiled
-through `ClassMngr`. Phase 2 remains open. Next candidate: F26 Sub Prep typed
-settings-gate removal.
+through `ClassMngr`. Phase 2 remains open. The next candidate was F26 Sub Prep
+typed settings-gate removal; it is completed below.
+
+#### Progress update - 2026-09-24 (F26 Sub Prep typed settings-gate removal)
+
+Sub Prep no longer exposes the raw `openSettingsService` helper. Saved-content
+and Zoom preference paths use their existing typed ports with
+`ApplicationServices`; the nullable current-campus port checks availability
+before campus loading or mutation. When settings are unavailable, save returns
+before stopping autosave or restoring grading. The four existing preference
+paths and keys, atomic save behavior, grading default, Zoom primary/legacy
+fallback and best-effort migration, and campus matching/fallback are preserved.
+The full campus-detail lookup and all-years calendar read remain untouched.
+
+Page tests cover unavailable loading with sentinel fields and unavailable save
+with page values, dirty state, timer, blank grading, and stored settings
+preserved. The test stub defaults to database-open; each unavailable fixture
+sets it false before page construction and does not close its fake service.
+Executor and independent fresh Ninja/MSVC x64 configure runs each validated
+878 handwritten owners and built `ClassMngr`, the page, and three adapter
+targets. Focused CTest passed 4/4 in both runs; the independent repeat build
+returned exit 0 with no work. `git diff --check` was clean. No verification gaps
+remain. Phase 2 remains open. Next candidate: F27 My Information campus chooser
+directory query.
