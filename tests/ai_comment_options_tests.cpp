@@ -20,6 +20,7 @@ private slots:
     void themeDefaultsToSystemDefaultAndPersists();
     void saveModeStartupAndWritesCanonicalValues();
     void providerAndVoiceDefaultsPersist();
+    void documentPageSpacingStartupReloadAndCanonicalPersistence();
     void documentViewerBackgroundStartupReloadAndCanonicalPersistence();
     void customWebsitePersistenceAndInvalidFallback();
     void providerUrlsAndCustomValidation();
@@ -206,6 +207,51 @@ void AiCommentOptionsTests::
         reloadedDirect.aiCommentVoiceState->current(),
         AiCommentVoice::DirectToStudent
         );
+}
+
+void AiCommentOptionsTests::
+    documentPageSpacingStartupReloadAndCanonicalPersistence()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString spacingKey =
+        QString::fromUtf8(OptionKeys::DocumentPageSpacing);
+    settings.remove(spacingKey);
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.documentPageSpacingState);
+    QCOMPARE(
+        defaults.documentPageSpacingState->current(),
+        DocumentPageSpacing::Small
+        );
+    QCOMPARE(settings.get(spacingKey).toInt(), 1);
+
+    const DocumentPageSpacing expectedValues[] = {
+        DocumentPageSpacing::None,
+        DocumentPageSpacing::Medium,
+        DocumentPageSpacing::Large,
+        DocumentPageSpacing::Small
+    };
+    const int expectedStoredValues[] = {0, 2, 3, 1};
+
+    for (int index = 0; index < 4; ++index)
+    {
+        defaults.documentPageSpacingState->set(
+            expectedValues[index]
+            );
+        QCOMPARE(
+            settings.get(spacingKey).toInt(),
+            expectedStoredValues[index]
+            );
+        settings.sync();
+
+        ActionRegistry reloaded;
+        reloaded.createActions();
+        QCOMPARE(
+            reloaded.documentPageSpacingState->current(),
+            expectedValues[index]
+            );
+    }
 }
 
 void AiCommentOptionsTests::

@@ -19,6 +19,10 @@ public:
     virtual ~DocumentPageSpacingPreferencesPort() = default;
 
     [[nodiscard]] virtual DocumentPageSpacing read() const = 0;
+
+    virtual void write(
+        DocumentPageSpacing spacing
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

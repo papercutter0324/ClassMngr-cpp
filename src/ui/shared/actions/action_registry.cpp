@@ -1027,6 +1027,42 @@ void ActionRegistry::createOptionActions()
         largeDocumentPageSpacingAction
         );
 
+    documentPageSpacingState->onPersist =
+        [](const ::DocumentPageSpacing spacing)
+    {
+        ClassMngr::Next::Application::DocumentPageSpacing preference;
+        switch (spacing)
+        {
+        case ::DocumentPageSpacing::None:
+            preference = ClassMngr::Next::Application::
+                DocumentPageSpacing::None;
+            break;
+
+        case ::DocumentPageSpacing::Small:
+            preference = ClassMngr::Next::Application::
+                DocumentPageSpacing::Small;
+            break;
+
+        case ::DocumentPageSpacing::Medium:
+            preference = ClassMngr::Next::Application::
+                DocumentPageSpacing::Medium;
+            break;
+
+        case ::DocumentPageSpacing::Large:
+            preference = ClassMngr::Next::Application::
+                DocumentPageSpacing::Large;
+            break;
+
+        default:
+            return;
+        }
+
+        ClassMngr::Next::Platform::
+            SettingsManagerDocumentPageSpacingPreferencesPort().write(
+                preference
+                );
+    };
+
     const auto storedDocumentPageSpacing =
         ClassMngr::Next::Platform::
             SettingsManagerDocumentPageSpacingPreferencesPort()

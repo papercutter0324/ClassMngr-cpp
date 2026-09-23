@@ -12,7 +12,7 @@ namespace ClassMngr::Next::Platform
 
 // Qt-boundary adapter for the document-page spacing read. The legacy
 // SettingsManager default and QVariant integer conversion stay here;
-// ActionRegistry remains the compatibility writer and UI owner.
+// ActionRegistry remains the compatibility bridge and UI owner.
 class SettingsManagerDocumentPageSpacingPreferencesPort final
     : public Application::DocumentPageSpacingPreferencesPort
 {
@@ -49,6 +49,39 @@ public:
         default:
             return Application::DocumentPageSpacing::Small;
         }
+    }
+
+    void write(
+        const Application::DocumentPageSpacing spacing
+        ) const override
+    {
+        int storedSpacing = 0;
+        switch (spacing)
+        {
+        case Application::DocumentPageSpacing::None:
+            storedSpacing = 0;
+            break;
+
+        case Application::DocumentPageSpacing::Small:
+            storedSpacing = 1;
+            break;
+
+        case Application::DocumentPageSpacing::Medium:
+            storedSpacing = 2;
+            break;
+
+        case Application::DocumentPageSpacing::Large:
+            storedSpacing = 3;
+            break;
+
+        default:
+            return;
+        }
+
+        SettingsManager::instance().set(
+            key(),
+            storedSpacing
+            );
     }
 
 private:

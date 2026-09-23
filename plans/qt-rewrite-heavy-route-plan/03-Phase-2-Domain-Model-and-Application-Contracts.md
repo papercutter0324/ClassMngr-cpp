@@ -3186,3 +3186,32 @@ PageManager, StartupVisualSettings, and provider, voice, language, and SaveMode
 regressions. CMake ownership validation passed with 837 handwritten sources;
 Qt-free, call-site, source-path, and diff checks passed. Tests used an isolated
 `CLASSMNGR_SETTINGS_ROOT`.
+
+#### Progress update - 2026-09-23 (typed document-page-spacing persistence)
+
+Against baseline commit `790082c4` (`Phase2 - Cut ActionRegistry viewer
+background persistence over`), completed the typed document-page-spacing
+persistence cutover. The Qt-free `DocumentPageSpacingPreferencesPort` now
+exposes `write()`, and the SettingsManager adapter persists valid `None`,
+`Small`, `Medium`, and `Large` values as `0`, `1`, `2`, and `3`. Invalid typed
+values are rejected without modifying storage. Existing reads remain
+compatible: missing or unknown values map to `Small`, while malformed text
+continues through unchecked `QVariant::toInt()` and maps to `None`.
+
+`ActionRegistry` installs typed persistence before initial state selection;
+MainWindow/PageManager update propagation remains unchanged. The expected
+implementation/test scope is:
+
+- `src/next/application/document_page_spacing_preferences.h`
+- `src/next/platform/settings_manager_document_page_spacing_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_document_page_spacing_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+No CMake changes were made.
+
+Independent review, build, and serial CTest passed for
+`ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests`,
+`ClassMngrAiCommentOptionsTests`, `ClassMngrPageManagerTests`, and
+`ClassMngrStartupVisualSettingsTests`; `git diff --check` was clean. Phase 2
+remains open; this document-page-spacing persistence boundary is closed.

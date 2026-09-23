@@ -1389,9 +1389,11 @@ canonical `OptionKeys::DocumentPageSpacing ==
 unknown numeric values map to `Small`. Malformed or non-numeric values retain
 legacy parity through unchecked `QVariant::toInt()`, yielding `0` (`None`).
 
-`ActionRegistry` now uses the typed load. The existing `OptionState` remains
-the compatibility writer and menu-persistence owner, and `PageManager`/
-`PdfViewer` behavior remains unchanged.
+`ActionRegistry` now uses the typed load and installs typed persistence before
+initial state selection through `DocumentPageSpacingPreferencesPort`. Valid
+typed values write canonical `0`/`1`/`2`/`3` values, while invalid typed values
+leave storage unchanged. `OptionState` remains the compatibility state and UI
+owner, and `PageManager`/`PdfViewer` behavior remains unchanged.
 
 Verification passed configure/ownership with 797 sources and an elevated clean
 Debug build. The offscreen focused suite passed 5/5, covering the adapter,
@@ -2525,3 +2527,35 @@ PageManager, StartupVisualSettings, and provider, voice, language, and SaveMode
 regressions. CMake ownership validation passed with 837 handwritten sources;
 Qt-free, call-site, source-path, and diff checks passed. Tests used an isolated
 `CLASSMNGR_SETTINGS_ROOT`.
+
+## Verified typed document-page-spacing persistence handoff
+
+Against baseline commit `790082c4` (`Phase2 - Cut ActionRegistry viewer
+background persistence over`), completed the typed document-page-spacing
+persistence cutover for `OptionKeys::DocumentPageSpacing ==
+"options/documentPageSpacing"`. The Qt-free
+`DocumentPageSpacingPreferencesPort` now exposes `write()`; the
+SettingsManager adapter stores valid `None`, `Small`, `Medium`, and `Large`
+values as `0`, `1`, `2`, and `3`, and rejects invalid typed values without
+changing storage. Existing reads retain compatibility: missing or unknown
+values map to `Small`, while malformed text uses unchecked
+`QVariant::toInt()` and maps to `None`.
+
+`ActionRegistry` installs typed persistence before initial state selection.
+MainWindow/PageManager update propagation remains unchanged. The source/test
+scope is limited to:
+
+- `src/next/application/document_page_spacing_preferences.h`
+- `src/next/platform/settings_manager_document_page_spacing_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_document_page_spacing_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+No CMake changes were made.
+
+Independent review, build, and serial CTest passed for
+`ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests`,
+`ClassMngrAiCommentOptionsTests`, `ClassMngrPageManagerTests`, and
+`ClassMngrStartupVisualSettingsTests`; `git diff --check` was clean. The typed
+document-page-spacing persistence seam is closed; generic settings and other
+Phase 2 migrations remain open.

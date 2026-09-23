@@ -31,6 +31,7 @@ private slots:
     void cleanup();
     void usesTheExactCanonicalKey();
     void mapsAllStoredSpacingValues();
+    void writesAllSpacingValuesForRoundTrip();
     void missingAndUnavailableValuesDefaultToSmall();
     void unknownNumericValuesDefaultToSmall();
     void malformedStoredTextBecomesNoneViaQVariantToIntParity();
@@ -106,6 +107,41 @@ mapsAllStoredSpacingValues()
             expectedValues[index]
             );
     }
+}
+
+void NextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests::
+writesAllSpacingValuesForRoundTrip()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerDocumentPageSpacingPreferencesPort port;
+
+    const DocumentPageSpacing expectedValues[] = {
+        DocumentPageSpacing::None,
+        DocumentPageSpacing::Small,
+        DocumentPageSpacing::Medium,
+        DocumentPageSpacing::Large
+    };
+
+    for (int spacingIndex = 0; spacingIndex < 4; ++spacingIndex)
+    {
+        port.write(expectedValues[spacingIndex]);
+        QCOMPARE(
+            settings.get(documentPageSpacingKey()).toInt(),
+            spacingIndex
+            );
+        QCOMPARE(
+            port.read(),
+            expectedValues[spacingIndex]
+            );
+    }
+
+    port.write(
+        static_cast<DocumentPageSpacing>(99)
+        );
+    QCOMPARE(
+        settings.get(documentPageSpacingKey()).toInt(),
+        3
+        );
 }
 
 void NextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests::
