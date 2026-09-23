@@ -14,8 +14,8 @@ this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
 palette caller boundary and calendar-import planning and signature-read seams,
-and Sub Prep print-source and selected-class details read adapters. A partial
-content-session integration covers referenced
+and Sub Prep print-source, selected-class details, and schedule-summary read
+adapters. A partial content-session integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
 remain open, including generic settings persistence.
 
@@ -2752,7 +2752,33 @@ The Windows x64 Debug build succeeded. Focused
 `NextPlatformApplicationServicesSubPrepPrintSourcePort` suites passed. This is
 a read-adapter seam only: it is not wired to a page or output path, and it
 establishes no full legacy-output parity, memory improvement, or broader
-acceptance. The next Phase 2-bounded Sub Prep continuation is implementing the
-scoped schedule-summary persistence read behind its existing Application
-contract. Page/output integration, parity, and large-workspace Release memory
-evidence remain open. Phase 2 remains In Progress.
+acceptance. The scoped schedule-summary persistence read was completed in
+commit `dd429838`; see the following section. Page/output integration, parity,
+and large-workspace Release memory evidence remain open. Phase 2 remains In
+Progress.
+
+## Verified Sub Prep scoped schedule-summary Platform read
+
+Commit `dd429838` adds
+[`ApplicationServicesSubPrepScheduleSummaryPort`](../../src/next/platform/application_services_sub_prep_schedule_summary_port.h)
+for `SubPrepScheduleSummaryQuery`. The read is scoped by visible class IDs,
+selected days, and regular or intensive mode. It uses the active `ClassService`
+repository session and returns bounded owning class and teacher summary values
+in request order. Teacher values are shared by ID, and roster counts are read
+in a batch; roster-query failure retains the zero-count fallback. Empty class
+or day scopes return successfully without reading, and there is no
+`DataService` fallback. The intensive-mode test succeeds with `class_times`
+dropped, confirming isolation from the regular schedule table.
+
+The Windows Debug build of
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
+succeeded. Focused CTest passed
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` 3/3 in
+13.39 seconds. Configure validated 857 handwritten files and
+`git diff --check` passed. This completes the scoped Application read seam,
+not Sub Prep or Phase 2 acceptance. Work Package D is the next Sub Prep
+increment: model-backed class list/navigation and a reusable selected-class
+detail view. Page/output wiring, behavior parity, and 96-class Release memory
+evidence remain open.

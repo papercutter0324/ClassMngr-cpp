@@ -8,11 +8,11 @@
 - Last updated: 2026-09-23
 - Current milestone: Phase 2 Application-contract slices are continuing;
   calendar-import planning and the existing-signature read cutover are
-  complete. Sub Prep now has session-backed Platform reads for the selected
-  class details and print source. Next is the scoped schedule-summary read
-  behind its existing contract. Page/output integration, parity, and memory
-  evidence remain open. Phase 1 build-system exit evidence remains
-  outstanding.
+  complete. Sub Prep now has session-backed Platform reads for selected-class
+  details, print source, and schedule summaries. Next is Work Package D:
+  model-backed class list/navigation and a reusable selected-class detail
+  view. Page/output wiring, parity, and 96-class Release memory evidence remain
+  open. Phase 1 build-system exit evidence remains outstanding.
 - Current blocker: official Phase 1 targets are Windows x64 and macOS
   universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
   after GitHub reported runner communication loss. The user observed the

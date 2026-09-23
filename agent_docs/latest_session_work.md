@@ -461,3 +461,27 @@ separate on a host with Xvfb and loopback access.
   the page; parity and Release memory evidence remain open. Next entry point:
   implement the scoped schedule-summary persistence read behind its existing
   Application contract. Phase 2 remains open; nothing has been pushed.
+- Commit `dd429838` adds the scoped schedule-summary persistence read. The
+  ClassService/Repository path filters by class IDs, weekdays, and selected
+  schedule mode, returns bounded owning summary values, and gets roster counts
+  in one scoped aggregate. The Platform adapter validates and projects the
+  values into the existing class-summary contract, preserving request order
+  and teacher deduplication. Empty scopes avoid reads; the intensive-mode test
+  passes with the regular schedule table removed; and roster-query failure
+  keeps the zero-count fallback. The read uses the active session and has no
+  DataService fallback.
+- Windows x64 Debug build succeeded for
+  `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
+  Focused CTest passed 3/3 for
+  `ClassMngrNextApplicationClassSummaryTests`,
+  `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`, and
+  `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
+  CMake validated 857 handwritten files; `git diff --check` passed. Nothing
+  was pushed.
+- Handoff: continue Phase 2 at Work Package D of
+  `sub-prep-class-information-memory-plan.md`. Start with model-backed class
+  navigation over compact summaries and one reusable selected-class details
+  view. The new summary/details reads are not connected to the live page;
+  output/package/PDF migration, behavior and visual parity, and the 96-class
+  Release memory evidence remain open. Phase 2 is still in progress; keep the
+  Linux Phase 0 follow-up separate.

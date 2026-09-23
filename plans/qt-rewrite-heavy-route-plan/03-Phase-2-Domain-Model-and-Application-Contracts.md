@@ -3405,3 +3405,28 @@ Page/output integration and parity plus the large-workspace Release memory
 evidence remain open. The next Phase 2-bounded Sub Prep continuation is the
 scoped schedule-summary persistence read behind its existing Application
 contract. Phase 2 remains In Progress.
+
+#### Progress update - 2026-09-23 (Sub Prep scoped schedule-summary Platform read)
+
+Commit `dd429838` adds
+[`ApplicationServicesSubPrepScheduleSummaryPort`](../../src/next/platform/application_services_sub_prep_schedule_summary_port.h)
+for the existing scoped schedule-summary query. It reads only the requested
+class/day/mode scope through the active `ClassService` repository session and
+returns bounded owning class and teacher summary values. Roster counts are
+batched; a roster read failure preserves the zero-count fallback. Empty class
+or day scopes return without reads, and the adapter has no `DataService`
+fallback. The intensive-mode test succeeds with `class_times` dropped,
+proving the mode-specific read does not require the regular schedule table.
+
+The Windows Debug build of
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
+succeeded. Focused CTest passed
+`ClassMngrNextApplicationClassSummaryTests`,
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` 3/3 in
+13.39 seconds. Configure validated 857 handwritten files, and
+`git diff --check` passed. This closes the scoped schedule-summary read seam
+only. Phase 2 remains In Progress; page/output wiring, behavior parity, and
+96-class Release memory evidence remain open. The next Sub Prep increment is
+Work Package D: model-backed list/navigation and a reusable selected-class
+detail view.

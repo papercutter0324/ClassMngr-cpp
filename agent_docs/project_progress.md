@@ -142,17 +142,23 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Phase 2 application-contract work continues on `Qt-Rewrite`. Commit
-`9f648b3e` adds the session-backed Platform read for selected Sub Prep class
-details. The query returns separate bounded room, WiFi, internet, Zoom, and
-projection fields with class/teacher notes and display name; it does not read
-schedule tables or fall back to `DataService`. Windows x64 Debug build and
-focused CTest passed (3/3), and CMake source ownership validation passed for
-855 handwritten files.
+Phase 2 continues on `Qt-Rewrite`. Commit `dd429838` adds the session-backed
+Platform schedule-summary read behind the existing Application contract. It
+filters by visible class IDs, selected weekdays, and regular/intensive mode;
+returns bounded owning summaries and teacher values; and batches roster
+counts without materializing roster rows. Empty scopes avoid a read, selected
+mode reads stay scoped to that schedule table, and roster-read failure keeps
+the legacy zero-count fallback. It uses the active ClassService session with
+no DataService fallback.
 
-Next: implement the scoped schedule-summary persistence read behind its
-existing Application contract. Page/output integration, parity, broader
-Sub Prep acceptance, and Release memory evidence remain open. Keep the Linux
+Windows x64 Debug builds succeeded for the Platform test target and the
+focused ClassSummary, SubPrepScheduleSummaryQuery, and SubPrep Platform suites
+passed 3/3. CMake ownership validation passed for 857 handwritten files and
+`git diff --check` passed. The next planned slice is Work Package D in the
+Sub Prep memory plan: a model-backed class list/navigation and one reusable
+selected-class details view. The summary/details reads are not yet wired into
+the live page. Page/output integration, behavior parity, the 96-class Release
+memory evidence, and the wider Phase 2 exit gate remain open. Keep the Linux
 Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
 access.
 

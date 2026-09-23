@@ -325,3 +325,16 @@
 - Adapter tests and a Debug build prove the read seam and value bounds only.
   Page/output wiring, full parity, and Release memory acceptance remain later
   gates.
+
+## Phase 2 Sub Prep schedule-summary Platform read — 2026-09-23
+
+- Keep class, day, and schedule-mode filters inside the persistence query so
+  irrelevant schedule rows are not copied into the summary operation. The
+  selected mode should remain independently readable even if the other mode's
+  schedule table is unavailable.
+- Build one bounded summary per requested class and aggregate roster counts in
+  a scoped batch; do not load student roster rows for the list view. Preserve
+  the legacy zero-count fallback when the roster aggregate cannot be read.
+- The adapter and its focused tests establish a bounded read contract only.
+  Wiring the projection into the live page, replacing per-class widget trees,
+  output parity, and Release memory evidence remain separate acceptance work.
