@@ -876,3 +876,32 @@ separate on a host with Xvfb and loopback access.
   migrated. Generic settings, other feature-service, workbook/campus, and
   broader document boundaries remain open. The 250 MiB gate belongs to Phase
   9; nothing was pushed.
+
+
+### Phase 2 personal display-name adapter constructor removal - 2026-09-24
+
+- My Information and Initial Setup now create
+  `ApplicationServicesPersonalDisplayNamePreferencesPort` from
+  `ApplicationServices&`. The adapter's `SettingsService*` constructor and its
+  constructor-only test were removed. Existing availability guards, UTF-8 and
+  whitespace handling, Setup's fill-only-if-blank condition, and aggregate
+  personal-details saves remain intact.
+- Independent verification configured and built a fresh isolated Ninja/MSVC
+  x64 tree in `build/p2-f20-independent` (322 build steps), including both
+  changed production translation units and the adapter test. Initial Setup
+  and adapter CTest targets passed. In `ClassMngrMyWorkspacePageTests`, the
+  F20 display-name, unavailable-storage, aggregate-save, and rollback cases
+  passed; three PageManager cases failed before F20 code ran because the
+  required `documents` and `campuses` resource packs were unavailable. No
+  baseline checkout was run. Source review found no F20 defect and
+  `git diff --check` passed. There is no direct regression test that
+  pre-populates the Setup name and verifies reinitialization leaves it intact;
+  the existing fill-only-if-blank condition remains in place.
+- Handoff: F21 removes the unreferenced `ClassNavigationPreferences` header
+  and implementation, production source entry, Classes Page test source entry,
+  and unused includes. Keep the active typed Application contracts and
+  Platform adapters. Then continue generic settings, remaining feature
+  services, calendar workbook/campus lookup, and document boundaries until the
+  Phase 2 exit gate is satisfied. The Phase 9 packaged Release memory gate is
+  separate. Nothing was pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md` user change.

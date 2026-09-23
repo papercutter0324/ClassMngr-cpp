@@ -2968,5 +2968,11 @@ dialog acceptance. Package generation later calls `QDir::mkpath`, so a later
 filesystem failure does not undo that preference write; the write does not
 depend on successful directory creation. Null services retain empty/default
 names, unavailable reads are empty, and unavailable writes are no-ops. My
-Information and Initial Setup remain display-name `SettingsService*` adapter
-callers. See the [verified Phase 2 caller migration](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-personal-display-name-caller-migration).
+Information and Initial Setup now also construct the adapter from
+`ApplicationServices&`; the `SettingsService*` constructor and its
+constructor-only test are removed. My Information retains its availability
+guard and aggregate personal-details save. Initial Setup retains its
+availability guard, fills only a blank name field, and uses the aggregate save
+path. The Setup prefilled-name reinitialization case has no direct assertion,
+though the fill-only-if-blank source condition remains. See the [verified F20
+migration and verification limits](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-f20-my-information-and-initial-setup-migration).

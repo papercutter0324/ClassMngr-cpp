@@ -27,13 +27,6 @@ public:
     {
     }
 
-    explicit ApplicationServicesPersonalDisplayNamePreferencesPort(
-        SettingsService* settingsService
-        ) noexcept
-        : m_settingsService(settingsService)
-    {
-    }
-
     ApplicationServicesPersonalDisplayNamePreferencesPort(
         const ApplicationServicesPersonalDisplayNamePreferencesPort&
         ) = delete;

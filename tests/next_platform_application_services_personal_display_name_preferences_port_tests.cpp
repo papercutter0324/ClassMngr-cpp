@@ -168,9 +168,6 @@ missingAndUnavailableReadEmpty()
         );
     QVERIFY(unavailablePort.read().empty());
     QVERIFY(unavailablePort.write("ignored"));
-
-    ApplicationServicesPersonalDisplayNamePreferencesPort nullPort(nullptr);
-    QVERIFY(nullPort.write("ignored"));
 }
 
 void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::

@@ -270,3 +270,19 @@ Independent Windows x64 Debug verification passed three focused targets
 remain the last pointer-constructor consumers before that overload can be
 removed. Phase 2 continues with those preference reads, generic settings,
 remaining feature services, and broader document boundaries.
+
+### Phase 2 personal display-name adapter constructor removal — 2026-09-24
+
+My Information and Initial Setup now construct the display-name adapter from
+`ApplicationServices&`; the adapter's `SettingsService*` constructor and its
+constructor-only test were removed. Existing availability guards, exact UTF-8
+and whitespace behavior, Setup's fill-only-when-blank rule, and aggregate
+personal-details saves remain intact. A fresh isolated Ninja/MSVC x64 build
+completed 322 steps. Initial Setup and adapter CTest targets passed. The
+MyWorkspace target's F20 display-name, availability, aggregate-save, and
+rollback cases passed, while three PageManager cases failed because the
+`documents` and `campuses` resource packs were unavailable before F20 code ran.
+The independent Tester found no F20 defect; `git diff --check` passed.
+Next: remove the unused `ClassNavigationPreferences` helper and stale build
+references, then continue the open generic-settings, feature-service, calendar
+workbook/campus, and document migrations against the Phase 2 exit gate.

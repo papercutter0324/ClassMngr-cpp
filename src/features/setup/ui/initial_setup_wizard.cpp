@@ -387,7 +387,7 @@ public:
         const std::string storedName =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalDisplayNamePreferencesPort(
-                    setup->settingsService()
+                    *setup->services()
                     ).read();
         if (m_name->text().trimmed().isEmpty())
         {

@@ -8,6 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
+- Latest slice: F20 routes My Information and Initial Setup display-name reads through `ApplicationServices&` and removes the adapter's `SettingsService*` overload. Phase 2 remains in progress. Next bounded slice: remove the unused `ClassNavigationPreferences` implementation after confirming no production callers remain, preserving the typed Application adapters and their tests.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -3810,3 +3811,25 @@ preferences, and null services. Independent verification built
 Information and Initial Setup remain display-name adapter callers; generic
 settings persistence, other feature-service migrations, and Phase 2 remain
 open.
+
+#### Progress update - 2026-09-24 (F20 My Information and Initial Setup migration)
+
+My Information and Initial Setup now construct
+`ApplicationServicesPersonalDisplayNamePreferencesPort` from
+`ApplicationServices&`. The adapter's `SettingsService*` constructor and its
+constructor-only test were removed. Existing availability guards remain;
+My Information preserves stored UTF-8/whitespace, Initial Setup fills only a
+blank name field, and both retain aggregate personal-details saves.
+
+An independent fresh Windows x64 Ninja/MSVC build completed 322 steps and
+compiled the changed production and test translation units. Initial Setup and
+adapter test targets passed. In My Workspace, F20 display-name, availability,
+aggregate-save, and rollback cases passed; three PageManager cases failed
+before reaching F20 code because required documents/campuses resource packs
+were unavailable, and no baseline checkout was available. The independent
+review found no F20 defect and `git diff --check` passed. Setup's prefilled-name
+reinitialization behavior still lacks a direct assertion; its fill-only-if-blank
+source condition remains. Generic settings persistence, other feature-service
+migrations, and Phase 2 remain open. The next bounded slice is the unused
+`ClassNavigationPreferences` cleanup; typed Application adapters and coverage
+remain in place.

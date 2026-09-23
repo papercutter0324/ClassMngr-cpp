@@ -539,3 +539,13 @@ Sub Prep, name persistence occurs after folder selection and replacement
 confirmation but before the later filesystem `mkpath`; a subsequent package
 creation failure does not undo that write. Keep that baseline ordering while
 moving unavailable-store handling into Platform.
+
+
+## Phase 2 personal display-name adapter constructor removal - 2026-09-24
+
+Migrate the remaining display-name consumers through the existing
+`ApplicationServices&` adapter before removing the `SettingsService*` overload.
+Keep each caller's availability guard, whitespace/trim behavior, fill-only-if-
+blank rule, and aggregate save path. For PageManager-backed tests, distinguish
+missing resource-pack setup failures from failures in the migrated preference
+path; report the test limitation rather than treating the whole target as green.

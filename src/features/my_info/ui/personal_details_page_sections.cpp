@@ -881,7 +881,7 @@ void PersonalDetailsPage::loadStoredSettings()
     const QByteArray storedName = QByteArray::fromStdString(
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort(
-                settingsService
+                *m_services
                 ).read()
         );
     m_nameEdit->setText(QString::fromUtf8(storedName));
