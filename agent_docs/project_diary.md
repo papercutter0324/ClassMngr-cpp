@@ -604,3 +604,14 @@ flag defaults to true; setting it false exercises unavailable typed preference
 ports. The fake service has no live session, so do not call `closeDatabase()`.
 Set the stub flag before constructing or querying `ApplicationServices` and
 assert both service availability and the page-level no-op behavior.
+
+
+## Phase 2 My Information campus chooser query - 2026-09-24
+
+Keep feature-specific campus metadata queries narrow when directory consumers
+need different fields. My Information needs only owning UTF-8 IDs and chooser
+labels; a CalendarPage-specific query should not become its implicit contract.
+Compare repository order, trim/fallback behavior, and combo ID payloads against
+the pre-migration page. A repository codec may normalize blank fields before
+the adapter sees them, limiting fixture coverage of defensive empty-value
+branches.

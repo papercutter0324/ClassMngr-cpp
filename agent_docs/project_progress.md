@@ -384,3 +384,21 @@ lookup behind an Application query and Platform adapter. Keep Sub Prep's full
 office/Wi-Fi campus details and all-years calendar read separate. Workbook,
 generic settings, personal-details atomic save, other feature services, and
 broader document work remain open; Phase 2 remains In progress.
+
+### Phase 2 My Information campus chooser query - 2026-09-24
+
+My Information now reads its campus chooser through a Qt-free
+`MyInfoCampusDirectoryQueryPort` and a Platform adapter. The page no longer
+accesses `CampusJsonRepository` or `ResourcePaths::Campuses` directly. The
+adapter preserves repository ordering, owning UTF-8 IDs, trimmed display names
+with trimmed-ID fallback, and the raw ID values used as combo data. Saved
+ID/name matching and correction writes remain unchanged. Executor and
+independent fresh Ninja/MSVC x64 builds validated 882 handwritten owners and
+built ClassMngr, MyWorkspace, and both new suites; focused CTest passed 3/3 in
+both runs. The existing MyWorkspace test covers selection correction. The
+codec normalizes blank IDs/names to `campus`, so the empty-label defensive
+filter cannot be reached through repository fixtures. Next: route Sub Prep's
+full campus office/Wi-Fi detail read through a separate Application query and
+Platform adapter. Keep the all-years calendar query separate. Personal Details
+atomic save, workbook, generic settings, other feature services, and broader
+document boundaries remain open; Phase 2 remains In progress.

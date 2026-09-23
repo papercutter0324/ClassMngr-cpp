@@ -2832,10 +2832,11 @@ count loader has been removed from this output path.
 
 Windows x64 Debug Ninja built the application and focused mapper, page,
 Application query, Platform adapter, PDF, and package targets. CTest passed
-6/6. The separate roster-PDF stage still loads legacy class, teacher, and full
-roster records. The mapper and existing output tests establish this boundary,
-not full generated package parity or a memory improvement; those Phase 2 and
-Sub Prep gates remain open.
+6/6. At this milestone the separate roster-PDF stage still loaded legacy
+class, teacher, and full roster records; Work Package F7 later replaced those
+direct package-service reads with the typed source below. The mapper and
+existing output tests establish this boundary, not full generated package
+parity or a memory improvement; those Phase 2 and Sub Prep gates remain open.
 
 ## Verified Sub Prep information-sheet renderer lifetime
 
@@ -2848,10 +2849,13 @@ synchronous renderer call, and the PDF test verifies that both values refer
 to the same list. Windows x64 Debug Ninja built the application, PDF, package,
 and page targets; CTest passed the page, PDF, and package suites 3/3.
 
-The package request still retains the information model after the main sheet
-finishes, and the roster output stage still uses full legacy class, teacher,
-and roster records. This is one copy reduction, not a completed lifetime or
-roster-source migration; Phase 2 and the Release memory gate remain open.
+At this point the package request still retained the information model after
+the main sheet finished, and roster output still used full legacy class,
+teacher, and roster records. The subsequent package-stage release dropped the
+information model before roster materialization; Work Package F7 later moved
+the roster source read behind the typed boundary below. This renderer change
+was one copy reduction, not full output parity or memory evidence; Phase 2 and
+the Release memory gate remain open.
 
 ## Verified Sub Prep package stage release
 
@@ -2862,10 +2866,27 @@ data, then clears `request.subPrep` before the roster output stage. This drops
 the schedule and rich information-sheet model before roster materialization.
 
 Windows x64 Debug Ninja built the application, package service tests, and page
-tests; CTest passed the page, PDF, and package suites 3/3. The current roster
-read still uses legacy class, teacher, and full roster records. This closes
-the main-sheet lifetime boundary only; the scoped roster source, output
-parity, and Phase 2 remain open.
+tests; CTest passed the page, PDF, and package suites 3/3. At this stage the
+package service still read legacy class, teacher, and full roster records
+directly. Work Package F7 later replaced those direct reads with the typed
+roster source below. This closes the main-sheet lifetime boundary only; output
+parity and Phase 2 remain open.
+
+## Current Sub Prep roster-output source boundary - 2026-09-24
+
+Commit `bc930be919a47cdeefa4b131cad3df92e96534b2` integrates
+`SubPrepRosterOutputSourceQuery` and
+`ApplicationServicesSubPrepRosterOutputSourcePort` into the package path.
+`SubPrepPage` owns the session-backed Platform adapter for the synchronous
+generation call; `SubPrepPackageService` maps the bounded Application result
+to the renderer model and no longer reads classes, teachers, or rosters through
+legacy services directly. The request carries typed class IDs, dates, schedule
+mode, and extra columns. Existing ordering, package tree, folder names, and
+output selection remain preserved.
+
+Focused CTest passed 5/5 across package, page, PDF, Application query, and
+Platform source suites. Full PDF/package output parity and the packaged
+96-class Release memory gate remain open; Phase 2 is not complete.
 
 
 ## Current calendar import persistence boundary - 2026-09-24
@@ -3100,13 +3121,29 @@ adapter targets, and passed focused CTest 4/4. The independent repeat build
 returned exit 0 with no work; diff checks were clean. There are no remaining
 verification gaps in this slice.
 
-## Next candidate: F27 My Information campus chooser query
+## Verified F27 My Information campus-directory query
 
-Route the campus-directory lookup in
-`src/features/my_info/ui/personal_details_page_sections.cpp` through a
-narrow Qt-free Application query and Platform adapter. Preserve repository
-name ordering, trimmed display-name fallback, original IDs in combo data,
-saved ID/name matching, and correction writes. This candidate was supported by
-paired Explorers. Workbook decoding, generic settings, personal-details atomic
-save, other feature services, and broader document work remain open; Phase 2
-remains in progress.
+My Information campus chooser metadata now crosses the Qt-free
+`MyInfoCampusDirectoryQueryPort`; a Platform adapter reads
+`CampusJsonRepository` and returns owning UTF-8 IDs and display names. It
+preserves repository order, trimmed name/ID fallback, and raw IDs. The page no
+longer reads `CampusJsonRepository` or `ResourcePaths` directly; stored
+ID/name matching and correction writes remain unchanged.
+
+Two new Application/Platform suites and the existing MyWorkspace behavior test
+cover the cutover. Executor and independent fresh Ninja/MSVC x64 configures
+validated 882 handwritten owners, built `ClassMngr`, MyWorkspace, and both new
+suites, and passed focused CTest 3/3. The independent repeat build returned
+exit 0 with no work; diff check passed. `CampusJsonCodec` normalizes blank
+ID/name to `campus`, so an empty-display fixture cannot be reached through the
+repository; the empty-display filter remains in place. Phase 2 remains open.
+
+## Next candidate: F28 Sub Prep full campus-detail directory query
+
+Route Sub Prep's full campus-detail directory read through a narrow Qt-free
+Application query and Platform adapter. Preserve repository order and
+omission, saved ID/name matching, first-entry fallback, `N/A` for missing
+details, and the availability guard. Keep settings and the 1–9999 calendar
+read out of scope. Workbook decoding, generic settings, PersonalDetails
+atomic-save caller cutover, other feature services, and broader document work
+remain open; Phase 2 remains in progress.

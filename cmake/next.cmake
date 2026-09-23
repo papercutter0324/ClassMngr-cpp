@@ -39,6 +39,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_import_plan.h
     src/next/application/calendar_event_import_campus_code_query_port.h
     src/next/application/calendar_page_campus_directory_query_port.h
+    src/next/application/my_info_campus_directory_query_port.h
     src/next/application/calendar_event_import_signature_query_port.h
     src/next/application/calendar_event_import_save_port.h
     src/next/application/calendar_event_save_port.h
@@ -117,6 +118,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_calendar_event_port.h
     src/next/platform/calendar_event_import_campus_code_query_adapter.h
     src/next/platform/calendar_page_campus_directory_query_adapter.h
+    src/next/platform/my_info_campus_directory_query_adapter.h
     src/next/platform/application_services_calendar_event_import_signature_query_port.h
     src/next/platform/application_services_calendar_event_delete_port.h
     src/next/platform/application_services_calendar_event_delete_all_port.h

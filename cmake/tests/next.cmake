@@ -463,6 +463,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationMyInfoCampusDirectoryQueryPort
+    SOURCES
+        tests/next_application_my_info_campus_directory_query_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesSubPrepRosterOutputSourcePort
     SOURCES
         tests/next_platform_application_services_sub_prep_roster_output_source_port_tests.cpp
@@ -566,6 +575,15 @@ classmngr_add_qt_test(
     NAME NextPlatformCalendarPageCampusDirectoryQuery
     SOURCES
         tests/next_platform_calendar_page_campus_directory_query_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformMyInfoCampusDirectoryQueryAdapter
+    SOURCES
+        tests/next_platform_my_info_campus_directory_query_adapter_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

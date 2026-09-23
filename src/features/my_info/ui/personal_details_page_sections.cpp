@@ -4,12 +4,11 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "core/resource_paths.h"
-#include "features/campus/data/campus_json_repository.h"
 #include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
+#include "next/platform/my_info_campus_directory_query_adapter.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
@@ -87,22 +86,6 @@ SettingsService* openSettingsService(
     return settingsService && settingsService->isAvailable()
         ? settingsService
         : nullptr;
-}
-
-CampusJsonRepository campusRepository()
-{
-    return CampusJsonRepository(
-        ResourcePaths::Campuses::directory()
-        );
-}
-
-QString campusDisplayName(
-    const CampusInfo& campus
-    )
-{
-    return campus.campusName.trimmed().isEmpty()
-        ? campus.id.trimmed()
-        : campus.campusName.trimmed();
 }
 
 int findCampusIndex(
@@ -896,22 +879,24 @@ void PersonalDetailsPage::loadStoredSettings()
 
     m_campusCombo->clear();
 
-    const QList<CampusInfo> campuses =
-        campusRepository().loadCampuses();
+    const auto campuses =
+        ClassMngr::Next::Platform::
+            MyInfoCampusDirectoryQueryAdapter().loadCampuses();
 
-    for (const CampusInfo& campusInfo : campuses)
+    for (const auto& campusInfo : campuses)
     {
-        const QString displayName =
-            campusDisplayName(campusInfo);
-
-        if (displayName.isEmpty())
-        {
-            continue;
-        }
+        const QString displayName = QString::fromUtf8(
+            campusInfo.displayName.data(),
+            static_cast<qsizetype>(campusInfo.displayName.size())
+            );
+        const QString campusId = QString::fromUtf8(
+            campusInfo.id.data(),
+            static_cast<qsizetype>(campusInfo.id.size())
+            );
 
         m_campusCombo->addItem(
             displayName,
-            campusInfo.id
+            campusId
             );
     }
 

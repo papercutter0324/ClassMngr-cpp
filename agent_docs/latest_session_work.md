@@ -1076,3 +1076,34 @@ separate on a host with Xvfb and loopback access.
   feature-service, and document migrations. Phase 2 remains open. Nothing was
   pushed; preserve the separately staged
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 My Information campus chooser query - 2026-09-24
+
+- Added the Qt-free `MyInfoCampusDirectoryQueryPort` and the Platform
+  `MyInfoCampusDirectoryQueryAdapter` over `CampusJsonRepository`. The adapter
+  returns owning UTF-8 IDs and display names, preserves repository ordering,
+  applies the existing trimmed-name/trimmed-ID fallback, filters empty display
+  names, and retains each original ID value. My Information no longer reads
+  the campus repository or `ResourcePaths::Campuses` directly. Saved campus
+  matching, combo selection, correction write, and later save remain unchanged.
+- App-less and adapter tests cover owning metadata, UTF-8, repository order,
+  raw ID values, trimmed fallback, malformed/default records, and empty or
+  missing directories. The existing MyWorkspace test covers case-insensitive
+  saved-ID selection and correction write. `CampusJsonCodec` normalizes a
+  blank ID/name record to `campus`, so the adapter's empty-label filter cannot
+  be reached through a repository fixture; the filter remains in place.
+- Executor and independent fresh Ninja/MSVC x64 configures each validated 882
+  handwritten source owners, built ClassMngr, MyWorkspace, and both new test
+  targets, and passed focused CTest 3/3. The independent repeat build returned
+  no work; `git diff --check HEAD` passed. Campus resource generation succeeded
+  with no test limitation.
+- Handoff: F28 routes Sub Prep's full campus details—office number, Wi-Fi name
+  and password, and photocopier code—through a separate Application query and
+  Platform adapter. Preserve repository ordering/omission, saved-ID/name
+  matching, first-campus fallback, “N/A” detail display, and availability
+  timing. Keep settings and the all-years calendar query out of scope. Personal
+  Details atomic-save callers, workbook decoding, generic settings, other
+  feature services, and broader document boundaries remain open. Phase 2
+  remains in progress. Nothing was pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
