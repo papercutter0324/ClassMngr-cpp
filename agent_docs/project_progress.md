@@ -160,8 +160,11 @@ refresh behavior are preserved. Import-start and dialog-opening availability
 guards now query the typed Platform calendar boundary; the calendar feature no
 longer calls `ApplicationServices::calendarService()` directly. Generic
 settings persistence, remaining feature-service migrations, and broader
-document-service migration also remain open. Keep the Linux Phase 0 follow-up
-separate until it can run on a host with Xvfb and loopback access.
+document-service migration also remain open. The calendar page now passes
+typed edit drafts from activation or new-event creation through the dialog and
+into typed save, repeat, and delete requests without a legacy event-object
+round trip. Keep the Linux Phase 0 follow-up separate until it can run on a
+host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

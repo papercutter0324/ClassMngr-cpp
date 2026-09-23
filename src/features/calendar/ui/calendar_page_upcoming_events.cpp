@@ -8,6 +8,7 @@
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
+#include "domain/models/calendar_event.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
@@ -900,28 +901,6 @@ CalendarPage::calendarEventDisplayOptions() const
     return options;
 }
 
-QList<CalendarEvent> CalendarPage::filterUpcomingEvents(
-    const QList<CalendarEvent>& events,
-    const CalendarEventDisplayOptions& options
-    ) const
-{
-    QList<CalendarEvent> filteredEvents;
-
-    for (const CalendarEvent& event : events)
-    {
-        if (
-            options.activeTypes.contains(
-                normalizedCalendarEventType(event.eventType)
-                )
-            && calendarEventVisible(event, options)
-            )
-        {
-            filteredEvents.append(event);
-        }
-    }
-
-    return filteredEvents;
-}
 std::vector<CalendarEventSummary> CalendarPage::filterUpcomingEvents(
     const std::vector<CalendarEventSummary>& events,
     const CalendarEventDisplayOptions& options
@@ -1304,26 +1283,6 @@ QString CalendarPage::upcomingEventTimeText(
             startTime.toString(format),
             endTime.toString(format)
             );
-}
-bool CalendarPage::calendarEventVisible(
-    const CalendarEvent& event,
-    const CalendarEventDisplayOptions& options
-    ) const
-{
-    if (
-        options.hideStartOfTermEvents
-        && isStartOfTermCalendarEvent(event)
-        )
-    {
-        return false;
-    }
-
-    return CalendarEventCampusFilter::eventMatchesCampus(
-        event,
-        options.currentCampusCodes,
-        options.allCampusCodes,
-        options.showAllCampuses
-        );
 }
 bool CalendarPage::calendarEventVisible(
     const CalendarEventSummary& event,

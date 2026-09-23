@@ -1,7 +1,7 @@
 #pragma once
 
-#include "domain/models/calendar_event.h"
 #include "calendar_event_cache.h"
+#include "next/application/calendar_event_edit_draft.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <array>
@@ -117,7 +117,7 @@ private:
         QWidget* parent
         );
     void openCalendarDialog(
-        const CalendarEvent& event,
+        const ClassMngr::Next::Application::CalendarEventEditDraft& draft,
         bool existingEvent
         );
     void refreshCalendarData();
@@ -153,10 +153,6 @@ private:
             >& events
         ) const;
     CalendarEventDisplayOptions calendarEventDisplayOptions() const;
-    QList<CalendarEvent> filterUpcomingEvents(
-        const QList<CalendarEvent>& events,
-        const CalendarEventDisplayOptions& options
-        ) const;
     std::vector<
         ClassMngr::Next::Application::CalendarEventSummary
         > filterUpcomingEvents(
@@ -194,10 +190,6 @@ private:
     QString upcomingEventTimeText(
         const ClassMngr::Next::Application::CalendarEventSummary& event,
         bool use24HourTime
-        ) const;
-    bool calendarEventVisible(
-        const CalendarEvent& event,
-        const CalendarEventDisplayOptions& options
         ) const;
     bool calendarEventVisible(
         const ClassMngr::Next::Application::CalendarEventSummary& event,

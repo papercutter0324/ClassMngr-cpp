@@ -1,11 +1,11 @@
 #include "calendar_page.h"
 
-#include "app/services/feature_services.h"
 #include "academic_calendar_provider.h"
 #include "calendar_event_cache.h"
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
+#include "domain/models/calendar_event.h"
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
@@ -56,102 +56,21 @@ QString projectionText(
         );
 }
 
-std::optional<CalendarEvent> legacyEventFromProjection(
+CalendarEventEditDraft calendarEventDraftFromProjection(
     const CalendarEventSummary& summary
     )
 {
-    bool validId = false;
-    const int id = projectionText(summary.id.value()).toInt(&validId);
-    const QDate startDate = QDate::fromString(
-        projectionText(summary.startDate),
-        Qt::ISODate
-        );
-    const QDate endDate = QDate::fromString(
-        projectionText(summary.endDate),
-        Qt::ISODate
-        );
-    if (!validId
-        || id <= 0
-        || !startDate.isValid()
-        || !endDate.isValid()
-        || endDate < startDate
-        || summary.startTime.has_value() != summary.endTime.has_value()
-        || (summary.allDay
-            && (summary.startTime.has_value() || summary.endTime.has_value())))
-    {
-        return std::nullopt;
-    }
-
-    CalendarEvent event;
-    event.id = id;
-    event.title = projectionText(summary.title);
-    event.eventType = projectionText(summary.eventType);
-    event.timeStatus = projectionText(summary.timeStatus);
-    event.repeatSeriesId = summary.repeatSeriesId
-        ? projectionText(*summary.repeatSeriesId)
-        : QString();
-    event.allDay = summary.allDay;
-    event.startDate = startDate;
-    event.endDate = endDate;
-
-    if (!summary.allDay && summary.startTime && summary.endTime)
-    {
-        event.startTime = QTime::fromString(
-            projectionText(*summary.startTime),
-            QStringLiteral("HH:mm")
-            );
-        event.endTime = QTime::fromString(
-            projectionText(*summary.endTime),
-            QStringLiteral("HH:mm")
-            );
-        if (!event.startTime.isValid() || !event.endTime.isValid())
-        {
-            return std::nullopt;
-        }
-    }
-
-    return event;
-}
-
-CalendarEventEditDraft editDraftFromLegacyEvent(
-    const CalendarEvent& event
-    )
-{
     CalendarEventEditDraft draft;
-
-    if (event.id > 0)
-    {
-        draft.id =
-            ClassMngr::Next::Domain::CalendarEventId::fromString(
-                std::to_string(event.id)
-                );
-    }
-
-    if (!event.repeatSeriesId.trimmed().isEmpty())
-    {
-        draft.repeatSeriesId =
-            event.repeatSeriesId.toUtf8().toStdString();
-    }
-
-    draft.title = event.title.toUtf8().toStdString();
-    draft.startDate = event.startDate.toString(Qt::ISODate).toStdString();
-    draft.endDate = event.endDate.toString(Qt::ISODate).toStdString();
-    draft.allDay = event.allDay;
-    draft.eventType = event.eventType.toUtf8().toStdString();
-    draft.timeStatus = event.timeStatus.toUtf8().toStdString();
-
-    if (!event.allDay
-        && event.startTime.isValid()
-        && event.endTime.isValid())
-    {
-        draft.startTime = event.startTime.toString(
-            QStringLiteral("HH:mm")
-            ).toStdString();
-        draft.endTime = event.endTime.toString(
-            QStringLiteral("HH:mm")
-            ).toStdString();
-    }
-
+    draft.id = summary.id;
+    draft.repeatSeriesId = summary.repeatSeriesId;
+    draft.title = summary.title;
+    draft.startDate = summary.startDate;
+    draft.endDate = summary.endDate;
+    draft.startTime = summary.startTime;
+    draft.endTime = summary.endTime;
+    draft.allDay = summary.allDay;
+    draft.eventType = summary.eventType;
+    draft.timeStatus = summary.timeStatus;
     return draft;
 }
 
@@ -266,10 +185,10 @@ QList<CalendarEventEditDraft> repeatedCalendarEventDrafts(
 }
 
 bool isRepeatSeriesEvent(
-    const CalendarEvent& event
+    const CalendarEventEditDraft& draft
     )
 {
-    return !event.repeatSeriesId.trimmed().isEmpty();
+    return draft.repeatSeriesId.has_value();
 }
 
 QString newRepeatSeriesId()
@@ -287,23 +206,15 @@ void CalendarPage::handleCalendarDayActivated(
     int day
     )
 {
-    CalendarEvent event;
-
-    event.startDate =
-        QDate(
-            year,
-            month,
-            day
-            );
-    event.endDate =
-        event.startDate;
-    event.startTime =
-        QTime(9, 0);
-    event.endTime =
-        QTime(10, 0);
+    CalendarEventEditDraft draft;
+    const QDate date(year, month, day);
+    draft.startDate = date.toString(Qt::ISODate).toStdString();
+    draft.endDate = draft.startDate;
+    draft.startTime = "09:00";
+    draft.endTime = "10:00";
 
     openCalendarDialog(
-        event,
+        draft,
         false
         );
 }
@@ -325,14 +236,10 @@ void CalendarPage::handleCalendarEventActivated(
         return;
     }
 
-    const auto event = legacyEventFromProjection(projectedEvent.value());
-    if (!event || event->id <= 0)
-    {
-        return;
-    }
-
+    const CalendarEventEditDraft draft =
+        calendarEventDraftFromProjection(projectedEvent.value());
     openCalendarDialog(
-        *event,
+        draft,
         true
         );
 }
@@ -811,7 +718,7 @@ void CalendarPage::syncCalendarFontSize()
         );
 }
 void CalendarPage::openCalendarDialog(
-    const CalendarEvent& event,
+    const CalendarEventEditDraft& draft,
     bool existingEvent
     )
 {
@@ -820,14 +727,12 @@ void CalendarPage::openCalendarDialog(
         return;
     }
 
-    const CalendarEventEditDraft editDraft =
-        editDraftFromLegacyEvent(event);
     ClassMngr::Next::Platform::
         ApplicationServicesScheduleDisplayPreferencesPort
         displayPreferencesPort(*m_services);
     const auto displayPreferences = displayPreferencesPort.load();
     CalendarEventDialog dialog(
-        editDraft,
+        draft,
         existingEvent,
         displayPreferences
             ? displayPreferences.value().use24HourTime
@@ -842,7 +747,7 @@ void CalendarPage::openCalendarDialog(
 
     const bool repeatSeriesEvent =
         existingEvent
-        && isRepeatSeriesEvent(event);
+        && isRepeatSeriesEvent(draft);
     const bool thisAndFollowing =
         repeatSeriesEvent
         && dialog.seriesEditScope()
@@ -850,13 +755,13 @@ void CalendarPage::openCalendarDialog(
 
     if (dialog.deleteRequested())
     {
-        Status deleted;
+        QString deleteError;
         if (thisAndFollowing)
         {
             const ClassMngr::Next::Application::
                 CalendarEventSeriesDeleteRequest request{
-                    event.repeatSeriesId.toUtf8().toStdString(),
-                    event.startDate.toString(Qt::ISODate).toStdString()
+                    *draft.repeatSeriesId,
+                    draft.startDate
                 };
             ClassMngr::Next::Platform::
                 ApplicationServicesCalendarEventSeriesDeletePort deletePort(
@@ -866,36 +771,33 @@ void CalendarPage::openCalendarDialog(
                 deletePort.deleteRepeatSeriesFromDate(request);
             if (!typedDeleted)
             {
-                deleted = std::unexpected(
-                    projectionText(typedDeleted.error().message)
-                    );
+                deleteError = projectionText(typedDeleted.error().message);
             }
         }
         else
         {
-            const auto typedEventId =
-                ClassMngr::Next::Domain::CalendarEventId::fromString(
-                    std::to_string(event.id)
-                    );
+            if (!draft.id)
+            {
+                return;
+            }
+
             ClassMngr::Next::Platform::
                 ApplicationServicesCalendarEventDeletePort deletePort(
                     *m_services
                     );
-            const auto typedDeleted = deletePort.deleteEvent(*typedEventId);
+            const auto typedDeleted = deletePort.deleteEvent(*draft.id);
             if (!typedDeleted)
             {
-                deleted = std::unexpected(
-                    projectionText(typedDeleted.error().message)
-                    );
+                deleteError = projectionText(typedDeleted.error().message);
             }
         }
 
-        if (!deleted)
+        if (!deleteError.isNull())
         {
             DialogServices::showWarning(
                 this,
                 tr("Delete Calendar Event"),
-                deleted.error()
+                deleteError
                 );
             return;
         }
@@ -909,11 +811,11 @@ void CalendarPage::openCalendarDialog(
         {
             const std::string repeatSeriesId = savedDraft.repeatSeriesId
                 ? *savedDraft.repeatSeriesId
-                : event.repeatSeriesId.toUtf8().toStdString();
+                : *draft.repeatSeriesId;
             ClassMngr::Next::Application::CalendarEventSeriesEditRequest
                 request{
                     repeatSeriesId,
-                    event.startDate.toString(Qt::ISODate).toStdString(),
+                    draft.startDate,
                     savedDraft.startDate,
                     savedDraft.endDate,
                     savedDraft.title,

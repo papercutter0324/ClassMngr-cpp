@@ -739,3 +739,20 @@ separate on a host with Xvfb and loopback access.
   remaining feature-service calls. Generic settings persistence, wider
   document migration, the 250 MiB settled-memory target, and the separate
   Linux Phase 0 follow-up remain open. Nothing was pushed.
+
+
+### Phase 2 typed calendar edit-draft flow - 2026-09-24
+
+- Calendar day activation creates a typed draft, and event activation passes
+  the typed summary directly into the dialog draft. The page no longer maps
+  through the legacy `CalendarEvent` record before editing; repeat/delete/save
+  decisions and requests now read from that draft. Removed the unused legacy
+  upcoming-event filter overloads.
+- Windows x64 Debug built `ClassMngr`, `ClassMngrDialogShellTests`, and the
+  Platform calendar event suite. Focused CTest passed 2/2. The dialog tests
+  preserve default, timed, all-day, and unconfirmed-time interactions;
+  `git diff --check` passed.
+- Handoff: continue the remaining calendar UI/value migration, then generic
+  settings persistence, remaining feature-service migrations, and broader
+  document migration. The 250 MiB settled-memory target and Linux Phase 0
+  follow-up remain open. Nothing was pushed.

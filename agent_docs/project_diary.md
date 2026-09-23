@@ -477,3 +477,12 @@ writes. Keep import-start and dialog-opening guards behaviorally unchanged, but
 do not keep a raw `CalendarService*` in the feature when the adapter can answer
 the same question. A source search after the cutover confirmed no direct
 calendar-service getter calls remain under `src/features/calendar/`.
+
+
+## Phase 2 calendar edit-draft flow - 2026-09-24
+
+When the calendar projection is already typed, pass its values directly into
+`CalendarEventEditDraft`. Avoid converting through the old `CalendarEvent`
+model and back before the dialog. Keep the dialog's Qt conversion private to
+its UI boundary and drive save, repeat, and delete requests from the typed
+draft.
