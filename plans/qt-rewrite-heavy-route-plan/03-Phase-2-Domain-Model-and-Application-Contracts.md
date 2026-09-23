@@ -3671,3 +3671,21 @@ fields, duplicate-only no-op, invalid-batch preflight, unavailable service,
 and rollback after a later insert fails. Workbook parsing and campus-directory
 lookup remain legacy responsibilities; the calendar import migration is not
 complete, and broader Phase 2 work remains open.
+
+
+#### Progress update - 2026-09-24 (typed calendar reset mutation)
+
+The calendar preferences panel now routes its confirmed reset through
+`CalendarEventDeleteAllPort` and
+`ApplicationServicesCalendarEventDeleteAllPort`. The adapter exposes service
+availability separately so the UI preserves the existing behavior of checking
+availability before displaying the destructive confirmation. The panel keeps
+the same prompt, warning, success status, and refresh notification and no
+longer stores `CalendarService`.
+
+Windows x64 Debug built `ClassMngr` and the Application and Platform calendar
+event test targets. CMake validated 871 explicit source owners. Focused CTest
+passed 2/2; database cases cover successful reset, unavailable service, and a
+trigger-injected delete failure that leaves its event intact. The import
+signature read, generic settings persistence, remaining feature-service
+migrations, and broader document migration remain open.

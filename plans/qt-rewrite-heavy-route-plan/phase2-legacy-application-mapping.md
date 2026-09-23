@@ -2875,3 +2875,17 @@ Qt-free `CalendarEventImportSaveRequest` and
 ordered `CalendarService::saveEvents()` transaction; see the Phase 2 plan's
 [typed calendar import batch-save update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-typed-calendar-import-batch-save-boundary)
 for verification. Workbook parsing and campus-directory lookup remain legacy.
+
+
+## Current calendar reset mutation boundary - 2026-09-24
+
+`CalendarPreferencesPanel::resetCalendarEvents()` now checks
+`Application::CalendarEventDeleteAllPort::isAvailable()` before opening its
+destructive prompt and routes the confirmed delete through
+`Platform::ApplicationServicesCalendarEventDeleteAllPort`. The panel no
+longer retains `CalendarService`; it still owns the existing prompt text,
+warning, success status, and `calendarPreferencesChanged(true)` notification.
+Focused Application and Platform tests cover the Qt-free result contract,
+successful reset, unavailable service, and a database delete failure. Calendar
+import signature reads and other feature-service calls remain mapped for later
+Phase 2 slices.

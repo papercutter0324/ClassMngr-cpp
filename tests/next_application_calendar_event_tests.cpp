@@ -1,4 +1,5 @@
 #include "next/application/calendar_event_edit_draft.h"
+#include "next/application/calendar_event_delete_all_port.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_save_port.h"
@@ -205,6 +206,7 @@ private slots:
     void importSaveRequestBoundsOrderedCreateBatchAndNoOp();
     void importSaveRequestRejectsUpdatesAndInvalidEvents();
     void importSaveRequestContractHasNoQtOrLegacySurface();
+    void deleteAllPortContractUsesStructuredQtFreeResult();
     void editDraftBoundsAndTimeStatusPolicyIsExplicit();
     void editDraftIsCopyableEqualAndIndependentlyReleasable();
     void editDraftContractHasNoQtOrLegacySurface();
@@ -959,6 +961,31 @@ importSaveRequestContractHasNoQtOrLegacySurface()
         >);
     static_assert(!std::is_pointer_v<
         decltype(std::declval<CalendarEventImportSaveRequest>().events)
+        >);
+    static_assert(!std::is_copy_constructible_v<Port>);
+
+    QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+deleteAllPortContractUsesStructuredQtFreeResult()
+{
+    using Port = CalendarEventDeleteAllPort;
+    using DeleteResult = decltype(
+        std::declval<Port&>().deleteAllEvents()
+        );
+
+    static_assert(std::is_same_v<
+        DeleteResult,
+        CalendarEventDeleteAllResult
+        >);
+    static_assert(std::is_same_v<
+        CalendarEventDeleteAllResult,
+        Domain::Result<void>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<const Port&>().isAvailable()),
+        bool
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
 

@@ -154,9 +154,12 @@ baseline. Settled working set was 306,466,816 bytes at one second and
 The calendar importer now persists accepted candidates through a typed,
 ordered batch port while preserving one transaction and duplicate-only no-op
 behavior. Continue the broader Phase 2 exit work with the typed calendar
-UI/page migration. Generic settings persistence, remaining feature-service
-migrations, and broader document-service migration also remain open. Keep the Linux Phase
-0 follow-up separate until it can run on a host with Xvfb and loopback access.
+UI/page migration. The calendar preferences reset mutation now uses a typed
+delete-all port; its availability guard, confirmation, warning, status, and
+refresh behavior are preserved. Calendar import signature reads, generic
+settings persistence, remaining feature-service migrations, and broader
+document-service migration also remain open. Keep the Linux Phase 0 follow-up
+separate until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

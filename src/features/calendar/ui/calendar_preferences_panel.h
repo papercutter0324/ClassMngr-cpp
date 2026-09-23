@@ -9,7 +9,6 @@
 class AcademicCalendarProvider;
 class ApplicationServices;
 class CalendarEventImportService;
-class CalendarService;
 class QCheckBox;
 class QDateEdit;
 class QLabel;
@@ -64,7 +63,7 @@ private:
     [[nodiscard]] QString termName(int termIndex) const;
 
     AcademicCalendarProvider* m_provider = nullptr;
-    CalendarService* m_calendarService = nullptr;
+    ApplicationServices* m_services = nullptr;
     SettingsService* m_settingsService = nullptr;
     CalendarEventImportService* m_importService = nullptr;
     int m_termYear = AcademicCalendarSchedule::FirstTermYear;

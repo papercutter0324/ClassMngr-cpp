@@ -7,6 +7,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "features/calendar/calendar_event_import_service.h"
+#include "next/platform/application_services_calendar_event_delete_all_port.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -53,7 +54,7 @@ CalendarPreferencesPanel::CalendarPreferencesPanel(
     )
     : QWidget(parent)
     , m_provider(provider)
-    , m_calendarService(services ? services->calendarService() : nullptr)
+    , m_services(services)
     , m_settingsService(services ? services->settingsService() : nullptr)
     , m_importService(new CalendarEventImportService(services, this))
 {
@@ -170,7 +171,14 @@ void CalendarPreferencesPanel::restoreDefaults()
 
 void CalendarPreferencesPanel::resetCalendarEvents()
 {
-    if (!m_calendarService || !m_calendarService->isAvailable())
+    if (!m_services)
+    {
+        return;
+    }
+
+    ClassMngr::Next::Platform::ApplicationServicesCalendarEventDeleteAllPort
+        deleteAllPort(*m_services);
+    if (!deleteAllPort.isAvailable())
     {
         return;
     }
@@ -190,10 +198,18 @@ void CalendarPreferencesPanel::resetCalendarEvents()
         return;
     }
 
-    const Status deleted = m_calendarService->deleteAllEvents();
+    const auto deleted = deleteAllPort.deleteAllEvents();
     if (!deleted)
     {
-        DialogServices::showWarning(this, tr("Reset Calendar"), deleted.error());
+        const std::string& message = deleted.error().message;
+        DialogServices::showWarning(
+            this,
+            tr("Reset Calendar"),
+            QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                )
+            );
         return;
     }
 

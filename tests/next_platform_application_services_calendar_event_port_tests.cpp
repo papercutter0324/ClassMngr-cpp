@@ -2,12 +2,14 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "next/application/calendar_event_delete_port.h"
+#include "next/application/calendar_event_delete_all_port.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
+#include "next/platform/application_services_calendar_event_delete_all_port.h"
 #include "next/platform/application_services_calendar_event_import_save_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/platform/application_services_calendar_event_series_create_port.h"
@@ -34,6 +36,8 @@ using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventDeletePort;
+using ClassMngr::Next::Platform::
+    ApplicationServicesCalendarEventDeleteAllPort;
 using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventImportSavePort;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventSavePort;
@@ -214,6 +218,9 @@ private slots:
     void reportsInvalidDeleteIdStructurally();
     void reportsUnavailableDeleteServiceStructurally();
     void reportsDeleteServiceFailureStructurally();
+    void deletesAllCalendarEventsThroughTypedPort();
+    void reportsUnavailableDeleteAllServiceStructurally();
+    void reportsDeleteAllServiceFailureStructurally();
     void savesOrderedCalendarImportBatchWithTypedIdsAndParity();
     void acceptsDuplicateOnlyEmptyImportBatchAsNoOp();
     void rejectsInvalidImportBatchBeforeCreatingAnyRows();
@@ -519,6 +526,95 @@ reportsDeleteServiceFailureStructurally()
     verifyFailure(deleted, ErrorCode::Technical);
     QVERIFY(
         deleted.error().message.find("Deleting calendar event")
+            != std::string::npos
+        );
+    QVERIFY(legacyService->event(eventId));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+deletesAllCalendarEventsThroughTypedPort()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    CalendarEvent firstEvent = makeEvent(
+        QStringLiteral("Reset one"),
+        QDate(2026, 12, 2),
+        QDate(2026, 12, 2)
+        );
+    firstEvent.startTime = QTime(9, 0);
+    firstEvent.endTime = QTime(10, 0);
+    QVERIFY(saveEvent(*legacyService, firstEvent) > 0);
+
+    CalendarEvent secondEvent = makeEvent(
+        QStringLiteral("Reset two"),
+        QDate(2026, 12, 3),
+        QDate(2026, 12, 3)
+        );
+    secondEvent.startTime = QTime(11, 0);
+    secondEvent.endTime = QTime(12, 0);
+    QVERIFY(saveEvent(*legacyService, secondEvent) > 0);
+
+    ApplicationServicesCalendarEventDeleteAllPort port(services);
+    QVERIFY(port.isAvailable());
+    const auto deleted = port.deleteAllEvents();
+    QVERIFY(deleted);
+    const auto remaining = legacyService->eventsInRange(
+        QDate(2026, 12, 1),
+        QDate(2026, 12, 31)
+        );
+    QVERIFY(remaining);
+    QVERIFY(remaining->isEmpty());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsUnavailableDeleteAllServiceStructurally()
+{
+    ApplicationServices services;
+    ApplicationServicesCalendarEventDeleteAllPort port(services);
+
+    QVERIFY(!port.isAvailable());
+    verifyFailure(port.deleteAllEvents(), ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsDeleteAllServiceFailureStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+    CalendarEvent event = makeEvent(
+        QStringLiteral("Reset failure"),
+        QDate(2026, 12, 2),
+        QDate(2026, 12, 2)
+        );
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    const int eventId = saveEvent(*legacyService, event);
+    QVERIFY(eventId > 0);
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_delete_all "
+        "BEFORE DELETE ON calendar_events "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected calendar reset failure'); "
+        "END"
+        )));
+
+    ApplicationServicesCalendarEventDeleteAllPort port(services);
+    const auto deleted = port.deleteAllEvents();
+
+    verifyFailure(deleted, ErrorCode::Technical);
+    QVERIFY(
+        deleted.error().message.find("injected calendar reset failure")
+            != std::string::npos
+        || deleted.error().message.find("Deleting all calendar events")
             != std::string::npos
         );
     QVERIFY(legacyService->event(eventId));

@@ -459,3 +459,12 @@ working set remains above the 250 MiB end-of-rewrite target.
 A duplicate-only calendar import is a valid empty batch. Preserve the planner's
 accepted input order and send the whole batch through one service call so the
 repository transaction still rolls back earlier rows if a later insert fails.
+
+
+## Phase 2 calendar reset mutation - 2026-09-24
+
+Keep the calendar reset availability check ahead of the destructive prompt.
+After confirmation, route deletion through the typed Platform port and map its
+owned UTF-8 error back to the existing warning UI. Verify the service error
+path with a database trigger and confirm the seeded event survives the failed
+delete.

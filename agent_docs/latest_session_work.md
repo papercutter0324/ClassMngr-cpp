@@ -705,3 +705,20 @@ separate on a host with Xvfb and loopback access.
   workbook parsing and campus-directory lookup remain legacy boundaries;
   generic settings, other feature-service migrations, and the wider document
   migration remain open. Nothing was pushed.
+
+
+### Phase 2 typed calendar reset mutation - 2026-09-24
+
+- Added the Qt-free `CalendarEventDeleteAllPort` and a Platform adapter that
+  maps availability and delete failures to structured results. The preferences
+  panel no longer stores `CalendarService`; it checks availability before
+  showing the existing destructive confirmation and preserves its warning,
+  success status, and refresh signal behavior.
+- Windows x64 Debug built `ClassMngr` and the Application and Platform calendar
+  event test targets. CMake validated 871 explicit source owners. Focused CTest
+  passed 2/2; database cases cover successful reset, unavailable service, and
+  a trigger-injected delete failure. `git diff --check` passed.
+- Handoff: continue Phase 2 with the calendar import signature read and broader
+  typed page migration. Generic settings persistence, remaining feature-service
+  migrations, wider document migration, the 250 MiB settled-memory target, and
+  the separate Linux Phase 0 follow-up remain open. Nothing was pushed.
