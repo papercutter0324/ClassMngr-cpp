@@ -3757,3 +3757,18 @@ Windows x64 Debug built `ClassMngr` and the Platform color-preference suite;
 focused CTest passed 1/1, including ApplicationServices-pointer round-trip
 and null-service fallback. `git diff --check` passed. Other upcoming-events
 preference access and broader Phase 2 migrations remain open.
+
+#### Progress update - 2026-09-24 (current-campus availability and options boundary)
+
+`Application::CurrentCampusPreferencesPort` exposes Qt-free `isAvailable()`;
+`Platform::ApplicationServicesCurrentCampusPreferencesPort` maps availability
+to the legacy service. CalendarPage upcoming-event options use the port before
+preference reads and campus projection, preserving the old availability gate.
+The feature file no longer retains or queries `SettingsService`.
+
+Windows x64 Debug built `ClassMngr` and the CurrentCampus preference test
+target. Focused CTest passed 1/1 for available, unavailable, null
+`ApplicationServices`, and null `SettingsService`; `git diff --check` passed.
+No dedicated CalendarPage test exists; the Tester judged the port tests plus
+guard/source comparison reasonable for this refactor. Other calendar
+input/lookup work and broader Phase 2 migrations remain open.

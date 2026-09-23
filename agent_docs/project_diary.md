@@ -510,3 +510,12 @@ Let the Platform preference adapter own the unavailable-service check. A
 calendar UI caller can read an empty stored color and use its existing
 default-color policy, or issue a save that becomes a no-op when settings are
 unavailable, without holding SettingsService.
+
+
+## Phase 2 calendar current-campus availability - 2026-09-24
+
+When a feature must preserve a larger preference-loading gate, expose the
+availability check through the Application port and map it in Platform.
+This keeps the feature from reaching for SettingsService while preserving
+unavailable defaults and avoiding unrelated repository reads. Keep the
+contract comment explicit about availability versus an empty value.

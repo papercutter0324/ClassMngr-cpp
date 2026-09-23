@@ -173,14 +173,20 @@ preference ports. CalendarPage and evaluation-default selection construct the
 Platform adapters at their boundaries, so the provider no longer references
 SettingsService. Windows x64 Debug built ClassMngr and the academic-calendar
 and three preference-port suites; focused CTest passed 4/4. Continue the
-remaining upcoming-events preference callers, then generic settings,
-feature-service, and document migrations.
+broader Phase 2 work with generic settings, feature-service, and document
+migrations.
 
 Calendar event-type color reads and writes now use the Application preference
 port through a Platform adapter constructed from ApplicationServices*. The
 adapter preserves the existing default-color fallback and unavailable-save
 no-op. Its focused Platform suite passed 1/1 after the Windows Debug app and
 test targets built.
+
+The current-campus Application preference port now exposes a Qt-free
+availability query. CalendarPage uses it to gate existing display-preference
+reads and campus projection, removing the final SettingsService reference
+from the calendar feature. Independent Windows x64 Debug build and focused
+CTest passed; there is no dedicated CalendarPage behavior test target.
 
 ### Phase 2 kickoff — 2026-09-19
 

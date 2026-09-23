@@ -1,9 +1,7 @@
 #include "calendar_page.h"
 
-#include "app/services/feature_services.h"
 #include "calendar_event_cache.h"
 #include "calendar_event_model.h"
-#include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
@@ -167,20 +165,6 @@ int upcomingEventRowHeight(
         UpcomingEventRowMinimumHeight,
         upcomingEventTagHeight(font) + 10
         );
-}
-
-SettingsService* openSettingsService(
-    ApplicationServices* services
-    )
-{
-    auto* settingsService =
-        services
-            ? services->settingsService()
-            : nullptr;
-
-    return settingsService && settingsService->isAvailable()
-        ? settingsService
-        : nullptr;
 }
 
 int scopeIndex(
@@ -841,10 +825,11 @@ CalendarPage::calendarEventDisplayOptions() const
     options.activeTypes =
         activeCalendarEventTypes();
 
-    auto* settingsService =
-        openSettingsService(m_services);
+    ClassMngr::Next::Platform::
+        ApplicationServicesCurrentCampusPreferencesPort
+        currentCampusPreferencesPort(m_services);
 
-    if (settingsService)
+    if (currentCampusPreferencesPort.isAvailable())
     {
         ClassMngr::Next::Platform::
             ApplicationServicesCalendarEventDisplayPreferencesPort
@@ -866,9 +851,6 @@ CalendarPage::calendarEventDisplayOptions() const
                 ? displayPreferences.value().use24HourTime
                 : false;
 
-        ClassMngr::Next::Platform::
-            ApplicationServicesCurrentCampusPreferencesPort
-            currentCampusPreferencesPort(settingsService);
         const QString currentName =
             projectionText(currentCampusPreferencesPort.read());
         const QList<CampusInfo> campuses =

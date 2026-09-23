@@ -72,6 +72,7 @@ private slots:
     void exactKeyAndVerbatimStringRoundTrip();
     void writePersistsExactKeyAndPreservesUnrelatedSettings();
     void missingAndUnavailableReadEmpty();
+    void reportsSettingsAvailability();
     void preservesQVariantToStringConversion();
     void preservesUnrelatedSettings();
     void writeFailureMapsToTechnicalError();
@@ -158,8 +159,37 @@ missingAndUnavailableReadEmpty()
     QVERIFY(unavailablePort.read().empty());
     QVERIFY(unavailablePort.write("ignored"));
 
-    ApplicationServicesCurrentCampusPreferencesPort nullPort(nullptr);
+    ApplicationServicesCurrentCampusPreferencesPort nullPort(
+        static_cast<SettingsService*>(nullptr)
+        );
     QVERIFY(nullPort.write("ignored"));
+}
+
+void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::
+reportsSettingsAvailability()
+{
+    ApplicationServices availableServices;
+    QVERIFY(openDatabase(availableServices, m_directory));
+    ApplicationServicesCurrentCampusPreferencesPort availablePort(
+        &availableServices
+        );
+    QVERIFY(availablePort.isAvailable());
+
+    ApplicationServices unavailableServices;
+    ApplicationServicesCurrentCampusPreferencesPort unavailablePort(
+        &unavailableServices
+        );
+    QVERIFY(!unavailablePort.isAvailable());
+
+    ApplicationServicesCurrentCampusPreferencesPort nullApplicationPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
+    QVERIFY(!nullApplicationPort.isAvailable());
+
+    ApplicationServicesCurrentCampusPreferencesPort nullSettingsPort(
+        static_cast<SettingsService*>(nullptr)
+        );
+    QVERIFY(!nullSettingsPort.isAvailable());
 }
 
 void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::

@@ -28,6 +28,15 @@ public:
     }
 
     explicit ApplicationServicesCurrentCampusPreferencesPort(
+        ApplicationServices* services
+        ) noexcept
+        : m_settingsService(
+            services ? services->settingsService() : nullptr
+            )
+    {
+    }
+
+    explicit ApplicationServicesCurrentCampusPreferencesPort(
         SettingsService* settingsService
         ) noexcept
         : m_settingsService(settingsService)
@@ -47,9 +56,14 @@ public:
         ApplicationServicesCurrentCampusPreferencesPort&&
         ) = delete;
 
+    [[nodiscard]] bool isAvailable() const override
+    {
+        return m_settingsService && m_settingsService->isAvailable();
+    }
+
     [[nodiscard]] std::string read() const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!isAvailable())
         {
             return {};
         }
@@ -73,7 +87,7 @@ public:
         const std::string& campus
         ) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!isAvailable())
         {
             return Domain::Result<void>::success();
         }

@@ -803,3 +803,23 @@ separate on a host with Xvfb and loopback access.
   service boundaries, then generic settings, feature-service, and document
   migrations. The 250 MiB settled-memory target and Linux Phase 0 follow-up
   remain open. Nothing was pushed.
+
+
+### Phase 2 current-campus preference availability - 2026-09-24
+
+- CurrentCampusPreferencesPort now reports availability through a Qt-free
+  Application contract. The Platform adapter supports nullable
+  ApplicationServices composition; CalendarPage uses the port to gate its
+  preference reads and campus projection. The raw openSettingsService helper
+  and SettingsService reference were removed from the calendar feature.
+- Independent Windows x64 Debug build of ClassMngr and the current-campus
+  preference test target passed; focused CTest passed 1/1, covering available,
+  unavailable, null ApplicationServices, and null SettingsService cases.
+  git diff --check passed. No dedicated CalendarPage behavior target exists;
+  the Tester accepted the port tests plus prior-code/guard comparison for
+  this refactor. No code changed after the passing build/test.
+- Handoff: continue the remaining generic settings, feature-service, calendar
+  import workbook/campus lookup, and document migrations using the paired
+  Phase 2 inventory. The 250 MiB packaged Release gate belongs to Phase 9;
+  the Phase 2 plan's app-less and forbidden-dependency exit checks remain.
+  Nothing was pushed.
