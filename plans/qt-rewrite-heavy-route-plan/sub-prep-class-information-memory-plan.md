@@ -47,11 +47,19 @@ handwritten files and `git diff --check` passed. The startup-performance
 target compiled, but the 96-class packaged Release route was not run. Focused
 page tests cover selection retention, invalidation when a class leaves scope,
 and display-mode refresh. The startup target compiles the new bounded
-widget/editor assertions. Page deactivation resource release,
-output/package/PDF migration, parity, and Release memory acceptance remain
-open. Next entry: Work Package E,
-explicit page-leave release and lifecycle invalidation. See the [Phase 2
-contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-model-backed-navigation-and-reusable-details-view).
+widget/editor assertions.
+
+Work Package E now uses `BasePage::deactivate()`'s resource-release hook to
+clear the selected details, compact projection, and selection state when
+PageManager leaves Sub Prep. The page is marked stale so re-entry reloads the
+current schedule scope and one selected detail. The page lifecycle test
+verifies release and reload; `ClassMngr` and `ClassMngrSubPrepPageTests` build
+on Windows x64 Debug Ninja and the page suite passes 1/1.
+
+Output/package/PDF migration, parity, and Release memory acceptance remain
+open. Next entry: Work Package F, migrate package generation onto the
+operation-scoped print-source contract. See the [Phase 2
+contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-page-leave-lifecycle-release).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

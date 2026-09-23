@@ -222,6 +222,7 @@ private slots:
     void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
     void scheduleDisplayModeRefreshesClassInformationInPlace();
+    void pageDeactivationReleasesClassInformationForTheNextEntry();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void savedCampusSelectionUsesTypedRead();
     void zoomUnavailableHidesStoredCredentials();
@@ -686,6 +687,42 @@ void SubPrepPageTests
         page.runtimeMetrics().classInformationVisibleClassCount,
         1
         );
+}
+
+void SubPrepPageTests
+    ::pageDeactivationReleasesClassInformationForTheNextEntry()
+{
+    ApplicationServices services;
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+
+    auto* classList =
+        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
+    auto* detailsCard =
+        page.findChild<SectionCard*>(QStringLiteral("subPrepTeacherSectionCard"));
+    auto* details =
+        page.findChild<QWidget*>(QStringLiteral("subPrepClassDetails"));
+    QVERIFY(classList);
+    QVERIFY(detailsCard);
+    QVERIFY(details);
+    QCOMPARE(classList->model()->rowCount(), 1);
+    QCOMPARE(details->property("classId").toInt(), 42);
+    QCOMPARE(harness.detailsReadPort.loadCount, 1);
+
+    page.deactivate();
+
+    QVERIFY(page.needsRefresh());
+    QCOMPARE(classList->model()->rowCount(), 0);
+    QVERIFY(detailsCard->isHidden());
+    QCOMPARE(details->property("classId").toInt(), -1);
+    QCOMPARE(harness.detailsReadPort.loadCount, 1);
+
+    page.activate();
+
+    QCOMPARE(classList->model()->rowCount(), 1);
+    QCOMPARE(details->property("classId").toInt(), 42);
+    QCOMPARE(harness.detailsReadPort.loadCount, 2);
 }
 
 void SubPrepPageTests

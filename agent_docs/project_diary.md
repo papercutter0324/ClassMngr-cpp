@@ -346,3 +346,5 @@
   reusable detail panel; it must not recreate a hidden widget tree per class.
 - Refresh the projection in place on schedule-mode changes and preserve a
   selection only while its class remains in the current schedule scope.
+- Release the selected details and summary projection from the page lifecycle
+  hook on deactivation; mark the page stale so re-entry creates fresh state.

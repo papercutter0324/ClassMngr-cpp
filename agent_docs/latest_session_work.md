@@ -502,3 +502,17 @@ separate on a host with Xvfb and loopback access.
   package/PDF migration and parity, the 96-class Release memory gate, and the
   wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up
   separate.
+
+### Phase 2 Sub Prep page-leave lifecycle — 2026-09-23
+
+- `SubPrepPage::releaseFeatureResources()` now clears the selection state,
+  compact summary projection, and selected details when `PageManager` calls
+  `BasePage::deactivate()`. It marks the page stale so re-entry reloads the
+  current schedule scope and selected details.
+- Windows x64 Debug Ninja built `ClassMngr` and `ClassMngrSubPrepPageTests`;
+  focused CTest passed 1/1. The test checks that list/details state is cleared
+  on deactivation and restored with a fresh detail read on activation.
+- Handoff: Work Package F connects `SubPrepPrintSourceQuery` and its
+  session-backed Platform adapter to package generation. Output/PDF parity,
+  cancellation/error cleanup, and the 96-class packaged Release memory gate
+  remain open. Keep the Linux Phase 0 follow-up separate.

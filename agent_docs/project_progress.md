@@ -142,22 +142,19 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Phase 2 continues on `Qt-Rewrite`. Work Package D now connects the scoped
-schedule-summary and selected-class details queries to the live Sub Prep
-class-information view. A compact `QAbstractListModel` backs one class list;
-one details card is reused, and `SubPrepClassInformationState` owns selection
-and the current details value. Projection refresh retains only an in-scope
-selection, and schedule display-mode changes refresh the projection in place.
+Phase 2 continues on `Qt-Rewrite`. Work Packages D and E connect the Sub Prep
+class-information view to the bounded Application queries and release its
+projection and selected details when PageManager deactivates the page. The
+model backs one class list and one reusable detail card; re-entry marks the
+page stale and reloads a fresh projection and selected details.
 
-Windows x64 Debug Ninja built `ClassMngr`, the list-model and Sub Prep page
-tests, and the startup-performance test target. Focused CTest passed 2/2;
-CMake ownership validation passed for 860 handwritten files and
-`git diff --check` passed. The 96-class packaged Release route was not run.
-Next is Work Package E: release selected details on page deactivation and
-cover the lifecycle invalidation boundary. Package/PDF output migration,
-behavior and visual parity, the 96-class Release memory evidence, and the
-wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up separate
-until it can run on a host with Xvfb and loopback access.
+Windows x64 Debug Ninja built `ClassMngr` and `ClassMngrSubPrepPageTests`; the
+lifecycle-focused page suite passed 1/1. The list-model and page suites for D
+passed 2/2, and CMake ownership validation passed for 860 handwritten files.
+Next is Work Package F: connect the operation-scoped print-source query to
+package generation. PDF/package parity, the 96-class Release memory evidence,
+and the wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up
+separate until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

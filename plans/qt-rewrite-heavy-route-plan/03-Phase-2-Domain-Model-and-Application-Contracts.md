@@ -3451,3 +3451,19 @@ target compiled, but this slice did not run the packaged 96-class Release
 route. This closes the model-backed view integration only. Page-leave resource
 release, output/package/PDF migration, parity, and Release memory acceptance
 remain open; Phase 2 remains In Progress. Work Package E is next.
+
+#### Progress update - 2026-09-23 (Sub Prep page-leave lifecycle release)
+
+Work Package E uses the existing `BasePage::deactivate()` resource-release
+hook. When PageManager leaves Sub Prep, the page clears the selected details,
+summary projection, and selection state, then marks itself stale. On the next
+activation, Sub Prep reloads the current schedule scope and one selected-class
+detail instead of retaining the prior operation state.
+
+Windows x64 Debug Ninja built `ClassMngr` and `ClassMngrSubPrepPageTests`;
+focused CTest passed the page suite 1/1. The lifecycle test verifies the list
+and details are cleared at deactivation and restored on activation, including
+a new details read. This closes page-leave release only. Package/PDF output
+migration, parity, and 96-class Release memory acceptance remain open; Phase 2
+remains In Progress. Work Package F is next: connect the operation-scoped
+print-source query to package generation.

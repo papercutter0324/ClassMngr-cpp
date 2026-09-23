@@ -1354,6 +1354,13 @@ void SubPrepPage::clearClassInformation()
         );
 }
 
+void SubPrepPage::releaseFeatureResources()
+{
+    clearClassInformation();
+    markStale();
+    BasePage::releaseFeatureResources();
+}
+
 void SubPrepPage::clearDirty()
 {
     m_dirty = false;

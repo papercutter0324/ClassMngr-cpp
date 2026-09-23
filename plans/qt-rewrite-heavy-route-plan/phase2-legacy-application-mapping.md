@@ -2802,3 +2802,17 @@ This closes the live summary/details view wiring only. Page-leave release,
 package/PDF output migration and parity, and Release memory acceptance remain
 open; Phase 2 remains in progress. Work Package E covers explicit lifecycle
 release and invalidation.
+
+## Verified Sub Prep page-leave lifecycle release
+
+`SubPrepPage::releaseFeatureResources()` runs through
+`BasePage::deactivate()`, which `PageManager` calls when leaving the page. It
+clears the selected detail state and summary projection while preserving the
+bounded static view skeleton, then marks the page stale. The next activation
+reloads the schedule projection and the current selected detail.
+
+Windows x64 Debug Ninja built `ClassMngr` and `ClassMngrSubPrepPageTests`;
+focused CTest passed 1/1. The lifecycle test verifies release before
+navigation returns and a fresh details read after reactivation. Package/PDF
+output migration, parity, and packaged Release memory acceptance remain open;
+Work Package F connects the print-source query to package generation.
