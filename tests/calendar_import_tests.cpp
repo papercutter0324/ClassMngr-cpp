@@ -35,6 +35,9 @@ private slots:
     void importsShiftedFirstCalendarRow();
     void appendsCampusCodesFromCellNotes();
     void appendsVariableLengthCampusCodesFromCellNotes();
+    void importSignatureUsesExactlyTheSixLegacyKeyFields();
+    void importSignatureNormalizesTitleTypeAndTimeStatus();
+    void importSignatureIgnoresTimesAndOtherNonKeyMetadata();
 };
 
 void CalendarImportTests::ignoresWeekendLegendEntries()
@@ -254,6 +257,119 @@ void CalendarImportTests::appendsVariableLengthCampusCodesFromCellNotes()
             {QStringLiteral("BDG"), QStringLiteral("S2")},
             false
             )
+        );
+}
+
+void CalendarImportTests::importSignatureUsesExactlyTheSixLegacyKeyFields()
+{
+    CalendarEvent event;
+    event.title = QStringLiteral("Open House");
+    event.eventType = QStringLiteral("Meeting");
+    event.startDate = QDate(2026, 9, 23);
+    event.endDate = QDate(2026, 9, 24);
+    event.allDay = false;
+    event.timeStatus = QStringLiteral("Timed");
+
+    const QString signature =
+        CalendarImport::calendarEventImportSignature(event);
+    QCOMPARE(
+        signature,
+        QStringLiteral("Open House|Meeting|2026-09-23|2026-09-24|0|Timed")
+        );
+
+    auto changed = event;
+    changed.title = QStringLiteral("Open House 2");
+    QVERIFY(
+        CalendarImport::calendarEventImportSignature(changed) != signature
+        );
+
+    changed = event;
+    changed.eventType = QStringLiteral("Holiday");
+    QVERIFY(
+        CalendarImport::calendarEventImportSignature(changed) != signature
+        );
+
+    changed = event;
+    changed.startDate = QDate(2026, 9, 22);
+    QVERIFY(
+        CalendarImport::calendarEventImportSignature(changed) != signature
+        );
+
+    changed = event;
+    changed.endDate = QDate(2026, 9, 25);
+    QVERIFY(
+        CalendarImport::calendarEventImportSignature(changed) != signature
+        );
+
+    changed = event;
+    changed.allDay = true;
+    QVERIFY(
+        CalendarImport::calendarEventImportSignature(changed) != signature
+        );
+
+    changed = event;
+    changed.timeStatus = QStringLiteral("Unknown");
+    QVERIFY(
+        CalendarImport::calendarEventImportSignature(changed) != signature
+        );
+}
+
+void CalendarImportTests::
+importSignatureNormalizesTitleTypeAndTimeStatus()
+{
+    CalendarEvent normalized;
+    normalized.title = QStringLiteral(" Open   House\n ");
+    normalized.eventType = QStringLiteral(" Meeting ");
+    normalized.startDate = QDate(2026, 9, 23);
+    normalized.endDate = QDate(2026, 9, 23);
+    normalized.timeStatus = QStringLiteral(" Timed ");
+
+    CalendarEvent canonical = normalized;
+    canonical.title = QStringLiteral("Open House");
+    canonical.eventType = QStringLiteral("Meeting");
+    canonical.timeStatus = QStringLiteral("Timed");
+    QCOMPARE(
+        CalendarImport::calendarEventImportSignature(normalized),
+        CalendarImport::calendarEventImportSignature(canonical)
+        );
+
+    normalized.eventType = QStringLiteral("not-a-calendar-type");
+    canonical.eventType = QStringLiteral("Other");
+    QCOMPARE(
+        CalendarImport::calendarEventImportSignature(normalized),
+        CalendarImport::calendarEventImportSignature(canonical)
+        );
+
+    normalized.eventType = QStringLiteral("Meeting");
+    canonical.eventType = QStringLiteral("Meeting");
+    normalized.timeStatus = QStringLiteral("not-a-time-status");
+    canonical.timeStatus = QStringLiteral("Timed");
+    QCOMPARE(
+        CalendarImport::calendarEventImportSignature(normalized),
+        CalendarImport::calendarEventImportSignature(canonical)
+        );
+}
+
+void CalendarImportTests::
+importSignatureIgnoresTimesAndOtherNonKeyMetadata()
+{
+    CalendarEvent event;
+    event.title = QStringLiteral("Open House");
+    event.eventType = QStringLiteral("Meeting");
+    event.startDate = QDate(2026, 9, 23);
+    event.endDate = QDate(2026, 9, 23);
+    event.timeStatus = QStringLiteral("Timed");
+
+    const QString signature =
+        CalendarImport::calendarEventImportSignature(event);
+
+    event.id = 42;
+    event.repeatSeriesId = QStringLiteral("series-1");
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    QCOMPARE(
+        CalendarImport::calendarEventImportSignature(event),
+        signature
         );
 }
 

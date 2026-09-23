@@ -6,13 +6,16 @@
 #include "core/resource_paths.h"
 #include "core/startup_profiler.h"
 #include "features/campus/data/campus_json_repository.h"
+#include "next/application/calendar_event_import_plan.h"
 
 #include <QDate>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QSet>
 #include <QUrl>
+
+#include <cstddef>
+#include <string>
 
 namespace
 {
@@ -51,6 +54,12 @@ QStringList campusCodesFromDirectory()
 
     codes.removeDuplicates();
     return codes;
+}
+
+std::u16string calendarEventSignatureKey(const CalendarEvent& event)
+{
+    return CalendarImport::calendarEventImportSignature(event)
+        .toStdU16String();
 }
 }
 
@@ -213,7 +222,6 @@ void CalendarEventImportService::handleFinished(
             qMax(lastDate, event.endDate);
     }
 
-    QSet<QString> existingSignatures;
     const Result<QList<CalendarEvent>> existingEvents =
         m_calendarService->eventsInRange(
             firstDate,
@@ -230,32 +238,40 @@ void CalendarEventImportService::handleFinished(
         existingEvents->size()
         );
 
+    ClassMngr::Next::Application::CalendarEventImportPlanRequest planRequest;
+    planRequest.initiallySkippedCount = parsed.skippedCount;
     for (const CalendarEvent& event : *existingEvents)
     {
-        existingSignatures.insert(
-            CalendarImport::calendarEventImportSignature(event)
+        planRequest.existingSignatures.push_back(
+            calendarEventSignatureKey(event)
             );
     }
 
-    QList<CalendarEvent> eventsToSave;
+    planRequest.candidateSignatures.reserve(
+        static_cast<std::size_t>(parsed.events.size())
+        );
     for (const CalendarEvent& event : parsed.events)
     {
-        const QString signature =
-            CalendarImport::calendarEventImportSignature(event);
+        planRequest.candidateSignatures.push_back(
+            calendarEventSignatureKey(event)
+            );
+    }
 
-        if (existingSignatures.contains(signature))
-        {
-            ++parsed.skippedCount;
-            continue;
-        }
+    const ClassMngr::Next::Application::CalendarEventImportPlan importPlan =
+        ClassMngr::Next::Application::planCalendarEventImport(planRequest);
 
-        eventsToSave.append(event);
-        existingSignatures.insert(signature);
+    QList<CalendarEvent> eventsToSave;
+    for (const std::size_t candidateIndex :
+         importPlan.acceptedCandidateIndices)
+    {
+        eventsToSave.append(
+            parsed.events.at(static_cast<qsizetype>(candidateIndex))
+            );
     }
 
     StartupProfiler::recordCalendarImportSavePrepared(
         eventsToSave.size(),
-        parsed.skippedCount
+        importPlan.skippedCount
         );
 
     const Result<QList<int>> saved =
@@ -269,11 +285,11 @@ void CalendarEventImportService::handleFinished(
 
     StartupProfiler::recordCalendarImportApplied(
         saved->size(),
-        parsed.skippedCount
+        importPlan.skippedCount
         );
 
     emit importFinished(
         saved->size(),
-        parsed.skippedCount
+        importPlan.skippedCount
         );
 }
