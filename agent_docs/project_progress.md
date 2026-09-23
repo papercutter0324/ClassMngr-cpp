@@ -163,11 +163,18 @@ render test confirms the alias and the page, PDF, and package suites pass 3/3.
 Work Package F3 makes package generation own that request, moves it from the
 page, renders the information sheet first, and clears the Sub Prep input before
 loading full roster values. The page, PDF, and package suites pass 3/3. The
-roster stage still uses legacy class/teacher/roster reads. Next is F4: move
-those reads behind an operation-scoped output contract. PDF/package parity,
-the 96-class Release memory evidence, and the wider Phase 2 exit gate remain
-open. Keep the Linux Phase 0 follow-up separate until it can run on a host with
-Xvfb and loopback access.
+roster stage still uses legacy class/teacher/roster reads. F4 adds the
+Qt-free `SubPrepRosterOutputSourceQuery` contract, scoped by selected class,
+day, mode, and requested extra columns. It validates teacher references,
+meeting days, row/cell shapes, and per-class and aggregate roster/text limits;
+its app-less query suite passes 1/1. CMake reconfiguration validated 865
+handwritten source owners, and Windows x64 Debug built `ClassMngr` and the new
+query test target. Next is F5: implement a bounded session-backed Platform
+read, including a repository query that enforces limits before materializing
+roster cells. Package integration, PDF/package parity, the 96-class Release
+memory evidence, and the wider Phase 2 exit gate remain open. Keep the Linux
+Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
+access.
 
 ### Phase 2 kickoff — 2026-09-19
 

@@ -3531,3 +3531,23 @@ tree, document order, and status behavior tests pass. The roster stage still
 uses legacy class, teacher, and full roster reads; the next Work Package F
 slice adds an operation-scoped roster source. Output parity, the 96-class
 packaged Release memory gate, and Phase 2 remain open.
+
+#### Progress update - 2026-09-24 (Sub Prep roster-output Application contract)
+
+Work Package F4 adds the Qt-free
+`SubPrepRosterOutputSourceRequest`, read port, bounded source value, and query.
+The request carries selected class IDs, weekdays, schedule mode, and requested
+extra roster columns. The source holds only renderer-facing class/teacher
+names, selected schedule facts, room/network/Zoom values, requested roster
+columns, and owning cell strings. Query validation enforces unique in-scope
+IDs and teacher links, selected weekdays, row shape, per-class and aggregate
+row/cell/text limits, and no I/O for empty class/day scopes.
+
+The app-less query test covers request and source rejection, no-read behavior,
+read failure propagation, stable port order, maximum per-class dimensions, and
+aggregate overflow. CMake source ownership validated 865 handwritten files;
+Windows x64 Debug built `ClassMngr` and the query target, and focused CTest
+passed 1/1. Query-side caps do not replace adapter-side limits: the next slice
+must enforce bounds while reading the active database session, before
+materializing roster rows. Package integration, PDF/package parity, the
+96-class packaged Release memory gate, and Phase 2 remain open.

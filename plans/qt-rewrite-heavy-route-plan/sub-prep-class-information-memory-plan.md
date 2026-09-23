@@ -80,16 +80,20 @@ Work Package F3 makes package generation own the request and moves it from the
 page. It renders the information sheet before loading roster records, then
 clears the Sub Prep document input immediately after that PDF succeeds. The
 page, PDF, and package suites pass 3/3. The full legacy class/teacher/roster
-read for roster PDFs remains; next add an operation-scoped roster output
-source. See the [Phase 2 contract
-update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-package-stage-release).
+read for roster PDFs remains. Work Package F4 adds the Qt-free
+`SubPrepRosterOutputSourceQuery` contract for the selected class/day/mode
+scope. It returns requested roster columns and owning row values under
+per-class and aggregate limits, along with only the class and teacher facts
+needed by the roster templates. Its app-less tests pass 1/1. The read adapter
+still needs to enforce bounds while reading, before materializing roster
+values. See the [Phase 2 contract
+update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-roster-output-application-contract).
 
 Output/package/PDF migration, parity, and Release memory acceptance remain
-open. Work Package F is underway; the selected information-sheet source is
-migrated and its input is released before roster records load. The next
-bounded output slice moves roster reads behind an operation-scoped contract.
-See the [Phase 2 contract
-update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-package-stage-release).
+open. Work Package F is underway; the information-sheet input is released
+before roster records load, and the roster Application contract now defines
+its bounded operation values. The next slice implements the session-backed
+bounded read, followed by package integration and parity.
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

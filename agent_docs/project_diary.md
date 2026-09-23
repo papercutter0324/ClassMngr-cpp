@@ -384,3 +384,15 @@
   the existing package tree, document order, and error status behavior.
 - The roster source is still legacy class/teacher/roster data. Keep its typed
   operation contract as the next independent migration slice.
+
+## Phase 2 Sub Prep roster-output contract - 2026-09-24
+
+- Keep the roster output projection separate from the information-sheet
+  projection. Both are scoped to the dialog's selected class/day/mode, but
+  roster cells exist only for the output operation and should be released
+  after it finishes.
+- Query validation after a read-port call protects the Application boundary,
+  but does not bound adapter allocation. The Platform/repository adapter must
+  reject excess columns, rows, cells, and bytes while reading, before building
+  full `Roster` values. Do not claim the roster memory gate until measured in
+  the packaged Release route.

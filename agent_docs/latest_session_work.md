@@ -568,3 +568,19 @@ separate on a host with Xvfb and loopback access.
   Roster PDFs still use legacy full class, teacher, and roster reads.
 - Handoff: add the operation-scoped roster output read and parity coverage.
   Phase 2 and the 96-class Release memory gate remain open.
+
+### Phase 2 Sub Prep roster-output Application contract - 2026-09-24
+
+- Added the Qt-free `SubPrepRosterOutputSourceQuery` contract, scoped to
+  selected class IDs, weekdays, schedule mode, and requested extra columns.
+  It returns bounded owning class/teacher facts and roster values, and
+  validates teacher links, meeting days, row shapes, and per-class and
+  aggregate row/cell/text caps.
+- CMake reconfiguration validated 865 handwritten source owners. Windows x64
+  Debug built `ClassMngr` and the query test target; focused CTest passed 1/1.
+  Coverage includes empty-scope no-read behavior, request/source validation,
+  scope forwarding/order, maximum per-class dimensions, and aggregate limits.
+- Handoff: implement the session-backed Platform read and enforce caps in the
+  repository query before creating roster strings. Then replace package-service
+  legacy reads and verify output parity. Phase 2 and the packaged 96-class
+  Release memory gate remain open.
