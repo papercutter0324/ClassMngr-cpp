@@ -555,3 +555,16 @@ separate on a host with Xvfb and loopback access.
 - Handoff: continue Work Package F with package-owned stage release and the
   scoped roster output read. Phase 2 and the Sub Prep Release memory gate
   remain open.
+
+### Phase 2 Sub Prep package stage release - 2026-09-24
+
+- `SubPrepPackageService::generate` now owns its request by value, and the
+  page moves its package request into the call. `generateAt()` writes the
+  information-sheet PDF before loading full roster records, then clears the
+  Sub Prep document input before roster generation.
+- Windows x64 Debug Ninja built `ClassMngr`, the package service test, and the
+  Sub Prep page test targets. CTest passed package, page, and PDF suites 3/3.
+- This shortens the main-sheet model lifetime and avoids a page/service copy.
+  Roster PDFs still use legacy full class, teacher, and roster reads.
+- Handoff: add the operation-scoped roster output read and parity coverage.
+  Phase 2 and the 96-class Release memory gate remain open.

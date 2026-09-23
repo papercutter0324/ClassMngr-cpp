@@ -160,12 +160,14 @@ the renderer document borrow its class-information list from the request for
 the synchronous render call, removing that full `TeacherGroup` copy. The page
 moves the request into the package request instead of copying the list. The
 render test confirms the alias and the page, PDF, and package suites pass 3/3.
-The package request still holds the information model through roster
-generation. Next is Work Package F3: release it after the main sheet, then
-migrate the roster output read. PDF/package parity, the 96-class Release
-memory evidence, and the wider Phase 2 exit gate remain open. Keep the Linux
-Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
-access.
+Work Package F3 makes package generation own that request, moves it from the
+page, renders the information sheet first, and clears the Sub Prep input before
+loading full roster values. The page, PDF, and package suites pass 3/3. The
+roster stage still uses legacy class/teacher/roster reads. Next is F4: move
+those reads behind an operation-scoped output contract. PDF/package parity,
+the 96-class Release memory evidence, and the wider Phase 2 exit gate remain
+open. Keep the Linux Phase 0 follow-up separate until it can run on a host with
+Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

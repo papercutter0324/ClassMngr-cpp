@@ -577,7 +577,7 @@ void SubPrepPage::generateSubPrep()
     packageRequest.openFolderAfterGeneration =
         dialog.openFolderAfterGeneration();
     const SubPrepPackageService::Result result =
-        SubPrepPackageService::generate(packageRequest);
+        SubPrepPackageService::generate(std::move(packageRequest));
 
     if (result.status == SubPrepPackageService::Status::Failed)
     {

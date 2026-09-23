@@ -2851,3 +2851,17 @@ The package request still retains the information model after the main sheet
 finishes, and the roster output stage still uses full legacy class, teacher,
 and roster records. This is one copy reduction, not a completed lifetime or
 roster-source migration; Phase 2 and the Release memory gate remain open.
+
+## Verified Sub Prep package stage release
+
+`SubPrepPackageService::generate()` now takes ownership of its request by
+value; `SubPrepPage` moves the operation request into the service. The package
+service writes `Sub Prep.pdf` before loading package classes and full roster
+data, then clears `request.subPrep` before the roster output stage. This drops
+the schedule and rich information-sheet model before roster materialization.
+
+Windows x64 Debug Ninja built the application, package service tests, and page
+tests; CTest passed the page, PDF, and package suites 3/3. The current roster
+read still uses legacy class, teacher, and full roster records. This closes
+the main-sheet lifetime boundary only; the scoped roster source, output
+parity, and Phase 2 remain open.

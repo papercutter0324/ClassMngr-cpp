@@ -301,7 +301,7 @@ QList<PackageClass> loadPackageClasses(
 }
 
 GeneratedPackage generateAt(
-    const Request& request,
+    Request& request,
     const QString& packageDirectory
     )
 {
@@ -312,15 +312,6 @@ GeneratedPackage generateAt(
             QObject::tr("Unable to create the Sub Prep package folder."),
             {}
         };
-    }
-
-    QString classError;
-    QList<PackageClass> classes =
-        loadPackageClasses(request, &classError);
-
-    if (classes.isEmpty())
-    {
-        return {false, classError, {}};
     }
 
     const QString subPrepRelative = QStringLiteral("Sub Prep.pdf");
@@ -335,6 +326,20 @@ GeneratedPackage generateAt(
     if (subPrepResult.status != SubPrepPrintService::Status::Sent)
     {
         return {false, subPrepResult.message, {}};
+    }
+
+    // The information-sheet inputs are not needed by roster generation.
+    // Release the schedule and class/teacher projection before loading full
+    // roster records for the next output stage.
+    request.subPrep = {};
+
+    QString classError;
+    QList<PackageClass> classes =
+        loadPackageClasses(request, &classError);
+
+    if (classes.isEmpty())
+    {
+        return {false, classError, {}};
     }
 
     QStringList documents{subPrepRelative};
@@ -644,7 +649,7 @@ QList<int> classIdsForDays(
 }
 
 Result generate(
-    const Request& request
+    Request request
     )
 {
     if (!request.createFolder && !request.printPaperCopies)

@@ -76,17 +76,20 @@ with a render-scoped const reference to the request's list. The PDF test
 checks that the document model borrows the original list, and the PDF,
 package, and page suites pass 3/3. The page moves the print request into the
 package request, avoiding another `TeacherGroup` list copy at that boundary.
-The package request still owns the information model after the sheet is
-rendered, overlapping the roster stage. Work Package F continues with explicit
-release after the information sheet and the roster-source boundary. See the
-[Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-information-sheet-print-source-integration).
+Work Package F3 makes package generation own the request and moves it from the
+page. It renders the information sheet before loading roster records, then
+clears the Sub Prep document input immediately after that PDF succeeds. The
+page, PDF, and package suites pass 3/3. The full legacy class/teacher/roster
+read for roster PDFs remains; next add an operation-scoped roster output
+source. See the [Phase 2 contract
+update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-package-stage-release).
 
 Output/package/PDF migration, parity, and Release memory acceptance remain
 open. Work Package F is underway; the selected information-sheet source is
-migrated and no longer duplicated in the renderer document. The next bounded
-output slice releases that model after the information-sheet stage and moves
-roster reads behind an operation-scoped contract. See the [Phase 2 contract
-update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-information-sheet-render-model-lifetime).
+migrated and its input is released before roster records load. The next
+bounded output slice moves roster reads behind an operation-scoped contract.
+See the [Phase 2 contract
+update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-package-stage-release).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

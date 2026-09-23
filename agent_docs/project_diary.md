@@ -373,3 +373,14 @@
   service still retains that request through roster generation, so the next
   output slice must release its main-sheet values before materializing roster
   output.
+
+## Phase 2 Sub Prep package stage release - 2026-09-24
+
+- Let `SubPrepPackageService::generate` own the operation request. The page
+  moves its package request into the call so a large information-sheet model
+  is not copied at the UI/service boundary.
+- Render the main sheet before loading full roster output records, then clear
+  the request's Sub Prep document input before roster materialization. Preserve
+  the existing package tree, document order, and error status behavior.
+- The roster source is still legacy class/teacher/roster data. Keep its typed
+  operation contract as the next independent migration slice.

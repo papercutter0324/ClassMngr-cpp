@@ -70,5 +70,7 @@ struct Result
     const QStringList& selectedDays
     );
 
-[[nodiscard]] Result generate(const Request& request);
+// Takes ownership of this operation snapshot and releases its Sub Prep
+// information-sheet input immediately after that PDF is rendered.
+[[nodiscard]] Result generate(Request request);
 }

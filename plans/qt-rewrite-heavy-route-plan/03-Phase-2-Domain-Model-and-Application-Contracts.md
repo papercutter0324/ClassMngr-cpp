@@ -3513,3 +3513,21 @@ the main sheet finishes, and roster PDF generation still reads full legacy
 class, teacher, and roster values. Work Package F continues with stage release
 and the roster-source contract; output parity, 96-class packaged Release
 memory acceptance, and Phase 2 remain open.
+
+#### Progress update - 2026-09-24 (Sub Prep package stage release)
+
+Work Package F3 makes `SubPrepPackageService::generate()` take ownership of
+its operation request by value. `SubPrepPage` moves its completed package
+request into the call. `generateAt()` now writes the information-sheet PDF
+before loading full class, teacher, and roster values; after that PDF succeeds,
+it clears `request.subPrep` before beginning the roster-output stage. This
+releases the schedule and rich information-sheet model instead of overlapping
+them with the roster projection.
+
+Windows x64 Debug Ninja built `ClassMngr`,
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`.
+Focused CTest passed the page, PDF, and package suites 3/3. Existing package
+tree, document order, and status behavior tests pass. The roster stage still
+uses legacy class, teacher, and full roster reads; the next Work Package F
+slice adds an operation-scoped roster source. Output parity, the 96-class
+packaged Release memory gate, and Phase 2 remain open.
