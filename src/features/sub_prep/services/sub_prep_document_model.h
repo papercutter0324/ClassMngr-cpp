@@ -6,6 +6,8 @@
 #include <QList>
 #include <QString>
 
+#include <functional>
+
 namespace SubPrepPrintService
 {
 struct Request;
@@ -35,10 +37,15 @@ struct Document
     QString gradingInstructions;
     QString specialInstructions;
     ScheduleViewModel schedule;
-    QList<SubPrepClassInformation::TeacherGroup> classInformation;
+    // This synchronous render view borrows the heavy projection from Request.
+    std::reference_wrapper<
+        const QList<SubPrepClassInformation::TeacherGroup>
+        > classInformation;
     QString subNotes;
 };
 
+// The returned view borrows request.classInformation. Keep Request alive until
+// the synchronous PDF render using this value has returned.
 [[nodiscard]] Document build(
     const SubPrepPrintService::Request& request
     );

@@ -565,7 +565,7 @@ void SubPrepPage::generateSubPrep()
     SubPrepPackageService::Request packageRequest;
     packageRequest.parent = this;
     packageRequest.services = m_services;
-    packageRequest.subPrep = subPrepRequest;
+    packageRequest.subPrep = std::move(subPrepRequest);
     packageRequest.selectedDates = dialog.selectedDates();
     packageRequest.classIds = dialog.selectedClassIds();
     packageRequest.useIntensiveSchedule = useIntensiveSchedule;

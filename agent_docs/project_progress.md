@@ -155,11 +155,17 @@ fallbacks and output fields. The page no longer builds this sheet by loading
 all classes and repeatedly reading class details, teachers, and rosters.
 Windows x64 Debug Ninja built the application, page, mapper, query, adapter,
 PDF, and package targets; focused CTest passed 6/6. The package service still
-loads full class/teacher/roster data for roster PDFs, and the document model
-still copies the renderer model. Work Package F continues with those output
-boundaries. PDF/package parity, the 96-class Release memory evidence, and the
-wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up separate
-until it can run on a host with Xvfb and loopback access.
+loads full class/teacher/roster data for roster PDFs. Work Package F2 makes
+the renderer document borrow its class-information list from the request for
+the synchronous render call, removing that full `TeacherGroup` copy. The page
+moves the request into the package request instead of copying the list. The
+render test confirms the alias and the page, PDF, and package suites pass 3/3.
+The package request still holds the information model through roster
+generation. Next is Work Package F3: release it after the main sheet, then
+migrate the roster output read. PDF/package parity, the 96-class Release
+memory evidence, and the wider Phase 2 exit gate remain open. Keep the Linux
+Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
+access.
 
 ### Phase 2 kickoff — 2026-09-19
 

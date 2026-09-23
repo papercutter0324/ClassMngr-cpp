@@ -3493,3 +3493,23 @@ package service. This closes only the main information-sheet read integration.
 Work Package F continues with the remaining output-source and renderer-model
 lifetime boundaries; parity, cancellation/error cleanup, the 96-class
 packaged Release memory gate, and Phase 2 remain open.
+
+#### Progress update - 2026-09-24 (Sub Prep information-sheet render model lifetime)
+
+Work Package F2 removes the second rich `TeacherGroup` list created when
+`SubPrepDocumentModel::build()` copied `SubPrepPrintService::Request` into its
+renderer value. `Document::classInformation` now holds an explicit const
+reference wrapper to the request's list. `saveSubPrepPdf()` keeps the source
+request alive in a named local through the synchronous `SubPrepPdfRenderer`
+call; no renderer-retained pointer is introduced. The page moves its print
+request into the package request so this handoff does not clone the
+`TeacherGroup` list.
+
+The PDF test verifies that the render document refers to the exact request
+list. Windows x64 Debug Ninja built `ClassMngr`, the PDF, package, and page
+targets; focused CTest passed those suites 3/3. This removes one overlapping
+rich model allocation only. The package request still owns those values after
+the main sheet finishes, and roster PDF generation still reads full legacy
+class, teacher, and roster values. Work Package F continues with stage release
+and the roster-source contract; output parity, 96-class packaged Release
+memory acceptance, and Phase 2 remain open.

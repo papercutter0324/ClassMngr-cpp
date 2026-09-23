@@ -1,3 +1,4 @@
+#include "features/sub_prep/services/sub_prep_document_model.h"
 #include "features/sub_prep/services/sub_prep_print_service.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -529,6 +530,7 @@ class SubPrepPrintPdfTests : public QObject
     Q_OBJECT
 
 private slots:
+    void documentModelBorrowsClassInformationForSynchronousRender();
     void generatedPdfUsesA4PortraitWithNarrowMargins();
     void rendersEssayScheduleSlots();
     void rendersTestingScheduleSlots();
@@ -545,6 +547,23 @@ private slots:
     void centersSelectedWeekdayScheduleAtNominalColumnWidth();
     void usesSevenDayColumnMinimumWhenWeekendsAreShown();
 };
+
+void SubPrepPrintPdfTests::
+documentModelBorrowsClassInformationForSynchronousRender()
+{
+    const SubPrepPrintService::Request request = sampleRequest();
+    const SubPrepDocumentModel::Document document =
+        SubPrepDocumentModel::build(request);
+
+    QCOMPARE(
+        &document.classInformation.get(),
+        &request.classInformation
+        );
+    QCOMPARE(
+        document.classInformation.get().first().displayName,
+        QStringLiteral("Susan")
+        );
+}
 
 void SubPrepPrintPdfTests::generatedPdfUsesA4PortraitWithNarrowMargins()
 {

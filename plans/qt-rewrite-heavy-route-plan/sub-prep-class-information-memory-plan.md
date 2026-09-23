@@ -71,14 +71,22 @@ service tests. Focused CTest passed 6/6. This verifies the query, adapter,
 mapping, page compilation/lifecycle, and existing renderer/package suites; it
 does not prove full package parity or a memory improvement. The separate
 roster-PDF stage in `SubPrepPackageService` still loads legacy class, teacher,
-and full roster values, and `SubPrepDocumentModel` still copies the renderer
-model. Work Package F continues with those output-stage boundaries. See the
+and full roster values. Work Package F2 replaces the rich renderer-model copy
+with a render-scoped const reference to the request's list. The PDF test
+checks that the document model borrows the original list, and the PDF,
+package, and page suites pass 3/3. The page moves the print request into the
+package request, avoiding another `TeacherGroup` list copy at that boundary.
+The package request still owns the information model after the sheet is
+rendered, overlapping the roster stage. Work Package F continues with explicit
+release after the information sheet and the roster-source boundary. See the
 [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-information-sheet-print-source-integration).
 
 Output/package/PDF migration, parity, and Release memory acceptance remain
 open. Work Package F is underway; the selected information-sheet source is
-migrated, and the roster/package source and duplicate renderer-model copy are
-the next bounded output slices. See the [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-information-sheet-print-source-integration).
+migrated and no longer duplicated in the renderer document. The next bounded
+output slice releases that model after the information-sheet stage and moves
+roster reads behind an operation-scoped contract. See the [Phase 2 contract
+update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-information-sheet-render-model-lifetime).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

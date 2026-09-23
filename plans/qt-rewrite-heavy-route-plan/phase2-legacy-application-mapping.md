@@ -2832,7 +2832,22 @@ count loader has been removed from this output path.
 Windows x64 Debug Ninja built the application and focused mapper, page,
 Application query, Platform adapter, PDF, and package targets. CTest passed
 6/6. The separate roster-PDF stage still loads legacy class, teacher, and full
-roster records, and the document model still copies the renderer model. The
-mapper and existing output tests establish this boundary, not full generated
-package parity or a memory improvement; those Phase 2 and Sub Prep gates
-remain open.
+roster records. The mapper and existing output tests establish this boundary,
+not full generated package parity or a memory improvement; those Phase 2 and
+Sub Prep gates remain open.
+
+## Verified Sub Prep information-sheet renderer lifetime
+
+`SubPrepDocumentModel::Document` now borrows `Request::classInformation` by
+const reference wrapper instead of copying the rich `TeacherGroup` list.
+The page moves the print request into `SubPrepPackageService::Request`,
+avoiding another copy at the ownership handoff.
+`SubPrepPrintService::saveSubPrepPdf()` keeps the request alive through the
+synchronous renderer call, and the PDF test verifies that both values refer
+to the same list. Windows x64 Debug Ninja built the application, PDF, package,
+and page targets; CTest passed the page, PDF, and package suites 3/3.
+
+The package request still retains the information model after the main sheet
+finishes, and the roster output stage still uses full legacy class, teacher,
+and roster records. This is one copy reduction, not a completed lifetime or
+roster-source migration; Phase 2 and the Release memory gate remain open.

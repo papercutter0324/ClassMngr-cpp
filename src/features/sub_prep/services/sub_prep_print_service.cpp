@@ -67,8 +67,10 @@ Result saveSubPrepPdf(
             );
     }
 
+    const SubPrepDocumentModel::Document document =
+        SubPrepDocumentModel::build(request);
     return SubPrepPdfRenderer::renderPdf(
-        SubPrepDocumentModel::build(request),
+        document,
         documentPath
         );
 }

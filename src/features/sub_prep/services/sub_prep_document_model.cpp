@@ -2,6 +2,8 @@
 
 #include "sub_prep_print_service.h"
 
+#include <functional>
+
 namespace SubPrepDocumentModel
 {
 Document build(
@@ -23,7 +25,7 @@ Document build(
         request.gradingInstructions,
         request.specialInstructions,
         request.schedule,
-        request.classInformation,
+        std::cref(request.classInformation),
         request.subNotes
     };
 }

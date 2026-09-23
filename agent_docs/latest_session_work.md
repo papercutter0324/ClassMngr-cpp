@@ -538,3 +538,20 @@ separate on a host with Xvfb and loopback access.
 - Handoff: continue Work Package F with the remaining package/roster source
   and renderer-model lifetime boundaries, then complete parity and lifecycle
   regression evidence. Phase 2 remains open.
+
+### Phase 2 Sub Prep renderer model lifetime - 2026-09-24
+
+- `SubPrepDocumentModel::Document` now stores a const reference wrapper to the
+  request's `classInformation` list. `saveSubPrepPdf()` keeps the request alive
+  for the synchronous renderer call. The page moves the request into the
+  package request, avoiding a second list copy there; the PDF test asserts the
+  render document borrows the same list.
+- Windows x64 Debug Ninja built `ClassMngr`, the Sub Prep PDF and package
+  targets, and the page test target. CTest passed the page, PDF, and package
+  suites 3/3.
+- The request remains alive for the rest of package generation, so its
+  information-sheet projection still overlaps roster rendering. The roster
+  PDF read still uses legacy full class/teacher/roster values.
+- Handoff: continue Work Package F with package-owned stage release and the
+  scoped roster output read. Phase 2 and the Sub Prep Release memory gate
+  remain open.

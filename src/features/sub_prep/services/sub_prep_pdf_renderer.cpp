@@ -783,10 +783,10 @@ QString documentHtml(
     html += sectionHtml(
         translate("Class Information"),
         classInformationHtml(
-            document.classInformation,
+            document.classInformation.get(),
             pageBreakBeforeTeacherGroups
             ),
-        !document.classInformation.isEmpty()
+        !document.classInformation.get().isEmpty()
         );
     html += sectionHtml(
         translate("Sub Notes"),
@@ -1365,7 +1365,7 @@ Result renderPdf(
 
     for (
         int pass = 0;
-        pass <= documentModel.classInformation.size();
+        pass <= documentModel.classInformation.get().size();
         ++pass
         )
     {

@@ -361,3 +361,15 @@
 - This only migrates the information sheet. The roster-PDF stage still loads
   full legacy class, teacher, and roster records, and the document model still
   copies the renderer model. Keep those output costs and end-to-end parity open.
+
+## Phase 2 Sub Prep renderer model lifetime - 2026-09-24
+
+- Make the renderer document a synchronous view over the request's
+  `classInformation` list. A `std::reference_wrapper<const QList<...>>` makes
+  the borrowed boundary visible and removes a second rich class/teacher model
+  allocation. Move the page request into the package request so the same list
+  is not duplicated at that ownership transfer.
+- Keep the request alive through the synchronous renderer call. The package
+  service still retains that request through roster generation, so the next
+  output slice must release its main-sheet values before materializing roster
+  output.
