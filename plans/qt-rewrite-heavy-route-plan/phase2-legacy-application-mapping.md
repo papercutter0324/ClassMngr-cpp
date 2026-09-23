@@ -14,8 +14,8 @@ this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
 palette caller boundary and calendar-import planning and signature-read seams,
-and a Sub Prep print-source read adapter. A partial content-session
-integration covers referenced
+and Sub Prep print-source and selected-class details read adapters. A partial
+content-session integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
 remain open, including generic settings persistence.
 
@@ -2726,6 +2726,33 @@ assignments, and roster failure.
 Ninja. Focused CTest passed both test targets and `git diff --check` passed.
 This closes only the selected-scope source-read seam: there is no page/PDF
 wiring, output-parity result, teacher/roster batching, Release memory
-acceptance, or full Sub Prep completion. The next bounded slice is a
-selected-class details Platform read adapter, initially unconnected to the
-page.
+acceptance, or full Sub Prep completion. A selected-class details Platform
+read adapter is now available; see the next section. It too is unconnected to
+the page.
+
+## Verified Sub Prep selected-class details Platform read adapter
+
+[`ApplicationServicesSubPrepClassDetailsPort`](../../src/next/platform/application_services_sub_prep_class_details_port.h)
+implements the injected read for
+[`SubPrepClassDetailsQuery`](../../src/next/application/sub_prep_class_details_query.h).
+The bounded Application value carries class notes, the preferred teacher
+display name, teacher notes, and separate bounded room, WiFi name, WiFi
+password, internet type, Zoom ID, Zoom password, and projection type fields.
+
+The adapter reads one class through the active `ClassService` repository
+session. It does not query regular or intensive schedule tables and has no
+`DataService` fallback. Existing classes without a `class_info` row return
+blank details; an absent class returns `NotFound`. Unassigned, missing, and
+stale teacher references return empty teacher values. The repository read is
+scoped to the selected class and projects only the details required by this
+contract.
+
+The Windows x64 Debug build succeeded. Focused
+`NextApplicationClassSummary`, `NextApplicationSubPrepClassDetailsQuery`, and
+`NextPlatformApplicationServicesSubPrepPrintSourcePort` suites passed. This is
+a read-adapter seam only: it is not wired to a page or output path, and it
+establishes no full legacy-output parity, memory improvement, or broader
+acceptance. The next Phase 2-bounded Sub Prep continuation is implementing the
+scoped schedule-summary persistence read behind its existing Application
+contract. Page/output integration, parity, and large-workspace Release memory
+evidence remain open. Phase 2 remains In Progress.

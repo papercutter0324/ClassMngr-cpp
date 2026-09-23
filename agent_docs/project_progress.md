@@ -142,35 +142,19 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-The schedule-summary, selected-details, and selection-state contracts remain
-app-less and separate from the legacy page. Commit `3802819b` adds the
-operation-scoped `SubPrepPrintSourceQuery` contract. Its focused target built
-and CTest passed 1/1 in the Windows x64 Ninja developer environment. Commit
-`83163b0a` moves `ColorUtils` to the existing Application custom-color
-preference port and composes its Platform adapter at all seven UI callers.
-The new utility target and existing adapter target built; focused CTest passed
-2/2. The current slice extracts and tests calendar-import duplicate planning
-as a Qt-free Application contract while preserving the legacy range read and
-batch save path. Commit `d5a5cab9` adds the planner and regression tests for
-duplicate order/counts and the existing six-field signature. Both focused
-Windows x64 Ninja targets built and CTest passed 2/2. Commit `d14155c1` moves
-the existing-event read behind `ApplicationServicesCalendarEventPort`, keeping
-ordered UTF-16 keys, the exact requested range, and legacy candidate parsing
-and batch saving. Adapter parity/failure tests pass, including a 4,097-row
-read beyond the general projection cap. Commit `2daae4ef` adds the Sub Prep
-print-source Platform adapter. The ClassService/repository read scopes by
-selected class IDs, weekdays, and mode before returning class records; SQL
-caps each class and the total schedule with overflow sentinels. It preserves
-request order, owns copied values, deduplicates teachers, and omits classes
-without a usable teacher. The 4,096 class-ID bound avoids SQLite's historical
-bind-variable limit. `ClassMngr` and both focused Sub Prep query/adapter
-targets built; their CTests passed 2/2. The legacy page/PDF wiring, persistence
-adapter, roster/package migration, output parity, and Release memory gate
-remain open. No batching or memory improvement is claimed. Keep the Linux
+Phase 2 application-contract work continues on `Qt-Rewrite`. Commit
+`9f648b3e` adds the session-backed Platform read for selected Sub Prep class
+details. The query returns separate bounded room, WiFi, internet, Zoom, and
+projection fields with class/teacher notes and display name; it does not read
+schedule tables or fall back to `DataService`. Windows x64 Debug build and
+focused CTest passed (3/3), and CMake source ownership validation passed for
+855 handwritten files.
+
+Next: implement the scoped schedule-summary persistence read behind its
+existing Application contract. Page/output integration, parity, broader
+Sub Prep acceptance, and Release memory evidence remain open. Keep the Linux
 Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
-access. Next slice: add a scoped Platform read adapter for the existing
-Sub Prep selected-class details query; keep page integration and Release
-memory acceptance as later gates.
+access.
 
 ### Phase 2 kickoff — 2026-09-19
 

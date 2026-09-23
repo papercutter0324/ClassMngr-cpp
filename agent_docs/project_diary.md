@@ -311,3 +311,17 @@
   with foreign-key checks disabled only around the direct update.
 - An adapter and focused tests do not prove page/PDF parity, roster/package
   migration, SQL batching, or a memory improvement; keep those gates open.
+
+## Phase 2 Sub Prep selected-class details Platform read — 2026-09-23
+
+- Expose teacher facilities as separate bounded fields so later page consumers
+  do not need to parse a formatted string. Keep the selected-class details
+  lookup on the active repository session, scoped to one class, with no
+  schedule-table read or `DataService` fallback.
+- Preserve the legacy empty-teacher fallback for unassigned or stale teacher
+  references. Existing classes without class-info rows still yield blank
+  details, while absent classes remain `NotFound`; canonical lexical IDs avoid
+  integer aliases such as `"01"`.
+- Adapter tests and a Debug build prove the read seam and value bounds only.
+  Page/output wiring, full parity, and Release memory acceptance remain later
+  gates.

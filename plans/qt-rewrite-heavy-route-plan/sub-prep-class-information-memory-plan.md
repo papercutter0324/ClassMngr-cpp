@@ -16,24 +16,28 @@
 
 Phase 2 has Qt-free schedule-summary and selected-class details queries,
 `SubPrepClassInformationState` for selection/detail lifecycle, and an
-operation-scoped print-source request/read-port/query. Commit `2daae4ef` adds
-the Platform print-source adapter and a session-backed SQL read scoped by
-requested class IDs, days, and one schedule mode. The 4,096-ID scope uses
-validated decimal integer literals; per-class and aggregate meeting bounds
-use limit-plus-one sentinels. The adapter returns owning values, copies each
-teacher once, and omits classes without selected meetings, class-info records,
-or a usable assigned teacher. Roster errors preserve the legacy zero-count
-fallback.
-The Windows x64 Ninja build passed for `ClassMngr`, the Platform adapter test,
-and the app-less print-source query target; focused CTest passed both tests.
+operation-scoped print-source request/read-port/query. Session-backed
+Platform reads now exist for the scoped print source and one selected class's
+details. The details value contains class notes, preferred teacher display
+name, teacher notes, and separate bounded room, WiFi name, WiFi password,
+internet type, Zoom ID, Zoom password, and projection type fields. The details
+read uses the active `ClassService` repository session, does not query either
+schedule table, and has no `DataService` fallback. Missing class-info rows on
+existing classes return blank details; absent classes return `NotFound`, and
+unassigned, missing, or stale teacher references return empty teacher values.
 
-The print-source adapter is not connected to the legacy Sub Prep page or PDF
-generation. Teacher/roster batching, source-release or memory improvement,
-roster/package migration, and PDF/output parity are unverified. The 96-class
+The Windows x64 Debug build succeeded. Focused ClassSummary,
+SubPrepClassDetailsQuery, and SubPrepPrintSource Platform suites passed. The
+selected-details and print-source adapters are not connected to the Sub Prep
+page or PDF generation. The schedule-summary persistence adapter,
+teacher/roster batching, source-release or memory improvement,
+roster/package migration, and PDF/output parity remain open. The 96-class
 Release baseline's legacy memory failure remains the acceptance reference;
-package/roster/PDF and Release memory gates remain later work. The next slice
-is a selected-class details Platform read adapter, initially unconnected to
-the page. See the [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-print-source-platform-read-adapter).
+package/roster/PDF and Release memory gates remain later work. Next entry:
+add the scoped schedule-summary persistence read described in Work Package C,
+then use the existing acceptance order for the model-backed reusable
+view/detail panel and output migration. Parity and large-workspace Release
+memory evidence follow integration. See the [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-selected-class-details-platform-read).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
@@ -155,9 +159,10 @@ The application boundary exposes contracts for operations equivalent to:
 - build an operation-scoped print source for selected days/classes.
 
 The schedule-summary, selected-details, selection-state, and print-source
-contracts now exist in Phase 2. The print-source scoped SQL adapter is
-implemented; the schedule-summary and selected-details persistence adapters,
-page integration, output parity, and Release memory evidence remain open.
+contracts now exist in Phase 2. The print-source scoped SQL adapter and
+selected-details Platform read adapter are implemented; the schedule-summary
+persistence adapter, page integration, output parity, and Release memory
+evidence remain open.
 
 The UI must not issue SQL or depend on `DataService` compatibility methods.
 

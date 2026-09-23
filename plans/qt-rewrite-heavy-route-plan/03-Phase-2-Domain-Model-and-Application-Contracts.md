@@ -3380,5 +3380,28 @@ query target built on Windows x64 Ninja. Focused CTest passed
 passed. This closes the selected-scope source-read seam only. Page/PDF wiring,
 output parity, teacher/roster batching, Release memory acceptance, and full
 Sub Prep completion remain open; Phase 2 remains In Progress. The next bounded
-slice is a selected-class details Platform read adapter, initially unconnected
-to the page.
+slice adds the selected-class details Platform read adapter, initially
+unconnected to the page.
+
+#### Progress update - 2026-09-23 (Sub Prep selected-class details Platform read)
+
+The selected-class Application details value now exposes separate bounded
+fields for room, WiFi name, WiFi password, internet type, Zoom ID, Zoom
+password, and projection type. The session-backed
+`ApplicationServicesSubPrepClassDetailsPort` reads one class through
+`ClassService` and the active repository session; it copies only class notes,
+preferred teacher display name, those seven fields, and teacher notes. It does
+not query either schedule table and has no `DataService` fallback. An existing
+class without a `class_info` row returns blank details; absent classes return
+`NotFound`. Unassigned, missing, or stale teacher references produce empty
+teacher values.
+
+The Windows x64 Debug build succeeded. Focused `NextApplicationClassSummary`,
+`NextApplicationSubPrepClassDetailsQuery`, and
+`NextPlatformApplicationServicesSubPrepPrintSourcePort` suites passed. This
+establishes the bounded read seam only: no page wiring, full legacy-output
+parity, memory improvement, or broader Sub Prep/Phase 2 acceptance is claimed.
+Page/output integration and parity plus the large-workspace Release memory
+evidence remain open. The next Phase 2-bounded Sub Prep continuation is the
+scoped schedule-summary persistence read behind its existing Application
+contract. Phase 2 remains In Progress.

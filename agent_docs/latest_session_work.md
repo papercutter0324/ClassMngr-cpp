@@ -442,7 +442,22 @@ separate on a host with Xvfb and loopback access.
   owning-value behavior.
 - This remains a read-adapter slice. The Sub Prep page/PDF wiring, persistence
   adapter, roster/package migration, output parity, SQL batching, and Release
-  memory acceptance remain open; no memory improvement is claimed. Next
-  entry point: add a scoped Platform read adapter for the existing selected-
-  class details query, initially separate from the page. Phase 2 remains
-  open; nothing has been pushed.
+  memory acceptance remain open; no memory improvement is claimed. The next
+  entry point after the selected-class details read is the scoped
+  schedule-summary persistence read. Phase 2 remains open; nothing has been
+  pushed.
+- Commit `9f648b3e` adds
+  `ApplicationServicesSubPrepClassDetailsPort` and its session-backed
+  ClassService/repository read. It returns owning selected-class details with
+  separate bounded room, WiFi, internet, Zoom, and projection values plus
+  notes and preferred teacher display name. The SQL reads one class, does not
+  touch schedule tables, treats absent class-info as blank details, and maps
+  absent classes to `NotFound`; stale and unassigned teachers preserve empty
+  teacher values. There is no `DataService` fallback.
+- Windows x64 Debug builds succeeded for ClassMngr and the focused ClassSummary,
+  SubPrepClassDetailsQuery, and SubPrepPrintSource Platform test targets;
+  focused CTest passed 3/3. Final configure validated ownership for 855
+  handwritten files and `git diff --check` passed. This read is not wired to
+  the page; parity and Release memory evidence remain open. Next entry point:
+  implement the scoped schedule-summary persistence read behind its existing
+  Application contract. Phase 2 remains open; nothing has been pushed.
