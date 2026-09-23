@@ -1,8 +1,11 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
+#include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
+#include "next/application/sub_prep_class_details_query.h"
+#include "next/application/sub_prep_schedule_summary_query.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -20,21 +23,143 @@
 #include <QDateEdit>
 #include <QDir>
 #include <QGridLayout>
+#include <QListView>
+#include <QMetaObject>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QTemporaryDir>
 #include <QStandardPaths>
 #include <QVBoxLayout>
 
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setDatabaseOpen(bool open);
 void setIncludeAdditionalClass(bool include);
+void setExistingIntensiveHours(bool exists);
 }
 
 namespace
 {
+using namespace ClassMngr::Next;
+using namespace ClassMngr::Next::Application;
+
+Domain::ClassId typedClassId(int value)
+{
+    return *Domain::ClassId::fromString(std::to_string(value));
+}
+
+Domain::TeacherId typedTeacherId(int value)
+{
+    return *Domain::TeacherId::fromString(std::to_string(value));
+}
+
+class SubPrepTestSummaryReadPort final
+    : public SubPrepScheduleSummaryReadPort
+{
+public:
+    SubPrepScheduleSummaryReadResult loadSummaries(
+        const SubPrepScheduleScopeRequest& request
+        ) override
+    {
+        lastRequest = request;
+        ClassSummaryProjectionInput input;
+        std::unordered_set<int> includedTeachers;
+        for (std::size_t index = 0;
+             index < request.visibleClassIds.size();
+             ++index)
+        {
+            const Domain::ClassId& id = request.visibleClassIds[index];
+            const int legacyId = std::stoi(id.value());
+            const bool secondClass = legacyId == 43;
+            const int teacher = secondClass ? 8 : 7;
+            const std::string grade = secondClass ? "E5" : "E4";
+            const std::string level = secondClass ? "Athena" : "Hercules";
+            if (includedTeachers.insert(teacher).second)
+            {
+                input.teachers.push_back({
+                    .id = typedTeacherId(teacher),
+                    .displayName = secondClass ? "Thomas" : "Susan",
+                    .facilities = {},
+                    .notes = {}
+                });
+            }
+            input.classes.push_back({
+                .id = id,
+                .teacherId = typedTeacherId(teacher),
+                .grade = grade,
+                .level = level,
+                .displayLabel = grade + " " + level,
+                .meetingText = secondClass ? "Thurs 5pm" : "Tues 4pm",
+                .studentCount = 9,
+                .order = static_cast<std::int32_t>(index)
+            });
+        }
+
+        return SubPrepScheduleSummaryReadResult::success(
+            std::move(input)
+            );
+    }
+
+    SubPrepScheduleScopeRequest lastRequest;
+};
+
+class SubPrepTestDetailsReadPort final
+    : public SubPrepClassDetailsReadPort
+{
+public:
+    SubPrepClassDetailsReadResult loadDetails(
+        const Domain::ClassId& classId
+        ) override
+    {
+        ++loadCount;
+        loadedClassIds.push_back(classId.value());
+        const bool secondClass = classId.value() == "43";
+        const int teacher = secondClass ? 8 : 7;
+        return SubPrepClassDetailsReadResult::success({
+            .classId = classId,
+            .teacherId = typedTeacherId(teacher),
+            .classNotes = secondClass
+                ? "Review the vocabulary list."
+                : "Read chapter three.",
+            .teacherDisplayName = secondClass ? "Thomas" : "Susan",
+            .teacherFacilities = {
+                .room = secondClass ? "512" : "413",
+                .wifiName = secondClass ? "Thomas WiFi" : "Susan WiFi",
+                .wifiPassword = "wifi secret",
+                .internetType = "WiFi",
+                .zoomId = secondClass ? "thomas.zoom" : "susan.zoom",
+                .zoomPassword = "zoom secret",
+                .projectionType = "HDMI"
+            },
+            .teacherNotes = secondClass
+                ? "Use the classroom projector."
+                : "Call before class."
+        });
+    }
+
+    int loadCount = 0;
+    std::vector<std::string> loadedClassIds;
+};
+
+class SubPrepPageHarness final
+{
+public:
+    explicit SubPrepPageHarness(ApplicationServices* services)
+        : page(services, summaryReadPort, detailsReadPort)
+    {
+    }
+
+    SubPrepTestSummaryReadPort summaryReadPort;
+    SubPrepTestDetailsReadPort detailsReadPort;
+    SubPrepPage page;
+};
+
 void saveSettingOrFail(
     DataService* dataService,
     const QString& key,
@@ -96,6 +221,7 @@ private slots:
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
     void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
+    void scheduleDisplayModeRefreshesClassInformationInPlace();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void savedCampusSelectionUsesTypedRead();
     void zoomUnavailableHidesStoredCredentials();
@@ -115,7 +241,8 @@ void SubPrepPageTests::init()
 void SubPrepPageTests::headerKeyboardOpensUntargeted()
 {
     ApplicationServices services;
-    SubPrepPage page(&services);
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
     page.resize(1100, 800);
     page.show();
     QApplication::processEvents();
@@ -140,7 +267,8 @@ void SubPrepPageTests
     ::sectionsAppearInRequestedOrderAndUseExpectedEditability()
 {
     ApplicationServices services;
-    SubPrepPage page(&services);
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
     activatePage(page);
 
     auto* scrollArea =
@@ -314,32 +442,21 @@ void SubPrepPageTests
         );
 
     auto* gradeTabs =
-        page.findChild<NavigationTabWidget*>(
-            QStringLiteral("subPrepGradeTabs")
+        page.findChild<NavigationTabStrip*>(
+            QStringLiteral("subPrepGradeTabBar")
             );
     QVERIFY(gradeTabs);
     QCOMPARE(gradeTabs->count(), 1);
-    QCOMPARE(
-        gradeTabs->tabStrip()->objectName(),
-        QStringLiteral("subPrepGradeTabBar")
-        );
+    QCOMPARE(gradeTabs->tabText(0), QStringLiteral("E4"));
 
-    auto* levelTabs =
-        gradeTabs
-            ->currentWidget()
-            ->findChild<NavigationTabWidget*>(
-                QStringLiteral("subPrepLevelTabs"),
-                Qt::FindDirectChildrenOnly
-                );
-    QVERIFY(levelTabs);
-    QCOMPARE(levelTabs->count(), 1);
-    QCOMPARE(
-        levelTabs->tabStrip()->objectName(),
-        QStringLiteral("subPrepLevelTabBar")
-        );
-    QCOMPARE(
-        levelTabs->currentWidget()->property("classId").toInt(),
-        42
+    auto* classList =
+        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
+    QVERIFY(classList);
+    QCOMPARE(classList->model()->rowCount(), 1);
+    QVERIFY(
+        classList->model()->data(classList->model()->index(0, 0))
+            .toString()
+            .contains(QStringLiteral("Hercules"))
         );
 
     auto* scheduleCard =
@@ -441,12 +558,13 @@ void SubPrepPageTests
     ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
 
     ApplicationServices services;
-    SubPrepPage page(&services);
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
     activatePage(page);
 
     auto* gradeTabs =
-        page.findChild<NavigationTabWidget*>(
-            QStringLiteral("subPrepGradeTabs")
+        page.findChild<NavigationTabStrip*>(
+            QStringLiteral("subPrepGradeTabBar")
             );
     QVERIFY(gradeTabs);
     QCOMPARE(gradeTabs->count(), 2);
@@ -464,33 +582,28 @@ void SubPrepPageTests
 
     QVERIFY(secondGradeIndex >= 0);
     gradeTabs->setCurrentIndex(secondGradeIndex);
+    QCOMPARE(harness.detailsReadPort.loadCount, 2);
+    QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("43"));
 
-    auto* levelTabs =
-        gradeTabs
-            ->currentWidget()
-            ->findChild<NavigationTabWidget*>(
-                QStringLiteral("subPrepLevelTabs"),
-                Qt::FindDirectChildrenOnly
-                );
-    QVERIFY(levelTabs);
-    QCOMPARE(levelTabs->count(), 1);
+    auto* classList =
+        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
+    QVERIFY(classList);
+    QCOMPARE(classList->model()->rowCount(), 1);
+    QCOMPARE(
+        classList->model()
+            ->data(classList->model()->index(0, 0),
+                   SubPrepClassInformationListModel::ClassIdRole)
+            .toString(),
+        QStringLiteral("43")
+        );
     QVERIFY(
-        levelTabs
-            ->tabText(0)
+        classList->model()->data(classList->model()->index(0, 0))
+            .toString()
             .contains(QStringLiteral("Athena"))
         );
 
-    QCOMPARE(
-        levelTabs->currentWidget()->property("classId").toInt(),
-        43
-        );
-
     auto* selectedDetails =
-        levelTabs
-            ->currentWidget()
-            ->findChild<QWidget*>(
-                QStringLiteral("subPrepClassDetails")
-                );
+        page.findChild<QWidget*>(QStringLiteral("subPrepClassDetails"));
     QVERIFY(selectedDetails);
     QCOMPARE(
         selectedDetails->property("classId").toInt(),
@@ -498,28 +611,80 @@ void SubPrepPageTests
         );
 
     page.refresh();
-    QCoreApplication::sendPostedEvents(
-        nullptr,
-        QEvent::DeferredDelete
-        );
 
     gradeTabs =
-        page.findChild<NavigationTabWidget*>(
-            QStringLiteral("subPrepGradeTabs")
+        page.findChild<NavigationTabStrip*>(
+            QStringLiteral("subPrepGradeTabBar")
             );
     QVERIFY(gradeTabs);
-
-    levelTabs =
-        gradeTabs
-            ->currentWidget()
-            ->findChild<NavigationTabWidget*>(
-                QStringLiteral("subPrepLevelTabs"),
-                Qt::FindDirectChildrenOnly
-                );
-    QVERIFY(levelTabs);
     QCOMPARE(
-        levelTabs->currentWidget()->property("classId").toInt(),
+        classList->model()
+            ->data(classList->currentIndex(),
+                   SubPrepClassInformationListModel::ClassIdRole)
+            .toString()
+            .toInt(),
         43
+        );
+    QCOMPARE(harness.detailsReadPort.loadCount, 3);
+
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(false);
+    page.refresh();
+
+    QCOMPARE(
+        selectedDetails->property("classId").toInt(),
+        42
+        );
+    QCOMPARE(
+        classList->model()
+            ->data(classList->currentIndex(),
+                   SubPrepClassInformationListModel::ClassIdRole)
+            .toString()
+            .toInt(),
+        42
+        );
+    QCOMPARE(harness.detailsReadPort.loadCount, 4);
+    QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("42"));
+}
+
+void SubPrepPageTests
+    ::scheduleDisplayModeRefreshesClassInformationInPlace()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+
+    ApplicationServices services;
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+
+    auto* schedule = page.findChild<ScheduleWidget*>(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    QVERIFY(schedule);
+    QCOMPARE(
+        harness.summaryReadPort.lastRequest.mode,
+        ScheduleViewMode::Regular
+        );
+    const int originalRebuildCount =
+        page.runtimeMetrics().classInformationRebuildCount;
+
+    QVERIFY(QMetaObject::invokeMethod(
+        schedule,
+        "setDisplayMode",
+        Qt::DirectConnection,
+        Q_ARG(int, static_cast<int>(ScheduleDisplayMode::Intensive))
+        ));
+
+    QCOMPARE(
+        harness.summaryReadPort.lastRequest.mode,
+        ScheduleViewMode::Intensive
+        );
+    QCOMPARE(
+        page.runtimeMetrics().classInformationRebuildCount,
+        originalRebuildCount + 1
+        );
+    QCOMPARE(
+        page.runtimeMetrics().classInformationVisibleClassCount,
+        1
         );
 }
 
@@ -529,7 +694,8 @@ void SubPrepPageTests
     ApplicationServices services;
 
     {
-        SubPrepPage fresh(&services);
+        SubPrepPageHarness freshHarness(&services);
+        SubPrepPage& fresh = freshHarness.page;
         activatePage(fresh);
         auto* grading =
             fresh.findChild<QTextEdit*>(
@@ -565,7 +731,8 @@ void SubPrepPageTests
         QStringLiteral("Existing substitute note")
         );
 
-    SubPrepPage existing(&services);
+    SubPrepPageHarness existingHarness(&services);
+    SubPrepPage& existing = existingHarness.page;
     activatePage(existing);
     auto* grading =
         existing.findChild<QTextEdit*>(
@@ -621,7 +788,8 @@ void SubPrepPageTests
         QStringLiteral("  BUNDANG  ")
         );
 
-    SubPrepPage page(&services);
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
     activatePage(page);
 
     auto* officeNumber =
@@ -656,7 +824,8 @@ void SubPrepPageTests
         true
         );
 
-    SubPrepPage unavailable(&services);
+    SubPrepPageHarness unavailableHarness(&services);
+    SubPrepPage& unavailable = unavailableHarness.page;
     activatePage(unavailable);
     QCOMPARE(
         unavailable
@@ -680,7 +849,8 @@ void SubPrepPageTests
         false
         );
 
-    SubPrepPage available(&services);
+    SubPrepPageHarness availableHarness(&services);
+    SubPrepPage& available = availableHarness.page;
     activatePage(available);
     QCOMPARE(
         available
@@ -714,7 +884,8 @@ void SubPrepPageTests
         false
         );
 
-    SubPrepPage legacy(&legacyServices);
+    SubPrepPageHarness legacyHarness(&legacyServices);
+    SubPrepPage& legacy = legacyHarness.page;
     activatePage(legacy);
     QCOMPARE(
         legacy
@@ -751,7 +922,8 @@ void SubPrepPageTests
         false
         );
 
-    SubPrepPage page(&services);
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
     page.setDatabaseOpen(true);
     page.activate();
     auto* materials =
@@ -766,10 +938,13 @@ void SubPrepPageTests
         page.findChild<ScheduleWidget*>(
             QStringLiteral("subPrepScheduleWidget")
             );
+    auto* classList =
+        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
 
     QVERIFY(materials);
     QVERIFY(zoomLogin);
     QVERIFY(schedule);
+    QVERIFY(classList);
     QCOMPARE(
         materials->toPlainText(),
         QStringLiteral("Stored database A material")
@@ -796,11 +971,12 @@ void SubPrepPageTests
     QVERIFY(materials->toPlainText().isEmpty());
     QVERIFY(zoomLogin->text().isEmpty());
     QVERIFY(schedule->visibleClassIds().isEmpty());
-    QVERIFY(
-        page.findChildren<QWidget*>(
-            QStringLiteral("subPrepClassDetails")
-            ).isEmpty()
+    auto* classDetails = page.findChild<QWidget*>(
+        QStringLiteral("subPrepClassDetails")
         );
+    QVERIFY(classDetails);
+    QCOMPARE(classDetails->property("classId").toInt(), -1);
+    QCOMPARE(classList->model()->rowCount(), 0);
 
     QTest::qWait(850);
     QCOMPARE(

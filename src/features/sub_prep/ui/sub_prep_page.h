@@ -1,17 +1,22 @@
 #pragma once
 
 #include "domain/models/campus_info.h"
+#include "next/domain/domain_types.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QList>
+#include <QStringList>
+
+#include <memory>
 
 class ApplicationServices;
 class QLabel;
 class QLineEdit;
+class QListView;
 class QPushButton;
 class QScrollArea;
-class NavigationTabWidget;
+class NavigationTabStrip;
 class OnScreenKeyboard;
 class QTextEdit;
 class QTimer;
@@ -19,6 +24,14 @@ class QVBoxLayout;
 class QWidget;
 class ScheduleWidget;
 class SectionCard;
+class SubPrepClassInformationDataAccess;
+class SubPrepClassInformationListModel;
+namespace ClassMngr::Next::Application
+{
+class SubPrepClassDetailsReadPort;
+class SubPrepClassInformationState;
+class SubPrepScheduleSummaryReadPort;
+}
 struct ScheduleViewModel;
 
 enum class SubPrepSection
@@ -61,6 +74,15 @@ public:
         ApplicationServices* services,
         QWidget* parent = nullptr
         );
+    SubPrepPage(
+        ApplicationServices* services,
+        ClassMngr::Next::Application::SubPrepScheduleSummaryReadPort&
+            summaryReadPort,
+        ClassMngr::Next::Application::SubPrepClassDetailsReadPort&
+            detailsReadPort,
+        QWidget* parent = nullptr
+        );
+    ~SubPrepPage() override;
 
     void saveData() override;
     bool saveChanges() override;
@@ -99,6 +121,7 @@ private slots:
     void generateSubPrep();
 
 private:
+    void initialize();
     void buildUi();
     void loadPageData();
     void loadStoredSettings();
@@ -114,6 +137,13 @@ private:
     void refreshGeneratedContent();
     void rebuildClassInformation();
     int currentClassInformationId() const;
+    void handleClassInformationGradeChanged(int index);
+    void handleClassInformationSelectionChanged();
+    void showSelectedClassInformation(
+        const ClassMngr::Next::Domain::ClassId& classId
+        );
+    void renderSelectedClassInformation();
+    void updateClassInformationEmptyState();
     QList<SubPrepClassInformation::TeacherGroup> buildClassInformation();
     QList<SubPrepClassInformation::TeacherGroup> buildClassInformation(
         const ScheduleViewModel& schedule
@@ -192,7 +222,33 @@ private:
     ScheduleWidget* m_scheduleWidget = nullptr;
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;
-    NavigationTabWidget* m_classInformationTabs = nullptr;
+    NavigationTabStrip* m_classInformationGradeTabs = nullptr;
+    QListView* m_classInformationListView = nullptr;
+    SubPrepClassInformationListModel* m_classInformationModel = nullptr;
+    QLabel* m_classInformationEmptyLabel = nullptr;
+    SectionCard* m_classInformationDetailsCard = nullptr;
+    QWidget* m_classInformationDetails = nullptr;
+    QLabel* m_classInformationLevelValue = nullptr;
+    QLabel* m_classInformationTimeValue = nullptr;
+    QLabel* m_classInformationStudentCountValue = nullptr;
+    QLabel* m_classInformationRoomValue = nullptr;
+    QLabel* m_classInformationWifiNameValue = nullptr;
+    QLabel* m_classInformationWifiPasswordValue = nullptr;
+    QLabel* m_classInformationZoomIdValue = nullptr;
+    QLabel* m_classInformationZoomPasswordValue = nullptr;
+    QLabel* m_classInformationInternetValue = nullptr;
+    QLabel* m_classInformationProjectionValue = nullptr;
+    QLabel* m_classInformationClassNotesLabel = nullptr;
+    QTextEdit* m_classInformationClassNotes = nullptr;
+    QLabel* m_classInformationTeacherNotesLabel = nullptr;
+    QTextEdit* m_classInformationTeacherNotes = nullptr;
+    QStringList m_classInformationGrades;
+    std::unique_ptr<SubPrepClassInformationDataAccess>
+        m_classInformationDataAccess;
+    std::unique_ptr<
+        ClassMngr::Next::Application::SubPrepClassInformationState
+        > m_classInformationState;
+    bool m_updatingClassInformation = false;
     int m_selectedClassId = -1;
     int m_classInformationSourceClassCount = 0;
     int m_classInformationVisibleClassCount = 0;

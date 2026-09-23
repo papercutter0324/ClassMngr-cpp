@@ -338,3 +338,11 @@
 - The adapter and its focused tests establish a bounded read contract only.
   Wiring the projection into the live page, replacing per-class widget trees,
   output parity, and Release memory evidence remain separate acceptance work.
+
+## Phase 2 Sub Prep live class-information view — 2026-09-23
+
+- Bind navigation to a compact summary model and keep the selected typed ID
+  and one selected-details value in Application state. The page renders one
+  reusable detail panel; it must not recreate a hidden widget tree per class.
+- Refresh the projection in place on schedule-mode changes and preserve a
+  selection only while its class remains in the current schedule scope.

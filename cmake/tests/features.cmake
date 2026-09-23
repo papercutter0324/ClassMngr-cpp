@@ -298,6 +298,33 @@ qt_add_executable(ClassMngrClassTransferTests
         COMMAND ClassMngrSubPrepClassInformationModelTests
     )
 
+    qt_add_executable(ClassMngrSubPrepClassInformationListModelTests
+        tests/sub_prep_class_information_list_model_tests.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp
+    )
+
+    target_compile_features(ClassMngrSubPrepClassInformationListModelTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSubPrepClassInformationListModelTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSubPrepClassInformationListModelTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrSubPrepClassInformationListModelTests
+        COMMAND ClassMngrSubPrepClassInformationListModelTests
+    )
+
     qt_add_executable(ClassMngrScheduleWidgetTests
         tests/schedule_widget_tests.cpp
         src/domain/models/classroom.cpp

@@ -31,21 +31,27 @@ Missing class-info rows on existing classes return blank details; absent
 classes return `NotFound`, and
 unassigned, missing, or stale teacher references return empty teacher values.
 
-The Windows Debug build of
-`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
-succeeded. Focused CTest passed the ClassSummary,
-SubPrepScheduleSummaryQuery, and SubPrep Platform suites 3/3 in 13.39 seconds;
-configure validated 857 handwritten files and `git diff --check` passed. The
-summary, selected-details, and print-source adapters are not connected to the
-Sub Prep page or PDF generation. Output-path teacher/roster batching,
-source-release or memory improvement, roster/package migration, and PDF/output
-parity remain open. The 96-class
-Release baseline's legacy memory failure remains the acceptance reference;
-package/roster/PDF and Release memory gates remain later work. Next entry:
-Work Package D: implement model-backed class list/navigation and a reusable
-selected-class detail view. Page/output wiring, behavior parity, and
-large-workspace Release memory evidence remain open. See the [Phase 2 contract
-update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-scoped-schedule-summary-platform-read).
+Work Package D now connects the schedule-summary and selected-class details
+queries to a model-backed grade/class list and one reusable details card.
+`SubPrepClassInformationListModel` filters and orders compact summaries; the
+page keeps selection in `SubPrepClassInformationState`, and refresh replaces
+the projection in place while retaining a class only when it remains in scope.
+Changing schedule display mode also refreshes that projection. There is no
+per-class page or details widget.
+
+Windows x64 Debug Ninja builds succeeded for `ClassMngr`,
+`ClassMngrSubPrepClassInformationListModelTests`,
+`ClassMngrSubPrepPageTests`, and `ClassMngrStartupPerformanceTests`. Focused
+CTest passed the list-model and page suites 2/2; configure validated 860
+handwritten files and `git diff --check` passed. The startup-performance
+target compiled, but the 96-class packaged Release route was not run. Focused
+page tests cover selection retention, invalidation when a class leaves scope,
+and display-mode refresh. The startup target compiles the new bounded
+widget/editor assertions. Page deactivation resource release,
+output/package/PDF migration, parity, and Release memory acceptance remain
+open. Next entry: Work Package E,
+explicit page-leave release and lifecycle invalidation. See the [Phase 2
+contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-model-backed-navigation-and-reusable-details-view).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

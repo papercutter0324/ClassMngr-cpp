@@ -2782,3 +2782,23 @@ not Sub Prep or Phase 2 acceptance. Work Package D is the next Sub Prep
 increment: model-backed class list/navigation and a reusable selected-class
 detail view. Page/output wiring, behavior parity, and 96-class Release memory
 evidence remain open.
+
+## Verified Sub Prep model-backed class-information view
+
+The live class-information view now consumes the Application schedule-summary
+and selected-class details queries through the corresponding Platform read
+ports. A `QAbstractListModel` owns the compact projection and supplies grade,
+configured-level, teacher, meeting, and student-count roles to one `QListView`.
+One reusable details card is updated from `SubPrepClassInformationState`; its
+selected typed class ID is not recovered from per-class widgets. Schedule
+display-mode changes refresh the projection in place, and refresh retains the
+selection only while the class remains in the current schedule scope.
+
+Windows x64 Debug Ninja built `ClassMngr`, the list-model and Sub Prep page
+test targets, and the startup-performance test target. Focused CTest passed
+the list-model and page suites 2/2; CMake validated 860 handwritten files and
+`git diff --check` passed. The packaged 96-class Release route was not run.
+This closes the live summary/details view wiring only. Page-leave release,
+package/PDF output migration and parity, and Release memory acceptance remain
+open; Phase 2 remains in progress. Work Package E covers explicit lifecycle
+release and invalidation.

@@ -8381,6 +8381,23 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 > 0
             );
         QVERIFY(
+            selectedMetrics.value(QStringLiteral("subPrepClassInformationWidgetCount"))
+                .toInt()
+                < 64
+            );
+        QVERIFY(
+            selectedMetrics.value(QStringLiteral("subPrepClassInformationWidgetCount"))
+                .toInt()
+                < selectedMetrics
+                      .value(QStringLiteral("subPrepClassInformationVisibleClassCount"))
+                      .toInt()
+            );
+        QCOMPARE(
+            selectedMetrics.value(QStringLiteral("subPrepClassInformationTextEditCount"))
+                .toInt(),
+            2
+            );
+        QVERIFY(
             changedMetrics
                 .value(QStringLiteral("subPrepClassInformationVisibleClassCount"))
                 .toInt()

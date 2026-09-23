@@ -1,35 +1,6 @@
 #include "sub_prep_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-SubPrepPage::SubPrepPage(
-    ApplicationServices* services,
-    QWidget* parent
-    )
-    : BasePage(parent)
-    , m_services(services)
-{
-    Q_ASSERT(m_services);
-
-    setProperty("role", UiRoles::SubPrep);
-
-    buildUi();
-
-    m_autosaveTimer =
-        new QTimer(this);
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(
-        AutosaveDelayMs
-        );
-
-    connect(
-        m_autosaveTimer,
-        &QTimer::timeout,
-        this,
-        &SubPrepPage::autosave
-        );
-
-}
-
 void SubPrepPage::saveData()
 {
     saveSubPrepInternal();
@@ -207,6 +178,27 @@ void SubPrepPage::retranslateUi()
     {
         m_classInformationHeading->setText(
             tr("Class Information")
+            );
+    }
+
+    if (m_classInformationEmptyLabel)
+    {
+        m_classInformationEmptyLabel->setText(
+            tr("No scheduled class information available.")
+            );
+    }
+
+    if (m_classInformationClassNotesLabel)
+    {
+        m_classInformationClassNotesLabel->setText(
+            tr("Class Notes")
+            );
+    }
+
+    if (m_classInformationTeacherNotesLabel)
+    {
+        m_classInformationTeacherNotesLabel->setText(
+            tr("Co-Teacher Notes")
             );
     }
 

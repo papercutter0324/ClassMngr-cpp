@@ -142,25 +142,22 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Phase 2 continues on `Qt-Rewrite`. Commit `dd429838` adds the session-backed
-Platform schedule-summary read behind the existing Application contract. It
-filters by visible class IDs, selected weekdays, and regular/intensive mode;
-returns bounded owning summaries and teacher values; and batches roster
-counts without materializing roster rows. Empty scopes avoid a read, selected
-mode reads stay scoped to that schedule table, and roster-read failure keeps
-the legacy zero-count fallback. It uses the active ClassService session with
-no DataService fallback.
+Phase 2 continues on `Qt-Rewrite`. Work Package D now connects the scoped
+schedule-summary and selected-class details queries to the live Sub Prep
+class-information view. A compact `QAbstractListModel` backs one class list;
+one details card is reused, and `SubPrepClassInformationState` owns selection
+and the current details value. Projection refresh retains only an in-scope
+selection, and schedule display-mode changes refresh the projection in place.
 
-Windows x64 Debug builds succeeded for the Platform test target and the
-focused ClassSummary, SubPrepScheduleSummaryQuery, and SubPrep Platform suites
-passed 3/3. CMake ownership validation passed for 857 handwritten files and
-`git diff --check` passed. The next planned slice is Work Package D in the
-Sub Prep memory plan: a model-backed class list/navigation and one reusable
-selected-class details view. The summary/details reads are not yet wired into
-the live page. Page/output integration, behavior parity, the 96-class Release
-memory evidence, and the wider Phase 2 exit gate remain open. Keep the Linux
-Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
-access.
+Windows x64 Debug Ninja built `ClassMngr`, the list-model and Sub Prep page
+tests, and the startup-performance test target. Focused CTest passed 2/2;
+CMake ownership validation passed for 860 handwritten files and
+`git diff --check` passed. The 96-class packaged Release route was not run.
+Next is Work Package E: release selected details on page deactivation and
+cover the lifecycle invalidation boundary. Package/PDF output migration,
+behavior and visual parity, the 96-class Release memory evidence, and the
+wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up separate
+until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

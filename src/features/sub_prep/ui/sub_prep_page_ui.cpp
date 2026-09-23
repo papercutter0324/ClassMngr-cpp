@@ -1,5 +1,11 @@
 #include "sub_prep_page_p.h"
 
+#include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
+
+#include <QAbstractItemView>
+#include <QItemSelectionModel>
+#include <QListView>
+
 void SubPrepPage::buildUi()
 {
     contentLayout()->setContentsMargins(0, 0, 0, 0);
@@ -459,6 +465,252 @@ void SubPrepPage::buildUi()
         UiConstants::ClassInfo::Page::ContentSpacing
         );
     m_classInformationLayout->setAlignment(Qt::AlignTop);
+
+    m_classInformationGradeTabs =
+        new NavigationTabStrip(
+            NavigationTabKind::Grade,
+            m_classInformationContent
+            );
+    m_classInformationGradeTabs->setObjectName(
+        QStringLiteral("subPrepGradeTabBar")
+        );
+    m_classInformationLayout->addWidget(
+        m_classInformationGradeTabs
+        );
+
+    m_classInformationListView =
+        new QListView(m_classInformationContent);
+    m_classInformationListView->setObjectName(
+        QStringLiteral("subPrepClassList")
+        );
+    m_classInformationListView->setSelectionMode(
+        QAbstractItemView::SingleSelection
+        );
+    m_classInformationListView->setSelectionBehavior(
+        QAbstractItemView::SelectRows
+        );
+    m_classInformationListView->setEditTriggers(
+        QAbstractItemView::NoEditTriggers
+        );
+    m_classInformationListView->setUniformItemSizes(true);
+    m_classInformationListView->setWordWrap(true);
+    m_classInformationListView->setVerticalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
+        );
+    m_classInformationListView->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAlwaysOff
+        );
+    m_classInformationListView->setMaximumHeight(200);
+    m_classInformationListView->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    m_classInformationModel =
+        new SubPrepClassInformationListModel(this);
+    m_classInformationListView->setModel(m_classInformationModel);
+    m_classInformationLayout->addWidget(
+        m_classInformationListView
+        );
+
+    m_classInformationEmptyLabel =
+        new QLabel(
+            tr("No scheduled class information available."),
+            m_classInformationContent
+            );
+    m_classInformationEmptyLabel->setObjectName(
+        QStringLiteral("pageSubtitle")
+        );
+    m_classInformationEmptyLabel->setProperty(
+        "classInformationEmptyState",
+        true
+        );
+    m_classInformationEmptyLabel->setWordWrap(true);
+    m_classInformationLayout->addWidget(
+        m_classInformationEmptyLabel
+        );
+
+    m_classInformationDetailsCard =
+        new SectionCard(
+            QString(),
+            m_classInformationContent
+            );
+    m_classInformationDetailsCard->setObjectName(
+        QStringLiteral("subPrepTeacherSectionCard")
+        );
+    m_classInformationDetailsCard->setVisible(false);
+
+    m_classInformationDetails =
+        new QWidget(m_classInformationDetailsCard);
+    m_classInformationDetails->setObjectName(
+        QStringLiteral("subPrepClassDetails")
+        );
+    m_classInformationDetails->setProperty(
+        "classId",
+        -1
+        );
+    auto* detailsLayout =
+        new QVBoxLayout(m_classInformationDetails);
+    detailsLayout->setContentsMargins(0, 0, 0, 0);
+    detailsLayout->setSpacing(
+        UiConstants::ClassInfo::Form::VerticalSpacing
+        );
+
+    auto* fields =
+        new QGridLayout;
+    fields->setHorizontalSpacing(
+        UiConstants::ClassInfo::Form::HorizontalSpacing
+        );
+    fields->setVerticalSpacing(
+        UiConstants::ClassInfo::Form::VerticalSpacing
+        );
+    m_classInformationLevelValue = createInlineValue(
+        tr("Level"), QString(), m_classInformationDetails
+        );
+    m_classInformationLevelValue->setObjectName(
+        QStringLiteral("subPrepClassInformationLevel")
+        );
+    m_classInformationTimeValue = createInlineValue(
+        tr("Time"), QString(), m_classInformationDetails
+        );
+    m_classInformationTimeValue->setObjectName(
+        QStringLiteral("subPrepClassInformationTime")
+        );
+    m_classInformationStudentCountValue = createInlineValue(
+        tr("# of Students"), QString(), m_classInformationDetails
+        );
+    m_classInformationStudentCountValue->setObjectName(
+        QStringLiteral("subPrepClassInformationStudentCount")
+        );
+    m_classInformationRoomValue = createInlineValue(
+        tr("Room"), QString(), m_classInformationDetails
+        );
+    m_classInformationRoomValue->setObjectName(
+        QStringLiteral("subPrepClassInformationRoom")
+        );
+    m_classInformationWifiNameValue = createInlineValue(
+        tr("WiFi Name"), QString(), m_classInformationDetails
+        );
+    m_classInformationWifiNameValue->setObjectName(
+        QStringLiteral("subPrepClassInformationWifiName")
+        );
+    m_classInformationWifiPasswordValue = createInlineValue(
+        tr("WiFi Password"), QString(), m_classInformationDetails
+        );
+    m_classInformationWifiPasswordValue->setObjectName(
+        QStringLiteral("subPrepClassInformationWifiPassword")
+        );
+    m_classInformationZoomIdValue = createInlineValue(
+        tr("Zoom ID"), QString(), m_classInformationDetails
+        );
+    m_classInformationZoomIdValue->setObjectName(
+        QStringLiteral("subPrepClassInformationZoomId")
+        );
+    m_classInformationZoomPasswordValue = createInlineValue(
+        tr("Zoom Password"), QString(), m_classInformationDetails
+        );
+    m_classInformationZoomPasswordValue->setObjectName(
+        QStringLiteral("subPrepClassInformationZoomPassword")
+        );
+    m_classInformationInternetValue = createInlineValue(
+        tr("Internet"), QString(), m_classInformationDetails
+        );
+    m_classInformationInternetValue->setObjectName(
+        QStringLiteral("subPrepClassInformationInternet")
+        );
+    m_classInformationProjectionValue = createInlineValue(
+        tr("Projection"), QString(), m_classInformationDetails
+        );
+    m_classInformationProjectionValue->setObjectName(
+        QStringLiteral("subPrepClassInformationProjection")
+        );
+    const QList<QLabel*> classInformationFields{
+        m_classInformationLevelValue,
+        m_classInformationTimeValue,
+        m_classInformationStudentCountValue,
+        m_classInformationRoomValue,
+        m_classInformationWifiNameValue,
+        m_classInformationWifiPasswordValue,
+        m_classInformationZoomIdValue,
+        m_classInformationZoomPasswordValue,
+        m_classInformationInternetValue,
+        m_classInformationProjectionValue
+    };
+    for (int index = 0; index < classInformationFields.size(); ++index)
+    {
+        fields->addWidget(
+            classInformationFields.at(index),
+            index / 4,
+            index % 4
+            );
+    }
+    for (int column = 0; column < 4; ++column)
+    {
+        fields->setColumnStretch(column, 1);
+    }
+    detailsLayout->addLayout(fields);
+
+    m_classInformationClassNotesLabel = createFieldLabel(
+        tr("Class Notes"),
+        m_classInformationDetails
+        );
+    detailsLayout->addWidget(m_classInformationClassNotesLabel);
+    m_classInformationClassNotes = createTextEdit(
+        ClassNotesLines,
+        true,
+        m_classInformationDetails
+        );
+    m_classInformationClassNotes->setObjectName(
+        QStringLiteral("subPrepClassInformationNotes")
+        );
+    detailsLayout->addWidget(m_classInformationClassNotes);
+
+    m_classInformationTeacherNotesLabel = createFieldLabel(
+        tr("Co-Teacher Notes"),
+        m_classInformationDetails
+        );
+    detailsLayout->addWidget(m_classInformationTeacherNotesLabel);
+    m_classInformationTeacherNotes = createTextEdit(
+        TeacherNotesLines,
+        true,
+        m_classInformationDetails
+        );
+    m_classInformationTeacherNotes->setObjectName(
+        QStringLiteral("subPrepClassInformationTeacherNotes")
+        );
+    detailsLayout->addWidget(m_classInformationTeacherNotes);
+
+    m_classInformationDetailsCard->contentLayout()->addWidget(
+        m_classInformationDetails
+        );
+    m_classInformationLayout->addWidget(
+        m_classInformationDetailsCard
+        );
+
+    connect(
+        m_classInformationGradeTabs,
+        &NavigationTabStrip::currentChanged,
+        this,
+        &SubPrepPage::handleClassInformationGradeChanged
+        );
+    connect(
+        m_classInformationListView->selectionModel(),
+        &QItemSelectionModel::currentChanged,
+        this,
+        [this](const QModelIndex&, const QModelIndex&)
+        {
+            handleClassInformationSelectionChanged();
+        }
+        );
+    connect(
+        m_scheduleWidget,
+        &ScheduleWidget::displayModeChanged,
+        this,
+        [this](ScheduleDisplayMode)
+        {
+            rebuildClassInformation();
+        }
+        );
+
     m_scrollContentLayout->addWidget(
         m_classInformationContent
         );

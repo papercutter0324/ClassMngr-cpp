@@ -235,6 +235,8 @@ qt_add_executable(ClassMngrSubPrepPageTests
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
+        src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp
+        src/features/sub_prep/ui/sub_prep_class_information_list_model.h
         src/features/sub_prep/ui/sub_prep_page.cpp
         src/features/sub_prep/ui/sub_prep_page_class_information.cpp
         src/features/sub_prep/ui/sub_prep_page.h

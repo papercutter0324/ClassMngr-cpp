@@ -525,6 +525,8 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/sub_prep/services/sub_prep_print_service.h"
     "src/features/sub_prep/ui/sub_prep_class_information_model.cpp"
     "src/features/sub_prep/ui/sub_prep_class_information_model.h"
+    "src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp"
+    "src/features/sub_prep/ui/sub_prep_class_information_list_model.h"
     "src/features/sub_prep/ui/sub_prep_page.cpp"
     "src/features/sub_prep/ui/sub_prep_page.h"
     "src/features/sub_prep/ui/sub_prep_page_class_information.cpp"

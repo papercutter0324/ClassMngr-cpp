@@ -3427,6 +3427,27 @@ succeeded. Focused CTest passed
 13.39 seconds. Configure validated 857 handwritten files, and
 `git diff --check` passed. This closes the scoped schedule-summary read seam
 only. Phase 2 remains In Progress; page/output wiring, behavior parity, and
-96-class Release memory evidence remain open. The next Sub Prep increment is
-Work Package D: model-backed list/navigation and a reusable selected-class
-detail view.
+96-class Release memory evidence remain open. Work Package D is now complete;
+the following progress update records the model-backed list/navigation and
+reusable selected-class details view.
+
+#### Progress update - 2026-09-23 (Sub Prep model-backed navigation and reusable details view)
+
+Work Package D wires the schedule-summary and selected-class details queries
+to the live Sub Prep class-information view. A Qt list model filters and orders
+the compact `ClassSummaryProjection` by grade and configured level; one
+`QListView` replaces per-class pages, and one details card is reused as the
+selection changes. `SubPrepClassInformationState` owns the selected typed
+class ID and current bounded details. Refresh keeps the selected class only
+while it remains in the schedule scope, and the schedule display-mode signal
+refreshes the projection in place.
+
+Windows x64 Debug Ninja built `ClassMngr`,
+`ClassMngrSubPrepClassInformationListModelTests`,
+`ClassMngrSubPrepPageTests`, and `ClassMngrStartupPerformanceTests`. Focused
+CTest passed the list-model and page suites 2/2; configure validated 860
+handwritten files and `git diff --check` passed. The startup-performance
+target compiled, but this slice did not run the packaged 96-class Release
+route. This closes the model-backed view integration only. Page-leave resource
+release, output/package/PDF migration, parity, and Release memory acceptance
+remain open; Phase 2 remains In Progress. Work Package E is next.

@@ -478,10 +478,27 @@ separate on a host with Xvfb and loopback access.
   `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
   CMake validated 857 handwritten files; `git diff --check` passed. Nothing
   was pushed.
-- Handoff: continue Phase 2 at Work Package D of
-  `sub-prep-class-information-memory-plan.md`. Start with model-backed class
-  navigation over compact summaries and one reusable selected-class details
-  view. The new summary/details reads are not connected to the live page;
-  output/package/PDF migration, behavior and visual parity, and the 96-class
-  Release memory evidence remain open. Phase 2 is still in progress; keep the
-  Linux Phase 0 follow-up separate.
+
+### Phase 2 Sub Prep model-backed navigation — 2026-09-23
+
+- The live Sub Prep class-information view now uses the Application
+  schedule-summary and selected-class details queries through their Platform
+  ports. `SubPrepClassInformationListModel` supplies compact grade/level class
+  rows to one `QListView`; one details card is updated from
+  `SubPrepClassInformationState`.
+- Schedule display-mode changes refresh the projection in place. Refresh keeps
+  the selected class only while it remains in scope. Focused tests cover grade
+  navigation, selection retention, invalidation when the selected class leaves
+  the schedule, mode refresh, and bounded list/detail widgets.
+- Windows x64 Debug Ninja built `ClassMngr`, the new list-model test target,
+  `ClassMngrSubPrepPageTests`, and `ClassMngrStartupPerformanceTests`. Focused
+  CTest passed the list-model and page suites 2/2. CMake validated 860
+  handwritten sources; `git diff --check` passed. The 96-class packaged
+  Release route was not run. The Visual Studio solution build hit a sandbox
+  `FileTracker` access denial before compilation; the equivalent Ninja build
+  succeeded from the Visual Studio developer environment.
+- Handoff: next implement Work Package E's explicit selected-details release
+  when the page deactivates, with a return-to-page lifecycle test. Output/
+  package/PDF migration and parity, the 96-class Release memory gate, and the
+  wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up
+  separate.

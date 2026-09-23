@@ -5,7 +5,6 @@
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
-#include "features/classes/models/class_tab_navigation_model.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
@@ -166,32 +165,6 @@ int textEditHeightForLines(
 
     return edit->fontMetrics().lineSpacing() * lines
         + TextEditVerticalPadding;
-}
-
-void clearLayout(
-    QLayout* layout
-    )
-{
-    if (!layout)
-    {
-        return;
-    }
-
-    while (QLayoutItem* item = layout->takeAt(0))
-    {
-        if (auto* childLayout = item->layout())
-        {
-            clearLayout(childLayout);
-            delete childLayout;
-        }
-
-        if (auto* widget = item->widget())
-        {
-            widget->deleteLater();
-        }
-
-        delete item;
-    }
 }
 
 QLabel* createInlineValue(
