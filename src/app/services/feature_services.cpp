@@ -494,6 +494,29 @@ Result<ClassInfo> ClassService::classInfo(int classId) const
     return std::unexpected(unavailableError());
 }
 
+Result<SubPrepClassDetailsRecord> ClassService::subPrepClassDetails(
+    const int classId
+    ) const
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QStringLiteral(
+                "Loading selected Sub Prep class details failed: invalid class id."
+                )
+            );
+    }
+
+    if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
+    {
+        return repository->loadSubPrepClassDetails(classId);
+    }
+
+    // Keep this selected-detail read bound to the active session. Falling
+    // back to DataService could load a broad legacy record and its schedules.
+    return std::unexpected(unavailableError());
+}
+
 Result<QList<ClassInfo>> ClassService::classInfosForScheduleScope(
     const QList<int>& classIds,
     const QStringList& selectedDays,

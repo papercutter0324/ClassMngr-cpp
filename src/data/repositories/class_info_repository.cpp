@@ -656,6 +656,124 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     return info;
 }
 
+Result<SubPrepClassDetailsRecord>
+ClassInfoRepository::loadSubPrepClassDetails(
+    const int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading selected Sub Prep class details failed: invalid class id %1."
+                ).arg(classId)
+            );
+    }
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(QStringLiteral(R"(
+        SELECT
+            c.id AS class_id,
+            ci.teacher_id AS assigned_teacher_id,
+            ci.notes AS class_notes,
+            t.id AS resolved_teacher_id,
+            t.teacher_kr,
+            t.teacher_en,
+            t.preferred_romanization,
+            t.preferred_name,
+            t.room_number,
+            t.wifi_name,
+            t.wifi_password,
+            t.internet_type,
+            t.zoom_id,
+            t.zoom_password,
+            t.projection_type,
+            t.notes AS teacher_notes
+        FROM classes c
+        LEFT JOIN class_info ci
+        ON ci.class_id = c.id
+        LEFT JOIN teachers t
+        ON t.id = ci.teacher_id
+        WHERE c.id = ?
+        LIMIT 1
+    )"));
+    query.addBindValue(classId);
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading selected Sub Prep class details"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    if (!query.next())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading selected Sub Prep class details failed: no matching record exists for class id %1."
+                ).arg(classId)
+            );
+    }
+
+    SubPrepClassDetailsRecord record;
+    record.classId = query.value(QStringLiteral("class_id")).toInt();
+    record.classNotes = query.value(QStringLiteral("class_notes")).toString();
+
+    // A missing assignment, or a stale assignment whose teacher row no longer
+    // exists, follows the legacy empty-teacher details fallback.
+    const QVariant assignedTeacherId =
+        query.value(QStringLiteral("assigned_teacher_id"));
+    const QVariant resolvedTeacherId =
+        query.value(QStringLiteral("resolved_teacher_id"));
+    bool assignedTeacherIdOk = false;
+    bool resolvedTeacherIdOk = false;
+    const int assignedTeacherIdValue = assignedTeacherId.toInt(
+        &assignedTeacherIdOk
+        );
+    const int resolvedTeacherIdValue = resolvedTeacherId.toInt(
+        &resolvedTeacherIdOk
+        );
+    if (assignedTeacherIdOk && resolvedTeacherIdOk
+        && assignedTeacherIdValue > 0
+        && assignedTeacherIdValue == resolvedTeacherIdValue)
+    {
+        record.teacherId = assignedTeacherIdValue;
+        record.teacherKr = query.value(QStringLiteral("teacher_kr")).toString();
+        record.teacherEn = query.value(QStringLiteral("teacher_en")).toString();
+        record.teacherPreferredRomanization = query.value(
+            QStringLiteral("preferred_romanization")
+            ).toString();
+        record.teacherPreferredName = query.value(
+            QStringLiteral("preferred_name")
+            ).toString();
+        record.roomNumber = query.value(QStringLiteral("room_number")).toString();
+        record.wifiName = query.value(QStringLiteral("wifi_name")).toString();
+        record.wifiPassword = query.value(
+            QStringLiteral("wifi_password")
+            ).toString();
+        record.internetType = normalizedInternetType(
+            query.value(QStringLiteral("internet_type")).toString()
+            );
+        record.zoomId = query.value(QStringLiteral("zoom_id")).toString();
+        record.zoomPassword = query.value(
+            QStringLiteral("zoom_password")
+            ).toString();
+        record.projectionType = normalizedProjectionType(
+            query.value(QStringLiteral("projection_type")).toString()
+            );
+        record.teacherNotes = query.value(
+            QStringLiteral("teacher_notes")
+            ).toString();
+    }
+
+    return record;
+}
+
 Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     const QList<int>& classIds,
     const QStringList& selectedDays,

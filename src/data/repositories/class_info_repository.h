@@ -5,9 +5,11 @@
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/class_teacher_assignment.h"
+#include "domain/models/sub_prep_class_details_record.h"
 
 #include <QList>
 #include <QSqlDatabase>
+#include <QString>
 #include <QStringList>
 
 class ClassInfoRepository
@@ -30,6 +32,9 @@ public:
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
         );
+
+    [[nodiscard]] Result<SubPrepClassDetailsRecord>
+        loadSubPrepClassDetails(int classId);
 
     [[nodiscard]] Result<QList<ClassInfo>> loadClassInfosForScheduleScope(
         const QList<int>& classIds,

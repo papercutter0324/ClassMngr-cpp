@@ -33,8 +33,19 @@ inline constexpr std::size_t kClassSummaryMaxStudentCount = 10'000;
 inline constexpr std::size_t kSelectedClassDetailsMaxClassNotesLength = 4'096;
 inline constexpr std::size_t
     kSelectedClassDetailsMaxTeacherDisplayNameLength = 256;
+inline constexpr std::size_t kSelectedClassDetailsMaxTeacherRoomLength = 256;
+inline constexpr std::size_t kSelectedClassDetailsMaxTeacherWifiNameLength =
+    256;
 inline constexpr std::size_t
-    kSelectedClassDetailsMaxTeacherFacilitiesLength = 1'024;
+    kSelectedClassDetailsMaxTeacherWifiPasswordLength = 256;
+inline constexpr std::size_t
+    kSelectedClassDetailsMaxTeacherInternetTypeLength = 64;
+inline constexpr std::size_t kSelectedClassDetailsMaxTeacherZoomIdLength =
+    256;
+inline constexpr std::size_t
+    kSelectedClassDetailsMaxTeacherZoomPasswordLength = 256;
+inline constexpr std::size_t
+    kSelectedClassDetailsMaxTeacherProjectionTypeLength = 64;
 inline constexpr std::size_t kSelectedClassDetailsMaxTeacherNotesLength =
     2'048;
 
@@ -79,6 +90,24 @@ struct ClassSummary final
         ) = default;
 };
 
+// Facility values remain separate so consumers can render and replace each
+// legacy field without parsing a formatted string.
+struct SelectedClassTeacherFacilities final
+{
+    std::string room;
+    std::string wifiName;
+    std::string wifiPassword;
+    std::string internetType;
+    std::string zoomId;
+    std::string zoomPassword;
+    std::string projectionType;
+
+    friend bool operator==(
+        const SelectedClassTeacherFacilities&,
+        const SelectedClassTeacherFacilities&
+        ) = default;
+};
+
 // This is the one detail value for the selected class. Teacher fields are
 // copied only for that active selection and are intentionally not a nested
 // rich record graph. Empty teacher fields are valid for the missing-teacher
@@ -89,7 +118,7 @@ struct SelectedClassDetails final
     std::optional<Domain::TeacherId> teacherId;
     std::string classNotes;
     std::string teacherDisplayName;
-    std::string teacherFacilities;
+    SelectedClassTeacherFacilities teacherFacilities;
     std::string teacherNotes;
 
     [[nodiscard]] bool hasTeacher() const noexcept
@@ -328,8 +357,32 @@ template <typename TypedId>
             kSelectedClassDetailsMaxTeacherDisplayNameLength
             )
         || !isOptionalText(
-            details.teacherFacilities,
-            kSelectedClassDetailsMaxTeacherFacilitiesLength
+            details.teacherFacilities.room,
+            kSelectedClassDetailsMaxTeacherRoomLength
+            )
+        || !isOptionalText(
+            details.teacherFacilities.wifiName,
+            kSelectedClassDetailsMaxTeacherWifiNameLength
+            )
+        || !isOptionalText(
+            details.teacherFacilities.wifiPassword,
+            kSelectedClassDetailsMaxTeacherWifiPasswordLength
+            )
+        || !isOptionalText(
+            details.teacherFacilities.internetType,
+            kSelectedClassDetailsMaxTeacherInternetTypeLength
+            )
+        || !isOptionalText(
+            details.teacherFacilities.zoomId,
+            kSelectedClassDetailsMaxTeacherZoomIdLength
+            )
+        || !isOptionalText(
+            details.teacherFacilities.zoomPassword,
+            kSelectedClassDetailsMaxTeacherZoomPasswordLength
+            )
+        || !isOptionalText(
+            details.teacherFacilities.projectionType,
+            kSelectedClassDetailsMaxTeacherProjectionTypeLength
             )
         || !isOptionalText(
             details.teacherNotes,

@@ -125,6 +125,7 @@ set(CLASSMNGR_DOMAIN_SOURCES
     "src/domain/models/roster.h"
     "src/domain/models/schedule_import.h"
     "src/domain/models/speaking_evaluation.h"
+    "src/domain/models/sub_prep_class_details_record.h"
     "src/domain/models/teacher.h"
     "src/domain/models/teacher_import.h"
     "src/domain/models/testing_block.h"

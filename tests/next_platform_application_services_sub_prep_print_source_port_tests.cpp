@@ -5,6 +5,7 @@
 #include "domain/models/roster.h"
 #include "domain/models/teacher.h"
 #include "next/application/sub_prep_print_source_query.h"
+#include "next/platform/application_services_sub_prep_class_details_port.h"
 #include "next/platform/application_services_sub_prep_print_source_port.h"
 
 #include <QSqlDatabase>
@@ -24,6 +25,8 @@
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
+using ClassMngr::Next::Platform::
+    ApplicationServicesSubPrepClassDetailsPort;
 using ClassMngr::Next::Platform::
     ApplicationServicesSubPrepPrintSourcePort;
 
@@ -179,6 +182,8 @@ class NextPlatformApplicationServicesSubPrepPrintSourcePortTests final
 
 private slots:
     void initTestCase();
+    void selectedClassDetailsReadUsesOnlyScopedSessionData();
+    void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
     void selectsIntensiveTimesAndOmitsClassesOutsideSelectedDays();
     void supportsUnassignedAndMissingTeachersAndEmptyRosterFallback();
@@ -197,6 +202,195 @@ void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
 initTestCase()
 {
     QVERIFY(m_directory.isValid());
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+selectedClassDetailsReadUsesOnlyScopedSessionData()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("details")
+        );
+    QVERIFY(teacher > 0);
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Selected details"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Selected class notes"),
+        QStringLiteral("#112233"),
+        QStringLiteral("#AABBCC"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(selectedClass > 0);
+
+    // The selected details query must not load either schedule relation.
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE class_times")));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("DROP TABLE class_intensive_times")
+        ));
+
+    ApplicationServicesSubPrepClassDetailsPort port(services);
+    const auto result = port.loadDetails(classId(selectedClass));
+
+    QVERIFY(result);
+    const auto& details = result.value();
+    QVERIFY(details.classId == classId(selectedClass));
+    QVERIFY(details.teacherId == teacherId(teacher));
+    QCOMPARE(details.classNotes, std::string("Selected class notes"));
+    QCOMPARE(details.teacherDisplayName, std::string("Preferred Name"));
+    QCOMPARE(details.teacherFacilities.room, std::string("Room details"));
+    QCOMPARE(details.teacherFacilities.wifiName, std::string("Network details"));
+    QCOMPARE(
+        details.teacherFacilities.wifiPassword,
+        std::string("wifi-password-details")
+        );
+    QCOMPARE(details.teacherFacilities.internetType, std::string("LAN"));
+    QCOMPARE(details.teacherFacilities.zoomId, std::string("zoom-details"));
+    QCOMPARE(
+        details.teacherFacilities.zoomPassword,
+        std::string("zoom-password-details")
+        );
+    QCOMPARE(details.teacherFacilities.projectionType, std::string("Zoom"));
+    QCOMPARE(
+        details.teacherNotes,
+        utf8(QString::fromUtf8(
+            "\xEA\xB5\x90\xEC\x82\xAC \xEB\x85\xB8\xED\x8A\xB8 details"
+            ))
+        );
+
+    const auto ownedCopy = details;
+    services.closeDatabase();
+    QVERIFY(ownedCopy == details);
+    QCOMPARE(ownedCopy.teacherFacilities.room, std::string("Room details"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int unassignedClass = createClass(
+        services,
+        QStringLiteral("Unassigned details"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral("Unassigned class notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(unassignedClass > 0);
+
+    const int missingTeacherClass = createClass(
+        services,
+        QStringLiteral("Stale teacher details"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Stale teacher notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(missingTeacherClass > 0);
+
+    const auto classWithoutInfo = services.classService()->create(
+        QStringLiteral("Missing class info")
+        );
+    QVERIFY(classWithoutInfo);
+
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = OFF")));
+    DataService* dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    QSqlQuery orphanAssignment(dataService->databaseSession()->database());
+    QVERIFY(orphanAssignment.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"
+        )));
+    orphanAssignment.addBindValue(999999);
+    orphanAssignment.addBindValue(missingTeacherClass);
+    QVERIFY2(
+        orphanAssignment.exec(),
+        qPrintable(orphanAssignment.lastError().text())
+        );
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
+
+    ApplicationServicesSubPrepClassDetailsPort port(services);
+    for (const int id : {unassignedClass, missingTeacherClass})
+    {
+        const auto result = port.loadDetails(classId(id));
+        QVERIFY(result);
+        QVERIFY(!result.value().teacherId.has_value());
+        QVERIFY(result.value().teacherDisplayName.empty());
+        QVERIFY(
+            result.value().teacherFacilities
+            == SelectedClassTeacherFacilities{}
+            );
+        QVERIFY(result.value().teacherNotes.empty());
+    }
+
+    const auto noInfo = port.loadDetails(classId(*classWithoutInfo));
+    QVERIFY(noInfo);
+    QCOMPARE(noInfo.value().classNotes, std::string());
+    QVERIFY(!noInfo.value().teacherId.has_value());
+
+    const auto missingClass = port.loadDetails(classId(999999));
+    QVERIFY(!missingClass);
+    QCOMPARE(missingClass.error().code, ErrorCode::NotFound);
+
+    const auto alias = ClassId::fromString("01");
+    QVERIFY(alias.has_value());
+    const auto invalidId = port.loadDetails(*alias);
+    QVERIFY(!invalidId);
+    QCOMPARE(invalidId.error().code, ErrorCode::InvalidInput);
+
+    const int oversizedTeacher = createTeacher(
+        services,
+        QStringLiteral("Oversized Room"),
+        QStringLiteral("Oversized Room"),
+        QStringLiteral("oversized")
+        );
+    QVERIFY(oversizedTeacher > 0);
+    DataService* oversizedDataService = services.dataService();
+    QVERIFY(oversizedDataService);
+    QVERIFY(oversizedDataService->databaseSession());
+    QSqlQuery oversizedRoom(oversizedDataService->databaseSession()->database());
+    QVERIFY(oversizedRoom.prepare(QStringLiteral(
+        "UPDATE teachers SET room_number = ? WHERE id = ?"
+        )));
+    oversizedRoom.addBindValue(QString(
+        static_cast<qsizetype>(kSelectedClassDetailsMaxTeacherRoomLength + 1),
+        QLatin1Char('R')
+        ));
+    oversizedRoom.addBindValue(oversizedTeacher);
+    QVERIFY2(oversizedRoom.exec(), qPrintable(oversizedRoom.lastError().text()));
+    const int oversizedDetailsClass = createClass(
+        services,
+        QStringLiteral("Oversized detail field"),
+        oversizedTeacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Odysseus"),
+        QStringLiteral("Valid class notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(oversizedDetailsClass > 0);
+    const auto oversized = port.loadDetails(classId(oversizedDetailsClass));
+    QVERIFY(!oversized);
+    QCOMPARE(oversized.error().code, ErrorCode::Validation);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

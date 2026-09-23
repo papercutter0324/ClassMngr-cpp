@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -31,7 +32,9 @@ SubPrepClassDetails details(
     std::optional<TeacherId> teacher = teacherId("teacher-1"),
     std::string classNotes = "Class notes",
     std::string teacherName = "Teacher One",
-    std::string teacherFacilities = "Room 1",
+    SelectedClassTeacherFacilities teacherFacilities = {
+        "Room 1", {}, {}, {}, {}, {}, {}
+        },
     std::string teacherNotes = "Teacher notes"
     )
 {
@@ -153,7 +156,15 @@ returnsExactRequestedClassDetails()
         teacherId("teacher-exact-4"),
         "Exact class notes",
         "Exact teacher name",
-        "Exact teacher facilities",
+        SelectedClassTeacherFacilities{
+            "Room 4",
+            "Exact WiFi name",
+            "Exact WiFi password",
+            "fiber",
+            "Exact Zoom ID",
+            "Exact Zoom password",
+            "projector"
+        },
         "Exact teacher notes"
         );
     readPort.result = SubPrepClassDetailsReadResult::success(expected);
@@ -177,7 +188,7 @@ allowsMissingTeacherIdentity()
         std::nullopt,
         "Class notes without an assigned teacher",
         "",
-        "",
+        {},
         ""
         );
     readPort.result = SubPrepClassDetailsReadResult::success(expected);
@@ -250,7 +261,6 @@ rejectsMalformedTeacherIdAndOversizedOutputText()
     const std::vector<std::pair<SubPrepClassDetails, std::string>> malformedOutputs{
         {details(), "class notes"},
         {details(), "teacher display name"},
-        {details(), "teacher facilities"},
         {details(), "teacher notes"}
     };
 
@@ -272,12 +282,6 @@ rejectsMalformedTeacherIdAndOversizedOutputText()
                 );
             break;
         case 2:
-            malformed.teacherFacilities = std::string(
-                kSelectedClassDetailsMaxTeacherFacilitiesLength + 1,
-                'f'
-                );
-            break;
-        case 3:
             malformed.teacherNotes = std::string(
                 kSelectedClassDetailsMaxTeacherNotesLength + 1,
                 'n'
@@ -293,6 +297,60 @@ rejectsMalformedTeacherIdAndOversizedOutputText()
             !result,
             malformedOutputs[index].second.c_str()
             );
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QVERIFY(!result.hasValue());
+    }
+
+    const std::vector<std::tuple<
+        const char*,
+        std::string SelectedClassTeacherFacilities::*,
+        std::size_t>> oversizedFacilityFields{
+        {
+            "teacher room",
+            &SelectedClassTeacherFacilities::room,
+            kSelectedClassDetailsMaxTeacherRoomLength
+        },
+        {
+            "teacher WiFi name",
+            &SelectedClassTeacherFacilities::wifiName,
+            kSelectedClassDetailsMaxTeacherWifiNameLength
+        },
+        {
+            "teacher WiFi password",
+            &SelectedClassTeacherFacilities::wifiPassword,
+            kSelectedClassDetailsMaxTeacherWifiPasswordLength
+        },
+        {
+            "teacher internet type",
+            &SelectedClassTeacherFacilities::internetType,
+            kSelectedClassDetailsMaxTeacherInternetTypeLength
+        },
+        {
+            "teacher Zoom ID",
+            &SelectedClassTeacherFacilities::zoomId,
+            kSelectedClassDetailsMaxTeacherZoomIdLength
+        },
+        {
+            "teacher Zoom password",
+            &SelectedClassTeacherFacilities::zoomPassword,
+            kSelectedClassDetailsMaxTeacherZoomPasswordLength
+        },
+        {
+            "teacher projection type",
+            &SelectedClassTeacherFacilities::projectionType,
+            kSelectedClassDetailsMaxTeacherProjectionTypeLength
+        }
+    };
+    for (const auto& [fieldName, field, maxLength] : oversizedFacilityFields)
+    {
+        auto malformed = details();
+        malformed.teacherFacilities.*field = std::string(maxLength + 1, 'f');
+        readPort.result = SubPrepClassDetailsReadResult::success(
+            std::move(malformed)
+            );
+
+        const auto result = query.execute(requestedClassId);
+        QVERIFY2(!result, fieldName);
         QCOMPARE(result.error().code, ErrorCode::InvalidInput);
         QVERIFY(!result.hasValue());
     }
@@ -312,7 +370,27 @@ acceptsMaximumBoundaryLengths()
         teacherId(std::string(kSummaryMaxIdentifierLength, 't')),
         std::string(kSelectedClassDetailsMaxClassNotesLength, 'c'),
         std::string(kSelectedClassDetailsMaxTeacherDisplayNameLength, 'n'),
-        std::string(kSelectedClassDetailsMaxTeacherFacilitiesLength, 'f'),
+        SelectedClassTeacherFacilities{
+            std::string(kSelectedClassDetailsMaxTeacherRoomLength, 'r'),
+            std::string(kSelectedClassDetailsMaxTeacherWifiNameLength, 'w'),
+            std::string(
+                kSelectedClassDetailsMaxTeacherWifiPasswordLength,
+                'p'
+                ),
+            std::string(
+                kSelectedClassDetailsMaxTeacherInternetTypeLength,
+                'i'
+                ),
+            std::string(kSelectedClassDetailsMaxTeacherZoomIdLength, 'z'),
+            std::string(
+                kSelectedClassDetailsMaxTeacherZoomPasswordLength,
+                'q'
+                ),
+            std::string(
+                kSelectedClassDetailsMaxTeacherProjectionTypeLength,
+                'j'
+                )
+        },
         std::string(kSelectedClassDetailsMaxTeacherNotesLength, 't')
         ));
 
@@ -333,10 +411,20 @@ acceptsMaximumBoundaryLengths()
         result.value().teacherDisplayName.size(),
         kSelectedClassDetailsMaxTeacherDisplayNameLength
         );
-    QCOMPARE(
-        result.value().teacherFacilities.size(),
-        kSelectedClassDetailsMaxTeacherFacilitiesLength
-        );
+    QCOMPARE(result.value().teacherFacilities.room.size(),
+             kSelectedClassDetailsMaxTeacherRoomLength);
+    QCOMPARE(result.value().teacherFacilities.wifiName.size(),
+             kSelectedClassDetailsMaxTeacherWifiNameLength);
+    QCOMPARE(result.value().teacherFacilities.wifiPassword.size(),
+             kSelectedClassDetailsMaxTeacherWifiPasswordLength);
+    QCOMPARE(result.value().teacherFacilities.internetType.size(),
+             kSelectedClassDetailsMaxTeacherInternetTypeLength);
+    QCOMPARE(result.value().teacherFacilities.zoomId.size(),
+             kSelectedClassDetailsMaxTeacherZoomIdLength);
+    QCOMPARE(result.value().teacherFacilities.zoomPassword.size(),
+             kSelectedClassDetailsMaxTeacherZoomPasswordLength);
+    QCOMPARE(result.value().teacherFacilities.projectionType.size(),
+             kSelectedClassDetailsMaxTeacherProjectionTypeLength);
     QCOMPARE(
         result.value().teacherNotes.size(),
         kSelectedClassDetailsMaxTeacherNotesLength

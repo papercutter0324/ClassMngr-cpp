@@ -84,7 +84,9 @@ ClassSummaryProjectionInput validInput()
         teacherId("teacher-1"),
         "Selected class notes",
         "Teacher One",
-        "Room 1",
+        SelectedClassTeacherFacilities{
+            "Room 1", {}, {}, {}, {}, {}, {}
+        },
         "Selected teacher notes"
     };
     return input;
@@ -155,7 +157,9 @@ void NextApplicationClassSummaryTests::valid96ClassScaleProjectionIsBoundedAndRe
         teacherId("teacher-3"),
         "Selected class 42 notes",
         "Teacher Three",
-        "Room 3",
+        SelectedClassTeacherFacilities{
+            "Room 3", {}, {}, {}, {}, {}, {}
+        },
         "Teacher Three detail notes"
     };
 
@@ -245,7 +249,7 @@ void NextApplicationClassSummaryTests::missingTeacherUsesExplicitOptionalFallbac
     input.selectedDetails->classId = input.classes[0].id;
     input.selectedDetails->teacherId.reset();
     input.selectedDetails->teacherDisplayName.clear();
-    input.selectedDetails->teacherFacilities.clear();
+    input.selectedDetails->teacherFacilities = {};
     input.selectedDetails->teacherNotes.clear();
 
     const auto result = ClassSummaryProjection::create(std::move(input));
