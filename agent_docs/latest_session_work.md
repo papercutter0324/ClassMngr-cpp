@@ -299,3 +299,30 @@ separate on a host with Xvfb and loopback access.
 - Commit `0883009d` records this production fix; the hosted baseline and
   release workflows passed on that source. A later local Phase 2 contract
   slice is recorded separately above.
+
+## Current Deployment Handoff — phase2_action_registry_persistence_20260923 (paused)
+
+- Goal: continue Phase 2 domain/application contracts by moving legacy
+  ActionRegistry preference writes behind typed ports. The user requires a
+  commit after each slice and asked to stop after the current font-size slice.
+- Heavy-route slices committed in this continuation: document page spacing
+  (`b363b6df`) and font size (`d5321089`). Prior ActionRegistry persistence
+  commits include viewer background (`790082c4`), AI provider (`2d7d4a29`), AI
+  voice (`c0281217`), SaveMode (`fe29d1cb`), and language (`9ad0fddb`). Phase 2
+  remains open; no next slice was started after the font-size commit.
+- Font size preserves the `options/fontSize` offsets Small=-2, Normal=0,
+  Large=2, ExtraLarge=4. The typed persistence hook is installed before
+  startup state selection; missing, unknown, and malformed reads still fall
+  back to Normal. Page spacing preserves `options/documentPageSpacing` values
+  None/Small/Medium/Large=0/1/2/3 and its malformed-text-to-None compatibility.
+- Independent Debug verification passed
+  `ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests`,
+  `ClassMngrAiCommentOptionsTests`, `ClassMngrStartupVisualSettingsTests`, and
+  `ClassMngrFontManagerTests`. The page-spacing port, ActionRegistry,
+  PageManager, and startup-visual targets also passed. Normal MSBuild attempts
+  hit FileTracker `UnauthorizedAccessException (E_ACCESSDENIED)`; elevated
+  targeted builds passed. No CMake changes were required.
+- Next entry point: continue Phase 2 by reviewing the remaining ActionRegistry
+  persistence candidates; theme is the known next candidate and has more
+  runtime coupling than the completed preference slices. Preserve one-slice-
+  per-commit sequencing and independently verify before committing.

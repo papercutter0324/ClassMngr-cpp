@@ -224,3 +224,11 @@
 - Keep Phase 1 hosted closure separate from Phase 2 implementation. The
   macOS action, quality, dialog-policy, and release evidence are now recorded
   as green on commit `0883009d`; Phase 1 is closed and Phase 2 may proceed.
+
+## Phase 2 settings persistence — 2026-09-23
+
+- When cutting `OptionState` persistence over to a typed port, attach the
+  `onPersist` bridge before the first startup `set()`. Preserve exact stored
+  integer values and existing malformed-read fallbacks, and keep `onChanged`
+  wiring intact. Cover adapter round trips, invalid-write no-ops, startup
+  canonicalization, and reload behavior.

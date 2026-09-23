@@ -1,9 +1,10 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: phase2_domain_contract_kickoff_20260919. Route: Heavy.
+Current deployment: phase2_action_registry_persistence_20260923. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
-the first Phase 2 domain-contract slice on top of that verified baseline.
+continued Phase 2 domain and application-contract work on top of that verified
+baseline.
 
 ## Goal
 
@@ -142,11 +143,13 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Continue Phase 2 with the first application use-case input/output contract over
-the new domain types. The Linux Phase 0 follow-up remains supplemental and
-should continue separately on a host with Xvfb and loopback access. Keep
-next-generation target names distinct from legacy object targets such as
-ClassMngrDomain and ClassMngrUiShared.
+Continue Phase 2 by assessing the remaining ActionRegistry persistence seams
+after the language, SaveMode, AI voice/provider, viewer-background, document
+page-spacing, and font-size cutovers. Theme is the next known candidate; inspect
+its typed mapping and runtime coupling before defining a separate slice. Keep
+the supplemental Linux Phase 0 follow-up separate on a host with Xvfb and
+loopback access, and keep next-generation target names distinct from legacy
+object targets such as ClassMngrDomain and ClassMngrUiShared.
 
 ### Phase 2 kickoff — 2026-09-19
 
@@ -171,3 +174,15 @@ direct async test (3/3), synchronous/shared-policy coverage, and
 `git diff --check`. A local full CTest run was 62/67 because five unrelated
 GUI/loopback tests require unavailable screen or port services; no dialog
 service test failed. No workflow files were changed.
+
+### Phase 2 ActionRegistry persistence — 2026-09-23
+
+The Heavy-route migration continues one committed persistence slice at a time.
+The latest commits are document page spacing (`b363b6df`) and font size
+(`d5321089`), following viewer background (`790082c4`), AI provider
+(`2d7d4a29`), AI voice (`c0281217`), SaveMode (`fe29d1cb`), and language
+(`9ad0fddb`). Independent verification passed the page-spacing port,
+ActionRegistry, PageManager, and startup-visual tests; font-size verification
+passed its port, ActionRegistry, startup-visual, and FontManager tests. Normal
+MSBuild attempts encountered FileTracker `E_ACCESSDENIED`; elevated targeted
+builds succeeded. Phase 2 remains open.
