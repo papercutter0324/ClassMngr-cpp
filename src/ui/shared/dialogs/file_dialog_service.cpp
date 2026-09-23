@@ -7,49 +7,18 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGridLayout>
-#include <QSettings>
 #include <QStandardPaths>
 #include <QWidget>
+
+#include <cstddef>
+#include <stdexcept>
+#include <string_view>
 
 namespace
 {
 
 IFileDialogService* testFileDialogService = nullptr;
-
-QString purposeKey(
-    FileDialogPurpose purpose
-    )
-{
-    switch (purpose)
-    {
-        case FileDialogPurpose::General:
-            return QStringLiteral("general");
-        case FileDialogPurpose::TeacherProfile:
-            return QStringLiteral("teacher-profile");
-        case FileDialogPurpose::ImportWorkbook:
-            return QStringLiteral("import-workbook");
-        case FileDialogPurpose::ExportReport:
-            return QStringLiteral("export-report");
-        case FileDialogPurpose::SignatureImage:
-            return QStringLiteral("signature-image");
-        case FileDialogPurpose::GeneratedPdf:
-            return QStringLiteral("generated-pdf");
-        case FileDialogPurpose::ClassTransfer:
-            return QStringLiteral("class-transfer");
-        case FileDialogPurpose::SubPrepPackage:
-            return QStringLiteral("sub-prep-package");
-    }
-
-    return QStringLiteral("general");
-}
-
-QString settingsKey(
-    FileDialogPurpose purpose
-    )
-{
-    return QStringLiteral("file-dialog/directories/%1")
-        .arg(purposeKey(purpose));
-}
+IFileDialogService* applicationFileDialogService = nullptr;
 
 QString defaultDirectory(
     FileDialogPurpose purpose
@@ -129,10 +98,11 @@ void applyNameFilters(
 }
 
 QtFileDialogService::QtFileDialogService(
-    QSettings* settings,
+    ClassMngr::Next::Application::FileDialogDirectoryPreferencesPort&
+        directoryPreferences,
     FileDialogBackend backend
     )
-    : m_settings(settings),
+    : m_directoryPreferences(directoryPreferences),
       m_backend(backend)
 {
 }
@@ -171,18 +141,12 @@ QString QtFileDialogService::initialDirectory(
         return QDir::cleanPath(requestedDirectory);
     }
 
-    if (m_settings)
-    {
-        const QString remembered =
-            m_settings->value(settingsKey(purpose)).toString();
-        return remembered.isEmpty()
-            ? defaultDirectory(purpose)
-            : remembered;
-    }
-
-    QSettings settings;
-    const QString remembered =
-        settings.value(settingsKey(purpose)).toString();
+    const std::string rememberedUtf8 =
+        m_directoryPreferences.readDirectory(purpose);
+    const QString remembered = QString::fromUtf8(
+        rememberedUtf8.data(),
+        static_cast<qsizetype>(rememberedUtf8.size())
+        );
     return remembered.isEmpty()
         ? defaultDirectory(purpose)
         : remembered;
@@ -198,14 +162,14 @@ void QtFileDialogService::rememberDirectory(
         ? normalizedExistingPath(selectedPath)
         : QFileInfo(selectedPath).absolutePath();
 
-    if (m_settings)
-    {
-        m_settings->setValue(settingsKey(purpose), directory);
-        return;
-    }
-
-    QSettings settings;
-    settings.setValue(settingsKey(purpose), directory);
+    const QByteArray encodedDirectory = directory.toUtf8();
+    m_directoryPreferences.writeDirectory(
+        purpose,
+        std::string_view(
+            encodedDirectory.constData(),
+            static_cast<std::size_t>(encodedDirectory.size())
+            )
+        );
 }
 
 std::optional<QString> QtFileDialogService::openFile(
@@ -395,8 +359,21 @@ IFileDialogService& DialogServices::fileDialogs()
         return *testFileDialogService;
     }
 
-    static QtFileDialogService service;
-    return service;
+    if (applicationFileDialogService)
+    {
+        return *applicationFileDialogService;
+    }
+
+    throw std::logic_error(
+        "File dialog service must be installed before application use."
+        );
+}
+
+void DialogServices::setFileDialogServiceForApplication(
+    IFileDialogService* service
+    )
+{
+    applicationFileDialogService = service;
 }
 
 void DialogServices::setFileDialogServiceForTesting(

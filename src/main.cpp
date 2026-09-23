@@ -13,6 +13,7 @@
 #include "core/theme_service.h"
 #include "core/updater/update_service.h"
 #include "next/platform/language_preference_port.h"
+#include "next/platform/qsettings_file_dialog_directory_preferences_adapter.h"
 #include "next/platform/settings_manager_font_size_preferences_port.h"
 #include "next/platform/settings_manager_language_preferences_port.h"
 #include "next/platform/settings_manager_theme_preferences_port.h"
@@ -41,6 +42,7 @@
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #if !defined(Q_OS_MACOS)
@@ -6193,6 +6195,16 @@ int main(int argc, char *argv[])
     app.setOrganizationName(AppSettings::OrganizationName);
     app.setApplicationVersion(
         QString::fromUtf8(BuildInfo::Version)
+        );
+
+    ClassMngr::Next::Platform::
+        QSettingsFileDialogDirectoryPreferencesAdapter
+            fileDialogDirectoryPreferences;
+    QtFileDialogService fileDialogService(
+        fileDialogDirectoryPreferences
+        );
+    DialogServices::setFileDialogServiceForApplication(
+        &fileDialogService
         );
 
     // =====================================================

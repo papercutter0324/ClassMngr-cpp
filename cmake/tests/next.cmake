@@ -1,6 +1,15 @@
 include_guard(GLOBAL)
 
 classmngr_add_qt_test(
+    NAME NextPlatformQSettingsFileDialogDirectoryPreferencesAdapter
+    SOURCES
+        tests/next_platform_qsettings_file_dialog_directory_preferences_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextDomainContract
     SOURCES
         tests/next_domain_contract_tests.cpp

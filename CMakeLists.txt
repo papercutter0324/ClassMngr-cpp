@@ -200,6 +200,33 @@ include(cmake/deployment.cmake)
 include(cmake/platform/macos.cmake)
 include(cmake/platform/windows.cmake)
 include(cmake/next.cmake)
+
+# These legacy UI targets consume the Qt-free Application file-dialog
+# vocabulary. Production startup owns the concrete adapter at the Platform
+# boundary and exposes the Application contract to runtime clients.
+foreach(_classmngr_ui_target IN ITEMS
+        ClassMngrFeatures
+        ClassMngrAppServices)
+    target_link_libraries(${_classmngr_ui_target}
+        PRIVATE
+            ClassMngrNext::Application
+    )
+endforeach()
+target_link_libraries(ClassMngrRuntime
+    PUBLIC
+        ClassMngrNext::Application
+)
+if(TARGET ClassMngrTestRuntime)
+    target_link_libraries(ClassMngrTestRuntime
+        PUBLIC
+            ClassMngrNext::Application
+    )
+endif()
+target_link_libraries(ClassMngr
+    PRIVATE
+        ClassMngrNext::Platform
+)
+
 if(BUILD_TESTING)
     find_package(Qt6 6.12.0 REQUIRED COMPONENTS
         Test

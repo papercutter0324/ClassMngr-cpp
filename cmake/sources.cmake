@@ -128,6 +128,10 @@ classmngr_add_production_objects(
         Qt6::PrintSupport
         Qt6::Widgets
 )
+target_link_libraries(ClassMngrUiShared
+    PRIVATE
+        ClassMngrNext::Application
+)
 classmngr_add_production_objects(
     TARGET ClassMngrFeatures
     SOURCES ${CLASSMNGR_FEATURES_SOURCES}
