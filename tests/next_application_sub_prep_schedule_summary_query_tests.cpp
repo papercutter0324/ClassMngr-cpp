@@ -367,12 +367,12 @@ selectedDetailsFailAllOrNothing()
     FakeReadPort readPort;
     auto input = validInput();
     input.selectedDetails = SelectedClassDetails{
-        classId("class-1"),
-        teacherId("teacher-1"),
-        "Class detail notes",
-        "Teacher One",
-        "Room 4",
-        "Teacher detail notes"
+        .classId = classId("class-1"),
+        .teacherId = teacherId("teacher-1"),
+        .classNotes = "Class detail notes",
+        .teacherDisplayName = "Teacher One",
+        .teacherFacilities = {.room = "Room 4"},
+        .teacherNotes = "Teacher detail notes"
     };
     readPort.result = SubPrepScheduleSummaryReadResult::success(std::move(input));
 

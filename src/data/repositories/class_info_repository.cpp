@@ -774,6 +774,381 @@ ClassInfoRepository::loadSubPrepClassDetails(
     return record;
 }
 
+Result<QList<SubPrepClassSummaryRecord>>
+ClassInfoRepository::loadSubPrepClassSummaries(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings
+    )
+{
+    if (classIds.isEmpty() || selectedDays.isEmpty())
+    {
+        return QList<SubPrepClassSummaryRecord>{};
+    }
+
+    constexpr qsizetype MaxClassIds = 4'096;
+    if (classIds.size() > MaxClassIds)
+    {
+        return std::unexpected(
+            QObject::tr("Loading Sub Prep class summaries failed: class scope exceeds its limit.")
+            );
+    }
+
+    if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
+    {
+        return std::unexpected(
+            QObject::tr("Loading Sub Prep class summaries failed: invalid schedule type.")
+            );
+    }
+
+    if (maxMeetingsPerClass < 0
+        || maxMeetingsPerClass == std::numeric_limits<int>::max()
+        || maxTotalMeetings < 0
+        || maxTotalMeetings == std::numeric_limits<int>::max())
+    {
+        return std::unexpected(
+            QObject::tr("Loading Sub Prep class summaries failed: invalid meeting limit.")
+            );
+    }
+
+    QSet<int> seenClassIds;
+    QStringList classIdValues;
+    classIdValues.reserve(classIds.size());
+    QStringList requestedIds;
+    requestedIds.reserve(classIds.size());
+    for (const int classId : classIds)
+    {
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading Sub Prep class summaries failed: class identifiers must be positive and unique."
+                    )
+                );
+        }
+        seenClassIds.insert(classId);
+        const QString value = QString::number(classId);
+        classIdValues.append(value);
+        requestedIds.append(value);
+    }
+
+    static const QStringList validDays{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+    if (selectedDays.size() > validDays.size())
+    {
+        return std::unexpected(
+            QObject::tr("Loading Sub Prep class summaries failed: invalid weekday scope.")
+            );
+    }
+
+    QSet<QString> seenDays;
+    for (const QString& day : selectedDays)
+    {
+        if (!validDays.contains(day) || seenDays.contains(day))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading Sub Prep class summaries failed: weekdays must be valid and unique."
+                    )
+                );
+        }
+        seenDays.insert(day);
+    }
+
+    QStringList dayPlaceholders;
+    dayPlaceholders.fill(QStringLiteral("?"), selectedDays.size());
+    const QString timesTable = type == ScheduleType::Regular
+        ? QStringLiteral("class_times")
+        : QStringLiteral("class_intensive_times");
+
+    // Class IDs are validated positive integers and formatted as decimal SQL
+    // literals so the maximum 4,096-class scope fits older SQLite bind limits.
+    // Day labels and meeting sentinels remain bound parameters.
+    const QString queryText = QStringLiteral(R"(
+        WITH scoped_classes AS (
+            SELECT
+                c.id AS class_id,
+                ci.teacher_id,
+                ci.class_grade,
+                ci.class_level,
+                t.teacher_kr,
+                t.teacher_en,
+                t.preferred_romanization,
+                t.preferred_name,
+                t.room_number,
+                t.wifi_name,
+                t.wifi_password,
+                t.internet_type,
+                t.zoom_id,
+                t.zoom_password,
+                t.projection_type,
+                t.notes AS teacher_notes
+            FROM classes c
+            INNER JOIN class_info ci
+            ON ci.class_id = c.id
+            INNER JOIN teachers t
+            ON t.id = ci.teacher_id
+            LEFT JOIN testing_classes tc
+            ON tc.class_id = c.id
+            WHERE c.id IN (%2)
+              AND ci.teacher_id > 0
+              AND tc.class_id IS NULL
+        ),
+        scoped_times AS (
+            SELECT
+                times.class_id,
+                times.id,
+                times.day,
+                times.start_time
+            FROM %1 times
+            INNER JOIN scoped_classes scoped
+            ON scoped.class_id = times.class_id
+            WHERE times.day IN (%3)
+        ),
+        ranked_times AS (
+            SELECT
+                class_id,
+                id,
+                day,
+                start_time,
+                ROW_NUMBER() OVER (
+                    PARTITION BY class_id
+                    ORDER BY id
+                ) AS class_meeting_order,
+                ROW_NUMBER() OVER (
+                    ORDER BY class_id, id
+                ) AS total_meeting_order
+            FROM scoped_times
+        )
+        SELECT
+            scoped.class_id,
+            scoped.teacher_id,
+            scoped.class_grade,
+            scoped.class_level,
+            scoped.teacher_kr,
+            scoped.teacher_en,
+            scoped.preferred_romanization,
+            scoped.preferred_name,
+            scoped.room_number,
+            scoped.wifi_name,
+            scoped.wifi_password,
+            scoped.internet_type,
+            scoped.zoom_id,
+            scoped.zoom_password,
+            scoped.projection_type,
+            scoped.teacher_notes,
+            ranked.day,
+            ranked.start_time
+        FROM ranked_times ranked
+        INNER JOIN scoped_classes scoped
+        ON scoped.class_id = ranked.class_id
+        WHERE ranked.class_meeting_order <= ?
+          AND ranked.total_meeting_order <= ?
+        ORDER BY ranked.class_id, ranked.id
+    )").arg(
+        timesTable,
+        classIdValues.join(QStringLiteral(", ")),
+        dayPlaceholders.join(QStringLiteral(", "))
+        );
+
+    const QString identity = QObject::tr("class ids %1, selected days %2")
+        .arg(requestedIds.join(QStringLiteral(", ")))
+        .arg(selectedDays.join(QStringLiteral(", ")));
+
+    QList<SubPrepClassSummaryRecord> summaries;
+    QHash<int, qsizetype> indexesByClassId;
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(queryText);
+    for (const QString& day : selectedDays)
+    {
+        query.addBindValue(day);
+    }
+    query.addBindValue(maxMeetingsPerClass + 1);
+    query.addBindValue(maxTotalMeetings + 1);
+
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading scoped Sub Prep class summaries"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        const int classId = query.value(QStringLiteral("class_id")).toInt();
+        auto index = indexesByClassId.constFind(classId);
+        if (index == indexesByClassId.cend())
+        {
+            SubPrepClassSummaryRecord record;
+            record.classId = classId;
+            record.teacherId = query.value(QStringLiteral("teacher_id")).toInt();
+            record.classGrade = query.value(QStringLiteral("class_grade"))
+                                    .toString();
+            record.classLevel = query.value(QStringLiteral("class_level"))
+                                    .toString();
+            record.teacherKr = query.value(QStringLiteral("teacher_kr"))
+                                   .toString();
+            record.teacherEn = query.value(QStringLiteral("teacher_en"))
+                                   .toString();
+            record.teacherPreferredRomanization = query.value(
+                QStringLiteral("preferred_romanization")
+                ).toString();
+            record.teacherPreferredName = query.value(
+                QStringLiteral("preferred_name")
+                ).toString();
+            record.teacherRoomNumber = query.value(
+                QStringLiteral("room_number")
+                ).toString();
+            record.teacherWifiName = query.value(
+                QStringLiteral("wifi_name")
+                ).toString();
+            record.teacherWifiPassword = query.value(
+                QStringLiteral("wifi_password")
+                ).toString();
+            record.teacherInternetType = query.value(
+                QStringLiteral("internet_type")
+                ).toString();
+            record.teacherZoomId = query.value(QStringLiteral("zoom_id"))
+                                       .toString();
+            record.teacherZoomPassword = query.value(
+                QStringLiteral("zoom_password")
+                ).toString();
+            record.teacherProjectionType = query.value(
+                QStringLiteral("projection_type")
+                ).toString();
+            record.teacherNotes = query.value(QStringLiteral("teacher_notes"))
+                                      .toString();
+            indexesByClassId.insert(classId, summaries.size());
+            summaries.append(std::move(record));
+            index = indexesByClassId.constFind(classId);
+        }
+
+        summaries[*index].meetings.append({
+            query.value(QStringLiteral("day")).toString(),
+            query.value(QStringLiteral("start_time")).toString()
+        });
+    }
+
+    if (query.lastError().type() != QSqlError::NoError)
+    {
+        return std::unexpected(
+            QObject::tr("Loading scoped Sub Prep class summaries failed for %1: %2")
+                .arg(identity, query.lastError().text())
+            );
+    }
+
+    if (summaries.isEmpty())
+    {
+        return summaries;
+    }
+
+    QStringList summaryClassIdValues;
+    summaryClassIdValues.reserve(summaries.size());
+    for (const SubPrepClassSummaryRecord& summary : summaries)
+    {
+        summaryClassIdValues.append(QString::number(summary.classId));
+    }
+
+    // Aggregate the two roster name columns in one scoped query rather than
+    // loading roster rows per class. As in the legacy page, roster failures
+    // retain the zero-count fallback without failing otherwise valid summaries.
+    const QString rosterCountSql = QStringLiteral(R"(
+        WITH name_positions AS (
+            SELECT
+                class_id,
+                MIN(CASE WHEN name = 'English' THEN position END)
+                    AS english_position,
+                MIN(CASE WHEN name = 'Korean' THEN position END)
+                    AS korean_position
+            FROM roster_columns
+            WHERE class_id IN (%1)
+              AND name IN ('English', 'Korean')
+            GROUP BY class_id
+        )
+        SELECT
+            positions.class_id,
+            COUNT(DISTINCT cells.row_index) AS student_count
+        FROM name_positions positions
+        LEFT JOIN roster_data cells
+        ON cells.class_id = positions.class_id
+        AND (
+            (
+                positions.english_position IS NOT NULL
+                AND cells.col_index = positions.english_position
+                AND LENGTH(TRIM(
+                    COALESCE(cells.value, ''),
+                    char(9) || char(10) || char(11) || char(12)
+                        || char(13) || ' '
+                    )) > 0
+            )
+            OR
+            (
+                positions.korean_position IS NOT NULL
+                AND cells.col_index = positions.korean_position
+                AND LENGTH(TRIM(
+                    COALESCE(cells.value, ''),
+                    char(9) || char(10) || char(11) || char(12)
+                        || char(13) || ' '
+                    )) > 0
+            )
+        )
+        GROUP BY positions.class_id
+    )").arg(summaryClassIdValues.join(QStringLiteral(", ")));
+
+    QHash<int, qint64> studentCounts;
+    QSqlQuery rosterQuery(m_database);
+    rosterQuery.setForwardOnly(true);
+    rosterQuery.prepare(rosterCountSql);
+    const auto rosterQueryResult = SqlQueryUtils::executePrepared(
+        rosterQuery,
+        QObject::tr("Loading scoped Sub Prep roster counts"),
+        identity
+        );
+    if (rosterQueryResult)
+    {
+        while (rosterQuery.next())
+        {
+            bool countOk = false;
+            const qint64 count = rosterQuery.value(
+                QStringLiteral("student_count")
+                ).toLongLong(&countOk);
+            if (!countOk || count < 0)
+            {
+                studentCounts.clear();
+                break;
+            }
+            studentCounts.insert(
+                rosterQuery.value(QStringLiteral("class_id")).toInt(),
+                count
+                );
+        }
+        if (rosterQuery.lastError().type() != QSqlError::NoError)
+        {
+            studentCounts.clear();
+        }
+    }
+
+    for (SubPrepClassSummaryRecord& summary : summaries)
+    {
+        summary.studentCount = studentCounts.value(summary.classId, 0);
+    }
+
+    return summaries;
+}
+
 Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     const QList<int>& classIds,
     const QStringList& selectedDays,

@@ -5,6 +5,7 @@
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/class_teacher_assignment.h"
+#include "domain/models/sub_prep_class_summary_record.h"
 #include "domain/models/sub_prep_class_details_record.h"
 
 #include <QList>
@@ -35,6 +36,15 @@ public:
 
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
+
+    [[nodiscard]] Result<QList<SubPrepClassSummaryRecord>>
+        loadSubPrepClassSummaries(
+            const QList<int>& classIds,
+            const QStringList& selectedDays,
+            ScheduleType type,
+            int maxMeetingsPerClass,
+            int maxTotalMeetings
+            );
 
     [[nodiscard]] Result<QList<ClassInfo>> loadClassInfosForScheduleScope(
         const QList<int>& classIds,

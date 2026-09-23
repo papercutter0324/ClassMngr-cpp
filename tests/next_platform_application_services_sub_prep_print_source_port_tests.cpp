@@ -7,6 +7,7 @@
 #include "next/application/sub_prep_print_source_query.h"
 #include "next/platform/application_services_sub_prep_class_details_port.h"
 #include "next/platform/application_services_sub_prep_print_source_port.h"
+#include "next/platform/application_services_sub_prep_schedule_summary_port.h"
 
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -29,6 +30,8 @@ using ClassMngr::Next::Platform::
     ApplicationServicesSubPrepClassDetailsPort;
 using ClassMngr::Next::Platform::
     ApplicationServicesSubPrepPrintSourcePort;
+using ClassMngr::Next::Platform::
+    ApplicationServicesSubPrepScheduleSummaryPort;
 
 namespace
 {
@@ -173,6 +176,48 @@ SubPrepPrintSourceRequest requestFor(
     };
 }
 
+SubPrepScheduleScopeRequest summaryRequestFor(
+    const std::vector<ClassId>& visibleClasses,
+    const std::vector<SubPrepWeekday>& selectedDays,
+    const ScheduleViewMode mode
+    )
+{
+    return {
+        .visibleClassIds = visibleClasses,
+        .selectedDays = selectedDays,
+        .mode = mode
+    };
+}
+
+bool insertScheduleMeeting(
+    ApplicationServices& services,
+    const QString& table,
+    const int classId,
+    const QString& day,
+    const QString& startTime
+    )
+{
+    DataService* dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return false;
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    if (!query.prepare(QStringLiteral(
+            "INSERT INTO %1 (class_id, day, start_time, end_time) "
+            "VALUES (?, ?, ?, ?)"
+            ).arg(table)))
+    {
+        return false;
+    }
+    query.addBindValue(classId);
+    query.addBindValue(day);
+    query.addBindValue(startTime);
+    query.addBindValue(QStringLiteral("11:59 PM"));
+    return query.exec();
+}
+
 } // namespace
 
 class NextPlatformApplicationServicesSubPrepPrintSourcePortTests final
@@ -182,6 +227,14 @@ class NextPlatformApplicationServicesSubPrepPrintSourcePortTests final
 
 private slots:
     void initTestCase();
+    void projectsVisibleScheduleSummariesAndAggregatesRosterCounts();
+    void selectsModeAndOmitsUnusableOrOutOfScopeClasses();
+    void rosterAggregateFailureKeepsLegacyZeroCountFallback();
+    void emptyScopeDoesNotReadAndUnavailableSessionFails();
+    void rejectsNoncanonicalIdsAndSupportsMaximumClassScope();
+    void rejectsOversizedTeacherSummaryFields();
+    void summaryPerClassMeetingOverflowSurfacesValidation();
+    void summaryAggregateMeetingOverflowSurfacesValidation();
     void selectedClassDetailsReadUsesOnlyScopedSessionData();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
@@ -202,6 +255,535 @@ void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
 initTestCase()
 {
     QVERIFY(m_directory.isValid());
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("summary")
+    );
+    QVERIFY(teacher > 0);
+    const int secondClass = createClass(
+        services,
+        QStringLiteral("Second class"),
+        teacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QStringLiteral("Second notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("10:00 AM"), QStringLiteral("10:45 AM")}
+        }
+        );
+    const int firstClass = createClass(
+        services,
+        QStringLiteral("First class"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("First notes"),
+        QStringLiteral("#112233"),
+        QStringLiteral("#AABBCC"),
+        {
+            {QStringLiteral("Wednesday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")},
+            {QStringLiteral("Tuesday"), QStringLiteral("11:00 AM"), QStringLiteral("11:45 AM")},
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    const int outsideSelectedDays = createClass(
+        services,
+        QStringLiteral("Outside selected days"),
+        teacher,
+        QStringLiteral("E6"),
+        QStringLiteral("Helios"),
+        QStringLiteral("Outside notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Tuesday"), QStringLiteral("1:00 PM"), QStringLiteral("1:45 PM")}
+        }
+        );
+    QVERIFY(secondClass > 0);
+    QVERIFY(firstClass > 0);
+    QVERIFY(outsideSelectedDays > 0);
+
+    QVERIFY(services.rosterService()->saveRoster(
+        firstClass,
+        rosterWithTwoStudents()
+        ));
+    Roster oneStudent;
+    oneStudent.columns = Roster::BaseColumns;
+    oneStudent.rows = {
+        {QStringLiteral("Casey"), QString::fromUtf8("\xEC\x9D\xB4\xED\x95\x99\xEC\x83\x9D"), {}, {}, {}, {}}
+    };
+    QVERIFY(services.rosterService()->saveRoster(secondClass, oneStudent));
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const SubPrepScheduleSummaryQuery query(port);
+    const auto result = query.execute(summaryRequestFor(
+        {classId(secondClass), classId(firstClass), classId(outsideSelectedDays)},
+        {SubPrepWeekday::Monday, SubPrepWeekday::Wednesday},
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes().size(), std::size_t(2));
+    QCOMPARE(result.value().classes()[0].id, classId(secondClass));
+    QCOMPARE(result.value().classes()[0].order, std::int32_t(0));
+    QCOMPARE(result.value().classes()[0].grade, std::string("E5"));
+    QCOMPARE(result.value().classes()[0].level, std::string("Apollo"));
+    QCOMPARE(result.value().classes()[0].displayLabel, std::string("E5 Apollo"));
+    QCOMPARE(result.value().classes()[0].studentCount, std::size_t(1));
+    QCOMPARE(result.value().classes()[1].id, classId(firstClass));
+    QCOMPARE(result.value().classes()[1].order, std::int32_t(1));
+    QCOMPARE(result.value().classes()[1].studentCount, std::size_t(2));
+    QCOMPARE(result.value().classes()[1].meetingText, std::string("MonWed 9am"));
+    QCOMPARE(result.value().teacherIndex().summaries().size(), std::size_t(1));
+    const auto teacherSummary = result.value().teacherIndex().find(
+        teacherId(teacher)
+        );
+    QVERIFY(teacherSummary.has_value());
+    QCOMPARE(teacherSummary->displayName, std::string("Preferred Name"));
+    QVERIFY(teacherSummary->facilities.find("Room: Room summary")
+            != std::string::npos);
+    QVERIFY(teacherSummary->facilities.find("WiFi Password: wifi-password-summary")
+            != std::string::npos);
+    QVERIFY(teacherSummary->notes.find("summary") != std::string::npos);
+
+    const auto ownedCopy = result.value();
+    services.closeDatabase();
+    QVERIFY(ownedCopy == result.value());
+    QCOMPARE(ownedCopy.classes()[1].meetingText, std::string("MonWed 9am"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+selectsModeAndOmitsUnusableOrOutOfScopeClasses()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    DataService* dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Mode Teacher"),
+        QStringLiteral("Mode Teacher"),
+        QStringLiteral("mode-summary")
+        );
+    QVERIFY(teacher > 0);
+    const int usable = createClass(
+        services,
+        QStringLiteral("Usable intensive"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        },
+        {
+            {QStringLiteral("Wednesday"), QStringLiteral("2:00 PM"), QStringLiteral("2:45 PM")}
+        }
+        );
+    const int unassigned = createClass(
+        services,
+        QStringLiteral("Unassigned"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Wednesday"), QStringLiteral("3:00 PM"), QStringLiteral("3:45 PM")}
+        }
+        );
+    const int staleTeacher = createClass(
+        services,
+        QStringLiteral("Stale teacher"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {},
+        {
+            {QStringLiteral("Wednesday"), QStringLiteral("4:00 PM"), QStringLiteral("4:45 PM")}
+        }
+        );
+    QVERIFY(usable > 0);
+    QVERIFY(unassigned > 0);
+    QVERIFY(staleTeacher > 0);
+
+    const auto noInfo = services.classService()->create(
+        QStringLiteral("Missing class info")
+        );
+    QVERIFY(noInfo.has_value());
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_intensive_times"),
+        *noInfo,
+        QStringLiteral("Wednesday"),
+        QStringLiteral("5:00 PM")
+        ));
+
+    const int testingClass = createClass(
+        services,
+        QStringLiteral("Testing class"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Odysseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Wednesday"), QStringLiteral("5:00 PM"), QStringLiteral("5:45 PM")}
+        }
+        );
+    QVERIFY(testingClass > 0);
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("INSERT INTO testing_classes (class_id, room) VALUES (%1, 'A')")
+            .arg(testingClass)
+        ));
+
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = OFF")));
+    QSqlQuery staleAssignment(dataService->databaseSession()->database());
+    QVERIFY(staleAssignment.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"
+        )));
+    staleAssignment.addBindValue(999999);
+    staleAssignment.addBindValue(staleTeacher);
+    QVERIFY2(
+        staleAssignment.exec(),
+        qPrintable(staleAssignment.lastError().text())
+        );
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE class_times")));
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {
+            classId(usable),
+            classId(unassigned),
+            classId(staleTeacher),
+            classId(*noInfo),
+            classId(testingClass)
+        },
+        {SubPrepWeekday::Wednesday},
+        ScheduleViewMode::Intensive
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    QCOMPARE(result.value().classes.front().id, classId(usable));
+    QCOMPARE(result.value().classes.front().meetingText, std::string("Wed 2pm"));
+    QCOMPARE(result.value().teachers.size(), std::size_t(1));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+rosterAggregateFailureKeepsLegacyZeroCountFallback()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Roster fallback"),
+        QStringLiteral("Roster fallback"),
+        QStringLiteral("roster-summary")
+        );
+    QVERIFY(teacher > 0);
+    const int classWithSchedule = createClass(
+        services,
+        QStringLiteral("Missing roster storage"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(classWithSchedule > 0);
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE roster_data")));
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(classWithSchedule)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    QCOMPARE(result.value().classes.front().studentCount, std::size_t(0));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+emptyScopeDoesNotReadAndUnavailableSessionFails()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE classes")));
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto empty = port.loadSummaries(summaryRequestFor(
+        {},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(empty);
+    QVERIFY(empty.value().classes.empty());
+    QVERIFY(empty.value().teachers.empty());
+
+    const auto queryFailure = port.loadSummaries(summaryRequestFor(
+        {classId(1)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(!queryFailure);
+    QCOMPARE(queryFailure.error().code, ErrorCode::Technical);
+
+    services.closeDatabase();
+    const auto unavailable = port.loadSummaries(summaryRequestFor(
+        {classId(1)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(!unavailable);
+    QCOMPARE(unavailable.error().code, ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+rejectsNoncanonicalIdsAndSupportsMaximumClassScope()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+
+    const auto alias = ClassId::fromString("01");
+    QVERIFY(alias.has_value());
+    const auto invalidId = port.loadSummaries(summaryRequestFor(
+        {*alias},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(!invalidId);
+    QCOMPARE(invalidId.error().code, ErrorCode::InvalidInput);
+
+    std::vector<ClassId> maximumScope;
+    maximumScope.reserve(kSubPrepScheduleScopeMaxVisibleClasses);
+    for (std::size_t index = 0;
+         index < kSubPrepScheduleScopeMaxVisibleClasses;
+         ++index)
+    {
+        maximumScope.push_back(classId(static_cast<int>(100'000 + index)));
+    }
+    const auto maximum = port.loadSummaries(summaryRequestFor(
+        maximumScope,
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(maximum);
+    QVERIFY(maximum.value().classes.empty());
+    QVERIFY(maximum.value().teachers.empty());
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+rejectsOversizedTeacherSummaryFields()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Oversized teacher"),
+        QStringLiteral("Oversized teacher"),
+        QStringLiteral("oversized-summary")
+        );
+    QVERIFY(teacher > 0);
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Oversized summary class"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(selectedClass > 0);
+
+    DataService* dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    QSqlQuery oversizedNotes(dataService->databaseSession()->database());
+    QVERIFY(oversizedNotes.prepare(QStringLiteral(
+        "UPDATE teachers SET notes = ? WHERE id = ?"
+        )));
+    oversizedNotes.addBindValue(QString(
+        static_cast<qsizetype>(kTeacherSummaryMaxNotesLength + 1),
+        QLatin1Char('N')
+        ));
+    oversizedNotes.addBindValue(teacher);
+    QVERIFY2(oversizedNotes.exec(), qPrintable(oversizedNotes.lastError().text()));
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(selectedClass)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+summaryPerClassMeetingOverflowSurfacesValidation()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Meeting overflow"),
+        QStringLiteral("Meeting overflow"),
+        QStringLiteral("meeting-overflow")
+        );
+    QVERIFY(teacher > 0);
+    const int classWithTooManyMeetings = createClass(
+        services,
+        QStringLiteral("Too many meetings"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(classWithTooManyMeetings > 0);
+    for (std::size_t index = 0;
+         index <= kSubPrepScheduleSummaryMaxMeetingsPerClass;
+         ++index)
+    {
+        QVERIFY(insertScheduleMeeting(
+            services,
+            QStringLiteral("class_times"),
+            classWithTooManyMeetings,
+            QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM")
+            ));
+    }
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(classWithTooManyMeetings)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+summaryAggregateMeetingOverflowSurfacesValidation()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Aggregate overflow"),
+        QStringLiteral("Aggregate overflow"),
+        QStringLiteral("aggregate-overflow")
+        );
+    QVERIFY(teacher > 0);
+
+    constexpr int ClassCount = 257;
+    constexpr int MeetingsPerClass = 64;
+    std::vector<ClassId> classIds;
+    classIds.reserve(ClassCount);
+    DataService* dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    QSqlDatabase database = dataService->databaseSession()->database();
+    QVERIFY(database.transaction());
+
+    QSqlQuery classInsert(database);
+    QVERIFY(classInsert.prepare(QStringLiteral(
+        "INSERT INTO classes (name) VALUES (?)"
+        )));
+    QSqlQuery infoInsert(database);
+    QVERIFY(infoInsert.prepare(QStringLiteral(
+        "INSERT INTO class_info "
+        "(class_id, teacher_id, class_grade, class_level) "
+        "VALUES (?, ?, 'E4', 'Perseus')"
+        )));
+    QSqlQuery meetingInsert(database);
+    QVERIFY(meetingInsert.prepare(QStringLiteral(
+        "INSERT INTO class_times (class_id, day, start_time, end_time) "
+        "VALUES (?, 'Monday', '9:00 AM', '9:45 AM')"
+        )));
+
+    std::size_t remaining = kSubPrepScheduleSummaryMaxMeetings + 1;
+    for (int index = 0; index < ClassCount && remaining > 0; ++index)
+    {
+        classInsert.bindValue(
+            0,
+            QStringLiteral("Aggregate class %1").arg(index)
+            );
+        QVERIFY2(
+            classInsert.exec(),
+            qPrintable(classInsert.lastError().text())
+            );
+        const int legacyClassId = classInsert.lastInsertId().toInt();
+        QVERIFY(legacyClassId > 0);
+        infoInsert.bindValue(0, legacyClassId);
+        infoInsert.bindValue(1, teacher);
+        QVERIFY2(infoInsert.exec(), qPrintable(infoInsert.lastError().text()));
+        classIds.push_back(ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(legacyClassId)
+            ).value());
+
+        const std::size_t count = std::min<std::size_t>(
+            MeetingsPerClass,
+            remaining
+            );
+        for (std::size_t index = 0; index < count; ++index)
+        {
+            meetingInsert.bindValue(0, legacyClassId);
+            QVERIFY2(
+                meetingInsert.exec(),
+                qPrintable(meetingInsert.lastError().text())
+                );
+        }
+        remaining -= count;
+    }
+    QCOMPARE(remaining, std::size_t(0));
+    QVERIFY(database.commit());
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        classIds,
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

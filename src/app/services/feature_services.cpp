@@ -517,6 +517,30 @@ Result<SubPrepClassDetailsRecord> ClassService::subPrepClassDetails(
     return std::unexpected(unavailableError());
 }
 
+Result<QList<SubPrepClassSummaryRecord>> ClassService::subPrepClassSummaries(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings
+    ) const
+{
+    if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
+    {
+        return repository->loadSubPrepClassSummaries(
+            classIds,
+            selectedDays,
+            type,
+            maxMeetingsPerClass,
+            maxTotalMeetings
+            );
+    }
+
+    // Summary reads stay within the active v2 database session. The legacy
+    // DataService call loads broad class, teacher, and roster record graphs.
+    return std::unexpected(unavailableError());
+}
+
 Result<QList<ClassInfo>> ClassService::classInfosForScheduleScope(
     const QList<int>& classIds,
     const QStringList& selectedDays,

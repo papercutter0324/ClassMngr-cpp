@@ -30,6 +30,9 @@ enum class SubPrepWeekday : std::uint8_t
 
 inline constexpr std::size_t kSubPrepScheduleScopeMaxVisibleClasses =
     kClassSummaryMaxEntries;
+inline constexpr std::size_t
+    kSubPrepScheduleSummaryMaxMeetingsPerClass = 64;
+inline constexpr std::size_t kSubPrepScheduleSummaryMaxMeetings = 16'384;
 
 struct SubPrepScheduleScopeRequest final
 {

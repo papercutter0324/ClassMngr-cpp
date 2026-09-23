@@ -14,6 +14,7 @@
 #include "domain/models/roster.h"
 #include "domain/models/schedule_import.h"
 #include "domain/models/speaking_evaluation.h"
+#include "domain/models/sub_prep_class_summary_record.h"
 #include "domain/models/sub_prep_class_details_record.h"
 #include "domain/models/teacher.h"
 #include "domain/models/teacher_import.h"
@@ -112,6 +113,14 @@ public:
     [[nodiscard]] Result<ClassInfo> classInfo(int classId) const;
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         subPrepClassDetails(int classId) const;
+    [[nodiscard]] Result<QList<SubPrepClassSummaryRecord>>
+        subPrepClassSummaries(
+            const QList<int>& classIds,
+            const QStringList& selectedDays,
+            ScheduleType type,
+            int maxMeetingsPerClass,
+            int maxTotalMeetings
+            ) const;
     [[nodiscard]] Result<QList<ClassInfo>> classInfosForScheduleScope(
         const QList<int>& classIds,
         const QStringList& selectedDays,
