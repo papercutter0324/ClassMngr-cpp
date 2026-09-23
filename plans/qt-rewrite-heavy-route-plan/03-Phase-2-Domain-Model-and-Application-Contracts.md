@@ -3259,3 +3259,22 @@ handwritten sources, `ClassMngrNext` built, and
 --output-on-failure` passed 1/1. The query is not connected to the legacy page
 and has no persistence adapter; batching, output/UI migration, feature parity,
 and memory improvement remain unclaimed. Phase 2 remains In progress.
+
+#### Progress update - 2026-09-23 (Sub Prep selected-details and selection-state contracts)
+
+Commit `389d90a6a433ae6c5c7ce7263daba02f4a27a5ce` adds the Qt-free
+`SubPrepClassDetailsQuery` for one selected class. Its injected read port
+propagates structured failures, verifies the returned class ID, and permits a
+missing teacher identity. `ClassMngrNextApplicationSubPrepClassDetailsQueryTests`
+passed 1/1.
+
+Commit `7959eb07` adds `SubPrepClassInformationState` for scope refresh,
+selection, detail application, and clear. It retains only a selection within
+the visible scope, clears details on each successful refresh or selection
+change, and accepts details only when class and teacher identity match. The
+focused `ClassMngrNextApplicationSubPrepClassInformationStateTests` passed 1/1. Both
+app-less targets compiled and linked in the Windows x64 developer environment;
+neither contract is connected to legacy UI or persistence. No batching,
+package/PDF migration, or memory reduction is claimed. The next Phase 2
+boundary is the operation-scoped print-source contract; package/roster/PDF and
+Release memory gates remain later work. Phase 2 remains In progress.

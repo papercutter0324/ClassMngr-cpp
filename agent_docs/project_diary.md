@@ -255,3 +255,15 @@
 - Keep the Phase 2 query boundary independent from the legacy Sub Prep page.
   Do not claim database batching or memory reduction until a persistence
   adapter and the full feature route provide evidence.
+
+## Phase 2 Sub Prep details and selection lifecycle — 2026-09-23
+
+- Read selected details by typed class ID and keep one detail value for the
+  active selection; validate its bounded text and identity at each boundary.
+- On every successful scope refresh, retain the selected class only if it is
+  still visible and clear the previous detail value. Carry the expected
+  teacher ID from the refreshed summary so stale detail results cannot attach
+  another teacher's data to the selection.
+- Leave fallback tab ordering to the view: the legacy grade/level ordering and
+  the v2 summary ordering are different. These contracts are not connected to
+  the page and do not establish persistence batching or memory improvement.

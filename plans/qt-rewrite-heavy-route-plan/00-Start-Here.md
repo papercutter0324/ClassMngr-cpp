@@ -6,7 +6,8 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-09-23
-- Current milestone: Phase 1 — build system and repository structure
+- Current milestone: Phase 1 build-system exit work; Phase 2 Sub Prep Application
+  contracts are progressing in parallel
 - Current blocker: official Phase 1 targets are Windows x64 and macOS
   universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
   after GitHub reported runner communication loss. The user observed the

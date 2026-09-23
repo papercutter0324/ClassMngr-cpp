@@ -355,3 +355,28 @@ separate on a host with Xvfb and loopback access.
   Implement the Sub Prep persistence adapter under Phase 3, then connect the
   UI/model, selected details, output, and release-memory acceptance under the
   feature and memory plans. Keep the Linux Phase 0 follow-up separate.
+
+## Current Deployment Handoff — phase2_next_contract_slice_20260923 (complete)
+
+- Continued Phase 2 after the typed Sub Prep schedule summary query. Commit
+  `389d90a6a433ae6c5c7ce7263daba02f4a27a5ce` adds the Qt-free
+  `SubPrepClassDetailsQuery` and standalone validation for one bounded detail
+  value. Its injected read port propagates structured errors, checks the
+  returned class ID, and permits a missing teacher identity. The focused
+  `ClassMngrNextApplicationSubPrepClassDetailsQueryTests` target passed 1/1.
+- Commit `7959eb07` adds `SubPrepClassInformationState`, a value transition
+  boundary for refresh, selection, detail application, and clear. It retains a
+  class only while visible, clears details on each successful refresh or
+  selection change, and matches incoming details to both the selected class
+  and the teacher identity in its current summary. The focused
+  `ClassMngrNextApplicationSubPrepClassInformationStateTests` target passed
+  1/1. Neither target was added to the full-suite gate.
+- Both targets compiled and linked in
+  `build/phase1-validation-ad635ace-windows-x64-ninja` under the Visual Studio
+  x64 developer environment. The working tree is clean on `Qt-Rewrite`, three
+  commits ahead of `origin/Qt-Rewrite`; nothing was pushed.
+- Neither contract is wired to the legacy page or a persistence adapter. No
+  UI fallback ordering, SQL batching, package/PDF migration, or memory
+  improvement is claimed. Next entry point: define the narrow operation-scoped
+  Sub Prep print-source contract, keeping roster/package output and Release
+  memory acceptance as later gates. Keep the Linux Phase 0 follow-up separate.

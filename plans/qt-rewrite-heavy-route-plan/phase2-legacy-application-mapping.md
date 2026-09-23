@@ -2596,3 +2596,24 @@ The current legacy summary read is
 [`SubPrepPage::buildClassInformation(schedule)`](../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp#L688): it reads all classes, then calls `classInfo(id)` and `studentCount(id)` per class and `teacher(id)` per class with a teacher, before `SubPrepClassInformation::build` filters to visible class IDs, days, and schedule mode. The equivalent v2 Application boundary is `SubPrepScheduleScopeRequest` → `SubPrepScheduleSummaryQuery` → `ClassSummaryProjection`, through the injected `SubPrepScheduleSummaryReadPort` in [`sub_prep_schedule_summary_query.h`](../../src/next/application/sub_prep_schedule_summary_query.h). The read adapter must apply the typed scope and return compact copied summary inputs; the query validates a complete projection and sorts deterministically.
 
 This is a contract mapping only. The legacy page and package path still use the current services; no adapter, page cutover, SQL batching, or output migration is implemented. The app-less test is [`next_application_sub_prep_schedule_summary_query_tests.cpp`](../../tests/next_application_sub_prep_schedule_summary_query_tests.cpp), registered in [`next.cmake`](../../cmake/tests/next.cmake). Release ownership validation covered 701 handwritten sources, `ClassMngrNext` built, and `ctest -R ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests --output-on-failure` passed 1/1. The full Sub Prep feature and memory gate remain open; see the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md) and [Sub Prep memory plan](sub-prep-class-information-memory-plan.md).
+
+## Verified Sub Prep selected-details and selection-state contracts
+
+Commit `389d90a6a433ae6c5c7ce7263daba02f4a27a5ce` adds
+[`SubPrepClassDetailsQuery`](../../src/next/application/sub_prep_class_details_query.h)
+for one selected-class detail value, with an injected read port, structured
+failures, returned-class validation, and support for a missing teacher.
+`SubPrepClassInformationState`, added in commit `7959eb07`, owns the value
+lifecycle for scope refresh, selection, details, and clear: it retains only a
+visible selection and accepts details only when class and teacher identities
+match. Details are cleared on each successful refresh and on selection change.
+
+The focused app-less targets
+[`ClassMngrNextApplicationSubPrepClassDetailsQueryTests`](../../tests/next_application_sub_prep_class_details_query_tests.cpp)
+and
+[`ClassMngrNextApplicationSubPrepClassInformationStateTests`](../../tests/next_application_sub_prep_class_information_state_tests.cpp)
+passed 1/1 each; both are registered in [`next.cmake`](../../cmake/tests/next.cmake).
+These contracts are not connected to legacy UI or persistence. No batching,
+package/PDF migration, or memory reduction is claimed. The next boundary is
+the operation-scoped print-source contract; package/roster/PDF and Release
+memory gates remain later work.

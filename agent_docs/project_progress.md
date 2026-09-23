@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: phase2_next_contract_slice_20260923. Route: Heavy.
+Current deployment: phase2_next_contract_slice_20260923 (complete). Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -142,18 +142,18 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-The Phase 2 Sub Prep schedule-scope summary query contract is implemented in
-ClassMngrNext Application. CMake ownership validation covered 701 handwritten
-sources, `ClassMngrNext` built, and
-`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests` passed 1/1. The
-contract uses typed class IDs, weekdays, and schedule mode; empty visibility
-returns a valid empty projection, and malformed or out-of-scope data fails
-without partial results. The legacy page, persistence adapter, output path,
-and Release memory gate remain future work; no batching or memory improvement
-is claimed. Next: continue with another Phase 2 application-contract slice,
-then add the persistence adapter in Phase 3 and connect the Sub Prep UI in the
-feature migration. Keep the Linux Phase 0 follow-up separate until it can run
-on a host with Xvfb and loopback access.
+The Phase 2 Sub Prep schedule-scope summary query is implemented in
+ClassMngrNext Application. Two further app-less contracts are now committed:
+`SubPrepClassDetailsQuery` reads one typed selected-class detail value, and
+`SubPrepClassInformationState` retains a selection only while it remains in
+the refreshed scope while invalidating old details. Both focused CTest targets
+passed 1/1 under the Windows x64 Visual Studio developer environment. These
+contracts remain separate from the legacy page and have no persistence
+adapter. The operation-scoped print source is the next contract boundary;
+package/PDF output, the persistence adapter, and the Release memory gate remain
+future work. No batching or memory improvement is claimed. Keep the Linux
+Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
+access.
 
 ### Phase 2 kickoff — 2026-09-19
 

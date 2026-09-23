@@ -14,15 +14,17 @@
 
 ## Current Sub Prep contract boundary - 2026-09-23
 
-Phase 2 now has the Qt-free `SubPrepScheduleSummaryQuery` over typed class IDs,
-weekdays, and schedule mode, with an injected read port and validated,
-deterministically ordered `ClassSummaryProjection`. Empty visible-class or
-selected-day scopes return a successful empty projection without a read. This
-contract is not connected to the legacy page and has no persistence adapter;
-it does not establish SQL batching or a memory reduction. The 96-class Release
-baseline's legacy memory failure remains the acceptance reference. The full
-Sub Prep vertical slice and packaged Release memory gate remain open. See the
-[Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-schedule-summary-query-contract).
+Phase 2 now has a Qt-free schedule-summary query and a selected-class details
+query, plus `SubPrepClassInformationState` for selection and detail lifecycle.
+The state retains a class only within the refreshed visible scope and clears
+details on each successful refresh or selection change. It accepts details
+only for the selected class and matching teacher identity. These are
+Application contracts only: neither is connected to the legacy page or
+persistence, and no batching,
+package/PDF migration, or memory reduction is claimed. The 96-class Release
+baseline's legacy memory failure remains the acceptance reference. Next is the
+operation-scoped print-source contract; package/roster/PDF and Release memory
+gates remain later work. See the [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-selected-details-and-selection-state-contracts).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
