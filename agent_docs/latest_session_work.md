@@ -413,9 +413,18 @@ separate on a host with Xvfb and loopback access.
   normalization, and fields excluded from identity. The two Windows x64 Ninja
   targets built and focused CTest passed 2/2. Range retrieval and batch
   persistence remain legacy responsibilities.
-- Current slice: move the calendar import's existing-event signature read
-  behind a typed Platform boundary. Preserve the exact six-field UTF-16 key
-  semantics and the same date range; candidate parsing and batch save stay on
-  the existing path. The general event projection's 4,096-row cap and stricter
-  metadata validation are not suitable for this caller without changing its
-  behavior. Phase 2 remains open. Nothing has been pushed.
+- Commit `d14155c1` moves the calendar import's existing-event signature read
+  behind `ApplicationServicesCalendarEventPort`. It queries the same date
+  range and returns ordered UTF-16 keys using the established six-field
+  signature, while leaving workbook parsing and batch save unchanged. The
+  dedicated read avoids the general projection's 4,096-row cap and unrelated
+  metadata checks.
+- Adapter tests compare Unicode, normalization, duplicate, and ordering
+  behavior against `CalendarImport::calendarEventImportSignature`; they cover
+  invalid/unavailable/read failures and a successful 4,097-row range. The app
+  and port test target built with Windows x64 Ninja; focused CTest passed 1/1.
+  Importer network/signal integration and batch save migration remain open.
+- Next slice: implement the Sub Prep print-source Platform adapter for the
+  existing selected-class/day/mode contract. The legacy page/PDF wiring and
+  Release memory gate remain later work. Phase 2 remains open; nothing has
+  been pushed.

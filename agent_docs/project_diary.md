@@ -290,3 +290,8 @@
   key when moving duplicate selection into a Qt-free Application contract.
   Preserve candidate order, initial parser skips, and batch save behavior; test
   identity-field normalization separately from the pure duplicate planner.
+- Keep the importer's existing-event identity at the Qt/legacy boundary when
+  moving the read behind a typed Platform port. A general event projection's
+  capacity and unrelated metadata validation change legacy import behavior;
+  return ordered UTF-16 signature keys and compare them against the canonical
+  parser helper, including ranges beyond the projection limit.

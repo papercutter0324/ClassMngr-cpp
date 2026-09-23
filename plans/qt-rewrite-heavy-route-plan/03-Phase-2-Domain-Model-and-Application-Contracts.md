@@ -3333,8 +3333,24 @@ and [`CalendarImportTests`](../../tests/calendar_import_tests.cpp) cover
 planning order/counts, exact six-field identity behavior, and UTF-16 equality.
 Both Windows x64 Ninja targets built and focused CTest passed 2/2. Range
 retrieval and batch persistence remain legacy responsibilities; this contract
-does not complete calendar import migration or Phase 2. The next slice is the
-existing-event signature-key range read behind a typed Platform boundary;
-candidate parsing and batch save remain unchanged. The general event projection
-has a 4,096-row cap and stricter metadata validation, so this importer uses a
-dedicated key read to preserve the legacy range behavior.
+does not complete calendar import migration or Phase 2. The existing-event
+signature-key read is completed in commit `d14155c1` below; candidate parsing
+and batch save remain unchanged. The general event projection has a 4,096-row
+cap and stricter metadata validation, so the import uses a dedicated key read
+to preserve legacy range behavior.
+
+#### Progress update - 2026-09-23 (calendar import existing-signature read cutover)
+
+Commit `d14155c1` adds
+[`ApplicationServicesCalendarEventPort::importSignatureKeysInRange`](../../src/next/platform/application_services_calendar_event_port.h)
+and routes duplicate planning through it. The port reads the same requested
+date range, preserves legacy result order, and returns UTF-16 keys matching
+`CalendarImport::calendarEventImportSignature`. It bypasses the general
+4,096-row event projection and its stricter metadata validation. Candidate
+parsing and batch save remain in the legacy import service.
+
+`ClassMngr` and the focused calendar-event port target built on Windows x64
+Ninja; focused CTest passed 1/1 and `git diff --check` passed. Phase 2 remains
+open. The next slice integrates the Sub Prep print-source contract with a
+production read adapter; the contract still has no adapter, page, or PDF
+wiring, and no output-parity or memory acceptance is claimed.

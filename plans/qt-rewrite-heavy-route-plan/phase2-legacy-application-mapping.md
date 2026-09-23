@@ -13,7 +13,7 @@ repeat-series suffix-delete, this-and-following repeat-series edit/save, and
 this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
-palette caller boundary and calendar-import planning contract.
+palette caller boundary and calendar-import planning and signature-read seams.
 A partial content-session
 integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
@@ -2676,8 +2676,24 @@ duplicate planning, ordering/counts, signature fields, normalization, and
 exact UTF-16 comparison, including distinct lone-surrogate keys. Both Windows
 x64 Ninja targets built and focused CTest passed 2/2. Range retrieval and
 batch persistence remain legacy responsibilities; no broader calendar-import
-migration is claimed. The next slice moves existing-event signature-key range
-retrieval behind a typed Platform boundary, while candidate parsing and batch
-save remain unchanged. The general projection's 4,096-row cap and stricter
-metadata checks would change this import caller's legacy behavior, so its read
-port returns exact signature keys. Phase 2 remains in progress.
+migration is claimed. The existing-signature read cutover is recorded below;
+batch persistence remains a legacy responsibility. The general projection's
+4,096-row cap and stricter metadata checks would change this import caller's
+legacy behavior, so its read port returns exact signature keys.
+
+## Verified calendar import existing-signature read cutover
+
+Commit `d14155c1` adds
+[`ApplicationServicesCalendarEventPort::importSignatureKeysInRange`](../../src/next/platform/application_services_calendar_event_port.h)
+and uses it for existing-event duplicate detection. It reads the importer's
+same date range through `CalendarService::eventsInRange`, preserves event
+order, and returns UTF-16 keys matching
+`CalendarImport::calendarEventImportSignature`. The dedicated read bypasses
+the general 4,096-row projection and its stricter metadata checks. Candidate
+parsing and batch save remain in the legacy import service.
+
+`ClassMngr` and the focused calendar-event port target built on Windows x64
+Ninja; focused CTest passed 1/1 and `git diff --check` passed. This closes the
+existing-signature read seam only; Phase 2 remains open. The next slice is
+Sub Prep print-source adapter/query integration. That contract has no production
+adapter, page, or PDF wiring; output parity and memory acceptance are unverified.
