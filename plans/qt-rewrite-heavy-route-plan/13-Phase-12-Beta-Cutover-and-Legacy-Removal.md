@@ -10,6 +10,22 @@
 - Last updated: 2026-09-16
 - Current note: Cut over only after parity, compatibility, packaging, and memory gates pass.
 
+## Progress log
+
+Record this phase's progress here. Add a dated entry when work starts, a
+milestone is reached, a blocker appears, or the exit gate passes. Append entries
+in date order and include what changed, what remains, evidence or a verification
+command, and any new risk or blocker.
+
+Entry format:
+
+### YYYY-MM-DD — <milestone or update>
+
+- Changed:
+- Remaining:
+- Evidence:
+- Risks or blockers:
+
 ## Objective
 
 Release v2 safely, preserve rollback ability, then delete the legacy architecture rather than leaving two permanent applications.

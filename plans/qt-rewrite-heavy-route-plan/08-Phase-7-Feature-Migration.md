@@ -10,6 +10,22 @@
 - Last updated: 2026-09-16
 - Current note: Migrate complete vertical slices, not isolated UI files.
 
+## Progress log
+
+Record this phase's progress here. Add a dated entry when work starts, a
+milestone is reached, a blocker appears, or the exit gate passes. Append entries
+in date order and include what changed, what remains, evidence or a verification
+command, and any new risk or blocker.
+
+Entry format:
+
+### YYYY-MM-DD — <milestone or update>
+
+- Changed:
+- Remaining:
+- Evidence:
+- Risks or blockers:
+
 ## Objective
 
 Move every feature from domain behavior through persistence, application use cases, presentation, resources, output, localization, and tests.

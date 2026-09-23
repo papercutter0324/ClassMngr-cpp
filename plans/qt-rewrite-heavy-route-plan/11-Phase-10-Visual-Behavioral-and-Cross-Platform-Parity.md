@@ -10,6 +10,22 @@
 - Last updated: 2026-09-16
 - Current note: Prove that the rewrite preserved the product, not merely that it compiles.
 
+## Progress log
+
+Record this phase's progress here. Add a dated entry when work starts, a
+milestone is reached, a blocker appears, or the exit gate passes. Append entries
+in date order and include what changed, what remains, evidence or a verification
+command, and any new risk or blocker.
+
+Entry format:
+
+### YYYY-MM-DD — <milestone or update>
+
+- Changed:
+- Remaining:
+- Evidence:
+- Risks or blockers:
+
 ## Objective
 
 Demonstrate that v2 preserves the current user experience and output across supported platforms while meeting the Windows memory target.

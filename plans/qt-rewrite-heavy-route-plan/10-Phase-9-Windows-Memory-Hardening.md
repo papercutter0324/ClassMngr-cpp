@@ -10,6 +10,22 @@
 - Last updated: 2026-09-16
 - Current note: The less-than-250-MiB Windows target is a hard release gate.
 
+## Progress log
+
+Record this phase's progress here. Add a dated entry when work starts, a
+milestone is reached, a blocker appears, or the exit gate passes. Append entries
+in date order and include what changed, what remains, evidence or a verification
+command, and any new risk or blocker.
+
+Entry format:
+
+### YYYY-MM-DD — <milestone or update>
+
+- Changed:
+- Remaining:
+- Evidence:
+- Risks or blockers:
+
 ## Objective
 
 Reduce and control resident memory through explicit ownership, lazy loading, bounded caches, compact models, and release verification.
