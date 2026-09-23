@@ -283,3 +283,10 @@
   preference port into shared UI utilities. Preserve the color dialog's
   load-before-open and save-after-close behavior, including cancellation; test
   all process-global color slots and restore them after each test.
+
+## Phase 2 calendar import plan — 2026-09-23
+
+- Keep the existing six-field import signature as an opaque UTF-16 identity
+  key when moving duplicate selection into a Qt-free Application contract.
+  Preserve candidate order, initial parser skips, and batch save behavior; test
+  identity-field normalization separately from the pure duplicate planner.

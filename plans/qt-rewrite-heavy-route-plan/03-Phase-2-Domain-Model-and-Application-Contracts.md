@@ -3315,3 +3315,26 @@ Both Windows x64 Ninja targets built and focused CTest passed 2/2; diff checks
 passed. Generic settings persistence remains open. This is not the Phase 3
 persistence rewrite or a Phase 7 feature migration; Phase 2 remains In
 Progress.
+
+#### Progress update - 2026-09-23 (calendar import planning contract)
+
+Commit `d5a5cab9` adds the Qt-free
+[`CalendarEventImportPlan`](../../src/next/application/calendar_event_import_plan.h)
+and uses it from
+[`CalendarEventImportService::handleFinished`](../../src/features/calendar/calendar_event_import_service.cpp).
+After the legacy range read, the service supplies exact UTF-16 signature keys
+for existing and candidate events. The planner returns accepted candidate
+indices in input order and carries forward parser skips, preserving duplicate
+behavior including exact comparison of malformed surrogate sequences. The
+batch save, error, metric, and signal paths remain in the legacy service.
+
+[`NextApplicationCalendarEventImportPlanTests`](../../tests/next_application_calendar_event_import_plan_tests.cpp)
+and [`CalendarImportTests`](../../tests/calendar_import_tests.cpp) cover
+planning order/counts, exact six-field identity behavior, and UTF-16 equality.
+Both Windows x64 Ninja targets built and focused CTest passed 2/2. Range
+retrieval and batch persistence remain legacy responsibilities; this contract
+does not complete calendar import migration or Phase 2. The next slice is the
+existing-event signature-key range read behind a typed Platform boundary;
+candidate parsing and batch save remain unchanged. The general event projection
+has a 4,096-row cap and stricter metadata validation, so this importer uses a
+dedicated key read to preserve the legacy range behavior.

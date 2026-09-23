@@ -402,7 +402,20 @@ separate on a host with Xvfb and loopback access.
   Its new offscreen test checks all 16 load/save slots and canonical write
   values; the existing adapter test covers null-settings defaults and no-op
   writes. Both Windows x64 Ninja targets built and focused CTest passed 2/2.
-- Current slice: extract and test the calendar-import duplicate planner as a
-  Qt-free Application contract. The legacy range read and batch save remain in
-  place; the typed range cutover and Sub Prep page/PDF wiring are later work.
-  Phase 2 remains open. Nothing has been pushed.
+- Commit `d5a5cab9` adds a Qt-free `CalendarEventImportPlan` and integrates it
+  after the existing range read. It selects candidate indices in stable order,
+  carries forward parser skips, and preserves the existing batch save, error,
+  metric, and signal paths. The legacy six-field signature is passed as exact
+  UTF-16 keys so malformed surrogate sequences retain `QString` equality.
+- The new app-less planner tests cover existing and repeated candidate keys,
+  stable accepted indices, skipped counts, empty input, and exact UTF-16 key
+  comparison. Calendar parser tests lock all six signature fields, their
+  normalization, and fields excluded from identity. The two Windows x64 Ninja
+  targets built and focused CTest passed 2/2. Range retrieval and batch
+  persistence remain legacy responsibilities.
+- Current slice: move the calendar import's existing-event signature read
+  behind a typed Platform boundary. Preserve the exact six-field UTF-16 key
+  semantics and the same date range; candidate parsing and batch save stay on
+  the existing path. The general event projection's 4,096-row cap and stricter
+  metadata validation are not suitable for this caller without changing its
+  behavior. Phase 2 remains open. Nothing has been pushed.

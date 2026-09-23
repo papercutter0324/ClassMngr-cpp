@@ -151,7 +151,14 @@ preference port and composes its Platform adapter at all seven UI callers.
 The new utility target and existing adapter target built; focused CTest passed
 2/2. The current slice extracts and tests calendar-import duplicate planning
 as a Qt-free Application contract while preserving the legacy range read and
-batch save path. The Sub Prep persistence adapter, page/PDF integration, roster
+batch save path. Commit `d5a5cab9` adds the planner and regression tests for
+duplicate order/counts and the existing six-field signature. Both focused
+Windows x64 Ninja targets built and CTest passed 2/2. The current slice moves
+the calendar-import existing-event signature read behind a typed Platform
+boundary while preserving exact UTF-16 keys, requested dates, and the legacy
+save path. The general projection's 4,096-row cap and stricter metadata checks
+would change this caller's behavior. The Sub Prep persistence adapter,
+page/PDF integration, roster
 and package migration, and Release memory gate remain future work; no batching
 or memory improvement is claimed. Keep the Linux Phase 0 follow-up separate
 until it can run on a host with Xvfb and loopback access.

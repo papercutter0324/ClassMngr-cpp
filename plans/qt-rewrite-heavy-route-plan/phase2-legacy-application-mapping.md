@@ -12,8 +12,8 @@ calendar activation-read, non-repeat single-event save and delete,
 repeat-series suffix-delete, this-and-following repeat-series edit/save, and
 this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
-theme and language preference bridges are implemented, as is the custom-color
-palette caller boundary.
+theme and language preference bridges are implemented, as are the custom-color
+palette caller boundary and calendar-import planning contract.
 A partial content-session
 integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
@@ -2655,3 +2655,29 @@ covers null-service defaults and no-op writes. This closes only the caller
 seam. Generic settings persistence, other UI-service boundaries, Phase 3
 persistence work, and Phase 7 feature migration remain open; no stored-format
 change is claimed.
+
+## Verified calendar import planning contract
+
+Commit `d5a5cab9` extracts duplicate planning from
+[`CalendarEventImportService::handleFinished`](../../src/features/calendar/calendar_event_import_service.cpp)
+into the Qt-free
+[`CalendarEventImportPlan`](../../src/next/application/calendar_event_import_plan.h).
+After the service's legacy range read, it supplies exact UTF-16 keys derived
+from the existing six-field signature. The planner skips keys already present
+or repeated among candidates, returns accepted indices in stable input order,
+and carries forward the parser's skipped count. The service maps those indices
+back to event values and retains its existing batch save, error, metric, and
+signal paths.
+
+The app-less
+[`NextApplicationCalendarEventImportPlanTests`](../../tests/next_application_calendar_event_import_plan_tests.cpp)
+and [`CalendarImportTests`](../../tests/calendar_import_tests.cpp) cover
+duplicate planning, ordering/counts, signature fields, normalization, and
+exact UTF-16 comparison, including distinct lone-surrogate keys. Both Windows
+x64 Ninja targets built and focused CTest passed 2/2. Range retrieval and
+batch persistence remain legacy responsibilities; no broader calendar-import
+migration is claimed. The next slice moves existing-event signature-key range
+retrieval behind a typed Platform boundary, while candidate parsing and batch
+save remain unchanged. The general projection's 4,096-row cap and stricter
+metadata checks would change this import caller's legacy behavior, so its read
+port returns exact signature keys. Phase 2 remains in progress.
