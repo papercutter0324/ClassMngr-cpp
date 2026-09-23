@@ -93,13 +93,15 @@ the Application input. See the [Phase 2 contract
 update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-bounded-roster-repository-read).
 
 Output/package/PDF migration is wired through the operation-scoped roster
-source, but full parity and Release memory acceptance remain open. Work
-Package F has moved the information-sheet and roster stages to separate
-bounded Application projections; the package service releases the
-information-sheet input before loading roster records, and the data repository
-applies row/cell caps before creating a dense roster projection. The next
-slice compares output with retained references and completes cancellation and
-cleanup coverage, followed by packaged Release memory acceptance.
+source. F8 compares the 96-class information-sheet and Daily roster PDFs with
+retained references across page count, dimensions, and extracted text, and
+compares all Windows 150-DPI renders exactly. Print cancellation and source
+failure cleanup checks pass. Work Package F has moved the information-sheet
+and roster stages to separate bounded Application projections; the package
+service releases the information-sheet input before loading roster records,
+and the data repository applies row/cell caps before creating a dense roster
+projection. Packaged Release memory acceptance and the full UI visual-state
+gate remain open; the next slice runs the Release memory gate.
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

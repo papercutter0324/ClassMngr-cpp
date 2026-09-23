@@ -431,3 +431,16 @@
 - Five focused Windows x64 Debug suites pass across package, page, PDF,
   Application query, and Platform source. This verifies scoped input mapping
   and pre-commit failure cleanup, not full output parity or Release memory.
+
+## Phase 2 Sub Prep output-reference parity - 2026-09-24
+
+- Use the retained 96-class `Sub Prep.pdf` and Daily roster PDF as package
+  output oracles. Compare every page's point dimensions and extracted text;
+  on the Windows baseline target, render each page at 150 DPI and compare the
+  pixels. Both outputs match the reference (19 and 16 pages respectively).
+- PDF container hashes differ between runs, so compare semantic text and page
+  rendering rather than raw PDF bytes. The Windows pixel comparison is exact.
+- Print-only cancellation removes temporary PDFs and commits no folder. Errors
+  while reading or mapping the roster source likewise leave no package staging
+  directory. Release memory and all feature visual-state gates still require
+  their own acceptance run.

@@ -185,13 +185,14 @@ print-source adapter, and the roster-output Application query. F7 replaces
 package-service legacy roster reads with the scoped typed source and maps
 bounded values into renderer models. The page owns the Platform adapter for
 the synchronous package call. The application query, adapter, package, page,
-and PDF suites passed 5/5 after a Windows x64 Debug build. Coverage checks
-selected classes/days/mode/columns, package paths, extra columns, and failure
-cleanup. Full PDF/package parity is not established. Next compare retained
-output references and complete cancellation/cleanup coverage, then run the
-packaged 96-class Release memory gate and continue the wider Phase 2 exit work.
-Keep the Linux Phase 0 follow-up separate until it can run on a host with Xvfb
-and loopback access.
+and PDF suites passed 5/5 after a Windows x64 Debug build. F8 compares the
+96-class Sub Prep and Daily roster PDFs against retained output references:
+page count, every page's dimensions and extracted text match, and all Windows
+150-DPI page renders are exact. Cancellation and staged read/mapping failure
+cleanup checks pass. The focused integration set again passed 5/5. Next run the
+packaged 96-class Release memory gate, then continue the wider Phase 2 exit
+work. Keep the Linux Phase 0 follow-up separate until it can run on a host
+with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

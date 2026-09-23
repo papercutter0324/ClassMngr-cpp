@@ -3612,3 +3612,20 @@ package is committed. Full PDF/package parity and the 96-class packaged
 Release memory gate have not been established. Work Package F8 compares output
 with retained references and closes cancellation/error/cleanup parity before
 the Release acceptance run; the broader Phase 2 exit gate remains open.
+
+#### Progress update - 2026-09-24 (Sub Prep output-reference parity)
+
+Work Package F8 extends the 96-class package probe to compare the generated
+`Sub Prep.pdf` and Daily roster PDF with the committed references under
+`docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/`. It checks
+page counts, every page's point dimensions, and extracted text. On Windows it
+also renders every page at 150 DPI and compares the images exactly. The
+information-sheet and Daily roster PDFs match the references at 19 and 16
+pages. PDF bytes are regenerated and are not used as the parity oracle.
+
+Cancellation and failure cleanup coverage confirms that print-only temporary
+PDFs are removed and no package directory is committed on cancellation, roster
+read failure, or invalid text mapping. Windows x64 Debug built the package
+suite; focused CTest passed 5/5 for package, page, PDF, Application query, and
+Platform source suites. Next is the packaged 96-class Windows x64 Release
+memory gate; UI visual-state and the broader Phase 2 exit gates remain open.

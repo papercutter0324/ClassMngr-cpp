@@ -641,3 +641,21 @@ separate on a host with Xvfb and loopback access.
 - Handoff: compare generated output against retained references and finish
   cancellation/cleanup parity. The packaged 96-class Release memory gate and
   broader Phase 2 exit work remain open. Nothing has been pushed.
+
+### Phase 2 Sub Prep output-reference parity - 2026-09-24
+
+- `largePackageGeneratesOutputReferenceWhenConfigured` now compares both
+  generated PDFs with the committed 96-class references under
+  `docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/`. It
+  checks page counts, each page's point dimensions, and extracted text. On
+  Windows it also compares every page's 150-DPI render exactly. The Sub Prep
+  PDF matches at 19 pages and the Daily roster PDF at 16 pages; their Windows
+  page rasters match exactly.
+- The print-only cancellation test confirms no package directory is committed
+  and temporary PDFs are removed. Roster read and mapping failures also leave
+  no staging folder. Windows x64 Debug built the package test target; focused
+  CTest passed 5/5 for package, page, PDF, Application query, and Platform
+  source suites; `git diff --check` passed.
+- Handoff: run the clean packaged Windows x64 Release 96-class Sub Prep route
+  against the Phase 9 memory budget. Full UI visual-state parity and the wider
+  Phase 2 exit work remain open. Nothing has been pushed.

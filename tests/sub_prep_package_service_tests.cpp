@@ -719,6 +719,95 @@ bool inspectGeneratedPdf(
 
     return true;
 }
+
+bool comparePdfToReference(
+    const QString& generatedPath,
+    const QString& referencePath,
+    QString* errorMessage
+    )
+{
+    QPdfDocument generated;
+    QPdfDocument reference;
+    if (generated.load(generatedPath) != QPdfDocument::Error::None
+        || generated.status() != QPdfDocument::Status::Ready
+        || reference.load(referencePath) != QPdfDocument::Error::None
+        || reference.status() != QPdfDocument::Status::Ready)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral(
+                "Generated or reference PDF could not be loaded."
+                );
+        }
+        return false;
+    }
+
+    if (generated.pageCount() != reference.pageCount())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral(
+                "Generated PDF page count differs from the reference."
+                );
+        }
+        return false;
+    }
+
+    for (int pageIndex = 0; pageIndex < generated.pageCount(); ++pageIndex)
+    {
+        if (generated.pagePointSize(pageIndex)
+            != reference.pagePointSize(pageIndex))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "Generated PDF page %1 has different dimensions."
+                    ).arg(pageIndex + 1);
+            }
+            return false;
+        }
+
+        if (generated.getAllText(pageIndex).text()
+            != reference.getAllText(pageIndex).text())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "Generated PDF page %1 text differs from the reference."
+                    ).arg(pageIndex + 1);
+            }
+            return false;
+        }
+    }
+
+#if defined(Q_OS_WIN)
+    for (int pageIndex = 0; pageIndex < generated.pageCount(); ++pageIndex)
+    {
+        const QSizeF pagePoints = generated.pagePointSize(pageIndex);
+        const QSize renderSize(
+            std::max(1, qRound(pagePoints.width() * 150.0 / 72.0)),
+            std::max(1, qRound(pagePoints.height() * 150.0 / 72.0))
+            );
+        const QImage generatedPage = generated.render(pageIndex, renderSize)
+            .convertToFormat(QImage::Format_ARGB32);
+        const QImage referencePage = reference.render(pageIndex, renderSize)
+            .convertToFormat(QImage::Format_ARGB32);
+        if (generatedPage.isNull() || referencePage.isNull()
+            || generatedPage != referencePage)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "Generated PDF page %1 rendering differs from the Windows reference."
+                    ).arg(pageIndex + 1);
+            }
+            return false;
+        }
+    }
+#endif
+
+    return true;
+}
 }
 
 namespace PdfPrintService
@@ -971,6 +1060,13 @@ void SubPrepPackageServiceTests
         SubPrepPackageService::generate(request);
     QCOMPARE(canceled.status, SubPrepPackageService::Status::Canceled);
     QVERIFY(canceled.printCanceled);
+    QVERIFY(!canceled.folderCreated);
+    QVERIFY(canceled.outputDirectory.isEmpty());
+    QCOMPARE(canceled.documentPaths.size(), 2);
+    for (const QString& canceledDocumentPath : canceled.documentPaths)
+    {
+        QVERIFY(!QFileInfo::exists(canceledDocumentPath));
+    }
 
     QTemporaryDir targetRoot;
     QVERIFY(targetRoot.isValid());
@@ -1127,8 +1223,25 @@ void SubPrepPackageServiceTests
                 capturePath,
                 &documentMetadata,
                 &inspectError
-                ),
+            ),
             qPrintable(inspectError)
+            );
+
+        const QString baselinePdfPath =
+            QDir::current().filePath(
+                QStringLiteral(
+                    "docs/qt-rewrite/visual-baseline/release/"
+                    "sub-prep-output/reference/%1"
+                    ).arg(QFileInfo(documentPath).fileName())
+                );
+        QString parityError;
+        QVERIFY2(
+            comparePdfToReference(
+                documentPath,
+                baselinePdfPath,
+                &parityError
+                ),
+            qPrintable(parityError)
             );
 
         documentMetadata.insert(
