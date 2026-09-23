@@ -1,26 +1,18 @@
 #pragma once
 
-#include "core/settingsmanager.h"
-
 #include <QObject>
 #include <QAction>
 #include <QActionGroup>
 #include <QHash>
 
 #include <functional>
-#include <type_traits>
-#include <utility>
 
 template <typename T>
 class OptionState : public QObject
 {
 public:
-    explicit OptionState(
-        const QString& settingsKey,
-        QObject* parent = nullptr
-        )
+    explicit OptionState(QObject* parent = nullptr)
         : QObject(parent)
-        , m_settingsKey(settingsKey)
     {
         m_group = new QActionGroup(this);
         m_group->setExclusive(true);
@@ -83,10 +75,6 @@ public:
         {
             onPersist(value);
         }
-        else
-        {
-            saveToSettings(value);
-        }
 
         if (onChanged)
             onChanged(value);
@@ -97,54 +85,9 @@ public:
         return m_currentValue;
     }
 
-    void loadFromSettings(T fallback = T())
-    {
-        T value =
-            static_cast<T>(
-                SettingsManager::instance().get(
-                            m_settingsKey,
-                            toStorageValue(fallback)
-                            ).toInt()
-                );
-
-        if (!m_actions.contains(value))
-        {
-            value = fallback;
-        }
-
-        if (!m_actions.contains(value))
-        {
-            return;
-        }
-
-        set(value);
-    }
-
-private:
-    void saveToSettings(T value)
-    {
-        SettingsManager::instance().set(
-            m_settingsKey,
-            toStorageValue(value)
-            );
-    }
-
-    static int toStorageValue(T value)
-    {
-        if constexpr (std::is_enum_v<T>)
-        {
-            return std::to_underlying(value);
-        }
-        else
-        {
-            return static_cast<int>(value);
-        }
-    }
-
 private:
     QActionGroup* m_group = nullptr;
     QHash<T, QAction*> m_actions;
     T m_currentValue{};
     bool m_hasValue = false;
-    QString m_settingsKey;
 };

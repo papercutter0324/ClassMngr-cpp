@@ -1,7 +1,6 @@
 #include "action_registry.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/state/option_state.h"
-#include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/styles/themed_icon_utils.h"
@@ -727,7 +726,7 @@ void ActionRegistry::createClassActions()
 void ActionRegistry::createOptionActions()
 {
     saveModeState =
-        new OptionState<SaveMode>(OptionKeys::SaveMode, this);
+        new OptionState<SaveMode>(this);
 
     auto automaticSaveAction =
         createCheckableAction(
@@ -779,7 +778,7 @@ void ActionRegistry::createOptionActions()
 
 
     themeState =
-        new OptionState<Theme>(OptionKeys::Theme, this);
+        new OptionState<Theme>(this);
 
     auto systemDefaultThemeAction =
         createCheckableAction(
@@ -856,7 +855,7 @@ void ActionRegistry::createOptionActions()
         );
 
     languageState =
-        new OptionState<Language>(OptionKeys::Language, this);
+        new OptionState<Language>(this);
 
     auto systemDefaultLanguageAction =
         createCheckableAction(
@@ -941,7 +940,7 @@ void ActionRegistry::createOptionActions()
         );
 
     fontSizeState =
-        new OptionState<FontSize>(OptionKeys::FontSize, this);
+        new OptionState<FontSize>(this);
 
     auto smallFontAction =
         createCheckableAction(
@@ -1041,10 +1040,7 @@ void ActionRegistry::createOptionActions()
         );
 
     documentPageSpacingState =
-        new OptionState<DocumentPageSpacing>(
-            OptionKeys::DocumentPageSpacing,
-            this
-            );
+        new OptionState<DocumentPageSpacing>(this);
 
     auto noDocumentPageSpacingAction =
         createCheckableAction(
@@ -1134,10 +1130,7 @@ void ActionRegistry::createOptionActions()
         );
 
     documentViewerBackgroundState =
-        new OptionState<DocumentViewerBackground>(
-            OptionKeys::DocumentViewerBackground,
-            this
-            );
+        new OptionState<DocumentViewerBackground>(this);
 
     auto defaultDocumentViewerBackgroundAction =
         createCheckableAction(
@@ -1212,10 +1205,7 @@ void ActionRegistry::createOptionActions()
         );
 
     aiCommentProviderState =
-        new OptionState<AiCommentProvider>(
-            OptionKeys::AiCommentProvider,
-            this
-            );
+        new OptionState<AiCommentProvider>(this);
 
     aiCommentProviderState->addOption(
         AiCommentProvider::ChatGPT,
@@ -1404,10 +1394,7 @@ void ActionRegistry::createOptionActions()
         );
 
     aiCommentVoiceState =
-        new OptionState<AiCommentVoice>(
-            OptionKeys::AiCommentVoice,
-            this
-            );
+        new OptionState<AiCommentVoice>(this);
     aiCommentVoiceState->addOption(
         AiCommentVoice::DirectToStudent,
         createCheckableAction(
