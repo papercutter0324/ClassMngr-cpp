@@ -58,6 +58,10 @@ regression coverage and removal of temporary paths.
 
 Use the standardized prefix `Phase# - ` for commits related to this rewrite, replacing `#` with the primary phase number. For example: `Phase0 - Add the initial baseline evidence`. For changes spanning multiple phases, use the phase that owns the primary deliverable.
 
+## Session handoff notes
+
+Update `agent_docs/latest_session_work.md` only when a handoff is requested.
+
 ## Phase 0 update - 2026-09-15
 
 - What changed: started the Phase 0 evidence set at commit `75755460`; added
