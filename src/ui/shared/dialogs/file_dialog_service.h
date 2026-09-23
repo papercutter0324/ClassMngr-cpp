@@ -1,24 +1,16 @@
 #pragma once
 
+#include "next/application/file_dialog_directory_preferences.h"
+
 #include <QString>
 #include <QStringList>
 
 #include <optional>
 
-class QSettings;
 class QWidget;
 
-enum class FileDialogPurpose
-{
-    General,
-    TeacherProfile,
-    ImportWorkbook,
-    ExportReport,
-    SignatureImage,
-    GeneratedPdf,
-    ClassTransfer,
-    SubPrepPackage
-};
+using FileDialogPurpose =
+    ClassMngr::Next::Application::FileDialogPurpose;
 
 enum class FileDialogBackend
 {
@@ -93,7 +85,8 @@ class QtFileDialogService final : public IFileDialogService
 {
 public:
     explicit QtFileDialogService(
-        QSettings* settings = nullptr,
+        ClassMngr::Next::Application::FileDialogDirectoryPreferencesPort&
+            directoryPreferences,
         FileDialogBackend backend = FileDialogBackend::PlatformDefault
         );
 
@@ -131,7 +124,8 @@ private:
         bool selectedPathIsDirectory
         );
 
-    QSettings* m_settings = nullptr;
+    ClassMngr::Next::Application::FileDialogDirectoryPreferencesPort&
+        m_directoryPreferences;
     FileDialogBackend m_backend = FileDialogBackend::PlatformDefault;
 };
 
@@ -139,6 +133,10 @@ namespace DialogServices
 {
 
 [[nodiscard]] IFileDialogService& fileDialogs();
+
+void setFileDialogServiceForApplication(
+    IFileDialogService* service
+    );
 
 void setFileDialogServiceForTesting(
     IFileDialogService* service

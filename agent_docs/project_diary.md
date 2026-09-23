@@ -224,3 +224,24 @@
 - Keep Phase 1 hosted closure separate from Phase 2 implementation. The
   macOS action, quality, dialog-policy, and release evidence are now recorded
   as green on commit `0883009d`; Phase 1 is closed and Phase 2 may proceed.
+
+## Phase 2 settings persistence — 2026-09-23
+
+- When cutting `OptionState` persistence over to a typed port, attach the
+  `onPersist` bridge before the first startup `set()`. Preserve exact stored
+  integer values and existing malformed-read fallbacks, and keep `onChanged`
+  wiring intact. Cover adapter round trips, invalid-write no-ops, startup
+  canonicalization, and reload behavior.
+
+## Phase 2 typed preference persistence — 2026-09-23
+
+- Attach each typed OptionState persistence callback before its first startup
+  mutation. Once every caller is explicit, remove the generic SettingsManager
+  fallback so new options cannot silently bypass their typed contract.
+- Preserve existing preference keys, values, malformed-read defaults, and
+  purpose slugs while moving writes behind typed ports.
+- Keep file-dialog directory values and purpose identifiers in the Qt-free
+  Application contract. Let the QSettings adapter own storage compatibility,
+  and compose the adapter and service in main before MainWindow. CMake should
+  express the Application-to-legacy-UI dependency explicitly without making
+  UI depend on Platform.

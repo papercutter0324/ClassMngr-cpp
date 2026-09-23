@@ -31,6 +31,7 @@ private slots:
     void cleanup();
     void usesTheExactCanonicalKey();
     void mapsAllStoredBackgroundValues();
+    void writesAllBackgroundValuesForRoundTrip();
     void missingInvalidAndUnknownValuesDefaultToDefault();
     void unavailableSettingsDefaultToDefault();
 
@@ -104,6 +105,40 @@ mapsAllStoredBackgroundValues()
             expectedValues[index]
             );
     }
+}
+
+void NextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests::
+writesAllBackgroundValuesForRoundTrip()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerDocumentViewerBackgroundPreferencesPort port;
+
+    const DocumentViewerBackground expectedValues[] = {
+        DocumentViewerBackground::Default,
+        DocumentViewerBackground::White,
+        DocumentViewerBackground::Black
+    };
+
+    for (int backgroundIndex = 0; backgroundIndex < 3; ++backgroundIndex)
+    {
+        port.write(expectedValues[backgroundIndex]);
+        QCOMPARE(
+            settings.get(documentViewerBackgroundKey()).toInt(),
+            backgroundIndex
+            );
+        QCOMPARE(
+            port.read(),
+            expectedValues[backgroundIndex]
+            );
+    }
+
+    port.write(
+        static_cast<DocumentViewerBackground>(99)
+        );
+    QCOMPARE(
+        settings.get(documentViewerBackgroundKey()).toInt(),
+        2
+        );
 }
 
 void NextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests::

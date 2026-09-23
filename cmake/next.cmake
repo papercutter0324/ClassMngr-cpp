@@ -63,6 +63,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/save_mode_preferences.h
     src/next/application/theme_preferences_port.h
     src/next/application/dialog_geometry_preferences_port.h
+    src/next/application/file_dialog_directory_preferences.h
     src/next/application/language_preferences_port.h
     src/next/application/upcoming_birthday_dismissal_port.h
     src/next/application/class_day_filter_reset_policy.h
@@ -117,6 +118,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/qt_job_worker_lifetime.h
     src/next/platform/qt_job_worker_adapters.h
     src/next/platform/theme_preference_port.h
+    src/next/platform/qsettings_file_dialog_directory_preferences_adapter.h
     src/next/platform/language_preference_port.h
     src/next/platform/application_services_schedule_display_preferences_port.h
     src/next/platform/application_services_schedule_display_mode_preferences_port.h

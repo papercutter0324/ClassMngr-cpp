@@ -31,6 +31,7 @@ private slots:
     void cleanup();
     void usesTheExactCanonicalKey();
     void mapsAllStoredThemeValues();
+    void writesCanonicalThemeValues();
     void missingAndUnknownValuesDefaultToSystemDefault();
     void unavailableSettingsDefaultToSystemDefault();
 
@@ -99,6 +100,35 @@ mapsAllStoredThemeValues()
             expectedThemes[storedValue]
             );
     }
+}
+
+void NextPlatformSettingsManagerThemePreferencesPortTests::
+writesCanonicalThemeValues()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerThemePreferencesPort port;
+
+    const Theme themes[] = {
+        Theme::Dark,
+        Theme::Light,
+        Theme::SystemDefault
+    };
+
+    for (int storedValue = 0; storedValue < 3; ++storedValue)
+    {
+        port.write(themes[storedValue]);
+        QCOMPARE(
+            settings.get(themeKey()).toInt(),
+            storedValue
+            );
+    }
+
+    settings.set(themeKey(), 17);
+    port.write(static_cast<Theme>(17));
+    QCOMPARE(
+        settings.get(themeKey()).toInt(),
+        17
+        );
 }
 
 void NextPlatformSettingsManagerThemePreferencesPortTests::

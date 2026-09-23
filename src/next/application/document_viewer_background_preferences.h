@@ -18,6 +18,10 @@ public:
     virtual ~DocumentViewerBackgroundPreferencesPort() = default;
 
     [[nodiscard]] virtual DocumentViewerBackground read() const = 0;
+
+    virtual void write(
+        DocumentViewerBackground background
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

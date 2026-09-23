@@ -52,6 +52,35 @@ public:
         }
     }
 
+    void write(
+        const Application::DocumentViewerBackground background
+        ) const override
+    {
+        int storedBackground = 0;
+        switch (background)
+        {
+        case Application::DocumentViewerBackground::Default:
+            storedBackground = 0;
+            break;
+
+        case Application::DocumentViewerBackground::White:
+            storedBackground = 1;
+            break;
+
+        case Application::DocumentViewerBackground::Black:
+            storedBackground = 2;
+            break;
+
+        default:
+            return;
+        }
+
+        SettingsManager::instance().set(
+            key(),
+            storedBackground
+            );
+    }
+
 private:
     [[nodiscard]] static QString key()
     {

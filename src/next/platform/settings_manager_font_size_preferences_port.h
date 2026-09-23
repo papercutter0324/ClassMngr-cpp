@@ -11,7 +11,7 @@ namespace ClassMngr::Next::Platform
 
 // Qt-boundary adapter for the startup font-size read. The legacy
 // SettingsManager singleton and integer conversion stay here; ActionRegistry
-// remains the compatibility reader/writer and menu owner for this option.
+// remains the compatibility bridge and menu owner for this option.
 class SettingsManagerFontSizePreferencesPort final
     : public Application::FontSizePreferencesPort
 {
@@ -39,6 +39,39 @@ public:
         default:
             return Application::FontSize::Normal;
         }
+    }
+
+    void write(
+        const Application::FontSize fontSize
+        ) const override
+    {
+        int storedValue = 0;
+        switch (fontSize)
+        {
+        case Application::FontSize::Small:
+            storedValue = -2;
+            break;
+
+        case Application::FontSize::Normal:
+            storedValue = 0;
+            break;
+
+        case Application::FontSize::Large:
+            storedValue = 2;
+            break;
+
+        case Application::FontSize::ExtraLarge:
+            storedValue = 4;
+            break;
+
+        default:
+            return;
+        }
+
+        SettingsManager::instance().set(
+            key(),
+            storedValue
+            );
     }
 
 private:

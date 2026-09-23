@@ -299,3 +299,36 @@ separate on a host with Xvfb and loopback access.
 - Commit `0883009d` records this production fix; the hosted baseline and
   release workflows passed on that source. A later local Phase 2 contract
   slice is recorded separately above.
+
+## Current Deployment Handoff: phase2_action_registry_persistence_20260923 (paused)
+
+- The user requested a pause, a handoff, a commit, and a push after the
+  current Phase 2 work. The three slices completed in this continuation are
+  committed as c30f13e0, 7caef52e, and df8202ed.
+- Theme persistence now uses the typed ThemePreferencesPort and retains the
+  options/theme values Dark=0, Light=1, and SystemDefault=2. The generic
+  OptionState SettingsManager fallback and settings-key constructor argument
+  were removed after all eight ActionRegistry states received typed callbacks.
+- File-dialog directory preferences now use a Qt-free Application port and a
+  QSettings Platform adapter. The adapter retains all eight existing
+  file-dialog/directories/<purpose> keys and purpose slugs. QtFileDialogService
+  receives the Application port; main constructs the adapter and service
+  before MainWindow. The test-service override remains available. CMake source
+  ownership and the Application dependency on ClassMngrUiShared are explicit;
+  UI has no Platform dependency.
+- Independent verification passed ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests
+  and ClassMngrAiCommentOptionsTests (2/2); ClassMngrAiCommentOptionsTests
+  and ClassMngrStartupVisualSettingsTests (2/2); then ClassMngrDialogServicesTests
+  and ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests
+  (2/2). The final configure validated 840 handwritten sources and Next target
+  assertions. ClassMngr and both focused test targets built; git diff --check
+  passed.
+- The file-dialog home-directory fallback assertion runs only when
+  QStandardPaths returns an empty writable location. Verification did not
+  force that condition. No hosted cross-platform run was performed.
+- Two independent scans found no other live direct application preference
+  persistence candidate. Unused legacy settings helpers and a read-only
+  PowerPoint registry probe remain outside the migration scope.
+- Phase 2 is paused here. On resume, select a new application-contract slice
+  from the plan. Keep the Linux Phase 0 follow-up separate until it can run on
+  a host with Xvfb and loopback access.

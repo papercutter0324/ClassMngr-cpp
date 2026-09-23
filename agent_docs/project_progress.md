@@ -1,9 +1,10 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: phase2_domain_contract_kickoff_20260919. Route: Heavy.
+Current deployment: phase2_action_registry_persistence_20260923. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
-the first Phase 2 domain-contract slice on top of that verified baseline.
+continued Phase 2 domain and application-contract work on top of that verified
+baseline.
 
 ## Goal
 
@@ -142,11 +143,13 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Continue Phase 2 with the first application use-case input/output contract over
-the new domain types. The Linux Phase 0 follow-up remains supplemental and
-should continue separately on a host with Xvfb and loopback access. Keep
-next-generation target names distinct from legacy object targets such as
-ClassMngrDomain and ClassMngrUiShared.
+Phase 2 settings persistence is paused after three committed slices: typed
+ActionRegistry theme persistence, removal of OptionState generic
+SettingsManager persistence, and typed file-dialog directory preferences.
+The scoped migration and independent scans found no other live application
+preference persistence candidate. On resume, select the next application
+contract slice from the Phase 2 plan. Keep the Linux Phase 0 follow-up separate
+on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 
@@ -171,3 +174,36 @@ direct async test (3/3), synchronous/shared-policy coverage, and
 `git diff --check`. A local full CTest run was 62/67 because five unrelated
 GUI/loopback tests require unavailable screen or port services; no dialog
 service test failed. No workflow files were changed.
+
+### Phase 2 ActionRegistry persistence pause — 2026-09-23
+
+The latest committed slices are theme persistence (c30f13e0), removal of the
+generic OptionState SettingsManager fallback (7caef52e), and typed file-dialog
+directory preferences (df8202ed). Theme keeps the existing options/theme
+values Dark=0, Light=1, and SystemDefault=2. All eight ActionRegistry option
+states now use typed persistence callbacks; OptionState no longer accepts a
+settings key or saves through SettingsManager.
+
+The file-dialog preference contract is Qt-free and owned by Application. Its
+QSettings adapter preserves all eight file-dialog/directories/<purpose> keys
+and existing purpose slugs. QtFileDialogService consumes the Application port;
+main constructs the adapter and service before MainWindow, while the existing
+test-service override retains priority. CMake records the new source ownership
+and the Application dependency on legacy ClassMngrUiShared without adding a
+UI-to-Platform dependency.
+
+Verification passed the theme port and AI comment options tests (2/2), the
+AI comment options and startup visual settings tests (2/2), and the dialog
+services and QSettings adapter tests (2/2). The final configure validated
+840 handwritten sources and the ClassMngrNext dependency assertions. ClassMngr
+and both focused test targets built, and git diff --check passed. The home
+directory fallback assertion is conditional on the platform returning an
+empty writable location; that condition was not forced during verification.
+No hosted cross-platform run was performed.
+
+Phase 2 is paused at the user request. Two independent scans found no other
+live direct application preference persistence candidate; unused legacy
+settings helpers and the read-only PowerPoint registry probe remain outside
+the migration scope. Next entry point: select a new application-contract
+slice from the Phase 2 plan. Keep the supplemental Linux Phase 0 follow-up
+separate on a host with Xvfb and loopback access.

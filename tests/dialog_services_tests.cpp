@@ -6,19 +6,50 @@
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QSettings>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTimer>
 #include <QWidget>
 
+#include <map>
+#include <string>
+#include <string_view>
+
 namespace
 {
+
+class InMemoryFileDialogDirectoryPreferences final
+    : public ClassMngr::Next::Application::
+          FileDialogDirectoryPreferencesPort
+{
+public:
+    [[nodiscard]] std::string readDirectory(
+        const FileDialogPurpose purpose
+        ) const override
+    {
+        ++readCount;
+        const auto it = directories.find(purpose);
+        return it == directories.end() ? std::string() : it->second;
+    }
+
+    void writeDirectory(
+        const FileDialogPurpose purpose,
+        const std::string_view utf8Directory
+        ) const override
+    {
+        directories[purpose] = std::string(utf8Directory);
+    }
+
+    mutable std::map<FileDialogPurpose, std::string> directories;
+    mutable int readCount = 0;
+};
 
 template<typename Dialog>
 Dialog* findServiceDialog(
@@ -60,14 +91,20 @@ private slots:
     void actionPromptMapsRolesDefaultsAndResult();
     void platformFileDialogPolicyIsExplicit();
     void qtFileDialogAppliesSharedPolicy();
+    void qtFileDialogRestoresStoredDirectoryForBlankRequest();
+    void qtFileDialogExplicitDirectoryTakesPrecedence();
+    void qtFileDialogUsesPurposeSpecificSystemDefaultWhenPreferenceIsEmpty_data();
+    void qtFileDialogUsesPurposeSpecificSystemDefaultWhenPreferenceIsEmpty();
     void saveFileReturnsAccessoryChoice();
     void openFileCanonicalizesAndRemembersPurposeDirectory();
+    void selectedDirectoryCanonicalizesAndRemembersPurposeDirectory();
 };
 
 void DialogServicesTests::cleanup()
 {
     DialogServices::setUserPromptServiceForTesting(nullptr);
     DialogServices::setFileDialogServiceForTesting(nullptr);
+    DialogServices::setFileDialogServiceForApplication(nullptr);
 }
 
 void DialogServicesTests::fakePromptServiceRecordsRequestsAndScriptsChoices()
@@ -189,8 +226,25 @@ void DialogServicesTests::fakeFileDialogServiceRecordsRequestsAndScriptsResults(
 void DialogServicesTests::applicationFileDialogAccessCanBeOverridden()
 {
     FakeFileDialogService fake;
+    InMemoryFileDialogDirectoryPreferences preferences;
+    QtFileDialogService applicationService(
+        preferences,
+        FileDialogBackend::Qt
+        );
+    DialogServices::setFileDialogServiceForApplication(
+        &applicationService
+        );
+    QCOMPARE(
+        &DialogServices::fileDialogs(),
+        static_cast<IFileDialogService*>(&applicationService)
+        );
+
     fake.scriptedDirectories.enqueue(QStringLiteral("/tmp/reports"));
     DialogServices::setFileDialogServiceForTesting(&fake);
+    QCOMPARE(
+        &DialogServices::fileDialogs(),
+        static_cast<IFileDialogService*>(&fake)
+        );
 
     const std::optional<QString> result =
         DialogServices::fileDialogs().selectDirectory(
@@ -626,12 +680,9 @@ void DialogServicesTests::qtFileDialogAppliesSharedPolicy()
 {
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
-    QSettings settings(
-        temporaryDirectory.filePath(QStringLiteral("settings.ini")),
-        QSettings::IniFormat
-        );
+    InMemoryFileDialogDirectoryPreferences preferences;
     QWidget parent;
-    QtFileDialogService service(&settings, FileDialogBackend::Qt);
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
     struct ObservedPolicy
     {
         bool found = false;
@@ -703,15 +754,159 @@ void DialogServicesTests::qtFileDialogAppliesSharedPolicy()
     QVERIFY(!result.has_value());
 }
 
+void DialogServicesTests::
+qtFileDialogRestoresStoredDirectoryForBlankRequest()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString storedDirectory = temporaryDirectory.filePath(
+        QStringLiteral("stored")
+        );
+    QVERIFY(QDir().mkpath(storedDirectory));
+
+    InMemoryFileDialogDirectoryPreferences preferences;
+    preferences.directories[FileDialogPurpose::ImportWorkbook] =
+        storedDirectory.toUtf8().toStdString();
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
+
+    bool inspected = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            QCOMPARE(
+                dialog->directory().canonicalPath(),
+                QFileInfo(storedDirectory).canonicalFilePath()
+                );
+            inspected = true;
+            dialog->reject();
+        }
+        );
+
+    QVERIFY(!service.openFile(
+        OpenFileRequest{
+            .title = QStringLiteral("Import Workbook"),
+            .purpose = FileDialogPurpose::ImportWorkbook
+        }
+        ).has_value());
+    QVERIFY(inspected);
+    QCOMPARE(preferences.readCount, 1);
+}
+
+void DialogServicesTests::qtFileDialogExplicitDirectoryTakesPrecedence()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString storedDirectory = temporaryDirectory.filePath(
+        QStringLiteral("stored")
+        );
+    const QString explicitDirectory = temporaryDirectory.filePath(
+        QStringLiteral("explicit")
+        );
+    QVERIFY(QDir().mkpath(storedDirectory));
+    QVERIFY(QDir().mkpath(explicitDirectory));
+
+    InMemoryFileDialogDirectoryPreferences preferences;
+    preferences.directories[FileDialogPurpose::ImportWorkbook] =
+        storedDirectory.toUtf8().toStdString();
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
+
+    bool inspected = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            QCOMPARE(
+                dialog->directory().canonicalPath(),
+                QFileInfo(explicitDirectory).canonicalFilePath()
+                );
+            inspected = true;
+            dialog->reject();
+        }
+        );
+
+    QVERIFY(!service.openFile(
+        OpenFileRequest{
+            .title = QStringLiteral("Import Workbook"),
+            .purpose = FileDialogPurpose::ImportWorkbook,
+            .initialDirectory = explicitDirectory
+        }
+        ).has_value());
+    QVERIFY(inspected);
+    QCOMPARE(preferences.readCount, 0);
+}
+
+void DialogServicesTests::
+qtFileDialogUsesPurposeSpecificSystemDefaultWhenPreferenceIsEmpty_data()
+{
+    QTest::addColumn<int>("purpose");
+    QTest::addColumn<int>("location");
+
+    QTest::newRow("general uses documents")
+        << static_cast<int>(FileDialogPurpose::General)
+        << static_cast<int>(QStandardPaths::DocumentsLocation);
+    QTest::newRow("signature image uses pictures")
+        << static_cast<int>(FileDialogPurpose::SignatureImage)
+        << static_cast<int>(QStandardPaths::PicturesLocation);
+}
+
+void DialogServicesTests::
+qtFileDialogUsesPurposeSpecificSystemDefaultWhenPreferenceIsEmpty()
+{
+    QFETCH(int, purpose);
+    QFETCH(int, location);
+
+    const QString systemDirectory = QStandardPaths::writableLocation(
+        static_cast<QStandardPaths::StandardLocation>(location)
+        );
+    const QString expectedDirectory = systemDirectory.isEmpty()
+        ? QDir::homePath()
+        : systemDirectory;
+
+    InMemoryFileDialogDirectoryPreferences preferences;
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
+
+    bool inspected = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            QCOMPARE(
+                dialog->directory().absolutePath(),
+                QDir::cleanPath(expectedDirectory)
+                );
+            inspected = true;
+            dialog->reject();
+        }
+        );
+
+    QVERIFY(!service.openFile(
+        OpenFileRequest{
+            .title = QStringLiteral("Open"),
+            .purpose = static_cast<FileDialogPurpose>(purpose)
+        }
+        ).has_value());
+    QVERIFY(inspected);
+}
+
 void DialogServicesTests::saveFileReturnsAccessoryChoice()
 {
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
-    QSettings settings(
-        temporaryDirectory.filePath(QStringLiteral("settings.ini")),
-        QSettings::IniFormat
-        );
-    QtFileDialogService service(&settings, FileDialogBackend::Qt);
+    InMemoryFileDialogDirectoryPreferences preferences;
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
     const QString filePath = temporaryDirectory.filePath(
         QStringLiteral("export.pdf")
         );
@@ -766,11 +961,8 @@ void DialogServicesTests::openFileCanonicalizesAndRemembersPurposeDirectory()
     QVERIFY(file.open(QIODevice::WriteOnly));
     file.close();
 
-    QSettings settings(
-        temporaryDirectory.filePath(QStringLiteral("settings.ini")),
-        QSettings::IniFormat
-        );
-    QtFileDialogService service(&settings, FileDialogBackend::Qt);
+    InMemoryFileDialogDirectoryPreferences preferences;
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
     QTimer::singleShot(
         0,
         [filePath]()
@@ -795,12 +987,54 @@ void DialogServicesTests::openFileCanonicalizesAndRemembersPurposeDirectory()
     QVERIFY(result.has_value());
     QCOMPARE(*result, QFileInfo(filePath).canonicalFilePath());
     QCOMPARE(
-        settings.value(
-            QStringLiteral(
-                "file-dialog/directories/import-workbook"
-                )
-            ).toString(),
-        QFileInfo(temporaryDirectory.path()).canonicalFilePath()
+        preferences.directories.at(FileDialogPurpose::ImportWorkbook),
+        QFileInfo(temporaryDirectory.path())
+            .canonicalFilePath()
+            .toUtf8()
+            .toStdString()
+        );
+}
+
+void DialogServicesTests::
+selectedDirectoryCanonicalizesAndRemembersPurposeDirectory()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString selectedDirectory = temporaryDirectory.filePath(
+        QStringLiteral("selected")
+        );
+    QVERIFY(QDir().mkpath(selectedDirectory));
+
+    InMemoryFileDialogDirectoryPreferences preferences;
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
+    QTimer::singleShot(
+        0,
+        [selectedDirectory]()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            dialog->setDirectory(selectedDirectory);
+            static_cast<QDialog*>(dialog)->accept();
+        }
+        );
+
+    const std::optional<QString> result = service.selectDirectory(
+        DirectoryRequest{
+            .title = QStringLiteral("Choose Directory"),
+            .purpose = FileDialogPurpose::ClassTransfer,
+            .initialDirectory = temporaryDirectory.path()
+        }
+        );
+
+    QVERIFY(result.has_value());
+    const QString canonicalDirectory =
+        QFileInfo(selectedDirectory).canonicalFilePath();
+    QCOMPARE(*result, canonicalDirectory);
+    QCOMPARE(
+        preferences.directories.at(FileDialogPurpose::ClassTransfer),
+        canonicalDirectory.toUtf8().toStdString()
         );
 }
 

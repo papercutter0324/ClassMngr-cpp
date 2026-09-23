@@ -20,6 +20,9 @@ private slots:
     void themeDefaultsToSystemDefaultAndPersists();
     void saveModeStartupAndWritesCanonicalValues();
     void providerAndVoiceDefaultsPersist();
+    void fontSizeStartupReloadAndCanonicalPersistence();
+    void documentPageSpacingStartupReloadAndCanonicalPersistence();
+    void documentViewerBackgroundStartupReloadAndCanonicalPersistence();
     void customWebsitePersistenceAndInvalidFallback();
     void providerUrlsAndCustomValidation();
     void updatePreferencesDefaultAndPersist();
@@ -57,10 +60,32 @@ void AiCommentOptionsTests::themeDefaultsToSystemDefaultAndPersists()
         defaults.themeState->current(),
         Theme::SystemDefault
         );
+    QCOMPARE(
+        settings.get(
+            QString::fromUtf8(OptionKeys::Theme)
+            ).toInt(),
+        2
+        );
     QVERIFY(
         defaults.themeState
             ->action(Theme::SystemDefault)
             ->isChecked()
+        );
+
+    defaults.themeState->set(Theme::Dark);
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::Theme)).toInt(),
+        0
+        );
+    defaults.themeState->set(Theme::Light);
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::Theme)).toInt(),
+        1
+        );
+    defaults.themeState->set(Theme::SystemDefault);
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::Theme)).toInt(),
+        2
         );
 
     defaults.themeState->set(Theme::Light);
@@ -205,6 +230,138 @@ void AiCommentOptionsTests::
         reloadedDirect.aiCommentVoiceState->current(),
         AiCommentVoice::DirectToStudent
         );
+}
+
+void AiCommentOptionsTests::
+    fontSizeStartupReloadAndCanonicalPersistence()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString fontSizeKey =
+        QString::fromUtf8(OptionKeys::FontSize);
+    settings.remove(fontSizeKey);
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.fontSizeState);
+    QCOMPARE(
+        defaults.fontSizeState->current(),
+        FontSize::Normal
+        );
+    QCOMPARE(settings.get(fontSizeKey).toInt(), 0);
+
+    const FontSize expectedValues[] = {
+        FontSize::Small,
+        FontSize::Large,
+        FontSize::ExtraLarge,
+        FontSize::Normal
+    };
+    const int expectedStoredValues[] = {-2, 2, 4, 0};
+
+    for (int index = 0; index < 4; ++index)
+    {
+        defaults.fontSizeState->set(expectedValues[index]);
+        QCOMPARE(
+            settings.get(fontSizeKey).toInt(),
+            expectedStoredValues[index]
+            );
+        settings.sync();
+
+        ActionRegistry reloaded;
+        reloaded.createActions();
+        QCOMPARE(
+            reloaded.fontSizeState->current(),
+            expectedValues[index]
+            );
+    }
+}
+
+void AiCommentOptionsTests::
+    documentPageSpacingStartupReloadAndCanonicalPersistence()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString spacingKey =
+        QString::fromUtf8(OptionKeys::DocumentPageSpacing);
+    settings.remove(spacingKey);
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.documentPageSpacingState);
+    QCOMPARE(
+        defaults.documentPageSpacingState->current(),
+        DocumentPageSpacing::Small
+        );
+    QCOMPARE(settings.get(spacingKey).toInt(), 1);
+
+    const DocumentPageSpacing expectedValues[] = {
+        DocumentPageSpacing::None,
+        DocumentPageSpacing::Medium,
+        DocumentPageSpacing::Large,
+        DocumentPageSpacing::Small
+    };
+    const int expectedStoredValues[] = {0, 2, 3, 1};
+
+    for (int index = 0; index < 4; ++index)
+    {
+        defaults.documentPageSpacingState->set(
+            expectedValues[index]
+            );
+        QCOMPARE(
+            settings.get(spacingKey).toInt(),
+            expectedStoredValues[index]
+            );
+        settings.sync();
+
+        ActionRegistry reloaded;
+        reloaded.createActions();
+        QCOMPARE(
+            reloaded.documentPageSpacingState->current(),
+            expectedValues[index]
+            );
+    }
+}
+
+void AiCommentOptionsTests::
+    documentViewerBackgroundStartupReloadAndCanonicalPersistence()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString backgroundKey =
+        QString::fromUtf8(OptionKeys::DocumentViewerBackground);
+    settings.remove(backgroundKey);
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.documentViewerBackgroundState);
+    QCOMPARE(
+        defaults.documentViewerBackgroundState->current(),
+        DocumentViewerBackground::Default
+        );
+    QCOMPARE(settings.get(backgroundKey).toInt(), 0);
+
+    const DocumentViewerBackground expectedValues[] = {
+        DocumentViewerBackground::White,
+        DocumentViewerBackground::Black,
+        DocumentViewerBackground::Default
+    };
+    const int expectedStoredValues[] = {1, 2, 0};
+
+    for (int index = 0; index < 3; ++index)
+    {
+        defaults.documentViewerBackgroundState->set(
+            expectedValues[index]
+            );
+        QCOMPARE(
+            settings.get(backgroundKey).toInt(),
+            expectedStoredValues[index]
+            );
+        settings.sync();
+
+        ActionRegistry reloaded;
+        reloaded.createActions();
+        QCOMPARE(
+            reloaded.documentViewerBackgroundState->current(),
+            expectedValues[index]
+            );
+    }
 }
 
 void AiCommentOptionsTests::

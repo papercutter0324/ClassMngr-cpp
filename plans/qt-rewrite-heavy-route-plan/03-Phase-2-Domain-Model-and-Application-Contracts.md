@@ -3160,3 +3160,84 @@ An independent elevated Debug rebuild passed. The provider adapter passed 7/7,
 AI/ActionRegistry 10/10, voice 7/7, language adapter and regression 8/8 each,
 and SaveMode 6/6. Static Qt-free, call-site, ownership, and diff checks passed;
 every test used a fresh temporary `CLASSMNGR_SETTINGS_ROOT`.
+
+#### Progress update - 2026-09-23 (typed document-viewer background persistence)
+
+Against baseline commit `2d7d4a29` (`Phase2 - Cut ActionRegistry AI provider
+persistence over`), added the typed document-viewer background write contract.
+The five-file scope is:
+
+- `src/next/application/document_viewer_background_preferences.h`
+- `src/next/platform/settings_manager_document_viewer_background_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_document_viewer_background_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+Canonical `options/documentViewerBackground` values are 0=`Default`,
+1=`White`, and 2=`Black`. `ActionRegistry` installs `onPersist` before startup
+selection; malformed or unknown reads fall back to `Default`. The existing
+MainWindow `onChanged` propagation and PDF viewer behavior remain intact; no
+CMake changes were needed.
+
+The focused Debug rebuild passed after retrying a Visual Studio FileTracker
+access-denied failure with elevated access. A serial CTest run passed all 9
+selected targets, including the background adapter, AI/ActionRegistry,
+PageManager, StartupVisualSettings, and provider, voice, language, and SaveMode
+regressions. CMake ownership validation passed with 837 handwritten sources;
+Qt-free, call-site, source-path, and diff checks passed. Tests used an isolated
+`CLASSMNGR_SETTINGS_ROOT`.
+
+#### Progress update - 2026-09-23 (typed document-page-spacing persistence)
+
+Against baseline commit `790082c4` (`Phase2 - Cut ActionRegistry viewer
+background persistence over`), completed the typed document-page-spacing
+persistence cutover. The Qt-free `DocumentPageSpacingPreferencesPort` now
+exposes `write()`, and the SettingsManager adapter persists valid `None`,
+`Small`, `Medium`, and `Large` values as `0`, `1`, `2`, and `3`. Invalid typed
+values are rejected without modifying storage. Existing reads remain
+compatible: missing or unknown values map to `Small`, while malformed text
+continues through unchecked `QVariant::toInt()` and maps to `None`.
+
+`ActionRegistry` installs typed persistence before initial state selection;
+MainWindow/PageManager update propagation remains unchanged. The expected
+implementation/test scope is:
+
+- `src/next/application/document_page_spacing_preferences.h`
+- `src/next/platform/settings_manager_document_page_spacing_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_document_page_spacing_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+No CMake changes were made.
+
+Independent review, build, and serial CTest passed for
+`ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests`,
+`ClassMngrAiCommentOptionsTests`, `ClassMngrPageManagerTests`, and
+`ClassMngrStartupVisualSettingsTests`; `git diff --check` was clean. Phase 2
+remains open; this document-page-spacing persistence boundary is closed.
+
+#### Progress update - 2026-09-23 (typed font-size persistence cutover)
+
+Completed the typed FontSize writer cutover in the current Phase 2 working
+tree. The Qt-free `FontSizePreferencesPort` now exposes `write()`, and the
+SettingsManager adapter writes only canonical offsets `Small=-2`, `Normal=0`,
+`Large=2`, and `ExtraLarge=4`; invalid typed values are ignored without
+changing storage. Missing, unknown, and malformed reads continue to fall back
+to `Normal`.
+
+`ActionRegistry` installs typed `onPersist` before startup selection and no
+longer performs the direct raw write. `FontSizeController` `onChanged`
+behavior remains unchanged. The exact five-file scope is:
+
+- `src/next/application/font_size_preferences.h`
+- `src/next/platform/settings_manager_font_size_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_font_size_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+Independent source review passed. The targeted Debug rebuild succeeded after
+the normal MSBuild FileTracker `E_ACCESSDENIED` retry with elevated access;
+registered CTest targets passed: `ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests`,
+`ClassMngrAiCommentOptionsTests`, `ClassMngrStartupVisualSettingsTests`, and
+`ClassMngrFontManagerTests`. No CMake changes were made; `git diff --check`
+was clean. Phase 2 remains open.
