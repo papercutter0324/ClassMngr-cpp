@@ -3032,12 +3032,34 @@ F23 adapter, F22 adapter, and CalendarEventCache. No dedicated CalendarPage
 test exists. This closes only the campus-directory migration seam; it does not
 complete calendar/workbook migration or Phase 2.
 
-## Next bounded mapping: personal signature-image caller cutover
+## Verified F24 personal signature-image caller cutover
 
-Route the five `PersonalSignatureImagePort` reads in Initial Setup, My
-Information, and Speaking Eval through `ApplicationServices*`. Preserve the
-existing availability guards, `myInfo/signatureImage` key, Base64 decoding,
-one-time `SignatureImage::prepareForEmbedding`, and empty results for missing,
-invalid, unavailable, or corrupt values. Custom colors, workbook parsing,
-generic settings, remaining feature-service reads, and document-service work
-remain open.
+`ApplicationServicesPersonalSignatureImagePort` retains its
+`ApplicationServices&` constructor, adds a nullable `ApplicationServices*`
+constructor, and removes the `SettingsService*` constructor. The five reads in
+Initial Setup (two), My Information (one), and Speaking Eval (two) now pass
+`setup->services()` or `m_services` through the Application adapter. The
+`myInfo/signatureImage` key, Base64 conversion, one-time
+`SignatureImage::prepareForEmbedding`, read-only behavior, empty results, and
+existing availability guards remain unchanged.
+
+Executor verification reused the Ninja/MSVC x64 configure, validated 878
+handwritten owners, built `ClassMngr` and the adapter, Initial Setup, and
+MyWorkspace targets, and passed focused CTest 3/3; source scan and
+`git diff --check` were clean. Independent fresh configure/build also validated
+878 owners and compiled all targets. Its focused CTest passed 2/3: adapter and
+Initial Setup passed, while three MyWorkspace PageManager cases failed because
+the `documents` and `campuses` resource packs were unavailable. Running all 18
+MyWorkspace functions individually confirmed the F24 image preview,
+missing/corrupt/unavailable image, display-name, and aggregate-save cases
+passed; only those same three resource-dependent cases failed. This is a
+fresh-tree limitation outside the F24 migration scope.
+
+## Next bounded mapping: custom-color adapter constructor cleanup
+
+Cut over the remaining seven custom-color adapter calls across five UI files to
+`ApplicationServices*`, removing the adapter's `SettingsService*` constructor.
+Preserve `custom_colors`, all 16 palette slots, stored payload formats,
+defaults, unrelated settings, and getColor load-before/save-after/cancel
+behavior. Generic settings, workbook decoding, other feature services, and
+document boundaries remain open; Phase 2 remains in progress.

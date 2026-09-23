@@ -199,9 +199,10 @@ the F22/F23 adapter suites. Focused CTest passed 3/3 in each build. Source
 comparison confirmed availability timing, alias order, matching, trimmed
 display fallback, whitespace-only code preservation, and final empty removal
 and deduplication. No dedicated CalendarPage behavior target exists. Next:
-cut over remaining PersonalSignatureImagePort callers to ApplicationServices*,
-then continue custom-color, workbook, generic-settings, feature-service, and
-document boundaries. The Phase 2 exit gate remains open.
+F24 completes the PersonalSignatureImagePort caller cutover to
+ApplicationServices*. The next bounded slice is the remaining custom-color
+adapter constructor cutover, followed by workbook, generic-settings,
+feature-service, and document boundaries. The Phase 2 exit gate remains open.
 
 ### Phase 2 kickoff — 2026-09-19
 
@@ -330,3 +331,19 @@ Ninja/MSVC x64 build passed for ClassMngr and both importer tests; CTest passed
 passed. Next: give CalendarPage a separate campus metadata query while keeping
 its matching and alias behavior in the UI. Workbook decoding, generic settings,
 other feature-service, and broader document migrations remain open.
+
+### Phase 2 PersonalSignatureImagePort caller cutover - 2026-09-24
+
+Initial Setup, My Information, and Speaking Eval now pass `ApplicationServices*`
+to the read-only signature-image adapter; its `SettingsService*` constructor
+was removed. The exact key, Base64 decoding, one-time image preparation, empty
+results, and caller guards remain unchanged. Executor build and focused CTest
+passed 3/3. Independent fresh Ninja/MSVC x64 configure validated 878 owners and
+all targets built; adapter and Setup suites passed. Three MyWorkspace top-level
+cases failed because `documents` and `campuses` packs were unavailable. All 18
+MyWorkspace functions were run individually: F24 signature-image, missing,
+corrupt, unavailable, display-name, and aggregate-save cases passed; only the
+same three resource-pack-dependent cases failed. Next: remove the custom-color
+adapter's remaining `SettingsService*` caller path while preserving stored
+palette behavior. Workbook, generic settings, remaining feature services, and
+document boundaries remain open; the Phase 2 exit gate is not met.

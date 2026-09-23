@@ -960,6 +960,38 @@ separate on a host with Xvfb and loopback access.
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
 
 
+### Phase 2 PersonalSignatureImagePort caller cutover - 2026-09-24
+
+- Kept the reference constructor and added a nullable `ApplicationServices*`
+  constructor to `ApplicationServicesPersonalSignatureImagePort`; removed the
+  `SettingsService*` constructor. The five reads in Initial Setup (two), My
+  Information (one), and Speaking Eval (two) now pass `setup->services()` or
+  `m_services`. No unrelated settings reads/writes changed.
+- Preserved the `myInfo/signatureImage` key, Base64 conversion, one-time
+  `SignatureImage::prepareForEmbedding`, read-only behavior, empty results for
+  missing/invalid/unavailable/corrupt values, and existing caller guards. The
+  null-service adapter case now explicitly passes a null `ApplicationServices*`.
+- Executor build succeeded for ClassMngr and the adapter, Initial Setup, and
+  MyWorkspace targets; its focused CTest passed 3/3. Independent fresh
+  Ninja/MSVC x64 configure validated 878 owners and built all requested
+  targets. Independent CTest passed 2/3: adapter and Initial Setup passed;
+  MyWorkspace failed three top-level page cases because `documents` and
+  `campuses` packs were unavailable. The tester ran all 18 MyWorkspace
+  functions individually: the F24 signature-image preview, missing/corrupt/
+  unavailable image, display-name, and aggregate-save cases passed, while only
+  the same three resource-dependent cases failed. `git diff --check HEAD`
+  passed. Speaking Eval compiled through ClassMngr; it has no dedicated page
+  integration test.
+- Handoff: F25 removes the custom-color adapter's remaining
+  `SettingsService*` caller path across seven picker call sites in five UI
+  files. Preserve the `custom_colors` key, 16-slot palette, legacy payloads,
+  defaults, unrelated settings, and load-before/save-after-dialog behavior,
+  including cancel. Then continue workbook decoding, generic settings,
+  remaining feature-service, and document migrations. Phase 2 remains open.
+  Nothing was pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
 ### Phase 2 CalendarPage campus metadata query - 2026-09-24
 
 - Added a Qt-free `CalendarPageCampusDirectoryQueryPort` returning owning UTF-8

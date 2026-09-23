@@ -577,3 +577,12 @@ repository/resource path in Platform. When adapting optional codes, omit only
 empty strings; whitespace-only values remain observable until the page's
 legacy cleanup step. Compare alias construction against the committed baseline
 when no page-specific behavior test exists.
+
+
+## Phase 2 PersonalSignatureImagePort caller cutover - 2026-09-24
+
+When moving read-only UI callers from a settings-service pointer to an
+ApplicationServices owner, keep the read adapter's decoding/preparation path
+and each caller's existing availability guard intact. Run the exact feature
+cases in addition to the whole page suite; missing shared resource packs can
+fail unrelated top-level page tests in an isolated tree.

@@ -399,7 +399,7 @@ public:
         const QByteArray storedSignature = QByteArray::fromStdString(
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
-                    setup->settingsService()
+                    setup->services()
                     ).read()
             );
         if (m_signature.isEmpty() && !storedSignature.isEmpty())
@@ -466,7 +466,7 @@ public:
         const QByteArray storedSignature = QByteArray::fromStdString(
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
-                    setup->settingsService()
+                    setup->services()
                     ).read()
             );
         const QByteArray signatureImage =

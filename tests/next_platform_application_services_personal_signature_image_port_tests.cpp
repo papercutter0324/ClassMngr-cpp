@@ -142,7 +142,8 @@ missingAndUnavailableSettingsReturnEmpty()
         );
     QVERIFY(unavailablePort.read().empty());
 
-    ApplicationServicesPersonalSignatureImagePort nullPort(nullptr);
+    ApplicationServices* nullServices = nullptr;
+    ApplicationServicesPersonalSignatureImagePort nullPort(nullServices);
     QVERIFY(nullPort.read().empty());
 }
 

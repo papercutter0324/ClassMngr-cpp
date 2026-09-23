@@ -327,7 +327,7 @@ void SpeakingEvalPage::showReports()
         signatureImage = QByteArray::fromStdString(
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
-                    m_services->settingsService()
+                    m_services
                     ).read()
             );
     }
@@ -471,7 +471,7 @@ void SpeakingEvalPage::outputReports(
         signatureImage = QByteArray::fromStdString(
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
-                    m_services->settingsService()
+                    m_services
                     ).read()
             );
     }

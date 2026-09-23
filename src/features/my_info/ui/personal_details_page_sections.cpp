@@ -978,7 +978,7 @@ void PersonalDetailsPage::loadStoredSettings()
     m_signatureImageData = QByteArray::fromStdString(
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalSignatureImagePort(
-                settingsService
+                m_services
                 ).read()
         );
 
