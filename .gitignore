@@ -68,11 +68,11 @@ artifacts/
 .codex_workflow_hidden_resources/
 
 # codex-workflow-managed-start
-AGENTS.md
 # codex-workflow-managed-end
 
 # Local codex-workflow update staging
 .codex_workflow_staging_*/
+.codex_workflow_download_1.2.0
 
 # Root-scoped in-source CMake generator output
 /CMakeFiles/
