@@ -15,7 +15,6 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QSpinBox;
-class SettingsService;
 
 class CalendarPreferencesPanel final : public QWidget
 {
@@ -64,7 +63,6 @@ private:
 
     AcademicCalendarProvider* m_provider = nullptr;
     ApplicationServices* m_services = nullptr;
-    SettingsService* m_settingsService = nullptr;
     CalendarEventImportService* m_importService = nullptr;
     int m_termYear = AcademicCalendarSchedule::FirstTermYear;
     bool m_refreshing = false;

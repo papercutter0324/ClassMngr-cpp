@@ -3717,3 +3717,14 @@ Windows x64 Debug built `ClassMngr`, `ClassMngrDialogShellTests`, and the
 Platform calendar event suite. Focused CTest passed 2/2. Broader calendar
 visual-state and page integration coverage remains part of the Phase 2 exit
 work.
+
+
+#### Progress update - 2026-09-24 (calendar display-preference boundary)
+
+`CalendarPreferencesPanel` now passes its `ApplicationServices*` to
+`ApplicationServicesCalendarEventDisplayPreferencesPort` rather than retaining
+a `SettingsService*` solely to construct the adapter. The adapter continues to
+own the same setting keys, default-false reads, unavailable-save no-op, and
+atomic two-key save. Windows x64 Debug built `ClassMngr` and the Platform
+display-preferences suite; focused CTest passed 1/1, including pointer-based
+round-trip and null/unavailable service behavior.

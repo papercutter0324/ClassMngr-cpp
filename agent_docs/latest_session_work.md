@@ -756,3 +756,18 @@ separate on a host with Xvfb and loopback access.
   settings persistence, remaining feature-service migrations, and broader
   document migration. The 250 MiB settled-memory target and Linux Phase 0
   follow-up remain open. Nothing was pushed.
+
+
+### Phase 2 calendar display-preference boundary - 2026-09-24
+
+- `CalendarPreferencesPanel` now uses its existing typed display-preferences
+  port through `ApplicationServices*` and no longer stores a `SettingsService*`
+  for this preference pair. Load defaults and unavailable-save no-op behavior
+  remain the same; unrelated keys and atomic save behavior stay in the adapter.
+- Windows x64 Debug built `ClassMngr` and the Platform display-preferences test
+  target. Focused CTest passed 1/1, including open-service pointer round-trip,
+  null/unavailable defaults, and save behavior. `git diff --check` passed.
+- Handoff: continue the remaining calendar and generic settings migrations,
+  then remaining feature-service and broader document migrations. The 250 MiB
+  settled-memory target and Linux Phase 0 follow-up remain open. Nothing was
+  pushed.

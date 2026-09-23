@@ -2,7 +2,6 @@
 
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "app/services/feature_services.h"
 #include "academic_calendar_provider.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
@@ -55,7 +54,6 @@ CalendarPreferencesPanel::CalendarPreferencesPanel(
     : QWidget(parent)
     , m_provider(provider)
     , m_services(services)
-    , m_settingsService(services ? services->settingsService() : nullptr)
     , m_importService(new CalendarEventImportService(services, this))
 {
     setObjectName(QStringLiteral("calendarPreferencesPanel"));
@@ -623,7 +621,7 @@ void CalendarPreferencesPanel::loadOptions()
     const auto displayPreferences =
         ClassMngr::Next::Platform::
             ApplicationServicesCalendarEventDisplayPreferencesPort(
-                m_settingsService
+                m_services
                 ).load();
 
     if (m_showAllCampusesCheck)
@@ -654,24 +652,21 @@ void CalendarPreferencesPanel::loadOptions()
 
 void CalendarPreferencesPanel::saveOptions()
 {
-    if (m_settingsService && m_settingsService->isAvailable())
+    const auto saved =
+        ClassMngr::Next::Platform::
+            ApplicationServicesCalendarEventDisplayPreferencesPort(
+                m_services
+                ).save({
+                    .showEventsAtAllCampuses =
+                        m_showAllCampusesCheck->isChecked(),
+                    .hideStartOfTermEvents =
+                        m_hideStartOfTermEventsCheck->isChecked()
+                });
+    if (!saved)
     {
-        const auto saved =
-            ClassMngr::Next::Platform::
-                ApplicationServicesCalendarEventDisplayPreferencesPort(
-                    m_settingsService
-                    ).save({
-                        .showEventsAtAllCampuses =
-                            m_showAllCampusesCheck->isChecked(),
-                        .hideStartOfTermEvents =
-                            m_hideStartOfTermEventsCheck->isChecked()
-                    });
-        if (!saved)
-        {
-            qWarning()
-                << "Failed to save calendar preferences:"
-                << QString::fromStdString(saved.error().message);
-        }
+        qWarning()
+            << "Failed to save calendar preferences:"
+            << QString::fromStdString(saved.error().message);
     }
 
     if (m_provider && m_startWeekOnMondayCheck)

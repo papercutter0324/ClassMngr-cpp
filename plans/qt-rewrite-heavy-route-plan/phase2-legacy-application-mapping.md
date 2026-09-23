@@ -2911,3 +2911,12 @@ draft shape. The dialog and typed mutation ports consume the draft without an
 intermediate legacy `CalendarEvent` record. The legacy list-based upcoming
 filter overload was unused and has been removed; calendar summary filtering
 continues on the typed projection values.
+
+
+## Calendar display-preference caller boundary - 2026-09-24
+
+`CalendarPreferencesPanel` keeps `ApplicationServices*` and now passes it to
+`ApplicationServicesCalendarEventDisplayPreferencesPort`. It no longer
+captures `SettingsService*` for the event-display setting pair. The Platform
+adapter retains the exact keys, default-false reads, unavailable-save no-op,
+and atomic save semantics; unrelated preferences remain untouched.

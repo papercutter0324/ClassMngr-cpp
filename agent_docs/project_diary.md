@@ -486,3 +486,11 @@ When the calendar projection is already typed, pass its values directly into
 model and back before the dialog. Keep the dialog's Qt conversion private to
 its UI boundary and drive save, repeat, and delete requests from the typed
 draft.
+
+
+## Phase 2 calendar display-preference boundary - 2026-09-24
+
+Use the `ApplicationServices*` entry point for the preferences adapter when a
+panel currently stores `SettingsService*` only to construct that adapter.
+Keep default reads and unavailable saves as successful no-ops, with atomic
+multi-key writes owned by Platform.

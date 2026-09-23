@@ -163,8 +163,10 @@ settings persistence, remaining feature-service migrations, and broader
 document-service migration also remain open. The calendar page now passes
 typed edit drafts from activation or new-event creation through the dialog and
 into typed save, repeat, and delete requests without a legacy event-object
-round trip. Keep the Linux Phase 0 follow-up separate until it can run on a
-host with Xvfb and loopback access.
+round trip. The preferences panel now passes `ApplicationServices*` to its
+typed event-display preferences adapter and no longer retains
+`SettingsService*` for that preference pair. Keep the Linux Phase 0 follow-up
+separate until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

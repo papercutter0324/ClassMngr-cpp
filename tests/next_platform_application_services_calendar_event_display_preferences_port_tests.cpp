@@ -105,6 +105,17 @@ missingAndUnavailableSettingsDefaultFalse()
         .showEventsAtAllCampuses = true,
         .hideStartOfTermEvents = true
     }));
+
+    ApplicationServicesCalendarEventDisplayPreferencesPort nullPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
+    const auto nullServices = nullPort.load();
+    QVERIFY(nullServices);
+    QCOMPARE(nullServices.value(), CalendarEventDisplayPreferences{});
+    QVERIFY(nullPort.save({
+        .showEventsAtAllCampuses = true,
+        .hideStartOfTermEvents = false
+    }));
 }
 
 void NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests::
@@ -124,7 +135,10 @@ exactKeysRoundTripAndPreserveUnrelatedSettings()
         .showEventsAtAllCampuses = true,
         .hideStartOfTermEvents = true
     };
-    ApplicationServicesCalendarEventDisplayPreferencesPort port(services);
+    ApplicationServices* servicesPointer = &services;
+    ApplicationServicesCalendarEventDisplayPreferencesPort port(
+        servicesPointer
+        );
     QVERIFY(port.save(expected));
 
     const auto loaded = port.load();

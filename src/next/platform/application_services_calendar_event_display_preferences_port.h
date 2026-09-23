@@ -26,6 +26,15 @@ public:
     }
 
     explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
+        ApplicationServices* services
+        ) noexcept
+        : m_settingsService(
+            services ? services->settingsService() : nullptr
+            )
+    {
+    }
+
+    explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
         SettingsService* settingsService
         ) noexcept
         : m_settingsService(settingsService)
