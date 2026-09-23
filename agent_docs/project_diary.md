@@ -567,3 +567,13 @@ projections when their validation or size limits would change legacy behavior.
 Move repository/resource access to Platform, return owning UTF-8 values through
 a Qt-free Application port, and preserve the repository's ordering, trim,
 blank, duplicate, and silent-empty fallback rules.
+
+
+## Phase 2 CalendarPage campus metadata query - 2026-09-24
+
+Keep CalendarPage's metadata lookup separate from the importer's code-only
+query. Return owning UTF-8 values from the Application contract and leave the
+repository/resource path in Platform. When adapting optional codes, omit only
+empty strings; whitespace-only values remain observable until the page's
+legacy cleanup step. Compare alias construction against the committed baseline
+when no page-specific behavior test exists.

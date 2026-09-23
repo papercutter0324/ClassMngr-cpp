@@ -188,6 +188,21 @@ reads and campus projection, removing the final SettingsService reference
 from the calendar feature. Independent Windows x64 Debug build and focused
 CTest passed; there is no dedicated CalendarPage behavior test target.
 
+### Phase 2 CalendarPage campus metadata query - 2026-09-24
+
+CalendarPage's campus-directory lookup now uses a Qt-free Application query
+port and Platform adapter over CampusJsonRepository. CalendarPage no longer
+reads CampusJsonRepository or ResourcePaths directly; F22's importer query
+remains separate. Executor and independent fresh Ninja/MSVC x64 builds
+validated 878 handwritten owners and built ClassMngr, CalendarEventCache, and
+the F22/F23 adapter suites. Focused CTest passed 3/3 in each build. Source
+comparison confirmed availability timing, alias order, matching, trimmed
+display fallback, whitespace-only code preservation, and final empty removal
+and deduplication. No dedicated CalendarPage behavior target exists. Next:
+cut over remaining PersonalSignatureImagePort callers to ApplicationServices*,
+then continue custom-color, workbook, generic-settings, feature-service, and
+document boundaries. The Phase 2 exit gate remains open.
+
 ### Phase 2 kickoff — 2026-09-19
 
 The v2 Domain boundary now contains header-only, Qt-free typed identifiers and

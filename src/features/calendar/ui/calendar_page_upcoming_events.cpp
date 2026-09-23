@@ -3,14 +3,13 @@
 #include "calendar_event_cache.h"
 #include "calendar_event_model.h"
 #include "core/fontmanager.h"
-#include "core/resource_paths.h"
-#include "features/campus/data/campus_json_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "domain/models/calendar_event.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
+#include "next/platform/calendar_page_campus_directory_query_adapter.h"
 #include "ui/shared/widgets/marquee_label.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
@@ -224,20 +223,14 @@ QString readableTextColor(
         : QStringLiteral("#ffffff");
 }
 
-CampusJsonRepository campusRepository()
-{
-    return CampusJsonRepository(
-        ResourcePaths::Campuses::directory()
-        );
-}
-
 QString campusDisplayName(
-    const CampusInfo& campus
+    const ClassMngr::Next::Application::CalendarPageCampusMetadata& campus
     )
 {
-    return campus.campusName.trimmed().isEmpty()
-        ? campus.id.trimmed()
-        : campus.campusName.trimmed();
+    const QString campusName = projectionText(campus.campusName);
+    return campusName.trimmed().isEmpty()
+        ? projectionText(campus.id).trimmed()
+        : campusName.trimmed();
 }
 
 }
@@ -853,24 +846,37 @@ CalendarPage::calendarEventDisplayOptions() const
 
         const QString currentName =
             projectionText(currentCampusPreferencesPort.read());
-        const QList<CampusInfo> campuses =
-            campusRepository().loadCampuses();
+        ClassMngr::Next::Platform::
+            CalendarPageCampusDirectoryQueryAdapter campusDirectoryQueryAdapter;
+        const auto campuses = campusDirectoryQueryAdapter.loadCampuses();
 
         options.currentCampusCodes.append(currentName);
 
-        for (const CampusInfo& campus : campuses)
+        for (const auto& campus : campuses)
         {
-            options.allCampusCodes.append(campus.campusCode);
-            options.allCampusCodes.append(campus.id);
+            if (campus.campusCode)
+            {
+                options.allCampusCodes.append(
+                    projectionText(*campus.campusCode)
+                    );
+            }
+            options.allCampusCodes.append(projectionText(campus.id));
 
             if (
-                campus.id.compare(currentName, Qt::CaseInsensitive) == 0
+                projectionText(campus.id)
+                    .compare(currentName, Qt::CaseInsensitive) == 0
                 || campusDisplayName(campus).compare(currentName, Qt::CaseInsensitive) == 0
-                || campus.campusName.compare(currentName, Qt::CaseInsensitive) == 0
+                || projectionText(campus.campusName)
+                    .compare(currentName, Qt::CaseInsensitive) == 0
                 )
             {
-                options.currentCampusCodes.append(campus.campusCode);
-                options.currentCampusCodes.append(campus.id);
+                if (campus.campusCode)
+                {
+                    options.currentCampusCodes.append(
+                        projectionText(*campus.campusCode)
+                        );
+                }
+                options.currentCampusCodes.append(projectionText(campus.id));
                 options.currentCampusCodes.append(campusDisplayName(campus));
             }
         }

@@ -958,3 +958,32 @@ separate on a host with Xvfb and loopback access.
   migrations remain open until the Phase 2 exit gate is met. Nothing was
   pushed; preserve the separately staged
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 CalendarPage campus metadata query - 2026-09-24
+
+- Added a Qt-free `CalendarPageCampusDirectoryQueryPort` returning owning UTF-8
+  campus IDs/names and an optional code, plus a Platform adapter over
+  `CampusJsonRepository` with an injected fixture directory. CalendarPage no
+  longer directly reads the campus repository or `ResourcePaths`; the F22
+  importer-specific query is unchanged.
+- Preserved the existing availability branch and read timing, repository
+  ordering, ID/name/code alias order, case-insensitive ID/name matching,
+  trimmed display-name fallback, whitespace-only campus codes, and final
+  removal of empty aliases and exact duplicates. Adapter fixtures cover UTF-8,
+  missing/empty/whitespace codes, blank/malformed/default records, and
+  empty/missing directories.
+- Executor and independent tester each configured fresh Ninja/MSVC x64 builds;
+  CMake validated 878 handwritten owners. Both built ClassMngr,
+  CalendarEventCache, and F22/F23 adapter targets. Focused CTest passed 3/3 for
+  CalendarEventCache, F22 campus-code query, and F23 campus-directory query.
+  `git diff --check` passed. There is no CalendarPage-specific behavior test;
+  alias semantics were checked by source comparison.
+- Handoff: F24 is the PersonalSignatureImagePort caller cutover to
+  `ApplicationServices*` across Initial Setup, My Information, and Speaking
+  Eval. Preserve existing availability guards, `myInfo/signatureImage`, Base64
+  decoding, one-time embedding preparation, and empty-result behavior. Then
+  continue custom-color, workbook decoding, generic settings, remaining
+  feature-service, and document migrations. Phase 2 remains open. Nothing was
+  pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.

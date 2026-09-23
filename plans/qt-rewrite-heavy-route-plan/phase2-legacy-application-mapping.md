@@ -3012,11 +3012,32 @@ build passed. CMake validated 875 source owners; parser and adapter CTest
 passed 2/2; source/dependency checks and `git diff --check` passed. This is
 only the importer's code-list read seam.
 
-## Next bounded mapping: CalendarPage campus metadata query
+## Verified F23 CalendarPage campus-directory query
 
-Move CalendarPage's separate campus metadata read behind its own Application
-query and Platform adapter. Preserve the current-campus availability guard,
-repository ordering, ID/name/code aliases, matching rules, blank handling,
-and duplicate behavior. Keep this separate from F22's importer campus-code
-list port. Generic settings, workbook parsing, other feature-service reads,
-and document-service work remain open.
+CalendarPage campus metadata now uses the Qt-free
+`Application::CalendarPageCampusDirectoryQueryPort` and a Platform adapter
+backed by `CampusJsonRepository` with an injected directory for tests. The
+query returns owning UTF-8 IDs and names with an optional code. CalendarPage no
+longer reads `CampusJsonRepository` or `ResourcePaths` directly; F22's
+importer-specific campus-code-list port remains separate.
+
+Source comparison confirmed the existing availability branch and timing,
+repository order, ID/name/code alias order, case-insensitive ID/name matching,
+trimmed display-name fallback, whitespace-only codes, exact-empty removal,
+and deduplication. Adapter tests cover Unicode and missing, empty, whitespace,
+blank, malformed, and default records, plus empty and missing directories.
+Executor and independent fresh Windows x64 Ninja/MSVC configure/builds
+validated 878 handwritten owners and each passed focused CTest 3/3 for the
+F23 adapter, F22 adapter, and CalendarEventCache. No dedicated CalendarPage
+test exists. This closes only the campus-directory migration seam; it does not
+complete calendar/workbook migration or Phase 2.
+
+## Next bounded mapping: personal signature-image caller cutover
+
+Route the five `PersonalSignatureImagePort` reads in Initial Setup, My
+Information, and Speaking Eval through `ApplicationServices*`. Preserve the
+existing availability guards, `myInfo/signatureImage` key, Base64 decoding,
+one-time `SignatureImage::prepareForEmbedding`, and empty results for missing,
+invalid, unavailable, or corrupt values. Custom colors, workbook parsing,
+generic settings, remaining feature-service reads, and document-service work
+remain open.

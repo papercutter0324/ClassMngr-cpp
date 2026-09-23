@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F22 routes calendar import campus-code lookup through Qt-free `CalendarEventImportCampusCodeQueryPort` and Platform `CalendarEventImportCampusCodeQueryAdapter`; the adapter owns resource-path/repository access and supports injected test directories. Independent fresh Windows x64 Ninja/MSVC Debug configure and 356-step build passed; CMake validated 875 source owners and focused parser/adapter CTest passed 2/2. Phase 2 remains in progress. Next bounded slice: route CalendarPage's separate current-campus metadata read through an Application query and Platform adapter, preserving its availability guard and matching behavior.
+- Latest slice: F23 routes CalendarPage campus metadata through the Qt-free `CalendarPageCampusDirectoryQueryPort` and Platform adapter backed by `CampusJsonRepository`; the query returns owning UTF-8 IDs, names, and optional codes. The F22 importer port remains separate. Independent fresh Windows x64 Ninja/MSVC configure/builds validated 878 handwritten owners and passed the focused F22/F23 adapter and CalendarEventCache CTest targets 3/3. Behavior review confirmed preserved lookup timing, aliases, matching, fallback, and deduplication; no dedicated CalendarPage test exists. Phase 2 remains in progress. Next bounded slice: cut over the five personal-signature-image reads in Initial Setup, My Information, and Speaking Eval to the typed Application port.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -3866,5 +3866,25 @@ are unchanged. A fixture includes actual Korean UTF-8. Independent fresh
 Windows x64 Ninja/MSVC Debug configure and full 356-step build passed; CMake
 validated 875 source owners, focused parser and adapter CTest passed 2/2, and
 source/dependency and `git diff --check` reviews passed. Phase 2 remains open.
-The next slice is CalendarPage's distinct campus metadata read; it does not
-reuse or widen the importer's campus-code-list port.
+The next planned slice was CalendarPage's distinct campus metadata read; F23
+completes it without reusing or widening the importer's campus-code-list port.
+
+#### Progress update - 2026-09-24 (F23 CalendarPage campus-directory query)
+
+CalendarPage campus metadata now crosses the Qt-free
+`Application::CalendarPageCampusDirectoryQueryPort`; its Platform adapter
+reads through `CampusJsonRepository` and accepts an injected fixture directory.
+The query returns owning UTF-8 IDs and names with an optional code. CalendarPage
+no longer reads `CampusJsonRepository` or `ResourcePaths` directly, and the
+F22 importer code-list port remains separate.
+
+Source comparison confirmed the existing availability branch and timing,
+repository order, alias order and matching, trimmed display-name fallback,
+whitespace-only-code behavior, and exact-empty removal/deduplication. Adapter
+coverage includes Unicode and missing, empty, whitespace, blank, malformed,
+default, and missing-directory cases. Executor and independent fresh Windows
+x64 Ninja/MSVC configure/builds validated 878 handwritten owners; both focused
+CTest runs passed 3/3 for the F23 adapter, F22 adapter, and CalendarEventCache.
+No dedicated CalendarPage test exists. This closes the campus-directory
+migration seam only; workbook parsing and broader calendar migration remain
+open. The next slice is the personal-signature-image caller cutover.

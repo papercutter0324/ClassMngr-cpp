@@ -563,6 +563,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformCalendarPageCampusDirectoryQuery
+    SOURCES
+        tests/next_platform_calendar_page_campus_directory_query_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesPersonalDisplayNamePreferencesPort
     SOURCES
         tests/next_platform_application_services_personal_display_name_preferences_port_tests.cpp
