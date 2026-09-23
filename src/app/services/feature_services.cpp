@@ -1266,6 +1266,35 @@ Result<Roster> RosterService::roster(int classId) const
         : Result<Roster>(std::unexpected(unavailableError()));
 }
 
+Result<Roster> RosterService::rosterForOutput(
+    const int classId,
+    const QStringList& requestedColumns,
+    const std::size_t maxRows,
+    const std::size_t maxCells,
+    const std::size_t maxTextBytes
+    ) const
+{
+    if (auto* repository = session() ? session()->rosterRepository() : nullptr)
+    {
+        return repository->loadRosterForOutput(
+            classId,
+            requestedColumns,
+            maxRows,
+            maxCells,
+            maxTextBytes
+            );
+    }
+    return dataService()
+        ? dataService()->loadRosterForOutput(
+            classId,
+            requestedColumns,
+            maxRows,
+            maxCells,
+            maxTextBytes
+            )
+        : Result<Roster>(std::unexpected(unavailableError()));
+}
+
 Result<int> RosterService::studentCount(int classId) const
 {
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)

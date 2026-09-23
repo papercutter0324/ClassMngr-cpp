@@ -26,6 +26,8 @@
 #include <QStringList>
 #include <QVariant>
 
+#include <cstddef>
+
 class DataService;
 class DatabaseSession;
 
@@ -228,8 +230,15 @@ public:
         ) const;
     [[nodiscard]] Status saveRosters(
         const QList<QPair<int, Roster>>& rosters
-        ) const;
+    ) const;
     [[nodiscard]] Result<Roster> roster(int classId) const;
+    [[nodiscard]] Result<Roster> rosterForOutput(
+        int classId,
+        const QStringList& requestedColumns,
+        std::size_t maxRows,
+        std::size_t maxCells,
+        std::size_t maxTextBytes
+        ) const;
     [[nodiscard]] Result<int> studentCount(int classId) const;
 };
 

@@ -959,6 +959,30 @@ Result<Roster> DataService::loadRoster(
         );
 }
 
+Result<Roster> DataService::loadRosterForOutput(
+    const int classId,
+    const QStringList& requestedColumns,
+    const std::size_t maxRows,
+    const std::size_t maxCells,
+    const std::size_t maxTextBytes
+    )
+{
+    if (!m_rosterRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return m_rosterRepository->loadRosterForOutput(
+        classId,
+        requestedColumns,
+        maxRows,
+        maxCells,
+        maxTextBytes
+        );
+}
+
 Result<int> DataService::getRosterStudentCount(
     int classId
     )

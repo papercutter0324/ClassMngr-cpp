@@ -1,5 +1,6 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/roster_repository.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 
@@ -221,6 +222,7 @@ class DataServiceLifecycleTests : public QObject
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
     void applicationServicesOwnDatabaseFileOperations();
+    void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
     void schemaFailureClosesDatabaseSession();
@@ -271,6 +273,128 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     services.closeDatabase();
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
+}
+
+void DataServiceLifecycleTests::
+boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("bounded-roster-output.db"))
+        ).has_value());
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Roster output class"));
+    QVERIFY(createdClass);
+
+    Roster fullRoster;
+    fullRoster.columns = {
+        QStringLiteral("Korean"),
+        QStringLiteral("Notes"),
+        QStringLiteral("English"),
+        QStringLiteral("Unused")
+    };
+    fullRoster.rows = {
+        {
+            QStringLiteral("학생 하나"),
+            QStringLiteral("First note"),
+            QStringLiteral("Alex"),
+            QStringLiteral("unneeded value")
+        },
+        {
+            QStringLiteral("학생 둘"),
+            QStringLiteral("Second note"),
+            QStringLiteral("Casey"),
+            QStringLiteral("another unneeded value")
+        }
+    };
+    QVERIFY(service.saveRoster(*createdClass, fullRoster));
+
+    const QStringList requestedColumns{
+        QStringLiteral("Notes"),
+        QStringLiteral("English")
+    };
+    const Result<Roster> projected = service.loadRosterForOutput(
+        *createdClass,
+        requestedColumns,
+        2,
+        4,
+        256
+        );
+    QVERIFY(projected);
+    QCOMPARE(projected->columns, requestedColumns);
+    QCOMPARE(projected->columnWidths, QVector<int>({0, 0}));
+    QCOMPARE(projected->rows.size(), 2);
+    QCOMPARE(projected->rows.at(0), QStringList({"First note", "Alex"}));
+    QCOMPARE(projected->rows.at(1), QStringList({"Second note", "Casey"}));
+
+    const Result<Roster> rowOverflow = service.loadRosterForOutput(
+        *createdClass,
+        requestedColumns,
+        1,
+        4,
+        256
+        );
+    QVERIFY(!rowOverflow);
+
+    const Result<Roster> cellOverflow = service.loadRosterForOutput(
+        *createdClass,
+        requestedColumns,
+        2,
+        3,
+        256
+        );
+    QVERIFY(!cellOverflow);
+
+    const Result<Roster> textOverflow = service.loadRosterForOutput(
+        *createdClass,
+        requestedColumns,
+        2,
+        4,
+        16
+        );
+    QVERIFY(!textOverflow);
+
+    QSqlQuery injectedValue(service.databaseSession()->database());
+    injectedValue.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, 2, 2, ?)"
+        ));
+    injectedValue.addBindValue(*createdClass);
+    injectedValue.addBindValue(
+        QString(kRosterRepositoryOutputMaxCellBytes + 1, QLatin1Char('x'))
+        );
+    QVERIFY(injectedValue.exec());
+    const Result<Roster> oversizedCell = service.loadRosterForOutput(
+        *createdClass,
+        requestedColumns,
+        kRosterRepositoryOutputMaxRows,
+        kRosterRepositoryOutputMaxCells,
+        kRosterRepositoryOutputMaxTextBytes
+        );
+    QVERIFY(!oversizedCell);
+
+    injectedValue.prepare(QStringLiteral(
+        "DELETE FROM roster_data WHERE class_id=? AND row_index=2 AND col_index=2"
+        ));
+    injectedValue.addBindValue(*createdClass);
+    QVERIFY(injectedValue.exec());
+    injectedValue.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, 1000000000, 2, 'out of range')"
+        ));
+    injectedValue.addBindValue(*createdClass);
+    QVERIFY(injectedValue.exec());
+    const Result<Roster> sparseRowOverflow = service.loadRosterForOutput(
+        *createdClass,
+        requestedColumns,
+        kRosterRepositoryOutputMaxRows,
+        kRosterRepositoryOutputMaxCells,
+        kRosterRepositoryOutputMaxTextBytes
+        );
+    QVERIFY(!sparseRowOverflow);
 }
 
 void DataServiceLifecycleTests::schemaFailureClosesDatabaseSession()

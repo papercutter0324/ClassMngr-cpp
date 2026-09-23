@@ -584,3 +584,19 @@ separate on a host with Xvfb and loopback access.
   repository query before creating roster strings. Then replace package-service
   legacy reads and verify output parity. Phase 2 and the packaged 96-class
   Release memory gate remain open.
+
+### Phase 2 Sub Prep bounded roster repository read - 2026-09-24
+
+- Added `RosterRepository::loadRosterForOutput`, with DataService and
+  RosterService forwarding. It selects only requested columns, checks the
+  highest relevant row and row-by-column cell budget before allocating the
+  row matrix, streams SQL results, and reads a bounded substring while checking
+  the original cell byte length.
+- `ClassMngr` and `ClassMngrDataServiceLifecycleTests` built on Windows x64
+  Debug Ninja. The lifecycle suite passed 1/1, covering selected-column order,
+  excluded values, row/cell/text caps, an oversized stored cell, and a sparse
+  out-of-range row index. `git diff --check` passed.
+- Handoff: add `ApplicationServicesSubPrepRosterOutputSourcePort`, using the
+  active session and remaining operation budgets, then wire the package
+  service and verify renderer/package parity. The packaged Release memory
+  gate and Phase 2 remain open.

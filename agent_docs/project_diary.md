@@ -396,3 +396,8 @@
   reject excess columns, rows, cells, and bytes while reading, before building
   full `Roster` values. Do not claim the roster memory gate until measured in
   the packaged Release route.
+- The repository read uses `MAX(row_index)` over only requested physical
+  columns before allocating the dense compatibility rows. It streams selected
+  values and SQL-truncates each fetched value before checking the original
+  byte length, so oversized text is rejected without materializing a full
+  cell or silently truncating it.

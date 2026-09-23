@@ -25,6 +25,8 @@
 #include <QString>
 #include <QVariantMap>
 
+#include <cstddef>
+
 #include <memory>
 
 class CampusRecordRepository;
@@ -380,6 +382,14 @@ public:
 
     [[nodiscard]] Result<Roster> loadRoster(
         int classId
+        );
+
+    [[nodiscard]] Result<Roster> loadRosterForOutput(
+        int classId,
+        const QStringList& requestedColumns,
+        std::size_t maxRows,
+        std::size_t maxCells,
+        std::size_t maxTextBytes
         );
 
     [[nodiscard]] Result<int> getRosterStudentCount(

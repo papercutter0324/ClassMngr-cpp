@@ -3551,3 +3551,20 @@ passed 1/1. Query-side caps do not replace adapter-side limits: the next slice
 must enforce bounds while reading the active database session, before
 materializing roster rows. Package integration, PDF/package parity, the
 96-class packaged Release memory gate, and Phase 2 remain open.
+
+#### Progress update - 2026-09-24 (Sub Prep bounded roster repository read)
+
+Work Package F5 adds `RosterRepository::loadRosterForOutput` and forwards it
+through `DataService` and `RosterService`. The query resolves only requested
+columns, checks `MAX(row_index)` on those physical columns, and validates the
+dense row/cell budget before allocating the projected matrix. SQL reads are
+forward-only; selected values use a bounded substring and the original byte
+length is checked before conversion. Unrequested column values are never read.
+
+`ClassMngr` and `ClassMngrDataServiceLifecycleTests` built on Windows x64
+Debug Ninja; the lifecycle suite passed 1/1. It covers selected-column order,
+row/cell/text budgets, an oversized stored cell, and a sparse out-of-range row
+index. The repository method enforces aggregate budgets supplied by its
+caller; the next Platform adapter must decrement those budgets across the
+operation while mapping bounded values. Package integration, output parity,
+the 96-class packaged Release memory gate, and Phase 2 remain open.

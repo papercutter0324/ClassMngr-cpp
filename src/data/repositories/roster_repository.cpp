@@ -5,9 +5,12 @@
 #include "data/database/sql_query_utils.h"
 
 #include <QDebug>
+#include <QHash>
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
+
+#include <vector>
 
 RosterRepository::RosterRepository(
     QSqlDatabase& database
@@ -323,6 +326,348 @@ Result<Roster> RosterRepository::loadRoster(
 
         roster.rows[row][column] =
             query.value("value").toString();
+    }
+
+    return roster;
+}
+
+Result<Roster> RosterRepository::loadRosterForOutput(
+    const int classId,
+    const QStringList& requestedColumns,
+    const std::size_t maxRows,
+    const std::size_t maxCells,
+    const std::size_t maxTextBytes
+    )
+{
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading roster output failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+    if (requestedColumns.size()
+            > static_cast<qsizetype>(kRosterRepositoryOutputMaxColumns)
+        || maxRows > kRosterRepositoryOutputMaxRows
+        || maxCells > kRosterRepositoryOutputMaxCells
+        || maxTextBytes > kRosterRepositoryOutputMaxTextBytes)
+    {
+        return std::unexpected(
+            QObject::tr("Loading roster output failed: a requested limit exceeds its bound.")
+            );
+    }
+
+    for (qsizetype index = 0; index < requestedColumns.size(); ++index)
+    {
+        const QString& column = requestedColumns.at(index);
+        if (column.size()
+                > static_cast<qsizetype>(
+                    kRosterRepositoryOutputMaxColumnNameBytes
+                    )
+            || column.trimmed().isEmpty()
+            || column.toUtf8().size()
+                > static_cast<qsizetype>(
+                    kRosterRepositoryOutputMaxColumnNameBytes
+                    ))
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster output failed: a column name is blank or too long.")
+                );
+        }
+        for (qsizetype other = 0; other < index; ++other)
+        {
+            if (requestedColumns.at(other).compare(
+                    column,
+                    Qt::CaseInsensitive
+                    ) == 0)
+            {
+                return std::unexpected(
+                    QObject::tr("Loading roster output failed: requested columns are duplicated.")
+                    );
+            }
+        }
+    }
+
+    struct RequestedColumn final
+    {
+        QString name;
+        int sourceIndex = -1;
+        std::size_t textBytes = 0;
+    };
+
+    std::vector<RequestedColumn> selectedColumns;
+    selectedColumns.reserve(
+        static_cast<std::size_t>(requestedColumns.size())
+        );
+    for (const QString& column : requestedColumns)
+    {
+        selectedColumns.push_back(
+            {
+                column,
+                -1,
+                static_cast<std::size_t>(column.toUtf8().size())
+            }
+            );
+    }
+
+    QSqlQuery columnsQuery(m_database);
+    columnsQuery.setForwardOnly(true);
+    columnsQuery.prepare(R"(
+        SELECT
+            substr(name, 1, 257) AS bounded_name,
+            length(CAST(name AS BLOB)) AS name_bytes
+        FROM roster_columns
+        WHERE class_id=?
+        ORDER BY position, id
+        LIMIT ?
+    )");
+    columnsQuery.addBindValue(classId);
+    columnsQuery.addBindValue(4'097);
+
+    const auto loadedColumns = SqlQueryUtils::executePrepared(
+        columnsQuery,
+        QObject::tr("Loading bounded roster output columns"),
+        identity
+        );
+    if (!loadedColumns)
+    {
+        return std::unexpected(loadedColumns.error().userMessage());
+    }
+
+    int sourceColumnIndex = 0;
+    while (columnsQuery.next())
+    {
+        if (sourceColumnIndex >= 4'096)
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster output failed: roster schema exceeds its safe column limit.")
+                );
+        }
+
+        bool byteLengthValid = false;
+        const qulonglong rawNameBytes =
+            columnsQuery.value("name_bytes").toULongLong(&byteLengthValid);
+        if (!byteLengthValid)
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster output failed: a column name has invalid size metadata.")
+                );
+        }
+
+        if (rawNameBytes <= kRosterRepositoryOutputMaxColumnNameBytes)
+        {
+            const QString sourceName =
+                columnsQuery.value("bounded_name").toString();
+            for (RequestedColumn& selected : selectedColumns)
+            {
+                if (selected.sourceIndex < 0
+                    && sourceName.compare(
+                        selected.name,
+                        Qt::CaseInsensitive
+                        ) == 0)
+                {
+                    selected.sourceIndex = sourceColumnIndex;
+                }
+            }
+        }
+        ++sourceColumnIndex;
+    }
+    columnsQuery.finish();
+
+    Roster roster;
+    std::size_t totalTextBytes = 0;
+    QList<int> sourceIndexes;
+    for (const RequestedColumn& selected : selectedColumns)
+    {
+        if (selected.sourceIndex < 0)
+        {
+            continue;
+        }
+        if (selected.textBytes > maxTextBytes
+            || totalTextBytes > maxTextBytes - selected.textBytes)
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster output failed: column names exceed the text byte limit.")
+                );
+        }
+        totalTextBytes += selected.textBytes;
+        sourceIndexes.append(selected.sourceIndex);
+        roster.columns.append(selected.name);
+        roster.columnWidths.append(0);
+    }
+
+    if (sourceIndexes.isEmpty())
+    {
+        return roster;
+    }
+
+    QStringList placeholders;
+    for (qsizetype index = 0; index < sourceIndexes.size(); ++index)
+    {
+        placeholders.append(QStringLiteral("?"));
+    }
+    const QString indexPlaceholders = placeholders.join(QStringLiteral(", "));
+
+    QSqlQuery maximumRowQuery(m_database);
+    maximumRowQuery.setForwardOnly(true);
+    maximumRowQuery.prepare(
+        QStringLiteral(
+            "SELECT MAX(row_index) FROM roster_data "
+            "WHERE class_id=? AND row_index>=0 AND col_index IN (%1)"
+            ).arg(indexPlaceholders)
+        );
+    maximumRowQuery.addBindValue(classId);
+    for (const int sourceIndex : sourceIndexes)
+    {
+        maximumRowQuery.addBindValue(sourceIndex);
+    }
+
+    const auto loadedMaximumRow = SqlQueryUtils::executePrepared(
+        maximumRowQuery,
+        QObject::tr("Sizing bounded roster output rows"),
+        identity
+        );
+    if (!loadedMaximumRow)
+    {
+        return std::unexpected(loadedMaximumRow.error().userMessage());
+    }
+    if (!maximumRowQuery.next())
+    {
+        return std::unexpected(
+            QObject::tr("Loading roster output failed: row count could not be read.")
+            );
+    }
+
+    const QVariant maximumRowValue = maximumRowQuery.value(0);
+    std::size_t rowCount = 0;
+    if (!maximumRowValue.isNull())
+    {
+        bool rowIndexValid = false;
+        const qlonglong maximumRowIndex =
+            maximumRowValue.toLongLong(&rowIndexValid);
+        if (!rowIndexValid || maximumRowIndex < 0
+            || static_cast<qulonglong>(maximumRowIndex) >= maxRows)
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster output failed: roster rows exceed the requested limit.")
+                );
+        }
+        rowCount = static_cast<std::size_t>(maximumRowIndex) + 1;
+    }
+    maximumRowQuery.finish();
+
+    const std::size_t columnCount =
+        static_cast<std::size_t>(roster.columns.size());
+    if (columnCount != 0 && rowCount > maxCells / columnCount)
+    {
+        return std::unexpected(
+            QObject::tr("Loading roster output failed: roster cells exceed the requested limit.")
+            );
+    }
+    const std::size_t cellCount = rowCount * columnCount;
+
+    roster.rows.reserve(static_cast<qsizetype>(rowCount));
+    for (std::size_t rowIndex = 0; rowIndex < rowCount; ++rowIndex)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(columnCount));
+        for (std::size_t column = 0; column < columnCount; ++column)
+        {
+            row.append(QString());
+        }
+        roster.rows.append(std::move(row));
+    }
+
+    QHash<int, int> outputIndexesBySourceIndex;
+    outputIndexesBySourceIndex.reserve(sourceIndexes.size());
+    for (qsizetype outputIndex = 0;
+         outputIndex < sourceIndexes.size();
+         ++outputIndex)
+    {
+        outputIndexesBySourceIndex.insert(
+            sourceIndexes.at(outputIndex),
+            static_cast<int>(outputIndex)
+            );
+    }
+
+    QSqlQuery valuesQuery(m_database);
+    valuesQuery.setForwardOnly(true);
+    valuesQuery.prepare(
+        QStringLiteral(
+            "SELECT row_index, col_index, "
+            "substr(value, 1, %1) AS bounded_value, "
+            "length(CAST(value AS BLOB)) AS value_bytes "
+            "FROM roster_data "
+            "WHERE class_id=? AND row_index>=0 AND col_index IN (%2) "
+            "ORDER BY row_index, col_index LIMIT ?"
+            )
+            .arg(
+                static_cast<qulonglong>(
+                    kRosterRepositoryOutputMaxCellBytes + 1
+                    )
+                )
+            .arg(indexPlaceholders)
+        );
+    valuesQuery.addBindValue(classId);
+    for (const int sourceIndex : sourceIndexes)
+    {
+        valuesQuery.addBindValue(sourceIndex);
+    }
+    valuesQuery.addBindValue(static_cast<qulonglong>(cellCount + 1));
+
+    const auto loadedValues = SqlQueryUtils::executePrepared(
+        valuesQuery,
+        QObject::tr("Loading bounded roster output values"),
+        identity
+        );
+    if (!loadedValues)
+    {
+        return std::unexpected(loadedValues.error().userMessage());
+    }
+
+    std::size_t loadedCellCount = 0;
+    while (valuesQuery.next())
+    {
+        if (loadedCellCount >= cellCount)
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster output failed: stored cells exceed their bounded matrix.")
+                );
+        }
+        ++loadedCellCount;
+
+        bool byteLengthValid = false;
+        const qulonglong cellBytes =
+            valuesQuery.value("value_bytes").toULongLong(&byteLengthValid);
+        if (!byteLengthValid
+            || cellBytes > kRosterRepositoryOutputMaxCellBytes
+            || cellBytes > maxTextBytes - totalTextBytes)
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster output failed: a cell exceeds the text byte limit.")
+                );
+        }
+        totalTextBytes += static_cast<std::size_t>(cellBytes);
+
+        bool rowIndexValid = false;
+        bool sourceIndexValid = false;
+        const qlonglong rowIndex =
+            valuesQuery.value("row_index").toLongLong(&rowIndexValid);
+        const int sourceIndex =
+            valuesQuery.value("col_index").toInt(&sourceIndexValid);
+        const auto outputIndex =
+            outputIndexesBySourceIndex.constFind(sourceIndex);
+        if (!rowIndexValid || rowIndex < 0
+            || static_cast<qulonglong>(rowIndex) >= rowCount
+            || !sourceIndexValid
+            || outputIndex == outputIndexesBySourceIndex.cend())
+        {
+            continue;
+        }
+
+        roster.rows[static_cast<qsizetype>(rowIndex)][*outputIndex] =
+            valuesQuery.value("bounded_value").toString();
     }
 
     return roster;

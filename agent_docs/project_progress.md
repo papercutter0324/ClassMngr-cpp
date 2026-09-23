@@ -169,12 +169,16 @@ day, mode, and requested extra columns. It validates teacher references,
 meeting days, row/cell shapes, and per-class and aggregate roster/text limits;
 its app-less query suite passes 1/1. CMake reconfiguration validated 865
 handwritten source owners, and Windows x64 Debug built `ClassMngr` and the new
-query test target. Next is F5: implement a bounded session-backed Platform
-read, including a repository query that enforces limits before materializing
-roster cells. Package integration, PDF/package parity, the 96-class Release
-memory evidence, and the wider Phase 2 exit gate remain open. Keep the Linux
-Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
-access.
+query test target. F5 adds `RosterRepository::loadRosterForOutput` with
+DataService and RosterService forwarding. It projects only requested columns,
+checks row and cell budgets before allocating the matrix, and uses forward-only
+SQL reads plus a bounded substring and byte-length check for each value. The
+data lifecycle suite passes 1/1, including oversized cell and sparse-row
+rejection. Next is F6: compose these reads through a session-backed Platform
+port and validate exact class/day/mode and aggregate bounds. Package
+integration, PDF/package parity, the 96-class Release memory evidence, and the
+wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up separate
+until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

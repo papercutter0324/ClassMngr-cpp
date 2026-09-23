@@ -85,15 +85,19 @@ read for roster PDFs remains. Work Package F4 adds the Qt-free
 scope. It returns requested roster columns and owning row values under
 per-class and aggregate limits, along with only the class and teacher facts
 needed by the roster templates. Its app-less tests pass 1/1. The read adapter
-still needs to enforce bounds while reading, before materializing roster
-values. See the [Phase 2 contract
-update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-roster-output-application-contract).
+now has a bounded repository operation: it selects requested columns, checks
+row/cell limits before matrix allocation, streams SQL rows, and checks each
+cell's original byte size before conversion. Data lifecycle coverage passes
+1/1. The Platform adapter still must enforce aggregate budgets while building
+the Application input. See the [Phase 2 contract
+update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-bounded-roster-repository-read).
 
 Output/package/PDF migration, parity, and Release memory acceptance remain
 open. Work Package F is underway; the information-sheet input is released
 before roster records load, and the roster Application contract now defines
-its bounded operation values. The next slice implements the session-backed
-bounded read, followed by package integration and parity.
+its bounded operation values. The data repository applies row/cell caps before
+creating a dense roster projection. The next slice implements the session-
+backed Platform adapter, followed by package integration and parity.
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
