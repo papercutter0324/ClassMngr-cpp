@@ -20,6 +20,7 @@ private slots:
     void themeDefaultsToSystemDefaultAndPersists();
     void saveModeStartupAndWritesCanonicalValues();
     void providerAndVoiceDefaultsPersist();
+    void documentViewerBackgroundStartupReloadAndCanonicalPersistence();
     void customWebsitePersistenceAndInvalidFallback();
     void providerUrlsAndCustomValidation();
     void updatePreferencesDefaultAndPersist();
@@ -205,6 +206,50 @@ void AiCommentOptionsTests::
         reloadedDirect.aiCommentVoiceState->current(),
         AiCommentVoice::DirectToStudent
         );
+}
+
+void AiCommentOptionsTests::
+    documentViewerBackgroundStartupReloadAndCanonicalPersistence()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString backgroundKey =
+        QString::fromUtf8(OptionKeys::DocumentViewerBackground);
+    settings.remove(backgroundKey);
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.documentViewerBackgroundState);
+    QCOMPARE(
+        defaults.documentViewerBackgroundState->current(),
+        DocumentViewerBackground::Default
+        );
+    QCOMPARE(settings.get(backgroundKey).toInt(), 0);
+
+    const DocumentViewerBackground expectedValues[] = {
+        DocumentViewerBackground::White,
+        DocumentViewerBackground::Black,
+        DocumentViewerBackground::Default
+    };
+    const int expectedStoredValues[] = {1, 2, 0};
+
+    for (int index = 0; index < 3; ++index)
+    {
+        defaults.documentViewerBackgroundState->set(
+            expectedValues[index]
+            );
+        QCOMPARE(
+            settings.get(backgroundKey).toInt(),
+            expectedStoredValues[index]
+            );
+        settings.sync();
+
+        ActionRegistry reloaded;
+        reloaded.createActions();
+        QCOMPARE(
+            reloaded.documentViewerBackgroundState->current(),
+            expectedValues[index]
+            );
+    }
 }
 
 void AiCommentOptionsTests::

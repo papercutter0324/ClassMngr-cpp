@@ -1074,6 +1074,37 @@ void ActionRegistry::createOptionActions()
         blackDocumentViewerBackgroundAction
         );
 
+    documentViewerBackgroundState->onPersist =
+        [](const ::DocumentViewerBackground background)
+    {
+        ClassMngr::Next::Application::DocumentViewerBackground preference;
+        switch (background)
+        {
+        case ::DocumentViewerBackground::Default:
+            preference = ClassMngr::Next::Application::
+                DocumentViewerBackground::Default;
+            break;
+
+        case ::DocumentViewerBackground::White:
+            preference = ClassMngr::Next::Application::
+                DocumentViewerBackground::White;
+            break;
+
+        case ::DocumentViewerBackground::Black:
+            preference = ClassMngr::Next::Application::
+                DocumentViewerBackground::Black;
+            break;
+
+        default:
+            return;
+        }
+
+        ClassMngr::Next::Platform::
+            SettingsManagerDocumentViewerBackgroundPreferencesPort().write(
+                preference
+                );
+    };
+
     const auto storedDocumentViewerBackground =
         ClassMngr::Next::Platform::
             SettingsManagerDocumentViewerBackgroundPreferencesPort()

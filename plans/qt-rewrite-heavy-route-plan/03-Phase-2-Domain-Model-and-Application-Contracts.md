@@ -3160,3 +3160,29 @@ An independent elevated Debug rebuild passed. The provider adapter passed 7/7,
 AI/ActionRegistry 10/10, voice 7/7, language adapter and regression 8/8 each,
 and SaveMode 6/6. Static Qt-free, call-site, ownership, and diff checks passed;
 every test used a fresh temporary `CLASSMNGR_SETTINGS_ROOT`.
+
+#### Progress update - 2026-09-23 (typed document-viewer background persistence)
+
+Against baseline commit `2d7d4a29` (`Phase2 - Cut ActionRegistry AI provider
+persistence over`), added the typed document-viewer background write contract.
+The five-file scope is:
+
+- `src/next/application/document_viewer_background_preferences.h`
+- `src/next/platform/settings_manager_document_viewer_background_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_document_viewer_background_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+Canonical `options/documentViewerBackground` values are 0=`Default`,
+1=`White`, and 2=`Black`. `ActionRegistry` installs `onPersist` before startup
+selection; malformed or unknown reads fall back to `Default`. The existing
+MainWindow `onChanged` propagation and PDF viewer behavior remain intact; no
+CMake changes were needed.
+
+The focused Debug rebuild passed after retrying a Visual Studio FileTracker
+access-denied failure with elevated access. A serial CTest run passed all 9
+selected targets, including the background adapter, AI/ActionRegistry,
+PageManager, StartupVisualSettings, and provider, voice, language, and SaveMode
+regressions. CMake ownership validation passed with 837 handwritten sources;
+Qt-free, call-site, source-path, and diff checks passed. Tests used an isolated
+`CLASSMNGR_SETTINGS_ROOT`.
