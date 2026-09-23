@@ -98,7 +98,6 @@ CalendarEventImportService::CalendarEventImportService(
     )
     : QObject(parent)
     , m_services(services)
-    , m_calendarService(services ? services->calendarService() : nullptr)
     , m_network(new QNetworkAccessManager(this))
 {
     connect(
@@ -126,7 +125,17 @@ void CalendarEventImportService::importFromDefaultSource()
         return;
     }
 
-    if (!m_calendarService || !m_calendarService->isAvailable())
+    if (!m_services)
+    {
+        emit importFailed(
+            tr("The calendar Teacher Profile is not available.")
+        );
+        return;
+    }
+
+    const ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort
+        calendarEventPort(*m_services);
+    if (!calendarEventPort.isAvailable())
     {
         emit importFailed(
             tr("The calendar Teacher Profile is not available.")

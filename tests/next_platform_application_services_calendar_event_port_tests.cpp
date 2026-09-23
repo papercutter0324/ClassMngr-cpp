@@ -212,6 +212,7 @@ class NextPlatformApplicationServicesCalendarEventPortTests final
 
 private slots:
     void initTestCase();
+    void reportsCalendarEventPortAvailability();
     void projectsOverlappingRangeAsOwnedTypedMetadata();
     void projectsByIdAsOwnedTypedMetadata();
     void deletesValidTypedEvent();
@@ -261,6 +262,17 @@ private:
 void NextPlatformApplicationServicesCalendarEventPortTests::initTestCase()
 {
     QVERIFY(m_directory.isValid());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsCalendarEventPortAvailability()
+{
+    ApplicationServices services;
+    ApplicationServicesCalendarEventPort port(services);
+
+    QVERIFY(!port.isAvailable());
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(port.isAvailable());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

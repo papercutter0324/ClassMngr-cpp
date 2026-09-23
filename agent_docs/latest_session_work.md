@@ -722,3 +722,20 @@ separate on a host with Xvfb and loopback access.
   typed page migration. Generic settings persistence, remaining feature-service
   migrations, wider document migration, the 250 MiB settled-memory target, and
   the separate Linux Phase 0 follow-up remain open. Nothing was pushed.
+
+
+### Phase 2 typed calendar availability boundary - 2026-09-24
+
+- `ApplicationServicesCalendarEventPort` now exposes a guarded availability
+  query. Calendar import start and dialog opening use it instead of retaining
+  or reading a raw `CalendarService*`; existing unavailable behavior remains
+  intact. A Platform contract test checks both closed and open workspace
+  states.
+- Windows x64 Debug built `ClassMngr`, `ClassMngrCalendarImportTests`, and the
+  Platform calendar event suite. Focused CTest passed 2/2, and a source search
+  found no `calendarService()` getter calls in `src/features/calendar/`.
+  `git diff --check` passed.
+- Handoff: continue Phase 2 with the broader calendar UI/value migration and
+  remaining feature-service calls. Generic settings persistence, wider
+  document migration, the 250 MiB settled-memory target, and the separate
+  Linux Phase 0 follow-up remain open. Nothing was pushed.

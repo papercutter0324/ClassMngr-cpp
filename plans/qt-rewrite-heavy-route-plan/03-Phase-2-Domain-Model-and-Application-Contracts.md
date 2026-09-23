@@ -3673,6 +3673,19 @@ lookup remain legacy responsibilities; the calendar import migration is not
 complete, and broader Phase 2 work remains open.
 
 
+#### Progress update - 2026-09-24 (typed calendar availability boundary)
+
+The calendar feature no longer calls `ApplicationServices::calendarService()`
+directly. Import-start and dialog-opening availability guards now use
+`ApplicationServicesCalendarEventPort::isAvailable()`, which contains the
+legacy service check and treats exceptions as unavailable. This preserves the
+existing early-return behavior while keeping raw service ownership in the
+Platform boundary. Windows x64 Debug built `ClassMngr`, the calendar import
+test target, and the Platform calendar event suite; focused CTest passed 2/2.
+The broader calendar UI/value migration and other feature-service migrations
+remain open.
+
+
 #### Progress update - 2026-09-24 (typed calendar reset mutation)
 
 The calendar preferences panel now routes its confirmed reset through

@@ -3,7 +3,6 @@
 #include <QObject>
 
 class ApplicationServices;
-class CalendarService;
 class QNetworkAccessManager;
 class QNetworkReply;
 
@@ -38,7 +37,6 @@ private:
         );
 
     ApplicationServices* m_services = nullptr;
-    CalendarService* m_calendarService = nullptr;
     QNetworkAccessManager* m_network = nullptr;
     bool m_importing = false;
 };

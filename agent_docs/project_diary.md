@@ -468,3 +468,12 @@ After confirmation, route deletion through the typed Platform port and map its
 owned UTF-8 error back to the existing warning UI. Verify the service error
 path with a database trigger and confirm the seeded event survives the failed
 delete.
+
+
+## Phase 2 calendar availability boundary - 2026-09-24
+
+Availability checks belong at the Platform boundary with the event reads and
+writes. Keep import-start and dialog-opening guards behaviorally unchanged, but
+do not keep a raw `CalendarService*` in the feature when the adapter can answer
+the same question. A source search after the cutover confirmed no direct
+calendar-service getter calls remain under `src/features/calendar/`.

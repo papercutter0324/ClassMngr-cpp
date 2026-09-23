@@ -155,18 +155,18 @@ CalendarEventEditDraft editDraftFromLegacyEvent(
     return draft;
 }
 
-CalendarService* openCalendarService(
+bool calendarServiceIsAvailable(
     ApplicationServices* services
     )
 {
-    auto* calendarService =
-        services
-            ? services->calendarService()
-            : nullptr;
+    if (!services)
+    {
+        return false;
+    }
 
-    return calendarService && calendarService->isAvailable()
-        ? calendarService
-        : nullptr;
+    const ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort
+        calendarEventPort(*services);
+    return calendarEventPort.isAvailable();
 }
 
 QDate nextRepeatDate(
@@ -815,9 +815,7 @@ void CalendarPage::openCalendarDialog(
     bool existingEvent
     )
 {
-    auto* calendarService =
-        openCalendarService(m_services);
-    if (!calendarService)
+    if (!calendarServiceIsAvailable(m_services))
     {
         return;
     }

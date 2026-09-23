@@ -51,6 +51,19 @@ public:
         ApplicationServicesCalendarEventPort&&
         ) = delete;
 
+    [[nodiscard]] bool isAvailable() const noexcept
+    {
+        try
+        {
+            const CalendarService* service = m_services.calendarService();
+            return service && service->isAvailable();
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
     [[nodiscard]] Domain::Result<Application::CalendarEventSummary>
     projectionById(
         const int eventId

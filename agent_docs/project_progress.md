@@ -156,7 +156,9 @@ ordered batch port while preserving one transaction and duplicate-only no-op
 behavior. Continue the broader Phase 2 exit work with the typed calendar
 UI/page migration. The calendar preferences reset mutation now uses a typed
 delete-all port; its availability guard, confirmation, warning, status, and
-refresh behavior are preserved. Calendar import signature reads, generic
+refresh behavior are preserved. Import-start and dialog-opening availability
+guards now query the typed Platform calendar boundary; the calendar feature no
+longer calls `ApplicationServices::calendarService()` directly. Generic
 settings persistence, remaining feature-service migrations, and broader
 document-service migration also remain open. Keep the Linux Phase 0 follow-up
 separate until it can run on a host with Xvfb and loopback access.

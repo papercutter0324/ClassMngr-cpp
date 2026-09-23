@@ -2889,3 +2889,14 @@ Focused Application and Platform tests cover the Qt-free result contract,
 successful reset, unavailable service, and a database delete failure. Calendar
 import signature reads and other feature-service calls remain mapped for later
 Phase 2 slices.
+
+
+## Calendar availability boundary - 2026-09-24
+
+Calendar import start and calendar dialog opening now use
+`ApplicationServicesCalendarEventPort::isAvailable()`. The Platform adapter
+owns the service lookup and converts exceptions to the existing unavailable
+path. Neither `CalendarEventImportService` nor the calendar page helper stores
+or dereferences `CalendarService`; a source search found no direct
+`calendarService()` call below `src/features/calendar/`. The calendar import
+query and save operations remain on their structured Platform result paths.
