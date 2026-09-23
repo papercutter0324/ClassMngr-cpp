@@ -929,3 +929,32 @@ separate on a host with Xvfb and loopback access.
   settings, other feature services, and document migration for later slices.
   The formal Phase 2 exit gate remains open. Nothing was pushed; preserve the
   separately staged `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 calendar-import campus-code query - 2026-09-24
+
+- Added the Qt-free `CalendarEventImportCampusCodeQueryPort`, returning an
+  owning `std::vector<std::string>`, and the Platform
+  `CalendarEventImportCampusCodeQueryAdapter` over
+  `ResourcePaths::Campuses::directory()` and `CampusJsonRepository`.
+  `CalendarEventImportService` now consumes the port and converts its UTF-8
+  values to QString at the feature boundary; direct repository/resource-path
+  lookup is removed from the importer. Workbook decoding, parser behavior, and
+  CalendarPage's separate campus lookup remain unchanged.
+- Preserved repository campus-name ordering, whitespace trimming, blank-code
+  removal, first exact duplicate retention, and default/malformed/unreadable
+  record behavior. Adapter fixtures cover ordering, Korean UTF-8, duplicates,
+  blanks, default and malformed records, and empty/missing directories.
+- Independent verification used a fresh Ninja/MSVC x64 Debug configure and a
+  356-step build of ClassMngr and both focused test targets. CMake validated
+  875 handwritten source owners; focused CTest passed 2/2 for the parser and
+  campus-code adapter suites. The importer source search, dependency
+  assertions, and `git diff --check` passed. No material gaps remain.
+- Handoff: F23 gives CalendarPage a separate campus metadata read port and
+  Platform adapter. Preserve its current-campus availability guard, repository
+  ordering, ID/name/code aliases, matching, blank removal, and duplicate
+  behavior. Keep that query independent from this importer-specific code list.
+  Generic settings, broader feature-service, workbook decoder, and document
+  migrations remain open until the Phase 2 exit gate is met. Nothing was
+  pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.

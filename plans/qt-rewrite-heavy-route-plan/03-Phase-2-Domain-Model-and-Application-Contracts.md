@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F21 removes the unused `ClassNavigationPreferences` implementation, manifest entries, and stale includes while retaining the typed Application adapters and coverage. Independent Windows x64 Ninja/MSVC verification passed 8/8 CTest targets and CMake validated 872 source owners. Phase 2 remains in progress. Next bounded slice: route calendar import campus-code directory lookup through a Qt-free Application query and Platform adapter, preserving repository ordering and legacy value normalization.
+- Latest slice: F22 routes calendar import campus-code lookup through Qt-free `CalendarEventImportCampusCodeQueryPort` and Platform `CalendarEventImportCampusCodeQueryAdapter`; the adapter owns resource-path/repository access and supports injected test directories. Independent fresh Windows x64 Ninja/MSVC Debug configure and 356-step build passed; CMake validated 875 source owners and focused parser/adapter CTest passed 2/2. Phase 2 remains in progress. Next bounded slice: route CalendarPage's separate current-campus metadata read through an Application query and Platform adapter, preserving its availability guard and matching behavior.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -3845,5 +3845,26 @@ Independent fresh Windows x64 Ninja/MSVC verification configured and built
 defaults, and the five typed preference suites. CMake validated 872 source
 owners. Searches found no deleted API/file references in `src`, `tests`,
 `cmake`, or `CMakeLists.txt`; `git diff --check` passed. Phase 2 remains open.
-The next bounded slice is the calendar importer's campus-code directory lookup;
-workbook decoding and other campus lookups remain legacy.
+At the close of F21, the next planned slice was calendar-import campus-code
+lookup; F22 completes it below. Workbook decoding and other campus lookups
+remain legacy.
+
+#### Progress update - 2026-09-24 (F22 calendar-import campus-code query)
+
+Calendar import now obtains campus codes through the Qt-free
+`Application::CalendarEventImportCampusCodeQueryPort` and the Platform
+`CalendarEventImportCampusCodeQueryAdapter`. The adapter owns `ResourcePaths`
+and `CampusJsonRepository` access and accepts an injected directory for tests;
+`CalendarEventImportService` no longer performs direct resource or repository
+lookup. The query returns `std::vector<std::string>`.
+
+The adapter preserves repository campus-name ordering, trims codes, removes
+blank values, and retains only the first exact duplicate. Default,
+malformed, and unreadable records are skipped; missing or empty directories
+produce no codes. Workbook parsing, parser behavior, and CalendarPage behavior
+are unchanged. A fixture includes actual Korean UTF-8. Independent fresh
+Windows x64 Ninja/MSVC Debug configure and full 356-step build passed; CMake
+validated 875 source owners, focused parser and adapter CTest passed 2/2, and
+source/dependency and `git diff --check` reviews passed. Phase 2 remains open.
+The next slice is CalendarPage's distinct campus metadata read; it does not
+reuse or widen the importer's campus-code-list port.

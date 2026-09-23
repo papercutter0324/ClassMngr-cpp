@@ -558,3 +558,12 @@ obsolete legacy preference helper together with its source-owner entries and
 stale includes. If a header had also been providing an unrelated model type,
 include that model directly. Keep the typed adapter and page behavior suites;
 an unused helper's removal should not remove active preference coverage.
+
+
+## Phase 2 calendar-import campus-code query - 2026-09-24
+
+Keep the importer-specific campus-code read separate from general campus
+projections when their validation or size limits would change legacy behavior.
+Move repository/resource access to Platform, return owning UTF-8 values through
+a Qt-free Application port, and preserve the repository's ordering, trim,
+blank, duplicate, and silent-empty fallback rules.

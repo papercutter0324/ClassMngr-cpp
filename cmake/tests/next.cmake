@@ -554,6 +554,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformCalendarEventImportCampusCodeQuery
+    SOURCES
+        tests/next_platform_calendar_event_import_campus_code_query_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesPersonalDisplayNamePreferencesPort
     SOURCES
         tests/next_platform_application_services_personal_display_name_preferences_port_tests.cpp

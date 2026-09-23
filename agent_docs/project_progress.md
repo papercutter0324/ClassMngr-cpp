@@ -301,3 +301,17 @@ importer's campus-code directory lookup through Application and Platform,
 preserving its ordered, trimmed, blank-filtered, duplicate-free result and
 empty-directory behavior. Generic settings, other feature-service, workbook,
 calendar-page campus lookup, and document migrations remain open.
+
+### Phase 2 calendar-import campus-code query — 2026-09-24
+
+Added the Qt-free `CalendarEventImportCampusCodeQueryPort` and a Platform
+adapter over the campus resource directory and repository. The importer now
+uses the port and converts the owning UTF-8 values to QString at its feature
+boundary. Repository ordering, code trimming, blank removal, exact duplicate
+handling, malformed/default record skipping, and the empty/missing-directory
+fallback remain intact. CMake validated 875 owners; independent fresh
+Ninja/MSVC x64 build passed for ClassMngr and both importer tests; CTest passed
+2/2, including Korean UTF-8 fixtures. Source search and `git diff --check`
+passed. Next: give CalendarPage a separate campus metadata query while keeping
+its matching and alias behavior in the UI. Workbook decoding, generic settings,
+other feature-service, and broader document migrations remain open.

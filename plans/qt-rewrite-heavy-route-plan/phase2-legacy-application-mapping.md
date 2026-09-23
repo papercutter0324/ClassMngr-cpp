@@ -2991,14 +2991,32 @@ defaults, and the five typed preference suites. CMake validated 872 source
 owners; searches found no deleted API or file references in `src`, `tests`,
 `cmake`, `CMakeLists.txt`, or `compile_commands`; `git diff --check` passed.
 
-## Next bounded mapping: calendar-import campus-code lookup
+## Verified F22 calendar-import campus-code query
 
-Move only the calendar importer's campus-code directory lookup in
-`calendar_event_import_service.cpp` behind a Qt-free Application query and a
-Platform adapter. Preserve `CampusJsonRepository` ordering (sorted by campus
-name), UTF-8 code values, trimming, blank removal, exact duplicate removal,
-and the no-codes result when the directory is missing or empty. Keep workbook
-decoding, CalendarPage campus lookup, generic settings, and other feature
-boundaries for later slices. The candidate contract/API name is not yet set;
-derive it from the existing call and verify the legacy behavior before
-choosing its shape.
+Calendar import obtains campus codes through the Qt-free
+`Application::CalendarEventImportCampusCodeQueryPort`, implemented by the
+Platform `CalendarEventImportCampusCodeQueryAdapter`. The adapter owns
+`ResourcePaths` and `CampusJsonRepository` access and supports injected test
+directories; `CalendarEventImportService` has no direct resource-path or
+repository lookup. The Application result is
+`std::vector<std::string>`.
+
+The adapter retains repository campus-name ordering, trims values, removes
+blanks, and preserves the first exact duplicate. It skips default,
+malformed, and unreadable records and returns no codes for a missing or empty
+directory. A fixture verifies actual Korean UTF-8. Workbook parsing, parser
+behavior, and CalendarPage behavior remain unchanged.
+
+Independent fresh Windows x64 Ninja/MSVC Debug configure and full 356-step
+build passed. CMake validated 875 source owners; parser and adapter CTest
+passed 2/2; source/dependency checks and `git diff --check` passed. This is
+only the importer's code-list read seam.
+
+## Next bounded mapping: CalendarPage campus metadata query
+
+Move CalendarPage's separate campus metadata read behind its own Application
+query and Platform adapter. Preserve the current-campus availability guard,
+repository ordering, ID/name/code aliases, matching rules, blank handling,
+and duplicate behavior. Keep this separate from F22's importer campus-code
+list port. Generic settings, workbook parsing, other feature-service reads,
+and document-service work remain open.

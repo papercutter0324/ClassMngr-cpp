@@ -4,12 +4,12 @@
 #include "academic_calendar_event_parser.h"
 #include "calendar_workbook_reader.h"
 #include "core/application_services.h"
-#include "core/resource_paths.h"
 #include "core/startup_profiler.h"
-#include "features/campus/data/campus_json_repository.h"
 #include "next/application/calendar_event_import_plan.h"
+#include "next/application/calendar_event_import_campus_code_query_port.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
 #include "next/application/calendar_event_import_save_port.h"
+#include "next/platform/calendar_event_import_campus_code_query_adapter.h"
 #include "next/platform/application_services_calendar_event_import_save_port.h"
 #include "next/platform/application_services_calendar_event_import_signature_query_port.h"
 
@@ -40,25 +40,23 @@ struct CalendarImportOperationReleaseGuard
     }
 };
 
-QStringList campusCodesFromDirectory()
+QStringList calendarImportCampusCodes(
+    const ClassMngr::Next::Application::
+        CalendarEventImportCampusCodeQueryPort& campusCodeQueryPort
+    )
 {
     QStringList codes;
-    const CampusJsonRepository repository(
-        ResourcePaths::Campuses::directory()
-        );
-
-    for (const CampusInfo& campus : repository.loadCampuses())
+    for (const std::string& campusCode :
+         campusCodeQueryPort.loadCampusCodes())
     {
-        const QString code =
-            campus.campusCode.trimmed();
-
-        if (!code.isEmpty())
-        {
-            codes.append(code);
-        }
+        codes.append(
+            QString::fromUtf8(
+                campusCode.data(),
+                static_cast<qsizetype>(campusCode.size())
+                )
+            );
     }
 
-    codes.removeDuplicates();
     return codes;
 }
 
@@ -234,10 +232,15 @@ void CalendarEventImportService::handleFinished(
         workbook.styles.size()
         );
 
+    const ClassMngr::Next::Platform::
+        CalendarEventImportCampusCodeQueryAdapter campusCodeQueryAdapter;
+    const ClassMngr::Next::Application::
+        CalendarEventImportCampusCodeQueryPort& campusCodeQueryPort =
+            campusCodeQueryAdapter;
     CalendarImport::ParsedCalendarImport parsed =
         CalendarImport::parseCalendarEventsFromWorkbook(
             workbook,
-            campusCodesFromDirectory()
+            calendarImportCampusCodes(campusCodeQueryPort)
             );
     StartupProfiler::recordCalendarImportEventsPrepared(
         parsed.events.size(),
