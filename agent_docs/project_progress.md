@@ -145,10 +145,13 @@ hosted Linux rerun remains unverified.
 The schedule-summary, selected-details, and selection-state contracts remain
 app-less and separate from the legacy page. Commit `3802819b` adds the
 operation-scoped `SubPrepPrintSourceQuery` contract. Its focused target built
-and CTest passed 1/1 in the Windows x64 Ninja developer environment. The next
-slice is the custom-color palette caller boundary: move `ColorUtils` to the
-existing Application preference port and compose its Platform adapter at the
-UI boundary. The Sub Prep persistence adapter, page/PDF integration, roster
+and CTest passed 1/1 in the Windows x64 Ninja developer environment. Commit
+`83163b0a` moves `ColorUtils` to the existing Application custom-color
+preference port and composes its Platform adapter at all seven UI callers.
+The new utility target and existing adapter target built; focused CTest passed
+2/2. The current slice extracts and tests calendar-import duplicate planning
+as a Qt-free Application contract while preserving the legacy range read and
+batch save path. The Sub Prep persistence adapter, page/PDF integration, roster
 and package migration, and Release memory gate remain future work; no batching
 or memory improvement is claimed. Keep the Linux Phase 0 follow-up separate
 until it can run on a host with Xvfb and loopback access.

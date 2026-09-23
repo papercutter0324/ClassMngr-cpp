@@ -3296,3 +3296,22 @@ is an app-less test registered in [`next.cmake`](../../cmake/tests/next.cmake).
 The focused target build passed and CTest passed 1/1. No Sub Prep adapter,
 page/UI, or PDF wiring, SQL batching, release/memory improvement, roster/package
 migration, or output parity was established. Phase 2 remains In Progress.
+
+#### Progress update - 2026-09-23 (custom-color palette caller boundary)
+
+Commit `83163b0a` completed the custom-color palette caller seam. [`ColorUtils`](../../src/core/utils/colorutils.h)
+now accepts the existing [`CustomColorPalettePreferencesPort`](../../src/next/application/custom_color_palette_preferences.h)
+and has no `SettingsService` or Platform dependency. All seven UI picker call
+sites pass the existing Platform adapter. Picker behavior and the stored
+palette format were preserved; no other UI-service boundary is covered by
+this slice.
+
+The offscreen QtTest [`ColorUtilsCustomColorPaletteTests`](../../tests/colorutils_custom_color_palette_tests.cpp)
+covers load/save across all 16 `QColorDialog` custom-color slots, canonical
+writes, and slot restoration. The
+[`NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`](../../tests/next_platform_application_services_custom_color_palette_preferences_port_tests.cpp)
+also covers null `SettingsService` defaults and no-op writes.
+Both Windows x64 Ninja targets built and focused CTest passed 2/2; diff checks
+passed. Generic settings persistence remains open. This is not the Phase 3
+persistence rewrite or a Phase 7 feature migration; Phase 2 remains In
+Progress.

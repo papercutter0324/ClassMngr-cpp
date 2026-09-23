@@ -396,8 +396,13 @@ separate on a host with Xvfb and loopback access.
   parity, roster/package migration, source-release, or memory improvement was
   established. The Phase 2 plan, mapping, and Sub Prep memory plan now record
   this boundary and its limits.
-- Next slice: move custom-color palette adapter composition out of `ColorUtils`
-  and into its UI callers. The Application preference port and Platform
-  adapter already exist; this cutover should keep the color picker behavior
-  while the utility consumes the typed port. Phase 2 remains open. Nothing has
-  been pushed.
+- Commit `83163b0a` moves `ColorUtils` to the Application custom-color
+  preference port and composes the Platform adapter at all seven UI callers.
+  The utility no longer references `SettingsService` or the Platform adapter.
+  Its new offscreen test checks all 16 load/save slots and canonical write
+  values; the existing adapter test covers null-settings defaults and no-op
+  writes. Both Windows x64 Ninja targets built and focused CTest passed 2/2.
+- Current slice: extract and test the calendar-import duplicate planner as a
+  Qt-free Application contract. The legacy range read and batch save remain in
+  place; the typed range cutover and Sub Prep page/PDF wiring are later work.
+  Phase 2 remains open. Nothing has been pushed.

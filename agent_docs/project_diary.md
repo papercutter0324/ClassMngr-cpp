@@ -276,3 +276,10 @@
 - The app-less query verifies value ownership and validation, not adapter
   release or output-stage lifetime. Keep SQL batching, PDF/package cleanup,
   parity, and memory claims behind their later integration gates.
+
+## Phase 2 custom-color caller boundary — 2026-09-23
+
+- Keep legacy settings access in the Platform adapter and pass its typed
+  preference port into shared UI utilities. Preserve the color dialog's
+  load-before-open and save-after-close behavior, including cancellation; test
+  all process-global color slots and restore them after each test.

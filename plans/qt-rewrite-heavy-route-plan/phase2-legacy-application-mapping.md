@@ -12,8 +12,8 @@ calendar activation-read, non-repeat single-event save and delete,
 repeat-series suffix-delete, this-and-following repeat-series edit/save, and
 this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
-theme
-and language preference bridges are implemented.
+theme and language preference bridges are implemented, as is the custom-color
+palette caller boundary.
 A partial content-session
 integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
@@ -2637,3 +2637,21 @@ target build passed and CTest passed 1/1. This contract is not wired to a Sub
 Prep adapter, page, or PDF renderer. SQL batching, source-release or memory
 improvement, roster/package migration, and output parity remain unverified;
 Phase 2 remains open.
+
+## Verified custom-color palette caller boundary
+
+Commit `83163b0a` moves [`ColorUtils`](../../src/core/utils/colorutils.h)
+palette load/save behind the existing
+[`CustomColorPalettePreferencesPort`](../../src/next/application/custom_color_palette_preferences.h);
+the utility no longer depends on `SettingsService` or Platform. Each of the
+seven UI picker call sites passes the existing adapter from
+[`application_services_custom_color_palette_preferences_port.h`](../../src/next/platform/application_services_custom_color_palette_preferences_port.h).
+
+The two focused Windows x64 Ninja targets built and CTest passed 2/2. The
+offscreen QtTest [`ColorUtilsCustomColorPaletteTests`](../../tests/colorutils_custom_color_palette_tests.cpp)
+covers all 16 Qt dialog slots, canonical writes, and slot restoration; the
+[`NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`](../../tests/next_platform_application_services_custom_color_palette_preferences_port_tests.cpp)
+covers null-service defaults and no-op writes. This closes only the caller
+seam. Generic settings persistence, other UI-service boundaries, Phase 3
+persistence work, and Phase 7 feature migration remain open; no stored-format
+change is claimed.
