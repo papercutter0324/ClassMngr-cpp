@@ -2682,7 +2682,7 @@ batch persistence remains a legacy responsibility. The general projection's
 4,096-row cap and stricter metadata checks would change this import caller's
 legacy behavior, so its read port returns exact signature keys.
 
-## Verified calendar import existing-signature read cutover
+## Historical calendar import concrete existing-signature read
 
 Commit `d14155c1` adds
 [`ApplicationServicesCalendarEventPort::importSignatureKeysInRange`](../../src/next/platform/application_services_calendar_event_port.h)
@@ -2694,10 +2694,11 @@ the general 4,096-row projection and its stricter metadata checks. Candidate
 parsing and batch save remain in the legacy import service.
 
 `ClassMngr` and the focused calendar-event port target built on Windows x64
-Ninja; focused CTest passed 1/1 and `git diff --check` passed. This closes the
-existing-signature read seam only; Phase 2 remains open. The next slice is
-Sub Prep print-source adapter/query integration. That contract has no production
-adapter, page, or PDF wiring; output parity and memory acceptance are unverified.
+Ninja; focused CTest passed 1/1 and `git diff --check` passed. This was the
+initial concrete Platform read seam. The current Application query boundary
+supersedes it; see the entry below. Sub Prep print-source adapter/query
+integration was the next slice at that time; its production adapter, page, and
+PDF wiring were still unverified then.
 
 ## Verified Sub Prep print-source Platform read adapter
 
@@ -2886,9 +2887,9 @@ destructive prompt and routes the confirmed delete through
 longer retains `CalendarService`; it still owns the existing prompt text,
 warning, success status, and `calendarPreferencesChanged(true)` notification.
 Focused Application and Platform tests cover the Qt-free result contract,
-successful reset, unavailable service, and a database delete failure. Calendar
-import signature reads and other feature-service calls remain mapped for later
-Phase 2 slices.
+successful reset, unavailable service, and a database delete failure.
+Workbook parsing, campus-directory lookup, and other feature-service calls
+remain mapped for later Phase 2 slices.
 
 
 ## Calendar availability boundary - 2026-09-24
@@ -2939,3 +2940,18 @@ from ApplicationServices*. The adapter owns missing or unavailable settings
 behavior: the caller receives no stored color and applies its current default,
 while a save safely does nothing. Current-campus options and remaining
 upcoming-events preferences remain separate legacy-access slices.
+
+
+## Current calendar import signature-query boundary - 2026-09-24
+
+Existing-event signature lookup now uses the Qt-free
+`Application::CalendarEventImportSignatureQueryPort` and dedicated
+`Platform::ApplicationServicesCalendarEventImportSignatureQueryPort`; the
+former `ApplicationServicesCalendarEventPort` method has been removed. The
+contract preserves the exact six-field QString/UTF-16 signature, result order,
+availability and failure behavior, and reads beyond the general projection
+cap. Independent focused CTest passed 2/2; Windows x64 Debug built `ClassMngr`
+and both port targets, CMake validated 874 source owners, and `git diff
+--check` passed. Workbook parsing and campus-directory lookup remain legacy;
+broader import and Phase 2 work remain open. See the Phase 2 plan's
+[signature-query update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-calendar-import-signature-query-contract).

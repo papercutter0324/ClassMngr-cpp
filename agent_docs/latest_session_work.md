@@ -823,3 +823,28 @@ separate on a host with Xvfb and loopback access.
   Phase 2 inventory. The 250 MiB packaged Release gate belongs to Phase 9;
   the Phase 2 plan's app-less and forbidden-dependency exit checks remain.
   Nothing was pushed.
+
+
+### Phase 2 calendar import signature-query boundary - 2026-09-24
+
+- Added a Qt-free Application request/result and availability contract for
+  calendar-import signature lookup, with a dedicated Platform adapter over
+  the legacy calendar service. The import workflow uses this interface; the
+  old concrete `ApplicationServicesCalendarEventPort` signature method was
+  removed. The Platform dependency guard remains Application plus Qt6::Core.
+- Independent Windows x64 Debug verification built `ClassMngr`, the
+  Application contract target, and the Platform adapter target. Focused CTest
+  passed 2/2. Coverage preserves six-field QString/UTF-16 identity, order,
+  unavailable/invalid/read failures, and 4,097 rows beyond the general
+  projection cap. Configure validated 874 source owners; `git diff --check`
+  passed. The initial plain-shell MSVC build lacked developer include paths;
+  retrying inside the x64 developer environment passed. No product defect was
+  found.
+- Handoff: next route the Schedule and Sub Prep personal-display-name callers
+  through the existing `ApplicationServices` adapter entry point, preserving
+  null-service defaults, caller trimming, read timing, and post-folder-create
+  save timing. My Information and Initial Setup still use the adapter's
+  `SettingsService*` constructor; workbook parsing/campus lookup, generic
+  settings persistence, other feature services, and broader document
+  migration remain open. The 250 MiB packaged Release gate belongs to Phase 9;
+  nothing was pushed.

@@ -245,3 +245,15 @@ at that time; unused legacy settings helpers and the read-only PowerPoint
 registry probe remain outside the migration scope. Keep the supplemental
 Linux Phase 0 follow-up separate until a host with Xvfb and loopback access is
 available.
+
+### Phase 2 calendar import signature-query boundary — 2026-09-24
+
+The import workflow now reads existing duplicate signatures and checks
+availability through a Qt-free Application query port. A dedicated Platform
+adapter owns the legacy calendar-service access; the former concrete signature
+method was removed. The six-field UTF-16 identity, order, errors, and uncapped
+range behavior are preserved. Independent Windows x64 Debug verification
+built `ClassMngr` and both focused targets; CTest passed 2/2, CMake validated
+874 source owners, and `git diff --check` passed. Workbook parsing and
+campus-directory lookup remain open. Next: continue typed preference caller
+migrations, then the remaining feature-service and document boundaries.

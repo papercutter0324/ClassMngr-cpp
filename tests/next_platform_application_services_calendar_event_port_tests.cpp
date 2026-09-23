@@ -4,6 +4,7 @@
 #include "next/application/calendar_event_delete_port.h"
 #include "next/application/calendar_event_delete_all_port.h"
 #include "next/application/calendar_event_import_save_port.h"
+#include "next/application/calendar_event_import_signature_query_port.h"
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
@@ -11,6 +12,7 @@
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_delete_all_port.h"
 #include "next/platform/application_services_calendar_event_import_save_port.h"
+#include "next/platform/application_services_calendar_event_import_signature_query_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/platform/application_services_calendar_event_series_create_port.h"
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
@@ -40,6 +42,8 @@ using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventDeleteAllPort;
 using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventImportSavePort;
+using ClassMngr::Next::Platform::
+    ApplicationServicesCalendarEventImportSignatureQueryPort;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventSavePort;
 using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventSeriesCreatePort;
@@ -108,6 +112,17 @@ CalendarEventSaveRequest validSaveRequest()
         false,
         "Meeting",
         "Timed"
+    };
+}
+
+CalendarEventImportSignatureRangeRequest importSignatureRange(
+    const QDate& startDate,
+    const QDate& endDate
+    )
+{
+    return {
+        CalendarEventDate(startDate.toString(Qt::ISODate).toStdString()),
+        CalendarEventDate(endDate.toString(Qt::ISODate).toStdString())
     };
 }
 
@@ -269,10 +284,15 @@ reportsCalendarEventPortAvailability()
 {
     ApplicationServices services;
     ApplicationServicesCalendarEventPort port(services);
+    ApplicationServicesCalendarEventImportSignatureQueryPort importPort(
+        services
+        );
 
     QVERIFY(!port.isAvailable());
+    QVERIFY(!importPort.isAvailable());
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(port.isAvailable());
+    QVERIFY(importPort.isAvailable());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -1912,8 +1932,10 @@ returnsLegacyImportSignatureKeysInRangeOrder()
         != legacyRows->at(2).repeatSeriesId
         );
 
-    ApplicationServicesCalendarEventPort port(services);
-    const auto keys = port.importSignatureKeysInRange(startDate, endDate);
+    ApplicationServicesCalendarEventImportSignatureQueryPort port(services);
+    const auto keys = port.loadSignaturesInRange(
+        importSignatureRange(startDate, endDate)
+        );
     QVERIFY(keys);
     const auto& keyValues = keys.value();
     QCOMPARE(keyValues.size(), std::size_t{3});
@@ -1947,32 +1969,39 @@ void NextPlatformApplicationServicesCalendarEventPortTests::
 reportsUnavailableAndInvalidImportSignatureRangesStructurally()
 {
     ApplicationServices unavailableServices;
-    ApplicationServicesCalendarEventPort unavailablePort(
+    ApplicationServicesCalendarEventImportSignatureQueryPort unavailablePort(
         unavailableServices
         );
     verifyFailure(
-        unavailablePort.importSignatureKeysInRange(
+        unavailablePort.loadSignaturesInRange(importSignatureRange(
             QDate(2026, 9, 20),
             QDate(2026, 9, 21)
-            ),
+            )),
         ErrorCode::NotFound
         );
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    ApplicationServicesCalendarEventPort port(services);
+    ApplicationServicesCalendarEventImportSignatureQueryPort port(services);
     verifyFailure(
-        port.importSignatureKeysInRange(
+        port.loadSignaturesInRange(importSignatureRange(
             QDate(),
             QDate(2026, 9, 21)
-            ),
+            )),
         ErrorCode::InvalidInput
         );
     verifyFailure(
-        port.importSignatureKeysInRange(
+        port.loadSignaturesInRange(importSignatureRange(
             QDate(2026, 9, 21),
             QDate(2026, 9, 20)
-            ),
+            )),
+        ErrorCode::InvalidInput
+        );
+    verifyFailure(
+        port.loadSignaturesInRange({
+            CalendarEventDate("2026-9-21"),
+            CalendarEventDate("2026-09-22")
+        }),
         ErrorCode::InvalidInput
         );
 }
@@ -1991,12 +2020,12 @@ reportsImportSignatureRangeReadFailureStructurally()
         qPrintable(query.lastError().text())
         );
 
-    ApplicationServicesCalendarEventPort port(services);
+    ApplicationServicesCalendarEventImportSignatureQueryPort port(services);
     verifyFailure(
-        port.importSignatureKeysInRange(
+        port.loadSignaturesInRange(importSignatureRange(
             QDate(2026, 9, 20),
             QDate(2026, 9, 21)
-            ),
+            )),
         ErrorCode::Technical
         );
 }
@@ -2083,9 +2112,11 @@ rejectsPartialSourceTimesAndProjectionOverflow()
         || overflow.error().message.find("capacity") != std::string::npos
         );
 
-    const auto importKeys = port.importSignatureKeysInRange(
-        QDate(2026, 11, 1),
-        QDate(2026, 11, 1)
+    ApplicationServicesCalendarEventImportSignatureQueryPort importPort(
+        services
+        );
+    const auto importKeys = importPort.loadSignaturesInRange(
+        importSignatureRange(QDate(2026, 11, 1), QDate(2026, 11, 1))
         );
     QVERIFY(importKeys);
     const auto& importKeyValues = importKeys.value();
@@ -2154,6 +2185,8 @@ void NextPlatformApplicationServicesCalendarEventPortTests::
 boundaryIsTypedAndDoesNotExposeLegacyOwnership()
 {
     using Port = ApplicationServicesCalendarEventPort;
+    using ImportSignatureQueryPort =
+        CalendarEventImportSignatureQueryPort;
     using DeletePort = CalendarEventDeletePort;
     using SavePort = CalendarEventSavePort;
     using SeriesEditPort = CalendarEventSeriesEditPort;
@@ -2167,6 +2200,12 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         );
     using ByIdResult = decltype(
         std::declval<const Port&>().projectionById(1)
+        );
+    using ImportSignatureQueryResult = decltype(
+        std::declval<const ImportSignatureQueryPort&>()
+            .loadSignaturesInRange(
+                std::declval<const CalendarEventImportSignatureRangeRequest&>()
+                )
         );
     using DeleteResult = decltype(
         std::declval<DeletePort&>().deleteEvent(
@@ -2201,6 +2240,20 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     static_assert(std::is_same_v<
         ByIdResult,
         Domain::Result<CalendarEventSummary>
+        >);
+    static_assert(std::is_same_v<
+        ImportSignatureQueryResult,
+        CalendarEventImportSignatureQueryResult
+        >);
+    static_assert(std::is_base_of_v<
+        ImportSignatureQueryPort,
+        ApplicationServicesCalendarEventImportSignatureQueryPort
+        >);
+    static_assert(!std::is_copy_constructible_v<
+        ApplicationServicesCalendarEventImportSignatureQueryPort
+        >);
+    static_assert(!std::is_move_constructible_v<
+        ApplicationServicesCalendarEventImportSignatureQueryPort
         >);
     static_assert(std::is_same_v<
         DeleteResult,

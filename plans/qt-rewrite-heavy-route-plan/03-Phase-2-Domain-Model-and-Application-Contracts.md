@@ -3772,3 +3772,22 @@ target. Focused CTest passed 1/1 for available, unavailable, null
 No dedicated CalendarPage test exists; the Tester judged the port tests plus
 guard/source comparison reasonable for this refactor. Other calendar
 input/lookup work and broader Phase 2 migrations remain open.
+
+
+#### Progress update - 2026-09-24 (calendar import signature-query contract)
+
+The exact existing-signature read now crosses the Qt-free Application
+`CalendarEventImportSignatureQueryPort`, with a dedicated Platform
+`ApplicationServicesCalendarEventImportSignatureQueryPort`. The import
+workflow uses the port for availability and date-range signatures; the former
+`ApplicationServicesCalendarEventPort::importSignatureKeysInRange` method has
+been removed. Platform's enforced dependencies remain Application and
+Qt6::Core.
+
+Windows x64 Debug built `ClassMngr` and both query-port targets. Independent
+focused CTest passed 2/2; CMake validated 874 source owners, and
+`git diff --check` passed. Coverage preserves the six-field QString/UTF-16
+signature, ordering, invalid/unavailable/read failures, and 4,097-row results
+beyond the general projection cap. Workbook parsing and campus-directory
+lookup remain legacy; broader calendar import, generic settings, other
+feature-service migrations, and Phase 2 remain open.

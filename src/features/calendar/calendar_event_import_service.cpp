@@ -8,9 +8,10 @@
 #include "core/startup_profiler.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "next/application/calendar_event_import_plan.h"
+#include "next/application/calendar_event_import_signature_query_port.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/platform/application_services_calendar_event_import_save_port.h"
-#include "next/platform/application_services_calendar_event_port.h"
+#include "next/platform/application_services_calendar_event_import_signature_query_port.h"
 
 #include <QDate>
 #include <QNetworkAccessManager>
@@ -133,9 +134,13 @@ void CalendarEventImportService::importFromDefaultSource()
         return;
     }
 
-    const ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort
-        calendarEventPort(*m_services);
-    if (!calendarEventPort.isAvailable())
+    const ClassMngr::Next::Platform::
+        ApplicationServicesCalendarEventImportSignatureQueryPort
+            signatureQueryAdapter(*m_services);
+    const ClassMngr::Next::Application::
+        CalendarEventImportSignatureQueryPort& signatureQueryPort =
+            signatureQueryAdapter;
+    if (!signatureQueryPort.isAvailable())
     {
         emit importFailed(
             tr("The calendar Teacher Profile is not available.")
@@ -270,13 +275,20 @@ void CalendarEventImportService::handleFinished(
         return;
     }
 
-    const ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort
-        calendarEventPort(*m_services);
-    auto existingSignatures =
-        calendarEventPort.importSignatureKeysInRange(
-            firstDate,
-            lastDate
-            );
+    const ClassMngr::Next::Platform::
+        ApplicationServicesCalendarEventImportSignatureQueryPort
+            signatureQueryAdapter(*m_services);
+    const ClassMngr::Next::Application::
+        CalendarEventImportSignatureQueryPort& signatureQueryPort =
+            signatureQueryAdapter;
+    auto existingSignatures = signatureQueryPort.loadSignaturesInRange({
+        .startDate = ClassMngr::Next::Application::CalendarEventDate(
+            firstDate.toString(Qt::ISODate).toStdString()
+            ),
+        .endDate = ClassMngr::Next::Application::CalendarEventDate(
+            lastDate.toString(Qt::ISODate).toStdString()
+            )
+    });
     if (!existingSignatures)
     {
         const std::string& errorText =

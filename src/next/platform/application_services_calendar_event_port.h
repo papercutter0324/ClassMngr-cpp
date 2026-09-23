@@ -15,7 +15,6 @@
 #include <optional>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace ClassMngr::Next::Platform
 {
@@ -27,10 +26,6 @@ namespace ClassMngr::Next::Platform
 class ApplicationServicesCalendarEventPort final
 {
 public:
-    using ImportSignatureKeys = std::vector<std::u16string>;
-    using ImportSignatureKeysResult =
-        Domain::Result<ImportSignatureKeys>;
-
     explicit ApplicationServicesCalendarEventPort(
         ApplicationServices& services
         ) noexcept
@@ -148,79 +143,6 @@ public:
         }
     }
 
-    [[nodiscard]] ImportSignatureKeysResult importSignatureKeysInRange(
-        const QDate& startDate,
-        const QDate& endDate
-        ) const
-    {
-        if (!startDate.isValid()
-            || !endDate.isValid()
-            || endDate < startDate)
-        {
-            return failureImportSignatureKeys(
-                Domain::ErrorCode::InvalidInput,
-                "Calendar event range must contain valid ordered dates."
-                );
-        }
-
-        try
-        {
-            const CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
-            {
-                return failureImportSignatureKeys(
-                    Domain::ErrorCode::NotFound,
-                    "No Teacher Profile service is available."
-                    );
-            }
-
-            const ::Result<QList<CalendarEvent>> loaded =
-                service->eventsInRange(startDate, endDate);
-            if (!loaded)
-            {
-                const QString legacyError = loaded.error();
-                if (!service->isAvailable())
-                {
-                    return failureImportSignatureKeys(
-                        Domain::ErrorCode::NotFound,
-                        "No Teacher Profile service is available."
-                        );
-                }
-
-                const std::string message =
-                    legacyError.toUtf8().toStdString();
-                return failureImportSignatureKeys(
-                    Domain::ErrorCode::Technical,
-                    message
-                    );
-            }
-
-            const QList<CalendarEvent>& events = loaded.value();
-            ImportSignatureKeys keys;
-            keys.reserve(static_cast<std::size_t>(events.size()));
-            for (const CalendarEvent& event : events)
-            {
-                keys.push_back(importSignatureKey(event));
-            }
-
-            return ImportSignatureKeysResult::success(std::move(keys));
-        }
-        catch (const std::exception&)
-        {
-            return failureImportSignatureKeys(
-                Domain::ErrorCode::Technical,
-                "Calendar event import signatures could not be loaded."
-                );
-        }
-        catch (...)
-        {
-            return failureImportSignatureKeys(
-                Domain::ErrorCode::Technical,
-                "Calendar event import signatures could not be loaded."
-                );
-        }
-    }
-
     [[nodiscard]] Domain::Result<Application::CalendarEventProjection>
     projection(
         const QDate& startDate,
@@ -328,39 +250,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::u16string importSignatureKey(
-        const CalendarEvent& event
-        )
-    {
-        // Keep the importer's established six-field QString identity and its
-        // UTF-16 key representation. This read intentionally avoids the
-        // bounded general event projection, whose capacity and metadata checks
-        // are not part of legacy import duplicate detection.
-        const QString signature = QStringLiteral("%1|%2|%3|%4|%5|%6")
-            .arg(
-                event.title.simplified(),
-                normalizedCalendarEventType(event.eventType),
-                event.startDate.toString(Qt::ISODate),
-                event.endDate.toString(Qt::ISODate),
-                event.allDay ? QStringLiteral("1") : QStringLiteral("0"),
-                normalizedCalendarEventTimeStatus(event.timeStatus)
-                );
-        return signature.toStdU16String();
-    }
-
-    [[nodiscard]] static ImportSignatureKeysResult
-    failureImportSignatureKeys(
-        const Domain::ErrorCode code,
-        std::string message
-        )
-    {
-        return ImportSignatureKeysResult::failure({
-            .code = code,
-            .message = std::move(message),
-            .recoverable = false
-        });
-    }
-
     [[nodiscard]] static Domain::Result<Application::CalendarEventSummary>
     projectEvent(
         const CalendarEvent& source,

@@ -519,3 +519,13 @@ availability check through the Application port and map it in Platform.
 This keeps the feature from reaching for SettingsService while preserving
 unavailable defaults and avoiding unrelated repository reads. Keep the
 contract comment explicit about availability versus an empty value.
+
+
+## Phase 2 calendar import signature query - 2026-09-24
+
+Keep import duplicate detection on its dedicated legacy range query: the
+general calendar projection is bounded and applies stricter metadata rules
+that are not part of import identity. Expose the dedicated read as a Qt-free
+Application contract, and keep QString normalization and UTF-16 key creation
+at the Platform boundary. Remove the old concrete API once the workflow uses
+the contract; do not bridge through the capped projection.
