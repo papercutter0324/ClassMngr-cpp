@@ -3354,3 +3354,31 @@ Ninja; focused CTest passed 1/1 and `git diff --check` passed. Phase 2 remains
 open. The next slice integrates the Sub Prep print-source contract with a
 production read adapter; the contract still has no adapter, page, or PDF
 wiring, and no output-parity or memory acceptance is claimed.
+
+#### Progress update - 2026-09-23 (Sub Prep print-source Platform read adapter)
+
+Commit `2daae4ef` adds
+[`ApplicationServicesSubPrepPrintSourcePort`](../../src/next/platform/application_services_sub_prep_print_source_port.h)
+and a scoped `ClassService::classInfosForScheduleScope` /
+`ClassInfoRepository::loadClassInfosForScheduleScope` SQL read. The query
+filters requested class IDs, selected weekdays, and the selected regular or
+intensive schedule table before materializing class information. Positive
+typed IDs are validated and rendered as decimal integer literals, keeping the
+4,096-class scope within SQLite's bind limit. Per-class and aggregate meeting
+limits read at most one sentinel row beyond each bound and report overflow.
+
+The adapter returns owning values, preserves requested-class order, copies
+each referenced teacher once, and omits classes without selected meetings or
+with missing class information, an unassigned teacher, or a missing teacher.
+Roster lookup failures retain the legacy zero-count fallback. The class-scope
+read requires the active repository session and has no `DataService` fallback.
+
+`ClassMngr`, the Platform adapter test target, and the app-less print-source
+query target built on Windows x64 Ninja. Focused CTest passed
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` and
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`; `git diff --check`
+passed. This closes the selected-scope source-read seam only. Page/PDF wiring,
+output parity, teacher/roster batching, Release memory acceptance, and full
+Sub Prep completion remain open; Phase 2 remains In Progress. The next bounded
+slice is a selected-class details Platform read adapter, initially unconnected
+to the page.

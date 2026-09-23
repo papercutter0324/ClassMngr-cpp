@@ -13,8 +13,8 @@ repeat-series suffix-delete, this-and-following repeat-series edit/save, and
 this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
-palette caller boundary and calendar-import planning and signature-read seams.
-A partial content-session
+palette caller boundary and calendar-import planning and signature-read seams,
+and a Sub Prep print-source read adapter. A partial content-session
 integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
 remain open, including generic settings persistence.
@@ -2697,3 +2697,35 @@ Ninja; focused CTest passed 1/1 and `git diff --check` passed. This closes the
 existing-signature read seam only; Phase 2 remains open. The next slice is
 Sub Prep print-source adapter/query integration. That contract has no production
 adapter, page, or PDF wiring; output parity and memory acceptance are unverified.
+
+## Verified Sub Prep print-source Platform read adapter
+
+Commit `2daae4ef` adds
+[`ApplicationServicesSubPrepPrintSourcePort`](../../src/next/platform/application_services_sub_prep_print_source_port.h)
+and routes its selected class/day/mode read through
+`ClassService::classInfosForScheduleScope` to
+`ClassInfoRepository::loadClassInfosForScheduleScope`. The repository filters
+the requested IDs, selected days, and one schedule mode in SQL before
+materializing records. It validates positive unique integer IDs, uses decimal
+integer literals for the at-most-4,096-ID scope to stay below SQLite's bind
+limit, and uses per-class and aggregate limit-plus-one sentinels to detect
+overflow. This scoped class-info read requires the active repository session;
+it has no `DataService` fallback.
+
+The Platform adapter emits owning values in request order and stores each
+referenced teacher once. Classes lacking a selected meeting, class-info row,
+assigned teacher, or existing teacher are omitted, matching the legacy
+print-source builder. Roster lookup errors preserve its zero-count fallback.
+The adapter test also covers selected-mode-only reads, noncanonical typed-ID
+aliases, per-class and aggregate overflow, repeated and orphan teacher
+assignments, and roster failure.
+
+`ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests` built on Windows x64
+Ninja. Focused CTest passed both test targets and `git diff --check` passed.
+This closes only the selected-scope source-read seam: there is no page/PDF
+wiring, output-parity result, teacher/roster batching, Release memory
+acceptance, or full Sub Prep completion. The next bounded slice is a
+selected-class details Platform read adapter, initially unconnected to the
+page.

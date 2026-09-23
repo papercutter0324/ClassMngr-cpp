@@ -295,3 +295,19 @@
   capacity and unrelated metadata validation change legacy import behavior;
   return ordered UTF-16 signature keys and compare them against the canonical
   parser helper, including ranges beyond the projection limit.
+
+## Phase 2 Sub Prep print-source Platform read — 2026-09-23
+
+- Parse typed lexical IDs canonically before mapping to legacy integer keys;
+  strings like `"01"` can alias `"1"` after conversion.
+- Apply class, weekday, and mode filters in SQL before copying records. Use
+  per-class and aggregate limit-plus-one sentinels so overflow is visible and
+  returned materialization stays within the Application contract bounds.
+- A valid 4,096-class scope exceeds older SQLite bind-variable defaults.
+  Decimal formatting is safe after strict integer parsing; continue binding
+  weekdays and limits.
+- Preserve legacy omissions for classes without a usable teacher. A fixture
+  for an orphan teacher assignment must seed that invalid state explicitly
+  with foreign-key checks disabled only around the direct update.
+- An adapter and focused tests do not prove page/PDF parity, roster/package
+  migration, SQL batching, or a memory improvement; keep those gates open.

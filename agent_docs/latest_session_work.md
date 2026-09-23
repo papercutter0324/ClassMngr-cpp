@@ -424,7 +424,25 @@ separate on a host with Xvfb and loopback access.
   invalid/unavailable/read failures and a successful 4,097-row range. The app
   and port test target built with Windows x64 Ninja; focused CTest passed 1/1.
   Importer network/signal integration and batch save migration remain open.
-- Next slice: implement the Sub Prep print-source Platform adapter for the
-  existing selected-class/day/mode contract. The legacy page/PDF wiring and
-  Release memory gate remain later work. Phase 2 remains open; nothing has
-  been pushed.
+- Commit `2daae4ef` adds `ApplicationServicesSubPrepPrintSourcePort` and its
+  scoped ClassService/repository read. SQL filters requested class IDs,
+  weekdays, schedule mode, and usable-teacher rows before copying data. It
+  applies per-class and total limit-plus-one sentinels, returns owned values
+  in request order, deduplicates teacher copies, and uses validated decimal
+  integer IDs so the maximum 4,096-class request stays within older SQLite
+  bind limits. Missing-info, unassigned, and orphan-teacher classes are
+  omitted; roster-read failures preserve the count-zero fallback.
+- `ClassMngr` and the new Platform adapter test target built. The app-less
+  `ClassMngrNextApplicationSubPrepPrintSourceQueryTests` and offscreen
+  `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
+  focused CTests passed 2/2; `git diff --check` passed. The test covers
+  request order, mode/day/class scope, empty scopes, shared teachers,
+  missing/unassigned/orphan teachers, roster failure, SQL failure, canonical
+  ID aliases, per-class and aggregate overflow, the maximum class scope, and
+  owning-value behavior.
+- This remains a read-adapter slice. The Sub Prep page/PDF wiring, persistence
+  adapter, roster/package migration, output parity, SQL batching, and Release
+  memory acceptance remain open; no memory improvement is claimed. Next
+  entry point: add a scoped Platform read adapter for the existing selected-
+  class details query, initially separate from the page. Phase 2 remains
+  open; nothing has been pushed.

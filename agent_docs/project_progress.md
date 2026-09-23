@@ -157,12 +157,20 @@ Windows x64 Ninja targets built and CTest passed 2/2. Commit `d14155c1` moves
 the existing-event read behind `ApplicationServicesCalendarEventPort`, keeping
 ordered UTF-16 keys, the exact requested range, and legacy candidate parsing
 and batch saving. Adapter parity/failure tests pass, including a 4,097-row
-read beyond the general projection cap. The next slice implements the Sub Prep
-print-source Platform adapter; its legacy page/PDF wiring and Release memory
-gate remain open. The Sub Prep persistence adapter, roster and package
-migration remain future work; no batching or memory improvement is claimed.
-Keep the Linux Phase 0 follow-up separate
-until it can run on a host with Xvfb and loopback access.
+read beyond the general projection cap. Commit `2daae4ef` adds the Sub Prep
+print-source Platform adapter. The ClassService/repository read scopes by
+selected class IDs, weekdays, and mode before returning class records; SQL
+caps each class and the total schedule with overflow sentinels. It preserves
+request order, owns copied values, deduplicates teachers, and omits classes
+without a usable teacher. The 4,096 class-ID bound avoids SQLite's historical
+bind-variable limit. `ClassMngr` and both focused Sub Prep query/adapter
+targets built; their CTests passed 2/2. The legacy page/PDF wiring, persistence
+adapter, roster/package migration, output parity, and Release memory gate
+remain open. No batching or memory improvement is claimed. Keep the Linux
+Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
+access. Next slice: add a scoped Platform read adapter for the existing
+Sub Prep selected-class details query; keep page integration and Release
+memory acceptance as later gates.
 
 ### Phase 2 kickoff — 2026-09-19
 
