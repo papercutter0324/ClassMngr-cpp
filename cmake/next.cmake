@@ -114,6 +114,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_calendar_event_series_create_port.h
     src/next/platform/application_services_calendar_event_series_edit_port.h
     src/next/platform/application_services_calendar_event_series_delete_port.h
+    src/next/platform/application_services_sub_prep_print_source_port.h
     src/next/platform/application_services_calendar_event_display_preferences_port.h
     src/next/platform/application_services_calendar_event_type_color_preferences_port.h
     src/next/platform/application_services_custom_color_palette_preferences_port.h

@@ -21,6 +21,7 @@
 #include "features/classes/services/speaking_analytics.h"
 
 #include <QPair>
+#include <QStringList>
 #include <QVariant>
 
 class DataService;
@@ -108,6 +109,13 @@ public:
     [[nodiscard]] Status rename(int classId, const QString& name) const;
     [[nodiscard]] Status remove(int classId) const;
     [[nodiscard]] Result<ClassInfo> classInfo(int classId) const;
+    [[nodiscard]] Result<QList<ClassInfo>> classInfosForScheduleScope(
+        const QList<int>& classIds,
+        const QStringList& selectedDays,
+        ScheduleType type,
+        int maxMeetingsPerClass,
+        int maxTotalMeetings
+        ) const;
     [[nodiscard]] Status saveClassInfo(const ClassInfo& info) const;
     [[nodiscard]] Status saveClassNotes(
         int classId,

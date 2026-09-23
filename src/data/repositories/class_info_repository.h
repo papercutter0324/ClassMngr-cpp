@@ -8,6 +8,7 @@
 
 #include <QList>
 #include <QSqlDatabase>
+#include <QStringList>
 
 class ClassInfoRepository
 {
@@ -28,6 +29,14 @@ public:
 
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
+        );
+
+    [[nodiscard]] Result<QList<ClassInfo>> loadClassInfosForScheduleScope(
+        const QList<int>& classIds,
+        const QStringList& selectedDays,
+        ScheduleType type,
+        int maxMeetingsPerClass,
+        int maxTotalMeetings
         );
 
     [[nodiscard]] Result<QList<ClassTeacherAssignment>>

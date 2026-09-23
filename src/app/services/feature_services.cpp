@@ -494,6 +494,30 @@ Result<ClassInfo> ClassService::classInfo(int classId) const
     return std::unexpected(unavailableError());
 }
 
+Result<QList<ClassInfo>> ClassService::classInfosForScheduleScope(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings
+    ) const
+{
+    if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
+    {
+        return repository->loadClassInfosForScheduleScope(
+            classIds,
+            selectedDays,
+            type,
+            maxMeetingsPerClass,
+            maxTotalMeetings
+            );
+    }
+
+    // This bounded v2 read must execute against the active database session;
+    // it intentionally has no DataService fallback.
+    return std::unexpected(unavailableError());
+}
+
 Status ClassService::saveClassInfo(const ClassInfo& info) const
 {
     const ClassInfo normalized = ClassInfoValidator::normalized(info);

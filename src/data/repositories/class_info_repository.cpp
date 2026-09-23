@@ -9,7 +9,10 @@
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSet>
 #include <QStringList>
+
+#include <limits>
 
 namespace
 {
@@ -651,6 +654,248 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     }
 
     return info;
+}
+
+Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings
+    )
+{
+    if (classIds.isEmpty() || selectedDays.isEmpty())
+    {
+        return QList<ClassInfo>{};
+    }
+
+    if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
+    {
+        return std::unexpected(
+            QObject::tr("Loading scoped class information failed: invalid schedule type.")
+            );
+    }
+
+    if (maxMeetingsPerClass < 0
+        || maxMeetingsPerClass == std::numeric_limits<int>::max()
+        || maxTotalMeetings < 0
+        || maxTotalMeetings == std::numeric_limits<int>::max())
+    {
+        return std::unexpected(
+            QObject::tr("Loading scoped class information failed: invalid meeting limit.")
+            );
+    }
+
+    QSet<int> seenClassIds;
+    for (const int classId : classIds)
+    {
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading scoped class information failed: class identifiers must be positive and unique."
+                    )
+                );
+        }
+        seenClassIds.insert(classId);
+    }
+
+    static const QStringList validDays{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+    QSet<QString> seenDays;
+    for (const QString& day : selectedDays)
+    {
+        if (!validDays.contains(day) || seenDays.contains(day))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading scoped class information failed: selected weekdays must be valid and unique."
+                    )
+                );
+        }
+        seenDays.insert(day);
+    }
+
+    // IDs are validated positive integers above, so formatting them as
+    // decimal literals avoids exceeding SQLite's historical bind limit at
+    // the application's 4,096-class scope bound.
+    QStringList classIdValues;
+    classIdValues.reserve(classIds.size());
+    QStringList requestedIds;
+    requestedIds.reserve(classIds.size());
+    for (const int classId : classIds)
+    {
+        const QString value = QString::number(classId);
+        classIdValues.append(value);
+        requestedIds.append(value);
+    }
+
+    QStringList dayPlaceholders;
+    dayPlaceholders.fill(QStringLiteral("?"), selectedDays.size());
+
+    const QString timesTable = type == ScheduleType::Regular
+        ? QStringLiteral("class_times")
+        : QStringLiteral("class_intensive_times");
+    const QString queryText = QStringLiteral(R"(
+        WITH scoped_times AS (
+            SELECT
+                times.class_id,
+                times.id,
+                times.day,
+                times.start_time,
+                times.end_time
+            FROM %1 times
+            INNER JOIN class_info assigned_info
+            ON assigned_info.class_id = times.class_id
+            WHERE times.class_id IN (%2)
+              AND times.day IN (%3)
+              AND assigned_info.teacher_id > 0
+              AND EXISTS (
+                  SELECT 1
+                  FROM teachers assigned_teacher
+                  WHERE assigned_teacher.id = assigned_info.teacher_id
+              )
+        ),
+        ranked_times AS (
+            SELECT
+                class_id,
+                id,
+                day,
+                start_time,
+                end_time,
+                ROW_NUMBER() OVER (
+                    PARTITION BY class_id
+                    ORDER BY id
+                ) AS class_schedule_order,
+                ROW_NUMBER() OVER (
+                    ORDER BY class_id, id
+                ) AS total_schedule_order
+            FROM scoped_times
+        )
+        SELECT
+            ci.class_id AS info_class_id,
+            ci.teacher_id,
+            ci.class_grade,
+            ci.class_level,
+            ci.class_color,
+            ci.font_color,
+            ci.notes,
+            ranked_times.class_id AS schedule_class_id,
+            ranked_times.day,
+            ranked_times.start_time,
+            ranked_times.end_time,
+            ranked_times.class_schedule_order,
+            ranked_times.total_schedule_order
+        FROM ranked_times
+        INNER JOIN class_info ci
+        ON ci.class_id = ranked_times.class_id
+        WHERE ranked_times.class_schedule_order <= ?
+          AND ranked_times.total_schedule_order <= ?
+        ORDER BY ranked_times.class_id, ranked_times.id
+    )").arg(
+        timesTable,
+        classIdValues.join(QStringLiteral(", ")),
+        dayPlaceholders.join(QStringLiteral(", "))
+        );
+
+    const QString identity = QObject::tr("class ids %1, selected days %2")
+        .arg(requestedIds.join(QStringLiteral(", ")))
+        .arg(selectedDays.join(QStringLiteral(", ")));
+
+    QList<ClassInfo> infos;
+    QHash<int, qsizetype> indexesByClassId;
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(queryText);
+    for (const QString& day : selectedDays)
+    {
+        query.addBindValue(day);
+    }
+    query.addBindValue(maxMeetingsPerClass + 1);
+    query.addBindValue(maxTotalMeetings + 1);
+
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading scoped Sub Prep class information"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        const int classId = query.value(QStringLiteral("schedule_class_id"))
+                                .toInt();
+        const QVariant infoClassId =
+            query.value(QStringLiteral("info_class_id"));
+        if (infoClassId.isNull())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading scoped Sub Prep class information failed for class id %1: no matching class information record exists."
+                    ).arg(classId)
+                );
+        }
+
+        auto index = indexesByClassId.constFind(classId);
+        if (index == indexesByClassId.cend())
+        {
+            ClassInfo info;
+            info.classId = infoClassId.toInt();
+            const QVariant teacherId =
+                query.value(QStringLiteral("teacher_id"));
+            info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+            info.classGrade = query.value(QStringLiteral("class_grade"))
+                                  .toString();
+            info.classLevel = query.value(QStringLiteral("class_level"))
+                                  .toString();
+
+            const QString classColor =
+                query.value(QStringLiteral("class_color")).toString();
+            if (!classColor.isEmpty())
+            {
+                info.classColor = classColor;
+            }
+
+            const QString fontColor =
+                query.value(QStringLiteral("font_color")).toString();
+            if (!fontColor.isEmpty())
+            {
+                info.fontColor = fontColor;
+            }
+            info.notes = query.value(QStringLiteral("notes")).toString();
+
+            indexesByClassId.insert(classId, infos.size());
+            infos.append(std::move(info));
+            index = indexesByClassId.constFind(classId);
+        }
+
+        ClassTime time{
+            query.value(QStringLiteral("day")).toString(),
+            query.value(QStringLiteral("start_time")).toString(),
+            query.value(QStringLiteral("end_time")).toString()
+        };
+        ClassInfo& info = infos[*index];
+        if (type == ScheduleType::Regular)
+        {
+            info.classTimes.append(std::move(time));
+        }
+        else
+        {
+            info.intensiveTimes.append(std::move(time));
+        }
+    }
+
+    return infos;
 }
 
 Result<QList<ClassTeacherAssignment>>
