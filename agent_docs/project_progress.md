@@ -143,18 +143,23 @@ hosted Linux rerun remains unverified.
 ## Next Milestone
 
 Phase 2 continues on `Qt-Rewrite`. Work Packages D and E connect the Sub Prep
-class-information view to the bounded Application queries and release its
+class-information view to bounded Application queries and release its
 projection and selected details when PageManager deactivates the page. The
 model backs one class list and one reusable detail card; re-entry marks the
-page stale and reloads a fresh projection and selected details.
+page stale and reloads fresh summary and selected-detail values.
 
-Windows x64 Debug Ninja built `ClassMngr` and `ClassMngrSubPrepPageTests`; the
-lifecycle-focused page suite passed 1/1. The list-model and page suites for D
-passed 2/2, and CMake ownership validation passed for 860 handwritten files.
-Next is Work Package F: connect the operation-scoped print-source query to
-package generation. PDF/package parity, the 96-class Release memory evidence,
-and the wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up
-separate until it can run on a host with Xvfb and loopback access.
+Work Package F1 routes the generated information sheet through
+`SubPrepPrintSourceQuery`, scoped to the print dialog's selected classes,
+weekdays, and schedule mode. A mapper preserves the renderer's teacher-name
+fallbacks and output fields. The page no longer builds this sheet by loading
+all classes and repeatedly reading class details, teachers, and rosters.
+Windows x64 Debug Ninja built the application, page, mapper, query, adapter,
+PDF, and package targets; focused CTest passed 6/6. The package service still
+loads full class/teacher/roster data for roster PDFs, and the document model
+still copies the renderer model. Work Package F continues with those output
+boundaries. PDF/package parity, the 96-class Release memory evidence, and the
+wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up separate
+until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

@@ -3,10 +3,13 @@
 #include "core/startup_profiler.h"
 #include "next/application/sub_prep_class_details_query.h"
 #include "next/application/sub_prep_class_information_state.h"
+#include "next/application/sub_prep_print_source_query.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/platform/application_services_sub_prep_class_details_port.h"
+#include "next/platform/application_services_sub_prep_print_source_port.h"
 #include "next/platform/application_services_sub_prep_schedule_summary_port.h"
 #include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
+#include "features/sub_prep/ui/sub_prep_print_source_mapper.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QItemSelectionModel>
@@ -37,8 +40,15 @@ public:
               ClassMngr::Next::Platform::
                   ApplicationServicesSubPrepClassDetailsPort
               >(services)),
+          m_ownedPrintSourceReadPort(std::make_unique<
+              ClassMngr::Next::Platform::
+                  ApplicationServicesSubPrepPrintSourcePort
+              >(services)),
           m_summaryQuery(*m_ownedSummaryReadPort),
-          m_detailsQuery(*m_ownedDetailsReadPort)
+          m_detailsQuery(*m_ownedDetailsReadPort),
+          m_printSourceQuery(std::make_unique<
+              Application::SubPrepPrintSourceQuery
+              >(*m_ownedPrintSourceReadPort))
     {
     }
 
@@ -48,6 +58,19 @@ public:
         )
         : m_summaryQuery(summaryReadPort),
           m_detailsQuery(detailsReadPort)
+    {
+    }
+
+    SubPrepClassInformationDataAccess(
+        Application::SubPrepScheduleSummaryReadPort& summaryReadPort,
+        Application::SubPrepClassDetailsReadPort& detailsReadPort,
+        Application::SubPrepPrintSourceReadPort& printSourceReadPort
+        )
+        : m_summaryQuery(summaryReadPort),
+          m_detailsQuery(detailsReadPort),
+          m_printSourceQuery(std::make_unique<
+              Application::SubPrepPrintSourceQuery
+              >(printSourceReadPort))
     {
     }
 
@@ -66,6 +89,22 @@ public:
         return m_detailsQuery.execute(classId);
     }
 
+    [[nodiscard]] Application::SubPrepPrintSourceQueryResult loadPrintSource(
+        const Application::SubPrepPrintSourceRequest& request
+        )
+    {
+        if (!m_printSourceQuery)
+        {
+            return Application::SubPrepPrintSourceQueryResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The Sub Prep print-source query is unavailable.",
+                .recoverable = false
+            });
+        }
+
+        return m_printSourceQuery->execute(request);
+    }
+
 private:
     std::unique_ptr<
         ClassMngr::Next::Platform::
@@ -75,8 +114,13 @@ private:
         ClassMngr::Next::Platform::
             ApplicationServicesSubPrepClassDetailsPort
         > m_ownedDetailsReadPort;
+    std::unique_ptr<
+        ClassMngr::Next::Platform::
+            ApplicationServicesSubPrepPrintSourcePort
+        > m_ownedPrintSourceReadPort;
     Application::SubPrepScheduleSummaryQuery m_summaryQuery;
     Application::SubPrepClassDetailsQuery m_detailsQuery;
+    std::unique_ptr<Application::SubPrepPrintSourceQuery> m_printSourceQuery;
 };
 
 namespace
@@ -284,6 +328,29 @@ SubPrepPage::SubPrepPage(
           services
               ? std::make_unique<SubPrepClassInformationDataAccess>(*services)
               : nullptr
+          ),
+      m_classInformationState(
+          std::make_unique<Application::SubPrepClassInformationState>()
+          )
+{
+    initialize();
+}
+
+SubPrepPage::SubPrepPage(
+    ApplicationServices* services,
+    Application::SubPrepScheduleSummaryReadPort& summaryReadPort,
+    Application::SubPrepClassDetailsReadPort& detailsReadPort,
+    Application::SubPrepPrintSourceReadPort& printSourceReadPort,
+    QWidget* parent
+    )
+    : BasePage(parent),
+      m_services(services),
+      m_classInformationDataAccess(
+          std::make_unique<SubPrepClassInformationDataAccess>(
+              summaryReadPort,
+              detailsReadPort,
+              printSourceReadPort
+              )
           ),
       m_classInformationState(
           std::make_unique<Application::SubPrepClassInformationState>()
@@ -1083,114 +1150,97 @@ SubPrepPageRuntimeMetrics SubPrepPage::runtimeMetrics() const
     return metrics;
 }
 
-QList<SubPrepClassInformation::TeacherGroup>
-SubPrepPage::buildClassInformation()
-{
-    if (!m_scheduleWidget)
-    {
-        return {};
-    }
-
-    return buildClassInformation(
-        m_scheduleWidget->scheduleModel()
-        );
-}
-
-QList<SubPrepClassInformation::TeacherGroup>
-SubPrepPage::buildClassInformation(
-    const ScheduleViewModel& schedule
+bool SubPrepPage::buildPrintClassInformation(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const bool useIntensive,
+    QList<SubPrepClassInformation::TeacherGroup>* groups,
+    QString* errorMessage
     )
 {
-    auto* classService = openClassService(m_services);
-    auto* teacherService = openTeacherService(m_services);
-    auto* rosterService = openRosterService(m_services);
-
-    if (
-        !classService
-        || !teacherService
-        || !rosterService
-        || !m_scheduleWidget
-        )
+    if (!groups || !errorMessage)
     {
-        return {};
+        return false;
     }
 
-    QList<SubPrepClassInformation::SourceClass> sources;
-    ++m_classInformationClassQueryCount;
-    const Result<QList<Classroom>> classes = classService->classes();
-    if (!classes)
+    *groups = {};
+    *errorMessage = {};
+    if (!m_classInformationDataAccess)
     {
-        DialogServices::showWarning(
-            const_cast<SubPrepPage*>(this),
-            tr("Load Class Information"),
-            tr("Classes could not be loaded."),
-            classes.error()
-            );
-        return {};
+        *errorMessage = tr("Sub Prep print data is unavailable.");
+        return false;
     }
 
-    m_classInformationSourceClassCount = classes->size();
-    m_classInformationClassResultRowCount = classes->size();
+    Application::SubPrepPrintSourceRequest request;
+    request.mode = useIntensive
+        ? Application::ScheduleViewMode::Intensive
+        : Application::ScheduleViewMode::Regular;
 
-    for (const Classroom& classroom : *classes)
+    request.selectedClassIds.reserve(static_cast<std::size_t>(classIds.size()));
+    for (const int classId : classIds)
     {
-        SubPrepClassInformation::SourceClass source;
-        source.classroom = classroom;
-        ++m_classInformationClassInfoLookupCount;
-        ++m_classInformationClassInfoQueryCount;
-        const Result<ClassInfo> classInfo =
-            classService->classInfo(classroom.id);
-        if (classInfo)
+        if (classId <= 0)
         {
-            ++m_classInformationClassInfoResultRowCount;
-            source.info = *classInfo;
-            m_classInformationClassInfoScheduleRowCount +=
-                classInfo->classTimes.size()
-                + classInfo->intensiveTimes.size();
-        }
-        ++m_classInformationRosterLookupCount;
-        ++m_classInformationRosterQueryCount;
-        const Result<int> studentCount =
-            rosterService->studentCount(classroom.id);
-        if (studentCount)
-        {
-            ++m_classInformationRosterResultRowCount;
-            source.studentCount = qMax(0, *studentCount);
-            m_classInformationRosterStudentResultCount +=
-                source.studentCount;
+            *errorMessage = tr("A selected class identifier is invalid.");
+            return false;
         }
 
-        if (source.info.teacherId > 0)
+        const std::string value = std::to_string(classId);
+        const auto typedId = Domain::ClassId::fromString(value);
+        if (!typedId)
         {
-            ++m_classInformationTeacherLookupCount;
-            ++m_classInformationTeacherQueryCount;
-            const Result<Teacher> teacher =
-                teacherService->teacher(source.info.teacherId);
-            if (teacher)
-            {
-                ++m_classInformationTeacherResultRowCount;
-                source.teacher = *teacher;
-            }
+            *errorMessage = tr("A selected class identifier is invalid.");
+            return false;
         }
 
-        sources.append(source);
+        if (std::find(
+                request.selectedClassIds.cbegin(),
+                request.selectedClassIds.cend(),
+                *typedId
+                ) == request.selectedClassIds.cend())
+        {
+            request.selectedClassIds.push_back(*typedId);
+        }
     }
 
-    const ScheduleDisplayState state =
-        m_scheduleWidget->displayState();
+    for (const QString& day : selectedDays)
+    {
+        const auto typedDay = weekdayFor(day);
+        if (!typedDay)
+        {
+            *errorMessage = tr("A selected schedule weekday is invalid.");
+            return false;
+        }
 
-    SubPrepClassInformation::BuildOptions options;
-    options.visibleClassIds =
-        visibleClassIds(schedule);
-    options.visibleDays = schedule.days;
-    options.useIntensive =
-        state.displayMode
-            == ScheduleDisplayMode::Intensive;
+        if (std::find(
+                request.selectedDays.cbegin(),
+                request.selectedDays.cend(),
+                *typedDay
+                ) == request.selectedDays.cend())
+        {
+            request.selectedDays.push_back(*typedDay);
+        }
+    }
 
-    return SubPrepClassInformation::build(
-        sources,
-        options
+    const auto source = m_classInformationDataAccess->loadPrintSource(request);
+    if (!source)
+    {
+        *errorMessage = fromUtf8(source.error().message);
+        return false;
+    }
+
+    auto mapped = SubPrepPrintSourceMapper::toClassInformation(
+        source.value(),
+        request
         );
+    if (!mapped)
+    {
+        *errorMessage = fromUtf8(mapped.error().message);
+        return false;
+    }
+
+    *groups = std::move(mapped.value());
+    return true;
 }
 
 bool SubPrepPage::restoreGradingDefaultIfNeeded()

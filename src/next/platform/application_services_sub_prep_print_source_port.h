@@ -340,6 +340,11 @@ public:
                     Application::SubPrepPrintTeacher copiedTeacher{
                         .id = teacherId(assignedTeacherId),
                         .englishName = utf8(legacyTeacher.teacherEn),
+                        .koreanName = utf8(legacyTeacher.teacherKr),
+                        .preferredName = utf8(legacyTeacher.preferredName),
+                        .preferredRomanization = utf8(
+                            legacyTeacher.preferredRomanization
+                            ),
                         .room = utf8(legacyTeacher.roomNumber),
                         .wifiName = utf8(legacyTeacher.wifiName),
                         .wifiPassword = utf8(legacyTeacher.wifiPassword),

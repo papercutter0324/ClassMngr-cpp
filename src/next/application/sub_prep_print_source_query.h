@@ -41,6 +41,12 @@ inline constexpr std::size_t kSubPrepPrintSourceMaxTeacherNotesLength =
     kSelectedClassDetailsMaxTeacherNotesLength;
 inline constexpr std::size_t kSubPrepPrintSourceMaxEnglishNameLength =
     kTeacherSummaryMaxDisplayNameLength;
+inline constexpr std::size_t kSubPrepPrintSourceMaxKoreanNameLength =
+    kTeacherSummaryMaxDisplayNameLength;
+inline constexpr std::size_t kSubPrepPrintSourceMaxPreferredNameLength =
+    kTeacherSummaryMaxDisplayNameLength;
+inline constexpr std::size_t kSubPrepPrintSourceMaxPreferredRomanizationLength =
+    kTeacherSummaryMaxDisplayNameLength;
 inline constexpr std::size_t kSubPrepPrintSourceMaxRoomLength = 256;
 inline constexpr std::size_t kSubPrepPrintSourceMaxWifiNameLength = 256;
 inline constexpr std::size_t kSubPrepPrintSourceMaxWifiPasswordLength = 256;
@@ -81,6 +87,9 @@ struct SubPrepPrintTeacher final
 {
     Domain::TeacherId id;
     std::string englishName;
+    std::string koreanName;
+    std::string preferredName;
+    std::string preferredRomanization;
     std::string room;
     std::string wifiName;
     std::string wifiPassword;
@@ -342,6 +351,18 @@ template <typename TypedId>
                teacher.englishName,
                kSubPrepPrintSourceMaxEnglishNameLength
                )
+        && isOptionalText(
+            teacher.koreanName,
+            kSubPrepPrintSourceMaxKoreanNameLength
+            )
+        && isOptionalText(
+            teacher.preferredName,
+            kSubPrepPrintSourceMaxPreferredNameLength
+            )
+        && isOptionalText(
+            teacher.preferredRomanization,
+            kSubPrepPrintSourceMaxPreferredRomanizationLength
+            )
         && isOptionalText(teacher.room, kSubPrepPrintSourceMaxRoomLength)
         && isOptionalText(
             teacher.wifiName,

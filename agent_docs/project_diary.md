@@ -339,7 +339,7 @@
   Wiring the projection into the live page, replacing per-class widget trees,
   output parity, and Release memory evidence remain separate acceptance work.
 
-## Phase 2 Sub Prep live class-information view — 2026-09-23
+## Phase 2 Sub Prep live class-information view - 2026-09-23
 
 - Bind navigation to a compact summary model and keep the selected typed ID
   and one selected-details value in Application state. The page renders one
@@ -348,3 +348,16 @@
   selection only while its class remains in the current schedule scope.
 - Release the selected details and summary projection from the page lifecycle
   hook on deactivation; mark the page stale so re-entry creates fresh state.
+
+## Phase 2 Sub Prep information-sheet output - 2026-09-24
+
+- Keep the print query scope aligned with the dialog's own selected class IDs,
+  weekdays, and active schedule mode. This replaces the old broad all-class
+  reads for the main information sheet.
+- Preserve every teacher field used by the renderer, including the full
+  `preferredDisplayName()` fallback chain. The bounded Application value now
+  includes English name, Korean name, preferred name, and preferred
+  romanization; a tested UI-boundary mapper builds the compatibility model.
+- This only migrates the information sheet. The roster-PDF stage still loads
+  full legacy class, teacher, and roster records, and the document model still
+  copies the renderer model. Keep those output costs and end-to-end parity open.

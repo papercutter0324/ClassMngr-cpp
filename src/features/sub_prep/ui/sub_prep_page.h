@@ -30,9 +30,9 @@ namespace ClassMngr::Next::Application
 {
 class SubPrepClassDetailsReadPort;
 class SubPrepClassInformationState;
+class SubPrepPrintSourceReadPort;
 class SubPrepScheduleSummaryReadPort;
 }
-struct ScheduleViewModel;
 
 enum class SubPrepSection
 {
@@ -80,6 +80,16 @@ public:
             summaryReadPort,
         ClassMngr::Next::Application::SubPrepClassDetailsReadPort&
             detailsReadPort,
+        QWidget* parent = nullptr
+        );
+    SubPrepPage(
+        ApplicationServices* services,
+        ClassMngr::Next::Application::SubPrepScheduleSummaryReadPort&
+            summaryReadPort,
+        ClassMngr::Next::Application::SubPrepClassDetailsReadPort&
+            detailsReadPort,
+        ClassMngr::Next::Application::SubPrepPrintSourceReadPort&
+            printSourceReadPort,
         QWidget* parent = nullptr
         );
     ~SubPrepPage() override;
@@ -145,9 +155,12 @@ private:
         );
     void renderSelectedClassInformation();
     void updateClassInformationEmptyState();
-    QList<SubPrepClassInformation::TeacherGroup> buildClassInformation();
-    QList<SubPrepClassInformation::TeacherGroup> buildClassInformation(
-        const ScheduleViewModel& schedule
+    bool buildPrintClassInformation(
+        const QList<int>& classIds,
+        const QStringList& selectedDays,
+        bool useIntensive,
+        QList<SubPrepClassInformation::TeacherGroup>* groups,
+        QString* errorMessage
         );
 
     bool restoreGradingDefaultIfNeeded();

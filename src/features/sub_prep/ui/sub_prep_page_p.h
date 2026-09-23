@@ -69,48 +69,6 @@ SettingsService* openSettingsService(
         : nullptr;
 }
 
-ClassService* openClassService(
-    ApplicationServices* services
-    )
-{
-    auto* service =
-        services
-            ? services->classService()
-            : nullptr;
-
-    return service && service->isAvailable()
-        ? service
-        : nullptr;
-}
-
-TeacherService* openTeacherService(
-    ApplicationServices* services
-    )
-{
-    auto* service =
-        services
-            ? services->teacherService()
-            : nullptr;
-
-    return service && service->isAvailable()
-        ? service
-        : nullptr;
-}
-
-RosterService* openRosterService(
-    ApplicationServices* services
-    )
-{
-    auto* service =
-        services
-            ? services->rosterService()
-            : nullptr;
-
-    return service && service->isAvailable()
-        ? service
-        : nullptr;
-}
-
 CalendarService* openCalendarService(
     ApplicationServices* services
     )

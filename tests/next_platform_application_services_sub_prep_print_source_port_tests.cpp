@@ -1107,6 +1107,11 @@ projectsSelectedClassesInRequestOrderAndCopiesFilteredSource()
     QCOMPARE(source.teachers.size(), std::size_t(2));
     QCOMPARE(source.teachers[0].id, teacherId(teacherOne));
     QCOMPARE(source.teachers[0].englishName, std::string("Jin Park"));
+    QCOMPARE(source.teachers[0].koreanName, utf8(QString::fromUtf8(
+        "\xEA\xB0\x80\xEB\x82\x98"
+        )));
+    QCOMPARE(source.teachers[0].preferredName, std::string("Jin Park"));
+    QCOMPARE(source.teachers[0].preferredRomanization, std::string("Jin Park"));
     QCOMPARE(source.teachers[0].room, std::string("Room one"));
     QCOMPARE(source.teachers[0].wifiName, std::string("Network one"));
     QCOMPARE(source.teachers[0].wifiPassword, std::string("wifi-password-one"));

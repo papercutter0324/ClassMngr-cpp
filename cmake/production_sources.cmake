@@ -535,6 +535,8 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/sub_prep/ui/sub_prep_page_ui.cpp"
     "src/features/sub_prep/ui/sub_prep_print_dialog.cpp"
     "src/features/sub_prep/ui/sub_prep_print_dialog.h"
+    "src/features/sub_prep/ui/sub_prep_print_source_mapper.cpp"
+    "src/features/sub_prep/ui/sub_prep_print_source_mapper.h"
     "src/features/teacher/import/sectioned_contact_list_template.cpp"
     "src/features/teacher/import/sectioned_contact_list_template.h"
     "src/features/teacher/import/teacher_import_file_validator.cpp"

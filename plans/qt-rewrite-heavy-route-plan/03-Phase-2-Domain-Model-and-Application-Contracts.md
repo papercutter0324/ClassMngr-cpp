@@ -3467,3 +3467,29 @@ a new details read. This closes page-leave release only. Package/PDF output
 migration, parity, and 96-class Release memory acceptance remain open; Phase 2
 remains In Progress. Work Package F is next: connect the operation-scoped
 print-source query to package generation.
+
+#### Progress update - 2026-09-24 (Sub Prep information-sheet print-source integration)
+
+Work Package F1 connects the Sub Prep page's output request to
+`SubPrepPrintSourceQuery`. After dialog acceptance, the page sends the
+selected class IDs, selected weekdays, and current regular/intensive mode to
+the query. The bounded owning result is mapped into the existing
+`SubPrepClassInformation::TeacherGroup` renderer model. The Application value
+now carries English name, Korean name, preferred name, and preferred
+romanization so the mapper preserves `Teacher::preferredDisplayName()` and
+the existing teacher facts.
+
+The previous output path loaded all classes and then looked up each class's
+information, roster count, and teacher. That path is removed for the main
+information sheet. The query source is released when the mapper returns. The
+separate roster-PDF package stage still reads legacy class, teacher, and full
+roster values; `SubPrepDocumentModel` still copies the renderer model. No full
+package output parity or memory improvement is claimed.
+
+Windows x64 Debug Ninja built `ClassMngr`, the page, mapper, Application
+query, Platform adapter, PDF, and package targets. Focused CTest passed 6/6 for
+the mapper, page, print-source query and Platform adapter, PDF renderer, and
+package service. This closes only the main information-sheet read integration.
+Work Package F continues with the remaining output-source and renderer-model
+lifetime boundaries; parity, cancellation/error cleanup, the 96-class
+packaged Release memory gate, and Phase 2 remain open.

@@ -15,7 +15,8 @@ and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
 palette caller boundary and calendar-import planning and signature-read seams,
 and Sub Prep print-source, selected-class details, and schedule-summary read
-adapters. A partial content-session integration covers referenced
+adapters plus the Sub Prep information-sheet output wiring. A partial
+content-session integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
 remain open, including generic settings persistence.
 
@@ -2816,3 +2817,22 @@ focused CTest passed 1/1. The lifecycle test verifies release before
 navigation returns and a fresh details read after reactivation. Package/PDF
 output migration, parity, and packaged Release memory acceptance remain open;
 Work Package F connects the print-source query to package generation.
+
+## Verified Sub Prep information-sheet print-source integration
+
+`SubPrepPage::generateSubPrep()` now sends the accepted dialog's selected
+class IDs, weekdays, and current schedule mode through
+`SubPrepPrintSourceQuery`. `SubPrepPrintSourceMapper` converts the owning
+result into the existing renderer model. The Application teacher value
+preserves English name, Korean name, preferred name, and preferred
+romanization, retaining the legacy display-name fallback order and all facts
+used by the information sheet. The former all-class/class-info/teacher/roster
+count loader has been removed from this output path.
+
+Windows x64 Debug Ninja built the application and focused mapper, page,
+Application query, Platform adapter, PDF, and package targets. CTest passed
+6/6. The separate roster-PDF stage still loads legacy class, teacher, and full
+roster records, and the document model still copies the renderer model. The
+mapper and existing output tests establish this boundary, not full generated
+package parity or a memory improvement; those Phase 2 and Sub Prep gates
+remain open.

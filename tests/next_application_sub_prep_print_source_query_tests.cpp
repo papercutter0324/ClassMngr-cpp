@@ -620,6 +620,18 @@ acceptsMaximumBoundaryTextLengths()
         kSubPrepPrintSourceMaxEnglishNameLength,
         'n'
         );
+    expectedTeacher.koreanName = std::string(
+        kSubPrepPrintSourceMaxKoreanNameLength,
+        'k'
+        );
+    expectedTeacher.preferredName = std::string(
+        kSubPrepPrintSourceMaxPreferredNameLength,
+        'p'
+        );
+    expectedTeacher.preferredRomanization = std::string(
+        kSubPrepPrintSourceMaxPreferredRomanizationLength,
+        'r'
+        );
     expectedTeacher.room = std::string(kSubPrepPrintSourceMaxRoomLength, 'r');
     expectedTeacher.wifiName = std::string(kSubPrepPrintSourceMaxWifiNameLength, 'w');
     expectedTeacher.wifiPassword = std::string(
@@ -701,6 +713,28 @@ rejectsMalformedAndOverBoundTextAllOrNothing()
             [](SubPrepPrintSourceInput& input, const std::size_t length)
             {
                 input.teachers[0].englishName = std::string(length, 'n');
+            }
+        },
+        {
+            "teacher Korean name",
+            [](SubPrepPrintSourceInput& input, const std::size_t length)
+            {
+                input.teachers[0].koreanName = std::string(length, 'k');
+            }
+        },
+        {
+            "teacher preferred name",
+            [](SubPrepPrintSourceInput& input, const std::size_t length)
+            {
+                input.teachers[0].preferredName = std::string(length, 'p');
+            }
+        },
+        {
+            "teacher preferred romanization",
+            [](SubPrepPrintSourceInput& input, const std::size_t length)
+            {
+                input.teachers[0].preferredRomanization =
+                    std::string(length, 'r');
             }
         },
         {
@@ -811,6 +845,9 @@ rejectsMalformedAndOverBoundTextAllOrNothing()
     };
     const std::vector<std::size_t> maximumLengths{
         kSubPrepPrintSourceMaxEnglishNameLength,
+        kSubPrepPrintSourceMaxKoreanNameLength,
+        kSubPrepPrintSourceMaxPreferredNameLength,
+        kSubPrepPrintSourceMaxPreferredRomanizationLength,
         kSubPrepPrintSourceMaxRoomLength,
         kSubPrepPrintSourceMaxWifiNameLength,
         kSubPrepPrintSourceMaxWifiPasswordLength,
@@ -846,6 +883,13 @@ rejectsMalformedAndOverBoundTextAllOrNothing()
     readPort.result = SubPrepPrintSourceReadResult::success(std::move(blankTeacher));
     verifyValidationError(query.execute(validRequest()));
 
+    auto blankPreferredName = validInput();
+    blankPreferredName.teachers[0].preferredName = " \t ";
+    readPort.result = SubPrepPrintSourceReadResult::success(
+        std::move(blankPreferredName)
+        );
+    verifyValidationError(query.execute(validRequest()));
+
     auto blankClass = validInput();
     blankClass.classes[0].grade = " \t ";
     readPort.result = SubPrepPrintSourceReadResult::success(std::move(blankClass));
@@ -856,7 +900,7 @@ rejectsMalformedAndOverBoundTextAllOrNothing()
     readPort.result = SubPrepPrintSourceReadResult::success(std::move(blankMeeting));
     verifyValidationError(query.execute(validRequest()));
 
-    QCOMPARE(readPort.calls, static_cast<int>(oversizedFields.size() + 3));
+    QCOMPARE(readPort.calls, static_cast<int>(oversizedFields.size() + 4));
 }
 
 void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::

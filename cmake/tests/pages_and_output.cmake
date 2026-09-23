@@ -244,6 +244,8 @@ qt_add_executable(ClassMngrSubPrepPageTests
         src/features/sub_prep/ui/sub_prep_page_ui.cpp
         src/features/sub_prep/ui/sub_prep_print_dialog.cpp
         src/features/sub_prep/ui/sub_prep_print_dialog.h
+        src/features/sub_prep/ui/sub_prep_print_source_mapper.cpp
+        src/features/sub_prep/ui/sub_prep_print_source_mapper.h
         src/features/sub_prep/services/sub_prep_package_service.cpp
         src/features/sub_prep/services/sub_prep_package_service.h
         src/features/sub_prep/services/sub_prep_document_model.cpp

@@ -10,9 +10,9 @@
   packaged Release measurement harness
 - Blocks: Large-workspace Sub Prep acceptance and the Phase 9 memory gate
 - Owner: Unassigned
-- Last updated: 2026-09-23
+- Last updated: 2026-09-24
 
-## Current Sub Prep contract boundary - 2026-09-23
+## Current Sub Prep contract boundary - 2026-09-24
 
 Phase 2 has Qt-free schedule-summary and selected-class details queries,
 `SubPrepClassInformationState` for selection/detail lifecycle, and an
@@ -56,10 +56,29 @@ current schedule scope and one selected detail. The page lifecycle test
 verifies release and reload; `ClassMngr` and `ClassMngrSubPrepPageTests` build
 on Windows x64 Debug Ninja and the page suite passes 1/1.
 
+Work Package F1 now routes the Sub Prep information sheet through
+`SubPrepPrintSourceQuery` after the print dialog returns its selected class
+IDs, weekdays, and schedule mode. `SubPrepPrintSourceMapper` converts the
+bounded operation value into the existing PDF renderer model and preserves
+the teacher name fallback inputs and rendered facts. The old main-sheet path
+that loaded every class, class-info record, teacher, and roster count has been
+removed. The query-owned projection is released when the mapping helper
+returns.
+
+Windows x64 Debug Ninja built `ClassMngr`, the page and mapper tests, the print
+source query and Platform adapter tests, and the existing PDF and package
+service tests. Focused CTest passed 6/6. This verifies the query, adapter,
+mapping, page compilation/lifecycle, and existing renderer/package suites; it
+does not prove full package parity or a memory improvement. The separate
+roster-PDF stage in `SubPrepPackageService` still loads legacy class, teacher,
+and full roster values, and `SubPrepDocumentModel` still copies the renderer
+model. Work Package F continues with those output-stage boundaries. See the
+[Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-information-sheet-print-source-integration).
+
 Output/package/PDF migration, parity, and Release memory acceptance remain
-open. Next entry: Work Package F, migrate package generation onto the
-operation-scoped print-source contract. See the [Phase 2
-contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-page-leave-lifecycle-release).
+open. Work Package F is underway; the selected information-sheet source is
+migrated, and the roster/package source and duplicate renderer-model copy are
+the next bounded output slices. See the [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-information-sheet-print-source-integration).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

@@ -536,8 +536,27 @@ void SubPrepPage::generateSubPrep()
             fullSchedule,
             dialog.selectedDays()
             );
-    subPrepRequest.classInformation =
-        buildClassInformation(subPrepRequest.schedule);
+    const bool useIntensiveSchedule =
+        m_scheduleWidget
+        && m_scheduleWidget->displayState().displayMode
+            == ScheduleDisplayMode::Intensive;
+    QString classInformationError;
+    if (!buildPrintClassInformation(
+            dialog.selectedClassIds(),
+            dialog.selectedDays(),
+            useIntensiveSchedule,
+            &subPrepRequest.classInformation,
+            &classInformationError
+            ))
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Class Information"),
+            tr("Class information for Sub Prep could not be loaded."),
+            classInformationError
+            );
+        return;
+    }
     subPrepRequest.subNotes =
         m_subNotesEdit
             ? m_subNotesEdit->toPlainText()
@@ -549,10 +568,7 @@ void SubPrepPage::generateSubPrep()
     packageRequest.subPrep = subPrepRequest;
     packageRequest.selectedDates = dialog.selectedDates();
     packageRequest.classIds = dialog.selectedClassIds();
-    packageRequest.useIntensiveSchedule =
-        m_scheduleWidget
-        && m_scheduleWidget->displayState().displayMode
-            == ScheduleDisplayMode::Intensive;
+    packageRequest.useIntensiveSchedule = useIntensiveSchedule;
     packageRequest.createFolder = dialog.createFolder();
     packageRequest.targetRoot = dialog.targetRoot();
     packageRequest.userName = dialog.userName();

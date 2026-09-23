@@ -516,3 +516,25 @@ separate on a host with Xvfb and loopback access.
   session-backed Platform adapter to package generation. Output/PDF parity,
   cancellation/error cleanup, and the 96-class packaged Release memory gate
   remain open. Keep the Linux Phase 0 follow-up separate.
+
+### Phase 2 Sub Prep information-sheet print-source integration - 2026-09-24
+
+- The accepted print dialog's selected class IDs, weekdays, and current
+  schedule mode now feed the operation-scoped print-source query. The result
+  is mapped into the existing renderer model; the query-owned source is
+  released when mapping returns.
+- Added the preferred-name inputs needed to preserve the legacy teacher label
+  fallback order, plus a focused mapper test for teacher facts, class details,
+  schedule mode, and renderer-incompatible IDs. Removed the old information-
+  sheet loader that read every class, class-info record, teacher, and roster
+  count.
+- Windows x64 Debug Ninja built `ClassMngr`, the page, mapper, Application
+  query, Platform adapter, PDF, and package test targets. Focused CTest passed
+  6/6: mapper, page, PDF, package, print-source query, and Platform adapter.
+- This does not complete package migration: roster PDFs still load full
+  legacy class/teacher/roster records, the renderer model is copied into its
+  document value, full output parity is not established, and the 96-class
+  Release memory gate remains open.
+- Handoff: continue Work Package F with the remaining package/roster source
+  and renderer-model lifetime boundaries, then complete parity and lifecycle
+  regression evidence. Phase 2 remains open.

@@ -298,6 +298,36 @@ qt_add_executable(ClassMngrClassTransferTests
         COMMAND ClassMngrSubPrepClassInformationModelTests
     )
 
+    qt_add_executable(ClassMngrSubPrepPrintSourceMapperTests
+        tests/sub_prep_print_source_mapper_tests.cpp
+        src/core/utils/sidebar_node_naming.cpp
+        src/domain/models/classroom.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/features/sub_prep/ui/sub_prep_class_information_model.cpp
+        src/features/sub_prep/ui/sub_prep_print_source_mapper.cpp
+    )
+
+    target_compile_features(ClassMngrSubPrepPrintSourceMapperTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSubPrepPrintSourceMapperTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSubPrepPrintSourceMapperTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrSubPrepPrintSourceMapperTests
+        COMMAND ClassMngrSubPrepPrintSourceMapperTests
+    )
+
     qt_add_executable(ClassMngrSubPrepClassInformationListModelTests
         tests/sub_prep_class_information_list_model_tests.cpp
         src/features/classes/config/class_info_config.cpp
