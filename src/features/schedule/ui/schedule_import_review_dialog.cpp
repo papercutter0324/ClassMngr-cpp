@@ -560,11 +560,7 @@ void ScheduleImportReviewDialog::chooseClassColor(
 
         ClassMngr::Next::Platform::
             ApplicationServicesCustomColorPalettePreferencesPort
-            palettePreferencesPort(
-                m_services
-                    ? m_services->settingsService()
-                    : nullptr
-                );
+            palettePreferencesPort(m_services);
         const QColor selected =
             ColorUtils::getColor(
                 QColor(control.color),

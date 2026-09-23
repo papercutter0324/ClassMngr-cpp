@@ -36,9 +36,13 @@ public:
     }
 
     explicit ApplicationServicesCustomColorPalettePreferencesPort(
-        SettingsService* settingsService
+        ApplicationServices* services
         ) noexcept
-        : m_settingsService(settingsService)
+        : m_settingsService(
+              services
+                  ? services->settingsService()
+                  : nullptr
+              )
     {
     }
 

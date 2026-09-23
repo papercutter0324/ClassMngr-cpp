@@ -198,11 +198,10 @@ validated 878 handwritten owners and built ClassMngr, CalendarEventCache, and
 the F22/F23 adapter suites. Focused CTest passed 3/3 in each build. Source
 comparison confirmed availability timing, alias order, matching, trimmed
 display fallback, whitespace-only code preservation, and final empty removal
-and deduplication. No dedicated CalendarPage behavior target exists. Next:
-F24 completes the PersonalSignatureImagePort caller cutover to
-ApplicationServices*. The next bounded slice is the remaining custom-color
-adapter constructor cutover, followed by workbook, generic-settings,
-feature-service, and document boundaries. The Phase 2 exit gate remains open.
+and deduplication. No dedicated CalendarPage behavior target exists. F24 and
+F25 are now complete. The next bounded slice is the Sub Prep typed-preference
+caller cutover, followed by workbook, generic-settings, other feature-service,
+and document boundaries. The Phase 2 exit gate remains open.
 
 ### Phase 2 kickoff — 2026-09-19
 
@@ -347,3 +346,22 @@ same three resource-pack-dependent cases failed. Next: remove the custom-color
 adapter's remaining `SettingsService*` caller path while preserving stored
 palette behavior. Workbook, generic settings, remaining feature services, and
 document boundaries remain open; the Phase 2 exit gate is not met.
+
+### Phase 2 custom-color adapter constructor cleanup - 2026-09-24
+
+All seven custom-color picker callers across Schedule Editor, Testing Classes,
+Schedule Import Review, shared Class Details, and Initial Setup now pass
+`ApplicationServices*`. The adapter retains its reference constructor, adds a
+nullable application-services constructor, and removes the settings-service
+constructor. `custom_colors`, all 16 slots, legacy payloads, defaults,
+unrelated settings, and load-before-dialog/save-after-dialog behavior
+including cancel remain unchanged. Executor and independent fresh Ninja/MSVC
+x64 builds validated 878 handwritten owners; both built ClassMngr and all six
+focused adapter, ColorUtils, Setup, Testing Classes, Schedule Import Dialog,
+and Schedule Widget suites. Both CTest runs passed 6/6; the independent repeat
+build returned no work, and `git diff --check HEAD` passed. Next: remove
+Sub Prep's raw settings-service gate around its typed saved-content, Zoom, and
+current-campus preferences while preserving unavailable-service no-op
+behavior. Keep Sub Prep's full campus directory and all-dates calendar reads
+separate. Workbook, generic settings, other feature-service, and document
+boundaries remain open; Phase 2 remains In progress.

@@ -1184,11 +1184,7 @@ void TestingClassesPage::chooseClassColor()
 {
     ClassMngr::Next::Platform::
         ApplicationServicesCustomColorPalettePreferencesPort
-        palettePreferencesPort(
-            m_services
-                ? m_services->settingsService()
-                : nullptr
-            );
+        palettePreferencesPort(m_services);
     const QColor color =
         ColorUtils::getColor(
             QColor(m_savedClass.classColor),
@@ -1211,11 +1207,7 @@ void TestingClassesPage::chooseFontColor()
 {
     ClassMngr::Next::Platform::
         ApplicationServicesCustomColorPalettePreferencesPort
-        palettePreferencesPort(
-            m_services
-                ? m_services->settingsService()
-                : nullptr
-            );
+        palettePreferencesPort(m_services);
     const QColor color =
         ColorUtils::getColor(
             QColor(m_savedClass.fontColor),

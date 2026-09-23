@@ -586,3 +586,12 @@ ApplicationServices owner, keep the read adapter's decoding/preparation path
 and each caller's existing availability guard intact. Run the exact feature
 cases in addition to the whole page suite; missing shared resource packs can
 fail unrelated top-level page tests in an isolated tree.
+
+
+## Phase 2 custom-color adapter constructor cleanup - 2026-09-24
+
+Keep caller-owner cleanup distinct from a previously completed preference
+behavior migration. Pass the ApplicationServices owner through existing typed
+adapters, and verify every caller compiles even when only a subset has direct
+picker tests. Preserve the dialog/save order and cancellation behavior by
+leaving the shared ColorUtils flow unchanged.

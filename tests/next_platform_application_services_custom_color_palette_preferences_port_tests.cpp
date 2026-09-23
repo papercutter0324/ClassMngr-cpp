@@ -143,7 +143,7 @@ missingAndUnavailableReadDefaults()
     QVERIFY(unavailablePort.read() == defaultCustomColorPalette());
 
     ApplicationServicesCustomColorPalettePreferencesPort nullSettingsPort(
-        static_cast<SettingsService*>(nullptr)
+        static_cast<ApplicationServices*>(nullptr)
         );
     QVERIFY(nullSettingsPort.read() == defaultCustomColorPalette());
     nullSettingsPort.write(paletteWithTwoColors());

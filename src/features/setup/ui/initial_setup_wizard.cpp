@@ -889,7 +889,7 @@ public:
             ClassMngr::Next::Platform::
                 ApplicationServicesCustomColorPalettePreferencesPort
                 palettePreferencesPort(
-                    setup ? setup->settingsService() : nullptr
+                    setup ? setup->services() : nullptr
                     );
             const QColor color = ColorUtils::getColor(
                 QColor(m_color),

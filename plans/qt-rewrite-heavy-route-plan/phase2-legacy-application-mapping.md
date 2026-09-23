@@ -3055,11 +3055,39 @@ missing/corrupt/unavailable image, display-name, and aggregate-save cases
 passed; only those same three resource-dependent cases failed. This is a
 fresh-tree limitation outside the F24 migration scope.
 
-## Next bounded mapping: custom-color adapter constructor cleanup
+## Verified F25 custom-color adapter constructor cleanup
 
-Cut over the remaining seven custom-color adapter calls across five UI files to
-`ApplicationServices*`, removing the adapter's `SettingsService*` constructor.
-Preserve `custom_colors`, all 16 palette slots, stored payload formats,
-defaults, unrelated settings, and getColor load-before/save-after/cancel
-behavior. Generic settings, workbook decoding, other feature services, and
-document boundaries remain open; Phase 2 remains in progress.
+The custom-color adapter retains its `ApplicationServices&` constructor, adds
+a nullable `ApplicationServices*` constructor, and removes `SettingsService*`.
+Seven callers in five UI files now pass their `ApplicationServices*`:
+`src/features/schedule/ui/schedule_editor_dialog.cpp` (two),
+`src/features/classes/ui/testing_classes_page.cpp` (two),
+`src/features/schedule/ui/schedule_import_review_dialog.cpp`,
+`src/ui/shared/widgets/sections/class_details_section.cpp`, and
+`src/features/setup/ui/initial_setup_wizard.cpp`. The `custom_colors` key, 16
+palette slots, stored payload formats, defaults, unrelated settings, and getColor
+load-before/save-after/cancel behavior remain unchanged. No ColorUtils logic
+changed.
+
+Executor fresh Ninja/MSVC x64 configure validated 878 handwritten owners; its
+382-step build covered `ClassMngr`, adapter and ColorUtils tests, Initial Setup,
+Testing Classes, Schedule Import Review, and ScheduleWidget targets. Focused
+CTest passed 6/6. Independent fresh configure validated 878 owners; the repeat
+Ninja build returned exit 0 with no work, and the same six focused suites passed
+6/6. Source scan found exactly seven callers and no `SettingsService*`
+constructor or call; `git diff --check HEAD` passed. Schedule Editor and Class
+Details have no picker-specific tests, though their translation units compiled
+through `ClassMngr`.
+
+## Next candidate: F26 Sub Prep typed settings-gate removal
+
+Route the four preference paths in
+`src/features/sub_prep/ui/sub_prep_page_settings.cpp` through existing typed
+ports and remove `openSettingsService` from `sub_prep_page_p.h`. Preserve
+unavailable-service no-op timing and saved-content, Zoom, and campus behavior;
+add a page test proving unavailable settings preserve fields and save side
+effects. Keep the separate full campus-directory lookup out of this slice.
+Also defer the all-date calendar query: its existing span is years 1–9999,
+beyond the typed projection's 4,096-result cap. This candidate was supported by
+two independent Explorers. Workbook, generic settings, other feature services,
+and full document boundaries remain open; Phase 2 remains in progress.

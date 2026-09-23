@@ -992,6 +992,35 @@ separate on a host with Xvfb and loopback access.
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
 
 
+### Phase 2 custom-color adapter caller cutover - 2026-09-24
+
+- Kept the adapter's `ApplicationServices&` constructor, added a nullable
+  `ApplicationServices*` constructor, and removed its `SettingsService*`
+  constructor. Seven picker call sites across Schedule Editor, Testing
+  Classes, Schedule Import Review, shared Class Details, and Initial Setup
+  now pass ApplicationServices ownership.
+- Preserved the `custom_colors` key, 16 palette slots, legacy payloads,
+  defaults, unrelated settings, and load-before-dialog/save-after-dialog
+  behavior including cancellation. No ColorUtils logic changed.
+- Executor and independent fresh Ninja/MSVC x64 builds validated 878
+  handwritten source owners and built ClassMngr plus all six focused adapter,
+  ColorUtils, Setup, Testing Classes, Schedule Import Dialog, and Schedule
+  Widget test targets. Both CTest runs passed 6/6; the independent repeat
+  build had no work, source review found the seven expected migrated callers,
+  and `git diff --check HEAD` passed.
+- Handoff: F26 removes Sub Prep's raw settings-service gate around its
+  existing typed saved-content, personal Zoom, and current-campus preferences.
+  Add page-level unavailable-settings coverage for load no-mutation and save
+  no-side-effect behavior. Preserve missing-versus-present grading defaults,
+  Zoom fallback/migration, campus matching/fallback, and early return before
+  timer or grading changes. Keep full campus detail and the all-dates calendar
+  read separate; its typed projection has a 4,096-result cap versus the
+  current 1–9999-year query. Workbook, generic settings, other feature-service,
+  and document migrations remain open; Phase 2 remains in progress. Nothing
+  was pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
 ### Phase 2 CalendarPage campus metadata query - 2026-09-24
 
 - Added a Qt-free `CalendarPageCampusDirectoryQueryPort` returning owning UTF-8

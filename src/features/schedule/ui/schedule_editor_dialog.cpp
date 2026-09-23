@@ -86,7 +86,7 @@ void ScheduleEditorDialog::chooseClassColor()
 {
     ClassMngr::Next::Platform::
         ApplicationServicesCustomColorPalettePreferencesPort
-        palettePreferencesPort(m_services->settingsService());
+        palettePreferencesPort(m_services);
     QColor color =
         ColorUtils::getColor(
             QColor(m_classColor),
@@ -108,7 +108,7 @@ void ScheduleEditorDialog::chooseFontColor()
 {
     ClassMngr::Next::Platform::
         ApplicationServicesCustomColorPalettePreferencesPort
-        palettePreferencesPort(m_services->settingsService());
+        palettePreferencesPort(m_services);
     QColor color =
         ColorUtils::getColor(
             QColor(m_fontColor),

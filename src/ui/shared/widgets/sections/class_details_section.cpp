@@ -708,8 +708,6 @@ void ClassDetailsSection::openColorPicker()
         ApplicationServicesCustomColorPalettePreferencesPort
         palettePreferencesPort(
             m_services
-                ? m_services->settingsService()
-                : nullptr
             );
     QColor color = ColorUtils::getColor(
         currentColor,
