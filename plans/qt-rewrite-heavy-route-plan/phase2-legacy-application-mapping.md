@@ -1484,9 +1484,12 @@ caller cutover to the existing typed font-size port for the exact key
 to `Normal`, `2` to `Large`, and `4` to `ExtraLarge`; missing, unknown, and
 unavailable values fall back to `Normal`. The caller has no direct raw load.
 
-The existing `OptionState` remains the compatibility writer and menu owner.
-`FontManager` offsets, visual-capture precedence, and startup behavior remain
-unchanged.
+`ActionRegistry` now installs typed `onPersist` before startup selection and
+no longer performs the direct raw write. The typed adapter writes only the
+canonical offsets `-2`, `0`, `2`, and `4`, and ignores invalid values without
+changing storage. `OptionState` remains the compatibility state and menu/UI
+owner; `FontManager` offsets, `FontSizeController` `onChanged` behavior,
+visual-capture precedence, and startup behavior remain unchanged.
 
 Verification passed configure/ownership with 800 sources and a clean focused
 Debug build. The offscreen focused suite passed 5/5, covering the font
@@ -2559,3 +2562,30 @@ Independent review, build, and serial CTest passed for
 `ClassMngrStartupVisualSettingsTests`; `git diff --check` was clean. The typed
 document-page-spacing persistence seam is closed; generic settings and other
 Phase 2 migrations remain open.
+
+## Verified typed font-size persistence cutover handoff
+
+Completed the typed `FontSize` persistence cutover for
+`OptionKeys::FontSize == "options/fontSize"` in the current Phase 2 working
+tree. The Qt-free `FontSizePreferencesPort` now exposes `write()`; the
+SettingsManager adapter writes only `Small=-2`, `Normal=0`, `Large=2`, and
+`ExtraLarge=4`, and ignores invalid typed values without changing storage.
+Missing, unknown, and malformed reads continue to map to `Normal`.
+
+`ActionRegistry` installs typed `onPersist` before startup selection and the
+direct raw write is removed. `FontSizeController` `onChanged` behavior remains
+unchanged. The exact production/test scope is:
+
+- `src/next/application/font_size_preferences.h`
+- `src/next/platform/settings_manager_font_size_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_font_size_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+Independent source review passed. The targeted Debug rebuild succeeded after
+the normal MSBuild FileTracker `E_ACCESSDENIED` retry with elevated access;
+registered CTest targets passed: `ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests`,
+`ClassMngrAiCommentOptionsTests`, `ClassMngrStartupVisualSettingsTests`, and
+`ClassMngrFontManagerTests`. No CMake changes were made; `git diff --check`
+was clean. The typed FontSize persistence seam is closed; Phase 2 remains
+open.

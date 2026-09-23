@@ -19,6 +19,10 @@ public:
     virtual ~FontSizePreferencesPort() = default;
 
     [[nodiscard]] virtual FontSize read() const = 0;
+
+    virtual void write(
+        FontSize fontSize
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

@@ -20,6 +20,7 @@ private slots:
     void themeDefaultsToSystemDefaultAndPersists();
     void saveModeStartupAndWritesCanonicalValues();
     void providerAndVoiceDefaultsPersist();
+    void fontSizeStartupReloadAndCanonicalPersistence();
     void documentPageSpacingStartupReloadAndCanonicalPersistence();
     void documentViewerBackgroundStartupReloadAndCanonicalPersistence();
     void customWebsitePersistenceAndInvalidFallback();
@@ -207,6 +208,49 @@ void AiCommentOptionsTests::
         reloadedDirect.aiCommentVoiceState->current(),
         AiCommentVoice::DirectToStudent
         );
+}
+
+void AiCommentOptionsTests::
+    fontSizeStartupReloadAndCanonicalPersistence()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString fontSizeKey =
+        QString::fromUtf8(OptionKeys::FontSize);
+    settings.remove(fontSizeKey);
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.fontSizeState);
+    QCOMPARE(
+        defaults.fontSizeState->current(),
+        FontSize::Normal
+        );
+    QCOMPARE(settings.get(fontSizeKey).toInt(), 0);
+
+    const FontSize expectedValues[] = {
+        FontSize::Small,
+        FontSize::Large,
+        FontSize::ExtraLarge,
+        FontSize::Normal
+    };
+    const int expectedStoredValues[] = {-2, 2, 4, 0};
+
+    for (int index = 0; index < 4; ++index)
+    {
+        defaults.fontSizeState->set(expectedValues[index]);
+        QCOMPARE(
+            settings.get(fontSizeKey).toInt(),
+            expectedStoredValues[index]
+            );
+        settings.sync();
+
+        ActionRegistry reloaded;
+        reloaded.createActions();
+        QCOMPARE(
+            reloaded.fontSizeState->current(),
+            expectedValues[index]
+            );
+    }
 }
 
 void AiCommentOptionsTests::

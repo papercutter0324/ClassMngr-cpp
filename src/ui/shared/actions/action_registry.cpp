@@ -956,6 +956,38 @@ void ActionRegistry::createOptionActions()
         extraLargeFontAction
         );
 
+    fontSizeState->onPersist =
+        [](const ::FontSize fontSize)
+    {
+        ClassMngr::Next::Application::FontSize preference;
+        switch (fontSize)
+        {
+        case ::FontSize::Small:
+            preference = ClassMngr::Next::Application::FontSize::Small;
+            break;
+
+        case ::FontSize::Normal:
+            preference = ClassMngr::Next::Application::FontSize::Normal;
+            break;
+
+        case ::FontSize::Large:
+            preference = ClassMngr::Next::Application::FontSize::Large;
+            break;
+
+        case ::FontSize::ExtraLarge:
+            preference = ClassMngr::Next::Application::FontSize::ExtraLarge;
+            break;
+
+        default:
+            return;
+        }
+
+        ClassMngr::Next::Platform::
+            SettingsManagerFontSizePreferencesPort().write(
+                preference
+                );
+    };
+
     const auto storedFontSize =
         ClassMngr::Next::Platform::
             SettingsManagerFontSizePreferencesPort()

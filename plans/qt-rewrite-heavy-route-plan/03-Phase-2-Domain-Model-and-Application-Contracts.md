@@ -3215,3 +3215,29 @@ Independent review, build, and serial CTest passed for
 `ClassMngrAiCommentOptionsTests`, `ClassMngrPageManagerTests`, and
 `ClassMngrStartupVisualSettingsTests`; `git diff --check` was clean. Phase 2
 remains open; this document-page-spacing persistence boundary is closed.
+
+#### Progress update - 2026-09-23 (typed font-size persistence cutover)
+
+Completed the typed FontSize writer cutover in the current Phase 2 working
+tree. The Qt-free `FontSizePreferencesPort` now exposes `write()`, and the
+SettingsManager adapter writes only canonical offsets `Small=-2`, `Normal=0`,
+`Large=2`, and `ExtraLarge=4`; invalid typed values are ignored without
+changing storage. Missing, unknown, and malformed reads continue to fall back
+to `Normal`.
+
+`ActionRegistry` installs typed `onPersist` before startup selection and no
+longer performs the direct raw write. `FontSizeController` `onChanged`
+behavior remains unchanged. The exact five-file scope is:
+
+- `src/next/application/font_size_preferences.h`
+- `src/next/platform/settings_manager_font_size_preferences_port.h`
+- `src/ui/shared/actions/action_registry.cpp`
+- `tests/next_platform_settings_manager_font_size_preferences_port_tests.cpp`
+- `tests/ai_comment_options_tests.cpp`
+
+Independent source review passed. The targeted Debug rebuild succeeded after
+the normal MSBuild FileTracker `E_ACCESSDENIED` retry with elevated access;
+registered CTest targets passed: `ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests`,
+`ClassMngrAiCommentOptionsTests`, `ClassMngrStartupVisualSettingsTests`, and
+`ClassMngrFontManagerTests`. No CMake changes were made; `git diff --check`
+was clean. Phase 2 remains open.

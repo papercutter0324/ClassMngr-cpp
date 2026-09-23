@@ -31,6 +31,7 @@ private slots:
     void cleanup();
     void usesTheExactLegacyKey();
     void mapsAllStoredFontSizeValues();
+    void writesAllFontSizeValuesForRoundTrip();
     void missingAndUnknownValuesDefaultToNormal();
     void unavailableSettingsDefaultToNormal();
 
@@ -101,6 +102,42 @@ mapsAllStoredFontSizeValues()
             expectedFontSizes[index]
             );
     }
+}
+
+void NextPlatformSettingsManagerFontSizePreferencesPortTests::
+writesAllFontSizeValuesForRoundTrip()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerFontSizePreferencesPort port;
+
+    const FontSize expectedFontSizes[] = {
+        FontSize::Small,
+        FontSize::Normal,
+        FontSize::Large,
+        FontSize::ExtraLarge
+    };
+    const int expectedStoredValues[] = {-2, 0, 2, 4};
+
+    for (int index = 0; index < 4; ++index)
+    {
+        port.write(expectedFontSizes[index]);
+        QCOMPARE(
+            settings.get(fontSizeKey()).toInt(),
+            expectedStoredValues[index]
+            );
+        QCOMPARE(
+            port.read(),
+            expectedFontSizes[index]
+            );
+    }
+
+    port.write(
+        static_cast<FontSize>(99)
+        );
+    QCOMPARE(
+        settings.get(fontSizeKey()).toInt(),
+        4
+        );
 }
 
 void NextPlatformSettingsManagerFontSizePreferencesPortTests::
