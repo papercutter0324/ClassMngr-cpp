@@ -373,8 +373,9 @@ separate on a host with Xvfb and loopback access.
   1/1. Neither target was added to the full-suite gate.
 - Both targets compiled and linked in
   `build/phase1-validation-ad635ace-windows-x64-ninja` under the Visual Studio
-  x64 developer environment. The working tree is clean on `Qt-Rewrite`, three
-  commits ahead of `origin/Qt-Rewrite`; nothing was pushed.
+  x64 developer environment. The three contract commits and this documentation
+  handoff are recorded on `Qt-Rewrite`; the working tree is clean and nothing
+  was pushed.
 - Neither contract is wired to the legacy page or a persistence adapter. No
   UI fallback ordering, SQL batching, package/PDF migration, or memory
   improvement is claimed. Next entry point: define the narrow operation-scoped
