@@ -297,6 +297,55 @@ template <typename TypedId>
     return Domain::Result<void>::success();
 }
 
+[[nodiscard]] inline Domain::Result<void> validateSelectedDetailsValue(
+    const SelectedClassDetails& details
+    )
+{
+    if (!isValidId(details.classId))
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Selected class identifier must be non-blank and bounded."
+            )
+        );
+    }
+
+    if (details.teacherId.has_value() && !isValidId(*details.teacherId))
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Selected details teacher identifier must be non-blank and bounded."
+                )
+            );
+    }
+
+    if (!isOptionalText(
+            details.classNotes,
+            kSelectedClassDetailsMaxClassNotesLength
+            )
+        || !isOptionalText(
+            details.teacherDisplayName,
+            kSelectedClassDetailsMaxTeacherDisplayNameLength
+            )
+        || !isOptionalText(
+            details.teacherFacilities,
+            kSelectedClassDetailsMaxTeacherFacilitiesLength
+            )
+        || !isOptionalText(
+            details.teacherNotes,
+            kSelectedClassDetailsMaxTeacherNotesLength
+            ))
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Selected class and teacher detail text must be bounded."
+                )
+            );
+    }
+
+    return Domain::Result<void>::success();
+}
+
 [[nodiscard]] inline Domain::Result<void> validateSelectedDetails(
     const SelectedClassDetails& details,
     const std::vector<ClassSummary>& classes,
@@ -339,8 +388,7 @@ template <typename TypedId>
     }
 
     if (details.teacherId.has_value()
-        && (!isValidId(*details.teacherId)
-            || !containsId(teacherIds, *details.teacherId)))
+        && !containsId(teacherIds, *details.teacherId))
     {
         return Domain::Result<void>::failure(
             invalidInput(
@@ -349,31 +397,7 @@ template <typename TypedId>
             );
     }
 
-    if (!isOptionalText(
-            details.classNotes,
-            kSelectedClassDetailsMaxClassNotesLength
-            )
-        || !isOptionalText(
-            details.teacherDisplayName,
-            kSelectedClassDetailsMaxTeacherDisplayNameLength
-            )
-        || !isOptionalText(
-            details.teacherFacilities,
-            kSelectedClassDetailsMaxTeacherFacilitiesLength
-            )
-        || !isOptionalText(
-            details.teacherNotes,
-            kSelectedClassDetailsMaxTeacherNotesLength
-            ))
-    {
-        return Domain::Result<void>::failure(
-            invalidInput(
-                "Selected class and teacher detail text must be bounded."
-                )
-            );
-    }
-
-    return Domain::Result<void>::success();
+    return validateSelectedDetailsValue(details);
 }
 
 [[nodiscard]] inline Domain::Result<void> validateTeachers(
