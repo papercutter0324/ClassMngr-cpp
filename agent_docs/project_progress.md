@@ -143,13 +143,13 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Continue Phase 2 by assessing the remaining ActionRegistry persistence seams
-after the language, SaveMode, AI voice/provider, viewer-background, document
-page-spacing, and font-size cutovers. Theme is the next known candidate; inspect
-its typed mapping and runtime coupling before defining a separate slice. Keep
-the supplemental Linux Phase 0 follow-up separate on a host with Xvfb and
-loopback access, and keep next-generation target names distinct from legacy
-object targets such as ClassMngrDomain and ClassMngrUiShared.
+Phase 2 settings persistence is paused after three committed slices: typed
+ActionRegistry theme persistence, removal of OptionState generic
+SettingsManager persistence, and typed file-dialog directory preferences.
+The scoped migration and independent scans found no other live application
+preference persistence candidate. On resume, select the next application
+contract slice from the Phase 2 plan. Keep the Linux Phase 0 follow-up separate
+on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 
@@ -175,14 +175,35 @@ direct async test (3/3), synchronous/shared-policy coverage, and
 GUI/loopback tests require unavailable screen or port services; no dialog
 service test failed. No workflow files were changed.
 
-### Phase 2 ActionRegistry persistence — 2026-09-23
+### Phase 2 ActionRegistry persistence pause — 2026-09-23
 
-The Heavy-route migration continues one committed persistence slice at a time.
-The latest commits are document page spacing (`b363b6df`) and font size
-(`d5321089`), following viewer background (`790082c4`), AI provider
-(`2d7d4a29`), AI voice (`c0281217`), SaveMode (`fe29d1cb`), and language
-(`9ad0fddb`). Independent verification passed the page-spacing port,
-ActionRegistry, PageManager, and startup-visual tests; font-size verification
-passed its port, ActionRegistry, startup-visual, and FontManager tests. Normal
-MSBuild attempts encountered FileTracker `E_ACCESSDENIED`; elevated targeted
-builds succeeded. Phase 2 remains open.
+The latest committed slices are theme persistence (c30f13e0), removal of the
+generic OptionState SettingsManager fallback (7caef52e), and typed file-dialog
+directory preferences (df8202ed). Theme keeps the existing options/theme
+values Dark=0, Light=1, and SystemDefault=2. All eight ActionRegistry option
+states now use typed persistence callbacks; OptionState no longer accepts a
+settings key or saves through SettingsManager.
+
+The file-dialog preference contract is Qt-free and owned by Application. Its
+QSettings adapter preserves all eight file-dialog/directories/<purpose> keys
+and existing purpose slugs. QtFileDialogService consumes the Application port;
+main constructs the adapter and service before MainWindow, while the existing
+test-service override retains priority. CMake records the new source ownership
+and the Application dependency on legacy ClassMngrUiShared without adding a
+UI-to-Platform dependency.
+
+Verification passed the theme port and AI comment options tests (2/2), the
+AI comment options and startup visual settings tests (2/2), and the dialog
+services and QSettings adapter tests (2/2). The final configure validated
+840 handwritten sources and the ClassMngrNext dependency assertions. ClassMngr
+and both focused test targets built, and git diff --check passed. The home
+directory fallback assertion is conditional on the platform returning an
+empty writable location; that condition was not forced during verification.
+No hosted cross-platform run was performed.
+
+Phase 2 is paused at the user request. Two independent scans found no other
+live direct application preference persistence candidate; unused legacy
+settings helpers and the read-only PowerPoint registry probe remain outside
+the migration scope. Next entry point: select a new application-contract
+slice from the Phase 2 plan. Keep the supplemental Linux Phase 0 follow-up
+separate on a host with Xvfb and loopback access.

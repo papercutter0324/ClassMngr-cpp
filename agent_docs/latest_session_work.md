@@ -300,29 +300,35 @@ separate on a host with Xvfb and loopback access.
   release workflows passed on that source. A later local Phase 2 contract
   slice is recorded separately above.
 
-## Current Deployment Handoff — phase2_action_registry_persistence_20260923 (paused)
+## Current Deployment Handoff: phase2_action_registry_persistence_20260923 (paused)
 
-- Goal: continue Phase 2 domain/application contracts by moving legacy
-  ActionRegistry preference writes behind typed ports. The user requires a
-  commit after each slice and asked to stop after the current font-size slice.
-- Heavy-route slices committed in this continuation: document page spacing
-  (`b363b6df`) and font size (`d5321089`). Prior ActionRegistry persistence
-  commits include viewer background (`790082c4`), AI provider (`2d7d4a29`), AI
-  voice (`c0281217`), SaveMode (`fe29d1cb`), and language (`9ad0fddb`). Phase 2
-  remains open; no next slice was started after the font-size commit.
-- Font size preserves the `options/fontSize` offsets Small=-2, Normal=0,
-  Large=2, ExtraLarge=4. The typed persistence hook is installed before
-  startup state selection; missing, unknown, and malformed reads still fall
-  back to Normal. Page spacing preserves `options/documentPageSpacing` values
-  None/Small/Medium/Large=0/1/2/3 and its malformed-text-to-None compatibility.
-- Independent Debug verification passed
-  `ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests`,
-  `ClassMngrAiCommentOptionsTests`, `ClassMngrStartupVisualSettingsTests`, and
-  `ClassMngrFontManagerTests`. The page-spacing port, ActionRegistry,
-  PageManager, and startup-visual targets also passed. Normal MSBuild attempts
-  hit FileTracker `UnauthorizedAccessException (E_ACCESSDENIED)`; elevated
-  targeted builds passed. No CMake changes were required.
-- Next entry point: continue Phase 2 by reviewing the remaining ActionRegistry
-  persistence candidates; theme is the known next candidate and has more
-  runtime coupling than the completed preference slices. Preserve one-slice-
-  per-commit sequencing and independently verify before committing.
+- The user requested a pause, a handoff, a commit, and a push after the
+  current Phase 2 work. The three slices completed in this continuation are
+  committed as c30f13e0, 7caef52e, and df8202ed.
+- Theme persistence now uses the typed ThemePreferencesPort and retains the
+  options/theme values Dark=0, Light=1, and SystemDefault=2. The generic
+  OptionState SettingsManager fallback and settings-key constructor argument
+  were removed after all eight ActionRegistry states received typed callbacks.
+- File-dialog directory preferences now use a Qt-free Application port and a
+  QSettings Platform adapter. The adapter retains all eight existing
+  file-dialog/directories/<purpose> keys and purpose slugs. QtFileDialogService
+  receives the Application port; main constructs the adapter and service
+  before MainWindow. The test-service override remains available. CMake source
+  ownership and the Application dependency on ClassMngrUiShared are explicit;
+  UI has no Platform dependency.
+- Independent verification passed ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests
+  and ClassMngrAiCommentOptionsTests (2/2); ClassMngrAiCommentOptionsTests
+  and ClassMngrStartupVisualSettingsTests (2/2); then ClassMngrDialogServicesTests
+  and ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests
+  (2/2). The final configure validated 840 handwritten sources and Next target
+  assertions. ClassMngr and both focused test targets built; git diff --check
+  passed.
+- The file-dialog home-directory fallback assertion runs only when
+  QStandardPaths returns an empty writable location. Verification did not
+  force that condition. No hosted cross-platform run was performed.
+- Two independent scans found no other live direct application preference
+  persistence candidate. Unused legacy settings helpers and a read-only
+  PowerPoint registry probe remain outside the migration scope.
+- Phase 2 is paused here. On resume, select a new application-contract slice
+  from the plan. Keep the Linux Phase 0 follow-up separate until it can run on
+  a host with Xvfb and loopback access.

@@ -232,3 +232,16 @@
   integer values and existing malformed-read fallbacks, and keep `onChanged`
   wiring intact. Cover adapter round trips, invalid-write no-ops, startup
   canonicalization, and reload behavior.
+
+## Phase 2 typed preference persistence — 2026-09-23
+
+- Attach each typed OptionState persistence callback before its first startup
+  mutation. Once every caller is explicit, remove the generic SettingsManager
+  fallback so new options cannot silently bypass their typed contract.
+- Preserve existing preference keys, values, malformed-read defaults, and
+  purpose slugs while moving writes behind typed ports.
+- Keep file-dialog directory values and purpose identifiers in the Qt-free
+  Application contract. Let the QSettings adapter own storage compatibility,
+  and compose the adapter and service in main before MainWindow. CMake should
+  express the Application-to-legacy-UI dependency explicitly without making
+  UI depend on Platform.
