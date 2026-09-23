@@ -413,10 +413,7 @@ void addCalendarPreferencesTab(
     auto* panel = new CalendarPreferencesPanel(
         calendarPage ? calendarPage->academicCalendarProvider() : nullptr,
         window && window->services()
-            ? window->services()->calendarService()
-            : nullptr,
-        window && window->services()
-            ? window->services()->settingsService()
+            ? window->services()
             : nullptr,
         page
         );

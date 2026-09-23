@@ -4,6 +4,7 @@
 
 #include "app/services/feature_services.h"
 #include "academic_calendar_provider.h"
+#include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "features/calendar/calendar_event_import_service.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
@@ -47,15 +48,14 @@ AcademicTerm academicTerm(int index)
 
 CalendarPreferencesPanel::CalendarPreferencesPanel(
     AcademicCalendarProvider* provider,
-    CalendarService* calendarService,
-    SettingsService* settingsService,
+    ApplicationServices* services,
     QWidget* parent
     )
     : QWidget(parent)
     , m_provider(provider)
-    , m_calendarService(calendarService)
-    , m_settingsService(settingsService)
-    , m_importService(new CalendarEventImportService(calendarService, this))
+    , m_calendarService(services ? services->calendarService() : nullptr)
+    , m_settingsService(services ? services->settingsService() : nullptr)
+    , m_importService(new CalendarEventImportService(services, this))
 {
     setObjectName(QStringLiteral("calendarPreferencesPanel"));
 

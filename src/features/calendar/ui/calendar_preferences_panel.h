@@ -7,6 +7,7 @@
 #include <QWidget>
 
 class AcademicCalendarProvider;
+class ApplicationServices;
 class CalendarEventImportService;
 class CalendarService;
 class QCheckBox;
@@ -24,8 +25,7 @@ class CalendarPreferencesPanel final : public QWidget
 public:
     explicit CalendarPreferencesPanel(
         AcademicCalendarProvider* provider,
-        CalendarService* calendarService,
-        SettingsService* settingsService,
+        ApplicationServices* services,
         QWidget* parent = nullptr
         );
 

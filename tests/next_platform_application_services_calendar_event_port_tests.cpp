@@ -12,8 +12,10 @@
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_port.h"
+#include "features/calendar/academic_calendar_event_parser.h"
 
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -201,6 +203,9 @@ private slots:
     void preservesLegacyTitleSurroundingSpaces();
     void preservesAllDayAndUnknownTimePolicy();
     void reportsUnavailableAndInvalidRangesStructurally();
+    void returnsLegacyImportSignatureKeysInRangeOrder();
+    void reportsUnavailableAndInvalidImportSignatureRangesStructurally();
+    void reportsImportSignatureRangeReadFailureStructurally();
     void rejectsPartialSourceTimesAndProjectionOverflow();
     void rejectsMalformedRepeatSeriesMetadataStructurally();
     void boundaryIsTypedAndDoesNotExposeLegacyOwnership();
@@ -1525,6 +1530,201 @@ reportsUnavailableAndInvalidRangesStructurally()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
+returnsLegacyImportSignatureKeysInRangeOrder()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY2(
+        query.prepare(QStringLiteral(
+            "INSERT INTO calendar_events ("
+            "title, event_type, time_status, repeat_series_id, all_day, "
+            "start_date, start_time, end_date, end_time) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )),
+        qPrintable(query.lastError().text())
+        );
+
+    const auto insertEvent = [&query](
+        const QString& title,
+        const QString& eventType,
+        const QString& timeStatus,
+        const QString& repeatSeriesId,
+        const int allDay,
+        const QString& startDate,
+        const QString& startTime,
+        const QString& endDate,
+        const QString& endTime
+        )
+    {
+        query.bindValue(0, title);
+        query.bindValue(1, eventType);
+        query.bindValue(2, timeStatus);
+        query.bindValue(3, repeatSeriesId);
+        query.bindValue(4, allDay);
+        query.bindValue(5, startDate);
+        query.bindValue(6, startTime);
+        query.bindValue(7, endDate);
+        query.bindValue(8, endTime);
+        return query.exec();
+    };
+
+    const QString firstStartDate = QStringLiteral("2026-09-23");
+    const QString firstEndDate = QStringLiteral("2026-09-24");
+    const QString duplicateTitle =
+        QStringLiteral("  Caf\u00E9   \u5348\u524D  ");
+    const QString canonicalDuplicateTitle =
+        QStringLiteral("Caf\u00E9 \u5348\u524D");
+    QVERIFY2(
+        insertEvent(
+            duplicateTitle,
+            QStringLiteral("Meeting"),
+            QStringLiteral("Unconfirmed"),
+            QStringLiteral("series-first"),
+            0,
+            firstStartDate,
+            QStringLiteral("09:00"),
+            firstEndDate,
+            QStringLiteral("10:00")
+            ),
+        qPrintable(query.lastError().text())
+        );
+    QVERIFY2(
+        insertEvent(
+            QStringLiteral("  \u6771\u4EAC   \u6708\u4F8B\u4F1A  "),
+            QStringLiteral("Other"),
+            QStringLiteral("Timed"),
+            QStringLiteral("series-middle"),
+            0,
+            firstStartDate,
+            QStringLiteral("10:00"),
+            firstStartDate,
+            QStringLiteral("10:30")
+            ),
+        qPrintable(query.lastError().text())
+        );
+    QVERIFY2(
+        insertEvent(
+            canonicalDuplicateTitle,
+            QStringLiteral("Meeting"),
+            QStringLiteral("Unconfirmed"),
+            QStringLiteral("series-second"),
+            0,
+            firstStartDate,
+            QStringLiteral("11:00"),
+            firstEndDate,
+            QStringLiteral("12:00")
+            ),
+        qPrintable(query.lastError().text())
+        );
+
+    const QDate startDate(2026, 9, 23);
+    const QDate endDate(2026, 9, 24);
+    const auto legacyRows = legacyService->eventsInRange(startDate, endDate);
+    QVERIFY(legacyRows);
+    QCOMPARE(legacyRows->size(), static_cast<qsizetype>(3));
+    QVERIFY(legacyRows->at(0).id != legacyRows->at(2).id);
+    QVERIFY(legacyRows->at(0).startTime != legacyRows->at(2).startTime);
+    QVERIFY(
+        legacyRows->at(0).repeatSeriesId
+        != legacyRows->at(2).repeatSeriesId
+        );
+
+    ApplicationServicesCalendarEventPort port(services);
+    const auto keys = port.importSignatureKeysInRange(startDate, endDate);
+    QVERIFY(keys);
+    const auto& keyValues = keys.value();
+    QCOMPARE(keyValues.size(), std::size_t{3});
+
+    const QString expectedDuplicateKey = QStringLiteral(
+        "Caf\u00E9 \u5348\u524D|Meeting|2026-09-23|2026-09-24|0|Unconfirmed"
+        );
+    const QString expectedOtherKey = QStringLiteral(
+        "\u6771\u4EAC \u6708\u4F8B\u4F1A|Other|2026-09-23|2026-09-23|0|Timed"
+        );
+    const std::vector<QString> expectedKeys = {
+        expectedDuplicateKey,
+        expectedOtherKey,
+        expectedDuplicateKey
+    };
+    for (std::size_t index = 0; index < expectedKeys.size(); ++index)
+    {
+        const QString actual =
+            QString::fromStdU16String(keyValues.at(index));
+        QCOMPARE(actual, expectedKeys.at(index));
+        QCOMPARE(
+            actual,
+            CalendarImport::calendarEventImportSignature(
+                legacyRows->at(static_cast<qsizetype>(index))
+                )
+            );
+    }
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsUnavailableAndInvalidImportSignatureRangesStructurally()
+{
+    ApplicationServices unavailableServices;
+    ApplicationServicesCalendarEventPort unavailablePort(
+        unavailableServices
+        );
+    verifyFailure(
+        unavailablePort.importSignatureKeysInRange(
+            QDate(2026, 9, 20),
+            QDate(2026, 9, 21)
+            ),
+        ErrorCode::NotFound
+        );
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    ApplicationServicesCalendarEventPort port(services);
+    verifyFailure(
+        port.importSignatureKeysInRange(
+            QDate(),
+            QDate(2026, 9, 21)
+            ),
+        ErrorCode::InvalidInput
+        );
+    verifyFailure(
+        port.importSignatureKeysInRange(
+            QDate(2026, 9, 21),
+            QDate(2026, 9, 20)
+            ),
+        ErrorCode::InvalidInput
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsImportSignatureRangeReadFailureStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY2(
+        query.exec(QStringLiteral("DROP TABLE calendar_events")),
+        qPrintable(query.lastError().text())
+        );
+
+    ApplicationServicesCalendarEventPort port(services);
+    verifyFailure(
+        port.importSignatureKeysInRange(
+            QDate(2026, 9, 20),
+            QDate(2026, 9, 21)
+            ),
+        ErrorCode::Technical
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
 rejectsPartialSourceTimesAndProjectionOverflow()
 {
     ApplicationServices services;
@@ -1576,7 +1776,10 @@ rejectsPartialSourceTimesAndProjectionOverflow()
     {
         CalendarEvent event = makeEvent(
             QStringLiteral("Overflow %1").arg(
-                static_cast<qulonglong>(index)
+                static_cast<qulonglong>(index),
+                4,
+                10,
+                QLatin1Char('0')
                 ),
             QDate(2026, 11, 1),
             QDate(2026, 11, 1)
@@ -1601,6 +1804,25 @@ rejectsPartialSourceTimesAndProjectionOverflow()
     QVERIFY(
         overflow.error().message.find("bounded") != std::string::npos
         || overflow.error().message.find("capacity") != std::string::npos
+        );
+
+    const auto importKeys = port.importSignatureKeysInRange(
+        QDate(2026, 11, 1),
+        QDate(2026, 11, 1)
+        );
+    QVERIFY(importKeys);
+    const auto& importKeyValues = importKeys.value();
+    QCOMPARE(
+        importKeyValues.size(),
+        kCalendarEventProjectionMaxEvents + 1
+        );
+    QCOMPARE(
+        QString::fromStdU16String(importKeyValues.front()),
+        QStringLiteral("Overflow 0000|Other|2026-11-01|2026-11-01|0|Timed")
+        );
+    QCOMPARE(
+        QString::fromStdU16String(importKeyValues.back()),
+        QStringLiteral("Overflow 4096|Other|2026-11-01|2026-11-01|0|Timed")
         );
 }
 

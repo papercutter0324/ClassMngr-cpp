@@ -3,10 +3,12 @@
 #include "app/services/feature_services.h"
 #include "academic_calendar_event_parser.h"
 #include "calendar_workbook_reader.h"
+#include "core/application_services.h"
 #include "core/resource_paths.h"
 #include "core/startup_profiler.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "next/application/calendar_event_import_plan.h"
+#include "next/platform/application_services_calendar_event_port.h"
 
 #include <QDate>
 #include <QNetworkAccessManager>
@@ -16,6 +18,7 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -64,11 +67,12 @@ std::u16string calendarEventSignatureKey(const CalendarEvent& event)
 }
 
 CalendarEventImportService::CalendarEventImportService(
-    CalendarService* calendarService,
+    ApplicationServices* services,
     QObject* parent
     )
     : QObject(parent)
-    , m_calendarService(calendarService)
+    , m_services(services)
+    , m_calendarService(services ? services->calendarService() : nullptr)
     , m_network(new QNetworkAccessManager(this))
 {
     connect(
@@ -222,30 +226,43 @@ void CalendarEventImportService::handleFinished(
             qMax(lastDate, event.endDate);
     }
 
-    const Result<QList<CalendarEvent>> existingEvents =
-        m_calendarService->eventsInRange(
+    if (!m_services)
+    {
+        const QString message =
+            tr("The calendar Teacher Profile is not available.");
+        StartupProfiler::recordCalendarImportFailed(message);
+        emit importFailed(message);
+        return;
+    }
+
+    const ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort
+        calendarEventPort(*m_services);
+    auto existingSignatures =
+        calendarEventPort.importSignatureKeysInRange(
             firstDate,
             lastDate
             );
-    if (!existingEvents)
+    if (!existingSignatures)
     {
-        StartupProfiler::recordCalendarImportFailed(existingEvents.error());
-        emit importFailed(existingEvents.error());
+        const std::string& errorText =
+            existingSignatures.error().message;
+        const QString message = QString::fromUtf8(
+            errorText.data(),
+            static_cast<qsizetype>(errorText.size())
+            );
+        StartupProfiler::recordCalendarImportFailed(message);
+        emit importFailed(message);
         return;
     }
 
     StartupProfiler::recordCalendarImportExistingEventsLoaded(
-        existingEvents->size()
+        static_cast<int>(existingSignatures.value().size())
         );
 
     ClassMngr::Next::Application::CalendarEventImportPlanRequest planRequest;
     planRequest.initiallySkippedCount = parsed.skippedCount;
-    for (const CalendarEvent& event : *existingEvents)
-    {
-        planRequest.existingSignatures.push_back(
-            calendarEventSignatureKey(event)
-            );
-    }
+    planRequest.existingSignatures =
+        std::move(existingSignatures.value());
 
     planRequest.candidateSignatures.reserve(
         static_cast<std::size_t>(parsed.events.size())
