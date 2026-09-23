@@ -60,10 +60,32 @@ void AiCommentOptionsTests::themeDefaultsToSystemDefaultAndPersists()
         defaults.themeState->current(),
         Theme::SystemDefault
         );
+    QCOMPARE(
+        settings.get(
+            QString::fromUtf8(OptionKeys::Theme)
+            ).toInt(),
+        2
+        );
     QVERIFY(
         defaults.themeState
             ->action(Theme::SystemDefault)
             ->isChecked()
+        );
+
+    defaults.themeState->set(Theme::Dark);
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::Theme)).toInt(),
+        0
+        );
+    defaults.themeState->set(Theme::Light);
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::Theme)).toInt(),
+        1
+        );
+    defaults.themeState->set(Theme::SystemDefault);
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::Theme)).toInt(),
+        2
         );
 
     defaults.themeState->set(Theme::Light);

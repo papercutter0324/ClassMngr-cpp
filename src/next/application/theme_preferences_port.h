@@ -18,6 +18,7 @@ public:
     virtual ~ThemePreferencesPort() = default;
 
     [[nodiscard]] virtual Theme read() const = 0;
+    virtual void write(Theme theme) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

@@ -10,8 +10,8 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the startup theme read. The canonical options key,
-// legacy SettingsManager access, and integer conversion stay here.
+// Qt-boundary adapter for theme preference reads and writes. The canonical
+// options key, legacy SettingsManager access, and integer conversion stay here.
 class SettingsManagerThemePreferencesPort final
     : public Application::ThemePreferencesPort
 {
@@ -42,6 +42,35 @@ public:
         default:
             return Application::Theme::SystemDefault;
         }
+    }
+
+    void write(
+        const Application::Theme theme
+        ) const override
+    {
+        int storedTheme = 0;
+        switch (theme)
+        {
+        case Application::Theme::Dark:
+            storedTheme = 0;
+            break;
+
+        case Application::Theme::Light:
+            storedTheme = 1;
+            break;
+
+        case Application::Theme::SystemDefault:
+            storedTheme = 2;
+            break;
+
+        default:
+            return;
+        }
+
+        SettingsManager::instance().set(
+            key(),
+            storedTheme
+            );
     }
 
 private:
