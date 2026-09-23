@@ -2589,3 +2589,10 @@ registered CTest targets passed: `ClassMngrNextPlatformSettingsManagerFontSizePr
 `ClassMngrFontManagerTests`. No CMake changes were made; `git diff --check`
 was clean. The typed FontSize persistence seam is closed; Phase 2 remains
 open.
+
+## Verified Phase 2 Sub Prep schedule-summary query contract
+
+The current legacy summary read is
+[`SubPrepPage::buildClassInformation(schedule)`](../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp#L688): it reads all classes, then calls `classInfo(id)` and `studentCount(id)` per class and `teacher(id)` per class with a teacher, before `SubPrepClassInformation::build` filters to visible class IDs, days, and schedule mode. The equivalent v2 Application boundary is `SubPrepScheduleScopeRequest` → `SubPrepScheduleSummaryQuery` → `ClassSummaryProjection`, through the injected `SubPrepScheduleSummaryReadPort` in [`sub_prep_schedule_summary_query.h`](../../src/next/application/sub_prep_schedule_summary_query.h). The read adapter must apply the typed scope and return compact copied summary inputs; the query validates a complete projection and sorts deterministically.
+
+This is a contract mapping only. The legacy page and package path still use the current services; no adapter, page cutover, SQL batching, or output migration is implemented. The app-less test is [`next_application_sub_prep_schedule_summary_query_tests.cpp`](../../tests/next_application_sub_prep_schedule_summary_query_tests.cpp), registered in [`next.cmake`](../../cmake/tests/next.cmake). Release ownership validation covered 701 handwritten sources, `ClassMngrNext` built, and `ctest -R ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests --output-on-failure` passed 1/1. The full Sub Prep feature and memory gate remain open; see the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md) and [Sub Prep memory plan](sub-prep-class-information-memory-plan.md).

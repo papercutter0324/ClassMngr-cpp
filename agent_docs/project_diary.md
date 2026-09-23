@@ -245,3 +245,13 @@
   and compose the adapter and service in main before MainWindow. CMake should
   express the Application-to-legacy-UI dependency explicitly without making
   UI depend on Platform.
+
+## Phase 2 Sub Prep summary query contract — 2026-09-23
+
+- Keep schedule scope typed in Application: use explicit weekday and schedule
+  mode values rather than localized labels or raw integers.
+- Treat an empty class/day scope as a valid empty projection without a read;
+  empty feature states are part of the UI contract, not invalid input.
+- Keep the Phase 2 query boundary independent from the legacy Sub Prep page.
+  Do not claim database batching or memory reduction until a persistence
+  adapter and the full feature route provide evidence.

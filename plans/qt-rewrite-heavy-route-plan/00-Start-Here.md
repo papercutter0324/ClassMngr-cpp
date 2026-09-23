@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-09-18
+- Last updated: 2026-09-23
 - Current milestone: Phase 1 — build system and repository structure
 - Current blocker: official Phase 1 targets are Windows x64 and macOS
   universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
 | 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | In progress | Heavy | 0 |
-| 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | Not started | Heavy | 1 |
+| 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | In progress | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Not started | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Not started | Heavy | 2, 3, 4 |

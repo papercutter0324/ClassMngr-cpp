@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Route: Heavy
 - Slice type: Vertical feature and memory-hardening slice
 - Related phases: Phase 0, Phase 2, Phase 3, Phase 7J, Phase 8, and Phase 9
@@ -10,7 +10,19 @@
   packaged Release measurement harness
 - Blocks: Large-workspace Sub Prep acceptance and the Phase 9 memory gate
 - Owner: Unassigned
-- Last updated: 2026-09-16
+- Last updated: 2026-09-23
+
+## Current Sub Prep contract boundary - 2026-09-23
+
+Phase 2 now has the Qt-free `SubPrepScheduleSummaryQuery` over typed class IDs,
+weekdays, and schedule mode, with an injected read port and validated,
+deterministically ordered `ClassSummaryProjection`. Empty visible-class or
+selected-day scopes return a successful empty projection without a read. This
+contract is not connected to the legacy page and has no persistence adapter;
+it does not establish SQL batching or a memory reduction. The 96-class Release
+baseline's legacy memory failure remains the acceptance reference. The full
+Sub Prep vertical slice and packaged Release memory gate remain open. See the
+[Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-schedule-summary-query-contract).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

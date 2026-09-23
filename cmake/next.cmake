@@ -47,6 +47,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_projection.h
     src/next/application/campus_directory_projection.h
     src/next/application/class_summary_projection.h
+    src/next/application/sub_prep_schedule_summary_query.h
     src/next/application/class_transfer_projection.h
     src/next/application/document_catalog_projection.h
     src/next/application/document_catalog_use_case.h

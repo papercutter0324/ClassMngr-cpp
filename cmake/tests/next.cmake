@@ -136,6 +136,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationSubPrepScheduleSummaryQuery
+    SOURCES
+        tests/next_application_sub_prep_schedule_summary_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassTransfer
     SOURCES
         tests/next_application_class_transfer_tests.cpp

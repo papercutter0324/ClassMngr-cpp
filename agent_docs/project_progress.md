@@ -1,17 +1,16 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: phase2_action_registry_persistence_20260923. Route: Heavy.
+Current deployment: phase2_contract_slice_resume_20260923. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
 
 ## Goal
 
-Establish the parallel ClassMngrNext build, architectural target boundaries,
-explicit source ownership, dependency checks, and reproducible Debug, Release,
-and platform build flows while keeping the existing ClassMngr production
-target buildable through cutover.
+Define explicit, Qt-free ClassMngrNext application contracts with structured
+results, bounded projections, and deterministic tests while keeping the legacy
+application available as a compatibility oracle until its later cutover.
 
 ## Overall Progress
 
@@ -143,12 +142,17 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Phase 2 settings persistence is paused after three committed slices: typed
-ActionRegistry theme persistence, removal of OptionState generic
-SettingsManager persistence, and typed file-dialog directory preferences.
-The scoped migration and independent scans found no other live application
-preference persistence candidate. On resume, select the next application
-contract slice from the Phase 2 plan. Keep the Linux Phase 0 follow-up separate
+The Phase 2 Sub Prep schedule-scope summary query contract is implemented in
+ClassMngrNext Application. CMake ownership validation covered 701 handwritten
+sources, `ClassMngrNext` built, and
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests` passed 1/1. The
+contract uses typed class IDs, weekdays, and schedule mode; empty visibility
+returns a valid empty projection, and malformed or out-of-scope data fails
+without partial results. The legacy page, persistence adapter, output path,
+and Release memory gate remain future work; no batching or memory improvement
+is claimed. Next: continue with another Phase 2 application-contract slice,
+then add the persistence adapter in Phase 3 and connect the Sub Prep UI in the
+feature migration. Keep the Linux Phase 0 follow-up separate until it can run
 on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19

@@ -332,3 +332,26 @@ separate on a host with Xvfb and loopback access.
 - Phase 2 is paused here. On resume, select a new application-contract slice
   from the plan. Keep the Linux Phase 0 follow-up separate until it can run on
   a host with Xvfb and loopback access.
+
+## Current Deployment Handoff — phase2_contract_slice_resume_20260923 (complete)
+
+- Added `src/next/application/sub_prep_schedule_summary_query.h`, a Qt-free
+  schedule-scope query over typed visible class IDs, weekdays, and regular or
+  intensive mode. It uses an injected read port and the existing
+  `ClassSummaryProjection`; request validation, empty visibility, projection
+  bounds, deterministic ordering, out-of-scope rows, selected details, and
+  structured read failures are explicit.
+- Added app-less coverage in
+  `tests/next_application_sub_prep_schedule_summary_query_tests.cpp` and
+  registered `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`.
+  CMake Release configuration validated ownership of 701 handwritten files;
+  `ClassMngrNext` built, and the focused CTest passed 1/1. `git diff --check`
+  passed on the test lane's owned files.
+- The query contract is not connected to the live Sub Prep page and has no
+  persistence adapter. No SQLite batching, output migration, UI parity, or
+  memory improvement is claimed. The existing 96-class Release baseline and
+  its memory failure remain the acceptance reference for later feature work.
+- Next entry point: continue Phase 2 with another application-contract slice.
+  Implement the Sub Prep persistence adapter under Phase 3, then connect the
+  UI/model, selected details, output, and release-memory acceptance under the
+  feature and memory plans. Keep the Linux Phase 0 follow-up separate.

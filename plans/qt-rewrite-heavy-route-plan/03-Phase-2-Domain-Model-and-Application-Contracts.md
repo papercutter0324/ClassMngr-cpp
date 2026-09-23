@@ -7,7 +7,7 @@
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-20
+- Last updated: 2026-09-23
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` maps legacy activation/new-event values to `CalendarEventEditDraft` before constructing the dialog, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -3241,3 +3241,21 @@ registered CTest targets passed: `ClassMngrNextPlatformSettingsManagerFontSizePr
 `ClassMngrAiCommentOptionsTests`, `ClassMngrStartupVisualSettingsTests`, and
 `ClassMngrFontManagerTests`. No CMake changes were made; `git diff --check`
 was clean. Phase 2 remains open.
+
+#### Progress update - 2026-09-23 (Sub Prep schedule-summary query contract)
+
+`src/next/application/sub_prep_schedule_summary_query.h` adds a Qt-free
+Application query for typed visible class IDs, Application-owned weekdays,
+and typed regular/intensive schedule mode. It uses an injected read port and
+reuses `ClassSummaryProjection`; projection validation is all-or-nothing and
+ordering is deterministic. Empty visible-class or selected-day scopes return
+a successful empty projection without reading.
+
+The app-less test is
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`, registered
+in `cmake/tests/next.cmake`. Release configuration validated ownership of 701
+handwritten sources, `ClassMngrNext` built, and
+`ctest -R ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests
+--output-on-failure` passed 1/1. The query is not connected to the legacy page
+and has no persistence adapter; batching, output/UI migration, feature parity,
+and memory improvement remain unclaimed. Phase 2 remains In progress.
