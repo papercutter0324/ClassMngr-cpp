@@ -7,7 +7,7 @@
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-23
+- Last updated: 2026-09-24
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` maps legacy activation/new-event values to `CalendarEventEditDraft` before constructing the dialog, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -3629,3 +3629,22 @@ read failure, or invalid text mapping. Windows x64 Debug built the package
 suite; focused CTest passed 5/5 for package, page, PDF, Application query, and
 Platform source suites. Next is the packaged 96-class Windows x64 Release
 memory gate; UI visual-state and the broader Phase 2 exit gates remain open.
+
+#### Progress update - 2026-09-24 (Sub Prep packaged Release measurement)
+
+Work Package F9 extends the Sub Prep output-boundary workflow test to capture
+working set at both one and five seconds after completion. The updated Windows
+x64 Debug startup test target built, and the route test passed while driving
+the packaged Release application. Route-scoped validation passed for
+`output-sub-prep`, with two PDFs, 17 pages, normal exit, and no timeout. This
+single-route run leaves the aggregate Phase 0 exit gate incomplete, as
+expected.
+
+The report measured a 315,740,160-byte peak working set and 351,821,824-byte
+peak private usage, compared with retained legacy peaks of 498,176,000 and
+480,948,224 bytes. Settled working set was 306,466,816 bytes at one second and
+306,470,912 bytes at five seconds. The route is below the temporary 512 MiB
+diagnostic ceiling but remains above the final 250 MiB target. Package output
+parity and this route result do not close the broader Phase 2 exit gate; the
+typed calendar UI/page migration, generic settings persistence, remaining
+feature-service migrations, and broader document-service migration remain.

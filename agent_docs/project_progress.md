@@ -142,57 +142,19 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-Phase 2 continues on `Qt-Rewrite`. Work Packages D and E connect the Sub Prep
-class-information view to bounded Application queries and release its
-projection and selected details when PageManager deactivates the page. The
-model backs one class list and one reusable detail card; re-entry marks the
-page stale and reloads fresh summary and selected-detail values.
+Phase 2 Work Packages D and E and Sub Prep output packages F1-F8 are complete.
+F9 adds one- and five-second working-set checkpoints to the Sub Prep output
+workflow test and records the packaged Windows x64 Release route. The selected
+route passed validation and generated two PDFs. Peak working set was
+315,740,160 bytes and peak private usage was 351,821,824 bytes, both below the
+temporary 512 MiB diagnostic ceiling and lower than the retained legacy
+baseline. Settled working set was 306,466,816 bytes at one second and
+306,470,912 bytes at five seconds, so the final 250 MiB target remains open.
 
-Work Package F1 routes the generated information sheet through
-`SubPrepPrintSourceQuery`, scoped to the print dialog's selected classes,
-weekdays, and schedule mode. A mapper preserves the renderer's teacher-name
-fallbacks and output fields. The page no longer builds this sheet by loading
-all classes and repeatedly reading class details, teachers, and rosters.
-Windows x64 Debug Ninja built the application, page, mapper, query, adapter,
-PDF, and package targets; focused CTest passed 6/6. The package service still
-loads full class/teacher/roster data for roster PDFs. Work Package F2 makes
-the renderer document borrow its class-information list from the request for
-the synchronous render call, removing that full `TeacherGroup` copy. The page
-moves the request into the package request instead of copying the list. The
-render test confirms the alias and the page, PDF, and package suites pass 3/3.
-Work Package F3 makes package generation own that request, moves it from the
-page, renders the information sheet first, and clears the Sub Prep input before
-loading full roster values. The page, PDF, and package suites pass 3/3. The
-roster stage still uses legacy class/teacher/roster reads. F4 adds the
-Qt-free `SubPrepRosterOutputSourceQuery` contract, scoped by selected class,
-day, mode, and requested extra columns. It validates teacher references,
-meeting days, row/cell shapes, and per-class and aggregate roster/text limits;
-its app-less query suite passes 1/1. CMake reconfiguration validated 865
-handwritten source owners, and Windows x64 Debug built `ClassMngr` and the new
-query test target. F5 adds `RosterRepository::loadRosterForOutput` with
-DataService and RosterService forwarding. It projects only requested columns,
-checks row and cell budgets before allocating the matrix, and uses forward-only
-SQL reads plus a bounded substring and byte-length check for each value. The
-data lifecycle suite passes 1/1, including oversized cell and sparse-row
-rejection. F6 adds the session-backed
-`ApplicationServicesSubPrepRosterOutputSourcePort`. It scopes
-reads by class IDs, weekdays, and schedule mode, preserves unassigned classes
-for roster output, shares teacher facts, and passes remaining row/cell/text
-budgets into the bounded roster service. CMake validated 867 handwritten
-source owners. Windows x64 Debug built `ClassMngr` and the new Platform test;
-focused CTest passed 3/3 for the roster-output adapter, the existing Sub Prep
-print-source adapter, and the roster-output Application query. F7 replaces
-package-service legacy roster reads with the scoped typed source and maps
-bounded values into renderer models. The page owns the Platform adapter for
-the synchronous package call. The application query, adapter, package, page,
-and PDF suites passed 5/5 after a Windows x64 Debug build. F8 compares the
-96-class Sub Prep and Daily roster PDFs against retained output references:
-page count, every page's dimensions and extracted text match, and all Windows
-150-DPI page renders are exact. Cancellation and staged read/mapping failure
-cleanup checks pass. The focused integration set again passed 5/5. Next run the
-packaged 96-class Release memory gate, then continue the wider Phase 2 exit
-work. Keep the Linux Phase 0 follow-up separate until it can run on a host
-with Xvfb and loopback access.
+Continue the broader Phase 2 exit work with the typed calendar UI/page
+migration. Generic settings persistence, remaining feature-service migrations,
+and broader document-service migration also remain open. Keep the Linux Phase
+0 follow-up separate until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

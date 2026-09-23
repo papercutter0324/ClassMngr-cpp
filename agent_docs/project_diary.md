@@ -444,3 +444,11 @@
   while reading or mapping the roster source likewise leave no package staging
   directory. Release memory and all feature visual-state gates still require
   their own acceptance run.
+
+
+## Phase 2 Sub Prep packaged memory measurement - 2026-09-24
+
+A passing packaged route and output parity do not close the Sub Prep memory
+gate. Record both one- and five-second settled measurements: F9 stayed below
+512 MiB and improved over legacy peaks, while its approximately 307 MB settled
+working set remains above the 250 MiB end-of-rewrite target.

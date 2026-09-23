@@ -7604,7 +7604,7 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
             QStringLiteral("--startup-performance-scenario"),
             QStringLiteral("representative"),
             QStringLiteral("--startup-performance-settle-ms"),
-            QStringLiteral("1000"),
+            QStringLiteral("5000"),
             QStringLiteral("--startup-performance-output"),
             metricsPath,
             fixturePath
@@ -7722,7 +7722,8 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
              QStringLiteral("sub-prep-output-generated"),
              QStringLiteral("sub-prep-output-operation-released"),
              QStringLiteral("workflow-complete"),
-             QStringLiteral("settled-1s")
+             QStringLiteral("settled-1s"),
+             QStringLiteral("settled-5s")
          })
     {
         QVERIFY2(
@@ -7759,6 +7760,47 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         checkpoints.value(QStringLiteral("settled-1s"))
             .value(QStringLiteral("metrics"))
             .toObject();
+    const QJsonObject settledMemory =
+        checkpoints.value(QStringLiteral("settled-1s"))
+            .value(QStringLiteral("memory"))
+            .toObject();
+    const QJsonObject settledFiveSecondMemory =
+        checkpoints.value(QStringLiteral("settled-5s"))
+            .value(QStringLiteral("memory"))
+            .toObject();
+    const QJsonObject settledFiveSecondCheckpoint =
+        checkpoints.value(QStringLiteral("settled-5s"));
+    const double workflowCompleteElapsedMs =
+        checkpoints.value(QStringLiteral("workflow-complete"))
+            .value(QStringLiteral("elapsedMs"))
+            .toDouble();
+    const double settledOneSecondElapsedMs =
+        checkpoints.value(QStringLiteral("settled-1s"))
+            .value(QStringLiteral("elapsedMs"))
+            .toDouble();
+    const double settledFiveSecondElapsedMs =
+        settledFiveSecondCheckpoint.value(QStringLiteral("elapsedMs"))
+            .toDouble();
+
+    QVERIFY(
+        settledMemory.value(QStringLiteral("available")).toBool()
+        );
+    QVERIFY(
+        settledMemory.value(QStringLiteral("workingSetBytes")).toDouble() > 0.0
+        );
+    QVERIFY(
+        settledFiveSecondMemory.value(QStringLiteral("available")).toBool()
+        );
+    QVERIFY(
+        settledFiveSecondMemory.value(QStringLiteral("workingSetBytes"))
+            .toDouble() > 0.0
+        );
+    QVERIFY(
+        settledOneSecondElapsedMs >= workflowCompleteElapsedMs + 1000.0
+        );
+    QVERIFY(
+        settledFiveSecondElapsedMs >= workflowCompleteElapsedMs + 5000.0
+        );
 
     QCOMPARE(
         outputStartMetrics.value(QStringLiteral("subPrepOutputOperationsStarted"))
@@ -7960,6 +8002,18 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
             QStringLiteral("settledElapsedMs"),
             checkpoints.value(QStringLiteral("settled-1s"))
                 .value(QStringLiteral("elapsedMs"))
+        },
+        {
+            QStringLiteral("settled1sWorkingSetBytes"),
+            settledMemory.value(QStringLiteral("workingSetBytes"))
+        },
+        {
+            QStringLiteral("settled5sElapsedMs"),
+            settledFiveSecondCheckpoint.value(QStringLiteral("elapsedMs"))
+        },
+        {
+            QStringLiteral("settled5sWorkingSetBytes"),
+            settledFiveSecondMemory.value(QStringLiteral("workingSetBytes"))
         },
         {QStringLiteral("peakMemory"), peakMemory},
         {

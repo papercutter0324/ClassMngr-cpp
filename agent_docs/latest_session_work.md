@@ -659,3 +659,25 @@ separate on a host with Xvfb and loopback access.
 - Handoff: run the clean packaged Windows x64 Release 96-class Sub Prep route
   against the Phase 9 memory budget. Full UI visual-state parity and the wider
   Phase 2 exit work remain open. Nothing has been pushed.
+
+### Phase 2 Sub Prep packaged Release measurement - 2026-09-24
+
+- The Sub Prep output-boundary test now records the working set at one and
+  five seconds after the workflow settles. The Windows x64 Debug startup test
+  target built, and `capturesLargeSubPrepOutputBoundaryWhenConfigured` passed
+  while driving the packaged Release application.
+- Route-scoped validation passed for `output-sub-prep`: two PDFs, 17 total
+  pages, 139,650 PDF bytes, normal exit, and no timeout. This was a single
+  selected route, so the aggregate Phase 0 exit gate correctly remains
+  incomplete. The report is under
+  `%TEMP%\ClassMngr-Phase2\f9-subprep-output-5s-verified-20260924`.
+- The measured peak was 315,740,160 bytes working set and 351,821,824 bytes
+  private usage. Working set was 306,466,816 bytes at the one-second
+  checkpoint and 306,470,912 bytes at five seconds. The route stayed below
+  the temporary 512 MiB diagnostic ceiling and improved over the retained
+  legacy peak of 498,176,000 working-set bytes and 480,948,224 private bytes.
+  It remains above the final 250 MiB settled-memory target. The validator
+  recorded 25 samples at or above 250 MiB and none at or above 512 MiB.
+- Handoff: continue Phase 2 with the broader typed calendar UI/page migration.
+  Generic settings persistence, the remaining feature-service migrations,
+  and broader document-service migration remain open. Nothing was pushed.

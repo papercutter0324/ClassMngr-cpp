@@ -106,10 +106,15 @@ gate remain open; the next slice runs the Release memory gate.
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
 be used for fast route-semantics tests, but it must not replace the large
-fixture's scalability and memory gate. The current packaged Release boundary
-now completes the route but reaches 410,468,352 bytes peak working set and
-452,853,760 bytes peak private usage, so the gate is a bounded-memory
-requirement even when the legacy process exits normally.
+fixture's scalability and memory gate. The F9 packaged Windows x64 Release
+route completes normally and passes
+route-scoped validation. It measured 315,740,160 bytes peak working set,
+351,821,824 bytes peak private usage, 306,466,816 bytes at one second after
+completion, and 306,470,912 bytes at five seconds. These peaks improve on the
+retained legacy measurement (498,176,000 working-set bytes and 480,948,224
+private bytes), and the route stays below the temporary 512 MiB diagnostic
+ceiling. Both settled working-set samples remain above the final 250 MiB
+target; memory acceptance and repeated entry/leave growth checks remain open.
 
 ## Objective
 
