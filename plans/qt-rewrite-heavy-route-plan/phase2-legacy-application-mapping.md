@@ -2920,3 +2920,13 @@ continues on the typed projection values.
 captures `SettingsService*` for the event-display setting pair. The Platform
 adapter retains the exact keys, default-false reads, unavailable-save no-op,
 and atomic save semantics; unrelated preferences remain untouched.
+
+
+## Academic calendar preference-port ownership - 2026-09-24
+
+AcademicCalendarProvider now owns injected Application schedule and
+first-day preference ports. CalendarPage and evaluation-default selection
+construct their Platform adapters at the boundary. Platform retains
+SettingsService access; the provider no longer stores it or constructs
+adapters during reads and writes. Upcoming-events preference access and
+broader settings persistence remain open.

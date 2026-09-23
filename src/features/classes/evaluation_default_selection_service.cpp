@@ -5,6 +5,11 @@
 #include "domain/models/class_info.h"
 #include "features/calendar/ui/academic_calendar_provider.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
+#include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
+#include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
+
+#include <memory>
+#include <utility>
 
 namespace
 {
@@ -33,7 +38,6 @@ QString forClass(
         return {};
     }
 
-    SettingsService* settingsService = services->settingsService();
     const ClassMngr::Next::Platform::
         ApplicationServicesEvaluationDefaultPolicyPort policyPort(*services);
     if (
@@ -64,7 +68,18 @@ QString forClass(
         )
         ? SchoolLevel::Middle
         : SchoolLevel::Elementary;
-    AcademicCalendarProvider calendar(settingsService);
+    auto schedulePreferences = std::make_unique<
+        ClassMngr::Next::Platform::
+            ApplicationServicesAcademicCalendarSchedulePreferencesPort
+        >(*services);
+    auto firstDayOfWeekPreferences = std::make_unique<
+        ClassMngr::Next::Platform::
+            ApplicationServicesCalendarFirstDayOfWeekPreferencesPort
+        >(*services);
+    AcademicCalendarProvider calendar(
+        std::move(schedulePreferences),
+        std::move(firstDayOfWeekPreferences)
+        );
     if (!calendar.schedule().hasSavedSchedules())
     {
         return {};

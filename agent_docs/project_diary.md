@@ -494,3 +494,11 @@ Use the `ApplicationServices*` entry point for the preferences adapter when a
 panel currently stores `SettingsService*` only to construct that adapter.
 Keep default reads and unavailable saves as successful no-ops, with atomic
 multi-key writes owned by Platform.
+
+
+## Phase 2 academic calendar preference ports - 2026-09-24
+
+When a feature provider only needs persisted values, inject its Application
+preference ports and construct Platform adapters at the UI or service
+composition boundary. Keep legacy SettingsService ownership inside Platform;
+the provider should not recreate its own adapters during each read or write.

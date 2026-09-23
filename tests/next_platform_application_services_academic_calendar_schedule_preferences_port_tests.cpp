@@ -101,6 +101,13 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     QVERIFY(unavailablePort.read().empty());
     unavailablePort.write(R"({"version":1})");
     QVERIFY(unavailablePort.read().empty());
+
+    ApplicationServicesAcademicCalendarSchedulePreferencesPort nullPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
+    QVERIFY(nullPort.read().empty());
+    nullPort.write(R"({"version":1})");
+    QVERIFY(nullPort.read().empty());
 }
 
 void NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests::
@@ -112,7 +119,10 @@ roundTripsThroughTheExactKey()
 
     const std::string expected =
         R"({"version":1,"profiles":{"elementary":{},"middle":{}}})";
-    ApplicationServicesAcademicCalendarSchedulePreferencesPort port(services);
+    ApplicationServices* servicesPointer = &services;
+    ApplicationServicesAcademicCalendarSchedulePreferencesPort port(
+        servicesPointer
+        );
     port.write(expected);
 
     QCOMPARE(port.read(), expected);

@@ -29,9 +29,11 @@ public:
     }
 
     explicit ApplicationServicesAcademicCalendarSchedulePreferencesPort(
-        SettingsService* settingsService
+        ApplicationServices* services
         ) noexcept
-        : m_settingsService(settingsService)
+        : m_settingsService(
+            services ? services->settingsService() : nullptr
+            )
     {
     }
 

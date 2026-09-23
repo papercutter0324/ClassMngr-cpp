@@ -119,7 +119,10 @@ missingSettingUsesLocaleFallback()
     QVERIFY(openDatabase(services, m_directory));
 
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
-    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
+    ApplicationServices* servicesPointer = &services;
+    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(
+        servicesPointer
+        );
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Sunday);
 
     QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
@@ -142,7 +145,10 @@ invalidSettingUsesLocaleFallback()
             )
         );
 
-    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
+    ApplicationServices* servicesPointer = &services;
+    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(
+        servicesPointer
+        );
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
 
     QVERIFY(
@@ -185,7 +191,10 @@ roundTripsAllDaysUsingExactKey()
         CalendarFirstDayOfWeek::Saturday
     }};
 
-    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
+    ApplicationServices* servicesPointer = &services;
+    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(
+        servicesPointer
+        );
     for (const CalendarFirstDayOfWeek expected : values)
     {
         port.save(expected);
@@ -215,6 +224,13 @@ unavailableSettingsUseLocaleFallbackAndIgnoreSave()
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
     port.save(CalendarFirstDayOfWeek::Sunday);
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+
+    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort nullPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
+    QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
+    nullPort.save(CalendarFirstDayOfWeek::Sunday);
+    QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::

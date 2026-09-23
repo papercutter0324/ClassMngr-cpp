@@ -34,13 +34,6 @@ public:
     {
     }
 
-    explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
-        SettingsService* settingsService
-        ) noexcept
-        : m_settingsService(settingsService)
-    {
-    }
-
     ApplicationServicesCalendarEventDisplayPreferencesPort(
         const ApplicationServicesCalendarEventDisplayPreferencesPort&
         ) = delete;

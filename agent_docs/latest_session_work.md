@@ -771,3 +771,20 @@ separate on a host with Xvfb and loopback access.
   then remaining feature-service and broader document migrations. The 250 MiB
   settled-memory target and Linux Phase 0 follow-up remain open. Nothing was
   pushed.
+
+
+### Phase 2 academic calendar preference-port injection - 2026-09-24
+
+- AcademicCalendarProvider now owns Application schedule and first-day
+  preference ports instead of SettingsService. CalendarPage and
+  evaluation-default selection construct the Platform adapters and pass the
+  ports in. Platform schedule, first-day, and display-preference adapters no
+  longer expose SettingsService-pointer constructors.
+- Windows x64 Debug built ClassMngr, ClassMngrAcademicCalendarTests, and the
+  schedule, first-day, and display-preference Platform suites. Focused CTest
+  passed 4/4; the provider source search found no SettingsService reference,
+  and git diff --check passed.
+- Handoff: continue the remaining calendar upcoming-events preference callers,
+  then generic settings, feature-service, and document migrations. The 250 MiB
+  settled-memory target and Linux Phase 0 follow-up remain open. Nothing was
+  pushed.

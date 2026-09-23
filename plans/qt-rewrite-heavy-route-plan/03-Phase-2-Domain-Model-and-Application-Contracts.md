@@ -3728,3 +3728,18 @@ own the same setting keys, default-false reads, unavailable-save no-op, and
 atomic two-key save. Windows x64 Debug built `ClassMngr` and the Platform
 display-preferences suite; focused CTest passed 1/1, including pointer-based
 round-trip and null/unavailable service behavior.
+
+
+#### Progress update - 2026-09-24 (academic calendar preference-port injection)
+
+AcademicCalendarProvider now owns the Application schedule and first-day
+preference ports. CalendarPage and evaluation-default selection construct
+the Platform adapters and inject those ports, removing SettingsService from
+the provider. The schedule, first-day, and display-preference Platform
+adapters no longer expose SettingsService-pointer constructors.
+
+Windows x64 Debug built ClassMngr, ClassMngrAcademicCalendarTests, and the
+three Platform preference suites. Focused CTest passed 4/4; CMake validated
+871 source owners, a provider source search found no SettingsService
+references, and git diff --check passed. The remaining calendar
+upcoming-events preference callers and broader Phase 2 migrations remain open.

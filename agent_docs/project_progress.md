@@ -168,6 +168,14 @@ typed event-display preferences adapter and no longer retains
 `SettingsService*` for that preference pair. Keep the Linux Phase 0 follow-up
 separate until it can run on a host with Xvfb and loopback access.
 
+AcademicCalendarProvider now owns injected Application schedule and first-day
+preference ports. CalendarPage and evaluation-default selection construct the
+Platform adapters at their boundaries, so the provider no longer references
+SettingsService. Windows x64 Debug built ClassMngr and the academic-calendar
+and three preference-port suites; focused CTest passed 4/4. Continue the
+remaining upcoming-events preference callers, then generic settings,
+feature-service, and document migrations.
+
 ### Phase 2 kickoff — 2026-09-19
 
 The v2 Domain boundary now contains header-only, Qt-free typed identifiers and

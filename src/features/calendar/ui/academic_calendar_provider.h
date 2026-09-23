@@ -1,12 +1,14 @@
 #pragma once
 
 #include "features/calendar/academic_calendar_schedule.h"
+#include "next/application/academic_calendar_schedule_preferences.h"
+#include "next/application/calendar_first_day_of_week_preferences.h"
+
+#include <memory>
 
 #include <QObject>
 #include <QDateTime>
 #include <QVariantList>
-
-class SettingsService;
 
 class AcademicCalendarProvider : public QObject
 {
@@ -16,7 +18,10 @@ class AcademicCalendarProvider : public QObject
 
 public:
     explicit AcademicCalendarProvider(
-        SettingsService* settingsService,
+        std::unique_ptr<ClassMngr::Next::Application::
+            AcademicCalendarSchedulePreferencesPort> schedulePreferences,
+        std::unique_ptr<ClassMngr::Next::Application::
+            CalendarFirstDayOfWeekPreferencesPort> firstDayOfWeekPreferences,
         QObject* parent = nullptr
         );
 
@@ -64,7 +69,10 @@ private:
     void persist();
     void persistFirstDayOfWeek();
 
-    SettingsService* m_settingsService = nullptr;
+    std::unique_ptr<ClassMngr::Next::Application::
+        AcademicCalendarSchedulePreferencesPort> m_schedulePreferences;
+    std::unique_ptr<ClassMngr::Next::Application::
+        CalendarFirstDayOfWeekPreferencesPort> m_firstDayOfWeekPreferences;
     AcademicCalendarSchedule m_schedule;
     int m_revision = 0;
     int m_firstDayOfWeek = 0;

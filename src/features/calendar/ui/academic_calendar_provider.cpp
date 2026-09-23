@@ -1,15 +1,14 @@
 #include "academic_calendar_provider.h"
 
-#include "app/services/feature_services.h"
 #include "next/application/academic_calendar_schedule_preferences.h"
-#include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
 #include "next/application/calendar_first_day_of_week_preferences.h"
-#include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 
 #include <QDateTime>
 #include <QJsonDocument>
 #include <QLocale>
 #include <QVariantMap>
+
+#include <utility>
 
 namespace
 {
@@ -36,11 +35,15 @@ int qtDayOfWeek(int qmlLocaleDay)
 }
 
 AcademicCalendarProvider::AcademicCalendarProvider(
-    SettingsService* settingsService,
+    std::unique_ptr<ClassMngr::Next::Application::
+        AcademicCalendarSchedulePreferencesPort> schedulePreferences,
+    std::unique_ptr<ClassMngr::Next::Application::
+        CalendarFirstDayOfWeekPreferencesPort> firstDayOfWeekPreferences,
     QObject* parent
     )
     : QObject(parent)
-    , m_settingsService(settingsService)
+    , m_schedulePreferences(std::move(schedulePreferences))
+    , m_firstDayOfWeekPreferences(std::move(firstDayOfWeekPreferences))
 {
     reload();
 }
@@ -219,11 +222,9 @@ void AcademicCalendarProvider::reload()
     m_schedule.clear();
     loadOptions();
 
-    const std::string json =
-        ClassMngr::Next::Platform::
-            ApplicationServicesAcademicCalendarSchedulePreferencesPort(
-                m_settingsService
-                ).read();
+    const std::string json = m_schedulePreferences
+        ? m_schedulePreferences->read()
+        : std::string{};
     if (!json.empty())
     {
         QJsonParseError error;
@@ -254,12 +255,11 @@ void AcademicCalendarProvider::reload()
 
 void AcademicCalendarProvider::loadOptions()
 {
-    const auto firstDayOfWeek =
-        ClassMngr::Next::Platform::
-            ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
-                m_settingsService
-                ).load();
-    m_firstDayOfWeek = static_cast<int>(firstDayOfWeek);
+    m_firstDayOfWeek = m_firstDayOfWeekPreferences
+        ? static_cast<int>(m_firstDayOfWeekPreferences->load())
+        : static_cast<int>(
+            ClassMngr::Next::Application::CalendarFirstDayOfWeek::Sunday
+            );
 }
 
 QString AcademicCalendarProvider::termName(AcademicTerm term) const
@@ -330,21 +330,25 @@ QString AcademicCalendarProvider::tooltipText(
 
 void AcademicCalendarProvider::persist()
 {
+    if (!m_schedulePreferences)
+    {
+        return;
+    }
+
     const QByteArray json =
         QJsonDocument(m_schedule.toJson())
             .toJson(QJsonDocument::Compact);
-    ClassMngr::Next::Platform::
-        ApplicationServicesAcademicCalendarSchedulePreferencesPort(
-            m_settingsService
-            ).write(json.toStdString());
+    m_schedulePreferences->write(json.toStdString());
 }
 
 void AcademicCalendarProvider::persistFirstDayOfWeek()
 {
     using FirstDayOfWeek =
         ClassMngr::Next::Application::CalendarFirstDayOfWeek;
-    ClassMngr::Next::Platform::
-        ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
-            m_settingsService
-            ).save(static_cast<FirstDayOfWeek>(m_firstDayOfWeek));
+    if (m_firstDayOfWeekPreferences)
+    {
+        m_firstDayOfWeekPreferences->save(
+            static_cast<FirstDayOfWeek>(m_firstDayOfWeek)
+            );
+    }
 }

@@ -1,9 +1,93 @@
 #include "features/calendar/academic_calendar_schedule.h"
 #include "features/calendar/ui/academic_calendar_provider.h"
+#include "next/application/academic_calendar_schedule_preferences.h"
+#include "next/application/calendar_first_day_of_week_preferences.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QtTest>
+
+#include <memory>
+#include <string>
+#include <utility>
+
+using namespace ClassMngr::Next::Application;
+
+namespace
+{
+
+struct AcademicCalendarPreferenceState final
+{
+    std::string scheduleJson;
+    CalendarFirstDayOfWeek firstDayOfWeek = CalendarFirstDayOfWeek::Sunday;
+    int scheduleWriteCount = 0;
+    int firstDayWriteCount = 0;
+};
+
+class TestAcademicCalendarSchedulePreferencesPort final
+    : public AcademicCalendarSchedulePreferencesPort
+{
+public:
+    explicit TestAcademicCalendarSchedulePreferencesPort(
+        std::shared_ptr<AcademicCalendarPreferenceState> state
+        )
+        : m_state(std::move(state))
+    {
+    }
+
+    [[nodiscard]] std::string read() const override
+    {
+        return m_state->scheduleJson;
+    }
+
+    void write(const std::string& payload) const override
+    {
+        m_state->scheduleJson = payload;
+        ++m_state->scheduleWriteCount;
+    }
+
+private:
+    std::shared_ptr<AcademicCalendarPreferenceState> m_state;
+};
+
+class TestCalendarFirstDayOfWeekPreferencesPort final
+    : public CalendarFirstDayOfWeekPreferencesPort
+{
+public:
+    explicit TestCalendarFirstDayOfWeekPreferencesPort(
+        std::shared_ptr<AcademicCalendarPreferenceState> state
+        )
+        : m_state(std::move(state))
+    {
+    }
+
+    [[nodiscard]] CalendarFirstDayOfWeek load() const override
+    {
+        return m_state->firstDayOfWeek;
+    }
+
+    void save(const CalendarFirstDayOfWeek firstDayOfWeek) const override
+    {
+        m_state->firstDayOfWeek = firstDayOfWeek;
+        ++m_state->firstDayWriteCount;
+    }
+
+private:
+    std::shared_ptr<AcademicCalendarPreferenceState> m_state;
+};
+
+std::unique_ptr<AcademicCalendarProvider> makeProvider(
+    const std::shared_ptr<AcademicCalendarPreferenceState>& state =
+        std::make_shared<AcademicCalendarPreferenceState>()
+    )
+{
+    return std::make_unique<AcademicCalendarProvider>(
+        std::make_unique<TestAcademicCalendarSchedulePreferencesPort>(state),
+        std::make_unique<TestCalendarFirstDayOfWeekPreferencesPort>(state)
+        );
+}
+
+}
 
 class AcademicCalendarTests : public QObject
 {
@@ -15,6 +99,7 @@ private slots:
     void providerFormatsCompactAndDualTitles();
     void providerBuildsLocaleAlignedWeekRows();
     void providerOverridesFirstDayOfWeek();
+    void providerReadsAndWritesInjectedPreferencePorts();
     void customizedYearShiftsRolloverButFutureUsesDefaults();
     void winterEditKeepsPreviousFallContinuous();
     void replacingEarlierYearInvalidatesLaterCustomization();
@@ -75,20 +160,20 @@ void AcademicCalendarTests::termLookupResetsWeeksAtBoundaries()
 void AcademicCalendarTests::providerFormatsCompactAndDualTitles()
 {
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
-    AcademicCalendarProvider provider(nullptr);
+    const auto provider = makeProvider();
 
     QCOMPARE(
-        provider.monthTitle(2026, 5),
+        provider->monthTitle(2026, 5),
         QStringLiteral("June 2026 — Spring Wk 12")
         );
     QCOMPARE(
-        provider.monthTitle(2026, 8),
+        provider->monthTitle(2026, 8),
         QStringLiteral(
             "September 2026 — Elem: Summer Wk 7 · MS: Fall Wk 3"
             )
         );
     QCOMPARE(
-        provider.termYearForDate(QDate(2026, 1, 5)),
+        provider->termYearForDate(QDate(2026, 1, 5)),
         2026
         );
 }
@@ -96,12 +181,12 @@ void AcademicCalendarTests::providerFormatsCompactAndDualTitles()
 void AcademicCalendarTests::providerBuildsLocaleAlignedWeekRows()
 {
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
-    AcademicCalendarProvider provider(nullptr);
+    const auto provider = makeProvider();
 
     const QVariantList sundayFirst =
-        provider.weekRows(2026, 8, 0);
+        provider->weekRows(2026, 8, 0);
     const QVariantList mondayFirst =
-        provider.weekRows(2026, 8, 1);
+        provider->weekRows(2026, 8, 1);
 
     QCOMPARE(sundayFirst.size(), 6);
     QCOMPARE(mondayFirst.size(), 6);
@@ -124,35 +209,61 @@ void AcademicCalendarTests::providerBuildsLocaleAlignedWeekRows()
 void AcademicCalendarTests::providerOverridesFirstDayOfWeek()
 {
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
-    AcademicCalendarProvider provider(nullptr);
+    const auto provider = makeProvider();
 
-    provider.setFirstDayOfWeek(0);
-    QCOMPARE(provider.firstDayOfWeek(), 0);
+    provider->setFirstDayOfWeek(0);
+    QCOMPARE(provider->firstDayOfWeek(), 0);
 
     const QVariantMap sundayRow =
-        provider
-            .weekRows(
+        provider->weekRows(
                 2026,
                 2,
-                provider.firstDayOfWeek()
+                provider->firstDayOfWeek()
                 )
             .first()
             .toMap();
     QCOMPARE(sundayRow.value(QStringLiteral("elementaryWeek")).toInt(), 10);
 
-    provider.setFirstDayOfWeek(1);
-    QCOMPARE(provider.firstDayOfWeek(), 1);
+    provider->setFirstDayOfWeek(1);
+    QCOMPARE(provider->firstDayOfWeek(), 1);
 
     const QVariantMap mondayRow =
-        provider
-            .weekRows(
+        provider->weekRows(
                 2026,
                 2,
-                provider.firstDayOfWeek()
+                provider->firstDayOfWeek()
                 )
             .first()
             .toMap();
     QCOMPARE(mondayRow.value(QStringLiteral("elementaryWeek")).toInt(), 9);
+}
+
+void AcademicCalendarTests::providerReadsAndWritesInjectedPreferencePorts()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    auto provider = makeProvider(state);
+
+    AcademicYearSchedule elementary =
+        provider->schedule().yearSchedule(SchoolLevel::Elementary, 2026);
+    AcademicYearSchedule middle =
+        provider->schedule().yearSchedule(SchoolLevel::Middle, 2026);
+    elementary.weeks[2] = 12;
+    provider->saveYearSchedules(2026, elementary, middle);
+    provider->setFirstDayOfWeek(1);
+
+    QCOMPARE(state->scheduleWriteCount, 1);
+    QVERIFY(!state->scheduleJson.empty());
+    QCOMPARE(state->firstDayWriteCount, 1);
+    QCOMPARE(state->firstDayOfWeek, CalendarFirstDayOfWeek::Monday);
+
+    provider->reload();
+    QCOMPARE(
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .weeks[2],
+        12
+        );
+    QCOMPARE(provider->firstDayOfWeek(), 1);
 }
 
 void AcademicCalendarTests::customizedYearShiftsRolloverButFutureUsesDefaults()

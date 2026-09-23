@@ -10,6 +10,8 @@
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
+#include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
+#include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 #include "next/platform/application_services_calendar_event_series_create_port.h"
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
@@ -32,6 +34,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -326,13 +329,19 @@ void CalendarPage::buildCalendarContent()
             this
             );
 
-    m_academicCalendarProvider =
-        new AcademicCalendarProvider(
-            m_services
-                ? m_services->settingsService()
-                : nullptr,
-            this
-            );
+    auto schedulePreferences = std::make_unique<
+        ClassMngr::Next::Platform::
+            ApplicationServicesAcademicCalendarSchedulePreferencesPort
+        >(m_services);
+    auto firstDayOfWeekPreferences = std::make_unique<
+        ClassMngr::Next::Platform::
+            ApplicationServicesCalendarFirstDayOfWeekPreferencesPort
+        >(m_services);
+    m_academicCalendarProvider = new AcademicCalendarProvider(
+        std::move(schedulePreferences),
+        std::move(firstDayOfWeekPreferences),
+        this
+        );
 
     const QDate today =
         QDate::currentDate();
