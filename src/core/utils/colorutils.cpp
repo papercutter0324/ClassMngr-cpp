@@ -1,6 +1,4 @@
 #include "colorutils.h"
-#include "app/services/feature_services.h"
-#include "next/platform/application_services_custom_color_palette_preferences_port.h"
 
 #include <algorithm>
 #include <cmath>
@@ -185,10 +183,11 @@ QColor ColorUtils::getColor(
     const QColor& initialColor,
     QWidget* parent,
     const QString& title,
-    SettingsService* settingsService
+    const ClassMngr::Next::Application::
+        CustomColorPalettePreferencesPort& palettePreferencesPort
     )
 {
-    loadCustomColors(settingsService);
+    loadCustomColors(palettePreferencesPort);
     QColor startingColor = initialColor.isValid()
         ? initialColor
         : QColor(QStringLiteral("#FFFFFF"));
@@ -197,7 +196,7 @@ QColor ColorUtils::getColor(
     dialog.setCurrentColor(startingColor);
     dialog.setOption(QColorDialog::DontUseNativeDialog, true);
     const int result = dialog.exec();
-    saveCustomColors(settingsService);
+    saveCustomColors(palettePreferencesPort);
     return result == QDialog::Accepted ? dialog.selectedColor() : QColor{};
 }
 
@@ -205,23 +204,20 @@ QColor ColorUtils::getColor(
 // Load Custom Colors
 // =====================================================
 
-void ColorUtils::loadCustomColors(SettingsService* settingsService)
+void ColorUtils::loadCustomColors(
+    const ClassMngr::Next::Application::
+        CustomColorPalettePreferencesPort& palettePreferencesPort
+    )
 {
-    ClassMngr::Next::Platform::
-        ApplicationServicesCustomColorPalettePreferencesPort
-        palettePreferencesPort(settingsService);
     applyCustomColors(
         colorsForDialog(palettePreferencesPort.read())
         );
 }
 
-void ColorUtils::saveCustomColors(SettingsService* settingsService)
+void ColorUtils::saveCustomColors(
+    const ClassMngr::Next::Application::
+        CustomColorPalettePreferencesPort& palettePreferencesPort
+    )
 {
-    if (!settingsService)
-        return;
-
-    ClassMngr::Next::Platform::
-        ApplicationServicesCustomColorPalettePreferencesPort
-        palettePreferencesPort(settingsService);
     palettePreferencesPort.write(paletteFromDialog());
 }

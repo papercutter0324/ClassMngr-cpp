@@ -6,6 +6,7 @@
 #include "core/fontmanager.h"
 #include "core/startup_profiler.h"
 #include "core/utils/colorutils.h"
+#include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "domain/models/classroom.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
@@ -557,14 +558,19 @@ void ScheduleImportReviewDialog::chooseClassColor(
             continue;
         }
 
+        ClassMngr::Next::Platform::
+            ApplicationServicesCustomColorPalettePreferencesPort
+            palettePreferencesPort(
+                m_services
+                    ? m_services->settingsService()
+                    : nullptr
+                );
         const QColor selected =
             ColorUtils::getColor(
                 QColor(control.color),
                 this,
                 tr("Select Imported Class Color"),
-                m_services
-                    ? m_services->settingsService()
-                    : nullptr
+                palettePreferencesPort
                 );
         if (!selected.isValid())
         {

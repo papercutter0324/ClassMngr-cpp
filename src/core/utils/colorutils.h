@@ -4,9 +4,10 @@
 #include <QString>
 #include <QStringList>
 
+#include "next/application/custom_color_palette_preferences.h"
+
 #include <optional>
 
-class SettingsService;
 class QWidget;
 
 class ColorUtils
@@ -48,13 +49,20 @@ public:
         const QColor& initialColor,
         QWidget* parent,
         const QString& title,
-        SettingsService* settingsService
+        const ClassMngr::Next::Application::
+            CustomColorPalettePreferencesPort& palettePreferencesPort
         );
 
     // =====================================================
     // QColorDialog Custom Colors
     // =====================================================
 
-    static void loadCustomColors(SettingsService* settingsService);
-    static void saveCustomColors(SettingsService* settingsService);
+    static void loadCustomColors(
+        const ClassMngr::Next::Application::
+            CustomColorPalettePreferencesPort& palettePreferencesPort
+        );
+    static void saveCustomColors(
+        const ClassMngr::Next::Application::
+            CustomColorPalettePreferencesPort& palettePreferencesPort
+        );
 };

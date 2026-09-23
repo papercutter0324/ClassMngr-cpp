@@ -8,6 +8,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "ui/shared/widgets/clickable_color_preview.h"
 #include "core/utils/colorutils.h"
 
@@ -83,12 +84,15 @@ void ScheduleEditorDialog::rebuildLevelOptions(
 
 void ScheduleEditorDialog::chooseClassColor()
 {
+    ClassMngr::Next::Platform::
+        ApplicationServicesCustomColorPalettePreferencesPort
+        palettePreferencesPort(m_services->settingsService());
     QColor color =
         ColorUtils::getColor(
             QColor(m_classColor),
             this,
             tr("Choose Class Color"),
-            m_services->settingsService()
+            palettePreferencesPort
             );
 
     if (!color.isValid())
@@ -102,12 +106,15 @@ void ScheduleEditorDialog::chooseClassColor()
 
 void ScheduleEditorDialog::chooseFontColor()
 {
+    ClassMngr::Next::Platform::
+        ApplicationServicesCustomColorPalettePreferencesPort
+        palettePreferencesPort(m_services->settingsService());
     QColor color =
         ColorUtils::getColor(
             QColor(m_fontColor),
             this,
             tr("Choose Font Color"),
-            m_services->settingsService()
+            palettePreferencesPort
             );
 
     if (!color.isValid())

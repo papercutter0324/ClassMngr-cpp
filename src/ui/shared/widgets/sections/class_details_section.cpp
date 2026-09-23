@@ -16,6 +16,7 @@
 #include <QtAssert>
 
 #include "core/application_services.h"
+#include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "features/classes/config/class_info_config.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -703,13 +704,18 @@ void ClassDetailsSection::openColorPicker()
     if (!currentColor.isValid())
         currentColor = QColor("#FFFFFF");
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesCustomColorPalettePreferencesPort
+        palettePreferencesPort(
+            m_services
+                ? m_services->settingsService()
+                : nullptr
+            );
     QColor color = ColorUtils::getColor(
         currentColor,
         this,
         tr("Select Class Color"),
-        m_services
-            ? m_services->settingsService()
-            : nullptr
+        palettePreferencesPort
         );
 
     if (!color.isValid())

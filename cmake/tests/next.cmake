@@ -486,6 +486,17 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME ColorUtilsCustomColorPalette
+    SOURCES
+        tests/colorutils_custom_color_palette_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesCurrentCampusPreferencesPort
     SOURCES
         tests/next_platform_application_services_current_campus_preferences_port_tests.cpp

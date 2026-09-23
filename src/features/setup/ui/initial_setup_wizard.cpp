@@ -9,6 +9,7 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
+#include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
@@ -885,11 +886,16 @@ public:
         connect(m_colorButton, &QPushButton::clicked, this, [this]()
         {
             auto* setup = setupWizard(this);
+            ClassMngr::Next::Platform::
+                ApplicationServicesCustomColorPalettePreferencesPort
+                palettePreferencesPort(
+                    setup ? setup->settingsService() : nullptr
+                    );
             const QColor color = ColorUtils::getColor(
                 QColor(m_color),
                 this,
                 tr("Choose Class Color"),
-                setup ? setup->settingsService() : nullptr);
+                palettePreferencesPort);
             if (!color.isValid())
             {
                 return;

@@ -3,6 +3,7 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
+#include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
 #include "domain/models/classroom.h"
@@ -1181,14 +1182,19 @@ void TestingClassesPage::updateColorButtons()
 
 void TestingClassesPage::chooseClassColor()
 {
+    ClassMngr::Next::Platform::
+        ApplicationServicesCustomColorPalettePreferencesPort
+        palettePreferencesPort(
+            m_services
+                ? m_services->settingsService()
+                : nullptr
+            );
     const QColor color =
         ColorUtils::getColor(
             QColor(m_savedClass.classColor),
             this,
             tr("Choose Testing Class Color"),
-            m_services
-                ? m_services->settingsService()
-                : nullptr
+            palettePreferencesPort
             );
     if (!color.isValid())
     {
@@ -1203,14 +1209,19 @@ void TestingClassesPage::chooseClassColor()
 
 void TestingClassesPage::chooseFontColor()
 {
+    ClassMngr::Next::Platform::
+        ApplicationServicesCustomColorPalettePreferencesPort
+        palettePreferencesPort(
+            m_services
+                ? m_services->settingsService()
+                : nullptr
+            );
     const QColor color =
         ColorUtils::getColor(
             QColor(m_savedClass.fontColor),
             this,
             tr("Choose Testing Class Font Color"),
-            m_services
-                ? m_services->settingsService()
-                : nullptr
+            palettePreferencesPort
             );
     if (!color.isValid())
     {
