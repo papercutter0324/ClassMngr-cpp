@@ -286,3 +286,18 @@ The independent Tester found no F20 defect; `git diff --check` passed.
 Next: remove the unused `ClassNavigationPreferences` helper and stale build
 references, then continue the open generic-settings, feature-service, calendar
 workbook/campus, and document migrations against the Phase 2 exit gate.
+
+### Phase 2 ClassNavigationPreferences cleanup — 2026-09-24
+
+Removed the unused `ClassNavigationPreferences` API and implementation, both
+CMake source-owner entries, and stale includes. Speaking Eval now includes
+`class_tab_navigation_model.h` directly for `ClassTabNavigation`; active typed
+Application contracts and Platform adapters remain. CMake validated 872
+handwritten source owners. Independent fresh Ninja/MSVC x64 build passed for
+ClassMngr, ClassesPage, ClassTabNavigation, evaluation-default selection, and
+five typed preference targets; focused CTest passed 8/8. Source/CMake/build
+metadata searches and `git diff --check` passed. Next: route the calendar
+importer's campus-code directory lookup through Application and Platform,
+preserving its ordered, trimmed, blank-filtered, duplicate-free result and
+empty-directory behavior. Generic settings, other feature-service, workbook,
+calendar-page campus lookup, and document migrations remain open.

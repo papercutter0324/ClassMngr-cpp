@@ -318,8 +318,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/campus/ui/campus_dashboard_page_ui.cpp"
     "src/features/campus/ui/campus_map_preview.cpp"
     "src/features/campus/ui/campus_map_preview.h"
-    "src/features/classes/class_navigation_preferences.cpp"
-    "src/features/classes/class_navigation_preferences.h"
     "src/features/classes/config/class_info_config.cpp"
     "src/features/classes/config/class_info_config.h"
     "src/features/classes/evaluation_default_selection.cpp"

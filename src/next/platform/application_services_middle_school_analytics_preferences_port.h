@@ -54,7 +54,7 @@ public:
             return false;
         }
 
-        // Preserve the legacy ClassNavigationPreferences QVariant coercion.
+        // Preserve the previous QVariant coercion for stored values.
         return storedValue->toBool();
     }
 

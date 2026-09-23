@@ -2976,3 +2976,29 @@ availability guard, fills only a blank name field, and uses the aggregate save
 path. The Setup prefilled-name reinitialization case has no direct assertion,
 though the fill-only-if-blank source condition remains. See the [verified F20
 migration and verification limits](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-f20-my-information-and-initial-setup-migration).
+
+## Verified F21 unused class-navigation preferences cleanup
+
+The unused `ClassNavigationPreferences` header and implementation are removed,
+along with their production source manifest entry, the Classes Page test source
+entry, and stale includes. `speaking_eval_page_p.h` includes
+`class_tab_navigation_model.h` directly for `ClassTabNavigation`. The typed
+Application contracts, Platform adapters, and preference tests remain active.
+
+Independent fresh Windows x64 Ninja/MSVC verification configured and built
+376+8 steps. CTest passed 8/8 across ClassesPage, ClassTabNavigation, evaluation
+defaults, and the five typed preference suites. CMake validated 872 source
+owners; searches found no deleted API or file references in `src`, `tests`,
+`cmake`, `CMakeLists.txt`, or `compile_commands`; `git diff --check` passed.
+
+## Next bounded mapping: calendar-import campus-code lookup
+
+Move only the calendar importer's campus-code directory lookup in
+`calendar_event_import_service.cpp` behind a Qt-free Application query and a
+Platform adapter. Preserve `CampusJsonRepository` ordering (sorted by campus
+name), UTF-8 code values, trimming, blank removal, exact duplicate removal,
+and the no-codes result when the directory is missing or empty. Keep workbook
+decoding, CalendarPage campus lookup, generic settings, and other feature
+boundaries for later slices. The candidate contract/API name is not yet set;
+derive it from the existing call and verify the legacy behavior before
+choosing its shape.

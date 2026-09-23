@@ -549,3 +549,12 @@ Keep each caller's availability guard, whitespace/trim behavior, fill-only-if-
 blank rule, and aggregate save path. For PageManager-backed tests, distinguish
 missing resource-pack setup failures from failures in the migrated preference
 path; report the test limitation rather than treating the whole target as green.
+
+
+## Phase 2 class-navigation helper removal - 2026-09-24
+
+Once production callers use the typed Application/Platform boundary, remove an
+obsolete legacy preference helper together with its source-owner entries and
+stale includes. If a header had also been providing an unrelated model type,
+include that model directly. Keep the typed adapter and page behavior suites;
+an unused helper's removal should not remove active preference coverage.

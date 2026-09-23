@@ -905,3 +905,27 @@ separate on a host with Xvfb and loopback access.
   Phase 2 exit gate is satisfied. The Phase 9 packaged Release memory gate is
   separate. Nothing was pushed; preserve the separately staged
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md` user change.
+
+
+### Phase 2 ClassNavigationPreferences cleanup - 2026-09-24
+
+- Removed the unused `ClassNavigationPreferences` header and implementation,
+  production source entry, Classes Page test source entry, and stale includes.
+  `speaking_eval_page_p.h` now includes `class_tab_navigation_model.h`
+  directly for the still-used `ClassTabNavigation`. The active Qt-free
+  Application preference contracts and Platform adapters remain unchanged.
+- Independent verification used fresh `build/p2-f21-independent` Ninja/MSVC
+  x64 configuration and build. CMake validated 872 handwritten source owners.
+  `ClassMngr`, `ClassMngrClassesPageTests`, `ClassMngrClassTabNavigationModelTests`,
+  `ClassMngrEvaluationDefaultSelectionTests`, and five typed preference-port
+  suites built. Focused CTest passed 8/8. No deleted API or filename references
+  remain in `src`, `tests`, `cmake`, `CMakeLists.txt`, or `compile_commands.json`;
+  `git diff --check` passed. No material verification gaps remain.
+- Handoff: F22 moves the calendar importer's campus-code directory lookup
+  behind a Qt-free Application query port and Platform adapter. Preserve the
+  existing campus-name ordering, UTF-8/code values, trimming, blank removal,
+  duplicate removal, and no-codes fallback for missing or empty directories.
+  Leave workbook decoding, CalendarPage's separate campus lookup, generic
+  settings, other feature services, and document migration for later slices.
+  The formal Phase 2 exit gate remains open. Nothing was pushed; preserve the
+  separately staged `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.

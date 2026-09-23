@@ -1,6 +1,5 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
-#include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_page.h"
