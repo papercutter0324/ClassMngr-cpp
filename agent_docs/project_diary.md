@@ -267,3 +267,12 @@
 - Leave fallback tab ordering to the view: the legacy grade/level ordering and
   the v2 summary ordering are different. These contracts are not connected to
   the page and do not establish persistence batching or memory improvement.
+
+## Phase 2 Sub Prep print-source contract — 2026-09-23
+
+- Keep operation-scoped source facts in one bounded owned value, with typed
+  class and teacher references and stable adapter order. Reject malformed
+  output as a whole; an empty scope should avoid the port call.
+- The app-less query verifies value ownership and validation, not adapter
+  release or output-stage lifetime. Keep SQL batching, PDF/package cleanup,
+  parity, and memory claims behind their later integration gates.

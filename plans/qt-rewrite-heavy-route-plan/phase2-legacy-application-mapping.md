@@ -2617,3 +2617,23 @@ These contracts are not connected to legacy UI or persistence. No batching,
 package/PDF migration, or memory reduction is claimed. The next boundary is
 the operation-scoped print-source contract; package/roster/PDF and Release
 memory gates remain later work.
+
+## Verified Phase 2 Sub Prep operation-scoped print-source contract
+
+[`SubPrepPrintSourceRequest`, `SubPrepPrintSourceReadPort`, and
+`SubPrepPrintSourceQuery`](../../src/next/application/sub_prep_print_source_query.h)
+define the Qt-free information-sheet source boundary for selected class IDs,
+weekdays, and regular/intensive mode. The injected port returns copied values
+in stable order; the query validates request scope and bounded source records,
+propagates structured read errors, and returns one owned source or an error.
+Teacher records are stored once and classes refer to them by typed ID. An
+empty class/day scope performs no read; returned classes may be a subset and
+may omit a teacher.
+
+The app-less target
+[`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`](../../tests/next_application_sub_prep_print_source_query_tests.cpp)
+is registered in [`next.cmake`](../../cmake/tests/next.cmake); its focused
+target build passed and CTest passed 1/1. This contract is not wired to a Sub
+Prep adapter, page, or PDF renderer. SQL batching, source-release or memory
+improvement, roster/package migration, and output parity remain unverified;
+Phase 2 remains open.

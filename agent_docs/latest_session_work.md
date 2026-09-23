@@ -300,7 +300,7 @@ separate on a host with Xvfb and loopback access.
   release workflows passed on that source. A later local Phase 2 contract
   slice is recorded separately above.
 
-## Current Deployment Handoff: phase2_action_registry_persistence_20260923 (paused)
+## Historical Handoff — phase2_action_registry_persistence_20260923
 
 - The user requested a pause, a handoff, a commit, and a push after the
   current Phase 2 work. The three slices completed in this continuation are
@@ -329,9 +329,9 @@ separate on a host with Xvfb and loopback access.
 - Two independent scans found no other live direct application preference
   persistence candidate. Unused legacy settings helpers and a read-only
   PowerPoint registry probe remain outside the migration scope.
-- Phase 2 is paused here. On resume, select a new application-contract slice
-  from the plan. Keep the Linux Phase 0 follow-up separate until it can run on
-  a host with Xvfb and loopback access.
+- This handoff recorded the pause state at that time. Later user requests
+  resumed Phase 2 with one commit per slice; the current continuation below
+  supersedes its next-step note. Keep the Linux Phase 0 follow-up separate.
 
 ## Current Deployment Handoff — phase2_contract_slice_resume_20260923 (complete)
 
@@ -381,3 +381,23 @@ separate on a host with Xvfb and loopback access.
   improvement is claimed. Next entry point: define the narrow operation-scoped
   Sub Prep print-source contract, keeping roster/package output and Release
   memory acceptance as later gates. Keep the Linux Phase 0 follow-up separate.
+
+## Current Deployment Handoff — phase2_complete_continue_20260923 (executing)
+
+- Goal: continue Phase 2 until its application-contract exit gate is met;
+  commit each finished slice and start the next. The branch is `Qt-Rewrite`.
+- Commit `3802819b` adds the Qt-free `SubPrepPrintSourceQuery` contract for
+  typed class/day/mode scope and an operation-owned, bounded information-sheet
+  source. The query validates scope and data all-or-nothing, avoids reads for
+  empty scope, preserves the port's stable order, and does not cache results.
+- `ClassMngrNextApplicationSubPrepPrintSourceQueryTests` built in
+  `build/phase1-validation-ad635ace-windows-x64-ninja`; focused CTest passed
+  1/1. No persistence adapter, legacy page/PDF wiring, SQL batching, output
+  parity, roster/package migration, source-release, or memory improvement was
+  established. The Phase 2 plan, mapping, and Sub Prep memory plan now record
+  this boundary and its limits.
+- Next slice: move custom-color palette adapter composition out of `ColorUtils`
+  and into its UI callers. The Application preference port and Platform
+  adapter already exist; this cutover should keep the color picker behavior
+  while the utility consumes the typed port. Phase 2 remains open. Nothing has
+  been pushed.

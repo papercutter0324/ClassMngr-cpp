@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: phase2_next_contract_slice_20260923 (complete). Route: Heavy.
+Current deployment: phase2_complete_continue_20260923 (executing). Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -142,18 +142,16 @@ hosted Linux rerun remains unverified.
 
 ## Next Milestone
 
-The Phase 2 Sub Prep schedule-scope summary query is implemented in
-ClassMngrNext Application. Two further app-less contracts are now committed:
-`SubPrepClassDetailsQuery` reads one typed selected-class detail value, and
-`SubPrepClassInformationState` retains a selection only while it remains in
-the refreshed scope while invalidating old details. Both focused CTest targets
-passed 1/1 under the Windows x64 Visual Studio developer environment. These
-contracts remain separate from the legacy page and have no persistence
-adapter. The operation-scoped print source is the next contract boundary;
-package/PDF output, the persistence adapter, and the Release memory gate remain
-future work. No batching or memory improvement is claimed. Keep the Linux
-Phase 0 follow-up separate until it can run on a host with Xvfb and loopback
-access.
+The schedule-summary, selected-details, and selection-state contracts remain
+app-less and separate from the legacy page. Commit `3802819b` adds the
+operation-scoped `SubPrepPrintSourceQuery` contract. Its focused target built
+and CTest passed 1/1 in the Windows x64 Ninja developer environment. The next
+slice is the custom-color palette caller boundary: move `ColorUtils` to the
+existing Application preference port and compose its Platform adapter at the
+UI boundary. The Sub Prep persistence adapter, page/PDF integration, roster
+and package migration, and Release memory gate remain future work; no batching
+or memory improvement is claimed. Keep the Linux Phase 0 follow-up separate
+until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 
@@ -205,9 +203,10 @@ directory fallback assertion is conditional on the platform returning an
 empty writable location; that condition was not forced during verification.
 No hosted cross-platform run was performed.
 
-Phase 2 is paused at the user request. Two independent scans found no other
-live direct application preference persistence candidate; unused legacy
-settings helpers and the read-only PowerPoint registry probe remain outside
-the migration scope. Next entry point: select a new application-contract
-slice from the Phase 2 plan. Keep the supplemental Linux Phase 0 follow-up
-separate on a host with Xvfb and loopback access.
+Historical note (superseded): Phase 2 was paused at the user's request when
+this update was written. Later work resumed the plan. The earlier preference
+scan found no other live direct application preference persistence candidate
+at that time; unused legacy settings helpers and the read-only PowerPoint
+registry probe remain outside the migration scope. Keep the supplemental
+Linux Phase 0 follow-up separate until a host with Xvfb and loopback access is
+available.

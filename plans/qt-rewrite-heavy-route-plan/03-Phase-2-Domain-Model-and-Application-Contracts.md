@@ -3275,6 +3275,24 @@ change, and accepts details only when class and teacher identity match. The
 focused `ClassMngrNextApplicationSubPrepClassInformationStateTests` passed 1/1. Both
 app-less targets compiled and linked in the Windows x64 developer environment;
 neither contract is connected to legacy UI or persistence. No batching,
-package/PDF migration, or memory reduction is claimed. The next Phase 2
-boundary is the operation-scoped print-source contract; package/roster/PDF and
+package/PDF migration, or memory reduction is claimed. Package/roster/PDF and
 Release memory gates remain later work. Phase 2 remains In progress.
+
+#### Progress update - 2026-09-23 (Sub Prep operation-scoped print-source contract)
+
+`SubPrepPrintSourceRequest`, `SubPrepPrintSourceReadPort`, and
+`SubPrepPrintSourceQuery` in
+[`sub_prep_print_source_query.h`](../../src/next/application/sub_prep_print_source_query.h)
+define a Qt-free boundary for selected class IDs, weekdays, and regular or
+intensive schedule mode. The query validates the full request before reading,
+returns an empty source without I/O for an empty class or day scope, propagates
+structured read errors, and validates the complete bounded result before
+returning an owned source. Class rows refer to teacher IDs; teacher values are
+stored once, and missing teachers or a subset of requested classes are
+permitted.
+
+[`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`](../../tests/next_application_sub_prep_print_source_query_tests.cpp)
+is an app-less test registered in [`next.cmake`](../../cmake/tests/next.cmake).
+The focused target build passed and CTest passed 1/1. No Sub Prep adapter,
+page/UI, or PDF wiring, SQL batching, release/memory improvement, roster/package
+migration, or output parity was established. Phase 2 remains In Progress.

@@ -14,17 +14,18 @@
 
 ## Current Sub Prep contract boundary - 2026-09-23
 
-Phase 2 now has a Qt-free schedule-summary query and a selected-class details
-query, plus `SubPrepClassInformationState` for selection and detail lifecycle.
-The state retains a class only within the refreshed visible scope and clears
-details on each successful refresh or selection change. It accepts details
-only for the selected class and matching teacher identity. These are
-Application contracts only: neither is connected to the legacy page or
-persistence, and no batching,
-package/PDF migration, or memory reduction is claimed. The 96-class Release
-baseline's legacy memory failure remains the acceptance reference. Next is the
-operation-scoped print-source contract; package/roster/PDF and Release memory
-gates remain later work. See the [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-selected-details-and-selection-state-contracts).
+Phase 2 has Qt-free schedule-summary and selected-class details queries,
+`SubPrepClassInformationState` for selection/detail lifecycle, and an
+operation-scoped print-source request/read-port/query. The print query accepts
+typed class IDs, weekdays, and schedule mode; validates bounded copied source
+facts all-or-nothing; stores each teacher once; and returns an owned source
+with classes referring to teacher IDs. Empty class/day scopes avoid reads.
+The focused print-source target build passed and CTest passed 1/1. None of
+these contracts is wired to the legacy Sub Prep page or persistence. No SQL
+batching, source-release or memory improvement, roster/package migration, or
+PDF/output parity is established. The 96-class Release baseline's legacy
+memory failure remains the acceptance reference; package/roster/PDF and
+Release memory gates remain later work. See the [Phase 2 contract update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-23-sub-prep-operation-scoped-print-source-contract).
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
@@ -138,12 +139,16 @@ class:
 panel, including class notes and teacher facilities/notes. It must be loaded
 by ID and must not be stored once for every class in the page.
 
-The application boundary should expose operations equivalent to:
+The application boundary exposes contracts for operations equivalent to:
 
 - build summaries for a schedule scope;
 - load details for one class;
 - invalidate or refresh the scope;
 - build an operation-scoped print source for selected days/classes.
+
+The schedule-summary, selected-details, selection-state, and print-source
+contracts now exist in Phase 2. Persistence adapter/query integration, page
+integration, output parity, and Release memory evidence remain open.
 
 The UI must not issue SQL or depend on `DataService` compatibility methods.
 
