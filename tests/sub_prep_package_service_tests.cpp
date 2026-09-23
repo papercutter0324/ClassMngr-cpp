@@ -1,13 +1,13 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
-#include "core/application_services.h"
-#include "data/data_service.h"
 #include "domain/models/teacher.h"
+#include "next/application/sub_prep_roster_output_source_query.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QtTest>
 
 #include <QDir>
+#include <QByteArray>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
@@ -19,6 +19,11 @@
 #include <QTemporaryDir>
 
 #include <algorithm>
+#include <charconv>
+#include <optional>
+#include <string>
+#include <system_error>
+#include <unordered_set>
 #include <utility>
 
 namespace
@@ -36,22 +41,40 @@ PdfPrintService::Status g_batchPrintStatus =
     PdfPrintService::Status::Canceled;
 QStringList g_batchPrintPaths;
 
-alignas(ApplicationServices) unsigned char
-    g_fakeApplicationServicesStorage[sizeof(ApplicationServices)];
-alignas(DataService) unsigned char
-    g_fakeDataServiceStorage[sizeof(DataService)];
-
-ApplicationServices* fakeApplicationServices()
+ClassMngr::Next::Domain::ClassId typedClassId(const int id)
 {
-    return reinterpret_cast<ApplicationServices*>(
-        g_fakeApplicationServicesStorage
+    return *ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(id)
         );
 }
 
-DataService* fakeDataService()
+class FakeRosterOutputSourceReadPort final
+    : public ClassMngr::Next::Application::
+        SubPrepRosterOutputSourceReadPort
 {
-    return reinterpret_cast<DataService*>(g_fakeDataServiceStorage);
-}
+public:
+    using Request = ClassMngr::Next::Application::
+        SubPrepRosterOutputSourceRequest;
+    using Result = ClassMngr::Next::Application::
+        SubPrepRosterOutputSourceReadResult;
+
+    void reset()
+    {
+        loadCount = 0;
+        lastRequest = {};
+        failReads = false;
+        injectInvalidUtf8 = false;
+    }
+
+    [[nodiscard]] Result loadSource(const Request& request) override;
+
+    int loadCount = 0;
+    Request lastRequest;
+    bool failReads = false;
+    bool injectInvalidUtf8 = false;
+};
+
+FakeRosterOutputSourceReadPort g_rosterOutputSourceReadPort;
 
 void resetData()
 {
@@ -132,10 +155,10 @@ SubPrepPackageService::Request packageRequest(
     )
 {
     SubPrepPackageService::Request request;
-    request.services = fakeApplicationServices();
+    request.rosterOutputSourceReadPort = &g_rosterOutputSourceReadPort;
     request.subPrep = subPrepRequest();
     request.selectedDates = {QDate(2026, 7, 21)};
-    request.classIds = {42};
+    request.selectedClassIds = {typedClassId(42)};
     request.createFolder = true;
     request.targetRoot = targetRoot;
     request.userName = userName;
@@ -173,6 +196,7 @@ void populateHeavyOutputData()
     g_teachers.clear();
     g_batchPrintStatus = PdfPrintService::Status::Canceled;
     g_batchPrintPaths.clear();
+    g_rosterOutputSourceReadPort.reset();
 
     for (int classIndex = 0; classIndex < HeavyClassCount; ++classIndex)
     {
@@ -261,6 +285,266 @@ void populateHeavyOutputData()
         }
         g_rosters.insert(classId, roster);
     }
+}
+
+namespace
+{
+std::string utf8String(const QString& value)
+{
+    const QByteArray bytes = value.toUtf8();
+    return std::string(bytes.constData(), static_cast<std::size_t>(bytes.size()));
+}
+
+std::optional<int> legacyId(const std::string& value)
+{
+    int parsed = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        parsed
+        );
+    if (error != std::errc{} || end != value.data() + value.size()
+        || parsed <= 0 || std::to_string(parsed) != value)
+    {
+        return std::nullopt;
+    }
+    return parsed;
+}
+
+std::optional<ClassMngr::Next::Application::SubPrepWeekday> appWeekday(
+    const QString& value
+    )
+{
+    using ClassMngr::Next::Application::SubPrepWeekday;
+    if (value == QStringLiteral("Monday"))
+    {
+        return SubPrepWeekday::Monday;
+    }
+    if (value == QStringLiteral("Tuesday"))
+    {
+        return SubPrepWeekday::Tuesday;
+    }
+    if (value == QStringLiteral("Wednesday"))
+    {
+        return SubPrepWeekday::Wednesday;
+    }
+    if (value == QStringLiteral("Thursday"))
+    {
+        return SubPrepWeekday::Thursday;
+    }
+    if (value == QStringLiteral("Friday"))
+    {
+        return SubPrepWeekday::Friday;
+    }
+    if (value == QStringLiteral("Saturday"))
+    {
+        return SubPrepWeekday::Saturday;
+    }
+    if (value == QStringLiteral("Sunday"))
+    {
+        return SubPrepWeekday::Sunday;
+    }
+    return std::nullopt;
+}
+} // namespace
+
+FakeRosterOutputSourceReadPort::Result
+FakeRosterOutputSourceReadPort::loadSource(const Request& request)
+{
+    ++loadCount;
+    lastRequest = request;
+    if (failReads)
+    {
+        return Result::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "Synthetic roster-output read failure.",
+            .recoverable = false
+        });
+    }
+
+    ClassMngr::Next::Application::SubPrepRosterOutputSourceInput input;
+    std::unordered_set<int> copiedTeacherIds;
+
+    QStringList requestedColumns{
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    for (const std::string& encodedColumn : request.selectedExtraColumns)
+    {
+        const QString column = QString::fromUtf8(
+            encodedColumn.data(),
+            static_cast<qsizetype>(encodedColumn.size())
+            );
+        if (column.compare(QStringLiteral("English"), Qt::CaseInsensitive) != 0
+            && column.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) != 0
+            && !requestedColumns.contains(column, Qt::CaseInsensitive))
+        {
+            requestedColumns.append(column);
+        }
+    }
+
+    for (const auto& requestedId : request.selectedClassIds)
+    {
+        const auto classId = legacyId(requestedId.value());
+        if (!classId)
+        {
+            return Result::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                .message = "A selected class identifier is invalid.",
+                .recoverable = false
+            });
+        }
+
+        const auto classroom = std::find_if(
+            g_classes.cbegin(),
+            g_classes.cend(),
+            [classId](const Classroom& value)
+            {
+                return value.id == *classId;
+            }
+            );
+        if (classroom == g_classes.cend())
+        {
+            return Result::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+                .message = "A selected class was not found.",
+                .recoverable = false
+            });
+        }
+
+        const auto info = g_classInfo.constFind(*classId);
+        if (info == g_classInfo.cend())
+        {
+            continue;
+        }
+
+        const QList<ClassTime>& schedule =
+            request.mode == ClassMngr::Next::Application::
+                ScheduleViewMode::Intensive
+            ? info->intensiveTimes
+            : info->classTimes;
+        ClassMngr::Next::Application::SubPrepRosterOutputClass outputClass{
+            requestedId};
+        for (const ClassTime& meeting : schedule)
+        {
+            const auto weekday = appWeekday(meeting.day);
+            if (weekday
+                && std::find(
+                    request.selectedDays.cbegin(),
+                    request.selectedDays.cend(),
+                    *weekday
+                    ) != request.selectedDays.cend())
+            {
+                outputClass.meetings.push_back(
+                    {*weekday,
+                     utf8String(meeting.startTime),
+                     utf8String(meeting.endTime)}
+                    );
+            }
+        }
+        if (outputClass.meetings.empty())
+        {
+            continue;
+        }
+
+        outputClass.classroomName = utf8String(classroom->name);
+        outputClass.grade = utf8String(info->classGrade);
+        outputClass.level = utf8String(info->classLevel);
+
+        const Teacher* teacher = nullptr;
+        if (info->teacherId > 0)
+        {
+            const auto foundTeacher = g_teachers.constFind(info->teacherId);
+            if (foundTeacher == g_teachers.cend())
+            {
+                return Result::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+                    .message = "A selected class teacher was not found.",
+                    .recoverable = false
+                });
+            }
+            teacher = &foundTeacher.value();
+            outputClass.teacherId =
+                *ClassMngr::Next::Domain::TeacherId::fromString(
+                    std::to_string(info->teacherId)
+                    );
+
+            if (copiedTeacherIds.insert(info->teacherId).second)
+            {
+                input.teachers.push_back({
+                    *outputClass.teacherId,
+                    utf8String(teacher->teacherEn),
+                    utf8String(teacher->teacherKr),
+                    utf8String(teacher->preferredName),
+                    utf8String(teacher->preferredRomanization)
+                });
+            }
+        }
+
+        outputClass.classTeacherEnglishName = utf8String(
+            teacher ? teacher->teacherEn : info->teacherEn
+            );
+        outputClass.classTeacherKoreanName = utf8String(
+            teacher ? teacher->teacherKr : info->teacherKr
+            );
+        outputClass.room = utf8String(
+            teacher ? teacher->roomNumber : info->roomNumber
+            );
+        outputClass.wifiName = utf8String(
+            teacher ? teacher->wifiName : info->wifiName
+            );
+        outputClass.wifiPassword = utf8String(
+            teacher ? teacher->wifiPassword : info->wifiPassword
+            );
+        outputClass.zoomId = utf8String(
+            teacher ? teacher->zoomId : info->zoomId
+            );
+        outputClass.zoomPassword = utf8String(
+            teacher ? teacher->zoomPassword : info->zoomPassword
+            );
+
+        const auto roster = g_rosters.constFind(*classId);
+        std::vector<int> sourceColumnIndexes;
+        if (roster != g_rosters.cend())
+        {
+            for (const QString& column : requestedColumns)
+            {
+                for (int index = 0; index < roster->columns.size(); ++index)
+                {
+                    if (roster->columns.at(index).compare(
+                            column,
+                            Qt::CaseInsensitive
+                            ) == 0)
+                    {
+                        outputClass.rosterColumns.push_back(
+                            utf8String(column)
+                            );
+                        sourceColumnIndexes.push_back(index);
+                        break;
+                    }
+                }
+            }
+
+            for (const QStringList& sourceRow : roster->rows)
+            {
+                std::vector<std::string> row;
+                row.reserve(sourceColumnIndexes.size());
+                for (const int index : sourceColumnIndexes)
+                {
+                    row.push_back(utf8String(sourceRow.value(index)));
+                }
+                outputClass.rosterRows.push_back(std::move(row));
+            }
+        }
+        input.classes.push_back(std::move(outputClass));
+    }
+
+    if (injectInvalidUtf8 && !input.classes.empty())
+    {
+        input.classes.front().classroomName = std::string(1, '\xFF');
+    }
+
+    return Result::success(std::move(input));
 }
 
 SubPrepPrintService::Request heavySubPrepRequest()
@@ -366,10 +650,13 @@ SubPrepPackageService::Request heavyPackageRequest(
     )
 {
     SubPrepPackageService::Request request;
-    request.services = fakeApplicationServices();
+    request.rosterOutputSourceReadPort = &g_rosterOutputSourceReadPort;
     request.subPrep = heavySubPrepRequest();
     request.selectedDates = {QDate(2026, 7, 21)};
-    request.classIds = heavyClassIds();
+    for (const int id : heavyClassIds())
+    {
+        request.selectedClassIds.push_back(typedClassId(id));
+    }
     request.createFolder = true;
     request.targetRoot = targetRoot;
     request.userName = QStringLiteral("96-class reference");
@@ -434,61 +721,6 @@ bool inspectGeneratedPdf(
 }
 }
 
-DataService* ApplicationServices::dataService() const
-{
-    return fakeDataService();
-}
-
-bool ApplicationServices::hasOpenDatabase() const
-{
-    return true;
-}
-
-bool DataService::isOpen() const
-{
-    return true;
-}
-
-Result<QList<Classroom>> DataService::getClasses()
-{
-    return g_classes;
-}
-
-Result<Classroom> DataService::getClassById(
-    int classId
-    )
-{
-    for (const Classroom& classroom : std::as_const(g_classes))
-    {
-        if (classroom.id == classId)
-        {
-            return classroom;
-        }
-    }
-    return std::unexpected(QStringLiteral("Class not found."));
-}
-
-Result<ClassInfo> DataService::loadClassInfo(
-    int classId
-    )
-{
-    return g_classInfo.value(classId);
-}
-
-Result<Roster> DataService::loadRoster(
-    int classId
-    )
-{
-    return g_rosters.value(classId);
-}
-
-Result<Teacher> DataService::getTeacher(
-    int teacherId
-    )
-{
-    return g_teachers.value(teacherId);
-}
-
 namespace PdfPrintService
 {
 Result printPdfDocument(
@@ -523,6 +755,7 @@ private slots:
     void perClassPackagePlacesRosterInsideClassFolder();
     void intensiveScheduleControlsSelectedDayFiltering();
     void printOnlyUsesPacketOrderAndReportsCancellation();
+    void rosterSourceFailuresDoNotCommitPartialPackages();
     void largePackageGeneratesOutputReferenceWhenConfigured();
 };
 
@@ -562,6 +795,33 @@ void SubPrepPackageServiceTests
             QDir::Dirs | QDir::NoDotAndDotDot
             );
     QCOMPARE(classFolders.size(), 1);
+    QVERIFY(classFolders.front().contains(QStringLiteral("E4 Hercules")));
+    QVERIFY(classFolders.front().contains(QStringLiteral("Susan")));
+    QVERIFY2(
+        classFolders.front().contains(QStringLiteral("Tues (4.00)")),
+        qPrintable(classFolders.front())
+        );
+    QCOMPARE(g_rosterOutputSourceReadPort.loadCount, 1);
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedClassIds.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedClassIds.front(),
+        typedClassId(42)
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedDays.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedDays.front(),
+        ClassMngr::Next::Application::SubPrepWeekday::Tuesday
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.mode,
+        ClassMngr::Next::Application::ScheduleViewMode::Regular
+        );
 
     QFile sentinel(
         QDir(first.outputDirectory).filePath(QStringLiteral("keep-me.txt"))
@@ -625,6 +885,10 @@ void SubPrepPackageServiceTests
     const SubPrepPackageService::Result result =
         SubPrepPackageService::generate(request);
     QCOMPARE(result.status, SubPrepPackageService::Status::Completed);
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedExtraColumns,
+        (std::vector<std::string>{"Allergies"})
+        );
     QVERIFY(!QFileInfo::exists(
         QDir(result.outputDirectory).filePath(
             QStringLiteral("Rosters - By Day.pdf")
@@ -661,6 +925,10 @@ void SubPrepPackageServiceTests
         SubPrepPackageService::generate(intensiveRequest).status,
         SubPrepPackageService::Status::Completed
         );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.mode,
+        ClassMngr::Next::Application::ScheduleViewMode::Intensive
+        );
 
     SubPrepPackageService::Request regularRequest =
         packageRequest(targetRoot.path(), QStringLiteral("Regular"));
@@ -668,6 +936,10 @@ void SubPrepPackageServiceTests
     QCOMPARE(
         SubPrepPackageService::generate(regularRequest).status,
         SubPrepPackageService::Status::Failed
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.mode,
+        ClassMngr::Next::Application::ScheduleViewMode::Regular
         );
 }
 
@@ -714,7 +986,46 @@ void SubPrepPackageServiceTests
         QDir(failedPrint.outputDirectory).filePath(
             QStringLiteral("Sub Prep.pdf")
             )
+    ));
+}
+
+void SubPrepPackageServiceTests::
+rosterSourceFailuresDoNotCommitPartialPackages()
+{
+    QTemporaryDir targetRoot;
+    QVERIFY(targetRoot.isValid());
+
+    SubPrepPackageService::Request readFailureRequest =
+        packageRequest(targetRoot.path(), QStringLiteral("Read failure"));
+    g_rosterOutputSourceReadPort.failReads = true;
+    const SubPrepPackageService::Result readFailure =
+        SubPrepPackageService::generate(readFailureRequest);
+    QCOMPARE(readFailure.status, SubPrepPackageService::Status::Failed);
+    QCOMPARE(
+        readFailure.message,
+        QStringLiteral("Synthetic roster-output read failure.")
+        );
+    QVERIFY(!readFailure.folderCreated);
+    QVERIFY(readFailure.outputDirectory.isEmpty());
+
+    g_rosterOutputSourceReadPort.failReads = false;
+    g_rosterOutputSourceReadPort.injectInvalidUtf8 = true;
+    SubPrepPackageService::Request mappingFailureRequest =
+        packageRequest(targetRoot.path(), QStringLiteral("Mapping failure"));
+    const SubPrepPackageService::Result mappingFailure =
+        SubPrepPackageService::generate(mappingFailureRequest);
+    QCOMPARE(mappingFailure.status, SubPrepPackageService::Status::Failed);
+    QVERIFY(mappingFailure.message.contains(
+        QStringLiteral("cannot be mapped to roster output")
         ));
+    QVERIFY(!mappingFailure.folderCreated);
+    QVERIFY(mappingFailure.outputDirectory.isEmpty());
+    QCOMPARE(
+        QDir(targetRoot.path()).entryList(
+            QDir::Dirs | QDir::NoDotAndDotDot
+            ).size(),
+        0
+        );
 }
 
 void SubPrepPackageServiceTests

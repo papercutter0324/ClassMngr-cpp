@@ -1,5 +1,9 @@
 #include "sub_prep_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "next/platform/application_services_sub_prep_roster_output_source_port.h"
+
+#include <memory>
+#include <string>
 
 void SubPrepPage::saveData()
 {
@@ -564,10 +568,30 @@ void SubPrepPage::generateSubPrep()
 
     SubPrepPackageService::Request packageRequest;
     packageRequest.parent = this;
-    packageRequest.services = m_services;
     packageRequest.subPrep = std::move(subPrepRequest);
     packageRequest.selectedDates = dialog.selectedDates();
-    packageRequest.classIds = dialog.selectedClassIds();
+    const QList<int> selectedClassIds = dialog.selectedClassIds();
+    packageRequest.selectedClassIds.reserve(
+        static_cast<std::size_t>(selectedClassIds.size())
+        );
+    for (const int classId : selectedClassIds)
+    {
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classId)
+                );
+        if (!typedClassId)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Generate Sub Prep"),
+                tr("Selected class identifiers are invalid."),
+                QString::number(classId)
+                );
+            return;
+        }
+        packageRequest.selectedClassIds.push_back(*typedClassId);
+    }
     packageRequest.useIntensiveSchedule = useIntensiveSchedule;
     packageRequest.createFolder = dialog.createFolder();
     packageRequest.targetRoot = dialog.targetRoot();
@@ -576,6 +600,18 @@ void SubPrepPage::generateSubPrep()
     packageRequest.printPaperCopies = dialog.printPaperCopies();
     packageRequest.openFolderAfterGeneration =
         dialog.openFolderAfterGeneration();
+    std::unique_ptr<
+        ClassMngr::Next::Platform::
+            ApplicationServicesSubPrepRosterOutputSourcePort
+        > rosterOutputSource;
+    if (m_services)
+    {
+        rosterOutputSource = std::make_unique<
+            ClassMngr::Next::Platform::
+                ApplicationServicesSubPrepRosterOutputSourcePort
+            >(*m_services);
+    }
+    packageRequest.rosterOutputSourceReadPort = rosterOutputSource.get();
     const SubPrepPackageService::Result result =
         SubPrepPackageService::generate(std::move(packageRequest));
 

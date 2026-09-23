@@ -3,6 +3,7 @@
 #include "features/roster/services/roster_template_print_service.h"
 #include "features/sub_prep/services/sub_prep_print_service.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "next/application/sub_prep_roster_output_source_query.h"
 
 #include <QDate>
 #include <QList>
@@ -10,7 +11,8 @@
 #include <QString>
 #include <QStringList>
 
-class ApplicationServices;
+#include <vector>
+
 class QWidget;
 
 namespace SubPrepPackageService
@@ -25,10 +27,11 @@ enum class Status
 struct Request
 {
     QWidget* parent = nullptr;
-    ApplicationServices* services = nullptr;
+    ClassMngr::Next::Application::
+        SubPrepRosterOutputSourceReadPort* rosterOutputSourceReadPort = nullptr;
     SubPrepPrintService::Request subPrep;
     QList<QDate> selectedDates;
-    QList<int> classIds;
+    std::vector<ClassMngr::Next::Domain::ClassId> selectedClassIds;
     bool useIntensiveSchedule = false;
     bool createFolder = true;
     QString targetRoot;

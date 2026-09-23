@@ -181,12 +181,17 @@ for roster output, shares teacher facts, and passes remaining row/cell/text
 budgets into the bounded roster service. CMake validated 867 handwritten
 source owners. Windows x64 Debug built `ClassMngr` and the new Platform test;
 focused CTest passed 3/3 for the roster-output adapter, the existing Sub Prep
-print-source adapter, and the roster-output Application query. `git diff --check`
-passed. Next is F7: replace package-service roster reads with this
-source and map bounded values into the renderer model. Package/output parity,
-cancellation and cleanup coverage, the 96-class packaged Release memory
-evidence, and the wider Phase 2 exit gate remain open. Keep the Linux Phase 0
-follow-up separate until it can run on a host with Xvfb and loopback access.
+print-source adapter, and the roster-output Application query. F7 replaces
+package-service legacy roster reads with the scoped typed source and maps
+bounded values into renderer models. The page owns the Platform adapter for
+the synchronous package call. The application query, adapter, package, page,
+and PDF suites passed 5/5 after a Windows x64 Debug build. Coverage checks
+selected classes/days/mode/columns, package paths, extra columns, and failure
+cleanup. Full PDF/package parity is not established. Next compare retained
+output references and complete cancellation/cleanup coverage, then run the
+packaged 96-class Release memory gate and continue the wider Phase 2 exit work.
+Keep the Linux Phase 0 follow-up separate until it can run on a host with Xvfb
+and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

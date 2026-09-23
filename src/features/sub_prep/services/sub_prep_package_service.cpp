@@ -1,14 +1,14 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
-#include "app/services/feature_services.h"
-#include "core/application_services.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/teacher.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
+#include <QByteArray>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
+#include <QHash>
 #include <QPageSize>
 #include <QRegularExpression>
 #include <QSet>
@@ -18,8 +18,13 @@
 #include <QUuid>
 
 #include <algorithm>
+#include <charconv>
 #include <memory>
+#include <optional>
+#include <string>
+#include <system_error>
 #include <utility>
+#include <vector>
 
 namespace SubPrepPackageService
 {
@@ -53,31 +58,6 @@ Result failed(
     };
 }
 
-QString weekdayName(
-    const QDate& date
-    )
-{
-    switch (date.dayOfWeek())
-    {
-    case Qt::Monday:
-        return QStringLiteral("Monday");
-    case Qt::Tuesday:
-        return QStringLiteral("Tuesday");
-    case Qt::Wednesday:
-        return QStringLiteral("Wednesday");
-    case Qt::Thursday:
-        return QStringLiteral("Thursday");
-    case Qt::Friday:
-        return QStringLiteral("Friday");
-    case Qt::Saturday:
-        return QStringLiteral("Saturday");
-    case Qt::Sunday:
-        return QStringLiteral("Sunday");
-    default:
-        return {};
-    }
-}
-
 QList<QDate> normalizedDates(
     const QList<QDate>& dates
     )
@@ -96,41 +76,91 @@ QList<QDate> normalizedDates(
     return result;
 }
 
-QStringList selectedDayNames(
-    const QList<QDate>& dates
-    )
+std::optional<ClassMngr::Next::Application::SubPrepWeekday>
+weekdayForDate(const QDate& date)
 {
-    QStringList days;
-
-    for (const QDate& date : normalizedDates(dates))
+    using ClassMngr::Next::Application::SubPrepWeekday;
+    switch (date.dayOfWeek())
     {
-        const QString day = weekdayName(date);
-
-        if (!day.isEmpty() && !days.contains(day))
-        {
-            days.append(day);
-        }
+    case Qt::Monday:
+        return SubPrepWeekday::Monday;
+    case Qt::Tuesday:
+        return SubPrepWeekday::Tuesday;
+    case Qt::Wednesday:
+        return SubPrepWeekday::Wednesday;
+    case Qt::Thursday:
+        return SubPrepWeekday::Thursday;
+    case Qt::Friday:
+        return SubPrepWeekday::Friday;
+    case Qt::Saturday:
+        return SubPrepWeekday::Saturday;
+    case Qt::Sunday:
+        return SubPrepWeekday::Sunday;
+    default:
+        return std::nullopt;
     }
-
-    return days;
 }
 
-QList<ClassTime> filteredTimes(
-    const QList<ClassTime>& times,
-    const QStringList& selectedDays
+std::optional<QString> weekdayLabel(
+    const ClassMngr::Next::Application::SubPrepWeekday weekday
     )
 {
-    QList<ClassTime> filtered;
-
-    for (const ClassTime& time : times)
+    using ClassMngr::Next::Application::SubPrepWeekday;
+    switch (weekday)
     {
-        if (selectedDays.contains(time.day.trimmed()))
-        {
-            filtered.append(time);
-        }
+    case SubPrepWeekday::Monday:
+        return QStringLiteral("Monday");
+    case SubPrepWeekday::Tuesday:
+        return QStringLiteral("Tuesday");
+    case SubPrepWeekday::Wednesday:
+        return QStringLiteral("Wednesday");
+    case SubPrepWeekday::Thursday:
+        return QStringLiteral("Thursday");
+    case SubPrepWeekday::Friday:
+        return QStringLiteral("Friday");
+    case SubPrepWeekday::Saturday:
+        return QStringLiteral("Saturday");
+    case SubPrepWeekday::Sunday:
+        return QStringLiteral("Sunday");
+    }
+    return std::nullopt;
+}
+
+std::optional<int> legacyId(
+    const std::string& value
+    )
+{
+    if (value.empty())
+    {
+        return std::nullopt;
     }
 
-    return filtered;
+    int parsed = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        parsed
+        );
+    if (error != std::errc{} || end != value.data() + value.size()
+        || parsed <= 0 || std::to_string(parsed) != value)
+    {
+        return std::nullopt;
+    }
+    return parsed;
+}
+
+std::optional<QString> decodedText(const std::string& value)
+{
+    const QByteArray bytes(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+    const QString decoded = QString::fromUtf8(bytes);
+    if (decoded.toUtf8() != bytes)
+    {
+        return std::nullopt;
+    }
+    return decoded;
 }
 
 QString uniqueFolderName(
@@ -161,28 +191,7 @@ QList<PackageClass> loadPackageClasses(
     )
 {
     QList<PackageClass> result;
-
-    ClassService* classService =
-        request.services
-            ? request.services->classService()
-            : nullptr;
-    TeacherService* teacherService =
-        request.services
-            ? request.services->teacherService()
-            : nullptr;
-    RosterService* rosterService =
-        request.services
-            ? request.services->rosterService()
-            : nullptr;
-
-    if (
-        !classService
-        || !classService->isAvailable()
-        || !teacherService
-        || !teacherService->isAvailable()
-        || !rosterService
-        || !rosterService->isAvailable()
-        )
+    if (!request.rosterOutputSourceReadPort)
     {
         if (errorMessage)
         {
@@ -191,66 +200,225 @@ QList<PackageClass> loadPackageClasses(
         return result;
     }
 
-    const QStringList selectedDays = selectedDayNames(request.selectedDates);
-
-    for (int classId : request.classIds)
+    ClassMngr::Next::Application::SubPrepRosterOutputSourceRequest
+        sourceRequest;
+    sourceRequest.selectedClassIds = request.selectedClassIds;
+    sourceRequest.mode = request.useIntensiveSchedule
+        ? ClassMngr::Next::Application::ScheduleViewMode::Intensive
+        : ClassMngr::Next::Application::ScheduleViewMode::Regular;
+    for (const QDate& date : normalizedDates(request.selectedDates))
     {
-        if (classId <= 0)
+        const auto weekday = weekdayForDate(date);
+        if (weekday
+            && std::find(
+                sourceRequest.selectedDays.cbegin(),
+                sourceRequest.selectedDays.cend(),
+                *weekday
+                ) == sourceRequest.selectedDays.cend())
         {
-            continue;
+            sourceRequest.selectedDays.push_back(*weekday);
         }
+    }
+    sourceRequest.selectedExtraColumns.reserve(
+        static_cast<std::size_t>(request.selectedExtraColumns.size())
+        );
+    for (const QString& column : request.selectedExtraColumns)
+    {
+        const QByteArray bytes = column.toUtf8();
+        sourceRequest.selectedExtraColumns.emplace_back(
+            bytes.constData(),
+            static_cast<std::size_t>(bytes.size())
+            );
+    }
 
-        PackageClass packageClass;
-        const ::Result<Classroom> classroom =
-            classService->classroom(classId);
-        if (!classroom)
+    ClassMngr::Next::Application::SubPrepRosterOutputSourceQuery query(
+        *request.rosterOutputSourceReadPort
+        );
+    const auto loadedSource = query.execute(sourceRequest);
+    if (!loadedSource)
+    {
+        if (errorMessage)
+        {
+            const std::string& message = loadedSource.error().message;
+            *errorMessage = message.empty()
+                ? QObject::tr("Selected Sub Prep rosters could not be loaded.")
+                : QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    );
+        }
+        return result;
+    }
+
+    const ClassMngr::Next::Application::SubPrepRosterOutputSource& source =
+        loadedSource.value();
+    QHash<int, Teacher> teachersById;
+    teachersById.reserve(static_cast<qsizetype>(source.teachers().size()));
+    for (const auto& sourceTeacher : source.teachers())
+    {
+        const auto teacherId = legacyId(sourceTeacher.id.value());
+        const auto englishName = decodedText(sourceTeacher.englishName);
+        const auto koreanName = decodedText(sourceTeacher.koreanName);
+        const auto preferredName = decodedText(sourceTeacher.preferredName);
+        const auto preferredRomanization = decodedText(
+            sourceTeacher.preferredRomanization
+            );
+        if (!teacherId || !englishName || !koreanName || !preferredName
+            || !preferredRomanization)
         {
             if (errorMessage)
             {
-                *errorMessage = classroom.error();
+                *errorMessage = QObject::tr(
+                    "A selected Sub Prep teacher cannot be mapped to roster output."
+                    );
             }
             return {};
         }
-        packageClass.rosterData.classroom = *classroom;
 
-        if (packageClass.rosterData.classroom.id <= 0)
+        Teacher teacher;
+        teacher.id = *teacherId;
+        teacher.teacherEn = *englishName;
+        teacher.teacherKr = *koreanName;
+        teacher.preferredName = *preferredName;
+        teacher.preferredRomanization = *preferredRomanization;
+        teachersById.insert(*teacherId, std::move(teacher));
+    }
+
+    for (const auto& sourceClass : source.classes())
+    {
+        if (sourceClass.meetings.empty())
         {
             continue;
         }
 
-        packageClass.rosterData.info =
-            classService->classInfo(classId).value_or(ClassInfo{});
-        packageClass.rosterData.roster =
-            rosterService->roster(classId).value_or(Roster{});
-
-        if (packageClass.rosterData.info.teacherId > 0)
+        const auto classId = legacyId(sourceClass.id.value());
+        const auto classroomName = decodedText(sourceClass.classroomName);
+        const auto grade = decodedText(sourceClass.grade);
+        const auto level = decodedText(sourceClass.level);
+        const auto classTeacherEnglishName = decodedText(
+            sourceClass.classTeacherEnglishName
+            );
+        const auto classTeacherKoreanName = decodedText(
+            sourceClass.classTeacherKoreanName
+            );
+        const auto room = decodedText(sourceClass.room);
+        const auto wifiName = decodedText(sourceClass.wifiName);
+        const auto wifiPassword = decodedText(sourceClass.wifiPassword);
+        const auto zoomId = decodedText(sourceClass.zoomId);
+        const auto zoomPassword = decodedText(sourceClass.zoomPassword);
+        if (!classId || !classroomName || !grade || !level
+            || !classTeacherEnglishName || !classTeacherKoreanName || !room
+            || !wifiName || !wifiPassword || !zoomId || !zoomPassword)
         {
-            const ::Result<Teacher> teacher = teacherService->teacher(
-                packageClass.rosterData.info.teacherId);
-            if (!teacher)
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "A selected Sub Prep class cannot be mapped to roster output."
+                    );
+            }
+            return {};
+        }
+
+        PackageClass packageClass;
+        packageClass.rosterData.classroom.id = *classId;
+        packageClass.rosterData.classroom.name = *classroomName;
+
+        ClassInfo& info = packageClass.rosterData.info;
+        info.classId = *classId;
+        info.teacherId = -1;
+        info.classGrade = *grade;
+        info.classLevel = *level;
+        info.teacherEn = *classTeacherEnglishName;
+        info.teacherKr = *classTeacherKoreanName;
+        info.roomNumber = *room;
+        info.wifiName = *wifiName;
+        info.wifiPassword = *wifiPassword;
+        info.zoomId = *zoomId;
+        info.zoomPassword = *zoomPassword;
+
+        if (sourceClass.teacherId.has_value())
+        {
+            const auto teacherId = legacyId(sourceClass.teacherId->value());
+            if (!teacherId || !teachersById.contains(*teacherId))
             {
                 if (errorMessage)
                 {
-                    *errorMessage = teacher.error();
+                    *errorMessage = QObject::tr(
+                        "A selected Sub Prep class references an unavailable teacher."
+                        );
                 }
                 return {};
             }
-            packageClass.teacher = *teacher;
+            info.teacherId = *teacherId;
+            packageClass.teacher = teachersById.value(*teacherId);
         }
-
-        const QList<ClassTime>& sourceTimes =
-            request.useIntensiveSchedule
-                ? packageClass.rosterData.info.intensiveTimes
-                : packageClass.rosterData.info.classTimes;
-        packageClass.rosterData.info.classTimes =
-            filteredTimes(sourceTimes, selectedDays);
-
-        if (packageClass.rosterData.info.classTimes.isEmpty())
+        else
         {
-            continue;
+            packageClass.teacher.id = -1;
         }
 
-        result.append(packageClass);
+        for (const auto& sourceMeeting : sourceClass.meetings)
+        {
+            const auto day = weekdayLabel(sourceMeeting.weekday);
+            const auto startTime = decodedText(sourceMeeting.startTime);
+            const auto endTime = decodedText(sourceMeeting.endTime);
+            if (!day || !startTime || !endTime)
+            {
+                if (errorMessage)
+                {
+                    *errorMessage = QObject::tr(
+                        "A selected Sub Prep meeting cannot be mapped to roster output."
+                        );
+                }
+                return {};
+            }
+            info.classTimes.append({*day, *startTime, *endTime});
+        }
+
+        Roster& roster = packageClass.rosterData.roster;
+        for (const std::string& sourceColumn : sourceClass.rosterColumns)
+        {
+            const auto column = decodedText(sourceColumn);
+            if (!column)
+            {
+                if (errorMessage)
+                {
+                    *errorMessage = QObject::tr(
+                        "A selected roster column cannot be mapped to renderer data."
+                        );
+                }
+                return {};
+            }
+            roster.columns.append(*column);
+            roster.columnWidths.append(0);
+        }
+
+        roster.rows.reserve(
+            static_cast<qsizetype>(sourceClass.rosterRows.size())
+            );
+        for (const auto& sourceRow : sourceClass.rosterRows)
+        {
+            QStringList row;
+            row.reserve(static_cast<qsizetype>(sourceRow.size()));
+            for (const std::string& sourceCell : sourceRow)
+            {
+                const auto cell = decodedText(sourceCell);
+                if (!cell)
+                {
+                    if (errorMessage)
+                    {
+                        *errorMessage = QObject::tr(
+                            "A selected roster cell cannot be mapped to renderer data."
+                            );
+                    }
+                    return {};
+                }
+                row.append(*cell);
+            }
+            roster.rows.append(std::move(row));
+        }
+
+        result.append(std::move(packageClass));
     }
 
     std::sort(
@@ -289,6 +457,7 @@ QList<PackageClass> loadPackageClasses(
                     ),
                 &usedNames
                 );
+        packageClass.teacher = {};
     }
 
     if (result.isEmpty() && errorMessage)
@@ -344,9 +513,14 @@ GeneratedPackage generateAt(
 
     QStringList documents{subPrepRelative};
     QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
-    rosterClasses.reserve(classes.size());
+    const bool perClassRoster = request.rosterTemplate
+        == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
+    if (!perClassRoster)
+    {
+        rosterClasses.reserve(classes.size());
+    }
 
-    for (const PackageClass& packageClass : std::as_const(classes))
+    for (PackageClass& packageClass : classes)
     {
         const QString classDirectory =
             QDir(packageDirectory).filePath(packageClass.folderName);
@@ -361,13 +535,13 @@ GeneratedPackage generateAt(
             };
         }
 
-        rosterClasses.append(packageClass.rosterData);
+        if (!perClassRoster)
+        {
+            rosterClasses.append(std::move(packageClass.rosterData));
+        }
     }
 
-    if (
-        request.rosterTemplate
-        == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
-        )
+    if (perClassRoster)
     {
         for (const PackageClass& packageClass : std::as_const(classes))
         {
@@ -660,7 +834,7 @@ Result generate(
     {
         return failed(QObject::tr("Select at least one day to include."));
     }
-    if (request.classIds.isEmpty())
+    if (request.selectedClassIds.empty())
     {
         return failed(QObject::tr("No classes meet on the selected days."));
     }

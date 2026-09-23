@@ -417,3 +417,17 @@
 - The Platform source and three focused CTest suites verify the read seam.
   Package mapping, complete output parity, packaged Release memory evidence,
   and Phase 2 acceptance remain open.
+
+## Phase 2 Sub Prep package roster-source integration - 2026-09-24
+
+- Keep the package service dependent on the typed read port. The page can
+  construct the session-backed adapter for the synchronous call, while the
+  package service maps bounded, owning Application values into renderer
+  inputs. This removes its direct service/database reads.
+- Validate UTF-8 round trips at the Application-to-Qt renderer boundary and
+  parse legacy integer keys canonically. Keep folder-name sanitization in the
+  existing helper (`:` becomes `.` on Windows); tests should assert the safe
+  path form rather than an unsanitized display string.
+- Five focused Windows x64 Debug suites pass across package, page, PDF,
+  Application query, and Platform source. This verifies scoped input mapping
+  and pre-commit failure cleanup, not full output parity or Release memory.

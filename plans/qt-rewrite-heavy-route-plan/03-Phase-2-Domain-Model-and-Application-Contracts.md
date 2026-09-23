@@ -3591,3 +3591,24 @@ bounded roster-source adapter only. Package-service wiring, renderer mapping,
 output parity/cleanup, 96-class packaged Release memory evidence, and Phase 2
 acceptance remain open. Work Package F7 wires the source into package
 generation.
+
+#### Progress update - 2026-09-24 (Sub Prep package roster-source integration)
+
+Work Package F7 replaces the package service's direct legacy class, teacher,
+and roster reads with `SubPrepRosterOutputSourceQuery`. The request carries
+typed selected class IDs, dates, schedule mode, and extra columns. The package
+service maps bounded Application values into the existing renderer model,
+checks canonical integer IDs and UTF-8 round trips, and preserves the current
+class ordering, folder naming, package tree, and per-class/daily/by-day output
+selection. `SubPrepPage` owns the session-backed Platform adapter for the
+synchronous generation call; the package service has no `ApplicationServices`
+or `DataService` dependency.
+
+Windows x64 Debug built `ClassMngr`, the package service tests, and the page
+tests. Focused CTest passed 5/5 for package, page, PDF, Application query, and
+Platform source suites. Tests cover scoped class/day/mode/column forwarding,
+daily and per-class output, and source/mapping failure cleanup before a final
+package is committed. Full PDF/package parity and the 96-class packaged
+Release memory gate have not been established. Work Package F8 compares output
+with retained references and closes cancellation/error/cleanup parity before
+the Release acceptance run; the broader Phase 2 exit gate remains open.

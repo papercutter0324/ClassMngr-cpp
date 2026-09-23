@@ -196,6 +196,7 @@ qt_add_executable(ClassMngrBasePageTests
             Qt6::Sql
             Qt6::Test
             Qt6::Widgets
+            ClassMngrNext::Application
     )
 
     add_test(

@@ -92,12 +92,14 @@ cell's original byte size before conversion. Data lifecycle coverage passes
 the Application input. See the [Phase 2 contract
 update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-bounded-roster-repository-read).
 
-Output/package/PDF migration, parity, and Release memory acceptance remain
-open. Work Package F is underway; the information-sheet input is released
-before roster records load, and the roster Application contract now defines
-its bounded operation values. The data repository applies row/cell caps before
-creating a dense roster projection. The next slice implements the session-
-backed Platform adapter, followed by package integration and parity.
+Output/package/PDF migration is wired through the operation-scoped roster
+source, but full parity and Release memory acceptance remain open. Work
+Package F has moved the information-sheet and roster stages to separate
+bounded Application projections; the package service releases the
+information-sheet input before loading roster records, and the data repository
+applies row/cell caps before creating a dense roster projection. The next
+slice compares output with retained references and completes cancellation and
+cleanup coverage, followed by packaged Release memory acceptance.
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
@@ -221,8 +223,10 @@ The application boundary exposes contracts for operations equivalent to:
 The schedule-summary, selected-details, selection-state, print-source, and
 roster-output contracts now exist in Phase 2. Their scoped Platform reads are
 implemented, including the bounded roster repository projection. Package
-generation still needs to consume the roster source and map it to renderer
-inputs; output parity, cleanup coverage, and Release memory evidence remain
+generation now consumes the typed roster source and maps it to renderer
+inputs. Focused Windows Debug coverage verifies selected scope, output
+variants, and source/mapping failure cleanup; full output parity,
+cancellation/cleanup parity, and packaged Release memory evidence remain
 open.
 
 The UI must not issue SQL or depend on `DataService` compatibility methods.

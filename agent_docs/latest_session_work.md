@@ -623,3 +623,21 @@ separate on a host with Xvfb and loopback access.
   output/package parity and cleanup behavior. The 96-class packaged Release
   memory gate and broader Phase 2 exit gate remain open; nothing has been
   pushed.
+
+### Phase 2 Sub Prep package roster-source integration - 2026-09-24
+
+- `SubPrepPackageService::Request` now carries typed selected class IDs and a
+  borrowed roster-output read port. The service issues one scoped query for
+  selected classes, weekdays, schedule mode, and requested extra columns,
+  validates UTF-8 and canonical legacy IDs, then maps only the bounded source
+  values into the existing roster renderer model. The UI owns the
+  session-backed Platform adapter for the synchronous generation call; the
+  package service has no direct `ApplicationServices` or `DataService` reads.
+- Package tests cover selected scope and mode, daily and per-class output,
+  selected extra columns, and read/mapping errors that must not commit a
+  partial package. Windows x64 Debug built `ClassMngr` and package/page tests.
+  Focused CTest passed 5/5 for package, page, PDF, Application query, and
+  Platform source suites; `git diff --check` passed.
+- Handoff: compare generated output against retained references and finish
+  cancellation/cleanup parity. The packaged 96-class Release memory gate and
+  broader Phase 2 exit work remain open. Nothing has been pushed.
