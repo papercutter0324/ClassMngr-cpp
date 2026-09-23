@@ -80,6 +80,7 @@ private slots:
     void exactDynamicKeysUseNormalizedEventTypes();
     void validHexRgbRoundTripsAndPreservesUnrelatedSettings();
     void missingAndUnavailableReadEmptyAndIgnoreSave();
+    void pointerAndNullServiceAccessPreserveFallbacks();
     void invalidStoredColorPassesThroughUnchanged();
     void saveFailurePreservesWarningAndStoredColor();
 
@@ -176,6 +177,37 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
         utf8(QStringLiteral("#ffffff"))
         );
     QVERIFY(unavailablePort.read(utf8(QStringLiteral("Other"))).empty());
+}
+
+void NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests::
+pointerAndNullServiceAccessPreserveFallbacks()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    ApplicationServices* availableServices = &services;
+    ApplicationServicesCalendarEventTypeColorPreferencesPort port(
+        availableServices
+        );
+    port.write(
+        utf8(QStringLiteral("Vacation")),
+        utf8(QStringLiteral("#123456"))
+        );
+    QCOMPARE(
+        port.read(utf8(QStringLiteral("Vacation"))),
+        utf8(QStringLiteral("#123456"))
+        );
+
+    ApplicationServices* noServices = nullptr;
+    ApplicationServicesCalendarEventTypeColorPreferencesPort nullPort(
+        noServices
+    );
+    QVERIFY(nullPort.read(utf8(QStringLiteral("Vacation"))).empty());
+    nullPort.write(
+        utf8(QStringLiteral("Vacation")),
+        utf8(QStringLiteral("#abcdef"))
+        );
+    QVERIFY(nullPort.read(utf8(QStringLiteral("Vacation"))).empty());
 }
 
 void NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests::

@@ -3743,3 +3743,17 @@ three Platform preference suites. Focused CTest passed 4/4; CMake validated
 871 source owners, a provider source search found no SettingsService
 references, and git diff --check passed. The remaining calendar
 upcoming-events preference callers and broader Phase 2 migrations remain open.
+
+
+#### Progress update - 2026-09-24 (calendar event-type color preference boundary)
+
+Calendar event-type color reads and writes now construct
+`ApplicationServicesCalendarEventTypeColorPreferencesPort` from
+`ApplicationServices*`. The feature no longer gates these operations with or
+passes a raw `SettingsService*`; unavailable reads retain the default-color
+fallback and unavailable saves remain no-ops.
+
+Windows x64 Debug built `ClassMngr` and the Platform color-preference suite;
+focused CTest passed 1/1, including ApplicationServices-pointer round-trip
+and null-service fallback. `git diff --check` passed. Other upcoming-events
+preference access and broader Phase 2 migrations remain open.

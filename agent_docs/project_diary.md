@@ -502,3 +502,11 @@ When a feature provider only needs persisted values, inject its Application
 preference ports and construct Platform adapters at the UI or service
 composition boundary. Keep legacy SettingsService ownership inside Platform;
 the provider should not recreate its own adapters during each read or write.
+
+
+## Phase 2 calendar color preference boundary - 2026-09-24
+
+Let the Platform preference adapter own the unavailable-service check. A
+calendar UI caller can read an empty stored color and use its existing
+default-color policy, or issue a save that becomes a no-op when settings are
+unavailable, without holding SettingsService.

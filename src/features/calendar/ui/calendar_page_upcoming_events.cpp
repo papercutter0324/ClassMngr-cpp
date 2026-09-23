@@ -949,29 +949,23 @@ QColor CalendarPage::calendarEventTypeColor(
     const QString normalized =
         normalizedCalendarEventType(eventType);
 
-    auto* settingsService =
-        openSettingsService(m_services);
-
-    if (settingsService)
-    {
-        ClassMngr::Next::Platform::
-            ApplicationServicesCalendarEventTypeColorPreferencesPort
-            colorPreferencesPort(settingsService);
-        const std::string storedColorText =
-            colorPreferencesPort.read(
-                normalized.toUtf8().toStdString()
-                );
-        const QColor storedColor(
-            QString::fromUtf8(
-                storedColorText.data(),
-                static_cast<qsizetype>(storedColorText.size())
-                )
+    ClassMngr::Next::Platform::
+        ApplicationServicesCalendarEventTypeColorPreferencesPort
+        colorPreferencesPort(m_services);
+    const std::string storedColorText =
+        colorPreferencesPort.read(
+            normalized.toUtf8().toStdString()
             );
+    const QColor storedColor(
+        QString::fromUtf8(
+            storedColorText.data(),
+            static_cast<qsizetype>(storedColorText.size())
+            )
+        );
 
-        if (storedColor.isValid())
-        {
-            return storedColor;
-        }
+    if (storedColor.isValid())
+    {
+        return storedColor;
     }
 
     return defaultCalendarEventTypeColor(normalized);
@@ -986,17 +980,9 @@ void CalendarPage::saveCalendarEventTypeColor(
         return;
     }
 
-    auto* settingsService =
-        openSettingsService(m_services);
-
-    if (!settingsService)
-    {
-        return;
-    }
-
     ClassMngr::Next::Platform::
         ApplicationServicesCalendarEventTypeColorPreferencesPort
-        colorPreferencesPort(settingsService);
+        colorPreferencesPort(m_services);
     colorPreferencesPort.write(
         normalizedCalendarEventType(eventType).toUtf8().toStdString(),
         color.name(QColor::HexRgb).toUtf8().toStdString()

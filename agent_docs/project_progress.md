@@ -176,6 +176,12 @@ and three preference-port suites; focused CTest passed 4/4. Continue the
 remaining upcoming-events preference callers, then generic settings,
 feature-service, and document migrations.
 
+Calendar event-type color reads and writes now use the Application preference
+port through a Platform adapter constructed from ApplicationServices*. The
+adapter preserves the existing default-color fallback and unavailable-save
+no-op. Its focused Platform suite passed 1/1 after the Windows Debug app and
+test targets built.
+
 ### Phase 2 kickoff — 2026-09-19
 
 The v2 Domain boundary now contains header-only, Qt-free typed identifiers and

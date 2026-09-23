@@ -2930,3 +2930,12 @@ construct their Platform adapters at the boundary. Platform retains
 SettingsService access; the provider no longer stores it or constructs
 adapters during reads and writes. Upcoming-events preference access and
 broader settings persistence remain open.
+
+
+## Calendar event-type color preference caller - 2026-09-24
+
+Calendar event-type color reads and writes construct the Platform adapter
+from ApplicationServices*. The adapter owns missing or unavailable settings
+behavior: the caller receives no stored color and applies its current default,
+while a save safely does nothing. Current-campus options and remaining
+upcoming-events preferences remain separate legacy-access slices.

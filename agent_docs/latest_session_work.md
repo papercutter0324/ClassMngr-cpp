@@ -788,3 +788,18 @@ separate on a host with Xvfb and loopback access.
   then generic settings, feature-service, and document migrations. The 250 MiB
   settled-memory target and Linux Phase 0 follow-up remain open. Nothing was
   pushed.
+
+### Phase 2 calendar event-type color preference boundary - 2026-09-24
+
+- Calendar event-type color reads and writes now construct the Platform
+  preference adapter from ApplicationServices*. The feature no longer gates
+  these operations with or passes a raw SettingsService pointer; invalid or
+  unavailable stored values retain the existing default-color fallback and
+  unavailable saves remain no-ops.
+- Windows x64 Debug built ClassMngr and the event-type color preference test
+  target. Focused CTest passed 1/1, including ApplicationServices pointer
+  round-trip and null-service fallback. git diff --check passed.
+- Handoff: continue the remaining upcoming-events preferences and calendar
+  service boundaries, then generic settings, feature-service, and document
+  migrations. The 250 MiB settled-memory target and Linux Phase 0 follow-up
+  remain open. Nothing was pushed.
