@@ -1,4 +1,5 @@
 #include "next/application/calendar_event_edit_draft.h"
+#include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_series_create_port.h"
@@ -201,6 +202,9 @@ private slots:
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
     void saveRequestContractHasNoQtOrLegacySurface();
+    void importSaveRequestBoundsOrderedCreateBatchAndNoOp();
+    void importSaveRequestRejectsUpdatesAndInvalidEvents();
+    void importSaveRequestContractHasNoQtOrLegacySurface();
     void editDraftBoundsAndTimeStatusPolicyIsExplicit();
     void editDraftIsCopyableEqualAndIndependentlyReleasable();
     void editDraftContractHasNoQtOrLegacySurface();
@@ -882,6 +886,79 @@ saveRequestContractHasNoQtOrLegacySurface()
         >);
     static_assert(!std::is_pointer_v<
         decltype(std::declval<CalendarEventSaveRequest>().title)
+        >);
+    static_assert(!std::is_copy_constructible_v<Port>);
+
+    QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+importSaveRequestBoundsOrderedCreateBatchAndNoOp()
+{
+    CalendarEventImportSaveRequest emptyRequest;
+    QVERIFY(emptyRequest.validate());
+
+    CalendarEventImportSaveRequest request;
+    request.events.reserve(kCalendarEventImportSaveMaxEvents);
+    for (std::size_t index = 0;
+         index < kCalendarEventImportSaveMaxEvents;
+         ++index)
+    {
+        CalendarEventSaveRequest event = validSaveRequest();
+        event.title = "Imported event " + std::to_string(index);
+        request.events.push_back(std::move(event));
+    }
+
+    QVERIFY(request.validate());
+    QCOMPARE(request.events.size(), kCalendarEventImportSaveMaxEvents);
+
+    request.events.push_back(validSaveRequest());
+    const auto oversized = request.validate();
+    QVERIFY(!oversized);
+    QCOMPARE(oversized.error().code, ErrorCode::InvalidInput);
+}
+
+void NextApplicationCalendarEventTests::
+importSaveRequestRejectsUpdatesAndInvalidEvents()
+{
+    CalendarEventImportSaveRequest request;
+    request.events.push_back(validSaveRequest());
+    QVERIFY(request.validate());
+
+    request.events.front().id = calendarEventId("event-1");
+    verifyInvalidValidation(request.validate());
+
+    request.events.front().id.reset();
+    request.events.front().timeStatus = "Unknown";
+    request.events.front().startTime = "09:00";
+    request.events.front().endTime = "10:00";
+    verifyInvalidValidation(request.validate());
+}
+
+void NextApplicationCalendarEventTests::
+importSaveRequestContractHasNoQtOrLegacySurface()
+{
+    using Port = CalendarEventImportSavePort;
+    using SaveResult = decltype(
+        std::declval<Port&>().saveImportedEvents(
+            std::declval<const CalendarEventImportSaveRequest&>()
+            )
+        );
+
+    static_assert(std::is_same_v<
+        SaveResult,
+        CalendarEventImportSaveResult
+        >);
+    static_assert(std::is_same_v<
+        CalendarEventImportSaveResult,
+        Domain::Result<std::vector<CalendarEventId>>
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventImportSaveRequest>().events),
+        std::vector<CalendarEventSaveRequest>
+        >);
+    static_assert(!std::is_pointer_v<
+        decltype(std::declval<CalendarEventImportSaveRequest>().events)
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
 

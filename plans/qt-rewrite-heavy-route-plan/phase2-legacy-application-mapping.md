@@ -2865,3 +2865,13 @@ tests; CTest passed the page, PDF, and package suites 3/3. The current roster
 read still uses legacy class, teacher, and full roster records. This closes
 the main-sheet lifetime boundary only; the scoped roster source, output
 parity, and Phase 2 remain open.
+
+
+## Current calendar import persistence boundary - 2026-09-24
+
+Accepted candidates from the existing-signature planner now pass through the
+Qt-free `CalendarEventImportSaveRequest` and
+`ApplicationServicesCalendarEventImportSavePort`. The adapter preserves one
+ordered `CalendarService::saveEvents()` transaction; see the Phase 2 plan's
+[typed calendar import batch-save update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-typed-calendar-import-batch-save-boundary)
+for verification. Workbook parsing and campus-directory lookup remain legacy.

@@ -8,6 +8,8 @@
 #include "core/startup_profiler.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "next/application/calendar_event_import_plan.h"
+#include "next/application/calendar_event_import_save_port.h"
+#include "next/platform/application_services_calendar_event_import_save_port.h"
 #include "next/platform/application_services_calendar_event_port.h"
 
 #include <QDate>
@@ -63,6 +65,30 @@ std::u16string calendarEventSignatureKey(const CalendarEvent& event)
 {
     return CalendarImport::calendarEventImportSignature(event)
         .toStdU16String();
+}
+
+ClassMngr::Next::Application::CalendarEventSaveRequest
+calendarEventImportSaveRequest(const CalendarEvent& event)
+{
+    ClassMngr::Next::Application::CalendarEventSaveRequest request;
+    request.title = event.title.toUtf8().toStdString();
+    request.startDate = event.startDate.toString(Qt::ISODate).toStdString();
+    request.endDate = event.endDate.toString(Qt::ISODate).toStdString();
+    request.allDay = event.allDay;
+    request.eventType = event.eventType.toUtf8().toStdString();
+    request.timeStatus = event.timeStatus.toUtf8().toStdString();
+    if (event.startTime.isValid())
+    {
+        request.startTime =
+            event.startTime.toString(QStringLiteral("HH:mm")).toStdString();
+    }
+    if (event.endTime.isValid())
+    {
+        request.endTime =
+            event.endTime.toString(QStringLiteral("HH:mm")).toStdString();
+    }
+
+    return request;
 }
 }
 
@@ -277,36 +303,50 @@ void CalendarEventImportService::handleFinished(
     const ClassMngr::Next::Application::CalendarEventImportPlan importPlan =
         ClassMngr::Next::Application::planCalendarEventImport(planRequest);
 
-    QList<CalendarEvent> eventsToSave;
+    ClassMngr::Next::Application::CalendarEventImportSaveRequest saveRequest;
+    saveRequest.events.reserve(
+        importPlan.acceptedCandidateIndices.size()
+        );
     for (const std::size_t candidateIndex :
          importPlan.acceptedCandidateIndices)
     {
-        eventsToSave.append(
-            parsed.events.at(static_cast<qsizetype>(candidateIndex))
+        saveRequest.events.push_back(
+            calendarEventImportSaveRequest(
+                parsed.events.at(static_cast<qsizetype>(candidateIndex))
+                )
             );
     }
 
     StartupProfiler::recordCalendarImportSavePrepared(
-        eventsToSave.size(),
+        static_cast<int>(saveRequest.events.size()),
         importPlan.skippedCount
         );
 
-    const Result<QList<int>> saved =
-        m_calendarService->saveEvents(eventsToSave);
+    ClassMngr::Next::Platform::
+        ApplicationServicesCalendarEventImportSavePort importSavePort(
+            *m_services
+            );
+    const auto saved = importSavePort.saveImportedEvents(saveRequest);
     if (!saved)
     {
-        StartupProfiler::recordCalendarImportFailed(saved.error());
-        emit importFailed(saved.error());
+        const std::string& errorText = saved.error().message;
+        const QString message = QString::fromUtf8(
+            errorText.data(),
+            static_cast<qsizetype>(errorText.size())
+            );
+        StartupProfiler::recordCalendarImportFailed(message);
+        emit importFailed(message);
         return;
     }
 
+    const int savedCount = static_cast<int>(saved.value().size());
     StartupProfiler::recordCalendarImportApplied(
-        saved->size(),
+        savedCount,
         importPlan.skippedCount
         );
 
     emit importFinished(
-        saved->size(),
+        savedCount,
         importPlan.skippedCount
         );
 }

@@ -2,11 +2,13 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "next/application/calendar_event_delete_port.h"
+#include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
+#include "next/platform/application_services_calendar_event_import_save_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/platform/application_services_calendar_event_series_create_port.h"
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
@@ -32,6 +34,8 @@ using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventDeletePort;
+using ClassMngr::Next::Platform::
+    ApplicationServicesCalendarEventImportSavePort;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventSavePort;
 using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventSeriesCreatePort;
@@ -101,6 +105,34 @@ CalendarEventSaveRequest validSaveRequest()
         "Meeting",
         "Timed"
     };
+}
+
+CalendarEventImportSaveRequest validImportSaveRequest()
+{
+    CalendarEventSaveRequest laterEvent = validSaveRequest();
+    laterEvent.title = "Later imported event";
+    laterEvent.startDate = "2026-12-12";
+    laterEvent.endDate = "2026-12-12";
+    laterEvent.startTime.reset();
+    laterEvent.endTime.reset();
+    laterEvent.eventType = "Workshop";
+    laterEvent.timeStatus = "Unknown";
+
+    CalendarEventSaveRequest earlierAllDayEvent = validSaveRequest();
+    earlierAllDayEvent.title = "Earlier imported event";
+    earlierAllDayEvent.startDate = "2026-12-10";
+    earlierAllDayEvent.endDate = "2026-12-10";
+    earlierAllDayEvent.startTime.reset();
+    earlierAllDayEvent.endTime.reset();
+    earlierAllDayEvent.allDay = true;
+    earlierAllDayEvent.eventType = "Holiday";
+
+    CalendarEventImportSaveRequest request;
+    request.events = {
+        std::move(laterEvent),
+        std::move(earlierAllDayEvent)
+    };
+    return request;
 }
 
 CalendarEventSeriesCreateRequest seriesCreateRequest(
@@ -182,6 +214,11 @@ private slots:
     void reportsInvalidDeleteIdStructurally();
     void reportsUnavailableDeleteServiceStructurally();
     void reportsDeleteServiceFailureStructurally();
+    void savesOrderedCalendarImportBatchWithTypedIdsAndParity();
+    void acceptsDuplicateOnlyEmptyImportBatchAsNoOp();
+    void rejectsInvalidImportBatchBeforeCreatingAnyRows();
+    void reportsImportBatchFailureWithoutPartialRows();
+    void reportsUnavailableImportSaveServiceStructurally();
     void createsAndUpdatesValidEventWithTypedIdMapping();
     void reportsInvalidSaveRequestStructurally();
     void reportsUnavailableSaveServiceStructurally();
@@ -485,6 +522,138 @@ reportsDeleteServiceFailureStructurally()
             != std::string::npos
         );
     QVERIFY(legacyService->event(eventId));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+savesOrderedCalendarImportBatchWithTypedIdsAndParity()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    ApplicationServicesCalendarEventImportSavePort port(services);
+    const auto saved = port.saveImportedEvents(validImportSaveRequest());
+
+    QVERIFY(saved);
+    QCOMPARE(saved.value().size(), std::size_t(2));
+    const int laterEventId = std::stoi(saved.value().at(0).value());
+    const int earlierEventId = std::stoi(saved.value().at(1).value());
+    QVERIFY(laterEventId > 0);
+    QVERIFY(earlierEventId > laterEventId);
+
+    const auto laterEvent = legacyService->event(laterEventId);
+    QVERIFY(laterEvent);
+    QCOMPARE(laterEvent->title, QStringLiteral("Later imported event"));
+    QCOMPARE(laterEvent->startDate, QDate(2026, 12, 12));
+    QCOMPARE(laterEvent->timeStatus, QStringLiteral("Unknown"));
+    QVERIFY(!laterEvent->startTime.isValid());
+    QVERIFY(laterEvent->repeatSeriesId.isEmpty());
+
+    const auto earlierEvent = legacyService->event(earlierEventId);
+    QVERIFY(earlierEvent);
+    QCOMPARE(earlierEvent->title, QStringLiteral("Earlier imported event"));
+    QCOMPARE(earlierEvent->startDate, QDate(2026, 12, 10));
+    QCOMPARE(earlierEvent->eventType, QStringLiteral("Holiday"));
+    QVERIFY(earlierEvent->allDay);
+    QVERIFY(!earlierEvent->startTime.isValid());
+    QVERIFY(earlierEvent->repeatSeriesId.isEmpty());
+
+    const auto loaded = legacyService->eventsInRange(
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 12)
+        );
+    QVERIFY(loaded);
+    QCOMPARE(loaded->size(), 2);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+acceptsDuplicateOnlyEmptyImportBatchAsNoOp()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    ApplicationServicesCalendarEventImportSavePort port(services);
+
+    const auto saved = port.saveImportedEvents({});
+    QVERIFY(saved);
+    QVERIFY(saved.value().empty());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+rejectsInvalidImportBatchBeforeCreatingAnyRows()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    auto request = validImportSaveRequest();
+    request.events.back().id = calendarEventId(999);
+    ApplicationServicesCalendarEventImportSavePort port(services);
+    verifyFailure(
+        port.saveImportedEvents(request),
+        ErrorCode::InvalidInput
+        );
+
+    const auto loaded = legacyService->eventsInRange(
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 12)
+        );
+    QVERIFY(loaded);
+    QVERIFY(loaded->isEmpty());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsImportBatchFailureWithoutPartialRows()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_import_second "
+        "BEFORE INSERT ON calendar_events "
+        "WHEN NEW.title = 'Rejected imported event' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected calendar import save failure'); "
+        "END"
+        )));
+
+    auto request = validImportSaveRequest();
+    request.events.back().title = "Rejected imported event";
+    ApplicationServicesCalendarEventImportSavePort port(services);
+    const auto saved = port.saveImportedEvents(request);
+
+    verifyFailure(saved, ErrorCode::Technical);
+    QVERIFY(
+        saved.error().message.find("injected calendar import save failure")
+            != std::string::npos
+        || saved.error().message.find("Creating calendar event")
+            != std::string::npos
+    );
+
+    const auto loaded = legacyService->eventsInRange(
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 12)
+        );
+    QVERIFY(loaded);
+    QVERIFY(loaded->isEmpty());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsUnavailableImportSaveServiceStructurally()
+{
+    ApplicationServices services;
+    ApplicationServicesCalendarEventImportSavePort port(services);
+
+    verifyFailure(
+        port.saveImportedEvents(validImportSaveRequest()),
+        ErrorCode::NotFound
+        );
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

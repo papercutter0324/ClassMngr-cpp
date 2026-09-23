@@ -452,3 +452,10 @@ A passing packaged route and output parity do not close the Sub Prep memory
 gate. Record both one- and five-second settled measurements: F9 stayed below
 512 MiB and improved over legacy peaks, while its approximately 307 MB settled
 working set remains above the 250 MiB end-of-rewrite target.
+
+
+## Phase 2 calendar import batch save - 2026-09-24
+
+A duplicate-only calendar import is a valid empty batch. Preserve the planner's
+accepted input order and send the whole batch through one service call so the
+repository transaction still rolls back earlier rows if a later insert fails.

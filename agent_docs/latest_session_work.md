@@ -681,3 +681,27 @@ separate on a host with Xvfb and loopback access.
 - Handoff: continue Phase 2 with the broader typed calendar UI/page migration.
   Generic settings persistence, the remaining feature-service migrations,
   and broader document-service migration remain open. Nothing was pushed.
+
+
+### Phase 2 typed calendar import batch save - 2026-09-24
+
+- Added a Qt-free ordered import-save request over typed event-save values.
+  It validates every create request, rejects event IDs, accepts a valid empty
+  batch for duplicate-only imports, and caps accepted import batches at 4,096.
+- `CalendarEventImportService` now maps only the duplicate planner's accepted
+  candidates into that request. The Platform adapter performs one
+  `CalendarService::saveEvents()` call, preserving the legacy batch
+  transaction and returning typed IDs in input order. Import metrics,
+  skipped counts, failure messages, and completion signals remain connected to
+  that result.
+- Windows x64 Debug built `ClassMngr` and the application, Platform, and
+  parser test targets. CMake validated 869 explicit source owners. Focused
+  CTest passed 3/3: `ClassMngrNextApplicationCalendarEventTests`,
+  `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+  `ClassMngrCalendarImportTests`. Database coverage verifies order, all-day
+  and unknown-time mapping, empty-batch behavior, invalid-input preflight, and
+  rollback when the second insert fails.
+- Handoff: continue the broader typed calendar UI/page migration. Calendar
+  workbook parsing and campus-directory lookup remain legacy boundaries;
+  generic settings, other feature-service migrations, and the wider document
+  migration remain open. Nothing was pushed.

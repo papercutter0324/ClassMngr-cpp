@@ -151,9 +151,11 @@ temporary 512 MiB diagnostic ceiling and lower than the retained legacy
 baseline. Settled working set was 306,466,816 bytes at one second and
 306,470,912 bytes at five seconds, so the final 250 MiB target remains open.
 
-Continue the broader Phase 2 exit work with the typed calendar UI/page
-migration. Generic settings persistence, remaining feature-service migrations,
-and broader document-service migration also remain open. Keep the Linux Phase
+The calendar importer now persists accepted candidates through a typed,
+ordered batch port while preserving one transaction and duplicate-only no-op
+behavior. Continue the broader Phase 2 exit work with the typed calendar
+UI/page migration. Generic settings persistence, remaining feature-service
+migrations, and broader document-service migration also remain open. Keep the Linux Phase
 0 follow-up separate until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
