@@ -50,6 +50,7 @@ int savedTestingBlocks = 0;
 int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
 Theme lastPrintRequestTheme = Theme::Dark;
+QString lastPrintRequestUserName;
 Theme configuredTheme = Theme::Dark;
 bool themeAvailable = false;
 bool databaseOpen = true;
@@ -75,6 +76,7 @@ void reset()
     printRequestCount = 0;
     lastPrintRequestShowsEnglishNames = false;
     lastPrintRequestTheme = Theme::Dark;
+    lastPrintRequestUserName.clear();
     configuredTheme = Theme::Dark;
     themeAvailable = false;
     databaseOpen = true;
@@ -241,6 +243,11 @@ DataService::~DataService() = default;
 bool DataService::isOpen() const
 {
     return ScheduleWidgetTestStubs::databaseOpen;
+}
+
+DatabaseSession* DataService::databaseSession() const
+{
+    return nullptr;
 }
 
 Status DataService::saveSetting(
@@ -1343,6 +1350,8 @@ SchedulePrintService::Result SchedulePrintService::printSchedule(
         request.showEnglishNames;
     ScheduleWidgetTestStubs::lastPrintRequestTheme =
         request.currentTheme;
+    ScheduleWidgetTestStubs::lastPrintRequestUserName =
+        request.userName;
 
     return {Status::Canceled, {}};
 }

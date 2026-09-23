@@ -1,7 +1,6 @@
 #include "schedule_output_controller.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
@@ -40,15 +39,11 @@ void ScheduleOutputController::execute(
     request.style = dialog.selectedStyle();
     request.pageOrientation = dialog.selectedOrientation();
     request.currentTheme = currentTheme;
-    SettingsService* settingsService =
-        services
-            ? services->settingsService()
-            : nullptr;
-    if (settingsService && settingsService->isAvailable())
+    if (services)
     {
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort
-            personalDisplayNamePreferencesPort(settingsService);
+            personalDisplayNamePreferencesPort(*services);
         const std::string userName =
             personalDisplayNamePreferencesPort.read();
         request.userName = QString::fromUtf8(

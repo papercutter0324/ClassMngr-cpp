@@ -6,6 +6,7 @@
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_table_renderer.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "features/schedule/services/schedule_output_controller.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -19,7 +20,9 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDialog>
 #include <QDialogButtonBox>
+#include <QEvent>
 #include <QHeaderView>
 #include <QImage>
 #include <QLabel>
@@ -40,6 +43,7 @@ extern int savedSlotStates;
 extern int printRequestCount;
 extern bool lastPrintRequestShowsEnglishNames;
 extern Theme lastPrintRequestTheme;
+extern QString lastPrintRequestUserName;
 void reset();
 void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
@@ -68,6 +72,62 @@ void saveSettingOrFail(
     QVERIFY(dataService);
     QVERIFY(dataService->saveSetting(key, value).has_value());
 }
+
+class ScheduleOutputDisplayNameUpdate final : public QObject
+{
+public:
+    explicit ScheduleOutputDisplayNameUpdate(
+        ApplicationServices& services
+        )
+        : m_services(services)
+    {
+    }
+
+    [[nodiscard]] bool updated() const
+    {
+        return m_updated;
+    }
+
+protected:
+    bool eventFilter(
+        QObject* watched,
+        QEvent* event
+        ) override
+    {
+        auto* dialog = qobject_cast<QDialog*>(watched);
+        if (
+            event
+            && event->type() == QEvent::Show
+            && dialog
+            && dialog->objectName()
+                == QStringLiteral("schedulePrintDialog")
+            && !m_connected
+            )
+        {
+            m_connected = true;
+            QObject::connect(
+                dialog,
+                &QDialog::accepted,
+                [this]
+                {
+                    const auto saved =
+                        m_services.dataService()->saveSetting(
+                            QStringLiteral("myInfo/name"),
+                            QStringLiteral("  Updated After Acceptance  ")
+                            );
+                    m_updated = saved.has_value();
+                }
+                );
+        }
+
+        return QObject::eventFilter(watched, event);
+    }
+
+private:
+    ApplicationServices& m_services;
+    bool m_updated = false;
+    bool m_connected = false;
+};
 
 ScheduleViewModel rendererTestModel(
     const QString& mondaySlotState = scheduleEssaySlotState()
@@ -121,6 +181,8 @@ private slots:
     void clearTestingLayoutUsesScheduleService();
     void printUsesSelectedTeacherNameLanguage();
     void printPropagatesCurrentTheme();
+    void outputReadsDisplayNameAfterDialogAcceptanceWithoutTrimming();
+    void outputUsesEmptyNameWhenPreferencesAreUnavailableOrServicesAreNull();
     void importButtonRequestsScheduleImport();
     void controlsUseTextFitButtons();
     void legacyHourSettingsDoNotCarryForward();
@@ -305,6 +367,70 @@ void ScheduleWidgetTests::printPropagatesCurrentTheme()
         ScheduleWidgetTestStubs::lastPrintRequestTheme,
         Theme::Dark
         );
+}
+
+void ScheduleWidgetTests
+    ::outputReadsDisplayNameAfterDialogAcceptanceWithoutTrimming()
+{
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/name"),
+        QStringLiteral("Stored Before Dialog")
+        );
+    ScheduleOutputDisplayNameUpdate updateNameOnDialogShow(services);
+    qApp->installEventFilter(&updateNameOnDialogShow);
+
+    ScheduleOutputController::execute(
+        ScheduleOutputController::Action::Print,
+        nullptr,
+        &services,
+        rendererTestModel(),
+        Theme::Light,
+        false
+        );
+
+    qApp->removeEventFilter(&updateNameOnDialogShow);
+    QVERIFY(updateNameOnDialogShow.updated());
+    QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastPrintRequestUserName,
+        QStringLiteral("  Updated After Acceptance  ")
+        );
+}
+
+void ScheduleWidgetTests
+    ::outputUsesEmptyNameWhenPreferencesAreUnavailableOrServicesAreNull()
+{
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/name"),
+        QStringLiteral("Stored Name")
+        );
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+
+    ScheduleOutputController::execute(
+        ScheduleOutputController::Action::Print,
+        nullptr,
+        &services,
+        rendererTestModel(),
+        Theme::Light,
+        false
+        );
+
+    QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestUserName.isEmpty());
+
+    ScheduleOutputController::execute(
+        ScheduleOutputController::Action::Print,
+        nullptr,
+        nullptr,
+        rendererTestModel(),
+        Theme::Light,
+        false
+        );
+
+    QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestUserName.isEmpty());
 }
 
 void ScheduleWidgetTests::importButtonRequestsScheduleImport()

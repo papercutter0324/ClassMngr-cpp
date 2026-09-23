@@ -257,3 +257,16 @@ built `ClassMngr` and both focused targets; CTest passed 2/2, CMake validated
 874 source owners, and `git diff --check` passed. Workbook parsing and
 campus-directory lookup remain open. Next: continue typed preference caller
 migrations, then the remaining feature-service and document boundaries.
+
+### Phase 2 personal display-name caller cutover — 2026-09-24
+
+Schedule output/import and Sub Prep print-dialog now consume the existing typed
+personal-display-name adapter through `ApplicationServices&`, preserving the
+caller-specific trimming, acceptance timing, unavailable defaults, and Sub
+Prep's baseline preference-write order. The added ScheduleWidget cases verify
+accepted-dialog reads, whitespace, unavailable settings, and null services.
+Independent Windows x64 Debug verification passed three focused targets
+(3/3); the ScheduleWidget suite passed 19/19. My Information and Initial Setup
+remain the last pointer-constructor consumers before that overload can be
+removed. Phase 2 continues with those preference reads, generic settings,
+remaining feature services, and broader document boundaries.

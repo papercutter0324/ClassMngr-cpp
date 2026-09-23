@@ -1,6 +1,5 @@
 #include "schedule_import_dialog.h"
 
-#include "app/services/feature_services.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
@@ -751,19 +750,19 @@ void ScheduleImportDialog::prepareUserSelection()
     m_userCombo->clear();
     m_nameConfirmation->setChecked(false);
 
-    SettingsService* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-    ClassMngr::Next::Platform::
-        ApplicationServicesPersonalDisplayNamePreferencesPort
-        personalDisplayNamePreferencesPort(settingsService);
-    const std::string profileName =
-        personalDisplayNamePreferencesPort.read();
-    m_profileName = QString::fromUtf8(
-        profileName.data(),
-        static_cast<qsizetype>(profileName.size())
-        ).trimmed();
+    m_profileName.clear();
+    if (m_services)
+    {
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalDisplayNamePreferencesPort
+            personalDisplayNamePreferencesPort(*m_services);
+        const std::string profileName =
+            personalDisplayNamePreferencesPort.read();
+        m_profileName = QString::fromUtf8(
+            profileName.data(),
+            static_cast<qsizetype>(profileName.size())
+            ).trimmed();
+    }
 
     if (!sheet)
     {

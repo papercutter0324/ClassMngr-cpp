@@ -3791,3 +3791,22 @@ signature, ordering, invalid/unavailable/read failures, and 4,097-row results
 beyond the general projection cap. Workbook parsing and campus-directory
 lookup remain legacy; broader calendar import, generic settings, other
 feature-service migrations, and Phase 2 remain open.
+
+#### Progress update - 2026-09-24 (personal display-name caller migration)
+
+Schedule output, schedule import, and the Sub Prep print dialog now construct
+`ApplicationServicesPersonalDisplayNamePreferencesPort` from
+`ApplicationServices&`, removing their `SettingsService*` adapter callers.
+Unavailable reads remain empty and writes remain silent no-ops; null services
+retain empty/default names. Schedule output reads only after dialog acceptance
+and preserves stored whitespace, while import and Sub Prep continue to trim.
+
+The ScheduleWidget tests cover a preference value changed by the accepted
+signal, including exact whitespace in the print request, unavailable
+preferences, and null services. Independent verification built
+`ClassMngrScheduleWidgetTests`, `ClassMngrScheduleImportDialogTests`, and
+`ClassMngrSubPrepPageTests`; CTest passed 3/3 and ScheduleWidget passed 19/19.
+`git diff --check HEAD` passed with line-ending conversion notices. My
+Information and Initial Setup remain display-name adapter callers; generic
+settings persistence, other feature-service migrations, and Phase 2 remain
+open.

@@ -1,7 +1,6 @@
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
@@ -274,15 +273,11 @@ SubPrepPrintDialog::SubPrepPrintDialog(
     , m_services(services)
     , m_schedule(schedule)
 {
-    SettingsService* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-    if (settingsService && settingsService->isAvailable())
+    if (m_services)
     {
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort
-            personalDisplayNamePreferencesPort(settingsService);
+            personalDisplayNamePreferencesPort(*m_services);
         const std::string storedUserName =
             personalDisplayNamePreferencesPort.read();
         m_storedUserName = QString::fromUtf8(
@@ -795,30 +790,25 @@ void SubPrepPrintDialog::acceptGeneration()
         && m_services
         )
     {
-        SettingsService* settingsService =
-            m_services->settingsService();
-        if (settingsService && settingsService->isAvailable())
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalDisplayNamePreferencesPort
+            personalDisplayNamePreferencesPort(*m_services);
+        const QByteArray encodedName =
+            m_nameEdit->text().trimmed().toUtf8();
+        const auto saved =
+            personalDisplayNamePreferencesPort.write(
+                std::string(
+                    encodedName.constData(),
+                    static_cast<std::size_t>(encodedName.size())
+                    )
+                );
+        if (!saved)
         {
-            ClassMngr::Next::Platform::
-                ApplicationServicesPersonalDisplayNamePreferencesPort
-                personalDisplayNamePreferencesPort(settingsService);
-            const QByteArray encodedName =
-                m_nameEdit->text().trimmed().toUtf8();
-            const auto saved =
-                personalDisplayNamePreferencesPort.write(
-                    std::string(
-                        encodedName.constData(),
-                        static_cast<std::size_t>(encodedName.size())
-                        )
-                    );
-            if (!saved)
-            {
-                const QByteArray errorBytes =
-                    QByteArray::fromStdString(saved.error().message);
-                qWarning()
-                    << "Failed to save the Sub Prep user name:"
-                    << QString::fromUtf8(errorBytes);
-            }
+            const QByteArray errorBytes =
+                QByteArray::fromStdString(saved.error().message);
+            qWarning()
+                << "Failed to save the Sub Prep user name:"
+                << QString::fromUtf8(errorBytes);
         }
     }
 

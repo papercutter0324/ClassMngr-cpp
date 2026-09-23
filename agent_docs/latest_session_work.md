@@ -842,9 +842,37 @@ separate on a host with Xvfb and loopback access.
   found.
 - Handoff: next route the Schedule and Sub Prep personal-display-name callers
   through the existing `ApplicationServices` adapter entry point, preserving
-  null-service defaults, caller trimming, read timing, and post-folder-create
-  save timing. My Information and Initial Setup still use the adapter's
+  null-service defaults, caller trimming, and read timing. Preserve Sub Prep's
+  baseline preference-write ordering before the later package `mkpath` attempt.
+  My Information and Initial Setup still use the adapter's
   `SettingsService*` constructor; workbook parsing/campus lookup, generic
   settings persistence, other feature services, and broader document
   migration remain open. The 250 MiB packaged Release gate belongs to Phase 9;
   nothing was pushed.
+
+
+### Phase 2 personal display-name caller cutover - 2026-09-24
+
+- Schedule output/import and Sub Prep print-dialog now construct the existing
+  typed personal-display-name adapter from `ApplicationServices&`; these
+  callers no longer extract `SettingsService` for `myInfo/name`. Schedule
+  output reads only after dialog acceptance and preserves stored whitespace;
+  Schedule import and Sub Prep trim at their existing UI boundaries. Null and
+  unavailable service behavior remains empty/default or successful no-op.
+- Added ScheduleWidget regression coverage for a name changed on acceptance,
+  exact whitespace in the print request, unavailable settings, and null
+  services. Independent Windows x64 Debug verification built `ClassMngr` and
+  the ScheduleWidget, ScheduleImportDialog, and SubPrepPage targets; CTest
+  passed 3/3 and ScheduleWidget passed 19/19. `git diff --check HEAD` passed.
+- Sub Prep keeps its baseline event order: after folder selection and any
+  replacement confirmation, it writes the name before accepting the dialog;
+  package generation later attempts `QDir::mkpath`. A later filesystem
+  failure does not roll back that preference write. The paired Explorer's
+  earlier “after folder creation” description was inaccurate.
+- Handoff: migrate the My Information and Initial Setup display-name reads to
+  the existing ApplicationServices adapter while preserving their availability
+  guards and aggregate personal-details save path; then remove the
+  `SettingsService*` adapter constructor after its final callers and test are
+  migrated. Generic settings, other feature-service, workbook/campus, and
+  broader document boundaries remain open. The 250 MiB gate belongs to Phase
+  9; nothing was pushed.

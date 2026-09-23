@@ -529,3 +529,13 @@ that are not part of import identity. Expose the dedicated read as a Qt-free
 Application contract, and keep QString normalization and UTF-16 key creation
 at the Platform boundary. Remove the old concrete API once the workflow uses
 the contract; do not bridge through the capped projection.
+
+
+## Phase 2 personal display-name adapter migration - 2026-09-24
+
+When replacing a legacy store pointer with an existing typed preference
+adapter, preserve the caller's event order and transformation rules. In
+Sub Prep, name persistence occurs after folder selection and replacement
+confirmation but before the later filesystem `mkpath`; a subsequent package
+creation failure does not undo that write. Keep that baseline ordering while
+moving unavailable-store handling into Platform.

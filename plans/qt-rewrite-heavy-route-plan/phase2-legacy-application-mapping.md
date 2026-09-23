@@ -2955,3 +2955,18 @@ and both port targets, CMake validated 874 source owners, and `git diff
 --check` passed. Workbook parsing and campus-directory lookup remain legacy;
 broader import and Phase 2 work remain open. See the Phase 2 plan's
 [signature-query update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-calendar-import-signature-query-contract).
+
+
+## Personal display-name caller boundary - 2026-09-24
+
+Schedule output, schedule import, and Sub Prep print-dialog callers now create
+`ApplicationServicesPersonalDisplayNamePreferencesPort` from
+`ApplicationServices&`. Schedule output reads after acceptance and preserves
+stored whitespace; the import and Sub Prep callers trim. In Sub Prep, the name
+write follows folder selection and replacement confirmation but precedes
+dialog acceptance. Package generation later calls `QDir::mkpath`, so a later
+filesystem failure does not undo that preference write; the write does not
+depend on successful directory creation. Null services retain empty/default
+names, unavailable reads are empty, and unavailable writes are no-ops. My
+Information and Initial Setup remain display-name `SettingsService*` adapter
+callers. See the [verified Phase 2 caller migration](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-personal-display-name-caller-migration).
