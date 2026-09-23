@@ -546,7 +546,8 @@ Result<QList<ClassInfo>> ClassService::classInfosForScheduleScope(
     const QStringList& selectedDays,
     const ScheduleType type,
     const int maxMeetingsPerClass,
-    const int maxTotalMeetings
+    const int maxTotalMeetings,
+    const bool includeUnassignedTeachers
     ) const
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
@@ -556,7 +557,8 @@ Result<QList<ClassInfo>> ClassService::classInfosForScheduleScope(
             selectedDays,
             type,
             maxMeetingsPerClass,
-            maxTotalMeetings
+            maxTotalMeetings,
+            includeUnassignedTeachers
             );
     }
 

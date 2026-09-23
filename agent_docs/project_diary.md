@@ -401,3 +401,19 @@
   values and SQL-truncates each fetched value before checking the original
   byte length, so oversized text is rejected without materializing a full
   cell or silently truncating it.
+
+## Phase 2 Sub Prep roster-output Platform read - 2026-09-24
+
+- Parse canonical typed class IDs before mapping them to the legacy integer
+  keys. Preserve the regular schedule query's default teacher filter and opt
+  into unassigned classes only for roster output, whose package includes them.
+- Share teacher facts across selected classes, and subtract class/teacher and
+  schedule text already copied before passing remaining row/cell/text budgets
+  to the bounded roster repository read.
+- Keep adapter coverage grounded in valid domain fixtures: teacher preferred
+  names must match a display choice, class levels must be valid for their
+  grades, roster data must contain all base columns and acceptable student
+  names, and same-day meetings must not overlap.
+- The Platform source and three focused CTest suites verify the read seam.
+  Package mapping, complete output parity, packaged Release memory evidence,
+  and Phase 2 acceptance remain open.

@@ -218,10 +218,12 @@ The application boundary exposes contracts for operations equivalent to:
 - invalidate or refresh the scope;
 - build an operation-scoped print source for selected days/classes.
 
-The schedule-summary, selected-details, selection-state, and print-source
-contracts now exist in Phase 2. The scoped schedule-summary, selected-details,
-and print-source Platform read adapters are implemented; page integration,
-output parity, and Release memory evidence remain open.
+The schedule-summary, selected-details, selection-state, print-source, and
+roster-output contracts now exist in Phase 2. Their scoped Platform reads are
+implemented, including the bounded roster repository projection. Package
+generation still needs to consume the roster source and map it to renderer
+inputs; output parity, cleanup coverage, and Release memory evidence remain
+open.
 
 The UI must not issue SQL or depend on `DataService` compatibility methods.
 

@@ -3568,3 +3568,26 @@ index. The repository method enforces aggregate budgets supplied by its
 caller; the next Platform adapter must decrement those budgets across the
 operation while mapping bounded values. Package integration, output parity,
 the 96-class packaged Release memory gate, and Phase 2 remain open.
+
+#### Progress update - 2026-09-24 (Sub Prep roster-output Platform read)
+
+Work Package F6 adds
+[`ApplicationServicesSubPrepRosterOutputSourcePort`](../../src/next/platform/application_services_sub_prep_roster_output_source_port.h).
+It maps canonical typed IDs to legacy IDs, reads the requested class/day/mode
+scope through the active services, retains unassigned classes for roster
+output, shares teacher facts, and projects only baseline and requested roster
+columns. Remaining operation row/cell/text budgets are passed to the bounded
+roster service before values become the Application-owned source. The scoped
+schedule read now accepts an explicit include-unassigned option; existing
+callers retain their prior default behavior.
+
+The new database-backed Platform test covers request ordering, day and mode
+selection, unassigned teachers, roster column projection, sparse-row overflow,
+and oversized teacher output. CMake validated 867 handwritten source owners.
+Windows x64 Debug built `ClassMngr`; focused CTest passed the new Platform
+suite, the existing Sub Prep print-source Platform suite, and the roster-output
+Application query suite (3/3). `git diff --check` passed. This closes the
+bounded roster-source adapter only. Package-service wiring, renderer mapping,
+output parity/cleanup, 96-class packaged Release memory evidence, and Phase 2
+acceptance remain open. Work Package F7 wires the source into package
+generation.

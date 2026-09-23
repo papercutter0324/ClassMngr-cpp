@@ -174,11 +174,19 @@ DataService and RosterService forwarding. It projects only requested columns,
 checks row and cell budgets before allocating the matrix, and uses forward-only
 SQL reads plus a bounded substring and byte-length check for each value. The
 data lifecycle suite passes 1/1, including oversized cell and sparse-row
-rejection. Next is F6: compose these reads through a session-backed Platform
-port and validate exact class/day/mode and aggregate bounds. Package
-integration, PDF/package parity, the 96-class Release memory evidence, and the
-wider Phase 2 exit gate remain open. Keep the Linux Phase 0 follow-up separate
-until it can run on a host with Xvfb and loopback access.
+rejection. F6 adds the session-backed
+`ApplicationServicesSubPrepRosterOutputSourcePort`. It scopes
+reads by class IDs, weekdays, and schedule mode, preserves unassigned classes
+for roster output, shares teacher facts, and passes remaining row/cell/text
+budgets into the bounded roster service. CMake validated 867 handwritten
+source owners. Windows x64 Debug built `ClassMngr` and the new Platform test;
+focused CTest passed 3/3 for the roster-output adapter, the existing Sub Prep
+print-source adapter, and the roster-output Application query. `git diff --check`
+passed. Next is F7: replace package-service roster reads with this
+source and map bounded values into the renderer model. Package/output parity,
+cancellation and cleanup coverage, the 96-class packaged Release memory
+evidence, and the wider Phase 2 exit gate remain open. Keep the Linux Phase 0
+follow-up separate until it can run on a host with Xvfb and loopback access.
 
 ### Phase 2 kickoff — 2026-09-19
 

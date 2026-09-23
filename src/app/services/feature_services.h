@@ -128,7 +128,8 @@ public:
         const QStringList& selectedDays,
         ScheduleType type,
         int maxMeetingsPerClass,
-        int maxTotalMeetings
+        int maxTotalMeetings,
+        bool includeUnassignedTeachers = false
         ) const;
     [[nodiscard]] Status saveClassInfo(const ClassInfo& info) const;
     [[nodiscard]] Status saveClassNotes(

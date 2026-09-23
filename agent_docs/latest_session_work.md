@@ -596,7 +596,30 @@ separate on a host with Xvfb and loopback access.
   Debug Ninja. The lifecycle suite passed 1/1, covering selected-column order,
   excluded values, row/cell/text caps, an oversized stored cell, and a sparse
   out-of-range row index. `git diff --check` passed.
-- Handoff: add `ApplicationServicesSubPrepRosterOutputSourcePort`, using the
-  active session and remaining operation budgets, then wire the package
-  service and verify renderer/package parity. The packaged Release memory
-  gate and Phase 2 remain open.
+- Handoff: F6 completes the bounded Platform read seam recorded below. F7 now
+  wires this source into package generation and verifies renderer/package
+  parity. The packaged Release memory gate and Phase 2 remain open.
+
+### Phase 2 Sub Prep roster-output Platform read - 2026-09-24
+
+- Added `ApplicationServicesSubPrepRosterOutputSourcePort`. It validates
+  canonical class IDs before mapping to legacy IDs, reads only the requested
+  class/day/mode scope, preserves unassigned classes for roster output, and
+  shares teacher facts across the operation. It maps renderer-facing class
+  and meeting facts, requests only English/Korean plus selected extra roster
+  columns, and passes remaining row/cell/text budgets into the bounded roster
+  service before converting cells to Application-owned strings.
+- Added database coverage for request ordering, selected days and modes,
+  unassigned teachers, roster projection, sparse-row limits, and oversized
+  teacher output. `classInfosForScheduleScope` now has an explicit opt-in for
+  including unassigned teachers; existing callers retain their previous
+  default filter.
+- CMake validated 867 handwritten source owners. Windows x64 Debug built
+  `ClassMngr` and the new Platform target. Focused CTest passed 3/3 for the
+  roster-output Platform adapter, the existing Sub Prep print-source adapter,
+  and the roster-output Application query. `git diff --check` passed.
+- Handoff: F7 wires the typed roster source into `SubPrepPackageService` and
+  maps its bounded values into `RosterTemplatePrintService` inputs. Then verify
+  output/package parity and cleanup behavior. The 96-class packaged Release
+  memory gate and broader Phase 2 exit gate remain open; nothing has been
+  pushed.

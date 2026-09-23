@@ -1154,7 +1154,8 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     const QStringList& selectedDays,
     const ScheduleType type,
     const int maxMeetingsPerClass,
-    const int maxTotalMeetings
+    const int maxTotalMeetings,
+    const bool includeUnassignedTeachers
     )
 {
     if (classIds.isEmpty() || selectedDays.isEmpty())
@@ -1236,6 +1237,16 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     const QString timesTable = type == ScheduleType::Regular
         ? QStringLiteral("class_times")
         : QStringLiteral("class_intensive_times");
+    const QString teacherAssignmentFilter = includeUnassignedTeachers
+        ? QString()
+        : QStringLiteral(R"(
+              AND assigned_info.teacher_id > 0
+              AND EXISTS (
+                  SELECT 1
+                  FROM teachers assigned_teacher
+                  WHERE assigned_teacher.id = assigned_info.teacher_id
+              )
+        )");
     const QString queryText = QStringLiteral(R"(
         WITH scoped_times AS (
             SELECT
@@ -1249,12 +1260,7 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
             ON assigned_info.class_id = times.class_id
             WHERE times.class_id IN (%2)
               AND times.day IN (%3)
-              AND assigned_info.teacher_id > 0
-              AND EXISTS (
-                  SELECT 1
-                  FROM teachers assigned_teacher
-                  WHERE assigned_teacher.id = assigned_info.teacher_id
-              )
+              %4
         ),
         ranked_times AS (
             SELECT
@@ -1295,7 +1301,8 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     )").arg(
         timesTable,
         classIdValues.join(QStringLiteral(", ")),
-        dayPlaceholders.join(QStringLiteral(", "))
+        dayPlaceholders.join(QStringLiteral(", ")),
+        teacherAssignmentFilter
         );
 
     const QString identity = QObject::tr("class ids %1, selected days %2")

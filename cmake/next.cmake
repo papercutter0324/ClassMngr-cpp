@@ -116,6 +116,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_calendar_event_series_edit_port.h
     src/next/platform/application_services_calendar_event_series_delete_port.h
     src/next/platform/application_services_sub_prep_print_source_port.h
+    src/next/platform/application_services_sub_prep_roster_output_source_port.h
     src/next/platform/application_services_sub_prep_class_details_port.h
     src/next/platform/application_services_sub_prep_schedule_summary_port.h
     src/next/platform/application_services_calendar_event_display_preferences_port.h
