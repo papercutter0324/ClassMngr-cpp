@@ -1395,3 +1395,23 @@ separate on a host with Xvfb and loopback access.
   commit the F37 contract, repository cutover, CMake registrations, old
   validator removal, and tests; then select the precise fixture-backed review/
   preview slice. Nothing was pushed.
+
+## Current Deployment Handoff - phase2_domain_contracts_after_f37
+
+- F37 is committed as 7049506fb81cce611e6a7f0ab635a3600c7f960d with message
+  Phase2 - Move schedule import state validation to Application. The commit
+  contains the typed Application contract, repository cutover, legacy validator
+  removal, CMake registration, tests, and plan/deployment documentation.
+- Independent fresh Ninja/MSVC x64 configure validated 895 handwritten source
+  owners. Both ClassMngrScheduleImportTests and
+  ClassMngrNextApplicationScheduleImportStateValidationTests passed 2/2. The
+  trigger sentinel establishes validation precedes the first proposed write.
+- Gate 2 remains open: fixture-backed Schedule Import preview/matching, workbook
+  parity and decoding, and broader baseline parity remain. Gate 1 and Gate 3
+  remain partial; Gate 4's audited dependency boundary remains satisfied.
+- Next: choose the exact fixture-backed Schedule Import review/preview scope
+  with the three solution reviewers, then implement, verify, document, and
+  commit that slice before proceeding. Preserve the user's Sub Prep limit:
+  current and following calendar years at most.
+- Preserve modified, unstaged cmake/sources.cmake; it was excluded from F37.
+  Nothing was pushed.

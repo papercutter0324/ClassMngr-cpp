@@ -590,3 +590,15 @@ Gate 2 remains open: Schedule Import matching/preview and checked-in fixture
 parity, workbook decoding, and wider baseline-parity evidence remain. Phase 2
 remains in progress. Next: choose the exact fixture-backed Schedule Import
 review/preview boundary, then continue the remaining exit-gate gaps.
+
+## Current Deployment Continuation - 2026-09-24
+
+F37 is committed as 7049506fb81cce611e6a7f0ab635a3600c7f960d. Its typed
+Schedule Import state contract now guards the real apply path before writes;
+Gate 2 remains open because schedule review/preview matching and checked-in
+fixture parity are unfinished. Gate 1 and Gate 3 remain partial; Gate 4's
+`src/next` dependency audit remains satisfied for the stated legacy-pointer
+boundaries. Next: use three independent solution reviews to select the precise
+fixture-backed Schedule Import review/preview slice. Preserve the modified,
+unstaged cmake/sources.cmake path; it was excluded from F37. Phase 2 remains in
+progress and nothing was pushed.
