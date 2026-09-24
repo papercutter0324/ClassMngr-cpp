@@ -22,11 +22,23 @@
 #include <QFileInfo>
 #include <QSqlError>
 
+#include <atomic>
+#include <utility>
+
+namespace
+{
+QString nextConnectionName(const DatabaseSession* session)
+{
+    static std::atomic<quint64> sequence{0};
+    const quint64 suffix = sequence.fetch_add(1, std::memory_order_relaxed);
+    return QStringLiteral("classmngr-session-%1-%2")
+        .arg(reinterpret_cast<quintptr>(session), 0, 16)
+        .arg(suffix);
+}
+}
+
 DatabaseSession::DatabaseSession()
-    : m_connectionName(
-        QStringLiteral("classmngr-session-%1")
-            .arg(reinterpret_cast<quintptr>(this), 0, 16)
-        )
+    : m_connectionName(nextConnectionName(this))
 {
 }
 
@@ -37,9 +49,21 @@ DatabaseSession::~DatabaseSession()
 
 Status DatabaseSession::open(const QString& databasePath)
 {
+    DatabaseSession candidate;
+    const Status status = candidate.openCandidate(databasePath);
+    if (!status)
+    {
+        return status;
+    }
+
+    swapResources(candidate);
+    return {};
+}
+
+Status DatabaseSession::openCandidate(const QString& databasePath)
+{
     if (databasePath.trimmed().isEmpty())
     {
-        close();
         return std::unexpected(
             QStringLiteral("No Teacher Profile path was provided.")
             );
@@ -47,7 +71,6 @@ Status DatabaseSession::open(const QString& databasePath)
 
     const QFileInfo databaseInfo(databasePath);
     const QString normalizedPath = databaseInfo.absoluteFilePath();
-    close();
 
     if (normalizedPath.trimmed().isEmpty())
     {
@@ -67,16 +90,18 @@ Status DatabaseSession::open(const QString& databasePath)
             );
     }
 
-    m_database = QSqlDatabase::addDatabase(
-        QStringLiteral("QSQLITE"),
-        m_connectionName
+    m_database = std::make_unique<QSqlDatabase>(
+        QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            m_connectionName
+            )
         );
-    m_database.setDatabaseName(normalizedPath);
+    m_database->setDatabaseName(normalizedPath);
 
-    if (!m_database.open())
+    if (!m_database->open())
     {
-        const QString openError = m_database.lastError().text();
-        m_database = QSqlDatabase();
+        const QString openError = m_database->lastError().text();
+        m_database.reset();
         QSqlDatabase::removeDatabase(m_connectionName);
         return std::unexpected(
             QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
@@ -85,7 +110,7 @@ Status DatabaseSession::open(const QString& databasePath)
     }
 
     const Status schemaStatus =
-        DatabaseSchemaManager::ensureSchema(m_database);
+        DatabaseSchemaManager::ensureSchema(*m_database);
     if (!schemaStatus)
     {
         const QString schemaError = schemaStatus.error();
@@ -97,26 +122,50 @@ Status DatabaseSession::open(const QString& databasePath)
     }
 
     m_databasePath = normalizedPath;
-    m_settingsRepository = std::make_unique<SettingsRepository>(m_database);
-    m_campusRecordRepository = std::make_unique<CampusRecordRepository>(m_database);
-    m_teacherRepository = std::make_unique<TeacherRepository>(m_database);
+    m_settingsRepository = std::make_unique<SettingsRepository>(*m_database);
+    m_campusRecordRepository = std::make_unique<CampusRecordRepository>(*m_database);
+    m_teacherRepository = std::make_unique<TeacherRepository>(*m_database);
     m_nativeEnglishTeacherRepository =
-        std::make_unique<NativeEnglishTeacherRepository>(m_database);
-    m_gsTeamRepository = std::make_unique<GsTeamRepository>(m_database);
-    m_teacherImportRepository = std::make_unique<TeacherImportRepository>(m_database);
-    m_classRepository = std::make_unique<ClassRepository>(m_database);
-    m_classTransferRepository = std::make_unique<ClassTransferRepository>(m_database);
-    m_scheduleImportRepository = std::make_unique<ScheduleImportRepository>(m_database);
-    m_classInfoRepository = std::make_unique<ClassInfoRepository>(m_database);
+        std::make_unique<NativeEnglishTeacherRepository>(*m_database);
+    m_gsTeamRepository = std::make_unique<GsTeamRepository>(*m_database);
+    m_teacherImportRepository = std::make_unique<TeacherImportRepository>(*m_database);
+    m_classRepository = std::make_unique<ClassRepository>(*m_database);
+    m_classTransferRepository = std::make_unique<ClassTransferRepository>(*m_database);
+    m_scheduleImportRepository = std::make_unique<ScheduleImportRepository>(*m_database);
+    m_classInfoRepository = std::make_unique<ClassInfoRepository>(*m_database);
     m_intensiveSlotStateRepository =
-        std::make_unique<IntensiveSlotStateRepository>(m_database);
-    m_testingBlockRepository = std::make_unique<TestingBlockRepository>(m_database);
-    m_testingClassRepository = std::make_unique<TestingClassRepository>(m_database);
-    m_calendarEventRepository = std::make_unique<CalendarEventRepository>(m_database);
-    m_rosterRepository = std::make_unique<RosterRepository>(m_database);
-    m_speakingEvalRepository = std::make_unique<SpeakingEvalRepository>(m_database);
+        std::make_unique<IntensiveSlotStateRepository>(*m_database);
+    m_testingBlockRepository = std::make_unique<TestingBlockRepository>(*m_database);
+    m_testingClassRepository = std::make_unique<TestingClassRepository>(*m_database);
+    m_calendarEventRepository = std::make_unique<CalendarEventRepository>(*m_database);
+    m_rosterRepository = std::make_unique<RosterRepository>(*m_database);
+    m_speakingEvalRepository = std::make_unique<SpeakingEvalRepository>(*m_database);
 
     return {};
+}
+
+void DatabaseSession::swapResources(DatabaseSession& other) noexcept
+{
+    using std::swap;
+    swap(m_databasePath, other.m_databasePath);
+    swap(m_connectionName, other.m_connectionName);
+    swap(m_database, other.m_database);
+    swap(m_settingsRepository, other.m_settingsRepository);
+    swap(m_campusRecordRepository, other.m_campusRecordRepository);
+    swap(m_teacherRepository, other.m_teacherRepository);
+    swap(m_nativeEnglishTeacherRepository, other.m_nativeEnglishTeacherRepository);
+    swap(m_gsTeamRepository, other.m_gsTeamRepository);
+    swap(m_teacherImportRepository, other.m_teacherImportRepository);
+    swap(m_classRepository, other.m_classRepository);
+    swap(m_classTransferRepository, other.m_classTransferRepository);
+    swap(m_scheduleImportRepository, other.m_scheduleImportRepository);
+    swap(m_classInfoRepository, other.m_classInfoRepository);
+    swap(m_intensiveSlotStateRepository, other.m_intensiveSlotStateRepository);
+    swap(m_testingBlockRepository, other.m_testingBlockRepository);
+    swap(m_testingClassRepository, other.m_testingClassRepository);
+    swap(m_calendarEventRepository, other.m_calendarEventRepository);
+    swap(m_rosterRepository, other.m_rosterRepository);
+    swap(m_speakingEvalRepository, other.m_speakingEvalRepository);
 }
 
 void DatabaseSession::close()
@@ -138,11 +187,11 @@ void DatabaseSession::close()
     m_rosterRepository.reset();
     m_speakingEvalRepository.reset();
 
-    if (m_database.isOpen())
+    if (m_database && m_database->isOpen())
     {
-        m_database.close();
+        m_database->close();
     }
-    m_database = QSqlDatabase();
+    m_database.reset();
 
     if (QSqlDatabase::contains(m_connectionName))
     {
@@ -153,7 +202,7 @@ void DatabaseSession::close()
 
 bool DatabaseSession::isOpen() const
 {
-    return m_database.isValid() && m_database.isOpen();
+    return m_database && m_database->isValid() && m_database->isOpen();
 }
 
 QString DatabaseSession::databasePath() const
@@ -163,7 +212,7 @@ QString DatabaseSession::databasePath() const
 
 QSqlDatabase DatabaseSession::database() const
 {
-    return m_database;
+    return m_database ? *m_database : QSqlDatabase();
 }
 
 #define CLASSMNGR_REPOSITORY_ACCESSOR(Type, name, member) \

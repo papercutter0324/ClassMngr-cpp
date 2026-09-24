@@ -58,9 +58,12 @@ public:
     SpeakingEvalRepository* speakingEvalRepository() const;
 
 private:
+    [[nodiscard]] Status openCandidate(const QString& databasePath);
+    void swapResources(DatabaseSession& other) noexcept;
+
     QString m_databasePath;
     QString m_connectionName;
-    QSqlDatabase m_database;
+    std::unique_ptr<QSqlDatabase> m_database;
 
     std::unique_ptr<SettingsRepository> m_settingsRepository;
     std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;

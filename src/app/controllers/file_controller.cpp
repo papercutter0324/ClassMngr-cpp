@@ -585,11 +585,6 @@ bool FileController::loadDatabase(
         return false;
     }
 
-    if (!closeActiveDatabase())
-    {
-        return false;
-    }
-
     const auto opened =
         m_workspaceCoordinator->openWorkspace(
             ClassMngr::Next::Application::OpenWorkspaceRequest{
@@ -610,7 +605,10 @@ bool FileController::loadDatabase(
                 );
         }
 
-        enterNoDatabaseState();
+        if (!m_services->hasOpenDatabase())
+        {
+            enterNoDatabaseState();
+        }
         return false;
     }
 

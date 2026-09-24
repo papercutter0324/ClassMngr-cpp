@@ -1,4 +1,5 @@
 #include "app/controllers/file_controller.h"
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
 #include "fakes/fake_file_dialog_service.h"
@@ -110,6 +111,7 @@ private slots:
     void initialSetupBackupIsRestoredOnCancel();
     void createErrorUsesStructuredUtf8Message();
     void successfulStartupLoadPersistsNormalizedPath();
+    void failedReplacementOpenPreservesActiveWorkspaceAndUiState();
     void missingStartupPathUsesCapturedWarning();
     void invalidStartupDatabaseUsesLegacyErrorText();
     void startupLoadUsesCoordinatorAndLegacyFallback();
@@ -712,6 +714,127 @@ void FileControllerWorkspaceLifecycleTests::successfulStartupLoadPersistsNormali
         );
 }
 
+void FileControllerWorkspaceLifecycleTests::
+failedReplacementOpenPreservesActiveWorkspaceAndUiState()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+    SettingsManager::instance().clear();
+
+    const QString activePath = workspaceRoot.filePath(
+        QStringLiteral("active-profile.tps")
+        );
+    const QString invalidPath = workspaceRoot.filePath(
+        QStringLiteral("invalid-profile.tps")
+        );
+    const QString replacementPath = workspaceRoot.filePath(
+        QStringLiteral("replacement-profile.tps")
+        );
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(activePath));
+    QVERIFY(seedServices.settingsService()->save(
+        QStringLiteral("file-controller/sentinel"),
+        QStringLiteral("profile A")
+        ));
+    seedServices.closeDatabase();
+    QVERIFY(seedServices.openDatabase(replacementPath));
+    QVERIFY(seedServices.settingsService()->save(
+        QStringLiteral("file-controller/sentinel"),
+        QStringLiteral("profile B")
+        ));
+    seedServices.closeDatabase();
+
+    QVERIFY(writeFile(
+        invalidPath,
+        QByteArrayLiteral("not a SQLite database")
+        ));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    SettingsService* const retainedSettings = services.settingsService();
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    controller.loadDatabaseOnStartup(activePath);
+    const QString normalizedActivePath =
+        QFileInfo(activePath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+    QCOMPARE(SettingsManager::instance().getRecentFiles(), QStringList{
+        normalizedActivePath
+    });
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedActivePath);
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+    QCOMPARE(
+        retainedSettings->load(
+            QStringLiteral("file-controller/sentinel")
+            )->toString(),
+        QStringLiteral("profile A")
+        );
+
+    controller.loadDatabaseOnStartup(invalidPath);
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Open Teacher Profile"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(
+        QStringLiteral("Unable to initialize Teacher Profile")
+        ));
+    QVERIFY(warning.message.contains(QFileInfo(invalidPath).absoluteFilePath()));
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+    QCOMPARE(SettingsManager::instance().getRecentFiles(), QStringList{
+        normalizedActivePath
+    });
+    QCOMPARE(SettingsManager::instance().getLastFile(), normalizedActivePath);
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+    QCOMPARE(
+        retainedSettings->load(
+            QStringLiteral("file-controller/sentinel")
+            )->toString(),
+        QStringLiteral("profile A")
+        );
+
+    controller.autosave();
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(services.currentDatabasePath(), normalizedActivePath);
+
+    controller.loadDatabaseOnStartup(replacementPath);
+    const QString normalizedReplacementPath =
+        QFileInfo(replacementPath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedReplacementPath);
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        (QStringList{
+            normalizedReplacementPath,
+            normalizedActivePath
+        })
+        );
+    QCOMPARE(
+        SettingsManager::instance().getLastFile(),
+        normalizedReplacementPath
+        );
+    QCOMPARE(
+        retainedSettings->load(
+            QStringLiteral("file-controller/sentinel")
+            )->toString(),
+        QStringLiteral("profile B")
+        );
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+}
+
 void FileControllerWorkspaceLifecycleTests::missingStartupPathUsesCapturedWarning()
 {
     QTemporaryDir workspaceRoot;
@@ -815,8 +938,8 @@ void FileControllerWorkspaceLifecycleTests::startupLoadUsesCoordinatorAndLegacyF
         QFileInfo(firstPath).absoluteFilePath()
         );
 
-    // The next startup load closes the coordinator-owned session before
-    // opening the replacement workspace.
+    // The next startup load replaces the coordinator-owned session after the
+    // candidate workspace opens successfully.
     controller.loadDatabaseOnStartup(secondPath);
     QVERIFY(services.hasOpenDatabase());
     QCOMPARE(

@@ -4,6 +4,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 
+#include <QFile>
 #include <QFileInfo>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -221,6 +222,7 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
+    void failedReplacementOpenPreservesSessionAndReleasesCandidate();
     void applicationServicesOwnDatabaseFileOperations();
     void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
@@ -1151,6 +1153,119 @@ void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
     QVERIFY(session.classRepository() == nullptr);
     QVERIFY(session.rosterRepository() == nullptr);
     QVERIFY(session.speakingEvalRepository() == nullptr);
+}
+
+void DataServiceLifecycleTests::
+failedReplacementOpenPreservesSessionAndReleasesCandidate()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString databaseA =
+        directory.filePath(QStringLiteral("active-profile.tps"));
+    const QString invalidDatabase =
+        directory.filePath(QStringLiteral("invalid-profile.tps"));
+    const QString databaseB =
+        directory.filePath(QStringLiteral("replacement-profile.tps"));
+
+    DataService service;
+    QVERIFY(service.openDatabase(databaseA));
+    DatabaseSession* const session = service.databaseSession();
+    QVERIFY(session != nullptr);
+    SettingsRepository* const settingsRepository =
+        session->settingsRepository();
+    TeacherRepository* const teacherRepository =
+        session->teacherRepository();
+    ClassRepository* const classRepository =
+        session->classRepository();
+
+    QVERIFY(service.saveSetting(
+        QStringLiteral("replacement/sentinel"),
+        QStringLiteral("profile A")
+        ));
+    Teacher teacherA;
+    teacherA.teacherEn = QStringLiteral("Profile A Teacher");
+    const Result<int> teacherAId = service.createTeacher(teacherA);
+    QVERIFY(teacherAId);
+
+    const QString connectionA = session->database().connectionName();
+    const QStringList connectionsBeforeFailure =
+        QSqlDatabase::connectionNames();
+    QFile invalidFile(invalidDatabase);
+    QVERIFY(invalidFile.open(QIODevice::WriteOnly));
+    QCOMPARE(
+        invalidFile.write(QByteArrayLiteral("not a SQLite database")),
+        qint64(QByteArrayLiteral("not a SQLite database").size())
+        );
+    invalidFile.close();
+
+    const Status failedReplacement = service.openDatabase(invalidDatabase);
+    QVERIFY(!failedReplacement);
+    QVERIFY(failedReplacement.error().contains(
+        QStringLiteral("Unable to initialize Teacher Profile")
+        ));
+    QCOMPARE(service.databaseSession(), session);
+    QVERIFY(service.isOpen());
+    QCOMPARE(service.currentDatabasePath(), QFileInfo(databaseA).absoluteFilePath());
+    QCOMPARE(session->settingsRepository(), settingsRepository);
+    QCOMPARE(session->teacherRepository(), teacherRepository);
+    QCOMPARE(session->classRepository(), classRepository);
+    QCOMPARE(session->database().connectionName(), connectionA);
+    QCOMPARE(QSqlDatabase::connectionNames(), connectionsBeforeFailure);
+
+    const Result<QVariant> retainedSetting = service.loadSetting(
+        QStringLiteral("replacement/sentinel")
+        );
+    const Result<Teacher> retainedTeacher = service.getTeacher(*teacherAId);
+    QVERIFY(retainedSetting);
+    QVERIFY(retainedTeacher);
+    QCOMPARE(retainedSetting->toString(), QStringLiteral("profile A"));
+    QCOMPARE(retainedTeacher->teacherEn, QStringLiteral("Profile A Teacher"));
+
+    DataService seedReplacement;
+    QVERIFY(seedReplacement.openDatabase(databaseB));
+    QVERIFY(seedReplacement.saveSetting(
+        QStringLiteral("replacement/sentinel"),
+        QStringLiteral("profile B")
+        ));
+    Teacher teacherB;
+    teacherB.teacherEn = QStringLiteral("Profile B Teacher");
+    QVERIFY(seedReplacement.createTeacher(teacherB));
+    seedReplacement.closeDatabase();
+
+    SettingsService featureSettings(session, &service);
+    TeacherService featureTeachers(session, &service);
+    QVERIFY(service.openDatabase(databaseB));
+    QCOMPARE(service.databaseSession(), session);
+    QVERIFY(service.isOpen());
+    QCOMPARE(service.currentDatabasePath(), QFileInfo(databaseB).absoluteFilePath());
+
+    const QString connectionB = session->database().connectionName();
+    QVERIFY(connectionB != connectionA);
+    QVERIFY(QSqlDatabase::contains(connectionB));
+    QVERIFY(!QSqlDatabase::contains(connectionA));
+    QCOMPARE(QSqlDatabase::connectionNames().size(), connectionsBeforeFailure.size());
+
+    const Result<QVariant> replacementSetting = featureSettings.load(
+        QStringLiteral("replacement/sentinel")
+        );
+    const Result<QList<Teacher>> replacementTeachers = featureTeachers.teachers();
+    QVERIFY(replacementSetting);
+    QVERIFY(replacementTeachers);
+    QCOMPARE(replacementSetting->toString(), QStringLiteral("profile B"));
+    QCOMPARE(replacementTeachers->size(), 1);
+    QCOMPARE(replacementTeachers->first().teacherEn, QStringLiteral("Profile B Teacher"));
+
+    QVERIFY(service.openDatabase(databaseB));
+    const QString reopenedConnection = session->database().connectionName();
+    QVERIFY(reopenedConnection != connectionB);
+    QVERIFY(QSqlDatabase::contains(reopenedConnection));
+    QVERIFY(!QSqlDatabase::contains(connectionB));
+    QCOMPARE(QSqlDatabase::connectionNames().size(), connectionsBeforeFailure.size());
+    QCOMPARE(
+        featureSettings.load(QStringLiteral("replacement/sentinel"))->toString(),
+        QStringLiteral("profile B")
+        );
 }
 
 void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
