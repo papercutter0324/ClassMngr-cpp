@@ -228,6 +228,7 @@ private slots:
     void pageDeactivationReleasesClassInformationForTheNextEntry();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void savedCampusSelectionUsesTypedRead();
+    void emptyCampusDetailsDisplayNotAvailable();
     void zoomUnavailableHidesStoredCredentials();
     void unavailablePreferenceLoadsPreservePageValues();
     void unavailablePreferenceSaveHasNoSideEffects();
@@ -842,11 +843,49 @@ void SubPrepPageTests
         page.findChild<QLineEdit*>(
             QStringLiteral("subPrepOfficeWifiEdit")
             );
+    auto* officeWifiPassword =
+        page.findChild<QLineEdit*>(
+            QStringLiteral("subPrepOfficeWifiPasswordEdit")
+            );
+    auto* photocopierCode =
+        page.findChild<QLineEdit*>(
+            QStringLiteral("subPrepPhotocopierCodeEdit")
+            );
 
     QVERIFY(officeNumber);
     QVERIFY(officeWifi);
+    QVERIFY(officeWifiPassword);
+    QVERIFY(photocopierCode);
     QCOMPARE(officeNumber->text(), QStringLiteral("418"));
     QCOMPARE(officeWifi->text(), QStringLiteral("Native Room_5G"));
+    QCOMPARE(officeWifiPassword->text(), QStringLiteral("dyb418000"));
+    QCOMPARE(photocopierCode->text(), QStringLiteral("N/A"));
+}
+
+void SubPrepPageTests::emptyCampusDetailsDisplayNotAvailable()
+{
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/campus"),
+        QStringLiteral("j")
+        );
+
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+
+    for (const QString& objectName : {
+             QStringLiteral("subPrepOfficeNumberEdit"),
+             QStringLiteral("subPrepOfficeWifiEdit"),
+             QStringLiteral("subPrepOfficeWifiPasswordEdit"),
+             QStringLiteral("subPrepPhotocopierCodeEdit")
+             })
+    {
+        auto* field = page.findChild<QLineEdit*>(objectName);
+        QVERIFY(field);
+        QCOMPARE(field->text(), QStringLiteral("N/A"));
+    }
 }
 
 void SubPrepPageTests

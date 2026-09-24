@@ -3,6 +3,7 @@
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 #include "next/platform/application_services_sub_prep_preferences_port.h"
+#include "next/platform/sub_prep_campus_directory_query_adapter.h"
 
 #include <string>
 
@@ -166,7 +167,8 @@ void SubPrepPage::loadCampuses()
     m_loading = true;
 
     m_campuses =
-        campusRepository().loadCampuses();
+        ClassMngr::Next::Platform::
+            SubPrepCampusDirectoryQueryAdapter().loadCampuses();
 
     const std::string storedCampus =
         currentCampusPreferencesPort.read();
@@ -177,10 +179,11 @@ void SubPrepPage::loadCampuses()
 
     QString campusId;
 
-    for (const CampusInfo& campus : std::as_const(m_campuses))
+    for (const auto& campus : std::as_const(m_campuses))
     {
+        const QString candidateId = campusMetadataText(campus.id);
         if (
-            campus.id.compare(
+            candidateId.compare(
                 savedCampus.trimmed(),
                 Qt::CaseInsensitive
                 ) == 0
@@ -190,14 +193,14 @@ void SubPrepPage::loadCampuses()
                 ) == 0
             )
         {
-            campusId = campus.id;
+            campusId = candidateId;
             break;
         }
     }
 
-    if (campusId.isEmpty() && !m_campuses.isEmpty())
+    if (campusId.isEmpty() && !m_campuses.empty())
     {
-        campusId = m_campuses.first().id;
+        campusId = campusMetadataText(m_campuses.front().id);
     }
 
     loadCampusFields(campusId);
@@ -210,20 +213,19 @@ void SubPrepPage::loadCampusFields(
     const QString& campusId
     )
 {
-    CampusInfo campus;
-    bool found = false;
+    const ClassMngr::Next::Application::SubPrepCampusMetadata* campus =
+        nullptr;
 
-    for (const CampusInfo& candidate : std::as_const(m_campuses))
+    for (const auto& candidate : std::as_const(m_campuses))
     {
         if (
-            candidate.id.compare(
+            campusMetadataText(candidate.id).compare(
                 campusId,
                 Qt::CaseInsensitive
                 ) == 0
             )
         {
-            campus = candidate;
-            found = true;
+            campus = &candidate;
             break;
         }
     }
@@ -232,26 +234,24 @@ void SubPrepPage::loadCampusFields(
     const QSignalBlocker wifiBlocker(m_officeWifiEdit);
     const QSignalBlocker wifiPasswordBlocker(m_officeWifiPasswordEdit);
     const QSignalBlocker photocopierBlocker(m_photocopierCodeEdit);
+    const auto detailText = [](const std::string* value)
+    {
+        return value
+            ? valueOrNa(campusMetadataText(*value))
+            : NotAvailableText;
+    };
 
     m_officeNumberEdit->setText(
-        found
-            ? valueOrNa(campus.officeNumber)
-            : NotAvailableText
+        detailText(campus ? &campus->officeNumber : nullptr)
         );
     m_officeWifiEdit->setText(
-        found
-            ? valueOrNa(campus.officeWifi)
-            : NotAvailableText
+        detailText(campus ? &campus->wifiName : nullptr)
         );
     m_officeWifiPasswordEdit->setText(
-        found
-            ? valueOrNa(campus.officeWifiPassword)
-            : NotAvailableText
+        detailText(campus ? &campus->wifiPassword : nullptr)
         );
     m_photocopierCodeEdit->setText(
-        found
-            ? valueOrNa(campus.photocopierCode)
-            : NotAvailableText
+        detailText(campus ? &campus->photocopierCode : nullptr)
         );
 
     updateReadOnlyFieldWidths();

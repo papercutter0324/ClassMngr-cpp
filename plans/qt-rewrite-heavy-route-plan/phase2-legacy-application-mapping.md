@@ -3138,12 +3138,33 @@ exit 0 with no work; diff check passed. `CampusJsonCodec` normalizes blank
 ID/name to `campus`, so an empty-display fixture cannot be reached through the
 repository; the empty-display filter remains in place. Phase 2 remains open.
 
-## Next candidate: F28 Sub Prep full campus-detail directory query
+## Verified F28 Sub Prep campus-detail directory query
 
-Route Sub Prep's full campus-detail directory read through a narrow Qt-free
-Application query and Platform adapter. Preserve repository order and
-omission, saved ID/name matching, first-entry fallback, `N/A` for missing
-details, and the availability guard. Keep settings and the 1–9999 calendar
-read out of scope. Workbook decoding, generic settings, PersonalDetails
-atomic-save caller cutover, other feature services, and broader document work
-remain open; Phase 2 remains in progress.
+Sub Prep campus details now cross the Qt-free
+`SubPrepCampusDirectoryQueryPort`; its Platform adapter wraps
+`CampusJsonRepository` and accepts an injected fixture directory. The page no
+longer references `CampusJsonRepository`, `ResourcePaths::Campuses`, or
+`CampusInfo`. It preserves repository order and omission, trimmed
+case-insensitive saved ID/name matching, first-campus fallback, availability
+checks before lookup or state mutation, raw selected IDs, and `N/A` for empty
+detail fields. Settings behavior and the all-years calendar query remain
+outside this slice.
+
+New Application and Platform suites cover ordering, UTF-8 fields, fallback,
+malformed/default records, and missing or empty directories; the page suite
+checks selected details and `N/A`. Executor and independent fresh Ninja/MSVC
+x64 configures validated 886 handwritten owners and built `ClassMngr`, the
+SubPrepPage suite, and both new suites. Executor CTest passed 3/3; independent
+CTest passed 6/6, including three existing preference suites. Resource
+generation passed, and the independent repeat build had no work. Phase 2
+remains open.
+
+## Next candidate: F29 Personal Details atomic-save caller cutover
+
+Remove the `SettingsService*` constructor from
+`ApplicationServicesPersonalDetailsSavePort` and update Initial Setup and My
+Information callers to use `ApplicationServices`. Preserve the early
+availability guard, single `saveAll` behavior, all nine saved keys, UTF-8 and
+signature-image preparation, and rollback behavior. Workbook decoding,
+generic settings, other feature services, broader document work, and the
+formal Phase 2 exit gate remain open.

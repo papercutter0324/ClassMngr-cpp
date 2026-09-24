@@ -217,6 +217,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationSubPrepCampusDirectoryQuery
+    SOURCES
+        tests/next_application_sub_prep_campus_directory_query_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationCalendarEventImportSignatureQueryPort
     SOURCES
         tests/next_application_calendar_event_import_signature_query_port_tests.cpp
@@ -479,6 +488,15 @@ classmngr_add_qt_test(
         ClassMngrNext::Platform
         Qt6::Test
     OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformSubPrepCampusDirectoryQueryAdapter
+    SOURCES
+        tests/next_platform_sub_prep_campus_directory_query_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
 )
 
 classmngr_add_qt_test(

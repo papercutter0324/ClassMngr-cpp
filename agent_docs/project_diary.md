@@ -615,3 +615,12 @@ Compare repository order, trim/fallback behavior, and combo ID payloads against
 the pre-migration page. A repository codec may normalize blank fields before
 the adapter sees them, limiting fixture coverage of defensive empty-value
 branches.
+
+## Phase 2 Sub Prep campus detail query - 2026-09-24
+
+Keep campus query projections specific to each feature: Sub Prep needs office
+details that My Information's chooser contract does not. When moving Qt records
+to owning UTF-8 values, retain original IDs for selection while applying the
+existing trim/fallback rules to labels. Test the adapter through repository
+fixtures so repository ordering and record omission remain part of the
+observed contract.

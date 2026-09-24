@@ -55,6 +55,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/campus_directory_projection.h
     src/next/application/class_summary_projection.h
     src/next/application/sub_prep_schedule_summary_query.h
+    src/next/application/sub_prep_campus_directory_query_port.h
     src/next/application/sub_prep_print_source_query.h
     src/next/application/sub_prep_roster_output_source_query.h
     src/next/application/sub_prep_class_details_query.h
@@ -131,6 +132,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_sub_prep_roster_output_source_port.h
     src/next/platform/application_services_sub_prep_class_details_port.h
     src/next/platform/application_services_sub_prep_schedule_summary_port.h
+    src/next/platform/sub_prep_campus_directory_query_adapter.h
     src/next/platform/application_services_calendar_event_display_preferences_port.h
     src/next/platform/application_services_calendar_event_type_color_preferences_port.h
     src/next/platform/application_services_custom_color_palette_preferences_port.h

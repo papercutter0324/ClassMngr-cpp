@@ -402,3 +402,21 @@ full campus office/Wi-Fi detail read through a separate Application query and
 Platform adapter. Keep the all-years calendar query separate. Personal Details
 atomic save, workbook, generic settings, other feature services, and broader
 document boundaries remain open; Phase 2 remains In progress.
+
+### Phase 2 Sub Prep campus detail query - 2026-09-24
+
+Sub Prep now loads campus ID, display name, office number, Wi-Fi name/password,
+and photocopier code through a Qt-free Application query and Platform adapter.
+The page no longer accesses `CampusJsonRepository`, `ResourcePaths::Campuses`,
+or `CampusInfo` directly. Repository order and omission, saved trimmed-ID or
+display-name matching, first-campus fallback, raw ID selection, current-campus
+availability timing, and `N/A` for empty detail fields are preserved. Executor
+and independent fresh Ninja/MSVC x64 configures each validated 886 handwritten
+owners. Executor focused CTest passed 3/3; independent CTest passed 6/6,
+including all three Sub Prep preference adapters, and its repeat build had no
+work. Campus resource generation succeeded. Next: cut the Personal Details
+atomic-save adapter's remaining `SettingsService*` constructor and both UI
+callers over to `ApplicationServices`, retaining the early availability guard
+and atomic `saveAll` behavior. Workbook, generic settings, other feature
+services, and broader document boundaries remain open; Phase 2 remains In
+progress.

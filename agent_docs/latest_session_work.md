@@ -1107,3 +1107,33 @@ separate on a host with Xvfb and loopback access.
   feature services, and broader document boundaries remain open. Phase 2
   remains in progress. Nothing was pushed; preserve the separately staged
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 Sub Prep campus detail query - 2026-09-24
+
+- Added a Qt-free `SubPrepCampusDirectoryQueryPort` with owning UTF-8 values
+  for campus ID, display name, office number, Wi-Fi name/password, and
+  photocopier code. The Platform adapter reads `CampusJsonRepository` and
+  accepts a fixture directory. Sub Prep's page/helper files no longer access
+  `CampusJsonRepository`, `ResourcePaths::Campuses`, or `CampusInfo` directly.
+- Preserved repository order and omission, saved case-insensitive ID/name
+  matching, first-campus fallback, raw ID selection, current-campus
+  availability timing before lookup/state mutation, and `N/A` for empty office
+  details. Application and Platform adapter tests cover owning metadata,
+  Unicode, order, trimmed-name/ID fallback, malformed/default records, and
+  empty/missing directories. Page coverage checks selected details and empty
+  detail display.
+- Executor and independent fresh Ninja/MSVC x64 configures validated 886
+  handwritten source owners. Both built ClassMngr, the Sub Prep page suite,
+  and the new Application/Platform suites. Executor focused CTest passed 3/3;
+  independent focused CTest passed 6/6 including the three existing Sub Prep
+  preference adapters. The independent repeat build returned no work. Campus
+  resource generation passed; no resource-pack test limitation remains.
+- Handoff: F29 is the Personal Details atomic-save caller cutover. Remove the
+  adapter's `SettingsService*` constructor and update Initial Setup and My
+  Information to pass `ApplicationServices`, retaining the My Information
+  early return before autosave cancellation or field normalization and the
+  adapter's single atomic `saveAll`. Workbook decoding, generic settings,
+  other feature services, and broader document boundaries remain open; Phase
+  2's formal exit gate is not met. Nothing was pushed; preserve the separately
+  staged `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.

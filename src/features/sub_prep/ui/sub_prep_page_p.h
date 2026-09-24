@@ -3,8 +3,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
-#include "core/resource_paths.h"
-#include "features/campus/data/campus_json_repository.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
@@ -19,6 +17,7 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 #include <QEvent>
@@ -69,20 +68,21 @@ CalendarService* openCalendarService(
         : nullptr;
 }
 
-CampusJsonRepository campusRepository()
+QString campusMetadataText(
+    const std::string& value
+    )
 {
-    return CampusJsonRepository(
-        ResourcePaths::Campuses::directory()
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
 }
 
 QString campusDisplayName(
-    const CampusInfo& campus
+    const ClassMngr::Next::Application::SubPrepCampusMetadata& campus
     )
 {
-    return campus.campusName.trimmed().isEmpty()
-        ? campus.id.trimmed()
-        : campus.campusName.trimmed();
+    return campusMetadataText(campus.displayName);
 }
 
 QString valueOrNa(

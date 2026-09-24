@@ -1,7 +1,7 @@
 #pragma once
 
-#include "domain/models/campus_info.h"
 #include "next/domain/domain_types.h"
+#include "next/application/sub_prep_campus_directory_query_port.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 #include "ui/shared/pages/basepage.h"
 
@@ -9,6 +9,7 @@
 #include <QStringList>
 
 #include <memory>
+#include <vector>
 
 class ApplicationServices;
 class QLabel;
@@ -189,7 +190,9 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     SubPrepSection m_currentSection = SubPrepSection::ImportantInformation;
-    QList<CampusInfo> m_campuses;
+    std::vector<
+        ClassMngr::Next::Application::SubPrepCampusMetadata
+        > m_campuses;
 
     QScrollArea* m_scrollArea = nullptr;
     QWidget* m_scrollContent = nullptr;

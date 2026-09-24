@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F27 routes My Information's campus chooser through Qt-free `MyInfoCampusDirectoryQueryPort` and a Platform adapter backed by `CampusJsonRepository`; owning UTF-8 ID/display-name values preserve repository order, trimmed name/ID fallback, and raw IDs. The page no longer reads the repository or `ResourcePaths` directly, and stored matching/correction behavior is preserved. Executor and independent fresh Ninja/MSVC x64 configures validated 882 owners and passed focused CTest 3/3; blank display-name filtering lacks a repository fixture because the codec normalizes blank ID/name to `campus`. Phase 2 remains in progress. Next candidate F28 moves Sub Prep's full campus-detail directory read behind a narrow query/adapter, preserving its lookup and fallback behavior. Workbook decoding, generic settings, PersonalDetails atomic-save caller cutover, other feature services, and broader document work remain open.
+- Latest slice: F28 routes Sub Prep campus details through a Qt-free `SubPrepCampusDirectoryQueryPort` and Platform adapter over `CampusJsonRepository`; the page no longer accesses the repository, resource path, or `CampusInfo` directly. Lookup order, matching/fallback, availability timing, raw selection IDs, and `N/A` details are preserved. Executor and independent Ninja/MSVC x64 builds validated 886 owners; executor CTest passed 3/3 and independent CTest passed 6/6. Phase 2 remains in progress. Next is F29 Personal Details atomic-save caller cutover to `ApplicationServices`. Workbook decoding, generic settings, other feature services, broader document work, and the formal Phase 2 exit gate remain open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -3971,5 +3971,25 @@ and both new suites, and passed focused CTest 3/3. The independent repeat build
 returned exit 0 with no work; diff check passed. `CampusJsonCodec` normalizes a
 blank ID/name to `campus`, so the empty-display filter cannot be exercised from
 a repository fixture; the filter remains in place. Phase 2 remains open. Next
-candidate F28 routes Sub Prep's full campus-detail directory read through a
-narrow Application query and Platform adapter.
+#### Progress update - 2026-09-24 (F28 Sub Prep campus-detail directory query)
+
+Sub Prep campus details now cross the Qt-free
+`SubPrepCampusDirectoryQueryPort`; its Platform adapter wraps
+`CampusJsonRepository` and accepts an injected fixture directory. The page no
+longer references `CampusJsonRepository`, `ResourcePaths::Campuses`, or
+`CampusInfo`. It preserves repository order and omission, trimmed
+case-insensitive saved ID/name matching, first-campus fallback, availability
+checks before lookup or state mutation, raw selected IDs, and `N/A` for empty
+detail fields.
+
+New Application and Platform suites cover ordering, UTF-8 fields, fallback,
+malformed/default records, and missing or empty directories; the page suite
+checks selected details and `N/A`. Executor and independent fresh Ninja/MSVC
+x64 configures validated 886 handwritten owners and built `ClassMngr`, the
+SubPrepPage suite, and both new suites. Executor CTest passed 3/3; independent
+CTest passed 6/6, including three existing preference suites. Resource
+generation passed, and the independent repeat build had no work. Phase 2
+remains open. The next slice is F29 Personal Details atomic-save caller
+cutover to `ApplicationServices`; workbook decoding, generic settings, other
+feature services, broader document work, and the formal Phase 2 exit gate
+remain open.
