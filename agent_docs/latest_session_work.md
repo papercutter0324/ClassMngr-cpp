@@ -1815,9 +1815,45 @@ separate on a host with Xvfb and loopback access.
   audited v2 dependency isolation remain Satisfied. Phase 2 and its exit gate
   remain open. Sub Prep is capped at the current and following calendar years
   at most.
-- F48 is selected to add a typed `Domain::ScheduleEntry` at the real Schedule
-  Import persistence boundary after class and teacher IDs are resolved. Reuse
-  `schedule_review.xlsx` for persisted acceptance and
-  `schedule_overlap_conflict.xlsx` for pre-write rejection. Keep the Domain
-  value distinct from the existing UI schedule-row projection; preserve
-  `cmake/sources.cmake` and the Sub Prep year cap.
+- F48 completed the selected Domain schedule-entry persistence slice; its
+  verified handoff follows. Three investigators will compare the remaining
+  Domain, baseline-parity, and architecture gaps to select F49.
+
+
+### Phase 2 Domain schedule-entry persistence - 2026-09-25
+
+- F48 is committed as `2055bbb5f74842e4f146a48e211df58e65908b6b` (`Phase2 -
+  Add Domain schedule entry`). Its five paths are `cmake/next.cmake`,
+  `src/next/domain/schedule_entry.h`,
+  `src/data/repositories/schedule_import_repository.cpp`,
+  `tests/next_domain_contract_tests.cpp`, and `tests/schedule_import_tests.cpp`.
+- The Qt-free `Domain::ScheduleEntry` contains a typed `ClassId` and validated
+  `ScheduleTime` with value/accessor semantics. Schedule Import constructs
+  entries after real class IDs resolve and consumes them in the SQL persistence
+  writer. The adapter keeps original weekday/time text and checks it against
+  the typed value; write order and the transaction, Skip, Intensive, and
+  rollback paths remain preserved. The Domain value is distinct from the
+  existing UI schedule-row projection.
+- App-less coverage verifies class-vs-teacher ID type distinction, equality,
+  and schedule-time values. The required `schedule_review.xlsx` production
+  apply compares persisted rows with typed facts after IDs resolve. The
+  `schedule_overlap_conflict.xlsx` case now seeds teachers, classes,
+  class_info, class_times, and app_settings and proves rejection leaves all five
+  snapshots unchanged. Existing invalid-course/pattern, Skip, intensive, and
+  write-failure rollback cases passed.
+- Executor and independent Tester each configured fresh x64 MSVC
+  19.51.36257/Ninja 1.13.2/CMake 4.4.2/Qt 6.12.0 builds and validated 902
+  handwritten source owners. Both built `ClassMngrNextDomainContractTests` and
+  `ClassMngrScheduleImportTests`; focused CTest passed 2/2 in each build.
+  Direct QtTest totals were Domain 17/0/0 and Schedule Import 26/0/1; its single
+  skip was the optional external-workbook sample. The Tester directly reran
+  fixture apply, overlap rejection, Skip, and Intensive cases. `git diff
+  --check` passed; the full suite was not run. User-owned `cmake/sources.cmake`
+  remains at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF` and was
+  not part of the commit.
+- Gate 1 and Gate 2 advance but remain Partial because broader Domain records
+  and baseline parity are incomplete. The formal workspace boundary and
+  audited v2 dependency isolation remain Satisfied. Phase 2 is In Progress and
+  its exit gate remains Open. Sub Prep stays capped at the current and
+  following calendar years at most.

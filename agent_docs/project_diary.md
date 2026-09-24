@@ -799,3 +799,13 @@ Use one Course rule for both parse partitioning and apply validation. A
 fixture-derived prohibited pattern plus seeded persisted-state snapshots
 proves validation runs before writes; the existing Skip case with prohibited
 E5/Zeus Tuesday behavior also needs to remain covered.
+
+## Phase 2 persisted schedule entry - 2026-09-25
+
+Represent a persisted class meeting as a Qt-free value with typed `ClassId` and
+validated `ScheduleTime`, and construct it only after the repository resolves
+the real database ID. Keep the existing UI `ScheduleEntry` projection separate.
+At the persistence adapter, retain the original SQL day/time strings and verify
+they match the typed value so migration does not normalize stored text or alter
+write order. For rejection parity, seed existing rows and compare snapshots;
+empty-table row counts do not prove prior state was preserved.

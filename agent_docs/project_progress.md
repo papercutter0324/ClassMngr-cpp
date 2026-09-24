@@ -83,23 +83,23 @@ plus Teacher Import Dialog (1/1); CMake ownership validated 901 sources.
 Fixture-backed Teacher and Schedule paths passed. Optional external-workbook
 checks skipped as expected.
 
-F47 moves weekly meeting-day policy into typed `Domain::Course` behavior and
-routes Schedule Import partitioning and apply validation through that policy.
-It is committed as `7cba8abf952b5b32f90391844beec68eac2c3f69`. Independent fresh
-Windows x64 MSVC/Ninja builds with Qt 6.12.0 passed both focused CTest targets
-(2/2). The required schedule fixture persisted accepted rows; a fixture-derived
-prohibited pattern was rejected before writes with five seeded snapshots
-unchanged. The existing Skip regression covers a prohibited E5/Zeus Tuesday
-candidate and preserves its saved schedule.
+F47 moved weekly meeting-day policy into typed `Domain::Course` behavior and
+routed Schedule Import partitioning and apply validation through that policy.
+F48 adds Qt-free `Domain::ScheduleEntry` using typed `ClassId` and validated
+`ScheduleTime` at the real Schedule Import persistence boundary after class IDs
+resolve. It is committed as `2055bbb5f74842e4f146a48e211df58e65908b6b`.
+Independent fresh Windows x64 MSVC/Ninja builds with Qt 6.12.0 passed both
+focused CTest targets (2/2). `schedule_review.xlsx` persisted rows compared
+against typed facts; the overlap fixture rejected apply with five seeded
+database snapshots unchanged. Skip, intensive, and rollback cases passed.
 
 The formal gate remains open. Gates 1 and 2 advance but remain Partial because
 broader Domain records and baseline parity are incomplete; the workspace
-criterion and audited v2 dependency isolation remain Satisfied. F48 is selected:
-add a typed Domain schedule-entry value at the real Schedule Import persistence
-boundary, after class and teacher IDs are resolved, and reuse the accepted and
-conflict fixtures. Keep the value independent from the existing UI row model.
-Sub Prep remains capped at the current and following calendar years at most.
-Preserve the user-owned `cmake/sources.cmake` change; F47 did not modify it.
+criterion and audited v2 dependency isolation remain Satisfied. Three
+independent investigators will select the next bounded slice from the
+remaining Domain, baseline-parity, and architecture gaps. Sub Prep remains
+capped at the current and following calendar years at most. Preserve the
+user-owned `cmake/sources.cmake` change; F48 did not modify it.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 
