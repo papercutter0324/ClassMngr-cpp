@@ -1934,3 +1934,37 @@ separate on a host with Xvfb and loopback access.
   formal exit gate remains Open. Sub Prep stays capped at the current and
   following calendar years at most. Next, three investigators will compare
   remaining Domain, baseline-parity, and architecture gaps.
+
+### Phase 2 typed Calendar Import signature flow - 2026-09-25
+
+- F51 is committed as
+  `e940f0c0ed8a63e740a3c2375631a22c08875f84` (`Phase2 - Carry Calendar Import
+  signature through contracts`). It carries
+  `Application::CalendarEventImportSignature` through parser outputs, query
+  results, planner inputs, candidates, service mapping, and the application
+  use case. The service no longer converts the typed value through QString and
+  back to raw UTF-16 strings. The parser membership set hashes the existing
+  exact UTF-16 payload; emitted candidate order remains unchanged.
+- A fresh Windows x64 MSVC/Ninja configure passed the source ownership audit
+  with 906 handwritten sources. The seven focused CTest cases each passed 1/1:
+  `ClassMngrNextApplicationCalendarEventImportSignatureTests`,
+  `ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests`,
+  `ClassMngrNextApplicationCalendarEventImportPlanTests`,
+  `ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+  `ClassMngrCalendarImportTests`,
+  `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+  `ClassMngrCalendarEventImportParityTests`. The parity test used the checked-in
+  `calendar_import_parity_2026.xlsx` fixture. After restoring detailed
+  `QCOMPARE` output in all four typed signature equality checks,
+  `ClassMngrCalendarImportTests` was rebuilt and independently rerun, passing
+  1/1. No full suite was run.
+- The plan audit left Gate 1 and baseline parity Gate 2 Partial; the formal
+  workspace-create criterion and audited v2 dependency isolation remain
+  Satisfied. Phase 2 remains In Progress and its exit gate Open. Sub Prep
+  already queries at most the current and following calendar years; the
+  dedicated Sub Prep plan now records that bound with source and test links.
+- `cmake/sources.cmake` remains the sole unrelated modified path, with SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: start three independent investigations to select the next bounded
+  Phase 2 slice from the remaining Domain, baseline-parity, and architecture
+  gaps, then continue one source commit per slice.

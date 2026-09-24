@@ -14,7 +14,8 @@ this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
 palette caller boundary, Calendar Import planning/signature-query/application
-use-case seams and shared six-field signature identity, the partial Schedule
+use-case seams with the shared six-field signature identity carried as a typed
+value end-to-end, the partial Schedule
 import state-validation contract and repository
 pre-write cutover, the shared Qt-free Class Transfer review-decision contract
 and repository validation,
@@ -3577,3 +3578,31 @@ full suite was run. Gate 1 and Gate 2 remain Partial; Workspace boundary and
 audited `src/next` dependency isolation remain Satisfied. Phase 2 remains In
 Progress with its exit gate Open. Sub Prep remains capped at the current and
 following calendar years at most.
+
+## Verified F51 typed Calendar Import signature flow - commit e940f0c0ed8a63e740a3c2375631a22c08875f84
+
+Application::CalendarEventImportSignature now flows through the
+[CalendarEventImportSignatureQueryPort](../../src/next/application/calendar_event_import_signature_query_port.h),
+[CalendarEventImportPlan](../../src/next/application/calendar_event_import_plan.h),
+and [CalendarEventImportUseCase](../../src/next/application/calendar_event_import_use_case.h)
+as a typed value. The parser and
+[ApplicationServicesCalendarEventImportSignatureQueryPort](../../src/next/platform/application_services_calendar_event_import_signature_query_port.h)
+produce it directly; candidate deduplication uses the value's exact UTF-16
+payload. Query results, planner inputs, and candidates no longer convert the
+signature through raw std::u16string values. Qt-side normalization and ISO
+date conversion remain at the adapters.
+
+A fresh Windows x64 MSVC/Ninja configure validated 906 source owners. Executor
+and independent Tester each verified seven focused CTest targets, each passing
+1/1: ClassMngrNextApplicationCalendarEventImportSignatureTests,
+ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests,
+ClassMngrNextApplicationCalendarEventImportPlanTests,
+ClassMngrNextApplicationCalendarEventImportUseCaseTests,
+ClassMngrCalendarImportTests,
+ClassMngrNextPlatformApplicationServicesCalendarEventPortTests, and
+ClassMngrCalendarEventImportParityTests. The production parity test used
+[calendar_import_parity_2026.xlsx](../../tests/fixtures/imports/calendar_import_parity_2026.xlsx).
+With QCOMPARE diagnostics restored, ClassMngrCalendarImportTests was rebuilt
+and rerun, passing 1/1. No full suite was run. Gate 1 and baseline parity Gate 2
+remain Partial; workspace create and audited v2 dependency isolation remain
+Satisfied. Phase 2 remains In Progress with its exit gate Open.

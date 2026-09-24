@@ -104,27 +104,27 @@ and query/save failures; the required `calendar_import_parity_2026.xlsx`
 production path passed with persisted facts and counts. The full suite was not
 run.
 
-F50 adds a Qt-free Application value for Calendar Import's shared six-field
-duplicate signature and uses it from the workbook parser and signature-query
-adapter. Qt normalization and ISO date formatting remain at the adapter edge;
-the key retains the legacy order, delimiter, exact UTF-16, and all-day encoding
-while excluding time and row metadata. It is committed as
-`92d001db11d8c8eb973de5f238444abe855ea5c5`. Executor and independent Tester
-each configured a fresh Windows x64 MSVC/Ninja build, validated 906 handwritten
-source owners, built the app-less signature and two Calendar Import targets,
-and passed focused CTest 3/3. The production
-`calendar_import_parity_2026.xlsx` fixture passed in both runs. The full suite
-was not run.
+F51 carries the Qt-free `Application::CalendarEventImportSignature` through
+Calendar Import parser output, signature-query results, plan inputs, candidate
+deduplication, and the use case. Qt normalization and ISO date formatting
+remain at the adapter edges; exact UTF-16 identity and emitted order are
+preserved. It is committed as
+`e940f0c0ed8a63e740a3c2375631a22c08875f84`. Executor and independent Tester
+configured fresh Windows x64 MSVC/Ninja builds and validated 906 handwritten
+source owners. The seven focused CTest cases passed 7/7, including the
+production `calendar_import_parity_2026.xlsx` fixture. After restoring detailed
+`QCOMPARE` output in signature tests, `ClassMngrCalendarImportTests` was
+rebuilt and rerun by both, passing 1/1. The full suite was not run.
 
 The formal gate remains open. Gate 1 advances but remains Partial because the
 broader Domain and application-contract inventory is incomplete. Gate 2 gains
-Calendar Import production-path and shared identity evidence but remains
-Partial because baseline parity is incomplete. The workspace criterion and
-audited v2 dependency isolation remain Satisfied. Next, three independent
-investigators will compare the remaining Domain, baseline-parity, and
-architecture gaps for the next bounded slice. Sub Prep remains capped at the
-current and following calendar years at most. Preserve the user-owned
-`cmake/sources.cmake` change; neither F49 nor F50 modified it.
+Calendar Import production-path evidence but remains Partial because baseline
+parity is incomplete. The workspace criterion and audited v2 dependency
+isolation remain Satisfied. Next, three independent investigators will compare
+the remaining Domain, baseline-parity, and architecture gaps for the next
+bounded slice. Sub Prep remains capped at the current and following calendar
+years at most. Preserve the user-owned `cmake/sources.cmake` change; F49-F51 did
+not modify it.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

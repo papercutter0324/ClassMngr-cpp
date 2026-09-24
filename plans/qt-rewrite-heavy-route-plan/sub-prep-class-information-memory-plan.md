@@ -10,7 +10,7 @@
   packaged Release measurement harness
 - Blocks: Large-workspace Sub Prep acceptance and the Phase 9 memory gate
 - Owner: Unassigned
-- Last updated: 2026-09-24
+- Last updated: 2026-09-25
 
 ## Current Sub Prep contract boundary - 2026-09-24
 
@@ -30,6 +30,14 @@ does not query either schedule table, and has no `DataService` fallback.
 Missing class-info rows on existing classes return blank details; absent
 classes return `NotFound`, and
 unassigned, missing, or stale teacher references return empty teacher values.
+
+Sub Prep calendar intervals cover at most the current and following calendar
+years. [readRequestForReferenceDate](../../src/next/application/sub_prep_calendar_event_intervals_query.h#L164)
+builds January 1 of the reference year through December 31 of the following
+year, clamped at 9999. The production page passes the current date
+([sub_prep_page.cpp](../../src/features/sub_prep/ui/sub_prep_page.cpp#L502));
+[derivesCurrentAndFollowingCalendarYearWindow](../../tests/next_application_sub_prep_calendar_event_intervals_query_tests.cpp#L154)
+verifies that a 2026 reference yields 2026-01-01 through 2027-12-31.
 
 Work Package D now connects the schedule-summary and selected-class details
 queries to a model-backed grade/class list and one reusable details card.
