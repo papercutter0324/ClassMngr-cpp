@@ -115,6 +115,7 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Core
             Qt6::Sql
             Qt6::Test
+            ClassMngrNext::Application
             ZLIB::ZLIB
     )
 

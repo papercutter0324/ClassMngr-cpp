@@ -572,3 +572,21 @@ open. Next: choose between Schedule Import matching/preview and conflict/state
 projection for the next bounded parity slice. Workbook decoding, generic
 settings, remaining feature services, broader calendar and document work, and
 the formal exit gate remain open.
+
+### Phase 2 Schedule Import apply-time state contract - 2026-09-24
+
+F37 moves the live Schedule Import apply-time state checks into a typed,
+standard-C++ Application contract. The repository converts the current database
+snapshot and Qt teacher/class/day/time values at its boundary, then invokes the
+contract after plan validation and snapshot reads, before the first write in the
+existing transaction. The duplicate legacy state validator was removed. The
+contract covers stale teacher/class targets, identity and room selection,
+unique exact-match skips, invalid projected times, overlap/adjacency, and normal
+and intensive schedule projection. A SQLite BEFORE UPDATE trigger sentinel
+proves stale-state validation occurs before a proposed teacher write.
+Independent fresh Ninja/MSVC x64 configure validated 895 handwritten source
+owners; the Schedule Import regression and app-less contract suites passed 2/2.
+Gate 2 remains open: Schedule Import matching/preview and checked-in fixture
+parity, workbook decoding, and wider baseline-parity evidence remain. Phase 2
+remains in progress. Next: choose the exact fixture-backed Schedule Import
+review/preview boundary, then continue the remaining exit-gate gaps.

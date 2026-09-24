@@ -1366,3 +1366,32 @@ separate on a host with Xvfb and loopback access.
   open. The path-limited F36 commit includes the test, CMake registration,
   required fixture, and plan/deployment documentation. Next: select and start
   the next Schedule Import slice. Nothing was pushed.
+
+### Phase 2 Schedule Import apply-time state contract - 2026-09-24
+
+- F37 moves apply-time state validation into a typed standard-C++ Application
+  contract and replaces the duplicate legacy validator. The repository
+  converts snapshot identities and Qt day/time values at its edge; validation
+  runs after structural plan validation and database snapshot reads, before
+  write loops inside the existing transaction.
+- Contract tests cover stale teacher/class targets, matching identities and
+  room choices, unique exact-match skips, invalid times, overlap rejection and
+  adjacency, plus Normal and Intensive schedule projections. Intensive update
+  includes absent classes' current hours; replacement excludes them.
+- A SQLite BEFORE UPDATE trigger sentinel attempts to distinguish early
+  validation from later rollback. The new regression expects the typed stale
+  class error; an attempted proposed teacher update would instead abort with a
+  separate trigger message. Existing repository tests for duplicate targets,
+  conflict rollback, intensive modes, exact skip, and unrelated snapshot
+  preservation remain enabled.
+- Executor and independent fresh Ninja/MSVC x64 configure/builds validated 895
+  handwritten source owners. ClassMngrScheduleImportTests and
+  ClassMngrNextApplicationScheduleImportStateValidationTests passed 2/2 in both
+  runs. The optional external sample test still skips if
+  CLASSMNGR_SCHEDULE_IMPORT_SAMPLE is unset.
+- F37 improves production apply-time validation evidence but does not close
+  Gate 2 or Phase 2. Schedule Import preview/matching and checked-in workbook
+  parity remain open, as do workbook decoding and broader Domain work. Next:
+  commit the F37 contract, repository cutover, CMake registrations, old
+  validator removal, and tests; then select the precise fixture-backed review/
+  preview slice. Nothing was pushed.

@@ -697,3 +697,13 @@ deduplication distinct from planner duplicate-candidate handling: the parser
 removes those candidates before the planner sees them. Include required binary
 fixtures in the slice commit; a passing local test is insufficient if a clean
 checkout cannot obtain its workbook.
+
+## Phase 2 Schedule Import state validation - 2026-09-24
+
+A persisted snapshot staying unchanged does not prove a validator ran before
+writes; a later transaction rollback can produce the same observation. Use an
+aborting SQLite BEFORE UPDATE trigger with a distinct failure message on a
+proposed write, then assert the typed validation error wins and persisted data
+is unchanged. Convert Qt names, days, and times at the repository boundary so
+the Application contract remains standard-C++ only. Keep that claim scoped to
+the Application contract; Platform adapters and the Next entry point use Qt.

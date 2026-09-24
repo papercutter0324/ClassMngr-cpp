@@ -407,8 +407,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/schedule/services/schedule_import_review_model.h"
     "src/features/schedule/services/schedule_import_review_summary.cpp"
     "src/features/schedule/services/schedule_import_review_summary.h"
-    "src/features/schedule/services/schedule_import_state_validator.cpp"
-    "src/features/schedule/services/schedule_import_state_validator.h"
     "src/features/schedule/services/schedule_output_controller.cpp"
     "src/features/schedule/services/schedule_output_controller.h"
     "src/features/schedule/services/schedule_print_service.cpp"

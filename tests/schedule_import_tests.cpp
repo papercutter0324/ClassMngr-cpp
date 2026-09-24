@@ -34,6 +34,7 @@ private slots:
     void fullSnapshotPreservesUnrelatedData();
     void skippedExactMatchPreservesItsSchedule();
     void rejectsDuplicateExistingTargetsBeforeWrites();
+    void staleSelectedClassPreservesPersistedSnapshotBeforeWrites();
     void conflictsRollBackBeforeWrites();
     void writeFailureRollsBackEveryChange();
     void validatesExternalWorkbookWhenProvided();
@@ -2013,6 +2014,165 @@ void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
                 QStringLiteral("unique existing target")
                 )
             );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+staleSelectedClassPreservesPersistedSnapshotBeforeWrites()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-stale-class-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+        QSqlQuery query(database);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number) "
+                "VALUES ('김하늘', '413')"
+                )
+            );
+        const int teacherId = query.lastInsertId().toInt();
+        execOrFail(
+            query,
+            QStringLiteral("INSERT INTO classes (name) VALUES ('Existing')")
+            );
+        const int classId = query.lastInsertId().toInt();
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level) "
+                "VALUES (%1, %2, 'E4', 'Ares')"
+                )
+                .arg(classId)
+                .arg(teacherId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Tuesday', '3:00 PM', '3:50 PM')"
+                )
+                .arg(classId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('schedule-import-snapshot', 'preserve-me')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "CREATE TRIGGER reject_premature_teacher_update "
+                "BEFORE UPDATE ON teachers "
+                "BEGIN "
+                "SELECT RAISE(ABORT, 'write reached before state validation'); "
+                "END"
+                )
+            );
+
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = QStringLiteral("김하늘");
+        candidate.teacherKr = QStringLiteral("김하늘");
+        candidate.rooms = {QStringLiteral("999")};
+        candidate.classGrade = QStringLiteral("E5");
+        candidate.classLevel = QStringLiteral("Zeus");
+        candidate.times = {
+            {
+                QStringLiteral("Monday"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("4:55 PM")
+            },
+            {
+                QStringLiteral("Wednesday"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("4:55 PM")
+            }
+        };
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = {candidate};
+        plan.teachers = {
+            {
+                QStringLiteral("김하늘"),
+                ScheduleImportTeacherAction::UpdateRoom,
+                teacherId,
+                QStringLiteral("999")
+            }
+        };
+        plan.classes = {
+            {
+                0,
+                ScheduleImportClassAction::UpdateExisting,
+                classId + 1000
+            }
+        };
+
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+        QVERIFY(!imported.has_value());
+        QVERIFY(
+            imported.error().contains(
+                QStringLiteral("selected class is no longer available")
+                )
+            );
+
+        execOrFail(
+            query,
+            QStringLiteral("SELECT room_number FROM teachers WHERE id=%1")
+                .arg(teacherId)
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("413"));
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT class_grade, class_level FROM class_info "
+                "WHERE class_id=%1"
+                )
+                .arg(classId)
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("E4"));
+        QCOMPARE(query.value(1).toString(), QStringLiteral("Ares"));
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT day, start_time, end_time FROM class_times "
+                "WHERE class_id=%1"
+                )
+                .arg(classId)
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("Tuesday"));
+        QCOMPARE(query.value(1).toString(), QStringLiteral("3:00 PM"));
+        QCOMPARE(query.value(2).toString(), QStringLiteral("3:50 PM"));
+        QVERIFY(!query.next());
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT value FROM app_settings "
+                "WHERE key='schedule-import-snapshot'"
+                )
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("preserve-me"));
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

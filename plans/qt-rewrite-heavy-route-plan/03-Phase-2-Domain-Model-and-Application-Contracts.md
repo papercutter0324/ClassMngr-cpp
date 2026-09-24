@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest code slice: F36 adds deterministic parity coverage through the production Calendar import service; see the update below. Gate 2 now has this verified calendar-import path, while broader baseline parity and the other audited gaps remain open. Phase 2 remains in progress and the formal exit gate is open.
+- Latest code slice: F37 adds Qt-free Schedule import-state validation and invokes it at the repository edge before writes; see the update below. Gate 2 now has this state-validation cutover and the F36 Calendar import path, while Schedule matching/preview, required workbook parity, workbook decoding, broader Domain completeness, and other audited gaps remain open. Phase 2 remains in progress and the formal exit gate is open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4180,3 +4180,29 @@ service test. This closes only the exercised Calendar import-planning parity
 path; Domain completeness and broader validation, conflict, import, and state
 parity remain open. Phase 2 remains in progress and its formal exit gate is
 open.
+
+#### Progress update - 2026-09-24 (F37 Schedule import state validation contract)
+
+`ClassMngr::Next::Application` now owns the Qt-free
+`validateScheduleImportState` contract. The legacy repository adapts its
+structurally checked plan and existing teacher/class snapshots to the request
+after snapshot reads and before applying writes in the current transaction;
+the duplicate legacy state validator was removed. The request covers
+Normal/Intensive projections, teacher reuse/update-room/create/skip
+resolution, class update/create/skip resolution, selected-target availability
+and identity, the unique exact-match rule for skipped classes, valid projected
+day/time ranges, and overlaps. It preserves skipped classes in the projected
+normal schedule and absent intensive classes only in intensive update mode.
+
+The repository test installs a SQLite `BEFORE UPDATE` trigger that aborts if a
+teacher write is reached before validation. A stale selected class is rejected
+by the new contract, and persisted teacher, class, schedule-time, and settings
+sentinels remain unchanged. This proves pre-write rejection for that path; it
+does not prove every validation rule through the database integration.
+
+The Application contract is Qt-free; this does not establish that the whole
+`src/next` tree is Qt-free. Executor and independent Tester each completed a
+fresh Windows x64 configure with 895 handwritten source owners, and both
+focused suites passed 2/2. Schedule matching/preview, required workbook parity,
+the workbook decoder, and broader Domain completeness remain open. Gate 2 is
+partial; Phase 2 remains in progress and its formal exit gate remains open.

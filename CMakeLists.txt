@@ -201,6 +201,13 @@ include(cmake/platform/macos.cmake)
 include(cmake/platform/windows.cmake)
 include(cmake/next.cmake)
 
+# Schedule Import's persistence edge adapts legacy database snapshots to a
+# Qt-free Application state-validation contract.
+target_link_libraries(ClassMngrData
+    PRIVATE
+        ClassMngrNext::Application
+)
+
 # These legacy UI targets consume the Qt-free Application file-dialog
 # vocabulary. Production startup owns the concrete adapter at the Platform
 # boundary and exposes the Application contract to runtime clients.
