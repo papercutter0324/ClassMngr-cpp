@@ -105,6 +105,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/selection_state.h
     src/next/application/schedule_display_preferences.h
     src/next/application/schedule_display_mode_preferences.h
+    src/next/application/schedule_import_overlap_projection.h
     src/next/application/schedule_import_state_validation.h
     src/next/application/schedule_import_matching_projection.h
     src/next/application/sidebar_display_preferences.h

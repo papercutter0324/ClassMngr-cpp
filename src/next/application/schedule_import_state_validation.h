@@ -1,8 +1,11 @@
 #pragma once
 
+#include "next/application/schedule_import_overlap_projection.h"
+
 #include <map>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -54,16 +57,6 @@ struct ScheduleImportStateValidationError
     std::string day;
     std::string startTime;
     std::string endTime;
-};
-
-struct ScheduleImportStateTime
-{
-    int dayIndex = -1;
-    int startMinute = -1;
-    int endMinute = -1;
-    std::string dayLabel;
-    std::string startLabel;
-    std::string endLabel;
 };
 
 struct ScheduleImportStateCandidate
@@ -234,12 +227,6 @@ validateScheduleImportState(
         std::string label;
         std::vector<ScheduleImportStateTime> times;
     };
-    struct ScheduledTime
-    {
-        std::string label;
-        ScheduleImportStateTime time;
-    };
-
     const bool preservesAbsentIntensiveClasses =
         request.kind == ScheduleImportStateKind::Intensive
         && request.intensiveMode
@@ -305,10 +292,12 @@ validateScheduleImportState(
             );
     }
 
-    std::vector<ScheduledTime> projectedTimes;
+    std::vector<ScheduleImportOverlapSchedule> projectedSchedules;
     for (const auto& [classId, classroom] : projectedClasses)
     {
         static_cast<void>(classId);
+        ScheduleImportOverlapSchedule projectedSchedule;
+        projectedSchedule.classLabel = classroom.label;
         for (const auto& time : classroom.times)
         {
             if (time.dayIndex < 0
@@ -328,29 +317,23 @@ validateScheduleImportState(
                 error.endTime = time.endLabel;
                 return error;
             }
-
-            const int start = time.dayIndex * 24 * 60 + time.startMinute;
-            const int end = time.dayIndex * 24 * 60 + time.endMinute;
-            for (const auto& other : projectedTimes)
-            {
-                const int otherStart = other.time.dayIndex * 24 * 60
-                    + other.time.startMinute;
-                const int otherEnd = other.time.dayIndex * 24 * 60
-                    + other.time.endMinute;
-                if (start < otherEnd && otherStart < end)
-                {
-                    auto error = *failure(
-                        ScheduleImportStateValidationErrorCode::
-                            ProjectedScheduleOverlap
-                        );
-                    error.classLabel = classroom.label;
-                    error.conflictingClassLabel = other.label;
-                    error.day = time.dayLabel;
-                    return error;
-                }
-            }
-            projectedTimes.push_back({classroom.label, time});
+            projectedSchedule.times.push_back(time);
         }
+        projectedSchedules.push_back(std::move(projectedSchedule));
+    }
+
+    const auto conflicts =
+        projectScheduleImportOverlaps(projectedSchedules);
+    if (!conflicts.empty())
+    {
+        auto error = *failure(
+            ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap
+            );
+        error.classLabel = conflicts.front().classLabel;
+        error.conflictingClassLabel =
+            conflicts.front().conflictingClassLabel;
+        error.day = conflicts.front().time.dayLabel;
+        return error;
     }
 
     return std::nullopt;

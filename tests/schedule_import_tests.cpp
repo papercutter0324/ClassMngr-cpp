@@ -28,6 +28,7 @@ private slots:
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
     void previewsCheckedInWorkbookAgainstSeededDatabase();
+    void previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites();
     void reportsScheduleInventoryStates_data();
     void reportsScheduleInventoryStates();
     void regularImportMatchesIntensiveOnlyClasses();
@@ -1338,6 +1339,121 @@ void ScheduleImportTests::previewsCheckedInWorkbookAgainstSeededDatabase()
         QVERIFY(!preview->inventory.hasIntensiveHours);
         QCOMPARE(preview->initiallyAbsentClassIds, QList<int>{42});
 
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
+{
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_overlap_conflict.xlsx"
+            )
+        );
+    QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+    const auto workbook = parseScheduleImportWorkbook(
+        file.readAll(),
+        ScheduleImportKind::Normal
+        );
+    const QString parseError =
+        workbook.has_value() ? QString() : workbook.error();
+    QVERIFY2(workbook.has_value(), qPrintable(parseError));
+    QCOMPARE(workbook->sheets.size(), 1);
+    QVERIFY(workbook->sheets.first().visible);
+    QCOMPARE(workbook->sheets.first().users.size(), 1);
+
+    const ScheduleImportUserBlock user =
+        workbook->sheets.first().users.first();
+    QCOMPARE(user.classes.size(), 2);
+    QVERIFY(user.classes[0].meetingPatternError.isEmpty());
+    QVERIFY(user.classes[1].meetingPatternError.isEmpty());
+    QCOMPARE(user.classes[0].times.size(), 2);
+    QCOMPARE(user.classes[1].times.size(), 2);
+    QCOMPARE(user.classes[0].times[0].day, QStringLiteral("Monday"));
+    QCOMPARE(user.classes[0].times[0].startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(user.classes[1].times[0].day, QStringLiteral("Monday"));
+    QCOMPARE(user.classes[1].times[0].startTime, QStringLiteral("4:30 PM"));
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-overlap-fixture-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        ScheduleImportRepository repository(database);
+        const auto preview = repository.preview(
+            user,
+            ScheduleImportKind::Normal
+            );
+        const QString previewError =
+            preview.has_value() ? QString() : preview.error();
+        QVERIFY2(preview.has_value(), qPrintable(previewError));
+        QCOMPARE(preview->user.classes.size(), 2);
+        QCOMPARE(preview->classes.size(), 2);
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = user.name;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = user.classes;
+        for (int candidateIndex = 0;
+             candidateIndex < user.classes.size();
+             ++candidateIndex)
+        {
+            const ScheduleImportClassCandidate& candidate =
+                user.classes[candidateIndex];
+            plan.classes.append(
+                {
+                    candidateIndex,
+                    ScheduleImportClassAction::CreateNew,
+                    -1
+                }
+                );
+            bool hasTeacher = false;
+            for (const ScheduleImportTeacherResolution& teacher : plan.teachers)
+            {
+                if (teacher.teacherKey == candidate.teacherKey)
+                {
+                    hasTeacher = true;
+                    break;
+                }
+            }
+            if (!hasTeacher)
+            {
+                plan.teachers.append(
+                    {
+                        candidate.teacherKey,
+                        ScheduleImportTeacherAction::Create,
+                        -1,
+                        candidate.rooms.value(0)
+                    }
+                    );
+            }
+        }
+
+        const auto imported = repository.apply(plan);
+        QVERIFY(!imported.has_value());
+        QVERIFY(imported.error().contains(QStringLiteral("overlaps")));
+
+        QSqlQuery query(database);
+        execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM teachers"));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
+        execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM classes"));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
+        execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM class_times"));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

@@ -4,6 +4,7 @@
 #include "data/data_service.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
+#include "features/schedule/import/schedule_workbook_parser.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -76,6 +77,7 @@ private slots:
     void reviewWarnsForDuplicateClassTargets();
     void reviewWarnsForOverlappingProjectedTimes();
     void reviewWarnsWhenRetainedIntensiveClassOverlaps();
+    void checkedInOverlapWorkbookPresentsReviewConflict();
     void reviewPreviewUsesSavedScheduleDisplaySettings();
     void intensivePreviewPreservesEssayAndLunchBlocks();
     void suppliedWorkbookBuildsStagedReview();
@@ -2100,6 +2102,58 @@ void ScheduleImportDialogTests
         review.findChild<QPushButton*>(
             QStringLiteral("scheduleImportAcceptButton")
             );
+    QVERIFY(import);
+    QVERIFY(!import->isEnabled());
+    warning->accept();
+}
+
+void ScheduleImportDialogTests::
+checkedInOverlapWorkbookPresentsReviewConflict()
+{
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_overlap_conflict.xlsx"
+            )
+        );
+    QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+    const auto workbook = parseScheduleImportWorkbook(
+        file.readAll(),
+        ScheduleImportKind::Normal
+        );
+    const QString parseError =
+        workbook.has_value() ? QString() : workbook.error();
+    QVERIFY2(workbook.has_value(), qPrintable(parseError));
+    QCOMPARE(workbook->sheets.size(), 1);
+    QCOMPARE(workbook->sheets.first().users.size(), 1);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user = workbook->sheets.first().users.first();
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+    review.show();
+
+    QTRY_VERIFY(
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+    auto* warning = review.findChild<QMessageBox*>(
+        QStringLiteral("scheduleImportConflictWarning")
+        );
+    QVERIFY(warning);
+    QVERIFY(warning->text().contains(QStringLiteral("overlaps")));
+    QVERIFY(warning->text().contains(QStringLiteral("Monday")));
+    QVERIFY(warning->text().contains(QStringLiteral("E4 Theseus")));
+    QVERIFY(warning->text().contains(QStringLiteral("E4 Hercules")));
+    QVERIFY(warning->text().contains(QStringLiteral("4:00pm")));
+    QVERIFY(warning->text().contains(QStringLiteral("4:30pm")));
+
+    auto* import = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
     QVERIFY(import);
     QVERIFY(!import->isEnabled());
     warning->accept();

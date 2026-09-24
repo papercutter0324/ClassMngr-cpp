@@ -86,6 +86,8 @@ class NextApplicationScheduleImportStateValidationTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void sharedProjectionUsesHalfOpenTimesAndMatchingDays();
+    void sharedProjectionOrdersEveryConflictDeterministically();
     void rejectsStaleTeacherTargetsAndIdentity();
     void rejectsStaleClassTarget();
     void requiresUniqueExactSkipTarget();
@@ -93,7 +95,78 @@ private slots:
     void rejectsOverlapsAndAllowsAdjacentTimes();
     void normalProjectionIncludesSkippedButDropsAbsentClasses();
     void intensiveProjectionPreservesAbsentOnlyInUpdateMode();
+    void intensiveSkippedClassKeepsItsScheduleInBothModes();
 };
+
+void NextApplicationScheduleImportStateValidationTests::
+sharedProjectionUsesHalfOpenTimesAndMatchingDays()
+{
+    const auto first = ScheduleImportOverlapSchedule{
+        "First",
+        {time(0, 16 * 60, 17 * 60)}
+    };
+    auto second = ScheduleImportOverlapSchedule{
+        "Second",
+        {time(0, 17 * 60, 18 * 60)}
+    };
+
+    QVERIFY(projectScheduleImportOverlaps({first, second}).empty());
+
+    second.times[0] = time(0, 16 * 60 + 59, 18 * 60);
+    auto conflicts = projectScheduleImportOverlaps({first, second});
+    QCOMPARE(conflicts.size(), std::size_t(1));
+    QCOMPARE(conflicts.front().classLabel, std::string("Second"));
+    QCOMPARE(conflicts.front().conflictingClassLabel, std::string("First"));
+
+    second.times[0] = time(1, 16 * 60, 18 * 60, "Tuesday");
+    QVERIFY(projectScheduleImportOverlaps({first, second}).empty());
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+sharedProjectionOrdersEveryConflictDeterministically()
+{
+    const std::vector<ScheduleImportOverlapSchedule> schedules{
+        {"A", {time(0, 16 * 60, 18 * 60)}},
+        {"B", {time(0, 16 * 60 + 30, 17 * 60 + 30)}},
+        {
+            "C",
+            {
+                time(0, 16 * 60 + 10, 16 * 60 + 20),
+                time(0, 17 * 60, 18 * 60 + 30)
+            }
+        }
+    };
+
+    const auto conflicts = projectScheduleImportOverlaps(schedules);
+    QCOMPARE(conflicts.size(), std::size_t(4));
+    QCOMPARE(conflicts[0].classLabel, std::string("B"));
+    QCOMPARE(conflicts[0].conflictingClassLabel, std::string("A"));
+    QCOMPARE(conflicts[0].time.startMinute, 16 * 60 + 30);
+    QCOMPARE(conflicts[1].classLabel, std::string("C"));
+    QCOMPARE(conflicts[1].conflictingClassLabel, std::string("A"));
+    QCOMPARE(conflicts[1].time.startMinute, 16 * 60 + 10);
+    QCOMPARE(conflicts[2].classLabel, std::string("C"));
+    QCOMPARE(conflicts[2].conflictingClassLabel, std::string("A"));
+    QCOMPARE(conflicts[2].time.startMinute, 17 * 60);
+    QCOMPARE(conflicts[3].classLabel, std::string("C"));
+    QCOMPARE(conflicts[3].conflictingClassLabel, std::string("B"));
+    QCOMPARE(conflicts[3].time.startMinute, 17 * 60);
+
+    const auto repeated = projectScheduleImportOverlaps(schedules);
+    QCOMPARE(repeated.size(), conflicts.size());
+    for (std::size_t index = 0; index < conflicts.size(); ++index)
+    {
+        QCOMPARE(repeated[index].classLabel, conflicts[index].classLabel);
+        QCOMPARE(
+            repeated[index].conflictingClassLabel,
+            conflicts[index].conflictingClassLabel
+            );
+        QCOMPARE(
+            repeated[index].time.startMinute,
+            conflicts[index].time.startMinute
+            );
+    }
+}
 
 void NextApplicationScheduleImportStateValidationTests::
 rejectsStaleTeacherTargetsAndIdentity()
@@ -304,6 +377,52 @@ intensiveProjectionPreservesAbsentOnlyInUpdateMode()
         time(0, 17 * 60, 18 * 60)
     };
     QVERIFY(!errorCode(request).has_value());
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+intensiveSkippedClassKeepsItsScheduleInBothModes()
+{
+    ScheduleImportStateValidationRequest request;
+    request.kind = ScheduleImportStateKind::Intensive;
+    request.existingTeachers = {{3, "teacher-a"}};
+    request.existingClasses = {
+        {
+            11,
+            3,
+            "e5",
+            "zeus",
+            "E5 Zeus",
+            {},
+            {time(0, 16 * 60, 17 * 60)}
+        }
+    };
+    request.candidates = {
+        candidate("teacher-a", "e5", "zeus")
+    };
+    request.classResolutions = {
+        {0, ScheduleImportStateClassAction::Skip, 11}
+    };
+    addNewCandidate(
+        request,
+        "teacher-b",
+        {time(0, 16 * 60 + 30, 17 * 60 + 30)}
+        );
+
+    request.intensiveMode = ScheduleImportStateIntensiveMode::UpdateExisting;
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap
+        }
+        );
+
+    request.intensiveMode = ScheduleImportStateIntensiveMode::ReplaceWithNew;
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap
+        }
+        );
 }
 
 QTEST_APPLESS_MAIN(NextApplicationScheduleImportStateValidationTests)

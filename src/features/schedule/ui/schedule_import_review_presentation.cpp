@@ -9,7 +9,9 @@
 #include "features/schedule/ui/schedule_time_formatter.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/schedule_import_overlap_projection.h"
 
+#include <QByteArray>
 #include <QColor>
 #include <QHash>
 #include <QObject>
@@ -18,6 +20,8 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
+#include <vector>
 
 namespace ScheduleImportReviewPresentation
 {
@@ -348,25 +352,25 @@ QStringList meetingKeys(
     return keys;
 }
 
-bool timesOverlap(
-    const ClassTime& left,
-    const ClassTime& right
+std::string utf8String(
+    const QString& value
     )
 {
-    if (left.day != right.day)
-    {
-        return false;
-    }
-    const int leftStart = timeMinutes(left.startTime);
-    const int leftEnd = timeMinutes(left.endTime);
-    const int rightStart = timeMinutes(right.startTime);
-    const int rightEnd = timeMinutes(right.endTime);
-    return leftStart >= 0
-        && rightStart >= 0
-        && leftEnd > leftStart
-        && rightEnd > rightStart
-        && leftStart < rightEnd
-        && rightStart < leftEnd;
+    const QByteArray utf8 = value.toUtf8();
+    return std::string(
+        utf8.constData(),
+        static_cast<std::size_t>(utf8.size())
+        );
+}
+
+QString qString(
+    const std::string& value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
 
 QString importedClassConflictLabel(
@@ -396,54 +400,66 @@ QStringList projectedScheduleConflicts(
     const ScheduleImportUserBlock& user
     )
 {
-    struct Occurrence
-    {
-        QString label;
-        ClassTime time;
-    };
-    QList<Occurrence> occurrences;
-    QStringList conflicts;
+    std::vector<ClassMngr::Next::Application::ScheduleImportOverlapSchedule>
+        schedules;
+    schedules.reserve(static_cast<std::size_t>(user.classes.size()));
 
     for (const ScheduleImportClassCandidate& candidate : user.classes)
     {
-        const QString label =
+        auto& schedule = schedules.emplace_back();
+        schedule.classLabel = utf8String(
             QStringLiteral("%1 %2")
-                .arg(
-                    candidate.classGrade,
-                    candidate.classLevel
-                    );
+                .arg(candidate.classGrade, candidate.classLevel)
+            );
+        schedule.times.reserve(
+            static_cast<std::size_t>(candidate.times.size())
+            );
         for (const ClassTime& time : candidate.times)
         {
-            for (const Occurrence& existing : occurrences)
-            {
-                if (timesOverlap(time, existing.time))
+            schedule.times.push_back(
                 {
-                    conflicts.append(
-                        QObject::tr(
-                            "%1 overlaps %2 on %3 (%4 - %5 and %6 - %7)."
-                            )
-                            .arg(
-                                label,
-                                existing.label,
-                                scheduleImportWeekdayDisplayName(time.day),
-                                reconciliationTimeDisplay(
-                                    existing.time.startTime
-                                    ),
-                                reconciliationTimeDisplay(
-                                    existing.time.endTime
-                                    ),
-                                reconciliationTimeDisplay(
-                                    time.startTime
-                                    ),
-                                reconciliationTimeDisplay(
-                                    time.endTime
-                                    )
-                                )
-                        );
+                    weekdayIndex(time.day),
+                    timeMinutes(time.startTime),
+                    timeMinutes(time.endTime),
+                    utf8String(time.day),
+                    utf8String(time.startTime),
+                    utf8String(time.endTime)
                 }
-            }
-            occurrences.append({label, time});
+                );
         }
+    }
+
+    const auto projectedConflicts =
+        ClassMngr::Next::Application::projectScheduleImportOverlaps(
+            schedules
+            );
+    QStringList conflicts;
+    for (const auto& conflict : projectedConflicts)
+    {
+        conflicts.append(
+            QObject::tr(
+                "%1 overlaps %2 on %3 (%4 - %5 and %6 - %7)."
+                )
+                .arg(
+                    qString(conflict.classLabel),
+                    qString(conflict.conflictingClassLabel),
+                    scheduleImportWeekdayDisplayName(
+                        qString(conflict.time.dayLabel)
+                        ),
+                    reconciliationTimeDisplay(
+                        qString(conflict.conflictingTime.startLabel)
+                        ),
+                    reconciliationTimeDisplay(
+                        qString(conflict.conflictingTime.endLabel)
+                        ),
+                    reconciliationTimeDisplay(
+                        qString(conflict.time.startLabel)
+                        ),
+                    reconciliationTimeDisplay(
+                        qString(conflict.time.endLabel)
+                        )
+                    )
+            );
     }
 
     conflicts.removeDuplicates();
