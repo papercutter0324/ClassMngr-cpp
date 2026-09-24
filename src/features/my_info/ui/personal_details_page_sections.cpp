@@ -969,7 +969,7 @@ void PersonalDetailsPage::loadStoredSettings()
 
     ClassMngr::Next::Platform::
         ApplicationServicesPersonalSignaturePreferencesPort
-        personalSignaturePreferencesPort(settingsService);
+        personalSignaturePreferencesPort(m_services);
     const auto storedSignaturePreferences =
         personalSignaturePreferencesPort.load();
     if (storedSignaturePreferences)

@@ -24,14 +24,14 @@ public:
     explicit ApplicationServicesPersonalSignaturePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_services(&services)
     {
     }
 
     explicit ApplicationServicesPersonalSignaturePreferencesPort(
-        SettingsService* settingsService
+        ApplicationServices* services
         ) noexcept
-        : m_settingsService(settingsService)
+        : m_services(services)
     {
     }
 
@@ -51,7 +51,11 @@ public:
     [[nodiscard]] Application::PersonalSignaturePreferencesResult load()
         const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        SettingsService* const settingsService =
+            m_services
+                ? m_services->settingsService()
+                : nullptr;
+        if (!settingsService || !settingsService->isAvailable())
         {
             return Application::
                 PersonalSignaturePreferencesResult::failure(
@@ -60,21 +64,21 @@ public:
         }
 
         const int storedMode =
-            m_settingsService
+            settingsService
                 ->loadOrDefault(
                     signatureModeKey(),
                     0
                     )
                 .toInt();
         const int storedFont =
-            m_settingsService
+            settingsService
                 ->loadOrDefault(
                     typedSignatureFontKey(),
                     0
                     )
                 .toInt();
         const QByteArray storedText =
-            m_settingsService
+            settingsService
                 ->loadOrDefault(
                     typedSignatureTextKey(),
                     QString()
@@ -119,7 +123,7 @@ private:
         };
     }
 
-    SettingsService* m_settingsService = nullptr;
+    ApplicationServices* m_services = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

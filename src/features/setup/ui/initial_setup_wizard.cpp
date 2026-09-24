@@ -477,7 +477,7 @@ public:
         const auto signaturePreferencesResult =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignaturePreferencesPort(
-                    setup->settingsService()
+                    setup->services()
                     ).load();
         const auto signaturePreferences = signaturePreferencesResult
             ? signaturePreferencesResult.value()

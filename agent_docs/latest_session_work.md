@@ -1164,3 +1164,30 @@ separate on a host with Xvfb and loopback access.
   broader document boundaries remain open; Phase 2's formal exit gate is not
   met. Nothing was pushed; preserve the separately staged
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 Personal Signature Preferences caller cutover - 2026-09-24
+
+- `ApplicationServicesPersonalSignaturePreferencesPort` retains its reference
+  constructor, adds a nullable `ApplicationServices*` constructor, and removes
+  its `SettingsService*` constructor. My Information and Initial Setup now
+  pass their existing `ApplicationServices` owner.
+- Preserved the adapter's exact read-only keys, defaults, UTF-8 typed text,
+  mode/font normalization, unavailable failure behavior, and each caller's
+  existing availability guard. No writes were introduced. The null-services
+  test now covers the nullable `ApplicationServices*` path.
+- Executor and independent fresh Ninja/MSVC x64 configures each validated 886
+  source owners. Both built ClassMngr and the adapter, InitialSetupWizard, and
+  MyWorkspace suites; both focused CTest runs passed 3/3. Source review
+  confirmed both callers use ApplicationServices, the adapter checks
+  availability before reading, and the read performs no writes. Diff check
+  passed with no resource limitation.
+- Handoff: F31 removes the raw-service constructor from the current-campus
+  preferences adapter and migrates the two My Information calls (read and
+  correction write) plus Initial Setup's read to nullable `ApplicationServices*`.
+  Preserve `myInfo/campus`, string conversion, unavailable read/write/error
+  behavior, and My Information's matching/correction timing. Workbook
+  decoding, generic settings, other feature services, and broader document
+  boundaries remain open; Phase 2's formal exit gate is not met. Nothing was
+  pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.

@@ -3179,12 +3179,26 @@ and MyWorkspace targets, and passed focused CTest 3/3. Diff check and the
 caller/constructor scan passed; there was no resource limitation. Phase 2
 remains open.
 
-## Next candidate: F30 personal-signature-preferences caller cutover
+## Verified F30 personal-signature-preferences caller cutover
 
-Replace the remaining `SettingsService*` callers of
-`ApplicationServicesPersonalSignaturePreferencesPort` in My Information and
-Initial Setup with nullable `ApplicationServices*`. Preserve preference
-defaulting, value normalization, UTF-8 text, availability handling, and the
-read-only/no-write behavior. Workbook decoding, generic settings, other
-feature services, broader document work, and the formal Phase 2 exit gate
-remain open.
+`ApplicationServicesPersonalSignaturePreferencesPort` retains its
+`ApplicationServices&` constructor, adds a nullable `ApplicationServices*`
+constructor, and removes `SettingsService*`. My Information and Initial Setup
+pass their existing `ApplicationServices` owners. Availability guards, exact
+read-only keys and defaults, UTF-8 typed text, mode/font normalization,
+unavailable failure behavior, and the no-write contract are preserved.
+
+Executor and independent fresh Ninja/MSVC x64 configs each validated 886
+handwritten owners, built `ClassMngr`, the adapter, InitialSetupWizard, and
+MyWorkspace targets, and passed focused CTest 3/3. Diff and source scans
+passed; there was no resource limitation. Phase 2 remains open.
+
+## Next candidate: F31 current-campus-preferences caller cutover
+
+Replace the remaining `SettingsService*` constructor and callers of the
+current-campus preferences port with nullable `ApplicationServices*`: My
+Information's campus-ID read and correction (two callsites) and Initial
+Setup's campus read (one callsite). Preserve the existing key, string
+conversion, caller guards, unavailable read/write/failure behavior, and
+correction semantics. Workbook decoding, generic settings, other feature
+services, broader document work, and the formal Phase 2 exit gate remain open.

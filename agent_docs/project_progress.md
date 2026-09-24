@@ -438,3 +438,20 @@ Signature Preferences adapter and its two callers to `ApplicationServices`,
 preserving defaulting, normalization, UTF-8 text, and no-write behavior.
 Workbook, generic settings, other feature services, broader document work, and
 the Phase 2 exit gate remain open.
+
+### Phase 2 Personal Signature Preferences caller cutover - 2026-09-24
+
+The Personal Signature Preferences adapter now takes `ApplicationServices&`
+or nullable `ApplicationServices*`; its `SettingsService*` constructor is
+removed. My Information and Initial Setup pass their existing service owner.
+Read-only keys, defaults, UTF-8 typed text, mode/font normalization,
+unavailable failure behavior, and surrounding availability guards are
+preserved. Executor and independent fresh Ninja/MSVC x64 configures each
+validated 886 source owners; both built ClassMngr and the adapter,
+InitialSetupWizard, and MyWorkspace suites, and both focused CTest runs passed
+3/3.
+Next: move the current-campus preferences adapter and three remaining My
+Information/Initial Setup callers to `ApplicationServices*`, preserving
+matching, correction timing, and unavailable read/write semantics. Workbook,
+generic settings, other feature services, broader document work, and the Phase
+2 exit gate remain open.

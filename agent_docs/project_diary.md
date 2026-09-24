@@ -633,3 +633,10 @@ availability return before autosave cancellation or field normalization, and
 test that unavailable saves leave entered values and dirty state intact.
 Preserve the atomic `saveAll` operation and test adapter rollback separately
 from caller ownership changes.
+
+## Phase 2 Personal Signature Preferences caller cutover - 2026-09-24
+
+Keep read-only preference adapters on the `ApplicationServices` owner, with
+availability checked inside the adapter and at any broader page guard that
+protects neighboring operations. Test null/unavailable results without adding
+writes; retain existing defaults, normalization, and UTF-8 conversions.

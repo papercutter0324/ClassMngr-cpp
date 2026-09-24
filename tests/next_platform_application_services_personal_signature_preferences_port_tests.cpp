@@ -215,7 +215,9 @@ unavailableSettingsReturnFailure()
     ApplicationServicesPersonalSignaturePreferencesPort port(services);
     QVERIFY(!port.load());
 
-    ApplicationServicesPersonalSignaturePreferencesPort nullPort(nullptr);
+    ApplicationServicesPersonalSignaturePreferencesPort nullPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
     QVERIFY(!nullPort.load());
 }
 
