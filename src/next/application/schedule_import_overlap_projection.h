@@ -1,6 +1,10 @@
 #pragma once
 
+#include "next/domain/schedule_time.h"
+
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -16,40 +20,55 @@ struct ScheduleImportStateTime
     std::string endLabel;
 };
 
+struct ScheduleImportProjectedTime
+{
+    Domain::ScheduleTime scheduleTime;
+    std::string dayLabel;
+    std::string startLabel;
+    std::string endLabel;
+};
+
+[[nodiscard]] inline std::optional<ScheduleImportProjectedTime>
+projectScheduleImportStateTime(const ScheduleImportStateTime& stateTime)
+{
+    auto scheduleTime = Domain::ScheduleTime::fromMinutes(
+        stateTime.dayIndex,
+        stateTime.startMinute,
+        stateTime.endMinute
+        );
+    if (!scheduleTime)
+    {
+        return std::nullopt;
+    }
+
+    return ScheduleImportProjectedTime{
+        std::move(*scheduleTime),
+        stateTime.dayLabel,
+        stateTime.startLabel,
+        stateTime.endLabel
+    };
+}
+
 struct ScheduleImportOverlapSchedule
 {
     std::string classLabel;
-    std::vector<ScheduleImportStateTime> times;
+    std::vector<ScheduleImportProjectedTime> times;
 };
 
 struct ScheduleImportScheduleConflict
 {
     std::string classLabel;
     std::string conflictingClassLabel;
-    ScheduleImportStateTime time;
-    ScheduleImportStateTime conflictingTime;
+    ScheduleImportProjectedTime time;
+    ScheduleImportProjectedTime conflictingTime;
 };
 
 [[nodiscard]] inline bool scheduleImportTimesOverlap(
-    const ScheduleImportStateTime& left,
-    const ScheduleImportStateTime& right
+    const ScheduleImportProjectedTime& left,
+    const ScheduleImportProjectedTime& right
     )
 {
-    const auto isValid = [](const ScheduleImportStateTime& time)
-    {
-        return time.dayIndex >= 0
-            && time.dayIndex <= 6
-            && time.startMinute >= 0
-            && time.startMinute < 24 * 60
-            && time.endMinute > time.startMinute
-            && time.endMinute < 24 * 60;
-    };
-
-    return isValid(left)
-        && isValid(right)
-        && left.dayIndex == right.dayIndex
-        && left.startMinute < right.endMinute
-        && right.startMinute < left.endMinute;
+    return left.scheduleTime.overlaps(right.scheduleTime);
 }
 
 // Returns conflicts in schedule order, then meeting order. Each conflict names
@@ -62,14 +81,14 @@ projectScheduleImportOverlaps(
     struct ProjectedOccurrence
     {
         std::string classLabel;
-        ScheduleImportStateTime time;
+        ScheduleImportProjectedTime time;
     };
 
     std::vector<ProjectedOccurrence> projectedOccurrences;
     std::vector<ScheduleImportScheduleConflict> conflicts;
     for (const ScheduleImportOverlapSchedule& schedule : schedules)
     {
-        for (const ScheduleImportStateTime& time : schedule.times)
+        for (const ScheduleImportProjectedTime& time : schedule.times)
         {
             for (const ProjectedOccurrence& existing : projectedOccurrences)
             {

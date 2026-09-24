@@ -7,6 +7,7 @@
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+using ClassMngr::Next::Domain::Weekday;
 
 namespace
 {
@@ -27,6 +28,28 @@ ScheduleImportStateTime time(
         std::move(startLabel),
         std::move(endLabel)
     };
+}
+
+ScheduleImportProjectedTime projectedTime(
+    int day,
+    int start,
+    int end,
+    std::string dayLabel = "Monday",
+    std::string startLabel = "4:00 PM",
+    std::string endLabel = "4:55 PM"
+    )
+{
+    const auto projected = projectScheduleImportStateTime(
+        time(
+            day,
+            start,
+            end,
+            std::move(dayLabel),
+            std::move(startLabel),
+            std::move(endLabel)
+            )
+        );
+    return projected.value();
 }
 
 ScheduleImportStateCandidate candidate(
@@ -87,6 +110,7 @@ class NextApplicationScheduleImportStateValidationTests final : public QObject
 
 private slots:
     void sharedProjectionUsesHalfOpenTimesAndMatchingDays();
+    void rawStateTimeProjectsToDomainValueAndKeepsLabels();
     void sharedProjectionOrdersEveryConflictDeterministically();
     void rejectsStaleTeacherTargetsAndIdentity();
     void rejectsStaleClassTarget();
@@ -103,36 +127,61 @@ sharedProjectionUsesHalfOpenTimesAndMatchingDays()
 {
     const auto first = ScheduleImportOverlapSchedule{
         "First",
-        {time(0, 16 * 60, 17 * 60)}
+        {projectedTime(0, 16 * 60, 17 * 60)}
     };
     auto second = ScheduleImportOverlapSchedule{
         "Second",
-        {time(0, 17 * 60, 18 * 60)}
+        {projectedTime(0, 17 * 60, 18 * 60)}
     };
 
     QVERIFY(projectScheduleImportOverlaps({first, second}).empty());
 
-    second.times[0] = time(0, 16 * 60 + 59, 18 * 60);
+    second.times[0] = projectedTime(0, 16 * 60 + 59, 18 * 60);
     auto conflicts = projectScheduleImportOverlaps({first, second});
     QCOMPARE(conflicts.size(), std::size_t(1));
     QCOMPARE(conflicts.front().classLabel, std::string("Second"));
     QCOMPARE(conflicts.front().conflictingClassLabel, std::string("First"));
+    QVERIFY(
+        conflicts.front().time.scheduleTime.weekday() == Weekday::Monday
+        );
+    QCOMPARE(conflicts.front().time.dayLabel, std::string("Monday"));
 
-    second.times[0] = time(1, 16 * 60, 18 * 60, "Tuesday");
+    second.times[0] = projectedTime(1, 16 * 60, 18 * 60, "Tuesday");
     QVERIFY(projectScheduleImportOverlaps({first, second}).empty());
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+rawStateTimeProjectsToDomainValueAndKeepsLabels()
+{
+    const auto projected = projectScheduleImportStateTime(
+        time(6, 1438, 1439, "Sunday", "11:58 PM", "11:59 PM")
+        );
+    QVERIFY(projected.has_value());
+    QVERIFY(projected->scheduleTime.weekday() == Weekday::Sunday);
+    QCOMPARE(projected->scheduleTime.weekdayIndex(), 6);
+    QCOMPARE(projected->scheduleTime.startMinute(), 1438);
+    QCOMPARE(projected->scheduleTime.endMinute(), 1439);
+    QCOMPARE(projected->dayLabel, std::string("Sunday"));
+    QCOMPARE(projected->startLabel, std::string("11:58 PM"));
+    QCOMPARE(projected->endLabel, std::string("11:59 PM"));
+
+    QVERIFY(!projectScheduleImportStateTime(
+                 time(7, 1438, 1439, "Funday", "11:58 PM", "11:59 PM")
+                 )
+                 .has_value());
 }
 
 void NextApplicationScheduleImportStateValidationTests::
 sharedProjectionOrdersEveryConflictDeterministically()
 {
     const std::vector<ScheduleImportOverlapSchedule> schedules{
-        {"A", {time(0, 16 * 60, 18 * 60)}},
-        {"B", {time(0, 16 * 60 + 30, 17 * 60 + 30)}},
+        {"A", {projectedTime(0, 16 * 60, 18 * 60)}},
+        {"B", {projectedTime(0, 16 * 60 + 30, 17 * 60 + 30)}},
         {
             "C",
             {
-                time(0, 16 * 60 + 10, 16 * 60 + 20),
-                time(0, 17 * 60, 18 * 60 + 30)
+                projectedTime(0, 16 * 60 + 10, 16 * 60 + 20),
+                projectedTime(0, 17 * 60, 18 * 60 + 30)
             }
         }
     };
@@ -141,16 +190,16 @@ sharedProjectionOrdersEveryConflictDeterministically()
     QCOMPARE(conflicts.size(), std::size_t(4));
     QCOMPARE(conflicts[0].classLabel, std::string("B"));
     QCOMPARE(conflicts[0].conflictingClassLabel, std::string("A"));
-    QCOMPARE(conflicts[0].time.startMinute, 16 * 60 + 30);
+    QCOMPARE(conflicts[0].time.scheduleTime.startMinute(), 16 * 60 + 30);
     QCOMPARE(conflicts[1].classLabel, std::string("C"));
     QCOMPARE(conflicts[1].conflictingClassLabel, std::string("A"));
-    QCOMPARE(conflicts[1].time.startMinute, 16 * 60 + 10);
+    QCOMPARE(conflicts[1].time.scheduleTime.startMinute(), 16 * 60 + 10);
     QCOMPARE(conflicts[2].classLabel, std::string("C"));
     QCOMPARE(conflicts[2].conflictingClassLabel, std::string("A"));
-    QCOMPARE(conflicts[2].time.startMinute, 17 * 60);
+    QCOMPARE(conflicts[2].time.scheduleTime.startMinute(), 17 * 60);
     QCOMPARE(conflicts[3].classLabel, std::string("C"));
     QCOMPARE(conflicts[3].conflictingClassLabel, std::string("B"));
-    QCOMPARE(conflicts[3].time.startMinute, 17 * 60);
+    QCOMPARE(conflicts[3].time.scheduleTime.startMinute(), 17 * 60);
 
     const auto repeated = projectScheduleImportOverlaps(schedules);
     QCOMPARE(repeated.size(), conflicts.size());
@@ -162,8 +211,8 @@ sharedProjectionOrdersEveryConflictDeterministically()
             conflicts[index].conflictingClassLabel
             );
         QCOMPARE(
-            repeated[index].time.startMinute,
-            conflicts[index].time.startMinute
+            repeated[index].time.scheduleTime.startMinute(),
+            conflicts[index].time.scheduleTime.startMinute()
             );
     }
 }
@@ -261,7 +310,10 @@ rejectsInvalidProjectedTimes()
         error->code,
         ScheduleImportStateValidationErrorCode::InvalidProjectedTime
         );
+    QCOMPARE(error->classLabel, std::string("E5 Zeus"));
     QCOMPARE(error->day, std::string("Funday"));
+    QCOMPARE(error->startTime, std::string("4:00 PM"));
+    QCOMPARE(error->endTime, std::string("4:55 PM"));
 
     request.candidates[0].times[0] = time(0, 16 * 60, 16 * 60);
     QCOMPARE(

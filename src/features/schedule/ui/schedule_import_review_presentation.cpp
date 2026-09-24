@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <limits>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ScheduleImportReviewPresentation
@@ -416,16 +417,23 @@ QStringList projectedScheduleConflicts(
             );
         for (const ClassTime& time : candidate.times)
         {
-            schedule.times.push_back(
-                {
+            const ClassMngr::Next::Application::ScheduleImportStateTime
+                stateTime{
                     weekdayIndex(time.day),
                     timeMinutes(time.startTime),
                     timeMinutes(time.endTime),
                     utf8String(time.day),
                     utf8String(time.startTime),
                     utf8String(time.endTime)
-                }
-                );
+                };
+            auto projectedTime =
+                ClassMngr::Next::Application::projectScheduleImportStateTime(
+                    stateTime
+                    );
+            if (projectedTime)
+            {
+                schedule.times.push_back(std::move(*projectedTime));
+            }
         }
     }
 

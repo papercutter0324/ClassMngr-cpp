@@ -29,6 +29,7 @@ set(_classmngr_next_feature_targets
 set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/domain_types.h
     src/next/domain/operation_result.h
+    src/next/domain/schedule_time.h
 )
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES

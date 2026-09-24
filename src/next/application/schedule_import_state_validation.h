@@ -300,13 +300,8 @@ validateScheduleImportState(
         projectedSchedule.classLabel = classroom.label;
         for (const auto& time : classroom.times)
         {
-            if (time.dayIndex < 0
-                || time.dayIndex > 6
-                || time.startMinute < 0
-                || time.startMinute >= 24 * 60
-                || time.endMinute < 0
-                || time.endMinute >= 24 * 60
-                || time.endMinute <= time.startMinute)
+            auto projectedTime = projectScheduleImportStateTime(time);
+            if (!projectedTime)
             {
                 auto error = *failure(
                     ScheduleImportStateValidationErrorCode::InvalidProjectedTime
@@ -317,7 +312,7 @@ validateScheduleImportState(
                 error.endTime = time.endLabel;
                 return error;
             }
-            projectedSchedule.times.push_back(time);
+            projectedSchedule.times.push_back(std::move(*projectedTime));
         }
         projectedSchedules.push_back(std::move(projectedSchedule));
     }
