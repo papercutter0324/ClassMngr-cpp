@@ -53,6 +53,25 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
+### Current state - 2026-09-24
+
+F44 adds Qt-free Teacher Import review-decision validation shared by production
+dialog readiness/plan creation and repository apply. The required checked-in
+workbook test passes the exact plan returned by the dialog into repository
+apply; invalid decisions leave imported records and source date unchanged.
+F44 is committed as `28170a914a4dc76dc62f66677ad8f1067dfd42bf` and passed
+independent fresh Windows x64 MSVC/Ninja Debug verification with Qt 6.12.0:
+both focused CTest targets passed (2/2), and direct end-to-end and invalid-
+decision cases each passed 3/0/0.
+
+The formal gate remains open. Gates 1 and 2 advance but remain Partial because
+broader Domain records and baseline parity are incomplete; the workspace
+criterion and audited v2 dependency isolation remain Satisfied. F45 is in
+progress: add a Qt-free Domain `Course` value/catalog and use it for the
+existing Schedule Import grade/level rule and fixture-backed validation.
+Keep Sub Prep to the current and following calendar years at most. Preserve
+the user-owned `cmake/sources.cmake` change; F44 did not modify it.
+
 ### Windows/macOS source ownership regression — 2026-09-19
 
 Commit `898cd3fc` added a Linux-only process-memory test, but the cross-platform

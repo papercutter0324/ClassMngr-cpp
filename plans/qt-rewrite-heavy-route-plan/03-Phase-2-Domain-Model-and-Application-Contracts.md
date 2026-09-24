@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest code slice: F43 adds a shared Qt-free Class Transfer review-decision contract used by dialog readiness and apply validation, with fixture-backed success persistence and conflict no-partial-write coverage; committed as `c0e03e55aa5f5cc1897ccf97a25901a5e119c8e5`. Gate 1 and Gate 2 advance but remain partial; the formal WorkspaceCoordinator create criterion and audited `src/next` dependency isolation remain satisfied. Phase 2 remains In Progress and the exit gate is open. FileController/New Profile/Initial Setup integration caveats remain non-gating.
+- Latest code slice: F44 adds Qt-free Teacher Import review-decision validation shared by dialog readiness/plan creation and repository apply; the required checked-in workbook drives an actual dialog-produced plan through apply, with persisted-record, summary, invalid-choice, and no-partial-write/source-date coverage. Committed as `28170a914a4dc76dc62f66677ad8f1067dfd42bf`; independent fresh Windows x64 MSVC/Ninja Debug verification built both focused targets and passed CTest 2/2. Gate 1 and Gate 2 advance but remain Partial; the formal WorkspaceCoordinator create criterion and audited `src/next` dependency isolation remain Satisfied. Phase 2 remains In Progress and the exit gate is Open. FileController/New Profile/Initial Setup integration caveats remain non-gating.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -448,21 +448,23 @@ cover these create paths alongside open, close, save, save-as, and export.
 
 No new v2 production path depends on DataService, MainWindow, PageManager, or a widget pointer.
 
-### Exit-gate status after F43 - 2026-09-24 (commit `c0e03e55aa5f5cc1897ccf97a25901a5e119c8e5`)
+### Exit-gate status after F44 - 2026-09-24 (commit `28170a914a4dc76dc62f66677ad8f1067dfd42bf`)
 
-This audit applies the formal criteria above to the verified F36/F38/F39/F40/F41/F42/F43 evidence. F43's independent fresh-build and focused-test evidence is recorded below; no tests were rerun for this documentation update.
+This audit applies the formal criteria above to the verified F36/F38/F39/F40/F41/F42/F43/F44 evidence. F44's independent fresh-build and focused-test evidence is recorded below; no tests were rerun for this documentation update.
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior | Partial | F40 adds app-less `Domain::Weekday`/`Domain::ScheduleTime`; F41 and F43 add app-less Schedule and Class Transfer review-decision behavior. Broader Domain records remain incomplete. |
-| Baseline parity | Partial | Required fixtures cover F36 Calendar import, F38 Schedule preview, F39 conflict review/apply, F41 Schedule review through persisted apply, and F43 Class Transfer success persistence plus conflict no-partial-write. F37's pre-write sentinel and F39/F43 zero-write cases add state evidence; wider baseline parity remains incomplete. |
-| Workspace boundary | Satisfied | The formal criterion is the `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` behavior stated above: dirty replacement is rejected before the gateway, success opens `WorkspaceState` and clears `SelectionState`, and gateway/invalid-session failures preserve both snapshots. The focused app-less workspace CTests verify these cases. F42 additionally verifies failed production replacement-open preservation and abort-before-target-preparation if close fails; F43 does not change this criterion. FileController integration limitations remain separate and non-gating. |
-| v2 dependency isolation | Satisfied in the audited v2 scope | The `src/next` source scan and target dependencies found no direct `DataService`, `MainWindow`, `PageManager`, or widget-pointer dependency. F43's shared Class Transfer contract has no Qt or legacy Application dependencies; outer `ApplicationServices` adapters bridge legacy services, and `FileController` remains MainWindow-aware. |
+| App-less Domain/Application behavior | Partial | F40 adds app-less `Domain::Weekday`/`Domain::ScheduleTime`; F41 and F43 add Schedule and Class Transfer review-decision behavior, and F44 adds Teacher Import review-decision validation. Broader Domain records remain incomplete. |
+| Baseline parity | Partial | Required fixtures cover F36 Calendar import, F38 Schedule preview, F39 conflict review/apply, F41 Schedule review through persisted apply, F43 Class Transfer persistence/conflict, and F44 Teacher Import review through persisted apply. F37's pre-write sentinel and F39/F43/F44 no-partial-write cases add state evidence; wider baseline parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal criterion is the `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` behavior stated above: dirty replacement is rejected before the gateway, success opens `WorkspaceState` and clears `SelectionState`, and gateway/invalid-session failures preserve both snapshots. The focused app-less workspace CTests verify these cases. F42 additionally verifies failed production replacement-open preservation and abort-before-target-preparation if close fails; F43/F44 do not change this criterion. FileController integration limitations remain separate and non-gating. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The `src/next` source scan and target dependencies found no direct `DataService`, `MainWindow`, `PageManager`, or widget-pointer dependency. F43's Class Transfer and F44's Teacher Import contracts have no Qt or legacy Application dependencies; outer adapters bridge legacy services, and `FileController` remains MainWindow-aware. |
 
-Remaining work includes wider baseline parity, shared workbook decoding,
-broader Domain records, generic settings persistence, remaining feature-service
-migrations, and broader calendar/UI and document work. The Sub Prep interval
-query remains capped at the current and following calendar years at most.
+Gate 1 (app-less Domain/Application behavior) and Gate 2 (baseline parity)
+advance with F44 but remain Partial. Remaining work includes wider baseline
+parity, shared workbook decoding, broader Domain records, generic settings
+persistence, remaining feature-service migrations, and broader calendar/UI and
+document work. The Sub Prep interval query remains capped at the current and
+following calendar years at most.
 Non-gating FileController integration gaps remain: dirty-page approval still
 comes from `MainWindow`; New Profile and Initial Setup replacement can close the
 active session before target preparation and coordinator create have succeeded;
@@ -4373,4 +4375,35 @@ Domain/Application behavior and fixture-backed parity but leaves both gates
 partial; the formal WorkspaceCoordinator create criterion and audited
 dependency-isolation criterion remain satisfied. Phase 2 remains In Progress
 with its exit gate open. Sub Prep remains limited to the current and following
+calendar years at most.
+
+## Verified F44 Teacher Import review decisions - commit `28170a914a4dc76dc62f66677ad8f1067dfd42bf`
+
+Qt-free [`import_review_session.h`](../../src/next/application/import_review_session.h)
+provides Teacher Import review-decision validation shared by production dialog
+readiness/plan creation and repository apply. The repository validates that
+reviewed candidate identities match the plan before opening its transaction;
+the contract has no Qt or legacy Application includes.
+
+Required checked-in
+[`sectioned_review.xlsx`](../../tests/fixtures/teacher_import/sectioned_review.xlsx)
+drives the production dialog to produce the plan passed directly to apply in
+[`teacher_import_dialog_tests.cpp`](../../tests/teacher_import_dialog_tests.cpp).
+It verifies selected and omitted candidates and persisted Korean, Native English,
+and GS Team records (3/0/0 pass/fail/skip). The repository suite also verifies
+deterministic summary values, manually maintained-field preservation, and that
+invalid reviewed plans neither write records nor advance the source date.
+Direct invalid-decision coverage in
+[`teacher_import_tests.cpp`](../../tests/teacher_import_tests.cpp) passed 3/0/0,
+including an empty group ID.
+
+Independent fresh out-of-tree Windows x64 MSVC/Ninja Debug verification with
+Qt 6.12.0 built both focused Teacher Import targets and passed CTest 2/2. The
+required fixture case did not skip; optional external-sample tests skipped
+because `CLASSMNGR_TEACHER_IMPORT_SAMPLE` was unset. `git diff --check` passed.
+Gate 1 and Gate 2 advance but remain Partial; Workspace boundary and dependency
+isolation remain Satisfied. Wider baseline parity, shared workbook decoding,
+broader Domain records, generic settings, remaining feature migrations, and
+broader calendar/UI and document work remain open. Phase 2 remains In Progress
+with its exit gate Open. Sub Prep remains capped at the current and following
 calendar years at most.

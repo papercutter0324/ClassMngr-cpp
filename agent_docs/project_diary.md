@@ -764,3 +764,10 @@ the user made earlier. Rebuild repository matches from current database state
 and validate every choice against those matches immediately before the existing
 apply preflight. Preserve the distinct rules for zero, one, and ambiguous
 teacher matches, and keep UI messages localized at the edge.
+
+## Phase 2 fixture boundary evidence - 2026-09-24
+
+For import parity, a required local fixture must traverse the production path
+from parsing through the actual dialog-produced plan to repository apply.
+Separate parser/apply and dialog-plan tests can both pass while their
+connection remains untested. Keep optional external samples supplemental.

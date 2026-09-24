@@ -1641,5 +1641,52 @@ separate on a host with Xvfb and loopback access.
   close-before-create ordering, and direct FileController snapshot/same-path
   coverage. Phase 2 and the exit gate remain Open. Sub Prep stays capped at the
   current and following calendar years at most.
-- Next: finish the F43 plan/mapping audit, then select the next bounded slice
-  from remaining Domain and baseline-parity gaps.
+- F43 plan/mapping audit was committed as
+  `00c5cc32e35322108c7fc6757fd5c80cdc0f879c`; it selected F44 from the remaining
+  Domain and baseline-parity gaps. The current continuation is recorded below.
+
+
+### Phase 2 Teacher Import review decisions - 2026-09-24
+
+- F44 is committed as
+  `28170a914a4dc76dc62f66677ad8f1067dfd42bf` (`Phase2 - Validate Teacher
+  Import review decisions`). The seven paths are the Qt-free Application
+  review-decision contract, the Teacher Import plan model, dialog adapter,
+  repository validation, two focused test files, and the required
+  `tests/fixtures/teacher_import/sectioned_review.xlsx` workbook.
+- The contract is shared by dialog readiness/plan creation and repository
+  apply validation. The repository checks reviewed Korean teacher identities
+  before starting the transaction. Existing Qt-backed parsing, localized
+  errors, SQL, and transaction ownership remain at their prior edges; direct
+  legacy plans without review metadata keep their compatibility path.
+- The checked-in fixture is required. The test
+  `checkedInWorkbookProductionDialogPlanAppliesToRepository` loads it through
+  the production dialog, obtains that dialog's `importPlan()`, and passes that
+  exact plan to `TeacherImportRepository`. It verifies the import summary,
+  included/omitted choices, Korean/Native English/GS Team persisted records,
+  and manually maintained fields. Rejected choices preserve records and
+  source date. App-less tests cover invalid modes, empty/duplicate/unknown
+  groups, missing decisions, and invalid/duplicate indexes.
+- Independent fresh Windows x64 MSVC/Ninja Debug verification used Qt 6.12.0.
+  Both focused Teacher Import targets built and CTest passed 2/2. The named
+  end-to-end case and invalid-decision case each passed 3/0/0 directly
+  (passed/failed/skipped); neither required fixture case skipped. The external
+  sample checks remain supplemental. `git diff --check` passed and the
+  Application contract has no Qt or legacy dependency. `cmake/sources.cmake`
+  retained SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF` and was
+  not committed. The source commit contains only the seven F44 paths.
+- The first independent pass identified that fixture import and dialog review
+  were tested separately; the required exact-dialog-plan-to-repository test
+  was added and independently rerun before commit.
+- Gate 1 and Gate 2 advance but remain Partial; broader Domain records and
+  baseline parity remain open. The formal workspace criterion and audited v2
+  dependency isolation remain Satisfied. Phase 2 remains In Progress and its
+  exit gate remains open. Preserve the Sub Prep cap of the current and
+  following calendar years at most.
+- F45 is now assigned: implement a Qt-free Domain `Course` catalog/value and
+  route the existing Schedule Import grade/level validation through it,
+  preserving the legacy catalog and fixture behavior. After independent
+  verification, commit that slice, update the Phase 2 plan/mapping and repeat
+  from the remaining Domain and parity gaps. Do not touch
+  `cmake/sources.cmake`.
