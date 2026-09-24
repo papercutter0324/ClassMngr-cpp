@@ -1,6 +1,7 @@
 #include "academic_calendar_event_parser.h"
 
 #include "calendar_workbook_reader.h"
+#include "next/application/calendar_event_import_signature.h"
 
 #include <algorithm>
 #include <array>
@@ -744,15 +745,25 @@ QString calendarEventImportSignature(
     const CalendarEvent& event
     )
 {
-    return QStringLiteral("%1|%2|%3|%4|%5|%6")
-        .arg(
-            event.title.simplified(),
-            normalizedCalendarEventType(event.eventType),
-            event.startDate.toString(Qt::ISODate),
-            event.endDate.toString(Qt::ISODate),
-            event.allDay ? QStringLiteral("1") : QStringLiteral("0"),
-            normalizedCalendarEventTimeStatus(event.timeStatus)
-            );
+    const ClassMngr::Next::Application::CalendarEventImportSignature key =
+        ClassMngr::Next::Application::CalendarEventImportSignature::
+            fromNormalizedFields({
+                .simplifiedTitle = event.title.simplified().toStdU16String(),
+                .normalizedEventType = normalizedCalendarEventType(
+                    event.eventType
+                    ).toStdU16String(),
+                .startDateIso = event.startDate
+                    .toString(Qt::ISODate)
+                    .toStdU16String(),
+                .endDateIso = event.endDate
+                    .toString(Qt::ISODate)
+                    .toStdU16String(),
+                .allDay = event.allDay,
+                .normalizedTimeStatus = normalizedCalendarEventTimeStatus(
+                    event.timeStatus
+                    ).toStdU16String()
+            });
+    return QString::fromStdU16String(key.value());
 }
 
 CalendarEvent calendarEvent(

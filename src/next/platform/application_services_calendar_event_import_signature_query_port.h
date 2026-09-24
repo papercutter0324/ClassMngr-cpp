@@ -2,6 +2,7 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "next/application/calendar_event_import_signature.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
 
 #include <QByteArray>
@@ -148,20 +149,25 @@ private:
         const CalendarEvent& event
         )
     {
-        // Keep the importer's established six-field QString identity and its
-        // UTF-16 key representation. This read intentionally avoids the
-        // bounded general event projection, whose capacity and metadata checks
-        // are not part of legacy import duplicate detection.
-        const QString signature = QStringLiteral("%1|%2|%3|%4|%5|%6")
-            .arg(
-                event.title.simplified(),
-                normalizedCalendarEventType(event.eventType),
-                event.startDate.toString(Qt::ISODate),
-                event.endDate.toString(Qt::ISODate),
-                event.allDay ? QStringLiteral("1") : QStringLiteral("0"),
-                normalizedCalendarEventTimeStatus(event.timeStatus)
-                );
-        return signature.toStdU16String();
+        // Keep normalization and ISO date conversion at the Qt adapter edge.
+        // The Application value intentionally excludes time and row metadata.
+        return Application::CalendarEventImportSignature::
+            fromNormalizedFields({
+                .simplifiedTitle = event.title.simplified().toStdU16String(),
+                .normalizedEventType = normalizedCalendarEventType(
+                    event.eventType
+                    ).toStdU16String(),
+                .startDateIso = event.startDate
+                    .toString(Qt::ISODate)
+                    .toStdU16String(),
+                .endDateIso = event.endDate
+                    .toString(Qt::ISODate)
+                    .toStdU16String(),
+                .allDay = event.allDay,
+                .normalizedTimeStatus = normalizedCalendarEventTimeStatus(
+                    event.timeStatus
+                    ).toStdU16String()
+            }).value();
     }
 
     [[nodiscard]] static Application::CalendarEventImportSignatureQueryResult

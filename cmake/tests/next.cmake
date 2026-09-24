@@ -234,6 +234,37 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise the duplicate-key value without Qt or the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationCalendarEventImportSignatureTests
+    tests/next_application_calendar_event_import_signature_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationCalendarEventImportSignatureTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationCalendarEventImportSignatureTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationCalendarEventImportSignatureTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationCalendarEventImportSignatureTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationCalendarEventImportSignatureTests
+    COMMAND ClassMngrNextApplicationCalendarEventImportSignatureTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationScheduleImportStateValidation
     SOURCES
