@@ -64,13 +64,22 @@ independent fresh Windows x64 MSVC/Ninja Debug verification with Qt 6.12.0:
 both focused CTest targets passed (2/2), and direct end-to-end and invalid-
 decision cases each passed 3/0/0.
 
+F45 adds a Qt-free Domain `Course` value/catalog with the existing 25 ordered
+grade/level pairs. `ClassInfoConfig` adapts the catalog for UI lists, and
+Schedule Import validation uses the same Domain rule. It is committed as
+`eb2167e9d39a65446265b9506d749dc0e6be0d35`. Independent fresh Windows x64
+MSVC/Ninja verification with Qt 6.12.0 passed both focused CTest targets
+(2/2); valid fixture persistence and invalid-pair rejection passed. The
+rejection test preserves seeded teacher, class, class-info, schedule-time,
+and profile-setting snapshots.
+
 The formal gate remains open. Gates 1 and 2 advance but remain Partial because
 broader Domain records and baseline parity are incomplete; the workspace
-criterion and audited v2 dependency isolation remain Satisfied. F45 is in
-progress: add a Qt-free Domain `Course` value/catalog and use it for the
-existing Schedule Import grade/level rule and fixture-backed validation.
-Keep Sub Prep to the current and following calendar years at most. Preserve
-the user-owned `cmake/sources.cmake` change; F44 did not modify it.
+criterion and audited v2 dependency isolation remain Satisfied. F46 is
+assigned: centralize the exact Hangul-only Korean teacher identity rule in a
+Qt-free Domain key used by Teacher and Schedule matching. Keep Sub Prep to the
+current and following calendar years at most. Preserve the user-owned
+`cmake/sources.cmake` change; F44 and F45 did not modify it.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

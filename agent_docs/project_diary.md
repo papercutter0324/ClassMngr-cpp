@@ -771,3 +771,11 @@ For import parity, a required local fixture must traverse the production path
 from parsing through the actual dialog-produced plan to repository apply.
 Separate parser/apply and dialog-plan tests can both pass while their
 connection remains untested. Keep optional external samples supplemental.
+
+## Phase 2 Domain course catalog - 2026-09-24
+
+When rejection must preserve persisted state, seed representative existing
+rows and compare their values before and after the operation. Zero-row counts
+only show that no rows exist; they do not prove that invalid apply left prior
+records unchanged. Keep the Domain catalog as the single source for business
+validation and convert to Qt lists only in the existing UI adapter.

@@ -1690,3 +1690,53 @@ separate on a host with Xvfb and loopback access.
   verification, commit that slice, update the Phase 2 plan/mapping and repeat
   from the remaining Domain and parity gaps. Do not touch
   `cmake/sources.cmake`.
+
+
+### Phase 2 Domain Course catalog - 2026-09-24
+
+- F45 is committed as
+  `eb2167e9d39a65446265b9506d749dc0e6be0d35` (`Phase2 - Add Domain course
+  catalog`). The six paths are `src/next/domain/course.h`, the single
+  `cmake/next.cmake` Domain ownership registration,
+  `src/features/classes/config/class_info_config.cpp`,
+  `src/features/schedule/services/schedule_import_plan_validator.cpp`,
+  `tests/next_domain_contract_tests.cpp`, and
+  `tests/schedule_import_tests.cpp`.
+- `Domain::Course` is a Qt-free value/catalog of the existing 25 supported
+  grade/level pairs, preserving order and capitalization. `ClassInfoConfig`
+  converts from the Domain catalog for Qt-facing lists, and Schedule Import
+  validation uses `Course::fromNames`. ClassInfoConfig and validator retain
+  existing behavior at their feature boundary.
+- App-less tests cover every pair, ordering, value/accessor semantics, invalid
+  names and cross-grade pairs. The existing `schedule_review.xlsx` production
+  path still persists accepted grade/level values. The invalid-pair repository
+  test now seeds teacher, class, class-info, schedule-time, and profile-setting
+  state, then compares every snapshot after rejection to prove no mutation or
+  added rows.
+- Independent Windows x64 MSVC/Ninja Debug verification used Qt 6.12.0 and a
+  fresh out-of-tree build. Both focused targets built and CTest passed 2/2.
+  All three direct Domain cases, the valid fixture import, and the repaired
+  invalid-apply case passed 3/0/0 each. After the invalid-case test repair, the
+  same fresh build rebuilt both targets and reran focused CTest 2/2 plus the
+  repaired case 3/0/0. CMake source ownership validated 900 handwritten
+  files. `git diff --check` passed.
+- The first independent pass found that empty affected tables could not prove
+  preservation; the test was strengthened with seeded records and exact
+  snapshots, then rerun by the same independent tester. The only CMake code
+  change is the owner registration in `cmake/next.cmake`.
+  `cmake/sources.cmake` remains unchanged with SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Gate 1 advances with a Domain record used by production Schedule Import;
+  Gate 2 gains fixture-backed valid and rejected state behavior. Both remain
+  Partial because broader Domain completeness and baseline parity remain.
+  Workspace boundary and audited v2 dependency isolation remain Satisfied.
+  Phase 2 is In Progress and the exit gate remains open. Preserve Sub Prep's
+  current-and-following-calendar-year maximum.
+- Three independent post-F45 investigators compared Domain, baseline-parity,
+  and architecture candidates. F46 is assigned to centralize the duplicated
+  Hangul-only Korean teacher identity rule as a Qt-free Domain key, used by
+  both Teacher and Schedule matching. Preserve the exact five UTF-16 code-unit
+  ranges and current empty-name handling; do not trim, case-fold, or normalize.
+  Reuse the required Teacher and Schedule fixtures for production coverage.
+  After independent verification, commit and audit the slice, then repeat
+  against the remaining Phase 2 gates. Keep `cmake/sources.cmake` untouched.
