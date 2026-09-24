@@ -212,6 +212,10 @@ foreach(_classmngr_ui_target IN ITEMS
             ClassMngrNext::Application
     )
 endforeach()
+target_link_libraries(ClassMngrFeatures
+    PRIVATE
+        ClassMngrNext::Platform
+)
 target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrNext::Application

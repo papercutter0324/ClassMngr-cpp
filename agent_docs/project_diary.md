@@ -662,3 +662,11 @@ settings operations. Keep the guard ahead of widget reads and mutations, and
 ahead of save-side effects such as autosave cancellation and field
 normalization. Directly test unavailable initialization and validation paths;
 source inspection alone left the validation path without a regression check.
+
+## Phase 2 Class Notes save boundary - 2026-09-24
+
+When a legacy validator counts `QString` units, use a UTF-16 owning type at a
+Qt-free contract boundary; a UTF-8 byte limit would change accepted inputs.
+Test the page's default adapter path through real persistence in addition to
+separate adapter and page-fake tests, so composition wiring and dirty-state
+clearing are covered end to end.

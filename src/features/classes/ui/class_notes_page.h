@@ -13,6 +13,11 @@ class QPushButton;
 class SectionCard;
 class QTextEdit;
 
+namespace ClassMngr::Next::Application
+{
+class ClassNotesSavePort;
+}
+
 class ClassNotesPage : public BasePage
 {
     Q_OBJECT
@@ -21,7 +26,8 @@ public:
     explicit ClassNotesPage(
         ApplicationServices* services,
         bool embedded = false,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ClassMngr::Next::Application::ClassNotesSavePort* savePort = nullptr
         );
 
     void loadClass(
@@ -53,6 +59,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    ClassMngr::Next::Application::ClassNotesSavePort* m_savePort = nullptr;
     Classroom m_classroom;
     QString m_savedNotes;
     QString m_savedTimeFillerActivities;

@@ -54,6 +54,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_projection.h
     src/next/application/campus_directory_projection.h
     src/next/application/class_summary_projection.h
+    src/next/application/class_notes_save_port.h
     src/next/application/sub_prep_schedule_summary_query.h
     src/next/application/sub_prep_campus_directory_query_port.h
     src/next/application/sub_prep_print_source_query.h
@@ -150,6 +151,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_day_filter_reset_policy_port.h
     src/next/platform/application_services_class_selection_reset_policy_port.h
     src/next/platform/application_services_class_visibility_preferences_port.h
+    src/next/platform/application_services_class_notes_save_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h
     src/next/platform/application_services_personal_display_name_preferences_port.h

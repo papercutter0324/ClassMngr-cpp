@@ -10,6 +10,8 @@
 #include "core/fontmanager.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "next/application/class_notes_save_port.h"
+#include "next/platform/application_services_class_notes_save_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "core/utils/sidebar_node_naming.h"
@@ -22,13 +24,17 @@
 #include <QVBoxLayout>
 #include <QtAssert>
 
+#include <string>
+
 ClassNotesPage::ClassNotesPage(
     ApplicationServices* services,
     bool embedded,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Next::Application::ClassNotesSavePort* savePort
     )
     : BasePage(parent)
     , m_services(services)
+    , m_savePort(savePort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -163,7 +169,6 @@ bool ClassNotesPage::saveClassNotesInternal(
 {
     if (
         !m_services
-        || !m_services->classService()
         || m_classroom.id <= 0
         )
     {
@@ -182,30 +187,48 @@ bool ClassNotesPage::saveClassNotesInternal(
             ->toPlainText()
             .trimmed();
 
-    const Status saved = m_services->classService()->saveClassNotes(
-        m_classroom.id,
-        notes,
-        timeFillerActivities
-        );
+    const std::string classIdText =
+        std::to_string(m_classroom.id);
+    const auto classId =
+        ClassMngr::Next::Domain::ClassId::fromString(classIdText);
+    if (!classId)
+    {
+        return false;
+    }
+
+    const ClassMngr::Next::Application::ClassNotesSaveRequest request{
+        .classId = *classId,
+        .notes = notes.toStdU16String(),
+        .timeFillerActivities = timeFillerActivities.toStdU16String()
+    };
+
+    ClassMngr::Next::Platform::ApplicationServicesClassNotesSavePort
+        defaultSavePort(m_services);
+    ClassMngr::Next::Application::ClassNotesSavePort& savePort =
+        m_savePort ? *m_savePort : defaultSavePort;
+
+    const ClassMngr::Next::Application::ClassNotesSaveResult saved =
+        savePort.saveClassNotes(request);
     if (!saved)
     {
         if (showErrorMessage)
         {
+            const std::string& message = saved.error().message;
             DialogServices::showWarning(
                 this,
                 tr("Save Class Notes"),
-                saved.error()
+                QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    )
                 );
         }
 
         return false;
     }
 
-    m_savedNotes =
-        notes;
-
-    m_savedTimeFillerActivities =
-        timeFillerActivities;
+    m_savedNotes = notes;
+    m_savedTimeFillerActivities = timeFillerActivities;
 
     clearDirty();
     return true;

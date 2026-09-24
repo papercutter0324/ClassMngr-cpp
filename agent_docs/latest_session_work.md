@@ -1254,6 +1254,36 @@ separate on a host with Xvfb and loopback access.
   Start Here content unchanged.
 
 
+### Phase 2 Class Notes save boundary - 2026-09-24
+
+- Added the Qt-free `ClassNotesSavePort` request/result contract and the
+  `ApplicationServicesClassNotesSavePort` Platform adapter. The page's one
+  Class Notes save call now uses this boundary; its other legacy reads remain
+  unchanged. The contract uses `std::u16string` so the existing 10,000
+  UTF-16-code-unit validation rule is preserved rather than replaced with a
+  UTF-8 byte limit.
+- Preserved trimming, two-field persistence, class identity, unavailable and
+  write-failure behavior, manual warning, autosave timing, dirty-state rules,
+  and discard/reload. Contract, adapter, page, Classes page, and DataService
+  lifecycle coverage all passed. A page integration test exercises the default
+  adapter through real persistence and verifies both fields and clean state.
+- Independent fresh Ninja/MSVC x64 configure validated 891 handwritten source
+  owners. The executable and all five focused test targets built; exact suites
+  `ClassMngrNextApplicationClassNotesSavePortTests`,
+  `ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`,
+  `ClassMngrNextFeatureClassNotesPageTests`, `ClassMngrClassesPageTests`, and
+  `ClassMngrDataServiceLifecycleTests` passed 5/5. The Qt-free contract,
+  UTF-16 boundary, source callsite, and diff checks passed.
+- Handoff: F35 candidate is Sub Prep's all-years calendar read. Preserve the
+  years 0001–9999 query, the empty-list fallback when unavailable or failed,
+  and generation continuing. The existing generic calendar projection caps
+  output at 4,096 events, so define a purpose-specific query or explicit
+  capacity policy before using it. Phase 2 remains open; workbook decoding,
+  generic settings, remaining feature services, broader document work, and
+  the formal exit gate remain open. Nothing was pushed; keep Start Here and
+  the user-owned wording commit unchanged.
+
+
 ### Phase 2 typed settings availability guards - 2026-09-24
 
 - My Information now gates stored-settings load and save through

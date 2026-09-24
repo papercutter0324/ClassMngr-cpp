@@ -502,7 +502,25 @@ Setup's populated name/signature preview on unavailable validation. Executor
 and independent fresh Ninja/MSVC x64 runs built the page, adapter, and wizard
 targets; all three focused CTest suites passed 3/3. The independent configure
 validated 886 handwritten source owners; source and diff checks passed.
-Phase 2 remains open. Next: select the following bounded service slice from
-the Phase 2 plan, with the Sub Prep all-years calendar read and Class Notes
-save boundary under review. Workbook decoding, generic settings, remaining
-feature services, broader document work, and the formal exit gate remain open.
+Phase 2 remains open. Next: define a typed Sub Prep calendar projection that
+preserves the all-years query behavior without silently applying the generic
+4,096-event limit. Workbook decoding, generic settings, remaining feature
+services, broader document work, and the formal exit gate remain open.
+
+### Phase 2 Class Notes save boundary - 2026-09-24
+
+Class Notes saves now pass through a Qt-free `ClassNotesSavePort` contract and
+Platform adapter. The page no longer calls `ClassService::saveClassNotes()`;
+its other reads remain unchanged. The contract uses UTF-16 text to preserve
+the existing 10,000-code-unit validation rule. Trimming, the two-field
+upsert, warning behavior, autosave timing, and dirty-state handling remain
+covered. A page test exercises the default adapter through real persistence.
+Executor and independent fresh Ninja/MSVC x64 runs validated 891 handwritten
+source owners and built the ClassMngr executable, new boundary/page targets,
+ClassMngrClassesPageTests, and DataServiceLifecycle. The five focused CTest
+suites passed 5/5; source and diff checks passed. Phase 2 remains open. Next:
+define the typed Sub Prep calendar query carefully because the existing
+generic projection caps results at 4,096 and the current all-years read falls
+back to an empty list on failure. Workbook decoding, generic settings,
+remaining feature services, broader document work, and the formal exit gate
+remain open.
