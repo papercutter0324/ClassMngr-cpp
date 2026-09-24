@@ -519,8 +519,23 @@ Executor and independent fresh Ninja/MSVC x64 runs validated 891 handwritten
 source owners and built the ClassMngr executable, new boundary/page targets,
 ClassMngrClassesPageTests, and DataServiceLifecycle. The five focused CTest
 suites passed 5/5; source and diff checks passed. Phase 2 remains open. Next:
-define the typed Sub Prep calendar query carefully because the existing
-generic projection caps results at 4,096 and the current all-years read falls
-back to an empty list on failure. Workbook decoding, generic settings,
+audit the current code against the Phase 2 plan and formal exit gate, then
+continue with the remaining gaps. Workbook decoding, generic settings,
 remaining feature services, broader document work, and the formal exit gate
 remain open.
+
+### Phase 2 Sub Prep calendar interval query - 2026-09-24
+
+Sub Prep now requests only the current and following calendar years, using
+January 1 of the current year through December 31 of the next year. The query
+returns only normalized Vacation/Holiday types and complete event intervals;
+it avoids the generic 4,096-event projection cap. The page uses one captured
+date for query bounds and dialog defaults. Unavailable or failed reads still
+open the dialog with an empty calendar. Executor and independent fresh Ninja/
+MSVC x64 runs validated 894 handwritten source owners; all eight focused
+repository, Application, Platform, Sub Prep page, and output tests passed.
+The production ApplicationServices path and 4,097-event behavior are covered.
+Phase 2 remains open. Next: audit the current code against the Phase 2 plan and
+formal exit gate, then continue with the remaining gaps. Workbook decoding,
+generic settings, remaining feature services, broader document work, and the
+formal exit gate remain open.

@@ -33,6 +33,7 @@ class SubPrepClassDetailsReadPort;
 class SubPrepClassInformationState;
 class SubPrepPrintSourceReadPort;
 class SubPrepScheduleSummaryReadPort;
+class SubPrepCalendarEventIntervalsReadPort;
 }
 
 enum class SubPrepSection
@@ -91,6 +92,18 @@ public:
             detailsReadPort,
         ClassMngr::Next::Application::SubPrepPrintSourceReadPort&
             printSourceReadPort,
+        QWidget* parent = nullptr
+        );
+    SubPrepPage(
+        ApplicationServices* services,
+        ClassMngr::Next::Application::SubPrepScheduleSummaryReadPort&
+            summaryReadPort,
+        ClassMngr::Next::Application::SubPrepClassDetailsReadPort&
+            detailsReadPort,
+        ClassMngr::Next::Application::SubPrepPrintSourceReadPort&
+            printSourceReadPort,
+        ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort&
+            calendarIntervalsReadPort,
         QWidget* parent = nullptr
         );
     ~SubPrepPage() override;
@@ -186,6 +199,8 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort*
+        m_calendarIntervalsReadPort = nullptr;
 
     bool m_loading = false;
     bool m_dirty = false;

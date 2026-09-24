@@ -12,6 +12,15 @@ enum class CalendarEventRepeatFrequency
     Monthly
 };
 
+// Narrow calendar range result used when a caller needs event type and date
+// boundaries but none of the calendar display or recurrence metadata.
+struct CalendarEventDateInterval
+{
+    QString eventType;
+    QDate startDate;
+    QDate endDate;
+};
+
 struct CalendarEvent
 {
     int id = -1;

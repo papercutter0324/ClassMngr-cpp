@@ -1026,6 +1026,32 @@ Result<QList<CalendarEvent>> CalendarService::eventsInRange(
         : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
+Result<QList<CalendarEventDateInterval>>
+CalendarService::eventDateIntervalsInRange(
+    const QDate& startDate,
+    const QDate& endDate
+    ) const
+{
+    if (auto* repository = session()
+            ? session()->calendarEventRepository() : nullptr)
+    {
+        return repository->loadCalendarEventDateIntervalsInRange(
+            startDate,
+            endDate
+            );
+    }
+
+    if (!dataService())
+    {
+        return std::unexpected(unavailableError());
+    }
+
+    return dataService()->loadCalendarEventDateIntervalsInRange(
+        startDate,
+        endDate
+        );
+}
+
 Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
     const QDate& fromDate,
     int limit

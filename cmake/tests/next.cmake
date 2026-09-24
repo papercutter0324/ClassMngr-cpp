@@ -481,6 +481,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationSubPrepCalendarEventIntervalsQuery
+    SOURCES
+        tests/next_application_sub_prep_calendar_event_intervals_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassNotesSavePort
     SOURCES
         tests/next_platform_application_services_class_notes_save_port_tests.cpp

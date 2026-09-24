@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F34 cuts over only the Class Notes page save through the Qt-free `ClassNotesSavePort` and Platform adapter, preserving its two-field upsert and exact 10,000 UTF-16-unit limit. A fresh x64 Ninja/MSVC configure/build validated 891 handwritten owners; all targets built and the five focused suites passed 5/5, with the source audit and diff check passing. Phase 2 remains in progress. F35 is a Sub Prep all-years calendar-read design review: retain full-range usage and the unavailable/read-failure empty-list fallback; resolve the generic 4,096-event cap before choosing a contract. The formal Phase 2 exit gate remains open.
+- Latest slice: F35 replaces Sub Prep's generic calendar range read with a typed interval query and Platform adapter covering January 1 of the current calendar year through December 31 of the following year, clamped at 9999. The purpose-specific repository read has no 4,096-event cap. Independent fresh Ninja/MSVC x64 verification validated 894 source owners and passed the eight focused CTests (8/8). Phase 2 remains in progress and its formal exit gate is open; next is the requested current-code audit against this plan and the exit gate.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4100,9 +4100,9 @@ independent rerun passed the exact focused CTest suites
 `ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`
 (3/3). Source scans and diff check passed. Phase 2 remains in progress.
 
-F34 Class Notes save is recorded below. Sub Prep's all-years calendar read is
-the F35 design-review candidate; its generic projection cap remains unresolved.
-The formal Phase 2 exit gate remains open.
+F34 Class Notes save is recorded above. F35's Sub Prep calendar interval query
+is recorded below. Next, audit current code against this plan and the formal
+Phase 2 exit gate. Phase 2 remains in progress and the exit gate remains open.
 
 #### Progress update - 2026-09-24 (F34 Class Notes save cutover)
 
@@ -4121,10 +4121,25 @@ all targets built with 891 handwritten owners. The added
 fields and clean page state through the real default adapter. The Qt-free
 contract/source audit and diff check passed.
 
-F35 is a design review of Sub Prep's years 0001–9999 calendar read (one direct
-page call). Preserve the full-range use and the current behavior where an
-unavailable or failed read yields an empty list while generation continues;
-the dialog's vacation/holiday behavior already has tests. The generic typed
-projection caps results at 4,096, so reusing it must not silently change that
-behavior. No query shape or capacity policy is selected yet. Phase 2 remains
-in progress and its formal exit gate remains open.
+#### Progress update - 2026-09-24 (F35 Sub Prep calendar interval query)
+
+The typed `SubPrepCalendarEventIntervalsQuery` and Platform
+`ApplicationServicesSubPrepCalendarEventIntervalsPort` replace Sub Prep's
+direct generic calendar range read. One captured date sets the inclusive range
+from January 1 of its calendar year through December 31 of the following year,
+clamped at year 9999, and is also passed to the dialog. The repository selects
+only normalized Vacation/Holiday events overlapping the full range; invalid
+or reversed intervals are ignored. This purpose-specific read does not apply
+the generic 4,096-event projection cap.
+
+Unavailable services, query failures, and conversion exceptions still produce
+empty intervals while generation continues. Independent fresh Ninja/MSVC x64
+verification validated 894 source owners, built the executable and focused
+targets, and passed the eight focused CTests 8/8. Coverage includes 4,097
+events, the production ApplicationServices-to-repository path, the two-year
+boundary and year-9999 clamp, interval overlaps, day-28/day-29 cases, and
+historical/future holiday bridges. `git diff --check` passed. The exceptional
+conversion fallback was source-inspected but not fault-injected.
+
+Next, audit current code against the Phase 2 plan and formal exit gate. Phase 2
+remains in progress and its formal exit gate remains open.

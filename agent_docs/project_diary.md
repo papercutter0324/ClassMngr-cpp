@@ -670,3 +670,11 @@ Qt-free contract boundary; a UTF-8 byte limit would change accepted inputs.
 Test the page's default adapter path through real persistence in addition to
 separate adapter and page-fake tests, so composition wiring and dirty-state
 clearing are covered end to end.
+
+## Phase 2 Sub Prep calendar interval query - 2026-09-24
+
+Use the product's current-and-following-year window instead of carrying the
+legacy all-years range forward. Preserve full vacation/holiday intervals so
+the dialog can connect blocks across its lookahead; do not apply a generic
+projection cap. Capture one reference date for both query bounds and dialog
+defaults to avoid a year rollover mismatch.

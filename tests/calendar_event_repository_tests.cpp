@@ -81,6 +81,7 @@ class CalendarEventRepositoryTests : public QObject
 
 private slots:
     void rangeQueryIncludesEventsThatOverlapRange();
+    void intervalRangeQueryReturnsFullInclusiveIntervals();
     void rangeQuerySortsByDateTimeAndTitle();
     void upcomingQueryExcludesPastEventsAndLimitsResults();
     void nextEventQueryFindsEarliestFutureStartDate();
@@ -160,6 +161,83 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
                 QStringLiteral("Overlaps End")
             })
             );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+intervalRangeQueryReturnsFullInclusiveIntervals()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_interval_range_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("Historical prefix"),
+                QDate(2025, 12, 20),
+                QTime(0, 0),
+                QDate(2026, 1, 7),
+                QTime(23, 59),
+                QStringLiteral("Vacation")
+                )
+            );
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("Next year boundary"),
+                QDate(2027, 12, 31),
+                QTime(0, 0),
+                QDate(2028, 1, 7),
+                QTime(23, 59),
+                QStringLiteral("Holiday")
+                )
+            );
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("Before window"),
+                QDate(2025, 12, 1),
+                QTime(9, 0),
+                QDate(2025, 12, 15),
+                QTime(10, 0),
+                QStringLiteral("Vacation")
+                )
+            );
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("After window"),
+                QDate(2028, 1, 1),
+                QTime(9, 0),
+                QDate(2028, 1, 15),
+                QTime(10, 0),
+                QStringLiteral("Holiday")
+                )
+            );
+
+        const auto intervals =
+            repository.loadCalendarEventDateIntervalsInRange(
+                QDate(2026, 1, 1),
+                QDate(2027, 12, 31)
+                );
+
+        QVERIFY(intervals);
+        QCOMPARE(intervals->size(), 2);
+        QCOMPARE(intervals->at(0).eventType, QStringLiteral("Vacation"));
+        QCOMPARE(intervals->at(0).startDate, QDate(2025, 12, 20));
+        QCOMPARE(intervals->at(0).endDate, QDate(2026, 1, 7));
+        QCOMPARE(intervals->at(1).eventType, QStringLiteral("Holiday"));
+        QCOMPARE(intervals->at(1).startDate, QDate(2027, 12, 31));
+        QCOMPARE(intervals->at(1).endDate, QDate(2028, 1, 7));
     }
 
     QSqlDatabase::removeDatabase(connectionName);

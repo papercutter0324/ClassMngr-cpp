@@ -22,6 +22,12 @@ public:
         const QDate& endDate
         );
 
+    [[nodiscard]] Result<QList<CalendarEventDateInterval>>
+    loadCalendarEventDateIntervalsInRange(
+        const QDate& startDate,
+        const QDate& endDate
+        );
+
     [[nodiscard]] Result<QList<CalendarEvent>> loadUpcomingCalendarEvents(
         const QDate& fromDate,
         int limit

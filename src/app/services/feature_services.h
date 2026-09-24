@@ -202,6 +202,11 @@ public:
     using FeatureService::FeatureService;
     [[nodiscard]] Result<QList<CalendarEvent>> eventsForDate(const QDate& date) const;
     [[nodiscard]] Result<QList<CalendarEvent>> eventsInRange(const QDate& startDate, const QDate& endDate) const;
+    [[nodiscard]] Result<QList<CalendarEventDateInterval>>
+        eventDateIntervalsInRange(
+            const QDate& startDate,
+            const QDate& endDate
+            ) const;
     [[nodiscard]] Result<QList<CalendarEvent>> upcomingEvents(const QDate& fromDate, int limit) const;
     [[nodiscard]] Result<CalendarEvent> event(int eventId) const;
     [[nodiscard]] Result<QList<CalendarEvent>> repeatSeriesFromDate(

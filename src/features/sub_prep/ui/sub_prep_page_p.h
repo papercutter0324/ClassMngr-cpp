@@ -54,20 +54,6 @@ constexpr int TeacherNotesLines = 4;
 const QString NotAvailableText =
     QStringLiteral("N/A");
 
-CalendarService* openCalendarService(
-    ApplicationServices* services
-    )
-{
-    auto* service =
-        services
-            ? services->calendarService()
-            : nullptr;
-
-    return service && service->isAvailable()
-        ? service
-        : nullptr;
-}
-
 QString campusMetadataText(
     const std::string& value
     )

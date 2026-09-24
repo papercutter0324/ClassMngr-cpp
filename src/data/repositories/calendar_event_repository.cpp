@@ -201,6 +201,75 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsInRange(
     return events;
 }
 
+Result<QList<CalendarEventDateInterval>>
+CalendarEventRepository::loadCalendarEventDateIntervalsInRange(
+    const QDate& startDate,
+    const QDate& endDate
+    )
+{
+    QList<CalendarEventDateInterval> intervals;
+
+    if (!startDate.isValid()
+        || !endDate.isValid()
+        || endDate < startDate)
+    {
+        return std::unexpected(
+            QObject::tr("Loading calendar event intervals failed: invalid date range.")
+            );
+    }
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        SELECT
+            event_type,
+            start_date,
+            end_date
+        FROM calendar_events
+        WHERE end_date >= ?
+        AND start_date <= ?
+        ORDER BY start_date
+    )");
+
+    query.addBindValue(startDate.toString(Qt::ISODate));
+    query.addBindValue(endDate.toString(Qt::ISODate));
+
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading calendar event intervals in range"),
+        QObject::tr("from %1 to %2")
+            .arg(startDate.toString(Qt::ISODate), endDate.toString(Qt::ISODate))
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        intervals.append({
+            .eventType = query.value("event_type").toString(),
+            .startDate = QDate::fromString(
+                query.value("start_date").toString(),
+                Qt::ISODate
+                ),
+            .endDate = QDate::fromString(
+                query.value("end_date").toString(),
+                Qt::ISODate
+            )
+        });
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading calendar event intervals in range failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+
+    return intervals;
+}
+
 Result<QList<CalendarEvent>> CalendarEventRepository::loadUpcomingCalendarEvents(
     const QDate& fromDate,
     int limit

@@ -6,7 +6,9 @@
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "next/application/sub_prep_class_details_query.h"
+#include "next/application/sub_prep_calendar_event_intervals_query.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
+#include "next/application/sub_prep_print_source_query.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -21,6 +23,7 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QCheckBox>
+#include <QDialog>
 #include <QDateEdit>
 #include <QDir>
 #include <QGridLayout>
@@ -150,6 +153,42 @@ public:
     std::vector<std::string> loadedClassIds;
 };
 
+class SubPrepTestPrintSourceReadPort final
+    : public SubPrepPrintSourceReadPort
+{
+public:
+    SubPrepPrintSourceReadResult loadSource(
+        const SubPrepPrintSourceRequest& request
+        ) override
+    {
+        lastRequest = request;
+        return SubPrepPrintSourceReadResult::success({});
+    }
+
+    SubPrepPrintSourceRequest lastRequest;
+};
+
+class SubPrepTestCalendarIntervalsReadPort final
+    : public SubPrepCalendarEventIntervalsReadPort
+{
+public:
+    SubPrepCalendarEventIntervalsReadResult loadIntervals(
+        const SubPrepCalendarEventIntervalsReadRequest& request
+        ) override
+    {
+        ++loadCount;
+        lastRequest = request;
+        return SubPrepCalendarEventIntervalsReadResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "calendar read failed",
+            .recoverable = false
+        });
+    }
+
+    int loadCount = 0;
+    SubPrepCalendarEventIntervalsReadRequest lastRequest;
+};
+
 class SubPrepPageHarness final
 {
 public:
@@ -158,8 +197,23 @@ public:
     {
     }
 
+    SubPrepPageHarness(
+        ApplicationServices* services,
+        SubPrepCalendarEventIntervalsReadPort& calendarIntervalsReadPort
+        )
+        : page(
+              services,
+              summaryReadPort,
+              detailsReadPort,
+              printSourceReadPort,
+              calendarIntervalsReadPort
+              )
+    {
+    }
+
     SubPrepTestSummaryReadPort summaryReadPort;
     SubPrepTestDetailsReadPort detailsReadPort;
+    SubPrepTestPrintSourceReadPort printSourceReadPort;
     SubPrepPage page;
 };
 
@@ -235,6 +289,7 @@ private slots:
     void printDialogSelectsNextVacationBlock();
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
     void printDialogCombinesVacationDatesAcrossHolidayBlocks();
+    void printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure();
     void packageFolderNamesCoverDateRangesAndUnsafeCharacters();
     void printDialogRequiresAndSavesMissingUserName();
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
@@ -1556,6 +1611,46 @@ void SubPrepPageTests
             )
         );
 
+    const QList<CalendarEvent> connectedBlockPastLookahead{
+        calendarEvent(
+            QStringLiteral("Vacation"),
+            referenceDate.addDays(28),
+            referenceDate.addDays(28)
+            ),
+        calendarEvent(
+            QStringLiteral("Holiday"),
+            referenceDate.addDays(29),
+            referenceDate.addDays(30)
+            ),
+        calendarEvent(
+            QStringLiteral("Vacation"),
+            referenceDate.addDays(31),
+            referenceDate.addDays(32)
+            )
+    };
+    const QList<QDate> connectedBlockDates{
+        referenceDate.addDays(28),
+        referenceDate.addDays(31),
+        referenceDate.addDays(32)
+    };
+    QCOMPARE(
+        SubPrepPrintDialog::defaultSelectedDates(
+            connectedBlockPastLookahead,
+            referenceDate
+            ),
+        connectedBlockDates
+        );
+    SubPrepPrintDialog connectedBlockDialog(
+        connectedBlockPastLookahead,
+        referenceDate
+        );
+    QVERIFY(
+        connectedBlockDialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepNextVacationCheckBox")
+            )
+        );
+    QCOMPARE(connectedBlockDialog.selectedDates(), connectedBlockDates);
+
     QVERIFY(
         SubPrepPrintDialog::defaultSelectedDates(
             {tooDistantVacation},
@@ -1804,6 +1899,58 @@ void SubPrepPageTests
             QDate(2026, 7, 10),
             QDate(2026, 7, 13)
         })
+        );
+}
+
+void SubPrepPageTests::
+printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure()
+{
+    ApplicationServices services;
+    SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
+    const QDate referenceDate = QDate::currentDate();
+    const QDate expectedStartDate(referenceDate.year(), 1, 1);
+    const QDate expectedEndDate(referenceDate.year() + 1, 12, 31);
+
+    bool dialogOpened = false;
+    bool emptyCalendarFallbackShown = false;
+    QTimer::singleShot(
+        0,
+        [&dialogOpened, &emptyCalendarFallbackShown]()
+        {
+            auto* dialog = qobject_cast<SubPrepPrintDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+
+            dialogOpened = true;
+            emptyCalendarFallbackShown =
+                dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepNextVacationCheckBox")
+                    ) == nullptr;
+            dialog->reject();
+        }
+        );
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &harness.page,
+        "generateSubPrep",
+        Qt::DirectConnection
+        ));
+
+    QVERIFY(dialogOpened);
+    QVERIFY(emptyCalendarFallbackShown);
+    QCOMPARE(calendarIntervalsReadPort.loadCount, 1);
+    QCOMPARE(
+        calendarIntervalsReadPort.lastRequest.startDate.value(),
+        expectedStartDate.toString(Qt::ISODate).toStdString()
+        );
+    QCOMPARE(
+        calendarIntervalsReadPort.lastRequest.endDate.value(),
+        expectedEndDate.toString(Qt::ISODate).toStdString()
         );
 }
 

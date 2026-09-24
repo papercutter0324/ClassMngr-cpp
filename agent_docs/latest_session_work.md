@@ -1284,6 +1284,34 @@ separate on a host with Xvfb and loopback access.
   the user-owned wording commit unchanged.
 
 
+### Phase 2 Sub Prep calendar interval query - 2026-09-24
+
+- Replaced the page's generic all-years CalendarService read with a
+  purpose-specific typed interval query. Per user direction, its bounds are
+  January 1 of the current calendar year through December 31 of the following
+  year, clamped at year 9999. One captured date supplies both the query year
+  and dialog reference date.
+- The query returns normalized Vacation/Holiday types and complete inclusive
+  start/end intervals, using only the fields the dialog needs. It avoids the
+  generic 4,096-event projection cap. Unavailable/read failures still produce
+  empty calendar defaults and allow generation to continue. Dialog selection
+  logic and its day-28/day-29, historical-prefix, holiday-bridge, and connected
+  future-tail behavior remain covered.
+- Independent fresh Ninja/MSVC x64 configure validated 894 handwritten source
+  owners. The executable and focused targets built; repository, Application
+  query, Platform calendar adapter, Sub Prep page, print-source mapper, PDF,
+  package-service, and print-source port suites passed 8/8. Tests cover 5,000
+  intervals, 4,097 adapter results, the two-year bounds, year-9999 clamp,
+  full overlaps, production ApplicationServices-to-repository wiring, and
+  failure fallback. Source scan and `git diff --check` passed. The exceptional
+  conversion fallback was source-inspected but not fault-injected.
+- Handoff: after committing F35, audit the current code against the Phase 2
+  plan and formal exit gate, as requested. Phase 2 remains open; workbook
+  decoding, generic settings, remaining feature services, broader document
+  work, and the formal exit gate remain open. Nothing was pushed; preserve
+  Start Here and the user-owned wording commit.
+
+
 ### Phase 2 typed settings availability guards - 2026-09-24
 
 - My Information now gates stored-settings load and save through

@@ -9,6 +9,7 @@
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_delete_port.h"
+#include "next/application/sub_prep_calendar_event_intervals_query.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_delete_all_port.h"
 #include "next/platform/application_services_calendar_event_import_save_port.h"
@@ -18,6 +19,7 @@
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_port.h"
+#include "next/platform/application_services_sub_prep_calendar_event_intervals_port.h"
 #include "features/calendar/academic_calendar_event_parser.h"
 
 #include <QSqlQuery>
@@ -52,6 +54,8 @@ using ClassMngr::Next::Platform::
 using ClassMngr::Next::Platform::
     ApplicationServicesCalendarEventSeriesDeletePort;
 using ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort;
+using ClassMngr::Next::Platform::
+    ApplicationServicesSubPrepCalendarEventIntervalsPort;
 
 namespace
 {
@@ -229,6 +233,8 @@ private slots:
     void initTestCase();
     void reportsCalendarEventPortAvailability();
     void projectsOverlappingRangeAsOwnedTypedMetadata();
+    void readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation();
+    void readsTwoYearSubPrepIntervalsThroughApplicationServices();
     void projectsByIdAsOwnedTypedMetadata();
     void deletesValidTypedEvent();
     void reportsInvalidDeleteIdStructurally();
@@ -293,6 +299,172 @@ reportsCalendarEventPortAvailability()
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(port.isAvailable());
     QVERIFY(importPort.isAvailable());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation()
+{
+    constexpr int matchingEvents = 4'097;
+    QDate requestedStartDate;
+    QDate requestedEndDate;
+    ApplicationServicesSubPrepCalendarEventIntervalsPort port(
+        [&](const QDate& startDate, const QDate& endDate)
+        {
+            requestedStartDate = startDate;
+            requestedEndDate = endDate;
+
+            QList<CalendarEventDateInterval> intervals;
+            intervals.reserve(matchingEvents + 4);
+            intervals.append({
+                .eventType = QStringLiteral("Vacation"),
+                .startDate = QDate(2025, 12, 20),
+                .endDate = QDate(2026, 1, 7)
+            });
+            for (int index = 0; index < matchingEvents; ++index)
+            {
+                intervals.append({
+                    .eventType = QStringLiteral("Vacation"),
+                    .startDate = QDate(2026, 7, 1),
+                    .endDate = QDate(2026, 7, 29)
+                });
+            }
+            intervals.append({
+                .eventType = QStringLiteral("Holiday"),
+                .startDate = QDate(2027, 12, 31),
+                .endDate = QDate(2028, 1, 7)
+            });
+            intervals.append({
+                .eventType = QStringLiteral("Vacation"),
+                .startDate = QDate(2025, 12, 1),
+                .endDate = QDate(2025, 12, 15)
+            });
+            intervals.append({
+                .eventType = QStringLiteral("Holiday"),
+                .startDate = QDate(2028, 1, 1),
+                .endDate = QDate(2028, 1, 15)
+            });
+            return ::Result<QList<CalendarEventDateInterval>>(std::move(intervals));
+        }
+        );
+
+    const auto result = SubPrepCalendarEventIntervalsQuery(port).execute({
+        CalendarEventDate("2026-07-01")
+        });
+
+    QVERIFY(result);
+    QCOMPARE(requestedStartDate, QDate(2026, 1, 1));
+    QCOMPARE(requestedEndDate, QDate(2027, 12, 31));
+    QCOMPARE(result.value().size(), std::size_t(matchingEvents + 2));
+    QVERIFY(std::any_of(
+        result.value().cbegin(),
+        result.value().cend(),
+        [](const SubPrepCalendarEventInterval& interval)
+        {
+            return interval.startDate.value() == "2025-12-20"
+                && interval.endDate.value() == "2026-01-07";
+        }
+        ));
+    QVERIFY(std::any_of(
+        result.value().cbegin(),
+        result.value().cend(),
+        [](const SubPrepCalendarEventInterval& interval)
+        {
+            return interval.eventType == "Holiday"
+                && interval.startDate.value() == "2027-12-31"
+                && interval.endDate.value() == "2028-01-07";
+        }
+        ));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+readsTwoYearSubPrepIntervalsThroughApplicationServices()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* calendarService = services.calendarService();
+    QVERIFY(calendarService);
+    QVERIFY(calendarService->isAvailable());
+
+    DataService* dataService = services.dataService();
+    QVERIFY(dataService);
+    DatabaseSession* session = dataService->databaseSession();
+    QVERIFY(session);
+    QSqlDatabase database = session->database();
+
+    struct StoredInterval final
+    {
+        QString title;
+        QString eventType;
+        QDate startDate;
+        QDate endDate;
+    };
+    const QList<StoredInterval> storedIntervals{
+        {
+            QStringLiteral("Before current year"),
+            QStringLiteral("Vacation"),
+            QDate(2025, 12, 1),
+            QDate(2025, 12, 31)
+        },
+        {
+            QStringLiteral("Historical prefix through window start"),
+            QStringLiteral("Vacation"),
+            QDate(2025, 12, 20),
+            QDate(2026, 1, 1)
+        },
+        {
+            QStringLiteral("Current year"),
+            QStringLiteral("Vacation"),
+            QDate(2026, 7, 10),
+            QDate(2026, 7, 12)
+        },
+        {
+            QStringLiteral("Following year boundary"),
+            QStringLiteral("Holiday"),
+            QDate(2027, 12, 31),
+            QDate(2028, 1, 7)
+        },
+        {
+            QStringLiteral("After following year"),
+            QStringLiteral("Holiday"),
+            QDate(2028, 1, 1),
+            QDate(2028, 1, 15)
+        }
+    };
+
+    for (const StoredInterval& interval : storedIntervals)
+    {
+        QSqlQuery insert(database);
+        insert.prepare(R"(
+            INSERT INTO calendar_events (
+                title,
+                event_type,
+                start_date,
+                end_date
+            ) VALUES (?, ?, ?, ?)
+        )");
+        insert.addBindValue(interval.title);
+        insert.addBindValue(interval.eventType);
+        insert.addBindValue(interval.startDate.toString(Qt::ISODate));
+        insert.addBindValue(interval.endDate.toString(Qt::ISODate));
+        QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+    }
+
+    ApplicationServicesSubPrepCalendarEventIntervalsPort port(services);
+    const auto result = SubPrepCalendarEventIntervalsQuery(port).execute({
+        CalendarEventDate("2026-07-01")
+    });
+
+    QVERIFY(result);
+    QCOMPARE(result.value().size(), std::size_t(3));
+    QCOMPARE(result.value()[0].eventType, std::string("Vacation"));
+    QCOMPARE(result.value()[0].startDate.value(), std::string("2025-12-20"));
+    QCOMPARE(result.value()[0].endDate.value(), std::string("2026-01-01"));
+    QCOMPARE(result.value()[1].eventType, std::string("Vacation"));
+    QCOMPARE(result.value()[1].startDate.value(), std::string("2026-07-10"));
+    QCOMPARE(result.value()[1].endDate.value(), std::string("2026-07-12"));
+    QCOMPARE(result.value()[2].eventType, std::string("Holiday"));
+    QCOMPARE(result.value()[2].startDate.value(), std::string("2027-12-31"));
+    QCOMPARE(result.value()[2].endDate.value(), std::string("2028-01-07"));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

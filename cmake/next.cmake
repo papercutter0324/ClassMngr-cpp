@@ -52,6 +52,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_first_day_of_week_preferences.h
     src/next/application/calendar_event_query_port.h
     src/next/application/calendar_event_projection.h
+    src/next/application/sub_prep_calendar_event_intervals_query.h
     src/next/application/campus_directory_projection.h
     src/next/application/class_summary_projection.h
     src/next/application/class_notes_save_port.h
@@ -118,6 +119,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_academic_calendar_schedule_preferences_port.h
     src/next/platform/application_services_document_catalog_port.h
     src/next/platform/application_services_calendar_event_port.h
+    src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h
     src/next/platform/calendar_event_import_campus_code_query_adapter.h
     src/next/platform/calendar_page_campus_directory_query_adapter.h
     src/next/platform/my_info_campus_directory_query_adapter.h

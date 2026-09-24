@@ -1,9 +1,14 @@
 #include "sub_prep_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "next/application/sub_prep_calendar_event_intervals_query.h"
+#include "next/platform/application_services_sub_prep_calendar_event_intervals_port.h"
 #include "next/platform/application_services_sub_prep_roster_output_source_port.h"
 
 #include <memory>
+#include <limits>
 #include <string>
+
+#include <QDebug>
 
 void SubPrepPage::saveData()
 {
@@ -477,19 +482,82 @@ void SubPrepPage::generateSubPrep()
 
     refreshGeneratedContent();
 
-    QList<CalendarEvent> calendarEvents;
     const QDate currentDate = QDate::currentDate();
-
-    if (auto* calendarService = openCalendarService(m_services))
+    QList<CalendarEvent> calendarEvents;
+    std::unique_ptr<
+        ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort
+        > ownedCalendarIntervalsReadPort;
+    auto* calendarIntervalsReadPort = m_calendarIntervalsReadPort;
+    if (!calendarIntervalsReadPort && m_services)
     {
-        const Result<QList<CalendarEvent>> loadedEvents =
-            calendarService->eventsInRange(
-                QDate(1, 1, 1),
-                QDate(9999, 12, 31)
-                );
-        if (loadedEvents)
+        ownedCalendarIntervalsReadPort = std::make_unique<
+            ClassMngr::Next::Platform::
+                ApplicationServicesSubPrepCalendarEventIntervalsPort
+            >(*m_services);
+        calendarIntervalsReadPort = ownedCalendarIntervalsReadPort.get();
+    }
+
+    if (calendarIntervalsReadPort)
+    {
+        ClassMngr::Next::Application::SubPrepCalendarEventIntervalsQuery query(
+            *calendarIntervalsReadPort
+            );
+        const auto loadedIntervals = query.execute({
+            ClassMngr::Next::Application::CalendarEventDate(
+                currentDate.toString(Qt::ISODate).toStdString()
+                )
+        });
+        if (loadedIntervals)
         {
-            calendarEvents = *loadedEvents;
+            const std::size_t maxQtListSize = static_cast<std::size_t>(
+                std::numeric_limits<qsizetype>::max()
+                );
+            if (loadedIntervals.value().size() > maxQtListSize)
+            {
+                qWarning()
+                    << "Sub Prep calendar interval count exceeds the UI list capacity; using an empty calendar.";
+            }
+            else
+            {
+                try
+                {
+                    calendarEvents.reserve(
+                        static_cast<qsizetype>(loadedIntervals.value().size())
+                        );
+                    for (const auto& interval : loadedIntervals.value())
+                    {
+                        CalendarEvent event;
+                        event.eventType = QString::fromStdString(
+                            interval.eventType
+                            );
+                        event.startDate = QDate::fromString(
+                            QString::fromStdString(
+                                interval.startDate.value()
+                                ),
+                            Qt::ISODate
+                            );
+                        event.endDate = QDate::fromString(
+                            QString::fromStdString(
+                                interval.endDate.value()
+                                ),
+                            Qt::ISODate
+                            );
+                        calendarEvents.append(std::move(event));
+                    }
+                }
+                catch (...)
+                {
+                    calendarEvents.clear();
+                    qWarning()
+                        << "Sub Prep calendar interval conversion failed; using an empty calendar.";
+                }
+            }
+        }
+        else
+        {
+            qWarning()
+                << "Sub Prep calendar interval read failed; using an empty calendar."
+                << QString::fromStdString(loadedIntervals.error().message);
         }
     }
 

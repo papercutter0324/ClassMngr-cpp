@@ -765,6 +765,25 @@ Result<QList<CalendarEvent>> DataService::loadCalendarEventsInRange(
         );
 }
 
+Result<QList<CalendarEventDateInterval>>
+DataService::loadCalendarEventDateIntervalsInRange(
+    const QDate& startDate,
+    const QDate& endDate
+    )
+{
+    if (!m_calendarEventRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return m_calendarEventRepository->loadCalendarEventDateIntervalsInRange(
+        startDate,
+        endDate
+        );
+}
+
 Result<QList<CalendarEvent>> DataService::loadUpcomingCalendarEvents(
     const QDate& fromDate,
     int limit
