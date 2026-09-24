@@ -1433,10 +1433,43 @@ separate on a host with Xvfb and loopback access.
 - Three independent solution reviews converged 2/3 on F39: move Schedule
   Import review-time overlap/conflict projection into Qt-free Application and
   share its semantics with F37 apply-time validation, while keeping translated
-  warnings and dialog behavior at the UI edge. Acceptance should cover overlap
-  versus adjacency, days, conflict ordering, Normal/Intensive modes, preserved
-  and skipped schedules, required conflict-workbook parity, and no-write apply
-  rejection. F39 implementation is now underway.
+  warnings and dialog behavior at the UI edge. This slice is now independently
+  verified and committed; see the F39 evidence below.
 - Preserve the user's Sub Prep bound: the current calendar year and following
   calendar year at most. Preserve the pre-existing modified
   `cmake/sources.cmake`; it is outside F38. Nothing was pushed.
+
+### F39 Schedule Import conflict projection
+
+- F39 is committed as `3121d90c2db6af8e225048f016eec6f0843c1c18`
+  (`Phase2 - Share Schedule Import conflict projection`). The F38 source and
+  documentation handoffs remain `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`
+  and `e7d1aa3ccb3934e8e800e8ef4d8913125f19b857` respectively.
+- `src/next/application/schedule_import_overlap_projection.h` defines the
+  standard-C++ projection. UI review formats its typed conflicts as translated
+  warnings; application apply validation consumes the same overlap result.
+- Required `tests/fixtures/imports/schedule_overlap_conflict.xlsx` drives
+  production preview/review and apply. It verifies the review warning and
+  disabled import action, then verifies conflicting apply persists no teacher,
+  class, or class-time rows. The existing F37 trigger sentinel still passes.
+- Independent fresh Windows x64 Ninja/MSVC configure validated 896 handwritten
+  source owners. The three focused targets built and CTest passed 3/3. QtTest
+  totals: Schedule Import 25/0/1 (the existing optional external sample was
+  unset), review dialog 21/0/0, and app-less validation 12/0/0. Total: 58
+  passed, 0 failed, 1 optional skip. `git diff --check` passed.
+- App-less coverage includes half-open overlap/adjacency, weekdays,
+  deterministic conflict ordering, Normal/Intensive schedules, skipped classes,
+  and retained intensive schedules. The new projection header uses standard
+  library headers only. UI and apply validation both call it.
+- Gate audit after F39: app-less Domain/Application behavior remains partial
+  because broader Domain models are incomplete; baseline parity remains partial
+  despite fixture-backed Calendar import, Schedule preview, and conflict
+  review/apply paths; the workspace boundary remains partial because
+  FileController still asks MainWindow for dirty approval and closes the old
+  session before a replacement succeeds; audited `src/next` dependency
+  isolation remains satisfied. Phase 2 and its formal exit gate remain open.
+- Remaining work includes wider baseline parity, shared workbook decoding,
+  complete Domain models, generic settings, remaining feature-service
+  migrations, and broader calendar/UI and document work. Preserve the Sub Prep
+  limit of current and following calendar years at most. The user-modified
+  `cmake/sources.cmake` remained untouched and uncommitted; nothing was pushed.

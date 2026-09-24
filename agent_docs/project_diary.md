@@ -720,10 +720,10 @@ the checked-in fixture mandatory so preview parity still runs from a clean
 checkout. The optional external workbook check remains a separate supplement
 and may skip when its environment variable is absent.
 
-For the next Schedule Import slice, move live projected-overlap review into a
-Qt-free Application projection and reuse that rule at apply time. Keep the
-translated warning and dialog policy at the UI edge. Verify review/apply
-parity for real overlaps, adjacency, weekdays, conflict order, and Normal/
-Intensive schedule projections, including preserved intensive hours and
-skipped classes. A fixture-backed review warning and a pre-write no-mutation
-sentinel tie the behavior to the legacy workflow.
+F39 moved live projected-overlap review into a Qt-free Application projection
+shared with apply validation. Return both conflicting intervals and their class
+labels so the UI can localize warnings at its edge while apply validation uses
+the same conflict ordering and half-open overlap semantics. Keep adjacency,
+weekdays, Normal/Intensive and skipped/preserved schedules, a required
+conflict-workbook review path, and pre-write no-mutation evidence explicit in
+tests.

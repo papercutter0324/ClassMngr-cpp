@@ -144,7 +144,7 @@ later Phase 2 slice.
 | `settingsService()` | Menu preferences, setup, personal-info, class-detail, and speaking-evaluation UI; representative call sites are [`menu_builder.cpp`](../../src/app/menu_builder.cpp#L246) and [`initial_setup_wizard.cpp`](../../src/features/setup/ui/initial_setup_wizard.cpp#L380). | Future settings/preferences contract; no v2 wrapper. | Legacy feature service; future v2 application slice. |
 | `teacherService()` | Navigation, setup/import, roster, and teacher-facing UI; representative call sites are [`navigation_controller.cpp`](../../src/app/controllers/navigation_controller.cpp#L118) and [`initial_setup_wizard.cpp`](../../src/features/setup/ui/initial_setup_wizard.cpp#L154). | Future teacher use cases/projections; no v2 wrapper. | Legacy feature service; future teacher slice. |
 | `classService()` | Navigation, classes, roster, schedule, speaking evaluation, and setup use class CRUD/import data; representative calls are [`classes_page.cpp`](../../src/features/classes/ui/classes_page.cpp#L179) and [`navigation_controller.cpp`](../../src/app/controllers/navigation_controller.cpp#L234). | Future class use cases/projections; no v2 wrapper. | Legacy feature service; future class slice. |
-| `scheduleService()` | Menu, schedule UI, testing-class UI, and roster output consume schedule/testing operations; representative calls are [`menu_builder.cpp`](../../src/app/menu_builder.cpp#L195) and [`schedule_widget.cpp`](../../src/features/schedule/ui/schedule_widget.cpp#L307). | Partial F37/F38 boundary: `Application::validateScheduleImportState` validates the adapted import plan and snapshots before writes; the Qt-free [`ScheduleImportMatchingProjection`](../../src/next/application/schedule_import_matching_projection.h) now powers [`ScheduleImportRepository::preview`](../../src/data/repositories/schedule_import_repository.cpp), replacing the legacy matcher. Keys are normalized at the Qt edge while raw room text remains for display. Required workbook parity covers matching and preview, but review-time conflict projection, persistence, and other schedule/testing operations remain legacy; this is not a schedule-service wrapper. | Application validation and matching contracts plus the legacy repository edge; remaining schedule feature and persistence behavior. |
+| `scheduleService()` | Menu, schedule UI, testing-class UI, and roster output consume schedule/testing operations; representative calls are [`menu_builder.cpp`](../../src/app/menu_builder.cpp#L195) and [`schedule_widget.cpp`](../../src/features/schedule/ui/schedule_widget.cpp#L307). | Partial F37/F38/F39 boundary: `Application::validateScheduleImportState` validates the adapted plan and snapshots before writes; [`ScheduleImportMatchingProjection`](../../src/next/application/schedule_import_matching_projection.h) powers [`ScheduleImportRepository::preview`](../../src/data/repositories/schedule_import_repository.cpp), replacing the legacy matcher. F39's [`schedule_import_overlap_projection.h`](../../src/next/application/schedule_import_overlap_projection.h) is shared by review presentation and apply-time state validation. Qt matching keys are normalized at the edge while raw room text remains for display; translations remain at the UI edge. Required fixtures cover matching/preview and conflict review/apply, but broader schedule persistence and other schedule/testing operations remain legacy; this is not a schedule-service wrapper. | Application validation, matching, and overlap-projection contracts plus the legacy repository/UI edges; remaining schedule feature and persistence behavior. |
 | `calendarService()` | Menu still consumes legacy calendar events directly ([`menu_builder.cpp`](../../src/app/menu_builder.cpp#L391)); Sub Prep routes its interval read through the typed query and Platform adapter ([`sub_prep_page.cpp`](../../src/features/sub_prep/ui/sub_prep_page.cpp#L488)). Calendar feature callers use typed Platform/Application ports; a source search found no `ApplicationServices::calendarService()` getter calls in `src/features/calendar/`. | `Platform::ApplicationServicesCalendarEventPort` maps `CalendarService::eventsInRange` into an owned typed `Application::CalendarEventProjection`, with bounded copied metadata including `eventType`, `timeStatus`, and optional `repeatSeriesId`, typed IDs, explicit all-day/unknown-time policy, and validation of range, service, technical, ID/metadata, partial-time, and capacity failures. Sub Prep uses `SubPrepCalendarEventIntervalsQuery` and `ApplicationServicesSubPrepCalendarEventIntervalsPort` for Vacation/Holiday intervals from January 1 of the captured current calendar year through December 31 of the following calendar year (at most two years), bypassing this generic projection cap. The port also exposes typed `projectionById(int)` for activation reads, while `ApplicationServicesCalendarEventDeletePort` maps typed `CalendarEventId` deletion to legacy `CalendarService::deleteEvent` and returns typed failure results for its boundary cases. `CalendarEventDialog::eventData()` returns a typed `CalendarEventEditDraft`; private `legacyEventData()` retains the dialog-local Qt/legacy conversion used for validation, and the constructor/member now use the draft by value. `ApplicationServicesCalendarEventSavePort` maps typed draft-derived requests to `CalendarService::saveEvents({event})` and returns `Result<CalendarEventId>`; `ApplicationServicesCalendarEventSeriesEditPort` maps a typed `CalendarEventSeriesEditRequest` by loading `repeatSeriesFromDate(repeatSeriesId, startDate)`, applying the date offset, duration, and edited-field propagation, then saving through `saveEvents(updatedEvents)` with `Result<void>`; `ApplicationServicesCalendarEventSeriesCreatePort` maps a typed Qt-free `CalendarEventSeriesCreateRequest` to one ordered legacy batch and one atomic `saveEvents(events)` call, returning typed occurrence IDs; `ApplicationServicesCalendarEventSeriesDeletePort` maps a bounded typed repeat-series suffix-delete request to legacy `CalendarService::deleteRepeatSeriesFromDate` and returns `Result<void>`. It trims only `repeatSeriesId`, preserves existing mapped-field whitespace, and returns structured failures for blank, over-bounds, or malformed fields. `CalendarEventCache` retains typed summaries and exposes date-scoped and range-scoped typed projections; `CalendarEventModel` consumes typed rows and converts to QML types only at the UI boundary. Legacy `eventsForDate`/`eventsInRange` compatibility remains for other callers; `calendar_page_upcoming_events.cpp` uses `CalendarEventSummary` for its narrow retrieval/filtering/formatting/row-rendering path, and `CalendarPage::ensureNextTenEvents` uses the typed range projection with the typed `filterUpcomingEvents` overload. `calendar_page_events.cpp` maps typed summary values directly to `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record. It consumes drafts for all typed save, series-create, and series-edit requests; existing typed edit/save/delete/dialog paths, defaults, validation, inline errors, warnings, repeat/delete/mutation behavior, `schedule_use_24h`, routing, and invalidation/refresh remain preserved. | Platform calendar read adapter, dialog edit-draft and constructor/input ownership boundaries, cache/model, upcoming-read, next-ten-prefetch, activation-read, non-repeat save/delete, repeat-occurrence save, this-and-following repeat-series edit/save, new-repeat series-create/batch-save, repeat-series suffix-delete, and Sub Prep interval query/Platform adapter/page cutover; worker-boundary adapter and the current-campus availability and upcoming-event option-preference caller boundaries; broader calendar input/lookup and typed UI/page migration remain future. |
 | `rosterService()` | Roster editors/printing, class pages, sub-prep, and speaking evaluation use roster operations; representative calls are [`roster_editor_widget.cpp`](../../src/features/roster/ui/roster_editor_widget.cpp#L64) and [`roster_print_dialog.cpp`](../../src/features/roster/ui/roster_print_dialog.cpp#L445). | Future roster use cases/projections; no v2 wrapper. | Legacy feature service; future roster slice. |
 | `speakingEvaluationService()` | Speaking-evaluation pages, analytics, and roster score import use it; representative calls are [`speaking_eval_page.cpp`](../../src/features/speaking_eval/ui/speaking_eval_page.cpp#L198) and [`class_analytics_page.cpp`](../../src/features/classes/ui/class_analytics_page.cpp#L526). | Future evaluation/analytics contracts; no v2 wrapper. | Legacy feature service; future evaluation slice. |
@@ -3272,8 +3272,10 @@ Qt-free here, not the entire `src/next` tree. After structural plan checks and
 teacher/class snapshot reads, [`ScheduleImportRepository`](../../src/data/repositories/schedule_import_repository.cpp)
 adapts those values to the request and calls the contract before writes in the
 current transaction.
-This replaces the duplicate legacy state validator while leaving schedule
-review/matching/preview and persistence at the legacy edge.
+This replaces the duplicate legacy state validator. F38 later moved matching
+and preview into a Qt-free Application contract; F39 moved overlap/conflict
+projection into an Application contract shared with review presentation.
+Persistence remains at the legacy edge.
 
 The contract validates teacher and class target availability/identity,
 teacher action targets and room selection, unique exact-match skip targets,
@@ -3290,10 +3292,10 @@ settings sentinel remain unchanged. This checks the pre-write boundary for
 that stale-target path; other validation rules are exercised by the separate
 app-less Application suite. Executor and independent Tester each configured
 a fresh Windows x64 build with 895 handwritten source owners; both focused
-suites passed 2/2. F38 adds matching/preview and required workbook coverage;
-review-time conflict projection, workbook decoding, broader Domain
-completeness, and the formal Phase 2 gate remain open. Phase 2 remains in
-progress.
+suites passed 2/2. F38 adds matching/preview and F39 adds shared review/apply
+conflict projection with required fixture coverage. Workbook decoding, wider
+baseline parity, broader Domain completeness, and the formal Phase 2 gate
+remain open. Phase 2 remains in progress.
 
 ## Verified F38 Schedule Import matching and preview - commit `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`
 
@@ -3319,12 +3321,36 @@ owners, built the two focused targets, and passed CTest 2/2. QtTest reported
 Schedule 24/0/1 (the sole skip is the optional external sample, which was
 unset) and matching 5/0/0.
 
-This adds required fixture-backed matching/preview evidence; it does not
-complete wider baseline parity or review-time conflict projection. The next
-recommended F39 slice, supported by a 2/3 convergence among three independent
-reviews, is a Qt-free Schedule Import review-time overlap/conflict projection
-consumed by the UI. Keep translation and dialog behavior at the UI edge; cover
-overlap versus adjacency, days, conflict ordering, Normal/Intensive/skipped/
-reserved schedules, fixture-backed UI parity, and no-write apply rejection.
-F38 is committed as `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`. Phase 2
-remains open.
+This adds required fixture-backed matching/preview evidence. F39 subsequently
+adds shared review/apply conflict projection; see the verified F39 handoff
+below. Wider baseline parity, workbook decoding, and other Phase 2 gaps remain
+open. F38 is committed as `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`.
+Phase 2 remains open.
+
+## Verified F39 Schedule Import conflict projection - commit `3121d90c2db6af8e225048f016eec6f0843c1c18`
+
+The Qt-free standard-C++
+[`schedule_import_overlap_projection.h`](../../src/next/application/schedule_import_overlap_projection.h)
+is shared by Schedule Import review presentation and apply-time state
+validation. It covers half-open overlap versus adjacency, matching days,
+deterministic conflict ordering, Normal/Intensive projection, skipped classes,
+and retained intensive schedules. Translation remains at the UI edge.
+
+The required
+[`schedule_overlap_conflict.xlsx`](../../tests/fixtures/imports/schedule_overlap_conflict.xlsx)
+drives production preview and review, shows the expected conflict warning, and
+disables import in [`schedule_import_dialog_tests.cpp`](../../tests/schedule_import_dialog_tests.cpp).
+Apply rejects the conflicting state; [`schedule_import_tests.cpp`](../../tests/schedule_import_tests.cpp)
+verifies zero teachers, classes, or `class_times` persisted, and the F37
+pre-write trigger sentinel still passes. App-less rule coverage is in
+[`next_application_schedule_import_state_validation_tests.cpp`](../../tests/next_application_schedule_import_state_validation_tests.cpp).
+Independent Tester `PH2-F39-INDEPENDENT-VERIFY`
+configured fresh Windows x64 Ninja/MSVC with 896 handwritten source owners,
+built three focused targets, and passed CTest 3/3. QtTest passed ScheduleImport
+25/0/1 (pass/fail/skip), ScheduleImportDialog 21/0/0, and Application state
+validation 12/0/0 (58 passed, 0 failed, one existing optional external-workbook
+skip because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset). `git diff --check`
+passed.
+
+F39 closes the review-time conflict-projection gap, not the Phase 2 gate.
+Wider baseline parity and the remaining gate-audit items remain open.

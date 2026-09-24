@@ -615,11 +615,30 @@ fixture-backed preview evidence but remains incomplete; Gate 1 and Gate 3 are
 partial, and Gate 4's audited `src/next` dependency boundary remains satisfied.
 Phase 2 remains open.
 
-## Current Deployment Continuation - 2026-09-24
+### Phase 2 Schedule Import conflict projection - 2026-09-24
 
-F38 is committed as `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`. Three independent
-solution reviews converged 2/3 on F39: move
-Schedule Import review-time overlap projection into Application and share its
-semantics with F37 apply-time validation. Preserve the pre-existing modified
-`cmake/sources.cmake`; it is outside F38. Sub Prep is bounded to the current
-and following calendar years at most. Nothing was pushed.
+F39 adds one Qt-free Application overlap projection used by both Schedule
+Import review presentation and apply-time validation. The UI retains translated
+warning formatting. The checked-in `schedule_overlap_conflict.xlsx` fixture
+drives production preview/review, displays the expected warning and disabled
+import action, and proves apply rejection leaves teachers, classes, and class
+times unwritten. App-less tests cover half-open overlap and adjacency, matching
+days, deterministic order, Normal/Intensive schedules, skipped classes, and
+retained intensive schedules.
+
+Independent fresh Windows x64 Ninja/MSVC verification validated 896 handwritten
+source owners. The three focused CTest targets passed 3/3; QtTest totals were
+58 passed, 0 failed, and 1 existing optional external-workbook skip. The F37
+pre-write trigger sentinel also passed. F39 is committed as
+`3121d90c2db6af8e225048f016eec6f0843c1c18`.
+
+The Phase 2 gate remains open: app-less Domain/Application behavior is partial;
+fixture parity is partial despite the F36/F38/F39 fixture paths; workspace
+replacement is partial because FileController still depends on MainWindow dirty
+approval and closes the old session before replacement succeeds; audited
+`src/next` dependency isolation is satisfied. Wider baseline parity, shared
+workbook decoding, complete Domain models, generic settings, remaining
+feature-service migrations, and broader calendar/UI and document work remain.
+Preserve the Sub Prep bound of the current and following calendar years at most.
+Preserve the pre-existing modified `cmake/sources.cmake`; it was not part of
+F39. Nothing was pushed.
