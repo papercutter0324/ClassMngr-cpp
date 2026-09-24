@@ -483,9 +483,9 @@ primary values are absent, and the legacy value is still returned if migration
 fails. UTF-8 conversion, defaults, unavailable behavior, and page display are
 unchanged. Executor and independent fresh Ninja/MSVC x64 CTest runs passed
 3/3; the independent configure validated 886 handwritten owners and built
-ClassMngr, the adapter, MyWorkspace, and InitialSetupWizard. Next: route My
-Information and Initial Setup's remaining settings-availability checks
-through a typed availability query, preserving early-return behavior and
-adding unavailable My Information load coverage. Workbook, generic settings,
-other feature services, broader document work, and the Phase 2 exit gate
-remain open.
+ClassMngr, the adapter, MyWorkspace, and InitialSetupWizard. Next: use the
+existing `ApplicationServicesCurrentCampusPreferencesPort::isAvailable()`
+contract to route My Information and Initial Setup's remaining settings
+availability checks. Preserve early-return behavior and add unavailable My
+Information load coverage. Workbook, generic settings, other feature services,
+broader document work, and the Phase 2 exit gate remain open.

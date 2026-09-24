@@ -3238,8 +3238,9 @@ gates) behind a narrow typed availability query. Preserve unavailable early
 returns and no-mutation behavior, including My Information's save return
 before autosave cancellation or Zoom normalization and Initial Setup's no-op
 initialization/validation. Add direct My Information unavailable-load
-coverage. Decide before implementation whether this should be a generic
-Application availability contract with a Platform adapter or can reuse a
-tested port; the contract/adapter choice is not yet resolved. Workbook
+coverage. Use the existing typed
+`CurrentCampusPreferencesPort::isAvailable()` availability boundary and
+Platform adapter. This reuses the tested narrow contract and adapter; no
+generic availability contract is needed. Workbook
 decoding, generic settings, other feature services, broader document work, and
 the formal Phase 2 exit gate remain open.

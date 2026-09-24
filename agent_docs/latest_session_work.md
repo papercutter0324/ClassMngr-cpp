@@ -1240,14 +1240,15 @@ separate on a host with Xvfb and loopback access.
   legacy fallback/migration, UTF-8, defaults, unavailable/null services, and
   legacy-value return when migration write fails. Source scan and diff check
   passed with no resource limitation.
-- Handoff: F33 removes the remaining My Information and Initial Setup
-  settings-availability checks behind a typed availability query. Preserve
-  unavailable My Information load/save early returns, especially return before
-  autosave cancellation and Zoom-field normalization, and Initial Setup's
-  unavailable initialization/validation behavior. Add My Information load
-  coverage for unavailable settings. A focused typed availability contract
-  and Platform adapter may be needed; choose whether to reuse an existing
-  availability method after checking its semantics. Workbook decoding,
-  generic settings, other feature services, and broader document boundaries
-  remain open; Phase 2's formal exit gate is not met. Nothing was pushed; keep
-  user-owned commit `f5af92df` and its Start Here content unchanged.
+- Handoff: F33 routes the remaining My Information and Initial Setup
+  settings-availability checks through the existing
+  `ApplicationServicesCurrentCampusPreferencesPort::isAvailable()` contract.
+  Its Application contract explicitly reports persistence availability, so no
+  generic contract or adapter is needed. Preserve unavailable My Information
+  load/save early returns, especially return before autosave cancellation and
+  Zoom-field normalization, and Initial Setup's unavailable
+  initialization/validation behavior. Add My Information load coverage for
+  unavailable settings. Workbook decoding, generic settings, other feature
+  services, and broader document boundaries remain open; Phase 2's formal exit
+  gate is not met. Nothing was pushed; keep user-owned commit `f5af92df` and its
+  Start Here content unchanged.
