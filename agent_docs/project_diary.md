@@ -678,3 +678,12 @@ legacy all-years range forward. Preserve full vacation/holiday intervals so
 the dialog can connect blocks across its lookahead; do not apply a generic
 projection cap. Capture one reference date for both query bounds and dialog
 defaults to avoid a year rollover mismatch.
+
+## Phase 2 plan and exit-gate audit - 2026-09-24
+
+Distinguish app-less contract coverage from production UI integration and
+baseline-fixture parity. A coordinator boundary can preserve snapshots in its
+tests while the FileController replacement path still closes the active
+database before the new open/create succeeds. A source scan of `src/next` also
+does not by itself describe the legacy bridge behind outer ApplicationServices
+adapters.

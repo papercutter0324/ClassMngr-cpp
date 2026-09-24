@@ -535,7 +535,20 @@ open the dialog with an empty calendar. Executor and independent fresh Ninja/
 MSVC x64 runs validated 894 handwritten source owners; all eight focused
 repository, Application, Platform, Sub Prep page, and output tests passed.
 The production ApplicationServices path and 4,097-event behavior are covered.
-Phase 2 remains open. Next: audit the current code against the Phase 2 plan and
-formal exit gate, then continue with the remaining gaps. Workbook decoding,
-generic settings, remaining feature services, broader document work, and the
-formal exit gate remain open.
+Phase 2 remains open. The requested current-state audit follows; its findings
+and next step are recorded below.
+
+### Phase 2 plan and exit-gate audit - 2026-09-24
+
+Read-only review at committed F35 `616545ce` found app-less tests and target
+dependency boundaries for implemented Domain/Application contracts, but the
+Domain model and baseline-fixture parity are partial. WorkspaceCoordinator
+create/open/close/save/save-as/export snapshot behavior passes its stated
+contract tests; the production FileController still relies on MainWindow for
+dirty-page approval and closes the old database before replacement succeeds.
+The `src/next` source boundary has no direct DataService, MainWindow,
+PageManager, or widget-pointer dependencies, while outer ApplicationServices
+adapters bridge to legacy services. Phase 2 remains open. Next: select a slice
+from the remaining gate gaps. Workbook decoding, generic settings, remaining
+feature services, broader calendar and document work, and the formal exit
+gate remain open.

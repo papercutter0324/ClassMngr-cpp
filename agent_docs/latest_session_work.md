@@ -1312,6 +1312,16 @@ separate on a host with Xvfb and loopback access.
   Start Here and the user-owned wording commit.
 
 
+### Phase 2 plan and exit-gate audit - 2026-09-24
+
+- Read-only audit was performed at committed HEAD `616545cebf1de73d9f4414bcfe75cb5efbd5ad2d`; no tests were rerun. Prior focused pass records are not fresh audit results.
+- Gate 1: app-less tests and dependency declarations support behavior testing without MainWindow for implemented Domain/Application contracts. The Domain layer remains partial; it currently centers on typed IDs and Result/error contracts rather than all planned records and rules.
+- Gate 2: partial/unverified against baseline fixtures. Current Next tests exercise validation, conflicts, import planning, and state transitions on constructed inputs, while legacy fixture tests remain separate.
+- Gate 3: WorkspaceCoordinator boundary contracts and app-less tests cover create/open/close/save/save-as/export and snapshot preservation. The production FileController still obtains dirty-page approval from MainWindow and closes the current database before replacement; end-to-end preservation after a later create/open failure is not established.
+- Gate 4: static source and target-boundary review found no direct DataService, MainWindow, PageManager, or widget-pointer dependency within `src/next`. Outer ApplicationServices Platform adapters bridge to legacy services; FileController remains MainWindow-aware. Treat the core scan and the production integration boundary as separate evidence.
+- Phase 2 remains open. Workbook decoding, generic settings persistence, remaining feature-service migrations, broader calendar/UI migration, and broader document-service migration remain outstanding. Next: select the next bounded slice from these gate gaps. The legacy mapping's workspace row was also found stale and is being updated from verified source facts. Nothing was pushed; preserve Start Here and the user-owned wording commit.
+
+
 ### Phase 2 typed settings availability guards - 2026-09-24
 
 - My Information now gates stored-settings load and save through

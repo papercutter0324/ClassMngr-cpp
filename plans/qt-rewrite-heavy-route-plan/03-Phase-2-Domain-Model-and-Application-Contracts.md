@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F35 replaces Sub Prep's generic calendar range read with a typed interval query and Platform adapter covering January 1 of the current calendar year through December 31 of the following year, clamped at 9999. The purpose-specific repository read has no 4,096-event cap. Independent fresh Ninja/MSVC x64 verification validated 894 source owners and passed the eight focused CTests (8/8). Phase 2 remains in progress and its formal exit gate is open; next is the requested current-code audit against this plan and the exit gate.
+- Latest code slice: F35 is committed as `616545ce`; its typed two-year Sub Prep interval query is recorded below. The read-only exit-gate audit found partial Domain models, no established baseline-fixture parity, and a workspace replacement-preservation caveat. Phase 2 remains in progress and the formal exit gate is open; next, select a slice from the remaining gate gaps.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -447,6 +447,25 @@ invalid-session failures preserve both snapshots. The existing app-less
 cover these create paths alongside open, close, save, save-as, and export.
 
 No new v2 production path depends on DataService, MainWindow, PageManager, or a widget pointer.
+
+### Read-only exit-gate audit - 2026-09-24 (commit `616545ce`)
+
+This source and target-dependency audit was read-only at committed HEAD. No
+tests were rerun; suite coverage noted here or in prior handoffs is not fresh
+audit evidence.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | Implemented contracts have app-less tests and target dependency boundaries; Domain models remain partial. |
+| Baseline parity | Open | Validation, conflict, import-planning, and state tests exist, but parity against baseline fixtures is not established. |
+| Workspace boundary | Partial | `WorkspaceCoordinator` covers create/open/close/save/save-as/export and snapshot transitions. `FileController` still asks `MainWindow` for dirty-page approval and closes the old session before replacement, leaving end-to-end replacement preservation as an integration caveat. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The `src/next` source scan and target dependencies found no direct `DataService`, `MainWindow`, `PageManager`, or widget-pointer dependency. Outer `ApplicationServices` adapters bridge legacy services; `FileController` remains MainWindow-aware. |
+
+Open work includes baseline-fixture parity, completing the Domain models,
+workbook decoding, generic settings persistence, remaining feature-service
+migrations, and broader calendar/UI and document work. Phase 2 remains In
+Progress and the formal exit gate remains open. Next, select a slice from the
+remaining gate gaps.
 
 ## Heavy-route requirements
 
@@ -4141,5 +4160,6 @@ boundary and year-9999 clamp, interval overlaps, day-28/day-29 cases, and
 historical/future holiday bridges. `git diff --check` passed. The exceptional
 conversion fallback was source-inspected but not fault-injected.
 
-Next, audit current code against the Phase 2 plan and formal exit gate. Phase 2
-remains in progress and its formal exit gate remains open.
+The read-only exit-gate audit is recorded above. Phase 2 remains in progress
+and its formal exit gate remains open; next, select a slice from the remaining
+gate gaps.
