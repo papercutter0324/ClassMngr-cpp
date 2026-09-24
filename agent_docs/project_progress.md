@@ -552,3 +552,23 @@ adapters bridge to legacy services. Phase 2 remains open. Next: select a slice
 from the remaining gate gaps. Workbook decoding, generic settings, remaining
 feature services, broader calendar and document work, and the formal exit
 gate remain open.
+
+### Phase 2 Calendar import planning parity - 2026-09-24
+
+F36 adds a required checked-in workbook and loopback integration test around the
+production CalendarEventImportService, exercising workbook parsing, the typed
+signature query and planner, and batch save into a temporary database. The test
+checks four parsed events, one parser skip, repeated-signature parser
+deduplication, a pre-existing matching Red Day, the exact three-imported / two-
+skipped result, order, and persisted event set. An independent fresh x64
+Ninja/MSVC configure validated 895 handwritten source owners; all five focused
+calendar parser, planner, signature-query, ApplicationServices port, and parity
+suites passed. The test requires its fixture, serves it over loopback, and has
+no skip path or external Google URL. Parser dedup occurs before planning, so
+planner duplicate candidates are not covered end-to-end; the planner suite
+continues to cover planner behavior separately. This adds production-path
+Calendar import parity evidence, while Gate 2 remains partial and Phase 2 stays
+open. Next: choose between Schedule Import matching/preview and conflict/state
+projection for the next bounded parity slice. Workbook decoding, generic
+settings, remaining feature services, broader calendar and document work, and
+the formal exit gate remain open.

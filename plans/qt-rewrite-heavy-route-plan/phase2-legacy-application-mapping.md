@@ -2895,9 +2895,12 @@ Platform source suites. Full PDF/package output parity and the packaged
 Accepted candidates from the existing-signature planner now pass through the
 Qt-free `CalendarEventImportSaveRequest` and
 `ApplicationServicesCalendarEventImportSavePort`. The adapter preserves one
-ordered `CalendarService::saveEvents()` transaction; see the Phase 2 plan's
+ordered `CalendarService::saveEvents()` transaction. F36 verifies the live
+service path through this batch-save boundary; see the handoff below and the
+Phase 2 plan's
 [typed calendar import batch-save update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-typed-calendar-import-batch-save-boundary)
-for verification. Workbook parsing and campus-directory lookup remain legacy.
+for adapter details. Workbook parsing and campus-directory lookup remain
+legacy.
 
 
 ## Current calendar reset mutation boundary - 2026-09-24
@@ -3243,3 +3246,18 @@ Platform adapter. This reuses the tested narrow contract and adapter; no
 generic availability contract is needed. Workbook
 decoding, generic settings, other feature services, broader document work, and
 the formal Phase 2 exit gate remain open.
+
+## Verified F36 Calendar import parity handoff
+
+The production `CalendarEventImportService` is exercised with a required
+checked-in XLSX fixture over loopback transport and a temporary database. The
+test covers parsing, typed existing-signature lookup and planning, then ordered
+batch save; it asserts three inserted events, two skipped rows, and the exact
+persisted event set. Independent fresh Windows x64 configure/build and all
+five focused suites passed.
+
+Parser-level signature deduplication and planner duplicate candidates are
+covered by the separate planner suite, not by the end-to-end service test.
+This verifies one Calendar import parity path; broader baseline parity and the
+Phase 2 exit gate remain open. Workbook decoding and campus-directory lookup
+remain legacy boundaries.

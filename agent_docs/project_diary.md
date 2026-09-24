@@ -687,3 +687,13 @@ tests while the FileController replacement path still closes the active
 database before the new open/create succeeds. A source scan of `src/next` also
 does not by itself describe the legacy bridge behind outer ApplicationServices
 adapters.
+
+## Phase 2 Calendar import planning parity - 2026-09-24
+
+Exercise the live importer with a required local workbook fixture and a loopback
+URL override so production parser, typed query/planner, and persistence wiring
+are all covered without a changing external sheet. Keep parser signature
+deduplication distinct from planner duplicate-candidate handling: the parser
+removes those candidates before the planner sees them. Include required binary
+fixtures in the slice commit; a passing local test is insufficient if a clean
+checkout cannot obtain its workbook.

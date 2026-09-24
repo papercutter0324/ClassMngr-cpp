@@ -226,6 +226,18 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME CalendarEventImportParity
+    SOURCES
+        tests/next_feature_calendar_event_import_parity_tests.cpp
+    COMPILE_DEFINITIONS
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Network
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSubPrepCampusDirectoryQuery
     SOURCES
         tests/next_application_sub_prep_campus_directory_query_port_tests.cpp

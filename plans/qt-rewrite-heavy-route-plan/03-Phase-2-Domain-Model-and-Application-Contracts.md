@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest code slice: F35 is committed as `616545ce`; its typed two-year Sub Prep interval query is recorded below. The read-only exit-gate audit found partial Domain models, no established baseline-fixture parity, and a workspace replacement-preservation caveat. Phase 2 remains in progress and the formal exit gate is open; next, select a slice from the remaining gate gaps.
+- Latest code slice: F36 adds deterministic parity coverage through the production Calendar import service; see the update below. Gate 2 now has this verified calendar-import path, while broader baseline parity and the other audited gaps remain open. Phase 2 remains in progress and the formal exit gate is open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4145,8 +4145,9 @@ contract/source audit and diff check passed.
 The typed `SubPrepCalendarEventIntervalsQuery` and Platform
 `ApplicationServicesSubPrepCalendarEventIntervalsPort` replace Sub Prep's
 direct generic calendar range read. One captured date sets the inclusive range
-from January 1 of its calendar year through December 31 of the following year,
-clamped at year 9999, and is also passed to the dialog. The repository selects
+from January 1 of its calendar year through December 31 of the following year
+(the current and following calendar years at most), clamped at year 9999, and
+is also passed to the dialog. The repository selects
 only normalized Vacation/Holiday events overlapping the full range; invalid
 or reversed intervals are ignored. This purpose-specific read does not apply
 the generic 4,096-event projection cap.
@@ -4163,3 +4164,19 @@ conversion fallback was source-inspected but not fault-injected.
 The read-only exit-gate audit is recorded above. Phase 2 remains in progress
 and its formal exit gate remains open; next, select a slice from the remaining
 gate gaps.
+
+#### Progress update - 2026-09-24 (F36 Calendar import parity)
+
+The production `CalendarEventImportService` now has deterministic offline
+coverage using a required checked-in XLSX fixture, loopback transport, and a
+temporary database. The test exercises workbook parsing, typed existing-event
+signature lookup, planner execution, and ordered batch save; it asserts exactly
+three inserted events, two skipped rows, and the persisted event set.
+
+Independent fresh Windows x64 configure/build and all five focused suites
+passed. Parser-level signature deduplication and planner duplicate-candidate
+handling are covered by their separate planner suite, not end-to-end in this
+service test. This closes only the exercised Calendar import-planning parity
+path; Domain completeness and broader validation, conflict, import, and state
+parity remain open. Phase 2 remains in progress and its formal exit gate is
+open.

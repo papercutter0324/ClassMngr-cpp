@@ -1340,10 +1340,29 @@ separate on a host with Xvfb and loopback access.
   3/3 in both runs. Source scans and `git diff --check` passed. The independent
   verifier initially found the validation assertion missing; the executor
   added the focused test and the same verifier reran all three suites.
-- Handoff: F34 selection is being checked against the Phase 2 plan and exit
-  gate. The paired discovery reports differ on whether to route Sub Prep's
-  all-years calendar read or Class Notes save first. No next-slice decision has
-  been made yet. Workbook decoding, generic settings, remaining feature
-  services, broader document work, and the Phase 2 exit gate remain open.
-  Nothing was pushed; preserve user-owned commit `f5af92df` and its Start Here
-  content unchanged.
+- Historical F34 handoff superseded by the current Phase 2 continuation entry below.
+
+### Phase 2 Calendar import planning parity - 2026-09-24
+
+- F36 adds a required XLSX fixture and an integration test that drives the
+  production CalendarEventImportService over loopback into a temporary
+  database. It covers parser output, the typed signature query and import
+  planner, and the typed batch-save adapter.
+- Expected outcomes are four parsed events, one parser skip, repeated-signature
+  deduplication before planning, one pre-existing Red Day match, three inserted
+  events, two total skipped, preserved accepted order, and the exact final
+  event set. Planner-level duplicate candidates remain covered by its separate
+  application suite; the production parser prevents them from reaching this
+  planner end-to-end.
+- Independent fresh Ninja/MSVC x64 configure/build validated 895 handwritten
+  source owners and passed all five suites: CalendarImportTests,
+  CalendarEventImportPlanTests, CalendarEventImportSignatureQueryPortTests,
+  ApplicationServicesCalendarEventPortTests, and CalendarEventImportParityTests.
+  The test requires the fixture, binds an ephemeral server to LocalHost, and
+  contains no skip path or external URL.
+- F36 improves Calendar import planning parity evidence, but does not close
+  Gate 2: Schedule Import matching/preview, conflict detection, and state
+  transitions still need production-relevant parity coverage. Phase 2 remains
+  open. The path-limited F36 commit includes the test, CMake registration,
+  required fixture, and plan/deployment documentation. Next: select and start
+  the next Schedule Import slice. Nothing was pushed.
