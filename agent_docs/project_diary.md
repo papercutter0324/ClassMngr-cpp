@@ -727,3 +727,12 @@ the same conflict ordering and half-open overlap semantics. Keep adjacency,
 weekdays, Normal/Intensive and skipped/preserved schedules, a required
 conflict-workbook review path, and pre-write no-mutation evidence explicit in
 tests.
+
+## Phase 2 Domain schedule-time value - 2026-09-24
+
+Represent accepted weekday/minute intervals with a validated Domain value and
+keep untrusted raw input plus display labels at the Application boundary. Map
+invalid values to the existing labeled validation error before conflict
+projection, then carry the typed value through review/apply overlap checks.
+This avoids repeating validation during pairwise conflict comparisons while
+preserving the half-open rule.

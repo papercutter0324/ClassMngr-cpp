@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest code slice: F39 adds a Qt-free Schedule Import overlap/conflict projection shared by review presentation and apply-time state validation, with required workbook-fixture coverage; committed as `3121d90c2db6af8e225048f016eec6f0843c1c18`. Gate 2 now has fixture-backed Calendar import, Schedule preview, and Schedule conflict review/apply evidence, while wider baseline parity, workbook decoding, broader Domain completeness, and other audited gaps remain open. Phase 2 remains in progress and the formal exit gate is open.
+- Latest code slice: F40 adds standard-C++ Domain `Weekday` and validated `ScheduleTime` values, used by Schedule Import apply validation and F39 review projection; committed as `2ab23fb1796dfb1761a4c48644869a9ae6e1060d`. Gate 1 gains a tested schedule-time value but remains partial; Gate 2 parity scope is unchanged. Phase 2 remains in progress and the formal exit gate is open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -448,27 +448,26 @@ cover these create paths alongside open, close, save, save-as, and export.
 
 No new v2 production path depends on DataService, MainWindow, PageManager, or a widget pointer.
 
-### Exit-gate status after F39 - 2026-09-24 (commit `3121d90c2db6af8e225048f016eec6f0843c1c18`)
+### Exit-gate status after F40 - 2026-09-24 (commit `2ab23fb1796dfb1761a4c48644869a9ae6e1060d`)
 
 This status incorporates the existing gate audit and independently verified
-F36/F38/F39 results, with F39 at commit
-`3121d90c2db6af8e225048f016eec6f0843c1c18`. No tests were rerun for this
+F36/F38/F39/F40 results, with F40 at commit
+`2ab23fb1796dfb1761a4c48644869a9ae6e1060d`. No tests were rerun for this
 documentation update.
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior | Partial | F39 adds app-less overlap/conflict rule coverage, but the broader Domain models remain incomplete. |
-| Baseline parity | Partial | Required fixtures cover the F36 Calendar import path, F38 Schedule matching/preview, and F39 Schedule conflict review/apply. F37's pre-write sentinel and F39's zero-write apply case add state evidence; wider baseline parity remains incomplete. |
+| App-less Domain/Application behavior | Partial | F40 adds app-less tests for `Domain::Weekday` and validated `Domain::ScheduleTime`, which now carries validated times through Schedule Import projection and overlap validation. Broader Domain models remain incomplete. |
+| Baseline parity | Partial | Required fixtures cover the F36 Calendar import path, F38 Schedule matching/preview, and F39 Schedule conflict review/apply. F37's pre-write sentinel and F39's zero-write apply case add state evidence; F40 adds no parity scope, and wider baseline parity remains incomplete. |
 | Workspace boundary | Partial | `WorkspaceCoordinator` covers create/open/close/save/save-as/export and snapshot transitions. `FileController` still asks `MainWindow` for dirty-page approval and closes the old session before knowing replacement succeeded, leaving end-to-end replacement preservation as an integration caveat. |
 | v2 dependency isolation | Satisfied in the audited v2 scope | The `src/next` source scan and target dependencies found no direct `DataService`, `MainWindow`, `PageManager`, or widget-pointer dependency. Outer `ApplicationServices` adapters bridge legacy services; `FileController` remains MainWindow-aware. |
 
 Remaining work includes wider baseline parity, shared workbook decoding,
-complete Domain models, generic settings persistence, remaining
-feature-service migrations, and broader calendar/UI and document work. The
-workspace integration caveat also remains: `FileController` relies on
-`MainWindow` for dirty-page approval and closes the old session before a
-replacement is known to succeed. Phase 2 remains In Progress and the formal
-exit gate remains open.
+broader Domain models, generic settings persistence, remaining feature-service
+migrations, and broader calendar/UI and document work. The workspace
+integration caveat also remains: `FileController` relies on `MainWindow` for
+dirty-page approval and closes the old session before a replacement is known
+to succeed. Phase 2 remains In Progress and the formal exit gate remains open.
 
 ## Heavy-route requirements
 
@@ -4269,3 +4268,29 @@ unset. `git diff --check` passed.
 F39 is committed as `3121d90c2db6af8e225048f016eec6f0843c1c18`. It improves
 Gate 2 but does not close Phase 2: wider baseline parity and the remaining
 work listed in the gate audit remain open.
+
+#### Progress update - 2026-09-24 (F40 Domain schedule-time value)
+
+Standard-C++ [`Domain::Weekday` and `Domain::ScheduleTime`](../../src/next/domain/schedule_time.h)
+now provide a validated schedule value with weekday and minute bounds,
+half-open overlap behavior, and value comparison. Raw Application inputs are
+retained for error reporting. After validation,
+`ScheduleImportProjectedTime` carries the Domain value plus Application-owned
+labels through the overlap projection; apply validation and F39 UI review both
+consume it. Invalid raw values preserve `InvalidProjectedTime` labels.
+
+The independent `PH2-F40-SCHEDULE-TIME-VERIFY` recheck configured a fresh
+Windows x64 Ninja/MSVC Debug build with 897 handwritten sources, each with one
+explicit owner, and passed four focused CTest suites (4/4). QtTest passed
+[`Domain`](../../tests/next_domain_contract_tests.cpp) 8,
+[`state validation`](../../tests/next_application_schedule_import_state_validation_tests.cpp)
+13, [`Schedule Import repository`](../../tests/schedule_import_tests.cpp) 25,
+and [`review dialog`](../../tests/schedule_import_dialog_tests.cpp) 21 cases
+(67 passed, 0 failed), with one existing optional external-workbook skip because
+`CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset. The F39 fixture, conflict warning,
+disabled review action, zero-write rejection, and F37 pre-write trigger
+sentinel passed; `git diff --check` passed.
+
+F40 is committed as `2ab23fb1796dfb1761a4c48644869a9ae6e1060d`. It adds Domain
+coverage but no baseline-parity scope; Phase 2 remains in progress and the
+formal exit gate remains open.

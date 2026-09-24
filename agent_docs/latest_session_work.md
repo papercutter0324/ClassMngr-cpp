@@ -1473,3 +1473,37 @@ separate on a host with Xvfb and loopback access.
   migrations, and broader calendar/UI and document work. Preserve the Sub Prep
   limit of current and following calendar years at most. The user-modified
   `cmake/sources.cmake` remained untouched and uncommitted; nothing was pushed.
+
+### F40 Domain schedule-time value
+
+- F40 is committed as `2ab23fb1796dfb1761a4c48644869a9ae6e1060d`
+  (`Phase2 - Add Domain schedule time value`). It adds standard-C++
+  `Domain::Weekday` and `Domain::ScheduleTime::fromMinutes`, enforcing weekdays
+  Monday-Sunday and same-day minute intervals with start 0..1439, end after
+  start and below 1440. Half-open overlap is owned by the Domain value.
+- Untrusted Schedule Import `ScheduleImportStateTime` inputs and display labels
+  remain at the Application edge. The validator maps valid values once into
+  `ScheduleImportProjectedTime` (`Domain::ScheduleTime` plus labels); invalid
+  inputs still return `InvalidProjectedTime` with the original class/day/start/
+  end labels before conflict projection. Review and apply use the typed
+  projection and preserve F39 warning, conflict order, and rejection behavior.
+- Independent fresh Windows x64 Ninja/MSVC Debug configure validated 897
+  handwritten source owners. Four focused targets built and CTest passed 4/4.
+  QtTest totals were Domain 8/0/0, state validation 13/0/0, Schedule Import
+  repository 25/0/1, and review dialog 21/0/0 (67 passed, 0 failed, one
+  existing optional external-workbook skip because
+  `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset). `git diff --check` passed.
+- The checked-in F39 conflict workbook still produces the expected review
+  warning and disabled action; conflicting apply persists no teachers, classes,
+  or class times. The F37 pre-write trigger sentinel passed. Domain tests cover
+  all weekdays, minute boundaries, invalid values, value/copy behavior,
+  weekday separation, overlap, and adjacency. The Domain header has no Qt
+  dependency.
+- Post-F40 gate audit: Gate 1 is still Partial because broader Domain models
+  remain incomplete; Gate 2 is Partial with wider baseline parity open; Gate 3
+  is Partial due to FileController replacement preservation; audited `src/next`
+  dependency isolation remains Satisfied. Phase 2 and the formal exit gate
+  remain open. Remaining items include shared workbook decoding, generic
+  settings, remaining feature-service migrations, and broader calendar/UI and
+  document work. Preserve the Sub Prep current-and-following-year cap; F40 did
+  not change Sub Prep or `cmake/sources.cmake`.

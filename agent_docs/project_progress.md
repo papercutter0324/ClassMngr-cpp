@@ -642,3 +642,27 @@ feature-service migrations, and broader calendar/UI and document work remain.
 Preserve the Sub Prep bound of the current and following calendar years at most.
 Preserve the pre-existing modified `cmake/sources.cmake`; it was not part of
 F39. Nothing was pushed.
+
+### Phase 2 Domain schedule-time value - 2026-09-24
+
+F40 adds `Domain::Weekday` and a validated, Qt-free `Domain::ScheduleTime`
+value with the existing same-day minute bounds and half-open overlap rule. The
+Schedule Import validator converts untrusted time inputs once, keeps labels at
+the Application edge for `InvalidProjectedTime`, and carries typed values into
+the shared F39 conflict projection. Review and apply retain the same conflicts
+and ordering.
+
+Independent fresh Windows x64 Ninja/MSVC verification validated 897
+handwritten source owners. Domain, Application state-validation, Schedule
+Import repository, and review-dialog targets passed CTest 4/4: 67 passed, 0
+failed, and one existing optional external-workbook skip. The F39 conflict
+fixture review/disabled-import and zero-write rejection plus the F37 pre-write
+trigger sentinel passed. F40 is committed as
+`2ab23fb1796dfb1761a4c48644869a9ae6e1060d`.
+
+Gate 1 advances but remains partial because broader Domain models are
+incomplete. Gate 2 remains partial with F36/F38/F39 fixture parity and broader
+baseline parity open; Gate 3 remains partial at FileController replacement;
+the audited `src/next` dependency boundary remains satisfied. Phase 2 remains
+open. Preserve the Sub Prep current-and-following-year limit and the unrelated
+user modification to `cmake/sources.cmake`; neither was changed in F40.
