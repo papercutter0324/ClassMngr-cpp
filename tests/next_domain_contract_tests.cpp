@@ -28,6 +28,8 @@ private slots:
     void coursesExposeOrderedSupportedPairs();
     void coursesHaveValueAndAccessorSemantics();
     void coursesRejectInvalidNamesAndCrossGradePairs();
+    void coursesExposeWeeklyMeetingDayRules();
+    void weeklyMeetingDayRulesRejectInvalidPatterns();
     void koreanTeacherKeysKeepEveryAcceptedRangeAndBoundary();
     void koreanTeacherKeysDiscardOtherCodeUnitsWithoutNormalization();
     void koreanTeacherKeysExposeEmptyAndValueSemantics();
@@ -220,9 +222,129 @@ void NextDomainContractTests::coursesRejectInvalidNamesAndCrossGradePairs()
     QVERIFY(!Course::fromNames("E7", "Theseus").has_value());
     QVERIFY(!Course::fromNames("E4", "Unknown").has_value());
     QVERIFY(!Course::fromNames("E4", "Zeus").has_value());
+    QVERIFY(!Course::fromNames("M3", "Zeus").has_value());
     QVERIFY(!Course::fromNames("e4", "Theseus").has_value());
     QVERIFY(!Course::fromNames("E4", "theseus").has_value());
     QVERIFY(Course::levelsForGrade("E7").empty());
+}
+
+void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
+{
+    const auto theseus = Course::fromNames("E4", "Theseus");
+    const auto athena = Course::fromNames("E5", "Athena");
+    const auto standardE5 = Course::fromNames("E5", "Zeus");
+    const auto standardE6 = Course::fromNames("E6", "Hera");
+    const auto songsE6 = Course::fromNames("E6", "Song's");
+    const auto standardM1 = Course::fromNames("M1", "Elephantus");
+    const auto songsM1 = Course::fromNames("M1", "Song's");
+    const auto songsM3 = Course::fromNames("M3", "Song's");
+    QVERIFY(theseus.has_value());
+    QVERIFY(athena.has_value());
+    QVERIFY(standardE5.has_value());
+    QVERIFY(standardE6.has_value());
+    QVERIFY(songsE6.has_value());
+    QVERIFY(standardM1.has_value());
+    QVERIFY(songsM1.has_value());
+    QVERIFY(songsM3.has_value());
+
+    const auto pairedRule = theseus->weeklyMeetingDayRule();
+    QVERIFY(pairedRule.has_value());
+    QVERIFY(
+        pairedRule->kind()
+        == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
+        );
+    QVERIFY(pairedRule->allowedPatterns().size() == 4);
+    QVERIFY(pairedRule->allows({Weekday::Monday, Weekday::Wednesday}));
+    QVERIFY(pairedRule->allows({Weekday::Tuesday, Weekday::Thursday}));
+    QVERIFY(!pairedRule->allows({Weekday::Monday}));
+
+    const auto athenaRule = athena->weeklyMeetingDayRule();
+    QVERIFY(athenaRule.has_value());
+    QVERIFY(
+        athenaRule->kind()
+        == Course::WeeklyMeetingDayRuleKind::ThreeDayOrTuesdayThursday
+        );
+    QVERIFY(athenaRule->allows(
+        {Weekday::Monday, Weekday::Wednesday, Weekday::Friday}
+        ));
+    QVERIFY(athenaRule->allows({Weekday::Tuesday, Weekday::Thursday}));
+    QVERIFY(!athenaRule->allows({Weekday::Monday, Weekday::Wednesday}));
+
+    const auto standardE5Rule = standardE5->weeklyMeetingDayRule();
+    QVERIFY(standardE5Rule.has_value());
+    QVERIFY(
+        standardE5Rule->kind()
+        == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
+        );
+    QVERIFY(standardE5Rule->allows({Weekday::Monday, Weekday::Friday}));
+    QVERIFY(!standardE5Rule->allows(
+        {Weekday::Monday, Weekday::Wednesday, Weekday::Friday}
+        ));
+
+    const auto standardE6Rule = standardE6->weeklyMeetingDayRule();
+    QVERIFY(standardE6Rule.has_value());
+    QVERIFY(
+        standardE6Rule->kind()
+        == Course::WeeklyMeetingDayRuleKind::SingleWeekday
+        );
+    QVERIFY(standardE6Rule->allows({Weekday::Friday}));
+    QVERIFY(!standardE6Rule->allows({Weekday::Monday, Weekday::Wednesday}));
+
+    const auto songsE6Rule = songsE6->weeklyMeetingDayRule();
+    QVERIFY(songsE6Rule.has_value());
+    QVERIFY(
+        songsE6Rule->kind()
+        == Course::WeeklyMeetingDayRuleKind::ThreeDayOrTuesdayThursday
+        );
+    QVERIFY(songsE6Rule->allows(
+        {Weekday::Monday, Weekday::Wednesday, Weekday::Friday}
+        ));
+
+    const auto standardM1Rule = standardM1->weeklyMeetingDayRule();
+    QVERIFY(standardM1Rule.has_value());
+    QVERIFY(
+        standardM1Rule->kind()
+        == Course::WeeklyMeetingDayRuleKind::SingleWeekday
+        );
+    QVERIFY(standardM1Rule->allows({Weekday::Tuesday}));
+    QVERIFY(!standardM1Rule->allows({Weekday::Monday, Weekday::Friday}));
+
+    const auto songsM1Rule = songsM1->weeklyMeetingDayRule();
+    QVERIFY(songsM1Rule.has_value());
+    QVERIFY(
+        songsM1Rule->kind()
+        == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
+        );
+    QVERIFY(songsM1Rule->allows({Weekday::Wednesday, Weekday::Friday}));
+
+    const auto songsM3Rule = songsM3->weeklyMeetingDayRule();
+    QVERIFY(songsM3Rule.has_value());
+    QVERIFY(
+        songsM3Rule->kind()
+        == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
+        );
+    QVERIFY(songsM3Rule->allows({Weekday::Monday, Weekday::Friday}));
+
+    QVERIFY(!Course::weeklyMeetingDayRuleFor(
+        CourseGradeBand::M3,
+        CourseLevelCategory::Standard
+        ).has_value());
+}
+
+void NextDomainContractTests::weeklyMeetingDayRulesRejectInvalidPatterns()
+{
+    const auto rule = Course::weeklyMeetingDayRuleFor(
+        CourseGradeBand::E4,
+        CourseLevelCategory::Standard
+        );
+    QVERIFY(rule.has_value());
+
+    QVERIFY(rule->allows({Weekday::Wednesday, Weekday::Monday}));
+    QVERIFY(!rule->allows({Weekday::Monday, Weekday::Monday}));
+    QVERIFY(!rule->allows({Weekday::Monday, Weekday::Saturday}));
+    QVERIFY(!rule->allows({Weekday::Sunday}));
+    QVERIFY(!rule->allows({static_cast<Weekday>(7)}));
+    QVERIFY(!rule->allows({}));
 }
 
 void NextDomainContractTests::

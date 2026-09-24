@@ -1,9 +1,123 @@
 #include "schedule_import_rules.h"
 
+#include "next/domain/course.h"
+
 #include <QObject>
 
 #include <algorithm>
-#include <utility>
+#include <optional>
+
+namespace
+{
+using ClassMngr::Next::Domain::Course;
+using ClassMngr::Next::Domain::CourseGradeBand;
+using ClassMngr::Next::Domain::CourseLevelCategory;
+using ClassMngr::Next::Domain::Weekday;
+
+std::optional<Course::WeeklyMeetingDayRule> weeklyMeetingDayRuleForNames(
+    const QString& classGrade,
+    const QString& classLevel
+    )
+{
+    const QString grade = classGrade.trimmed().toUpper();
+    const QString level = classLevel.trimmed();
+
+    CourseGradeBand gradeBand = CourseGradeBand::Other;
+    if (grade == QStringLiteral("E4"))
+    {
+        gradeBand = CourseGradeBand::E4;
+    }
+    else if (grade == QStringLiteral("E5"))
+    {
+        gradeBand = CourseGradeBand::E5;
+    }
+    else if (grade == QStringLiteral("E6"))
+    {
+        gradeBand = CourseGradeBand::E6;
+    }
+    else if (grade == QStringLiteral("M1"))
+    {
+        gradeBand = CourseGradeBand::M1;
+    }
+    else if (grade == QStringLiteral("M2"))
+    {
+        gradeBand = CourseGradeBand::M2;
+    }
+    else if (grade == QStringLiteral("M3"))
+    {
+        gradeBand = CourseGradeBand::M3;
+    }
+
+    CourseLevelCategory levelCategory = CourseLevelCategory::Standard;
+    if (
+        level.compare(
+            QStringLiteral("Athena"),
+            Qt::CaseInsensitive
+            ) == 0
+        )
+    {
+        levelCategory = CourseLevelCategory::Athena;
+    }
+    else if (
+        level.compare(
+            QStringLiteral("Song's"),
+            Qt::CaseInsensitive
+            ) == 0
+        )
+    {
+        levelCategory = CourseLevelCategory::Songs;
+    }
+
+    return Course::weeklyMeetingDayRuleFor(gradeBand, levelCategory);
+}
+
+QString scheduleImportWeekdayName(Weekday weekday)
+{
+    switch (weekday)
+    {
+    case Weekday::Monday:
+        return QStringLiteral("Monday");
+    case Weekday::Tuesday:
+        return QStringLiteral("Tuesday");
+    case Weekday::Wednesday:
+        return QStringLiteral("Wednesday");
+    case Weekday::Thursday:
+        return QStringLiteral("Thursday");
+    case Weekday::Friday:
+        return QStringLiteral("Friday");
+    case Weekday::Saturday:
+        return QStringLiteral("Saturday");
+    case Weekday::Sunday:
+        return QStringLiteral("Sunday");
+    }
+    return {};
+}
+
+std::optional<Weekday> scheduleImportWeekday(const QString& day)
+{
+    if (day == QStringLiteral("Monday"))
+    {
+        return Weekday::Monday;
+    }
+    if (day == QStringLiteral("Tuesday"))
+    {
+        return Weekday::Tuesday;
+    }
+    if (day == QStringLiteral("Wednesday"))
+    {
+        return Weekday::Wednesday;
+    }
+    if (day == QStringLiteral("Thursday"))
+    {
+        return Weekday::Thursday;
+    }
+    if (day == QStringLiteral("Friday"))
+    {
+        return Weekday::Friday;
+    }
+    return std::nullopt;
+}
+} // namespace
 
 int scheduleImportDayGroup(
     const QList<ClassTime>& times
@@ -130,111 +244,26 @@ QList<QStringList> scheduleImportAllowedDayPatterns(
     const QString& classLevel
     )
 {
-    const QString grade =
-        classGrade.trimmed().toUpper();
-    const QString level =
-        classLevel.trimmed();
-    const bool songs =
-        level.compare(
-            QStringLiteral("Song's"),
-            Qt::CaseInsensitive
-            ) == 0;
-
-    const QStringList mondayWednesday{
-        QStringLiteral("Monday"),
-        QStringLiteral("Wednesday")
-    };
-    const QStringList mondayFriday{
-        QStringLiteral("Monday"),
-        QStringLiteral("Friday")
-    };
-    const QStringList wednesdayFriday{
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Friday")
-    };
-    const QStringList tuesdayThursday{
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Thursday")
-    };
-    const QStringList mondayWednesdayFriday{
-        QStringLiteral("Monday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Friday")
-    };
-
-    if (
-        grade == QStringLiteral("E4")
-        || (
-            grade == QStringLiteral("E5")
-            && level.compare(
-                QStringLiteral("Athena"),
-                Qt::CaseInsensitive
-                ) != 0
-            )
-        )
+    const auto rule = weeklyMeetingDayRuleForNames(classGrade, classLevel);
+    if (!rule.has_value())
     {
-        return {
-            mondayWednesday,
-            mondayFriday,
-            wednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        grade == QStringLiteral("E5")
-        && level.compare(
-            QStringLiteral("Athena"),
-            Qt::CaseInsensitive
-            ) == 0
-        )
-    {
-        return {
-            mondayWednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        grade == QStringLiteral("E6")
-        && songs
-        )
-    {
-        return {
-            mondayWednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        (
-            grade == QStringLiteral("M1")
-            || grade == QStringLiteral("M2")
-            || grade == QStringLiteral("M3")
-            )
-        && songs
-        )
-    {
-        return {
-            mondayWednesday,
-            mondayFriday,
-            wednesdayFriday,
-            tuesdayThursday
-        };
-    }
-    if (
-        grade == QStringLiteral("E6")
-        || grade == QStringLiteral("M1")
-        || grade == QStringLiteral("M2")
-        )
-    {
-        return {
-            {QStringLiteral("Monday")},
-            {QStringLiteral("Tuesday")},
-            {QStringLiteral("Wednesday")},
-            {QStringLiteral("Thursday")},
-            {QStringLiteral("Friday")}
-        };
+        return {};
     }
 
-    return {};
+    QList<QStringList> result;
+    for (
+        const Course::WeeklyMeetingDayPattern& pattern :
+        rule->allowedPatterns()
+        )
+    {
+        QStringList days;
+        for (const Weekday weekday : pattern)
+        {
+            days.append(scheduleImportWeekdayName(weekday));
+        }
+        result.append(days);
+    }
+    return result;
 }
 
 QString scheduleImportMeetingPatternExpectation(
@@ -242,73 +271,28 @@ QString scheduleImportMeetingPatternExpectation(
     const QString& classLevel
     )
 {
-    const QString grade =
-        classGrade.trimmed().toUpper();
-    const QString level =
-        classLevel.trimmed();
-    const bool songs =
-        level.compare(
-            QStringLiteral("Song's"),
-            Qt::CaseInsensitive
-            ) == 0;
-
-    if (
-        grade == QStringLiteral("E4")
-        || (
-            grade == QStringLiteral("E5")
-            && level.compare(
-                QStringLiteral("Athena"),
-                Qt::CaseInsensitive
-                ) != 0
-            )
-        )
+    const auto rule = weeklyMeetingDayRuleForNames(classGrade, classLevel);
+    if (!rule.has_value())
     {
+        return QObject::tr(
+            "The imported grade and level do not have a supported meeting-pattern rule."
+            );
+    }
+
+    switch (rule->kind())
+    {
+    case Course::WeeklyMeetingDayRuleKind::PairedWeekdays:
         return QObject::tr(
             "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
             );
-    }
-    if (
-        (
-            grade == QStringLiteral("E5")
-            && level.compare(
-                QStringLiteral("Athena"),
-                Qt::CaseInsensitive
-                ) == 0
-            )
-        || (
-            grade == QStringLiteral("E6")
-            && songs
-            )
-        )
-    {
+    case Course::WeeklyMeetingDayRuleKind::ThreeDayOrTuesdayThursday:
         return QObject::tr(
             "Expected Monday/Wednesday/Friday or Tuesday/Thursday."
             );
-    }
-    if (
-        (
-            grade == QStringLiteral("M1")
-            || grade == QStringLiteral("M2")
-            || grade == QStringLiteral("M3")
-            )
-        && songs
-        )
-    {
-        return QObject::tr(
-            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
-            );
-    }
-    if (
-        grade == QStringLiteral("E6")
-        || grade == QStringLiteral("M1")
-        || grade == QStringLiteral("M2")
-        )
-    {
+    case Course::WeeklyMeetingDayRuleKind::SingleWeekday:
         return QObject::tr("Expected one weekday meeting.");
     }
-    return QObject::tr(
-        "The imported grade and level do not have a supported meeting-pattern rule."
-        );
+    return {};
 }
 
 QString scheduleImportWeekdayDisplayName(
@@ -350,74 +334,38 @@ QString scheduleImportMeetingPatternError(
     const ScheduleImportClassCandidate& candidate
     )
 {
-    static const QStringList weekdayOrder{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday")
-    };
-    const auto patternKey =
-        [](QStringList days)
-        {
-            std::sort(
-                days.begin(),
-                days.end(),
-                [](
-                    const QString& left,
-                    const QString& right
-                    )
-                {
-                    return weekdayOrder.indexOf(left)
-                        < weekdayOrder.indexOf(right);
-                }
-                );
-            return days.join(QLatin1Char('|'));
-        };
-
-    QStringList days;
+    ClassMngr::Next::Domain::Course::WeeklyMeetingDayPattern days;
+    QStringList displayDays;
     for (const ClassTime& time : candidate.times)
     {
+        const std::optional<Weekday> weekday =
+            scheduleImportWeekday(time.day);
         if (
-            !weekdayOrder.contains(time.day)
-            || days.contains(time.day)
+            !weekday.has_value()
+            || std::find(days.begin(), days.end(), *weekday) != days.end()
             )
         {
             return QObject::tr(
                 "Each imported class must have exactly one meeting per scheduled weekday."
                 );
         }
-        days.append(time.day);
+        days.push_back(*weekday);
+        displayDays.append(scheduleImportWeekdayDisplayName(time.day));
     }
 
-    const QList<QStringList> allowedPatterns =
-        scheduleImportAllowedDayPatterns(
+    const auto rule =
+        weeklyMeetingDayRuleForNames(
             candidate.classGrade,
             candidate.classLevel
             );
-    if (allowedPatterns.isEmpty())
+    if (!rule.has_value())
     {
         return {};
     }
 
-    QStringList allowedKeys;
-    for (const QStringList& pattern : allowedPatterns)
-    {
-        allowedKeys.append(patternKey(pattern));
-    }
-
-    if (allowedKeys.contains(patternKey(days)))
+    if (rule->allows(days))
     {
         return {};
-    }
-
-    QStringList displayDays;
-    displayDays.reserve(days.size());
-    for (const QString& day : std::as_const(days))
-    {
-        displayDays.append(
-            scheduleImportWeekdayDisplayName(day)
-            );
     }
 
     return QObject::tr("%1 Detected: %2.")

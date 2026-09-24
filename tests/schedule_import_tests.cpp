@@ -31,7 +31,7 @@ private slots:
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
     void previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase();
-    void rejectsInvalidCourseAtApplyBoundaryBeforeWrites();
+    void rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites();
     void previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites();
     void reportsScheduleInventoryStates_data();
     void reportsScheduleInventoryStates();
@@ -616,6 +616,11 @@ void ScheduleImportTests::validatesCourseMeetingPatterns()
         QStringLiteral("Theseus"),
         {QStringLiteral("Monday"), QStringLiteral("Wednesday")}
         ));
+    QVERIFY(valid(
+        QStringLiteral(" e4 "),
+        QStringLiteral(" Theseus "),
+        {QStringLiteral("Wednesday"), QStringLiteral("Monday")}
+        ));
     QVERIFY(!valid(
         QStringLiteral("E4"),
         QStringLiteral("Theseus"),
@@ -624,6 +629,15 @@ void ScheduleImportTests::validatesCourseMeetingPatterns()
     QVERIFY(valid(
         QStringLiteral("E5"),
         QStringLiteral("Athena"),
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("Wednesday"),
+            QStringLiteral("Friday")
+        }
+        ));
+    QVERIFY(valid(
+        QStringLiteral(" e5 "),
+        QStringLiteral(" aThEnA "),
         {
             QStringLiteral("Monday"),
             QStringLiteral("Wednesday"),
@@ -648,6 +662,11 @@ void ScheduleImportTests::validatesCourseMeetingPatterns()
     QVERIFY(valid(
         QStringLiteral("E6"),
         QStringLiteral("Song's"),
+        {QStringLiteral("Tuesday"), QStringLiteral("Thursday")}
+        ));
+    QVERIFY(valid(
+        QStringLiteral(" e6 "),
+        QStringLiteral(" sOnG'S "),
         {QStringLiteral("Tuesday"), QStringLiteral("Thursday")}
         ));
     QVERIFY(valid(
@@ -688,6 +707,16 @@ void ScheduleImportTests::validatesCourseMeetingPatterns()
             QStringLiteral("Tuesday"),
             QStringLiteral("Thursday")
         }
+        ));
+    QVERIFY(!valid(
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        {QStringLiteral("Monday"), QStringLiteral("Monday")}
+        ));
+    QVERIFY(!valid(
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        {QStringLiteral("Monday"), QStringLiteral("Saturday")}
         ));
 }
 
@@ -1567,7 +1596,8 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
-void ScheduleImportTests::rejectsInvalidCourseAtApplyBoundaryBeforeWrites()
+void ScheduleImportTests::
+rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites()
 {
     QFile file(
         QStringLiteral(
@@ -1724,6 +1754,49 @@ void ScheduleImportTests::rejectsInvalidCourseAtApplyBoundaryBeforeWrites()
         QVERIFY(!imported.has_value());
         QVERIFY(
             imported.error().contains(QStringLiteral("invalid class"))
+            );
+
+        QCOMPARE(
+            snapshotRows(QStringLiteral("SELECT * FROM teachers ORDER BY id")),
+            teachersBefore
+            );
+        QCOMPARE(
+            snapshotRows(QStringLiteral("SELECT * FROM classes ORDER BY id")),
+            classesBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral("SELECT * FROM class_info ORDER BY class_id")
+                ),
+            classInfoBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral(
+                    "SELECT * FROM class_times "
+                    "ORDER BY class_id, day, start_time, end_time, id"
+                    )
+                ),
+            classTimesBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral("SELECT * FROM app_settings ORDER BY key")
+                ),
+            settingsBefore
+            );
+
+        QCOMPARE(user.classes.last().classGrade, QStringLiteral("E4"));
+        QCOMPARE(user.classes.last().classLevel, QStringLiteral("Theseus"));
+        QCOMPARE(user.classes.last().times.size(), 2);
+        plan.candidates.last().classGrade = user.classes.last().classGrade;
+        plan.candidates.last().classLevel = user.classes.last().classLevel;
+        plan.candidates.last().times = {user.classes.last().times.first()};
+
+        const auto rejectedPattern = repository.apply(plan);
+        QVERIFY(!rejectedPattern.has_value());
+        QVERIFY(
+            rejectedPattern.error().contains(QStringLiteral("meeting pattern"))
             );
 
         QCOMPARE(
