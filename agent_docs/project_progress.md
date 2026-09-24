@@ -73,13 +73,24 @@ MSVC/Ninja verification with Qt 6.12.0 passed both focused CTest targets
 rejection test preserves seeded teacher, class, class-info, schedule-time,
 and profile-setting snapshots.
 
+F46 adds a Qt-free Domain `KoreanTeacherKey` for the existing Hangul-only
+UTF-16 code-unit filter, used by Teacher and Schedule matching. It preserves
+the five ranges, empty-key handling, and current errors without trimming or
+normalization. F46 is committed as
+`bedb52e0045731bba3e4f4b7a576021bdc007b72`. Independent fresh Windows x64
+MSVC/Ninja verification with Qt 6.12.0 passed four focused CTest targets (4/4)
+plus Teacher Import Dialog (1/1); CMake ownership validated 901 sources.
+Fixture-backed Teacher and Schedule paths passed. Optional external-workbook
+checks skipped as expected.
+
 The formal gate remains open. Gates 1 and 2 advance but remain Partial because
 broader Domain records and baseline parity are incomplete; the workspace
-criterion and audited v2 dependency isolation remain Satisfied. F46 is
-assigned: centralize the exact Hangul-only Korean teacher identity rule in a
-Qt-free Domain key used by Teacher and Schedule matching. Keep Sub Prep to the
-current and following calendar years at most. Preserve the user-owned
-`cmake/sources.cmake` change; F44 and F45 did not modify it.
+criterion and audited v2 dependency isolation remain Satisfied. F47 is selected:
+move Schedule Import's weekly meeting-day rule into the existing Domain
+`Course` value and use it in parse/apply validation, preserving current name
+normalization and rejected-state behavior. Keep Sub Prep to the current and
+following calendar years at most. Preserve the user-owned
+`cmake/sources.cmake` change; F44 through F46 did not modify it.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

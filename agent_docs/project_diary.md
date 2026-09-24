@@ -779,3 +779,11 @@ rows and compare their values before and after the operation. Zero-row counts
 only show that no rows exist; they do not prove that invalid apply left prior
 records unchanged. Keep the Domain catalog as the single source for business
 validation and convert to Qt lists only in the existing UI adapter.
+
+## Phase 2 Korean teacher key - 2026-09-24
+
+When promoting a legacy text identity rule into Domain, preserve its exact
+code-unit ranges and leave trimming, normalization, empty-value policy, and
+localized errors at their existing call boundaries. Test both the shared
+value and each production caller so adapters do not silently change identity
+matching.

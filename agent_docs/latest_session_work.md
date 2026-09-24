@@ -1740,3 +1740,50 @@ separate on a host with Xvfb and loopback access.
   Reuse the required Teacher and Schedule fixtures for production coverage.
   After independent verification, commit and audit the slice, then repeat
   against the remaining Phase 2 gates. Keep `cmake/sources.cmake` untouched.
+
+
+### Phase 2 Korean teacher identity key - 2026-09-24
+
+- F46 is committed as
+  `bedb52e0045731bba3e4f4b7a576021bdc007b72` (`Phase2 - Centralize Korean
+  teacher key`). Its seven paths are `cmake/next.cmake`,
+  `src/next/domain/korean_teacher_key.h`,
+  `src/next/application/schedule_import_matching_projection.h`,
+  `src/features/teacher/import/teacher_import_name_utils.h`,
+  `tests/next_domain_contract_tests.cpp`,
+  `tests/next_application_schedule_import_matching_projection_tests.cpp`,
+  and `tests/teacher_import_tests.cpp`.
+- The Qt-free Domain value owns the existing five UTF-16 code-unit ranges:
+  0x1100–0x11FF, 0x3130–0x318F, 0xA960–0xA97F, 0xAC00–0xD7AF, and
+  0xD7B0–0xD7FF. It preserves code-unit order and does not trim or normalize.
+  The Teacher QString adapter and Schedule Import matching use the shared
+  rule. Empty-name behavior remains at the caller: contact parsing retains its
+  same validation message, repository validation retains its required-name
+  error, and Schedule matching retains its existing empty-key match behavior.
+- Independent fresh Windows x64 MSVC 19.51/Ninja 1.13/CMake 4.4.2/Qt 6.12.0
+  verification configured 901 handwritten source owners. The four focused
+  Domain, matching, Teacher Import, and Schedule Import CTest targets passed
+  4/4; Teacher Import Dialog passed 1/1. QtTest counts were respectively
+  14/0/0, 6/0/0, 16/0/1, 26/0/1, and 5/0/1 (passed/failed/skipped). The three
+  skips were supplemental external-workbook checks with unset sample variables.
+  Required Teacher parser/review/repository and dialog-plan apply fixtures,
+  Schedule matching/persisted fixture and overlap rejection passed. `git diff
+  --check` passed. `cmake/sources.cmake` SHA-256 remains
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- One separate Hangul predicate remains in the sidebar marquee delegate with
+  a different syllable endpoint; it is outside the Teacher/Schedule identity
+  key paths in F46.
+- Gate 1 and Gate 2 advance but remain Partial; broader Domain records and
+  baseline parity remain. Workspace boundary and audited v2 dependency
+  isolation remain Satisfied. Phase 2 remains In Progress with the exit gate
+  open. Preserve the Sub Prep cap of the current and following calendar years
+  at most.
+- Three post-F46 investigators compared Domain, parity, and architecture
+  candidates. F47 is selected to move weekly meeting-day policy into the
+  existing Domain `Course` value and route Schedule Import parse/apply checks
+  through it. Preserve grade trimming/case normalization and the existing
+  behavior for unsupported courses with no pattern error; a separate exact
+  Course validity check rejects invalid grade/level before writes. The
+  acceptance must use the required workbook path for valid persistence and a
+  fixture-derived prohibited pattern with seeded-state preservation. Do not
+  touch `cmake/sources.cmake` or expand Sub Prep beyond its year cap.
