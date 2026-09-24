@@ -62,7 +62,7 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
 
 ## Session handoff notes
 
-Update `agent_docs/latest_session_work.md` only when a handoff is requested.
+Update `agent_docs/latest_session_work.md` only when a handoff is expressly requested by the user.
 
 ## Phase 0 update - 2026-09-15
 
