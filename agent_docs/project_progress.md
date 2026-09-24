@@ -420,3 +420,21 @@ callers over to `ApplicationServices`, retaining the early availability guard
 and atomic `saveAll` behavior. Workbook, generic settings, other feature
 services, and broader document boundaries remain open; Phase 2 remains In
 progress.
+
+### Phase 2 Personal Details atomic-save caller cutover - 2026-09-24
+
+The Personal Details save adapter now takes `ApplicationServices&` or nullable
+`ApplicationServices*`; its `SettingsService*` constructor is removed. Initial
+Setup and My Information pass their existing service owner. The save still
+uses one atomic `saveAll` for all nine keys, preserving UTF-8 conversion,
+signature-image preparation, normalization, rollback, and failure behavior.
+My Information still returns before autosave cancellation or field
+normalization when settings are unavailable. A page regression test preserves
+whitespace Zoom values and dirty state in that case. Executor and independent
+fresh Ninja/MSVC x64 configures each validated 886 handwritten owners; both
+built ClassMngr and the adapter, InitialSetupWizard, and MyWorkspace suites,
+and focused CTest passed 3/3. Next: move the separate read-only Personal
+Signature Preferences adapter and its two callers to `ApplicationServices`,
+preserving defaulting, normalization, UTF-8 text, and no-write behavior.
+Workbook, generic settings, other feature services, broader document work, and
+the Phase 2 exit gate remain open.

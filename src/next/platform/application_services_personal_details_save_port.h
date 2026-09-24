@@ -25,14 +25,14 @@ public:
     explicit ApplicationServicesPersonalDetailsSavePort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_services(&services)
     {
     }
 
     explicit ApplicationServicesPersonalDetailsSavePort(
-        SettingsService* settingsService
+        ApplicationServices* services
         ) noexcept
-        : m_settingsService(settingsService)
+        : m_services(services)
     {
     }
 
@@ -53,7 +53,11 @@ public:
         const Application::PersonalDetailsSaveRequest& request
         ) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        SettingsService* const settingsService =
+            m_services
+                ? m_services->settingsService()
+                : nullptr;
+        if (!settingsService || !settingsService->isAvailable())
         {
             return Application::PersonalDetailsSaveResult::failure(
                 unavailableError()
@@ -99,7 +103,7 @@ public:
             }
         };
 
-        const Status saved = m_settingsService->saveAll(values);
+        const Status saved = settingsService->saveAll(values);
         if (!saved)
         {
             const QByteArray errorBytes = saved.error().toUtf8();
@@ -215,7 +219,7 @@ private:
             : 0;
     }
 
-    SettingsService* m_settingsService = nullptr;
+    ApplicationServices* m_services = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

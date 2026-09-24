@@ -330,7 +330,9 @@ unavailableSettingsReturnFailureWithoutPartialWrites()
         ClassMngr::Next::Domain::ErrorCode::Technical
         );
 
-    ApplicationServicesPersonalDetailsSavePort nullPort(nullptr);
+    ApplicationServicesPersonalDetailsSavePort nullPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
     QVERIFY(!nullPort.save({}));
 }
 

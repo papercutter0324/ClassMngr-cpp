@@ -1,3 +1,4 @@
+#include "app/services/feature_services.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "features/calendar/ui/calendar_page.h"
@@ -170,6 +171,7 @@ private slots:
     void missingZoomValuesUseNaFallbackAndDisableFields();
     void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
     void storedSignaturePreferencesPopulateModeTextAndFont();
+    void unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues();
     void aggregateSavePersistsAllPersonalDetailsKeys();
     void aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings();
 };
@@ -810,6 +812,35 @@ void MyWorkspacePageTests::aggregateSavePersistsAllPersonalDetailsKeys()
             ->toString(),
         QStringLiteral("preserved")
         );
+}
+
+void MyWorkspacePageTests::
+unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues()
+{
+    ApplicationServices services;
+    QVERIFY(services.settingsService());
+    QVERIFY(!services.settingsService()->isAvailable());
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    auto* login = personalZoomLoginEditor(page);
+    auto* password = personalZoomPasswordEditor(page);
+    auto* unavailable = personalZoomUnavailableCheck(page);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+
+    login->setText(QStringLiteral("  "));
+    password->setText(QStringLiteral(" \t "));
+    unavailable->setChecked(false);
+    QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
+
+    QVERIFY(!page.personalDetailsPage()->saveChanges());
+
+    QCOMPARE(login->text(), QStringLiteral("  "));
+    QCOMPARE(password->text(), QStringLiteral(" \t "));
+    QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
 }
 
 void MyWorkspacePageTests::

@@ -624,3 +624,12 @@ to owning UTF-8 values, retain original IDs for selection while applying the
 existing trim/fallback rules to labels. Test the adapter through repository
 fixtures so repository ordering and record omission remain part of the
 observed contract.
+
+## Phase 2 Personal Details atomic-save caller cutover - 2026-09-24
+
+Keep the UI callers on the `ApplicationServices` owner when removing raw
+settings-service adapter constructors. For My Information, retain the
+availability return before autosave cancellation or field normalization, and
+test that unavailable saves leave entered values and dirty state intact.
+Preserve the atomic `saveAll` operation and test adapter rollback separately
+from caller ownership changes.

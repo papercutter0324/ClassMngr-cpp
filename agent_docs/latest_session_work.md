@@ -1137,3 +1137,30 @@ separate on a host with Xvfb and loopback access.
   other feature services, and broader document boundaries remain open; Phase
   2's formal exit gate is not met. Nothing was pushed; preserve the separately
   staged `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 Personal Details atomic-save caller cutover - 2026-09-24
+
+- `ApplicationServicesPersonalDetailsSavePort` retains the reference
+  constructor, adds a nullable `ApplicationServices*` constructor, and removes
+  the `SettingsService*` constructor. Initial Setup and My Information now
+  pass their existing `ApplicationServices` owner.
+- Preserved My Information's unavailable-settings return before autosave
+  cancellation and field normalization, Initial Setup's warning on failure,
+  one atomic `saveAll`, all nine keys, UTF-8 conversion, signature-image
+  preparation, mode/font normalization, and rollback. Added null services
+  pointer coverage and an unavailable MyWorkspace save case that preserves
+  whitespace Zoom fields and dirty state.
+- Executor and independent fresh Ninja/MSVC x64 configures each validated 886
+  handwritten source owners. Both built ClassMngr and the save adapter,
+  InitialSetupWizard, and MyWorkspace targets; both focused CTest runs passed
+  3/3. The independent run confirmed the two production callsites and absence
+  of a `SettingsService*` constructor. `git diff --check` passed; no resource
+  limitation remains.
+- Handoff: F30 moves the separate read-only Personal Signature Preferences
+  adapter and its two callers to `ApplicationServices`. Preserve defaults,
+  mode normalization, UTF-8 signature text, availability guards, and no-write
+  behavior. Workbook decoding, generic settings, other feature services, and
+  broader document boundaries remain open; Phase 2's formal exit gate is not
+  met. Nothing was pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.

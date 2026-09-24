@@ -486,7 +486,7 @@ public:
         const auto saved =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalDetailsSavePort(
-                    setup->settingsService()
+                    setup->services()
                     ).save({
                         .name = toUtf8(m_name->text().trimmed()),
                         .campus = campus,

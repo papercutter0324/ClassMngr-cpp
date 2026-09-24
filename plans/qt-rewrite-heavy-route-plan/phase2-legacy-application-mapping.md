@@ -3159,12 +3159,32 @@ CTest passed 6/6, including three existing preference suites. Resource
 generation passed, and the independent repeat build had no work. Phase 2
 remains open.
 
-## Next candidate: F29 Personal Details atomic-save caller cutover
+## Verified F29 Personal Details atomic-save caller cutover
 
-Remove the `SettingsService*` constructor from
-`ApplicationServicesPersonalDetailsSavePort` and update Initial Setup and My
-Information callers to use `ApplicationServices`. Preserve the early
-availability guard, single `saveAll` behavior, all nine saved keys, UTF-8 and
-signature-image preparation, and rollback behavior. Workbook decoding,
-generic settings, other feature services, broader document work, and the
-formal Phase 2 exit gate remain open.
+`ApplicationServicesPersonalDetailsSavePort` retains its
+`ApplicationServices&` constructor, adds a nullable `ApplicationServices*`
+constructor, and removes the `SettingsService*` constructor. Initial Setup and
+My Information now pass their existing `ApplicationServices*`. The adapter
+retains its availability check before mutation, UTF-8 and signature-image
+preparation, request normalization, and one atomic `saveAll` for all nine
+personal-details keys. Initial Setup's failure warning, My Information's
+availability return before autosave cancellation or field normalization, and
+rollback behavior remain preserved.
+
+Adapter null-pointer coverage and a MyWorkspace unavailable-save regression
+verify the new constructor and preservation of whitespace Zoom fields and
+dirty state. Executor and independent fresh Ninja/MSVC x64 configs validated
+886 handwritten owners, built `ClassMngr`, the adapter, InitialSetupWizard,
+and MyWorkspace targets, and passed focused CTest 3/3. Diff check and the
+caller/constructor scan passed; there was no resource limitation. Phase 2
+remains open.
+
+## Next candidate: F30 personal-signature-preferences caller cutover
+
+Replace the remaining `SettingsService*` callers of
+`ApplicationServicesPersonalSignaturePreferencesPort` in My Information and
+Initial Setup with nullable `ApplicationServices*`. Preserve preference
+defaulting, value normalization, UTF-8 text, availability handling, and the
+read-only/no-write behavior. Workbook decoding, generic settings, other
+feature services, broader document work, and the formal Phase 2 exit gate
+remain open.

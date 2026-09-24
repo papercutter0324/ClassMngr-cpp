@@ -1057,7 +1057,7 @@ bool PersonalDetailsPage::saveMyInfoInternal()
     const auto saved =
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDetailsSavePort(
-                settingsService
+                m_services
                 ).save({
                     .name = toUtf8(details.name),
                     .campus = toUtf8(details.campus),
