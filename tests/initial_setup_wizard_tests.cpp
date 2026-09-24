@@ -112,6 +112,7 @@ private slots:
     void missingInvalidAndUnavailableSignatureImagesStayEmpty();
     void storedDisplayNamePreservesUtf8AndWhitespace();
     void missingAndUnavailableDisplayNameStayEmpty();
+    void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
     void aggregateSaveComposesTypedReadsWithoutDataLoss();
@@ -318,6 +319,43 @@ void InitialSetupWizardTests::missingAndUnavailableDisplayNameStayEmpty()
         QVERIFY(name);
         QVERIFY(name->text().isEmpty());
     }
+}
+
+void InitialSetupWizardTests::
+unavailableSettingsBlockPersonalDetailsValidationWithoutMutation()
+{
+    ApplicationServices services;
+    QVERIFY(services.settingsService());
+    QVERIFY(!services.settingsService()->isAvailable());
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    auto* preview = signaturePreview(wizard);
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(name);
+    QVERIFY(preview);
+    QVERIFY(next);
+    QVERIFY(next->isEnabled());
+
+    const QString existingName =
+        QStringLiteral("  Existing Teacher  ");
+    name->setText(existingName);
+    const QString existingPreviewText = preview->text();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    next->click();
+    QApplication::processEvents();
+    DialogServices::setUserPromptServiceForTesting(nullptr);
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::PersonalDetailsPage);
+    QCOMPARE(name->text(), existingName);
+    QCOMPARE(preview->text(), existingPreviewText);
+    QVERIFY(prompts.messages.isEmpty());
 }
 
 void InitialSetupWizardTests::

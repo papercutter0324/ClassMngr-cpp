@@ -3,7 +3,6 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
-#include "app/services/feature_services.h"
 #include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
@@ -72,20 +71,6 @@ QStringList supportedImagePatterns()
     patterns.removeDuplicates();
     patterns.sort(Qt::CaseInsensitive);
     return patterns;
-}
-
-SettingsService* openSettingsService(
-    ApplicationServices* services
-    )
-{
-    auto* settingsService =
-        services
-            ? services->settingsService()
-            : nullptr;
-
-    return settingsService && settingsService->isAvailable()
-        ? settingsService
-        : nullptr;
 }
 
 int findCampusIndex(
@@ -847,9 +832,12 @@ void PersonalDetailsPage::loadPageData()
 }
 void PersonalDetailsPage::loadStoredSettings()
 {
-    auto* settingsService = openSettingsService(m_services);
-
-    if (!settingsService)
+    if (
+        !ClassMngr::Next::Platform::
+            ApplicationServicesCurrentCampusPreferencesPort(
+                m_services
+                ).isAvailable()
+        )
     {
         return;
     }
@@ -1005,9 +993,12 @@ void PersonalDetailsPage::loadStoredSettings()
 }
 bool PersonalDetailsPage::saveMyInfoInternal()
 {
-    auto* settingsService = openSettingsService(m_services);
-
-    if (!settingsService)
+    if (
+        !ClassMngr::Next::Platform::
+            ApplicationServicesCurrentCampusPreferencesPort(
+                m_services
+                ).isAvailable()
+        )
     {
         return false;
     }

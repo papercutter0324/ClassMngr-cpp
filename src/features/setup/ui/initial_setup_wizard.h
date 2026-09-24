@@ -9,7 +9,6 @@ class ClassService;
 class OnScreenKeyboard;
 class QPushButton;
 class QResizeEvent;
-class SettingsService;
 class TeacherService;
 
 class InitialSetupWizard final : public QWizard
@@ -35,7 +34,6 @@ public:
         );
 
     [[nodiscard]] ApplicationServices* services() const;
-    [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;
     [[nodiscard]] ClassService* classService() const;
     [[nodiscard]] bool wantsTeacherImport() const;

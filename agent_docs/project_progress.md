@@ -489,3 +489,20 @@ contract to route My Information and Initial Setup's remaining settings
 availability checks. Preserve early-return behavior and add unavailable My
 Information load coverage. Workbook, generic settings, other feature services,
 broader document work, and the Phase 2 exit gate remain open.
+
+### Phase 2 typed settings availability guards - 2026-09-24
+
+My Information and Initial Setup now use the existing typed current-campus
+preferences availability query instead of exposing raw `SettingsService`
+getters. Unavailable My Information loading returns before reading or changing
+widgets; saving returns before autosave cancellation or Zoom normalization.
+Initial Setup retains unavailable initialization and validation early returns.
+Regression coverage checks My Information's sentinel fields and Initial
+Setup's populated name/signature preview on unavailable validation. Executor
+and independent fresh Ninja/MSVC x64 runs built the page, adapter, and wizard
+targets; all three focused CTest suites passed 3/3. The independent configure
+validated 886 handwritten source owners; source and diff checks passed.
+Phase 2 remains open. Next: select the following bounded service slice from
+the Phase 2 plan, with the Sub Prep all-years calendar read and Class Notes
+save boundary under review. Workbook decoding, generic settings, remaining
+feature services, broader document work, and the formal exit gate remain open.

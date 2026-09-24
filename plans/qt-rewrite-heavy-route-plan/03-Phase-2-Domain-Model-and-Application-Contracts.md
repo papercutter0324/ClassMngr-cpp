@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F32 removes the raw `SettingsService*` constructor from `ApplicationServicesSubPrepPersonalZoomPreferencesPort`; My Information and Initial Setup pass their existing `ApplicationServices` owners. It preserves primary `myInfo/zoom*` precedence, legacy `subPrep/personalZoom*` fallback and best-effort migration only when the primary key is absent, legacy-value return on migration failure, UTF-8/defaults, unavailable behavior, and page display. Executor built `ClassMngr`, the adapter, MyWorkspace, and InitialSetupWizard; focused CTest passed 1/1. An independent fresh Ninja/MSVC x64 configure validated 886 handwritten owners, built all four targets, and passed focused CTest 3/3; adapter/source audits and diff check passed with no resource limitation. Phase 2 remains in progress. F33 is a candidate to remove remaining direct settings-availability checks from My Information and Initial Setup using the existing typed `CurrentCampusPreferencesPort::isAvailable()` availability boundary and Platform adapter. Preserve unavailable early-return/no-mutation behavior and add direct My Information unavailable-load coverage. This reuses the tested narrow contract and adapter; no generic availability contract is needed. Workbook decoding, generic settings, other feature services, broader document work, and the formal Phase 2 exit gate remain open.
+- Latest slice: F33 routes My Information and Initial Setup settings availability through `ApplicationServicesCurrentCampusPreferencesPort::isAvailable()`, removing the My Information raw helper and Initial Setup raw getter while preserving guarded no-mutation behavior. Independent fresh Ninja/MSVC x64 configure/build validated 886 handwritten owners; the three focused CTest suites passed 3/3 after a test-only coverage repair, and source scans and diff check passed. Phase 2 remains in progress. F34 Class Notes save is the next bounded candidate; preserve its save semantics and limits. Sub Prep's all-years calendar read remains open pending a purpose-specific query or explicit capacity policy; the formal Phase 2 exit gate remains open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4075,15 +4075,38 @@ The executor built `ClassMngr`, the adapter, MyWorkspace, and InitialSetupWizard
 focused CTest passed 1/1. An independent fresh Ninja/MSVC x64 configure
 validated 886 handwritten owners, built all four targets, and passed focused
 CTest 3/3. Adapter/source audits and diff check passed; there was no resource
-limitation. Phase 2 remains open. F33 is a candidate to route the remaining
-direct settings-availability checks in My Information and Initial Setup
-through a narrow typed availability query. Preserve unavailable early returns
-and no-mutation behavior, including My Information's save return before
-autosave cancellation or Zoom normalization and Initial Setup's no-op
-initialization/validation, and add direct My Information unavailable-load
-coverage. Use the existing typed
-`CurrentCampusPreferencesPort::isAvailable()` availability boundary and
-Platform adapter. This reuses the tested narrow contract and adapter; no
-generic availability contract is needed. Workbook
-decoding, generic settings, other feature services, broader document work,
-and the formal Phase 2 exit gate remain open.
+limitation. Phase 2 remains open. F33 completes the typed settings-availability
+migration for My Information and Initial Setup. Workbook decoding, generic
+settings, other feature services, broader document work, and the formal Phase 2
+exit gate remain open.
+
+#### Progress update - 2026-09-24 (F33 My Information and Initial Setup typed availability boundary)
+
+My Information and Initial Setup now use
+`ApplicationServicesCurrentCampusPreferencesPort::isAvailable()` instead of
+direct settings-availability access. My Information's raw availability helper
+and Initial Setup's raw getter were removed. Guards preserve My Information's
+load no-mutation and save-before-autosave-cancel/Zoom-normalization behavior,
+and Initial Setup's early returns. Regressions verify that unavailable My
+Information loading preserves sentinel fields and unavailable Initial Setup
+validation preserves the entered name and signature preview, stays on the page,
+and shows no warning; the unavailable-initialization test remains.
+
+Executor and independent fresh Ninja/MSVC x64 configure/builds validated 886
+handwritten owners and built `ClassMngr`, the CurrentCampus adapter,
+MyWorkspace, and InitialSetupWizard. After a test-only coverage repair, the
+independent rerun passed the exact focused CTest suites
+`ClassMngrInitialSetupWizardTests`, `ClassMngrMyWorkspacePageTests`, and
+`ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`
+(3/3). Source scans and diff check passed. Phase 2 remains in progress.
+
+F34 Class Notes save is the next bounded candidate: it isolates a two-field
+mutation seam with explicit success/failure behavior without imposing the
+4,096-result projection cap on Sub Prep. Preserve trimming, the single upsert,
+autosave/manual failure behavior, dirty state on failure and clean state on
+success, and the 10,000 QString-code-unit limit; add adapter and page behavior
+coverage. Sub Prep's all-years calendar read still uses legacy CalendarService.
+Its typed event projection has a 4,096-result cap that could change failure or
+default behavior, so keep that read open until a purpose-specific query or
+explicit capacity policy preserves the current behavior. The formal Phase 2
+exit gate remains open.

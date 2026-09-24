@@ -379,7 +379,13 @@ public:
     void initializePage() override
     {
         auto* setup = setupWizard(this);
-        if (!setup || !setup->settingsService())
+        if (
+            !setup
+            || !ClassMngr::Next::Platform::
+                ApplicationServicesCurrentCampusPreferencesPort(
+                    setup->services()
+                    ).isAvailable()
+            )
         {
             return;
         }
@@ -422,7 +428,13 @@ public:
         }
 
         auto* setup = setupWizard(this);
-        if (!setup || !setup->settingsService())
+        if (
+            !setup
+            || !ClassMngr::Next::Platform::
+                ApplicationServicesCurrentCampusPreferencesPort(
+                    setup->services()
+                    ).isAvailable()
+            )
         {
             return false;
         }
@@ -1343,17 +1355,6 @@ void InitialSetupWizard::positionKeyboardButton()
 ApplicationServices* InitialSetupWizard::services() const
 {
     return m_services;
-}
-
-SettingsService* InitialSetupWizard::settingsService() const
-{
-    SettingsService* service =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-    return service && service->isAvailable()
-        ? service
-        : nullptr;
 }
 
 TeacherService* InitialSetupWizard::teacherService() const

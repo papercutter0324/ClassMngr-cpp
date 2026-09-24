@@ -1252,3 +1252,30 @@ separate on a host with Xvfb and loopback access.
   services, and broader document boundaries remain open; Phase 2's formal exit
   gate is not met. Nothing was pushed; keep user-owned commit `f5af92df` and its
   Start Here content unchanged.
+
+
+### Phase 2 typed settings availability guards - 2026-09-24
+
+- My Information now gates stored-settings load and save through
+  `ApplicationServicesCurrentCampusPreferencesPort::isAvailable()`. The load
+  guard precedes widget reads/mutations; the save guard precedes autosave
+  cancellation and Zoom normalization. Initial Setup's initialization and
+  validation checks use the same typed availability query. The raw
+  `settingsService()` getter and My Information helper were removed.
+- Added a My Information unavailable-load sentinel regression and an Initial
+  Setup unavailable-validation regression that preserves the entered name and
+  signature preview, stays on the page, and shows no warning. Existing
+  unavailable initialization coverage remains.
+- Executor and independent fresh Ninja/MSVC x64 configure/builds validated 886
+  handwritten source owners. Both built ClassMngr, the current-campus adapter,
+  MyWorkspace, and InitialSetupWizard. The three focused CTest suites passed
+  3/3 in both runs. Source scans and `git diff --check` passed. The independent
+  verifier initially found the validation assertion missing; the executor
+  added the focused test and the same verifier reran all three suites.
+- Handoff: F34 selection is being checked against the Phase 2 plan and exit
+  gate. The paired discovery reports differ on whether to route Sub Prep's
+  all-years calendar read or Class Notes save first. No next-slice decision has
+  been made yet. Workbook decoding, generic settings, remaining feature
+  services, broader document work, and the Phase 2 exit gate remain open.
+  Nothing was pushed; preserve user-owned commit `f5af92df` and its Start Here
+  content unchanged.

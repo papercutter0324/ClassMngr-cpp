@@ -654,3 +654,11 @@ When removing raw settings-service callers from a preference adapter, keep
 legacy fallback/migration rules explicit. Migrate only when the primary key is
 absent, ignore migration-write failure when returning the legacy value, and
 test primary precedence separately from the migration failure path.
+
+## Phase 2 typed settings availability guards - 2026-09-24
+
+Reuse a typed persistence-availability query when a page only needs to gate
+settings operations. Keep the guard ahead of widget reads and mutations, and
+ahead of save-side effects such as autosave cancellation and field
+normalization. Directly test unavailable initialization and validation paths;
+source inspection alone left the validation path without a regression check.

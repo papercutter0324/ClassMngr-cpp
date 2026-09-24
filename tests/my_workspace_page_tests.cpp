@@ -18,6 +18,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -171,6 +172,7 @@ private slots:
     void missingZoomValuesUseNaFallbackAndDisableFields();
     void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
     void storedSignaturePreferencesPopulateModeTextAndFont();
+    void unavailableSettingsLeavePersonalDetailsFieldsUnchangedOnLoad();
     void unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues();
     void aggregateSavePersistsAllPersonalDetailsKeys();
     void aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings();
@@ -812,6 +814,57 @@ void MyWorkspacePageTests::aggregateSavePersistsAllPersonalDetailsKeys()
             ->toString(),
         QStringLiteral("preserved")
         );
+}
+
+void MyWorkspacePageTests::
+unavailableSettingsLeavePersonalDetailsFieldsUnchangedOnLoad()
+{
+    ApplicationServices services;
+    QVERIFY(services.settingsService());
+    QVERIFY(!services.settingsService()->isAvailable());
+
+    MyWorkspacePage page(&services);
+    auto* name = personalNameEditor(page);
+    auto* campus = page.personalDetailsPage()->findChild<QComboBox*>();
+    auto* login = personalZoomLoginEditor(page);
+    auto* password = personalZoomPasswordEditor(page);
+    auto* unavailable = personalZoomUnavailableCheck(page);
+    auto* typedSignature = page.personalDetailsPage()->findChild<QLineEdit*>(
+        QStringLiteral("typedSignatureEdit")
+        );
+    QVERIFY(name);
+    QVERIFY(campus);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QVERIFY(typedSignature);
+
+    const QSignalBlocker nameBlocker(name);
+    const QSignalBlocker campusBlocker(campus);
+    const QSignalBlocker loginBlocker(login);
+    const QSignalBlocker passwordBlocker(password);
+    const QSignalBlocker unavailableBlocker(unavailable);
+    const QSignalBlocker typedSignatureBlocker(typedSignature);
+    name->setText(QStringLiteral("preexisting name"));
+    campus->addItem(
+        QStringLiteral("preexisting campus"),
+        QStringLiteral("campus-id")
+        );
+    login->setText(QStringLiteral("preexisting login"));
+    password->setText(QStringLiteral("preexisting password"));
+    unavailable->setChecked(true);
+    typedSignature->setText(QStringLiteral("preexisting signature"));
+
+    refreshPersonalDetails(page);
+
+    QCOMPARE(name->text(), QStringLiteral("preexisting name"));
+    QCOMPARE(campus->count(), 1);
+    QCOMPARE(campus->currentText(), QStringLiteral("preexisting campus"));
+    QCOMPARE(campus->currentData().toString(), QStringLiteral("campus-id"));
+    QCOMPARE(login->text(), QStringLiteral("preexisting login"));
+    QCOMPARE(password->text(), QStringLiteral("preexisting password"));
+    QVERIFY(unavailable->isChecked());
+    QCOMPARE(typedSignature->text(), QStringLiteral("preexisting signature"));
 }
 
 void MyWorkspacePageTests::
