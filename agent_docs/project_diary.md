@@ -647,3 +647,10 @@ Keep the current-campus preference cutover separate from campus-directory
 queries. Retain the page-level availability guard around its other reads, keep
 the stored-ID/name correction timing, and verify that unavailable typed reads
 and writes keep their existing result behavior.
+
+## Phase 2 Personal Zoom preferences caller cutover - 2026-09-24
+
+When removing raw settings-service callers from a preference adapter, keep
+legacy fallback/migration rules explicit. Migrate only when the primary key is
+absent, ignore migration-write failure when returning the legacy value, and
+test primary precedence separately from the migration failure path.

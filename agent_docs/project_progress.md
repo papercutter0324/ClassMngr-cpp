@@ -471,3 +471,21 @@ Information/Initial Setup callers over to `ApplicationServices*`, preserving
 primary-key precedence and best-effort legacy migration. Workbook, generic
 settings, other feature services, broader document work, and the Phase 2 exit
 gate remain open.
+
+### Phase 2 Personal Zoom preferences caller cutover - 2026-09-24
+
+The Personal Zoom preferences adapter now accepts `ApplicationServices&` or
+nullable `ApplicationServices*`; its `SettingsService*` constructor is
+removed. My Information and Initial Setup pass their existing service owner.
+Primary `myInfo/zoom*` values still take precedence; legacy
+`subPrep/personalZoom*` values are read and migrated best-effort only when
+primary values are absent, and the legacy value is still returned if migration
+fails. UTF-8 conversion, defaults, unavailable behavior, and page display are
+unchanged. Executor and independent fresh Ninja/MSVC x64 CTest runs passed
+3/3; the independent configure validated 886 handwritten owners and built
+ClassMngr, the adapter, MyWorkspace, and InitialSetupWizard. Next: route My
+Information and Initial Setup's remaining settings-availability checks
+through a typed availability query, preserving early-return behavior and
+adding unavailable My Information load coverage. Workbook, generic settings,
+other feature services, broader document work, and the Phase 2 exit gate
+remain open.

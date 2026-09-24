@@ -457,7 +457,7 @@ public:
         const auto zoomResult =
             ClassMngr::Next::Platform::
                 ApplicationServicesSubPrepPersonalZoomPreferencesPort(
-                    setup->settingsService()
+                    setup->services()
                     ).load();
         const auto zoom = zoomResult
             ? zoomResult.value()

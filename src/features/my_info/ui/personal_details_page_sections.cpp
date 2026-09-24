@@ -933,7 +933,7 @@ void PersonalDetailsPage::loadStoredSettings()
 
     ClassMngr::Next::Platform::
         ApplicationServicesSubPrepPersonalZoomPreferencesPort
-        personalZoomPreferencesPort(settingsService);
+        personalZoomPreferencesPort(m_services);
     const auto storedPreferences = personalZoomPreferencesPort.load();
     if (storedPreferences)
     {

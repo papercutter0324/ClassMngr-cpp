@@ -1219,3 +1219,35 @@ separate on a host with Xvfb and loopback access.
   services, and broader document boundaries remain open; Phase 2's formal exit
   gate is not met. Nothing was pushed; preserve the separately staged
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 Personal Zoom preferences caller cutover - 2026-09-24
+
+- `ApplicationServicesSubPrepPersonalZoomPreferencesPort` retains its
+  `ApplicationServices&` constructor, adds a nullable `ApplicationServices*`
+  constructor, and removes its `SettingsService*` constructor. My Information
+  and Initial Setup now pass their existing `ApplicationServices` owner.
+- Preserved primary `myInfo/zoom*` precedence and legacy
+  `subPrep/personalZoom*` fallback/migration only when primary values are
+  absent. Migration writes remain best-effort and migration failure still
+  returns the legacy value. UTF-8, defaults, unavailable behavior, caller
+  guards, and page display behavior remain unchanged. Adapter null-service
+  coverage now uses the nullable ApplicationServices path.
+- Executor built ClassMngr, the adapter, MyWorkspace, and InitialSetupWizard;
+  all three focused CTest suites passed. Independent fresh Ninja/MSVC x64
+  configure validated 886 handwritten owners, built all four targets, and
+  passed focused CTest 3/3. The adapter suite covers primary precedence,
+  legacy fallback/migration, UTF-8, defaults, unavailable/null services, and
+  legacy-value return when migration write fails. Source scan and diff check
+  passed with no resource limitation.
+- Handoff: F33 removes the remaining My Information and Initial Setup
+  settings-availability checks behind a typed availability query. Preserve
+  unavailable My Information load/save early returns, especially return before
+  autosave cancellation and Zoom-field normalization, and Initial Setup's
+  unavailable initialization/validation behavior. Add My Information load
+  coverage for unavailable settings. A focused typed availability contract
+  and Platform adapter may be needed; choose whether to reuse an existing
+  availability method after checking its semantics. Workbook decoding,
+  generic settings, other feature services, and broader document boundaries
+  remain open; Phase 2's formal exit gate is not met. Nothing was pushed; keep
+  user-owned commit `f5af92df` and its Start Here content unchanged.

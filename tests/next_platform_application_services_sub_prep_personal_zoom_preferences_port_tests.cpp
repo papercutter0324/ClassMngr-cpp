@@ -254,7 +254,9 @@ unavailableSettingsFailWithoutChangingCallerState()
 
     QVERIFY(!port.load());
 
-    ApplicationServicesSubPrepPersonalZoomPreferencesPort nullPort(nullptr);
+    ApplicationServicesSubPrepPersonalZoomPreferencesPort nullPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
     QVERIFY(!nullPort.load());
 }
 

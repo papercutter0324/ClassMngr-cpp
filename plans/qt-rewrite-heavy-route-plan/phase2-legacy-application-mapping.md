@@ -3211,13 +3211,35 @@ handwritten owners, built `ClassMngr`, the adapter, InitialSetupWizard, and
 MyWorkspace, and passed focused CTest 3/3. Adapter/test/source scans and diff
 check passed; there was no resource limitation. Phase 2 remains open.
 
-## Next candidate: F32 Sub Prep personal-Zoom preference caller cutover
+## Verified F32 Sub Prep personal-Zoom preference caller cutover
 
-Remove the raw `SettingsService*` constructor from
-`ApplicationServicesSubPrepPersonalZoomPreferencesPort` and update My
-Information and Initial Setup to use `ApplicationServices*`. Preserve
-primary-over-legacy precedence, best-effort legacy migration only when primary
-values are absent, return of the legacy value when migration fails,
-UTF-8/defaults, unavailable handling, and UI behavior. Workbook decoding,
-generic settings, other feature services, broader document work, and the
-formal Phase 2 exit gate remain open.
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort` retains its
+`ApplicationServices&` constructor, adds a nullable `ApplicationServices*`
+constructor, and removes the `SettingsService*` constructor. My Information
+and Initial Setup pass their existing services. Primary `myInfo/zoom*` values
+take precedence; legacy `subPrep/personalZoom*` values are fallback inputs and
+are best-effort migrated only when the primary key is absent. Migration failure
+still returns the legacy values. UTF-8 conversion, defaults, unavailable
+behavior, and page display remain unchanged. Null-constructor coverage was
+updated.
+
+The executor built `ClassMngr`, the adapter, MyWorkspace, and InitialSetupWizard;
+focused CTest passed 1/1. An independent fresh Ninja/MSVC x64 configure
+validated 886 handwritten owners, built all four targets, and passed focused
+CTest 3/3. Adapter/source audits and diff check passed; there was no resource
+limitation. Phase 2 remains open.
+
+## Next candidate: F33 settings-availability query for My Information and Initial Setup
+
+Remove the remaining direct settings-availability checks in My Information
+(`openSettingsService` helper and its load/save gates) and Initial Setup
+(`settingsService()` getter and its personal-details initialization/validation
+gates) behind a narrow typed availability query. Preserve unavailable early
+returns and no-mutation behavior, including My Information's save return
+before autosave cancellation or Zoom normalization and Initial Setup's no-op
+initialization/validation. Add direct My Information unavailable-load
+coverage. Decide before implementation whether this should be a generic
+Application availability contract with a Platform adapter or can reuse a
+tested port; the contract/adapter choice is not yet resolved. Workbook
+decoding, generic settings, other feature services, broader document work, and
+the formal Phase 2 exit gate remain open.
