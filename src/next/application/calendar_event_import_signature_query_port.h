@@ -1,8 +1,8 @@
 #pragma once
 
 #include "next/application/calendar_event_query_port.h"
+#include "next/application/calendar_event_import_signature.h"
 
-#include <string>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -19,7 +19,8 @@ struct CalendarEventImportSignatureRangeRequest final
         ) = default;
 };
 
-using CalendarEventImportSignatureKeys = std::vector<std::u16string>;
+using CalendarEventImportSignatureKeys =
+    std::vector<CalendarEventImportSignature>;
 using CalendarEventImportSignatureQueryResult =
     Domain::Result<CalendarEventImportSignatureKeys>;
 using CalendarEventImportSignatureQueryError = Domain::OperationError;

@@ -145,7 +145,8 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::u16string importSignatureKey(
+    [[nodiscard]] static Application::CalendarEventImportSignature
+    importSignatureKey(
         const CalendarEvent& event
         )
     {
@@ -167,7 +168,7 @@ private:
                 .normalizedTimeStatus = normalizedCalendarEventTimeStatus(
                     event.timeStatus
                     ).toStdU16String()
-            }).value();
+            });
     }
 
     [[nodiscard]] static Application::CalendarEventImportSignatureQueryResult

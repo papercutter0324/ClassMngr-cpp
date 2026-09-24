@@ -4,9 +4,27 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+
+namespace
+{
+
+CalendarEventImportSignature signature(std::u16string title)
+{
+    return CalendarEventImportSignature::fromNormalizedFields({
+        .simplifiedTitle = std::move(title),
+        .normalizedEventType = u"Other",
+        .startDateIso = u"2026-09-23",
+        .endDateIso = u"2026-09-23",
+        .allDay = false,
+        .normalizedTimeStatus = u"Unknown"
+    });
+}
+
+} // namespace
 
 class NextApplicationCalendarEventImportPlanTests final : public QObject
 {
@@ -34,7 +52,7 @@ void NextApplicationCalendarEventImportPlanTests::
 noCandidatesRetainParserSkippedCount()
 {
     CalendarEventImportPlanRequest request;
-    request.existingSignatures = {u"already-present"};
+    request.existingSignatures = {signature(u"already-present")};
     request.initiallySkippedCount = 6;
 
     const CalendarEventImportPlan plan =
@@ -48,8 +66,14 @@ void NextApplicationCalendarEventImportPlanTests::
 existingSignaturesSkipMatchingCandidates()
 {
     CalendarEventImportPlanRequest request;
-    request.existingSignatures = {u"already-present", u"already-present"};
-    request.candidateSignatures = {u"already-present", u"new-event"};
+    request.existingSignatures = {
+        signature(u"already-present"),
+        signature(u"already-present")
+    };
+    request.candidateSignatures = {
+        signature(u"already-present"),
+        signature(u"new-event")
+    };
 
     const CalendarEventImportPlan plan =
         planCalendarEventImport(request);
@@ -63,14 +87,14 @@ void NextApplicationCalendarEventImportPlanTests::
 duplicateCandidatesAreAcceptedOnlyOnceInInputOrder()
 {
     CalendarEventImportPlanRequest request;
-    request.existingSignatures = {u"existing"};
+    request.existingSignatures = {signature(u"existing")};
     request.candidateSignatures = {
-        u"first",
-        u"existing",
-        u"second",
-        u"first",
-        u"third",
-        u"second"
+        signature(u"first"),
+        signature(u"existing"),
+        signature(u"second"),
+        signature(u"first"),
+        signature(u"third"),
+        signature(u"second")
     };
     request.initiallySkippedCount = 7;
 
@@ -87,12 +111,12 @@ void NextApplicationCalendarEventImportPlanTests::
 opaqueSignaturesUseExactStringEquality()
 {
     CalendarEventImportPlanRequest request;
-    request.existingSignatures = {u"key|part", u"CASE"};
+    request.existingSignatures = {signature(u"key|part"), signature(u"CASE")};
     request.candidateSignatures = {
-        u"key|part",
-        u"key",
-        u"case",
-        u"CASE"
+        signature(u"key|part"),
+        signature(u"key"),
+        signature(u"case"),
+        signature(u"CASE")
     };
 
     const CalendarEventImportPlan plan =
@@ -106,8 +130,12 @@ opaqueSignaturesUseExactStringEquality()
 void NextApplicationCalendarEventImportPlanTests::
 distinctLoneSurrogateKeysRemainDistinct()
 {
-    const std::u16string existingKey(1, static_cast<char16_t>(0xD800));
-    const std::u16string distinctKey(1, static_cast<char16_t>(0xD801));
+    const CalendarEventImportSignature existingKey = signature(
+        std::u16string(1, static_cast<char16_t>(0xD800))
+        );
+    const CalendarEventImportSignature distinctKey = signature(
+        std::u16string(1, static_cast<char16_t>(0xD801))
+        );
 
     CalendarEventImportPlanRequest request;
     request.existingSignatures = {existingKey};

@@ -270,10 +270,10 @@ void CalendarImportTests::importSignatureUsesExactlyTheSixLegacyKeyFields()
     event.allDay = false;
     event.timeStatus = QStringLiteral("Timed");
 
-    const QString signature =
+    const auto signature =
         CalendarImport::calendarEventImportSignature(event);
     QCOMPARE(
-        signature,
+        QString::fromStdU16String(signature.value()),
         QStringLiteral("Open House|Meeting|2026-09-23|2026-09-24|0|Timed")
         );
 
@@ -329,15 +329,23 @@ importSignatureNormalizesTitleTypeAndTimeStatus()
     canonical.eventType = QStringLiteral("Meeting");
     canonical.timeStatus = QStringLiteral("Timed");
     QCOMPARE(
-        CalendarImport::calendarEventImportSignature(normalized),
-        CalendarImport::calendarEventImportSignature(canonical)
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(normalized).value()
+            ),
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(canonical).value()
+            )
         );
 
     normalized.eventType = QStringLiteral("not-a-calendar-type");
     canonical.eventType = QStringLiteral("Other");
     QCOMPARE(
-        CalendarImport::calendarEventImportSignature(normalized),
-        CalendarImport::calendarEventImportSignature(canonical)
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(normalized).value()
+            ),
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(canonical).value()
+            )
         );
 
     normalized.eventType = QStringLiteral("Meeting");
@@ -345,8 +353,12 @@ importSignatureNormalizesTitleTypeAndTimeStatus()
     normalized.timeStatus = QStringLiteral("not-a-time-status");
     canonical.timeStatus = QStringLiteral("Timed");
     QCOMPARE(
-        CalendarImport::calendarEventImportSignature(normalized),
-        CalendarImport::calendarEventImportSignature(canonical)
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(normalized).value()
+            ),
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(canonical).value()
+            )
         );
 }
 
@@ -360,7 +372,7 @@ importSignatureIgnoresTimesAndOtherNonKeyMetadata()
     event.endDate = QDate(2026, 9, 23);
     event.timeStatus = QStringLiteral("Timed");
 
-    const QString signature =
+    const auto signature =
         CalendarImport::calendarEventImportSignature(event);
 
     event.id = 42;
@@ -368,8 +380,10 @@ importSignatureIgnoresTimesAndOtherNonKeyMetadata()
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
     QCOMPARE(
-        CalendarImport::calendarEventImportSignature(event),
-        signature
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(event).value()
+            ),
+        QString::fromStdU16String(signature.value())
         );
 }
 

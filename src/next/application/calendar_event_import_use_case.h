@@ -5,7 +5,6 @@
 #include "next/application/calendar_event_import_signature_query_port.h"
 
 #include <cstddef>
-#include <string>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -15,7 +14,7 @@ namespace ClassMngr::Next::Application
 // accepted plan indexes cannot be applied to a differently ordered batch.
 struct CalendarEventImportCandidate final
 {
-    std::u16string signature;
+    CalendarEventImportSignature signature;
     CalendarEventSaveRequest saveRequest;
 
     friend bool operator==(

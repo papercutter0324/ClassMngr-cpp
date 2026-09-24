@@ -39,7 +39,7 @@ public:
     bool available = true;
     mutable int callCount = 0;
     mutable CalendarEventImportSignatureRangeRequest lastRequest;
-    std::vector<std::u16string> signatures;
+    std::vector<CalendarEventImportSignature> signatures;
     std::optional<Domain::OperationError> failure;
 };
 
@@ -112,8 +112,20 @@ CalendarEventSaveRequest saveRequest(std::string title)
     return request;
 }
 
+CalendarEventImportSignature signature(std::u16string title)
+{
+    return CalendarEventImportSignature::fromNormalizedFields({
+        .simplifiedTitle = std::move(title),
+        .normalizedEventType = u"Other",
+        .startDateIso = u"2026-02-03",
+        .endDateIso = u"2026-02-03",
+        .allDay = false,
+        .normalizedTimeStatus = u"Unknown"
+    });
+}
+
 CalendarEventImportCandidate candidate(
-    std::u16string signature,
+    CalendarEventImportSignature signature,
     std::string title
     )
 {
@@ -189,14 +201,14 @@ acceptedCandidatesStayOrderedAndCountsMatch()
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.initiallySkippedCount = 4;
     request.candidates = {
-        candidate(u"new-a", "First accepted"),
-        candidate(u"existing", "Existing duplicate"),
-        candidate(u"new-b", "Second accepted"),
-        candidate(u"new-a", "In-batch duplicate")
+        candidate(signature(u"new-a"), "First accepted"),
+        candidate(signature(u"existing"), "Existing duplicate"),
+        candidate(signature(u"new-b"), "Second accepted"),
+        candidate(signature(u"new-a"), "In-batch duplicate")
     };
 
     FakeSignatureQueryPort queryPort;
-    queryPort.signatures = {u"existing", u"existing"};
+    queryPort.signatures = {signature(u"existing"), signature(u"existing")};
     FakeSavePort savePort;
     savePort.returnedIds = {calendarEventId(31), calendarEventId(32)};
     RecordingObserver observer;
@@ -238,10 +250,10 @@ duplicateOnlyInputStillSavesAnEmptyBatch()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.initiallySkippedCount = 2;
-    request.candidates = {candidate(u"existing", "Duplicate")};
+    request.candidates = {candidate(signature(u"existing"), "Duplicate")};
 
     FakeSignatureQueryPort queryPort;
-    queryPort.signatures = {u"existing"};
+    queryPort.signatures = {signature(u"existing")};
     FakeSavePort savePort;
 
     const auto result = CalendarEventImportUseCase::execute(
@@ -265,16 +277,18 @@ duplicateOnlyInputStillSavesAnEmptyBatch()
 void NextApplicationCalendarEventImportUseCaseTests::
 signatureIdentityRemainsExactUtf16()
 {
-    const std::u16string loneSurrogate(1, static_cast<char16_t>(0xD800));
+    const CalendarEventImportSignature loneSurrogate = signature(
+        std::u16string(1, static_cast<char16_t>(0xD800))
+        );
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.candidates = {
-        candidate(u"case-sensitive", "Different case"),
-        candidate(u"CASE-SENSITIVE", "Exact match"),
+        candidate(signature(u"case-sensitive"), "Different case"),
+        candidate(signature(u"CASE-SENSITIVE"), "Exact match"),
         candidate(loneSurrogate, "Unpaired surrogate")
     };
 
     FakeSignatureQueryPort queryPort;
-    queryPort.signatures = {u"CASE-SENSITIVE"};
+    queryPort.signatures = {signature(u"CASE-SENSITIVE")};
     FakeSavePort savePort;
     savePort.returnedIds = {calendarEventId(41), calendarEventId(42)};
 
@@ -302,7 +316,7 @@ void NextApplicationCalendarEventImportUseCaseTests::
 queryFailurePropagatesWithoutSaving()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.candidates = {candidate(u"candidate", "Candidate")};
+    request.candidates = {candidate(signature(u"candidate"), "Candidate")};
     FakeSignatureQueryPort queryPort;
     const Domain::OperationError expectedError =
         sampleError("signature lookup failed");
@@ -326,7 +340,7 @@ saveFailurePropagatesAfterPreparation()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.initiallySkippedCount = 3;
-    request.candidates = {candidate(u"candidate", "Candidate")};
+    request.candidates = {candidate(signature(u"candidate"), "Candidate")};
     FakeSignatureQueryPort queryPort;
     FakeSavePort savePort;
     const Domain::OperationError expectedError = sampleError("batch save failed");

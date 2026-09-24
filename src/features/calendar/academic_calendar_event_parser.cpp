@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
+#include <string>
+#include <unordered_set>
 
 #include <QDate>
 #include <QHash>
@@ -16,6 +19,16 @@ namespace CalendarImport
 {
 namespace
 {
+struct CalendarEventImportSignatureHash final
+{
+    [[nodiscard]] std::size_t operator()(
+        const ClassMngr::Next::Application::CalendarEventImportSignature& key
+        ) const noexcept
+    {
+        return std::hash<std::u16string>{}(key.value());
+    }
+};
+
 constexpr int LegendColumn = 26;
 constexpr int CalendarGridRows = 6;
 constexpr int CalendarGridColumns = 7;
@@ -741,29 +754,28 @@ QString titleWithCampusCodes(
 
 }
 
-QString calendarEventImportSignature(
+ClassMngr::Next::Application::CalendarEventImportSignature
+calendarEventImportSignature(
     const CalendarEvent& event
     )
 {
-    const ClassMngr::Next::Application::CalendarEventImportSignature key =
-        ClassMngr::Next::Application::CalendarEventImportSignature::
-            fromNormalizedFields({
-                .simplifiedTitle = event.title.simplified().toStdU16String(),
-                .normalizedEventType = normalizedCalendarEventType(
-                    event.eventType
-                    ).toStdU16String(),
-                .startDateIso = event.startDate
-                    .toString(Qt::ISODate)
-                    .toStdU16String(),
-                .endDateIso = event.endDate
-                    .toString(Qt::ISODate)
-                    .toStdU16String(),
-                .allDay = event.allDay,
-                .normalizedTimeStatus = normalizedCalendarEventTimeStatus(
-                    event.timeStatus
-                    ).toStdU16String()
-            });
-    return QString::fromStdU16String(key.value());
+    return ClassMngr::Next::Application::CalendarEventImportSignature::
+        fromNormalizedFields({
+            .simplifiedTitle = event.title.simplified().toStdU16String(),
+            .normalizedEventType = normalizedCalendarEventType(
+                event.eventType
+                ).toStdU16String(),
+            .startDateIso = event.startDate
+                .toString(Qt::ISODate)
+                .toStdU16String(),
+            .endDateIso = event.endDate
+                .toString(Qt::ISODate)
+                .toStdU16String(),
+            .allDay = event.allDay,
+            .normalizedTimeStatus = normalizedCalendarEventTimeStatus(
+                event.timeStatus
+                ).toStdU16String()
+        });
 }
 
 CalendarEvent calendarEvent(
@@ -831,7 +843,10 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
         normalizedColor(weekendStyle.fillColor);
     const QString weekendFont =
         comparableFontColor(weekendStyle.fontColor);
-    QSet<QString> emitted;
+    std::unordered_set<
+        ClassMngr::Next::Application::CalendarEventImportSignature,
+        CalendarEventImportSignatureHash
+        > emitted;
 
     for (const MonthBlock& block : blocks)
     {
@@ -960,7 +975,7 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
                                 importTitle,
                                 eventType
                                 );
-                        const QString signature =
+                        const auto signature =
                             calendarEventImportSignature(event);
 
                         if (emitted.contains(signature))

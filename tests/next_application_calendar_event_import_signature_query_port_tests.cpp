@@ -13,6 +13,18 @@ using namespace ClassMngr::Next::Domain;
 namespace
 {
 
+CalendarEventImportSignature signature(std::u16string title)
+{
+    return CalendarEventImportSignature::fromNormalizedFields({
+        .simplifiedTitle = std::move(title),
+        .normalizedEventType = u"Meeting",
+        .startDateIso = u"2026-09-23",
+        .endDateIso = u"2026-09-24",
+        .allDay = false,
+        .normalizedTimeStatus = u"Timed"
+    });
+}
+
 class FakeImportSignatureQueryPort final
     : public CalendarEventImportSignatureQueryPort
 {
@@ -31,9 +43,9 @@ public:
         ) const override
     {
         lastRequest = request;
-        return CalendarEventImportSignatureQueryResult::success({
-            u"Caf\u00E9|Meeting|2026-09-23|2026-09-24|0|Timed"
-        });
+        return CalendarEventImportSignatureQueryResult::success(
+            {signature(u"Caf\u00E9")}
+            );
     }
 };
 
@@ -56,7 +68,7 @@ contractUsesOwnedDatesAndUtf16Signatures()
         >);
     static_assert(std::is_same_v<
         CalendarEventImportSignatureKeys,
-        std::vector<std::u16string>
+        std::vector<CalendarEventImportSignature>
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventImportSignatureQueryPort&>()
@@ -81,7 +93,7 @@ contractUsesOwnedDatesAndUtf16Signatures()
     QCOMPARE(result.value().size(), std::size_t{1});
     QCOMPARE(
         result.value().front(),
-        std::u16string(u"Caf\u00E9|Meeting|2026-09-23|2026-09-24|0|Timed")
+        signature(u"Caf\u00E9")
         );
 
     port.available = false;

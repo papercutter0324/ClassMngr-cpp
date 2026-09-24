@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/calendar_event.h"
+#include "next/application/calendar_event_import_signature.h"
 
 #include <QList>
 #include <QStringList>
@@ -20,7 +21,8 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
     const QStringList& campusCodes = {}
     );
 
-QString calendarEventImportSignature(
+ClassMngr::Next::Application::CalendarEventImportSignature
+calendarEventImportSignature(
     const CalendarEvent& event
     );
 }

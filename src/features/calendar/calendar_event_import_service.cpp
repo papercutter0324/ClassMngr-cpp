@@ -83,10 +83,10 @@ QStringList calendarImportCampusCodes(
     return codes;
 }
 
-std::u16string calendarEventSignatureKey(const CalendarEvent& event)
+ClassMngr::Next::Application::CalendarEventImportSignature
+calendarEventSignatureKey(const CalendarEvent& event)
 {
-    return CalendarImport::calendarEventImportSignature(event)
-        .toStdU16String();
+    return CalendarImport::calendarEventImportSignature(event);
 }
 
 ClassMngr::Next::Application::CalendarEventSaveRequest

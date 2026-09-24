@@ -2123,13 +2123,18 @@ returnsLegacyImportSignatureKeysInRangeOrder()
         expectedOtherKey,
         expectedDuplicateKey
     };
+    static_assert(std::is_same_v<
+        CalendarEventImportSignatureKeys,
+        std::vector<CalendarEventImportSignature>
+        >);
     for (std::size_t index = 0; index < expectedKeys.size(); ++index)
     {
         const QString actual =
-            QString::fromStdU16String(keyValues.at(index));
+            QString::fromStdU16String(keyValues.at(index).value());
         QCOMPARE(actual, expectedKeys.at(index));
-        QCOMPARE(
-            actual,
+        QVERIFY(
+            keyValues.at(index)
+            ==
             CalendarImport::calendarEventImportSignature(
                 legacyRows->at(static_cast<qsizetype>(index))
                 )
@@ -2297,11 +2302,11 @@ rejectsPartialSourceTimesAndProjectionOverflow()
         kCalendarEventProjectionMaxEvents + 1
         );
     QCOMPARE(
-        QString::fromStdU16String(importKeyValues.front()),
+        QString::fromStdU16String(importKeyValues.front().value()),
         QStringLiteral("Overflow 0000|Other|2026-11-01|2026-11-01|0|Timed")
         );
     QCOMPARE(
-        QString::fromStdU16String(importKeyValues.back()),
+        QString::fromStdU16String(importKeyValues.back().value()),
         QStringLiteral("Overflow 4096|Other|2026-11-01|2026-11-01|0|Timed")
         );
 }
