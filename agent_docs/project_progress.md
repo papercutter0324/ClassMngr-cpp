@@ -713,3 +713,25 @@ gaps. Gates 1 and 2 remain partial for broader Domain models and baseline
 parity; Gate 4 remains satisfied. Phase 2 and its exit gate remain open.
 Preserve the Sub Prep bound of the current and following calendar years at
 most and the user-owned `cmake/sources.cmake` modification.
+
+
+### Phase 2 Class Transfer review decisions - 2026-09-24
+
+F43 adds a Qt-free Class Transfer choice contract shared by dialog readiness and
+repository apply validation. The repository rebuilds preview matches at apply
+time; the contract preserves zero/unique/ambiguous teacher-match behavior and
+rejects missing/duplicate decisions, invalid or foreign targets, and duplicate
+replacement claims. A required success fixture now covers production
+parse/preview/apply and persisted class, teacher, regular schedule including
+end time, and roster data. The conflict fixture still rejects with no partial
+writes.
+
+F43 is committed as `c0e03e55aa5f5cc1897ccf97a25901a5e119c8e5`. Fresh Windows
+x64 Ninja/MSVC verification validated 899 handwritten source owners and passed
+both focused CTest targets (19 + 15 QtTest cases, 34 total, no failures or
+skips). `git diff --check` passed; the Application contract has no Qt or
+legacy dependencies. Gates 1 and 2 advance but remain Partial due to broader
+Domain completeness and baseline parity. The formal workspace criterion and
+audited dependency isolation remain Satisfied; Phase 2 and its exit gate remain
+open. Preserve the Sub Prep maximum of the current and following calendar
+years and the user-owned `cmake/sources.cmake` modification.

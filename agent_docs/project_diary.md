@@ -755,3 +755,12 @@ object at a stable address and transfer ownership of that object together with
 the repositories. Exercise the first settings write after open, failed and
 successful replacement, same-path reopen, and candidate-connection cleanup;
 the original snapshot tests alone did not expose the lifetime defect.
+
+
+## Phase 2 Class Transfer review decisions - 2026-09-24
+
+Dialog readiness is only a preview; it cannot authorize apply against choices
+the user made earlier. Rebuild repository matches from current database state
+and validate every choice against those matches immediately before the existing
+apply preflight. Preserve the distinct rules for zero, one, and ambiguous
+teacher matches, and keep UI messages localized at the edge.

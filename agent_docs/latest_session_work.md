@@ -1592,3 +1592,54 @@ separate on a host with Xvfb and loopback access.
 - Next: use a fresh three-lane Heavy-route investigation to select the next
   bounded slice from the remaining Domain and parity gaps; update the plan and
   mapping handoff before implementation.
+
+
+### F43 Class Transfer review decisions
+
+- F43 is committed as `c0e03e55aa5f5cc1897ccf97a25901a5e119c8e5`
+  (`Phase2 - Validate Class Transfer review decisions`). The changed paths are
+  `src/next/application/class_transfer_projection.h`,
+  `src/features/classes/ui/class_import_dialog.cpp/.h`,
+  `src/data/repositories/class_transfer_repository.cpp`,
+  `tests/next_application_class_transfer_tests.cpp`,
+  `tests/class_transfer_tests.cpp`, and the required
+  `tests/fixtures/transfers/success_source.json`.
+- The Qt-free Application decision validator is now used by both dialog
+  readiness and repository apply-time plan validation. It requires complete,
+  unique decisions; valid action/target combinations; targets in the current
+  match set; and no duplicate replacement claims. It preserves zero-match
+  Create, unique-match Keep/Replace of that target, and ambiguous-match
+  Create or in-set Keep/Replace semantics. Repository apply rebuilds preview
+  matches from current database state before validation. SQL matching,
+  schedule preflight, transaction and writes remain repository-owned.
+- The success fixture now exercises production parse, preview, ready dialog
+  decisions, and apply. It asserts persisted class, teacher, roster, and
+  regular schedule data, including Monday 3:30 PM to 3:50 PM. The existing
+  conflict fixture continues to reject schedule collisions with no partial
+  teacher/class/class-info/schedule/roster writes. App-less tests cover zero,
+  one, and multiple matches; missing/duplicate choices; invalid actions;
+  absent, foreign, or stale targets; and duplicate replacement claims.
+- Independent fresh Windows x64 Ninja/MSVC Debug configure used MSVC
+  19.51.36257.0 and Qt 6.12.0, validated 899 handwritten owners, and built
+  both `ClassMngrClassTransferTests` and
+  `ClassMngrNextApplicationClassTransferTests`. CTest passed 2/2. QtTest
+  totals: Class Transfer 19/0/0 and Application contract 15/0/0
+  (passed/failed/skipped; 34 passed total). The persisted end-time delta was
+  rerun by the same tester with both targets still passing. `git diff --check`
+  passed; the Application contract has no Qt/legacy dependency. The pre-existing
+  `cmake/sources.cmake` modification remains untouched.
+- Environment notes: the existing Visual Studio generator hit FileTracker
+  `E_ACCESSDENIED` before compilation. The independent fresh Ninja build
+  succeeded after loading `vcvarsall.bat x64`; harmless `vswhere.exe` and
+  unrelated long-object-path warnings remained.
+- Gate audit after F43: Gate 1 advances but remains Partial due to broader
+  Domain records. Gate 2 improves with Class Transfer fixture-backed
+  success/conflict behavior but remains Partial because wider baseline parity
+  is incomplete. The formal WorkspaceCoordinator create criterion and audited
+  `src/next` dependency isolation remain Satisfied. Non-gating integration
+  caveats remain around MainWindow dirty approval, New Profile/Initial Setup
+  close-before-create ordering, and direct FileController snapshot/same-path
+  coverage. Phase 2 and the exit gate remain Open. Sub Prep stays capped at the
+  current and following calendar years at most.
+- Next: finish the F43 plan/mapping audit, then select the next bounded slice
+  from remaining Domain and baseline-parity gaps.
