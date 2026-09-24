@@ -160,8 +160,9 @@ missingAndUnavailableReadEmpty()
     QVERIFY(unavailablePort.write("ignored"));
 
     ApplicationServicesCurrentCampusPreferencesPort nullPort(
-        static_cast<SettingsService*>(nullptr)
+        static_cast<ApplicationServices*>(nullptr)
         );
+    QVERIFY(nullPort.read().empty());
     QVERIFY(nullPort.write("ignored"));
 }
 
@@ -185,11 +186,6 @@ reportsSettingsAvailability()
         static_cast<ApplicationServices*>(nullptr)
         );
     QVERIFY(!nullApplicationPort.isAvailable());
-
-    ApplicationServicesCurrentCampusPreferencesPort nullSettingsPort(
-        static_cast<SettingsService*>(nullptr)
-        );
-    QVERIFY(!nullSettingsPort.isAvailable());
 }
 
 void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::

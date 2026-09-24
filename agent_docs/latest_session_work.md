@@ -1191,3 +1191,31 @@ separate on a host with Xvfb and loopback access.
   boundaries remain open; Phase 2's formal exit gate is not met. Nothing was
   pushed; preserve the separately staged
   `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.
+
+
+### Phase 2 current-campus preferences caller cutover - 2026-09-24
+
+- Removed the `SettingsService*` constructor from
+  `ApplicationServicesCurrentCampusPreferencesPort`. My Information's campus
+  read and correction write, and Initial Setup's campus read, now pass their
+  existing `ApplicationServices` owner.
+- Preserved the `myInfo/campus` key, UTF-8 and `QVariant::toString()`
+  conversion, unavailable empty-read/no-op-write behavior, technical error on
+  failed writes, and My Information's broader availability guard and campus
+  correction timing. Adapter coverage exercises null/unavailable services,
+  round trips, unrelated settings, conversion, and write failure.
+- Executor and independent fresh Ninja/MSVC x64 configures each validated 886
+  handwritten owners. Both built ClassMngr and the adapter,
+  InitialSetupWizard, and MyWorkspace suites; both focused CTest runs passed
+  3/3. The independent repeat build had no work. Diff check and the three-call
+  source scan passed; no resource limitation remained.
+- Handoff: F32 removes the raw-service constructor from
+  `ApplicationServicesSubPrepPersonalZoomPreferencesPort` and updates its My
+  Information and Initial Setup callers to use `ApplicationServices*`.
+  Preserve primary-over-legacy precedence, fallback and best-effort migration
+  only when primary values are absent, and keep returning legacy values when
+  migration writes fail. Preserve UTF-8, defaults, unavailable handling, and
+  page display behavior. Workbook decoding, generic settings, other feature
+  services, and broader document boundaries remain open; Phase 2's formal exit
+  gate is not met. Nothing was pushed; preserve the separately staged
+  `plans/qt-rewrite-heavy-route-plan/00-Start-Here.md`.

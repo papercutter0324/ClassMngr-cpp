@@ -15,7 +15,9 @@ and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
 palette caller boundary and calendar-import planning and signature-read seams,
 and Sub Prep print-source, selected-class details, and schedule-summary read
-adapters plus the Sub Prep information-sheet output wiring. A partial
+adapters plus the Sub Prep information-sheet output wiring. Personal-details
+save, personal-signature, and current-campus preference caller boundaries
+also use their existing typed ports through `ApplicationServices`. A partial
 content-session integration covers referenced
 `PdfViewerPage` descriptors; broader legacy ownership and feature cutover
 remain open, including generic settings persistence.
@@ -3193,12 +3195,29 @@ handwritten owners, built `ClassMngr`, the adapter, InitialSetupWizard, and
 MyWorkspace targets, and passed focused CTest 3/3. Diff and source scans
 passed; there was no resource limitation. Phase 2 remains open.
 
-## Next candidate: F31 current-campus-preferences caller cutover
+## Verified F31 current-campus-preferences caller cutover
 
-Replace the remaining `SettingsService*` constructor and callers of the
-current-campus preferences port with nullable `ApplicationServices*`: My
-Information's campus-ID read and correction (two callsites) and Initial
-Setup's campus read (one callsite). Preserve the existing key, string
-conversion, caller guards, unavailable read/write/failure behavior, and
-correction semantics. Workbook decoding, generic settings, other feature
-services, broader document work, and the formal Phase 2 exit gate remain open.
+`ApplicationServicesCurrentCampusPreferencesPort` removes its raw
+`SettingsService*` constructor while retaining its `ApplicationServices&` and
+nullable `ApplicationServices*` constructors. My Information's campus read
+and correction writes, plus Initial Setup's campus read, pass their existing
+`ApplicationServices` owners. The `myInfo/campus` key, UTF-8/QVariant string
+conversion, unavailable empty-read/no-op-write behavior, mapped save failure,
+My Information availability guard, and saved-campus correction timing remain
+preserved.
+
+Executor and independent fresh Ninja/MSVC x64 configures each validated 886
+handwritten owners, built `ClassMngr`, the adapter, InitialSetupWizard, and
+MyWorkspace, and passed focused CTest 3/3. Adapter/test/source scans and diff
+check passed; there was no resource limitation. Phase 2 remains open.
+
+## Next candidate: F32 Sub Prep personal-Zoom preference caller cutover
+
+Remove the raw `SettingsService*` constructor from
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort` and update My
+Information and Initial Setup to use `ApplicationServices*`. Preserve
+primary-over-legacy precedence, best-effort legacy migration only when primary
+values are absent, return of the legacy value when migration fails,
+UTF-8/defaults, unavailable handling, and UI behavior. Workbook decoding,
+generic settings, other feature services, broader document work, and the
+formal Phase 2 exit gate remain open.

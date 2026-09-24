@@ -455,3 +455,19 @@ Information/Initial Setup callers to `ApplicationServices*`, preserving
 matching, correction timing, and unavailable read/write semantics. Workbook,
 generic settings, other feature services, broader document work, and the Phase
 2 exit gate remain open.
+
+### Phase 2 current-campus preferences caller cutover - 2026-09-24
+
+The current-campus preferences adapter no longer accepts `SettingsService*`.
+My Information's campus read and correction write, and Initial Setup's campus
+read, now pass their existing `ApplicationServices` owner. The `myInfo/campus`
+key, UTF-8/`QVariant::toString()` conversion, unavailable empty-read and
+no-op-write behavior, write-failure mapping, and My Information guard and
+correction timing are preserved. Executor and independent fresh Ninja/MSVC x64
+configures each validated 886 handwritten owners; both built ClassMngr and the
+adapter, InitialSetupWizard, and MyWorkspace suites, and both focused CTest runs
+passed 3/3. Next: cut the Personal Zoom preferences adapter and its My
+Information/Initial Setup callers over to `ApplicationServices*`, preserving
+primary-key precedence and best-effort legacy migration. Workbook, generic
+settings, other feature services, broader document work, and the Phase 2 exit
+gate remain open.

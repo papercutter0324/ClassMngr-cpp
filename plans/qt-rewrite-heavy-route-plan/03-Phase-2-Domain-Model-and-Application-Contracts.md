@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-24
-- Latest slice: F30 cuts My Information and Initial Setup personal-signature-preferences reads over to nullable `ApplicationServices*` while preserving exact keys/defaults, UTF-8 text, mode/font normalization, availability failures, and read-only behavior. Executor and independent fresh Ninja/MSVC x64 configs validated 886 handwritten owners; both built `ClassMngr`, the adapter, InitialSetupWizard, and MyWorkspace targets, and passed focused CTest 3/3. Phase 2 remains in progress. Next is F31, the current-campus-preferences caller cutover to nullable `ApplicationServices*`. Workbook decoding, generic settings, other feature services, broader document work, and the formal Phase 2 exit gate remain open.
+- Latest slice: F31 removes the raw `SettingsService*` constructor from `ApplicationServicesCurrentCampusPreferencesPort`; My Information campus reads/correction writes and Initial Setup campus reads pass their existing `ApplicationServices` owners. It preserves `myInfo/campus`, UTF-8/QVariant conversion, unavailable empty reads/no-op writes, mapped save failure, the existing My Information availability guard, and saved-campus correction timing. Executor and independent fresh Ninja/MSVC x64 configs each validated 886 handwritten owners, built `ClassMngr`, the adapter, InitialSetupWizard, and MyWorkspace, and passed focused CTest 3/3; source scans and diff check passed with no resource limitation. Phase 2 remains in progress. Next is F32, removing the raw `SettingsService*` constructor from `ApplicationServicesSubPrepPersonalZoomPreferencesPort` and migrating My Information and Initial Setup callers. Workbook decoding, generic settings, other feature services, broader document work, and the formal Phase 2 exit gate remain open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, and ordered calendar-import batch save are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4033,3 +4033,28 @@ cut the current-campus-preferences callers over to nullable
 `ApplicationServices*` while preserving caller guards and read/correction
 semantics. Workbook decoding, generic settings, other feature services,
 broader document work, and the formal Phase 2 exit gate remain open.
+
+#### Progress update - 2026-09-24 (F31 current-campus-preferences caller cutover)
+
+`ApplicationServicesCurrentCampusPreferencesPort` removes its raw
+`SettingsService*` constructor while retaining its `ApplicationServices&` and
+nullable `ApplicationServices*` constructors. My Information's campus read
+and correction writes, plus Initial Setup's campus read, pass their existing
+`ApplicationServices` owners. The `myInfo/campus` key, UTF-8/QVariant string
+conversion, unavailable empty-read/no-op-write behavior, mapped save failure,
+My Information availability guard, and saved-campus correction timing remain
+preserved.
+
+Executor and independent fresh Ninja/MSVC x64 configures each validated 886
+handwritten owners, built `ClassMngr`, the adapter, InitialSetupWizard, and
+MyWorkspace, and passed focused CTest 3/3. Adapter/test/source scans and diff
+check passed; there was no resource limitation. Phase 2 remains open. F32 is
+the Sub Prep personal-Zoom preference caller cutover: remove the raw
+`SettingsService*` constructor from
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort` and update My
+Information and Initial Setup to use `ApplicationServices*`, preserving
+primary-over-legacy precedence, best-effort migration only when primary
+values are absent, legacy-value return on migration failure, UTF-8/defaults,
+unavailable handling, and UI behavior. Workbook decoding, generic settings,
+other feature services, broader document work, and the formal Phase 2 exit
+gate remain open.

@@ -451,7 +451,7 @@ public:
         const std::string campus =
             ClassMngr::Next::Platform::
                 ApplicationServicesCurrentCampusPreferencesPort(
-                    setup->settingsService()
+                    setup->services()
                     ).read();
 
         const auto zoomResult =

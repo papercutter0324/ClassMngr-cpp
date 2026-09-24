@@ -872,7 +872,7 @@ void PersonalDetailsPage::loadStoredSettings()
     const QByteArray storedCampus = QByteArray::fromStdString(
         ClassMngr::Next::Platform::
             ApplicationServicesCurrentCampusPreferencesPort(
-                settingsService
+                m_services
                 ).read()
         );
     const QString campus = QString::fromUtf8(storedCampus);
@@ -923,7 +923,7 @@ void PersonalDetailsPage::loadStoredSettings()
         [[maybe_unused]] const auto campusSaved =
             ClassMngr::Next::Platform::
                 ApplicationServicesCurrentCampusPreferencesPort(
-                    settingsService
+                    m_services
                     ).write(
                         m_campusCombo->currentText()
                             .toUtf8()

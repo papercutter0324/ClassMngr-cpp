@@ -640,3 +640,10 @@ Keep read-only preference adapters on the `ApplicationServices` owner, with
 availability checked inside the adapter and at any broader page guard that
 protects neighboring operations. Test null/unavailable results without adding
 writes; retain existing defaults, normalization, and UTF-8 conversions.
+
+## Phase 2 current-campus preferences caller cutover - 2026-09-24
+
+Keep the current-campus preference cutover separate from campus-directory
+queries. Retain the page-level availability guard around its other reads, keep
+the stored-ID/name correction timing, and verify that unavailable typed reads
+and writes keep their existing result behavior.

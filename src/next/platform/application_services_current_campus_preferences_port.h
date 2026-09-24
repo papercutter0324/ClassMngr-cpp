@@ -36,13 +36,6 @@ public:
     {
     }
 
-    explicit ApplicationServicesCurrentCampusPreferencesPort(
-        SettingsService* settingsService
-        ) noexcept
-        : m_settingsService(settingsService)
-    {
-    }
-
     ApplicationServicesCurrentCampusPreferencesPort(
         const ApplicationServicesCurrentCampusPreferencesPort&
         ) = delete;
