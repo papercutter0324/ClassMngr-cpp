@@ -1,15 +1,37 @@
 #include "class_info_config.h"
 
+#include "next/domain/course.h"
+
+#include <string_view>
+
 namespace ClassInfoConfig
 {
+
+namespace
+{
+QString fromDomainName(std::string_view value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+}
 
 // =====================================================
 // Static UI Lists
 // =====================================================
 
-const QStringList Grades{
-    "E4", "E5", "E6", "M1", "M2", "M3"
-};
+const QStringList Grades = []()
+{
+    QStringList grades;
+    for (const std::string_view grade :
+         ClassMngr::Next::Domain::Course::grades())
+    {
+        grades.append(fromDomainName(grade));
+    }
+    return grades;
+}();
 
 const QStringList Days{
     "Monday", "Tuesday", "Wednesday", "Thursday",
@@ -44,15 +66,6 @@ const QStringList EndMinutes{
 // =====================================================
 // Grade → Levels (NO IF CHAINS)
 // =====================================================
-
-static const QHash<QString, QStringList> LEVEL_MAP = {
-    { "E4", { "Theseus", "Perseus", "Odysseus", "Hercules" } },
-    { "E5", { "Artemis", "Hermes", "Apollo", "Zeus", "Athena" } },
-    { "E6", { "Helios", "Poseidon", "Gaia", "Hera", "Song's" } },
-    { "M1", { "Elephantus", "Galaxia", "Solis", "Major", "Song's" } },
-    { "M2", { "Ursa", "Leo", "Tigris", "Major", "Song's" } },
-    { "M3", { "Song's" } }
-};
 
 // =====================================================
 // Reading Books Map
@@ -153,7 +166,15 @@ static const QHash<QString, QHash<QString, QStringList>> ESSAY_MAP = {
 
 QStringList levelsForGrade(const QString& grade)
 {
-    return LEVEL_MAP.value(grade);
+    QStringList levels;
+    for (const std::string_view level :
+         ClassMngr::Next::Domain::Course::levelsForGrade(
+             grade.toStdString()
+             ))
+    {
+        levels.append(fromDomainName(level));
+    }
+    return levels;
 }
 
 QStringList readingBooks(const QString& grade, const QString& level)

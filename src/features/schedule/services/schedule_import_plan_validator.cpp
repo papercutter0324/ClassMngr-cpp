@@ -1,9 +1,9 @@
 #include "schedule_import_plan_validator.h"
 
 #include "domain/rules/schedule_import_rules.h"
-#include "features/classes/config/class_info_config.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_decisions.h"
+#include "next/domain/course.h"
 
 #include <QObject>
 #include <QRegularExpression>
@@ -31,8 +31,10 @@ using ClassMngr::Next::Application::
 
 bool validCourse(const QString& grade, const QString& level)
 {
-    return ClassInfoConfig::Grades.contains(grade)
-        && ClassInfoConfig::levelsForGrade(grade).contains(level);
+    return ClassMngr::Next::Domain::Course::fromNames(
+        grade.toStdString(),
+        level.toStdString()
+        ).has_value();
 }
 
 QString normalizedHexColor(const QString& value)

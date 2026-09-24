@@ -7,10 +7,13 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSqlRecord>
 #include <QTemporaryDir>
 #include <QTime>
 #include <QUuid>
 #include <QtTest>
+
+#include <QVariant>
 
 #include <zlib.h>
 
@@ -28,6 +31,7 @@ private slots:
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
     void previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase();
+    void rejectsInvalidCourseAtApplyBoundaryBeforeWrites();
     void previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites();
     void reportsScheduleInventoryStates_data();
     void reportsScheduleInventoryStates();
@@ -1557,6 +1561,200 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
             );
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::rejectsInvalidCourseAtApplyBoundaryBeforeWrites()
+{
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_review.xlsx"
+            )
+        );
+    QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+    const auto workbook = parseScheduleImportWorkbook(
+        file.readAll(),
+        ScheduleImportKind::Normal
+        );
+    const QString parseError =
+        workbook.has_value() ? QString() : workbook.error();
+    QVERIFY2(workbook.has_value(), qPrintable(parseError));
+    QCOMPARE(workbook->sheets.first().users.size(), 1);
+
+    const ScheduleImportUserBlock user =
+        workbook->sheets.first().users.first();
+    QCOMPARE(user.classes.size(), 3);
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-invalid-course-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number, notes) "
+                "VALUES ('Sentinel Teacher', 'R-KEEP', 'Retain teacher row')"
+                )
+            );
+        const int retainedTeacherId = query.lastInsertId().toInt();
+        QVERIFY(retainedTeacherId > 0);
+        constexpr int retainedClassId = 9001;
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO classes (id, name) "
+                "VALUES (%1, 'Sentinel Class')"
+                )
+                .arg(retainedClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level, "
+                "reading_book, essay_book, class_color, font_color, "
+                "notes, time_filler_activities) "
+                "VALUES (%1, %2, 'M2', 'Ursa', 'Keep Reading', 'Keep Essay', "
+                "'#1A2B3C', '#FFFFFF', 'Retain class info', 'Retain filler')"
+                )
+                .arg(retainedClassId)
+                .arg(retainedTeacherId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Friday', '7:00 PM', '7:55 PM')"
+                )
+                .arg(retainedClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('myInfo/name', 'Retained User')"
+                )
+            );
+
+        const auto snapshotRows = [&query](const QString& sql)
+        {
+            execOrFail(query, sql);
+            QStringList rows;
+            while (query.next())
+            {
+                QStringList columns;
+                const QSqlRecord record = query.record();
+                for (int column = 0; column < record.count(); ++column)
+                {
+                    const QVariant value = query.value(column);
+                    columns.append(
+                        value.isNull()
+                            ? QStringLiteral("<NULL>")
+                            : value.toString()
+                        );
+                }
+                rows.append(columns.join(QChar(0x1f)));
+            }
+            return rows;
+        };
+        const QStringList teachersBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM teachers ORDER BY id")
+            );
+        const QStringList classesBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM classes ORDER BY id")
+            );
+        const QStringList classInfoBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM class_info ORDER BY class_id")
+            );
+        const QStringList classTimesBefore = snapshotRows(
+            QStringLiteral(
+                "SELECT * FROM class_times "
+                "ORDER BY class_id, day, start_time, end_time, id"
+                )
+            );
+        const QStringList settingsBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM app_settings ORDER BY key")
+            );
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = QStringLiteral("Must not be saved");
+        plan.updateProfileName = true;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = user.classes;
+        plan.candidates.last().classGrade = QStringLiteral("E4");
+        plan.candidates.last().classLevel = QStringLiteral("Zeus");
+        for (int index = 0; index < plan.candidates.size(); ++index)
+        {
+            const ScheduleImportClassCandidate& candidate =
+                plan.candidates[index];
+            plan.teachers.append(
+                {
+                    candidate.teacherKey,
+                    ScheduleImportTeacherAction::Create,
+                    -1,
+                    candidate.rooms.value(0)
+                }
+                );
+            plan.classes.append(
+                {
+                    index,
+                    ScheduleImportClassAction::CreateNew,
+                    -1
+                }
+                );
+        }
+
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+        QVERIFY(!imported.has_value());
+        QVERIFY(
+            imported.error().contains(QStringLiteral("invalid class"))
+            );
+
+        QCOMPARE(
+            snapshotRows(QStringLiteral("SELECT * FROM teachers ORDER BY id")),
+            teachersBefore
+            );
+        QCOMPARE(
+            snapshotRows(QStringLiteral("SELECT * FROM classes ORDER BY id")),
+            classesBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral("SELECT * FROM class_info ORDER BY class_id")
+                ),
+            classInfoBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral(
+                    "SELECT * FROM class_times "
+                    "ORDER BY class_id, day, start_time, end_time, id"
+                    )
+                ),
+            classTimesBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral("SELECT * FROM app_settings ORDER BY key")
+                ),
+            settingsBefore
+            );
 
         database.close();
     }

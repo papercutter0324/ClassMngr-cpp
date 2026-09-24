@@ -1,10 +1,15 @@
+#include "next/domain/course.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_time.h"
 
 #include <QtTest/QtTest>
 
+#include <array>
+#include <string_view>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 using namespace ClassMngr::Next::Domain;
 
@@ -19,6 +24,9 @@ private slots:
     void scheduleTimesAcceptWeekdayAndMinuteBoundaries();
     void scheduleTimesRejectInvalidDaysAndIntervals();
     void scheduleTimesHaveValueAndOverlapSemantics();
+    void coursesExposeOrderedSupportedPairs();
+    void coursesHaveValueAndAccessorSemantics();
+    void coursesRejectInvalidNamesAndCrossGradePairs();
 };
 
 void NextDomainContractTests::typedIdentifiersRejectEmptyValues()
@@ -123,6 +131,94 @@ void NextDomainContractTests::scheduleTimesHaveValueAndOverlapSemantics()
     QVERIFY(!first->overlaps(*adjacent));
     QVERIFY(first->overlaps(*overlapping));
     QVERIFY(!first->overlaps(*differentWeekday));
+}
+
+void NextDomainContractTests::coursesExposeOrderedSupportedPairs()
+{
+    using CourseNames = std::pair<std::string_view, std::string_view>;
+    const std::array<CourseNames, 25> supportedPairs{{
+        {"E4", "Theseus"},
+        {"E4", "Perseus"},
+        {"E4", "Odysseus"},
+        {"E4", "Hercules"},
+        {"E5", "Artemis"},
+        {"E5", "Hermes"},
+        {"E5", "Apollo"},
+        {"E5", "Zeus"},
+        {"E5", "Athena"},
+        {"E6", "Helios"},
+        {"E6", "Poseidon"},
+        {"E6", "Gaia"},
+        {"E6", "Hera"},
+        {"E6", "Song's"},
+        {"M1", "Elephantus"},
+        {"M1", "Galaxia"},
+        {"M1", "Solis"},
+        {"M1", "Major"},
+        {"M1", "Song's"},
+        {"M2", "Ursa"},
+        {"M2", "Leo"},
+        {"M2", "Tigris"},
+        {"M2", "Major"},
+        {"M2", "Song's"},
+        {"M3", "Song's"}
+    }};
+    const std::array<std::string_view, 6> expectedGrades{
+        "E4", "E5", "E6", "M1", "M2", "M3"
+    };
+    const std::array<std::vector<std::string_view>, 6> expectedLevels{{
+        {"Theseus", "Perseus", "Odysseus", "Hercules"},
+        {"Artemis", "Hermes", "Apollo", "Zeus", "Athena"},
+        {"Helios", "Poseidon", "Gaia", "Hera", "Song's"},
+        {"Elephantus", "Galaxia", "Solis", "Major", "Song's"},
+        {"Ursa", "Leo", "Tigris", "Major", "Song's"},
+        {"Song's"}
+    }};
+
+    const auto grades = Course::grades();
+    QCOMPARE(static_cast<int>(grades.size()),
+        static_cast<int>(expectedGrades.size()));
+    for (std::size_t index = 0; index < expectedGrades.size(); ++index)
+    {
+        QVERIFY(grades[index] == expectedGrades[index]);
+        QVERIFY(
+            Course::levelsForGrade(expectedGrades[index])
+            == expectedLevels[index]
+            );
+    }
+
+    for (const CourseNames& names : supportedPairs)
+    {
+        const auto course = Course::fromNames(names.first, names.second);
+        QVERIFY(course.has_value());
+        QVERIFY(course->grade() == names.first);
+        QVERIFY(course->level() == names.second);
+    }
+}
+
+void NextDomainContractTests::coursesHaveValueAndAccessorSemantics()
+{
+    const auto first = Course::fromNames("E4", "Theseus");
+    const auto sameValue = Course::fromNames("E4", "Theseus");
+    const auto otherLevel = Course::fromNames("E4", "Perseus");
+    QVERIFY(first.has_value());
+    QVERIFY(sameValue.has_value());
+    QVERIFY(otherLevel.has_value());
+    QVERIFY(*first == *sameValue);
+    QVERIFY(*first != *otherLevel);
+    QVERIFY(first->grade() == "E4");
+    QVERIFY(first->level() == "Theseus");
+}
+
+void NextDomainContractTests::coursesRejectInvalidNamesAndCrossGradePairs()
+{
+    QVERIFY(!Course::fromNames("", "Theseus").has_value());
+    QVERIFY(!Course::fromNames("E7", "Theseus").has_value());
+    QVERIFY(!Course::fromNames("E4", "Unknown").has_value());
+    QVERIFY(!Course::fromNames("E4", "Zeus").has_value());
+    QVERIFY(!Course::fromNames("e4", "Theseus").has_value());
+    QVERIFY(!Course::fromNames("E4", "theseus").has_value());
+    QVERIFY(Course::levelsForGrade("E7").empty());
 }
 
 QTEST_APPLESS_MAIN(NextDomainContractTests)
