@@ -1857,3 +1857,42 @@ separate on a host with Xvfb and loopback access.
   audited v2 dependency isolation remain Satisfied. Phase 2 is In Progress and
   its exit gate remains Open. Sub Prep stays capped at the current and
   following calendar years at most.
+
+
+### Phase 2 Calendar Import application use case - 2026-09-25
+
+- F49 is committed as
+  `6a41e958671b7fa93c301d8b25c9c4381178fd7f` (`Phase2 - Add Calendar Import
+  use case`). The five paths are `cmake/next.cmake`,
+  `cmake/tests/next.cmake`,
+  `src/next/application/calendar_event_import_use_case.h`,
+  `src/features/calendar/calendar_event_import_service.cpp`, and
+  `tests/next_application_calendar_event_import_use_case_tests.cpp`.
+- The Qt-free use case composes the existing Calendar Import signature-query,
+  duplicate-planning, and batch-save ports. It pairs each exact UTF-16
+  signature with its save request through planning, then saves accepted
+  requests in order and reports imported/skipped counts. The production
+  service delegates this flow while workbook parsing, network and campus
+  handling, Qt signals, localized errors, and the observer-backed profiler
+  timing remain at the feature edge.
+- Six app-less fake-port cases cover ordered mapping, existing and in-batch
+  duplicates, parser skip counts, truly empty and duplicate-only input, exact
+  UTF-16 identity including an unpaired surrogate, and query/save failures.
+  The required `calendar_import_parity_2026.xlsx` production test passed and
+  checked persisted facts and counts. Truly empty input avoids port calls;
+  duplicate-only nonempty input retains its empty batch-save call.
+- Executor and independent Tester each configured fresh Windows x64 builds
+  with MSVC 19.51.36257, Ninja 1.13.2, CMake 4.4.2, and Qt 6.12.0. Both built
+  the app-less use-case and production parity targets; focused CTest passed
+  2/2 in each build. Ownership validation covered 904 handwritten sources.
+  `git diff --check` passed. The full suite was not run. The protected
+  user-owned `cmake/sources.cmake` retained SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF` and was
+  not included in the commit.
+- Gate 1 advances but remains Partial because broader Domain and application
+  contracts remain. Gate 2 gains a production Calendar Import fixture path but
+  remains Partial because baseline parity is incomplete. The workspace
+  criterion and audited v2 dependency isolation remain Satisfied. Phase 2 is
+  In Progress and its exit gate remains Open. Sub Prep covers at most the
+  current and following calendar years. Next, three investigators will compare
+  remaining Domain, baseline-parity, and architecture gaps for the next slice.

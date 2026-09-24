@@ -13,8 +13,8 @@ repeat-series suffix-delete, this-and-following repeat-series edit/save, and
 this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
-palette caller boundary and calendar-import planning and signature-read seams,
-plus the partial Schedule import state-validation contract and repository
+palette caller boundary, Calendar Import planning/signature-query/application
+use-case seams, the partial Schedule import state-validation contract and repository
 pre-write cutover, the shared Qt-free Class Transfer review-decision contract
 and repository validation,
 and Sub Prep print-source, selected-class details, and schedule-summary read
@@ -3530,3 +3530,25 @@ Gate 1 and Gate 2 advance but remain Partial; the Workspace boundary and
 audited v2 dependency isolation remain Satisfied. Broader parity and Domain
 gaps remain open. Phase 2 remains In Progress and its exit gate Open. Sub Prep
 coverage stays capped at the current and following calendar years at most.
+
+## Verified F49 Calendar Import use case - commit `6a41e958671b7fa93c301d8b25c9c4381178fd7f`
+
+Qt-free [`CalendarEventImportUseCase`](../../src/next/application/calendar_event_import_use_case.h)
+composes the existing signature-query port, duplicate planner, and batch-save
+port. `CalendarEventImportService::handleFinished` delegates signature lookup,
+deduplication, ordered signature/request pairing, batch save, and imported and
+skipped counts to this use case. Pairing signatures with requests prevents
+index mismatch. Workbook/network/campus handling, Qt signals, and localized
+error translation remain at the feature edge; the injected observer preserves
+profiler timing at the prior boundaries.
+
+Six app-less fake-port tests cover ordered mapping, existing and in-batch
+duplicates, parser skip counts, empty and duplicate-only input, exact UTF-16
+signature identity including a lone surrogate, and query/save failures. The
+required [`calendar_import_parity_2026.xlsx`](../../tests/fixtures/imports/calendar_import_parity_2026.xlsx)
+production fixture exercises the modified service and verifies persisted rows
+and counts. Executor and independent Tester fresh builds each passed the
+focused CTest 2/2; no full suite was run. Gate 1 and Gate 2 advance but remain
+Partial; Workspace boundary and audited v2 dependency isolation remain
+Satisfied. Phase 2 remains In Progress and the exit gate Open. Sub Prep stays
+capped at the current and following calendar years at most.

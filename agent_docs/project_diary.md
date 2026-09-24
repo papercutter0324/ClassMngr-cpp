@@ -809,3 +809,15 @@ At the persistence adapter, retain the original SQL day/time strings and verify
 they match the typed value so migration does not normalize stored text or alter
 write order. For rejection parity, seed existing rows and compare snapshots;
 empty-table row counts do not prove prior state was preserved.
+
+
+## Phase 2 Calendar Import use case - 2026-09-25
+
+Keep each opaque import signature paired with its save request through
+duplicate planning so accepted indexes cannot select a different request.
+Preserve exact UTF-16 identity, including unusual code units, and keep workbook,
+network, campus, signal, and localized error handling at the feature edge. A
+Qt-free use case can compose existing query, planner, and batch-save contracts;
+an observer at the adapter boundary preserves existing profiler timing. Verify
+the contract app-less and run a required checked-in fixture through the actual
+production service path.

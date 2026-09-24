@@ -93,13 +93,26 @@ focused CTest targets (2/2). `schedule_review.xlsx` persisted rows compared
 against typed facts; the overlap fixture rejected apply with five seeded
 database snapshots unchanged. Skip, intensive, and rollback cases passed.
 
-The formal gate remains open. Gates 1 and 2 advance but remain Partial because
-broader Domain records and baseline parity are incomplete; the workspace
-criterion and audited v2 dependency isolation remain Satisfied. Three
-independent investigators will select the next bounded slice from the
-remaining Domain, baseline-parity, and architecture gaps. Sub Prep remains
-capped at the current and following calendar years at most. Preserve the
-user-owned `cmake/sources.cmake` change; F48 did not modify it.
+F49 adds a Qt-free Calendar Import application use case that composes signature
+lookup, duplicate planning, and batch saving. The feature service delegates
+those operations while keeping workbook, network, campus, signal, and localized
+error handling at the feature edge. It is committed as
+`6a41e958671b7fa93c301d8b25c9c4381178fd7f`. Independent fresh Windows x64
+MSVC/Ninja builds passed both focused CTest targets (2/2 each). App-less tests
+cover ordering, duplicates, parser skips, empty inputs, exact UTF-16 identity,
+and query/save failures; the required `calendar_import_parity_2026.xlsx`
+production path passed with persisted facts and counts. The full suite was not
+run.
+
+The formal gate remains open. Gate 1 advances but remains Partial because the
+broader Domain and application-contract inventory is incomplete. Gate 2 gains
+Calendar Import production-path evidence but remains Partial because baseline
+parity is incomplete. The workspace criterion and audited v2 dependency
+isolation remain Satisfied. Next, three independent investigators will compare
+the remaining Domain, baseline-parity, and architecture gaps for the next
+bounded slice. Sub Prep remains capped at the current and following calendar
+years at most. Preserve the user-owned `cmake/sources.cmake` change; F49 did not
+modify it.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 
