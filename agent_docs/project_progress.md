@@ -617,9 +617,9 @@ Phase 2 remains open.
 
 ## Current Deployment Continuation - 2026-09-24
 
-F38 is locally implemented and independently verified; its path-limited commit
-is pending. Three independent solution reviews converged 2/3 on F39: move
+F38 is committed as `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`. Three independent
+solution reviews converged 2/3 on F39: move
 Schedule Import review-time overlap projection into Application and share its
 semantics with F37 apply-time validation. Preserve the pre-existing modified
-`cmake/sources.cmake`; it is outside F38. Preserve the user's
-current-and-following-calendar-year maximum for Sub Prep. Nothing was pushed.
+`cmake/sources.cmake`; it is outside F38. Sub Prep is bounded to the current
+and following calendar years at most. Nothing was pushed.

@@ -1399,8 +1399,9 @@ separate on a host with Xvfb and loopback access.
 ## Current Deployment Handoff - phase2_complete_continue_20260923
 
 - F37 remains committed as `7049506fb81cce611e6a7f0ab635a3600c7f960d`.
-  F38's typed Schedule Import matching/preview projection is implemented and
-  independently verified; its path-limited commit is pending.
+  F38's typed Schedule Import matching/preview projection is implemented,
+  independently verified, and committed as
+  `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`.
 - Production preview now calls the Qt-free Application projection. The
   repository constructs Qt-simplified, case-folded grade/level/room keys and
   maps typed results back to the legacy preview model; translations remain at
@@ -1435,7 +1436,7 @@ separate on a host with Xvfb and loopback access.
   warnings and dialog behavior at the UI edge. Acceptance should cover overlap
   versus adjacency, days, conflict ordering, Normal/Intensive modes, preserved
   and skipped schedules, required conflict-workbook parity, and no-write apply
-  rejection. Implement only after the path-limited F38 commit.
+  rejection. F39 implementation is now underway.
 - Preserve the user's Sub Prep bound: the current calendar year and following
   calendar year at most. Preserve the pre-existing modified
-  `cmake/sources.cmake`; it is not part of F38. Nothing was pushed.
+  `cmake/sources.cmake`; it is outside F38. Nothing was pushed.

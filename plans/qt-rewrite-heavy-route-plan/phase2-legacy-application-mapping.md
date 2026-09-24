@@ -3295,7 +3295,7 @@ review-time conflict projection, workbook decoding, broader Domain
 completeness, and the formal Phase 2 gate remain open. Phase 2 remains in
 progress.
 
-## Verified F38 Schedule Import matching and preview
+## Verified F38 Schedule Import matching and preview - commit `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`
 
 A Qt-free Application contract now owns Schedule Import candidate matching
 and preview projection; [`ScheduleImportRepository::preview`](../../src/data/repositories/schedule_import_repository.cpp)
@@ -3326,4 +3326,5 @@ reviews, is a Qt-free Schedule Import review-time overlap/conflict projection
 consumed by the UI. Keep translation and dialog behavior at the UI edge; cover
 overlap versus adjacency, days, conflict ordering, Normal/Intensive/skipped/
 reserved schedules, fixture-backed UI parity, and no-write apply rejection.
-F38's deployment commit is pending. Phase 2 remains open.
+F38 is committed as `bc6ac011504e0a499a8cdfd4b1533b49ea3f4bcb`. Phase 2
+remains open.
