@@ -235,6 +235,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationScheduleImportMatchingProjection
+    SOURCES
+        tests/next_application_schedule_import_matching_projection_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES
         tests/next_feature_calendar_event_import_parity_tests.cpp

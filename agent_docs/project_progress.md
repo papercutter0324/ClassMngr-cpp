@@ -591,14 +591,35 @@ parity, workbook decoding, and wider baseline-parity evidence remain. Phase 2
 remains in progress. Next: choose the exact fixture-backed Schedule Import
 review/preview boundary, then continue the remaining exit-gate gaps.
 
+### Phase 2 Schedule Import matching and preview - 2026-09-24
+
+F38 moves Schedule Import candidate matching and preview ranking into a
+standard-C++ Application projection. `ScheduleImportRepository::preview`
+adapts Qt/SQLite records into the contract and converts results back at the
+repository edge. The old competing matcher was removed. A required checked-in
+`schedule_review.xlsx` test calls the production preview path and asserts
+candidate ordering, exact/confident suggestion, inventory, and initially
+absent classes. Its seeded exact-match room includes surrounding whitespace,
+verifying Qt normalization at the adapter boundary. App-less tests cover all
+seven ranking categories, stable ties, no match, inventory, and Normal/
+Intensive fallback.
+
+Executor and independent fresh Windows x64 Ninja/MSVC builds validated 895
+handwritten source owners. Both Schedule Import and Application projection
+CTest suites passed 2/2 in both runs. The matching suite passed 5/5; the
+Schedule Import suite passed 24 tests with only its existing optional external
+workbook test skipped because `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset.
+The required checked-in fixture test passed. `git diff --check` passed, and a
+source scan found no references to the removed matcher. Gate 2 has improved
+fixture-backed preview evidence but remains incomplete; Gate 1 and Gate 3 are
+partial, and Gate 4's audited `src/next` dependency boundary remains satisfied.
+Phase 2 remains open.
+
 ## Current Deployment Continuation - 2026-09-24
 
-F37 is committed as 7049506fb81cce611e6a7f0ab635a3600c7f960d. Its typed
-Schedule Import state contract now guards the real apply path before writes;
-Gate 2 remains open because schedule review/preview matching and checked-in
-fixture parity are unfinished. Gate 1 and Gate 3 remain partial; Gate 4's
-`src/next` dependency audit remains satisfied for the stated legacy-pointer
-boundaries. Next: use three independent solution reviews to select the precise
-fixture-backed Schedule Import review/preview slice. Preserve the modified,
-unstaged cmake/sources.cmake path; it was excluded from F37. Phase 2 remains in
-progress and nothing was pushed.
+F38 is locally implemented and independently verified; its path-limited commit
+is pending. Three independent solution reviews converged 2/3 on F39: move
+Schedule Import review-time overlap projection into Application and share its
+semantics with F37 apply-time validation. Preserve the pre-existing modified
+`cmake/sources.cmake`; it is outside F38. Preserve the user's
+current-and-following-calendar-year maximum for Sub Prep. Nothing was pushed.

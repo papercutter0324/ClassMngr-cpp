@@ -707,3 +707,23 @@ proposed write, then assert the typed validation error wins and persisted data
 is unchanged. Convert Qt names, days, and times at the repository boundary so
 the Application contract remains standard-C++ only. Keep that claim scoped to
 the Application contract; Platform adapters and the Next entry point use Qt.
+
+## Phase 2 Schedule Import matching and preview - 2026-09-24
+
+For a Qt-free matching contract, keep Unicode normalization at the existing
+repository edge: carry explicit grade, level, and room match keys produced by
+`QString::simplified().toCaseFolded()`, while keeping raw room labels for
+preview display. The application projection can then preserve ranked matching
+without depending on Qt. Verify edge normalization through the required
+workbook integration path by seeding a room with surrounding whitespace. Keep
+the checked-in fixture mandatory so preview parity still runs from a clean
+checkout. The optional external workbook check remains a separate supplement
+and may skip when its environment variable is absent.
+
+For the next Schedule Import slice, move live projected-overlap review into a
+Qt-free Application projection and reuse that rule at apply time. Keep the
+translated warning and dialog policy at the UI edge. Verify review/apply
+parity for real overlaps, adjacency, weekdays, conflict order, and Normal/
+Intensive schedule projections, including preserved intensive hours and
+skipped classes. A fixture-backed review warning and a pre-write no-mutation
+sentinel tie the behavior to the legacy workflow.

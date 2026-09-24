@@ -1396,22 +1396,46 @@ separate on a host with Xvfb and loopback access.
   validator removal, and tests; then select the precise fixture-backed review/
   preview slice. Nothing was pushed.
 
-## Current Deployment Handoff - phase2_domain_contracts_after_f37
+## Current Deployment Handoff - phase2_complete_continue_20260923
 
-- F37 is committed as 7049506fb81cce611e6a7f0ab635a3600c7f960d with message
-  Phase2 - Move schedule import state validation to Application. The commit
-  contains the typed Application contract, repository cutover, legacy validator
-  removal, CMake registration, tests, and plan/deployment documentation.
-- Independent fresh Ninja/MSVC x64 configure validated 895 handwritten source
-  owners. Both ClassMngrScheduleImportTests and
-  ClassMngrNextApplicationScheduleImportStateValidationTests passed 2/2. The
-  trigger sentinel establishes validation precedes the first proposed write.
-- Gate 2 remains open: fixture-backed Schedule Import preview/matching, workbook
-  parity and decoding, and broader baseline parity remain. Gate 1 and Gate 3
-  remain partial; Gate 4's audited dependency boundary remains satisfied.
-- Next: choose the exact fixture-backed Schedule Import review/preview scope
-  with the three solution reviewers, then implement, verify, document, and
-  commit that slice before proceeding. Preserve the user's Sub Prep limit:
-  current and following calendar years at most.
-- Preserve modified, unstaged cmake/sources.cmake; it was excluded from F37.
-  Nothing was pushed.
+- F37 remains committed as `7049506fb81cce611e6a7f0ab635a3600c7f960d`.
+  F38's typed Schedule Import matching/preview projection is implemented and
+  independently verified; its path-limited commit is pending.
+- Production preview now calls the Qt-free Application projection. The
+  repository constructs Qt-simplified, case-folded grade/level/room keys and
+  maps typed results back to the legacy preview model; translations remain at
+  the repository edge. The former `ScheduleImportMatcher` implementation and
+  target ownership were removed.
+- Required fixture `tests/fixtures/imports/schedule_review.xlsx` drives
+  `ScheduleImportRepository::preview` against a temporary database. It asserts
+  exact and weaker candidates `[43, 42]`, suggested class 43, exact/confident
+  status, regular-only inventory of two, and initially absent IDs. The seed
+  stores the exact class room as ` 416 ` while the workbook imports `416`.
+  The fixture test has no skip or external URL path.
+- App-less projection tests cover all seven ranking buckets, stable ties,
+  no-match behavior, inventory, and Normal/Intensive fallback. The contract
+  header is standard C++ and includes no Qt headers.
+- Executor and independent fresh Windows x64 Ninja/MSVC configure/builds each
+  validated 895 handwritten source owners. The Schedule Import and matching
+  projection focused suites passed 2/2 in each run. QtTest totals were 24
+  passed / 0 failed / 1 skipped for Schedule Import (only the existing
+  optional external-workbook sample, unset) and 5 passed / 0 failed / 0
+  skipped for matching projection. `git diff --check` passed. CMake emitted
+  nonfatal warnings about long generated paths for unrelated test targets.
+- Gate 1 remains partial because the broader Domain models are incomplete.
+  Gate 2 now has production fixture-backed Schedule preview/matching evidence,
+  but remains open for full validation/conflict/import/state parity and shared
+  workbook decoding. Gate 3 remains partial because FileController replacement
+  still uses MainWindow dirty approval and closes the old session before the
+  new session succeeds. Gate 4's audited `src/next` dependency boundary
+  remains satisfied. The formal Phase 2 exit gate is not met.
+- Three independent solution reviews converged 2/3 on F39: move Schedule
+  Import review-time overlap/conflict projection into Qt-free Application and
+  share its semantics with F37 apply-time validation, while keeping translated
+  warnings and dialog behavior at the UI edge. Acceptance should cover overlap
+  versus adjacency, days, conflict ordering, Normal/Intensive modes, preserved
+  and skipped schedules, required conflict-workbook parity, and no-write apply
+  rejection. Implement only after the path-limited F38 commit.
+- Preserve the user's Sub Prep bound: the current calendar year and following
+  calendar year at most. Preserve the pre-existing modified
+  `cmake/sources.cmake`; it is not part of F38. Nothing was pushed.

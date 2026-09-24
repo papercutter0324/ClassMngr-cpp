@@ -6,11 +6,10 @@
 #include "data/repositories/class_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "core/startup_profiler.h"
-#include "domain/rules/schedule_import_rules.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
-#include "features/schedule/services/schedule_import_matcher.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/schedule_import_matching_projection.h"
 #include "next/application/schedule_import_state_validation.h"
 
 #include <QByteArray>
@@ -23,6 +22,7 @@
 #include <QTime>
 
 #include <algorithm>
+#include <utility>
 
 using namespace ClassMngr::Next::Application;
 
@@ -33,6 +33,113 @@ QString teacherKey(
     )
 {
     return TeacherImportNameUtils::hangulOnly(value);
+}
+
+std::vector<ScheduleImportMatchingTime> matchingTimes(
+    const QList<ClassTime>& times
+    )
+{
+    std::vector<ScheduleImportMatchingTime> result;
+    result.reserve(static_cast<std::size_t>(times.size()));
+    for (const ClassTime& time : times)
+    {
+        result.push_back({time.day.toStdString()});
+    }
+    return result;
+}
+
+std::u16string matchingKey(const QString& value)
+{
+    return value.simplified().toCaseFolded().toStdU16String();
+}
+
+ScheduleImportMatchingInput matchingInput(
+    const ScheduleImportUserBlock& user,
+    const ScheduleImportKind kind,
+    const QList<Teacher>& teachers,
+    const QList<Classroom>& classrooms,
+    const QHash<int, ClassInfo>& classInfo
+    )
+{
+    ScheduleImportMatchingInput result;
+    result.kind = kind == ScheduleImportKind::Intensive
+        ? ScheduleImportMatchingKind::Intensive
+        : ScheduleImportMatchingKind::Normal;
+    result.candidates.reserve(static_cast<std::size_t>(user.classes.size()));
+    for (const ScheduleImportClassCandidate& candidate : user.classes)
+    {
+        ScheduleImportMatchingCandidate projected;
+        projected.teacherKey = candidate.teacherKey.toStdU16String();
+        projected.teacherName = candidate.teacherKr.toStdU16String();
+        projected.gradeMatchKey = matchingKey(candidate.classGrade);
+        projected.levelMatchKey = matchingKey(candidate.classLevel);
+        projected.rooms.reserve(static_cast<std::size_t>(candidate.rooms.size()));
+        projected.roomMatchKeys.reserve(
+            static_cast<std::size_t>(candidate.rooms.size())
+            );
+        for (const QString& room : candidate.rooms)
+        {
+            projected.rooms.push_back(room.toStdU16String());
+            projected.roomMatchKeys.push_back(matchingKey(room));
+        }
+        projected.times = matchingTimes(candidate.times);
+        result.candidates.push_back(std::move(projected));
+    }
+
+    result.teachers.reserve(static_cast<std::size_t>(teachers.size()));
+    for (const Teacher& teacher : teachers)
+    {
+        result.teachers.push_back({
+            teacher.id,
+            teacher.teacherKr.toStdU16String()
+        });
+    }
+
+    result.classes.reserve(static_cast<std::size_t>(classrooms.size()));
+    for (const Classroom& classroom : classrooms)
+    {
+        const ClassInfo info = classInfo.value(classroom.id);
+        ScheduleImportMatchingClass projected;
+        projected.id = classroom.id;
+        projected.teacherId = info.teacherId;
+        projected.roomMatchKey = matchingKey(info.roomNumber);
+        projected.gradeMatchKey = matchingKey(info.classGrade);
+        projected.levelMatchKey = matchingKey(info.classLevel);
+        projected.regularTimes = matchingTimes(info.classTimes);
+        projected.intensiveTimes = matchingTimes(info.intensiveTimes);
+        result.classes.push_back(std::move(projected));
+    }
+    return result;
+}
+
+QString matchExplanation(
+    const ScheduleImportMatchingExplanation explanation
+    )
+{
+    switch (explanation)
+    {
+    case ScheduleImportMatchingExplanation::Exact:
+        return QObject::tr(
+            "One existing class matches the imported grade, level, Korean teacher, room, and meeting days."
+            );
+    case ScheduleImportMatchingExplanation::PossibleWithTargetHours:
+        return QObject::tr(
+            "Possible existing classes share the imported grade and level and have a compatible weekday group."
+            );
+    case ScheduleImportMatchingExplanation::PossibleWithOtherHours:
+        return QObject::tr(
+            "Possible existing classes have hours only in the other schedule type; their grade, level, and weekday group are compatible."
+            );
+    case ScheduleImportMatchingExplanation::PossibleWithoutHours:
+        return QObject::tr(
+            "Possible existing classes share the imported grade and level but have no schedule hours to compare."
+            );
+    case ScheduleImportMatchingExplanation::None:
+        return QObject::tr(
+            "No existing class has the same grade and level with a compatible weekday group."
+            );
+    }
+    return {};
 }
 
 QString queryFailure(
@@ -477,13 +584,92 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         classInfo.insert(classroom.id, *info);
     }
 
-    return ScheduleImportMatcher::preview(
-        user,
-        kind,
-        *teachers,
-        *classrooms,
-        classInfo
+    const ScheduleImportMatchingProjection projection =
+        projectScheduleImportMatching(
+            matchingInput(
+                user,
+                kind,
+                *teachers,
+                *classrooms,
+                classInfo
+                )
+            );
+
+    ScheduleImportPreview result;
+    result.kind = kind;
+    result.user = user;
+    result.inventory.classCount =
+        static_cast<int>(projection.inventory.classCount);
+    result.inventory.hasRegularHours =
+        projection.inventory.hasRegularHours;
+    result.inventory.hasIntensiveHours =
+        projection.inventory.hasIntensiveHours;
+    for (const ScheduleImportMatchingTeacherProjection& teacher :
+         projection.teachers)
+    {
+        ScheduleImportTeacherPreview projected;
+        projected.teacherKey = QString::fromStdU16String(teacher.teacherKey);
+        projected.teacherKr = QString::fromStdU16String(teacher.teacherName);
+        projected.matchingTeacherIds.reserve(
+            static_cast<qsizetype>(teacher.matchingTeacherIds.size())
+            );
+        for (const std::int32_t teacherId : teacher.matchingTeacherIds)
+        {
+            projected.matchingTeacherIds.append(teacherId);
+        }
+        projected.importedRooms.reserve(
+            static_cast<qsizetype>(teacher.importedRooms.size())
+            );
+        for (const std::u16string& room : teacher.importedRooms)
+        {
+            projected.importedRooms.append(
+                QString::fromStdU16String(room)
+                );
+        }
+        projected.affectedClassCount =
+            static_cast<int>(teacher.affectedClassCount);
+        result.teachers.append(std::move(projected));
+    }
+    for (const ScheduleImportMatchingClassProjection& value :
+         projection.classes)
+    {
+        ScheduleImportClassPreview projected;
+        projected.candidateIndex = static_cast<int>(value.candidateIndex);
+        projected.matchingClassIds.reserve(
+            static_cast<qsizetype>(value.matchingClassIds.size())
+            );
+        for (const std::int32_t classId : value.matchingClassIds)
+        {
+            projected.matchingClassIds.append(classId);
+        }
+        projected.suggestedClassId = value.suggestedClassId;
+        projected.exactMatch = value.exactMatch;
+        switch (value.confidence)
+        {
+        case ScheduleImportMatchingConfidence::None:
+            projected.matchConfidence =
+                ScheduleImportClassMatchConfidence::None;
+            break;
+        case ScheduleImportMatchingConfidence::Possible:
+            projected.matchConfidence =
+                ScheduleImportClassMatchConfidence::Possible;
+            break;
+        case ScheduleImportMatchingConfidence::Confident:
+            projected.matchConfidence =
+                ScheduleImportClassMatchConfidence::Confident;
+            break;
+        }
+        projected.matchExplanation = matchExplanation(value.explanation);
+        result.classes.append(std::move(projected));
+    }
+    result.initiallyAbsentClassIds.reserve(
+        static_cast<qsizetype>(projection.initiallyAbsentClassIds.size())
         );
+    for (const std::int32_t classId : projection.initiallyAbsentClassIds)
+    {
+        result.initiallyAbsentClassIds.append(classId);
+    }
+    return result;
 }
 
 Result<ScheduleImportSummary> ScheduleImportRepository::apply(

@@ -399,8 +399,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/schedule/import/schedule_workbook_parser.h"
     "src/features/schedule/schedule_settings_preferences.cpp"
     "src/features/schedule/schedule_settings_preferences.h"
-    "src/features/schedule/services/schedule_import_matcher.cpp"
-    "src/features/schedule/services/schedule_import_matcher.h"
     "src/features/schedule/services/schedule_import_plan_validator.cpp"
     "src/features/schedule/services/schedule_import_plan_validator.h"
     "src/features/schedule/services/schedule_import_review_model.cpp"

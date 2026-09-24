@@ -110,6 +110,11 @@ qt_add_executable(ClassMngrClassTransferTests
             ${PROJECT_SOURCE_DIR}/src
     )
 
+    target_compile_definitions(ClassMngrScheduleImportTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
     target_link_libraries(ClassMngrScheduleImportTests
         PRIVATE
             Qt6::Core

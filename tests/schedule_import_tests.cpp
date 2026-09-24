@@ -27,6 +27,7 @@ private slots:
     void partitionsRepeatedCourseIntoValidClasses();
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
+    void previewsCheckedInWorkbookAgainstSeededDatabase();
     void reportsScheduleInventoryStates_data();
     void reportsScheduleInventoryStates();
     void regularImportMatchesIntensiveOnlyClasses();
@@ -1132,6 +1133,210 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
             intensivePreview->classes.first().matchConfidence,
             ScheduleImportClassMatchConfidence::Possible
             );
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::previewsCheckedInWorkbookAgainstSeededDatabase()
+{
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_review.xlsx"
+            )
+        );
+    QVERIFY2(
+        file.open(QIODevice::ReadOnly),
+        qPrintable(file.errorString())
+        );
+    const auto workbook = parseScheduleImportWorkbook(
+        file.readAll(),
+        ScheduleImportKind::Normal
+        );
+    const QString parseError =
+        workbook.has_value() ? QString() : workbook.error();
+    QVERIFY2(workbook.has_value(), qPrintable(parseError));
+
+    QCOMPARE(workbook->sheets.size(), 2);
+    QCOMPARE(workbook->sheets[0].name, QStringLiteral("Current"));
+    QVERIFY(workbook->sheets[0].visible);
+    QCOMPARE(workbook->sheets[0].users.size(), 1);
+    const ScheduleImportUserBlock user = workbook->sheets[0].users[0];
+    QCOMPARE(user.name, QStringLiteral("Alice"));
+    QCOMPARE(user.classes.size(), 3);
+
+    const ScheduleImportClassCandidate& first = user.classes[0];
+    QCOMPARE(first.teacherKey, QString::fromUtf8("\xEB\xB0\x95\xEC\x84\xA0\xEC\x83\x9D"));
+    QCOMPARE(first.teacherKr, QString::fromUtf8("\xEB\xB0\x95\xEC\x84\xA0\xEC\x83\x9D"));
+    QCOMPARE(first.rooms, QStringList{QStringLiteral("415")});
+    QCOMPARE(first.classGrade, QStringLiteral("M3"));
+    QCOMPARE(first.classLevel, QStringLiteral("Song's"));
+    QCOMPARE(first.times.size(), 2);
+    QCOMPARE(first.times[0].day, QStringLiteral("Monday"));
+    QCOMPARE(first.times[0].startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(first.times[0].endTime, QStringLiteral("4:55 PM"));
+    QCOMPARE(first.times[1].day, QStringLiteral("Friday"));
+    QCOMPARE(first.times[1].startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(first.times[1].endTime, QStringLiteral("4:55 PM"));
+
+    const ScheduleImportClassCandidate& target = user.classes[1];
+    QCOMPARE(target.teacherKey, QString::fromUtf8("\xEC\xB5\x9C\xEC\x84\xA0\xEC\x83\x9D"));
+    QCOMPARE(target.teacherKr, QString::fromUtf8("\xEC\xB5\x9C\xEC\x84\xA0\xEC\x83\x9D"));
+    QCOMPARE(target.rooms, QStringList{QStringLiteral("416")});
+    QCOMPARE(target.classGrade, QStringLiteral("E4"));
+    QCOMPARE(target.classLevel, QStringLiteral("Hercules"));
+    QCOMPARE(target.times.size(), 2);
+    QCOMPARE(target.times[0].day, QStringLiteral("Tuesday"));
+    QCOMPARE(target.times[0].startTime, QStringLiteral("5:00 PM"));
+    QCOMPARE(target.times[0].endTime, QStringLiteral("5:55 PM"));
+    QCOMPARE(target.times[1].day, QStringLiteral("Thursday"));
+    QCOMPARE(target.times[1].startTime, QStringLiteral("5:00 PM"));
+    QCOMPARE(target.times[1].endTime, QStringLiteral("5:55 PM"));
+
+    const ScheduleImportClassCandidate& third = user.classes[2];
+    QCOMPARE(third.teacherKey, QString::fromUtf8("\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D"));
+    QCOMPARE(third.teacherKr, QString::fromUtf8("\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D"));
+    QCOMPARE(third.rooms, QStringList{QStringLiteral("413")});
+    QCOMPARE(third.classGrade, QStringLiteral("E4"));
+    QCOMPARE(third.classLevel, QStringLiteral("Theseus"));
+    QCOMPARE(third.times.size(), 2);
+    QCOMPARE(third.times[0].day, QStringLiteral("Monday"));
+    QCOMPARE(third.times[0].startTime, QStringLiteral("6:00 PM"));
+    QCOMPARE(third.times[0].endTime, QStringLiteral("6:55 PM"));
+    QCOMPARE(third.times[1].day, QStringLiteral("Wednesday"));
+    QCOMPARE(third.times[1].startTime, QStringLiteral("6:00 PM"));
+    QCOMPARE(third.times[1].endTime, QStringLiteral("6:55 PM"));
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-fixture-preview-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+        QSqlQuery query(database);
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number) "
+                "VALUES (?, ?)"
+                )
+            );
+        query.addBindValue(QString::fromUtf8("\xEC\xB5\x9C\xEC\x84\xA0\xEC\x83\x9D"));
+        query.addBindValue(QStringLiteral(" 416 "));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        const int choiTeacherId = query.lastInsertId().toInt();
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number) "
+                "VALUES (?, ?)"
+                )
+            );
+        query.addBindValue(QString::fromUtf8("\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D"));
+        query.addBindValue(QStringLiteral("413"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        const int kimTeacherId = query.lastInsertId().toInt();
+
+        query.prepare(
+            QStringLiteral("INSERT INTO classes (id, name) VALUES (?, ?)")
+            );
+        query.addBindValue(42);
+        query.addBindValue(QStringLiteral("A weaker Hercules candidate"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        query.prepare(
+            QStringLiteral("INSERT INTO classes (id, name) VALUES (?, ?)")
+            );
+        query.addBindValue(43);
+        query.addBindValue(QStringLiteral("B exact Hercules candidate"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level) "
+                "VALUES (?, ?, ?, ?)"
+                )
+            );
+        query.addBindValue(42);
+        query.addBindValue(kimTeacherId);
+        query.addBindValue(QStringLiteral("E4"));
+        query.addBindValue(QStringLiteral("Hercules"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level) "
+                "VALUES (?, ?, ?, ?)"
+                )
+            );
+        query.addBindValue(43);
+        query.addBindValue(choiTeacherId);
+        query.addBindValue(QStringLiteral("E4"));
+        query.addBindValue(QStringLiteral("Hercules"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) VALUES (?, ?, ?, ?)"
+                )
+            );
+        query.addBindValue(42);
+        query.addBindValue(QStringLiteral("Tuesday"));
+        query.addBindValue(QStringLiteral("4:00 PM"));
+        query.addBindValue(QStringLiteral("4:50 PM"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) VALUES (?, ?, ?, ?)"
+                )
+            );
+        query.addBindValue(43);
+        query.addBindValue(QStringLiteral("Tuesday"));
+        query.addBindValue(QStringLiteral("5:00 PM"));
+        query.addBindValue(QStringLiteral("5:55 PM"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) VALUES (?, ?, ?, ?)"
+                )
+            );
+        query.addBindValue(43);
+        query.addBindValue(QStringLiteral("Thursday"));
+        query.addBindValue(QStringLiteral("5:00 PM"));
+        query.addBindValue(QStringLiteral("5:55 PM"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+        ScheduleImportRepository repository(database);
+        const auto preview = repository.preview(user, ScheduleImportKind::Normal);
+        const QString previewError =
+            preview.has_value() ? QString() : preview.error();
+        QVERIFY2(preview.has_value(), qPrintable(previewError));
+        QCOMPARE(preview->kind, ScheduleImportKind::Normal);
+        QCOMPARE(preview->user.classes.size(), user.classes.size());
+        QCOMPARE(preview->classes.size(), 3);
+        const ScheduleImportClassPreview& match = preview->classes[1];
+        QCOMPARE(match.candidateIndex, 1);
+        QCOMPARE(match.matchingClassIds, (QList<int>{43, 42}));
+        QCOMPARE(match.suggestedClassId, 43);
+        QVERIFY(match.exactMatch);
+        QCOMPARE(
+            match.matchConfidence,
+            ScheduleImportClassMatchConfidence::Confident
+            );
+        QCOMPARE(preview->inventory.classCount, 2);
+        QVERIFY(preview->inventory.hasRegularHours);
+        QVERIFY(!preview->inventory.hasIntensiveHours);
+        QCOMPARE(preview->initiallyAbsentClassIds, QList<int>{42});
 
         database.close();
     }
