@@ -2,6 +2,7 @@
 #include "data/repositories/schedule_import_repository.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
+#include "next/domain/schedule_entry.h"
 
 #include <QFile>
 #include <QSqlDatabase>
@@ -14,6 +15,11 @@
 #include <QtTest>
 
 #include <QVariant>
+
+#include <algorithm>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include <zlib.h>
 
@@ -48,6 +54,57 @@ private slots:
 
 namespace
 {
+std::optional<ClassMngr::Next::Domain::ScheduleEntry> domainEntry(
+    int classId,
+    const QString& day,
+    const QString& startTime,
+    const QString& endTime
+    )
+{
+    using namespace ClassMngr::Next::Domain;
+
+    static const QStringList days{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+    const auto minutes = [](const QString& value)
+    {
+        for (const QString& format : {
+                 QStringLiteral("h:mm AP"),
+                 QStringLiteral("h:mmAP"),
+                 QStringLiteral("H:mm"),
+                 QStringLiteral("HH:mm")
+             })
+        {
+            const QTime time = QTime::fromString(value.trimmed(), format);
+            if (time.isValid())
+            {
+                return time.hour() * 60 + time.minute();
+            }
+        }
+        return -1;
+    };
+
+    const auto typedClassId = ClassId::fromString(
+        std::to_string(classId)
+        );
+    const auto time = ScheduleTime::fromMinutes(
+        days.indexOf(day),
+        minutes(startTime),
+        minutes(endTime)
+        );
+    if (!typedClassId || !time)
+    {
+        return std::nullopt;
+    }
+    return ScheduleEntry(*typedClassId, *time);
+}
+
 void appendLe16(
     QByteArray& data,
     quint16 value
@@ -1553,22 +1610,32 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         execOrFail(
             query,
             QStringLiteral(
-                "SELECT c.name, ct.day, ct.start_time, ct.end_time "
+                "SELECT c.id, c.name, ct.day, ct.start_time, ct.end_time "
                 "FROM class_times ct JOIN classes c ON c.id=ct.class_id "
                 "ORDER BY c.name, ct.day"
                 )
-            );
+        );
+        std::vector<ClassMngr::Next::Domain::ScheduleEntry>
+            persistedDomainEntries;
         while (query.next())
         {
             persistedTimes.append(
-                query.value(0).toString()
-                + QLatin1Char('|')
-                + query.value(1).toString()
+                query.value(1).toString()
                 + QLatin1Char('|')
                 + query.value(2).toString()
                 + QLatin1Char('|')
                 + query.value(3).toString()
+                + QLatin1Char('|')
+                + query.value(4).toString()
                 );
+            const auto entry = domainEntry(
+                query.value(0).toInt(),
+                query.value(2).toString(),
+                query.value(3).toString(),
+                query.value(4).toString()
+                );
+            QVERIFY(entry.has_value());
+            persistedDomainEntries.push_back(*entry);
         }
         QCOMPARE(
             persistedTimes,
@@ -1581,6 +1648,73 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
                 QStringLiteral("M3 Song's|Monday|4:00 PM|4:55 PM")
             })
             );
+
+        std::vector<int> resolvedClassIds(plan.candidates.size(), -1);
+        QSqlQuery classIdQuery(database);
+        for (const ScheduleImportClassResolution& resolution : plan.classes)
+        {
+            const int candidateIndex = resolution.candidateIndex;
+            if (
+                resolution.action
+                    == ScheduleImportClassAction::UpdateExisting
+                )
+            {
+                resolvedClassIds[static_cast<std::size_t>(candidateIndex)] =
+                    resolution.targetClassId;
+                continue;
+            }
+
+            const ScheduleImportClassCandidate& candidate =
+                plan.candidates[candidateIndex];
+            const QString className = QStringLiteral("%1 %2")
+                .arg(candidate.classGrade, candidate.classLevel)
+                .simplified();
+            classIdQuery.prepare(
+                QStringLiteral("SELECT id FROM classes WHERE name=?")
+                );
+            classIdQuery.addBindValue(className);
+            QVERIFY2(
+                classIdQuery.exec(),
+                qPrintable(classIdQuery.lastError().text())
+                );
+            QVERIFY(classIdQuery.next());
+            resolvedClassIds[static_cast<std::size_t>(candidateIndex)] =
+                classIdQuery.value(0).toInt();
+            QVERIFY(!classIdQuery.next());
+        }
+
+        std::vector<ClassMngr::Next::Domain::ScheduleEntry>
+            expectedDomainEntries;
+        for (int candidateIndex = 0;
+             candidateIndex < plan.candidates.size();
+             ++candidateIndex)
+        {
+            const int resolvedClassId =
+                resolvedClassIds[static_cast<std::size_t>(candidateIndex)];
+            QVERIFY(resolvedClassId > 0);
+            for (const ClassTime& time :
+                 plan.candidates[candidateIndex].times)
+            {
+                const auto entry = domainEntry(
+                    resolvedClassId,
+                    time.day,
+                    time.startTime,
+                    time.endTime
+                    );
+                QVERIFY(entry.has_value());
+                expectedDomainEntries.push_back(*entry);
+            }
+        }
+        std::sort(
+            persistedDomainEntries.begin(),
+            persistedDomainEntries.end()
+            );
+        std::sort(
+            expectedDomainEntries.begin(),
+            expectedDomainEntries.end()
+            );
+        QVERIFY(persistedDomainEntries == expectedDomainEntries);
+
         execOrFail(
             query,
             QStringLiteral(
@@ -1879,6 +2013,92 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
+        QSqlQuery seedQuery(database);
+        execOrFail(
+            seedQuery,
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number, notes) "
+                "VALUES ('Preserved Teacher', 'R-KEEP', 'Preserved notes')"
+                )
+            );
+        const int preservedTeacherId = seedQuery.lastInsertId().toInt();
+        QVERIFY(preservedTeacherId > 0);
+        constexpr int preservedClassId = 9901;
+        execOrFail(
+            seedQuery,
+            QStringLiteral(
+                "INSERT INTO classes (id, name) "
+                "VALUES (%1, 'Preserved Class')"
+                ).arg(preservedClassId)
+            );
+        execOrFail(
+            seedQuery,
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level, "
+                "class_color, font_color, notes) "
+                "VALUES (%1, %2, 'M2', 'Ursa', '#112233', '#FFFFFF', "
+                "'Preserved class info')"
+                )
+                .arg(preservedClassId)
+                .arg(preservedTeacherId)
+            );
+        execOrFail(
+            seedQuery,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Sunday', '7:00 PM', '7:55 PM')"
+                ).arg(preservedClassId)
+            );
+        execOrFail(
+            seedQuery,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('myInfo/name', 'Preserved User')"
+                )
+            );
+
+        const auto snapshotRows = [&seedQuery](const QString& sql)
+        {
+            execOrFail(seedQuery, sql);
+            QStringList rows;
+            while (seedQuery.next())
+            {
+                QStringList columns;
+                const QSqlRecord record = seedQuery.record();
+                for (int column = 0; column < record.count(); ++column)
+                {
+                    const QVariant value = seedQuery.value(column);
+                    columns.append(
+                        value.isNull()
+                            ? QStringLiteral("<NULL>")
+                            : value.toString()
+                        );
+                }
+                rows.append(columns.join(QChar(0x1f)));
+            }
+            return rows;
+        };
+        const QStringList teachersBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM teachers ORDER BY id")
+            );
+        const QStringList classesBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM classes ORDER BY id")
+            );
+        const QStringList classInfoBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM class_info ORDER BY class_id")
+            );
+        const QStringList classTimesBefore = snapshotRows(
+            QStringLiteral(
+                "SELECT * FROM class_times "
+                "ORDER BY class_id, day, start_time, end_time, id"
+                )
+            );
+        const QStringList settingsBefore = snapshotRows(
+            QStringLiteral("SELECT * FROM app_settings ORDER BY key")
+            );
+
         ScheduleImportRepository repository(database);
         const auto preview = repository.preview(
             user,
@@ -1933,17 +2153,33 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
         const auto imported = repository.apply(plan);
         QVERIFY(!imported.has_value());
         QVERIFY(imported.error().contains(QStringLiteral("overlaps")));
-
-        QSqlQuery query(database);
-        execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM teachers"));
-        QVERIFY(query.next());
-        QCOMPARE(query.value(0).toInt(), 0);
-        execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM classes"));
-        QVERIFY(query.next());
-        QCOMPARE(query.value(0).toInt(), 0);
-        execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM class_times"));
-        QVERIFY(query.next());
-        QCOMPARE(query.value(0).toInt(), 0);
+        QCOMPARE(
+            snapshotRows(QStringLiteral("SELECT * FROM teachers ORDER BY id")),
+            teachersBefore
+            );
+        QCOMPARE(
+            snapshotRows(QStringLiteral("SELECT * FROM classes ORDER BY id")),
+            classesBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral("SELECT * FROM class_info ORDER BY class_id")
+                ),
+            classInfoBefore
+            );
+        QCOMPARE(
+            snapshotRows(
+                QStringLiteral(
+                    "SELECT * FROM class_times "
+                    "ORDER BY class_id, day, start_time, end_time, id"
+                    )
+                ),
+            classTimesBefore
+            );
+        QCOMPARE(
+            snapshotRows(QStringLiteral("SELECT * FROM app_settings ORDER BY key")),
+            settingsBefore
+            );
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

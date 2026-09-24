@@ -2,6 +2,7 @@
 #include "next/domain/domain_types.h"
 #include "next/domain/korean_teacher_key.h"
 #include "next/domain/operation_result.h"
+#include "next/domain/schedule_entry.h"
 #include "next/domain/schedule_time.h"
 
 #include <QtTest/QtTest>
@@ -25,6 +26,7 @@ private slots:
     void scheduleTimesAcceptWeekdayAndMinuteBoundaries();
     void scheduleTimesRejectInvalidDaysAndIntervals();
     void scheduleTimesHaveValueAndOverlapSemantics();
+    void scheduleEntriesKeepTypedClassAndValidatedTime();
     void coursesExposeOrderedSupportedPairs();
     void coursesHaveValueAndAccessorSemantics();
     void coursesRejectInvalidNamesAndCrossGradePairs();
@@ -137,6 +139,49 @@ void NextDomainContractTests::scheduleTimesHaveValueAndOverlapSemantics()
     QVERIFY(!first->overlaps(*adjacent));
     QVERIFY(first->overlaps(*overlapping));
     QVERIFY(!first->overlaps(*differentWeekday));
+}
+
+void NextDomainContractTests::scheduleEntriesKeepTypedClassAndValidatedTime()
+{
+    static_assert(
+        std::is_constructible_v<ScheduleEntry, ClassId, ScheduleTime>
+        );
+    static_assert(
+        !std::is_constructible_v<ScheduleEntry, TeacherId, ScheduleTime>
+        );
+
+    const auto classId = ClassId::fromString("class-42");
+    const auto scheduleTime = ScheduleTime::fromMinutes(
+        static_cast<int>(Weekday::Tuesday),
+        16 * 60,
+        16 * 60 + 55
+        );
+    QVERIFY(classId.has_value());
+    QVERIFY(scheduleTime.has_value());
+
+    const ScheduleEntry entry(*classId, *scheduleTime);
+    const ScheduleEntry copy = entry;
+    const ScheduleEntry differentClass(
+        *ClassId::fromString("class-43"),
+        *scheduleTime
+        );
+    const ScheduleEntry differentTime(
+        *classId,
+        *ScheduleTime::fromMinutes(
+            static_cast<int>(Weekday::Tuesday),
+            16 * 60,
+            17 * 60
+            )
+        );
+
+    QVERIFY(entry.classId() == *classId);
+    QVERIFY(entry.scheduleTime() == *scheduleTime);
+    QVERIFY(copy == entry);
+    QVERIFY(copy != differentClass);
+    QVERIFY(copy != differentTime);
+    QVERIFY(entry.scheduleTime().weekday() == Weekday::Tuesday);
+    QCOMPARE(entry.scheduleTime().startMinute(), 16 * 60);
+    QCOMPARE(entry.scheduleTime().endMinute(), 16 * 60 + 55);
 }
 
 void NextDomainContractTests::coursesExposeOrderedSupportedPairs()

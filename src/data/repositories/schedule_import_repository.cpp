@@ -11,6 +11,8 @@
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_matching_projection.h"
 #include "next/application/schedule_import_state_validation.h"
+#include "next/domain/schedule_entry.h"
+#include "next/domain/schedule_time.h"
 
 #include <QByteArray>
 #include <QHash>
@@ -22,9 +24,14 @@
 #include <QTime>
 
 #include <algorithm>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 using namespace ClassMngr::Next::Application;
+
+namespace Domain = ClassMngr::Next::Domain;
 
 namespace
 {
@@ -210,6 +217,59 @@ int timeMinutes(
         }
     }
     return -1;
+}
+
+struct PersistedScheduleEntry final
+{
+    Domain::ScheduleEntry fact;
+    // Keep the legacy SQL representation at this adapter edge verbatim.
+    ClassTime sourceTime;
+};
+
+std::optional<std::vector<PersistedScheduleEntry>> resolvedScheduleEntries(
+    const QHash<int, QList<ClassTime>>& finalTimes
+    )
+{
+    std::vector<PersistedScheduleEntry> result;
+    for (auto iterator = finalTimes.cbegin();
+         iterator != finalTimes.cend();
+         ++iterator)
+    {
+        const int legacyClassId = iterator.key();
+        if (legacyClassId <= 0)
+        {
+            return std::nullopt;
+        }
+
+        const auto classId = Domain::ClassId::fromString(
+            std::to_string(legacyClassId)
+            );
+        if (!classId)
+        {
+            return std::nullopt;
+        }
+
+        for (const ClassTime& sourceTime : iterator.value())
+        {
+            const auto scheduleTime = Domain::ScheduleTime::fromMinutes(
+                dayIndex(sourceTime.day),
+                timeMinutes(sourceTime.startTime),
+                timeMinutes(sourceTime.endTime)
+                );
+            if (!scheduleTime)
+            {
+                return std::nullopt;
+            }
+
+            result.push_back(
+                {
+                    Domain::ScheduleEntry(*classId, *scheduleTime),
+                    sourceTime
+                }
+                );
+        }
+    }
+    return result;
 }
 
 ScheduleImportStateTime stateTime(
@@ -438,11 +498,10 @@ QList<ClassTime> selectedTimes(
         : info.classTimes;
 }
 
-Status writeTimes(
+Status writeScheduleEntries(
     QSqlDatabase& database,
     const QString& table,
-    int classId,
-    const QList<ClassTime>& times
+    const std::vector<PersistedScheduleEntry>& entries
     )
 {
     QSqlQuery query(database);
@@ -455,12 +514,36 @@ Status writeTimes(
             .arg(table)
         );
 
-    for (const ClassTime& time : times)
+    for (const PersistedScheduleEntry& entry : entries)
     {
+        bool classIdOk = false;
+        const int classId = QString::fromStdString(
+            entry.fact.classId().value()
+            ).toInt(&classIdOk);
+        const ClassTime& sourceTime = entry.sourceTime;
+        const Domain::ScheduleTime& scheduleTime =
+            entry.fact.scheduleTime();
+        if (
+            !classIdOk
+            || classId <= 0
+            || dayIndex(sourceTime.day) != scheduleTime.weekdayIndex()
+            || timeMinutes(sourceTime.startTime)
+                != scheduleTime.startMinute()
+            || timeMinutes(sourceTime.endTime)
+                != scheduleTime.endMinute()
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "A resolved schedule entry cannot be persisted."
+                    )
+                );
+        }
+
         query.bindValue(0, classId);
-        query.bindValue(1, time.day);
-        query.bindValue(2, time.startTime);
-        query.bindValue(3, time.endTime);
+        query.bindValue(1, sourceTime.day);
+        query.bindValue(2, sourceTime.startTime);
+        query.bindValue(3, sourceTime.endTime);
 
         if (!query.exec())
         {
@@ -1017,6 +1100,16 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         classResolutions.size()
         );
 
+    const auto scheduleEntries = resolvedScheduleEntries(finalTimes);
+    if (!scheduleEntries)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "A resolved schedule entry has an invalid class or time."
+                )
+            );
+    }
+
     if (!preservesAbsentIntensiveClasses)
     {
         for (const Classroom& classroom : *existingClasses)
@@ -1079,23 +1172,14 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
             );
     }
 
-    for (
-        auto iterator = finalTimes.cbegin();
-        iterator != finalTimes.cend();
-        ++iterator
-        )
+    const Status written = writeScheduleEntries(
+        m_database,
+        timeTable,
+        *scheduleEntries
+        );
+    if (!written)
     {
-        const Status written =
-            writeTimes(
-                m_database,
-                timeTable,
-                iterator.key(),
-                iterator.value()
-                );
-        if (!written)
-        {
-            return std::unexpected(written.error());
-        }
+        return std::unexpected(written.error());
     }
 
     if (plan.kind == ScheduleImportKind::Intensive)

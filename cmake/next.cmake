@@ -31,6 +31,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/domain_types.h
     src/next/domain/korean_teacher_key.h
     src/next/domain/operation_result.h
+    src/next/domain/schedule_entry.h
     src/next/domain/schedule_time.h
 )
 
