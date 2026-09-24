@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -832,6 +833,174 @@ inline auto ImportReviewSession::create(
     return Domain::Result<ImportReviewSession>::success(
         ImportReviewSession(std::move(input))
         );
+}
+
+enum class TeacherImportGroupMode
+{
+    All,
+    Selected,
+    None
+};
+
+struct TeacherImportCandidateGroup
+{
+    std::string id;
+    std::size_t candidateCount = 0;
+};
+
+struct TeacherImportGroupDecision
+{
+    std::string groupId;
+    TeacherImportGroupMode mode = TeacherImportGroupMode::All;
+    std::vector<std::int64_t> selectedCandidateIndexes;
+};
+
+enum class TeacherImportReviewIssue
+{
+    None,
+    EmptyGroupId,
+    DuplicateCandidateGroup,
+    DuplicateDecisionGroup,
+    UnknownDecisionGroup,
+    MissingDecisionGroup,
+    InvalidMode,
+    UnexpectedCandidateIndexes,
+    DuplicateCandidateIndex,
+    CandidateIndexOutOfRange
+};
+
+struct TeacherImportReviewResolution
+{
+    TeacherImportReviewIssue issue = TeacherImportReviewIssue::None;
+    std::vector<std::vector<std::size_t>> selectedCandidateIndexes;
+
+    [[nodiscard]] bool accepted() const
+    {
+        return issue == TeacherImportReviewIssue::None;
+    }
+};
+
+[[nodiscard]] inline TeacherImportReviewResolution resolveTeacherImportReview(
+    const std::vector<TeacherImportCandidateGroup>& candidateGroups,
+    const std::vector<TeacherImportGroupDecision>& decisions
+    )
+{
+    TeacherImportReviewResolution result;
+    std::vector<bool> resolved(candidateGroups.size(), false);
+
+    for (std::size_t groupIndex = 0; groupIndex < candidateGroups.size(); ++groupIndex)
+    {
+        const std::string& id = candidateGroups[groupIndex].id;
+        if (id.empty())
+        {
+            result.issue = TeacherImportReviewIssue::EmptyGroupId;
+            return result;
+        }
+        for (std::size_t earlier = 0; earlier < groupIndex; ++earlier)
+        {
+            if (candidateGroups[earlier].id == id)
+            {
+                result.issue = TeacherImportReviewIssue::DuplicateCandidateGroup;
+                return result;
+            }
+        }
+    }
+
+    result.selectedCandidateIndexes.resize(candidateGroups.size());
+    for (const TeacherImportGroupDecision& decision : decisions)
+    {
+        std::size_t groupIndex = candidateGroups.size();
+        for (std::size_t candidateIndex = 0;
+             candidateIndex < candidateGroups.size();
+             ++candidateIndex)
+        {
+            if (candidateGroups[candidateIndex].id == decision.groupId)
+            {
+                groupIndex = candidateIndex;
+                break;
+            }
+        }
+        if (groupIndex == candidateGroups.size())
+        {
+            result.issue = TeacherImportReviewIssue::UnknownDecisionGroup;
+            return result;
+        }
+        if (resolved[groupIndex])
+        {
+            result.issue = TeacherImportReviewIssue::DuplicateDecisionGroup;
+            return result;
+        }
+        resolved[groupIndex] = true;
+
+        switch (decision.mode)
+        {
+        case TeacherImportGroupMode::All:
+            if (!decision.selectedCandidateIndexes.empty())
+            {
+                result.issue = TeacherImportReviewIssue::UnexpectedCandidateIndexes;
+                return result;
+            }
+            for (std::size_t index = 0;
+                 index < candidateGroups[groupIndex].candidateCount;
+                 ++index)
+            {
+                result.selectedCandidateIndexes[groupIndex].push_back(index);
+            }
+            break;
+
+        case TeacherImportGroupMode::Selected:
+        {
+            std::vector<bool> selected(candidateGroups[groupIndex].candidateCount, false);
+            for (const std::int64_t requestedIndex : decision.selectedCandidateIndexes)
+            {
+                if (requestedIndex < 0
+                    || static_cast<std::uint64_t>(requestedIndex)
+                        >= candidateGroups[groupIndex].candidateCount)
+                {
+                    result.issue = TeacherImportReviewIssue::CandidateIndexOutOfRange;
+                    return result;
+                }
+                const std::size_t index = static_cast<std::size_t>(requestedIndex);
+                if (selected[index])
+                {
+                    result.issue = TeacherImportReviewIssue::DuplicateCandidateIndex;
+                    return result;
+                }
+                selected[index] = true;
+            }
+            for (std::size_t index = 0; index < selected.size(); ++index)
+            {
+                if (selected[index])
+                {
+                    result.selectedCandidateIndexes[groupIndex].push_back(index);
+                }
+            }
+            break;
+        }
+
+        case TeacherImportGroupMode::None:
+            if (!decision.selectedCandidateIndexes.empty())
+            {
+                result.issue = TeacherImportReviewIssue::UnexpectedCandidateIndexes;
+                return result;
+            }
+            break;
+
+        default:
+            result.issue = TeacherImportReviewIssue::InvalidMode;
+            return result;
+        }
+    }
+
+    for (const bool hasDecision : resolved)
+    {
+        if (!hasDecision)
+        {
+            result.issue = TeacherImportReviewIssue::MissingDecisionGroup;
+            return result;
+        }
+    }
+    return result;
 }
 
 }

@@ -8,6 +8,8 @@
 #include <QList>
 #include <QString>
 
+#include <optional>
+
 struct KoreanTeacherImportCandidate
 {
     Teacher teacher;
@@ -44,6 +46,12 @@ struct TeacherImportGroupSelection
     QList<int> selectedCandidateIndexes;
 };
 
+struct TeacherImportReview
+{
+    QList<KoreanTeacherImportGroup> candidateGroups;
+    QList<TeacherImportGroupSelection> groupSelections;
+};
+
 struct TeacherImportPlan
 {
     QString templateId;
@@ -51,6 +59,7 @@ struct TeacherImportPlan
     QList<Teacher> koreanTeachers;
     QList<NativeEnglishTeacher> nativeEnglishTeachers;
     QList<GsTeamMember> gsTeamMembers;
+    std::optional<TeacherImportReview> review;
 };
 
 struct TeacherImportCounts

@@ -1,15 +1,23 @@
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "data/database/database_schema_manager.h"
+#include "data/repositories/teacher_import_repository.h"
 #include "fakes/fake_file_dialog_service.h"
 
 #include <QCheckBox>
 #include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QScrollArea>
+#include <QTemporaryDir>
+#include <QUuid>
 #include <QtTest>
 
 class TeacherImportDialogTests : public QObject
@@ -21,7 +29,17 @@ private slots:
     void showsFilePromptAndInvalidStatus();
     void browseUsesTypedFileDialogRequest();
     void suppliedWorkbookBuildsDynamicSelectionUi();
+    void checkedInWorkbookProductionDialogPlanAppliesToRepository();
 };
+
+namespace
+{
+QString teacherImportReviewFixturePath()
+{
+    return QDir(QFileInfo(QString::fromUtf8(__FILE__)).absolutePath()).filePath(
+        QStringLiteral("fixtures/teacher_import/sectioned_review.xlsx"));
+}
+}
 
 void TeacherImportDialogTests::cleanup()
 {
@@ -241,6 +259,135 @@ void TeacherImportDialogTests::suppliedWorkbookBuildsDynamicSelectionUi()
         validationLabel->text(),
         QStringLiteral("Status: Invalid File"),
         5000);
+}
+
+void TeacherImportDialogTests::checkedInWorkbookProductionDialogPlanAppliesToRepository()
+{
+    TeacherImportDialog dialog;
+    dialog.setFilePath(teacherImportReviewFixturePath());
+
+    const auto* validationLabel = dialog.findChild<QLabel*>(
+        QStringLiteral("teacherImportValidationStatus"));
+    auto* importButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("teacherImportAcceptButton"));
+    QVERIFY(validationLabel);
+    QVERIFY(importButton);
+    QTRY_COMPARE_WITH_TIMEOUT(
+        validationLabel->text(), QStringLiteral("Status: Valid File"), 10000);
+
+    auto* selectM1 = dialog.findChild<QRadioButton*>(
+        QStringLiteral("teacherImportSelect_M1"));
+    auto* noneM2 = dialog.findChild<QRadioButton*>(
+        QStringLiteral("teacherImportNone_M2"));
+    auto* allH1 = dialog.findChild<QRadioButton*>(
+        QStringLiteral("teacherImportAll_H1"));
+    auto* firstM1 = dialog.findChild<QCheckBox*>(
+        QStringLiteral("teacherImportCandidate_0_0"));
+    auto* secondM1 = dialog.findChild<QCheckBox*>(
+        QStringLiteral("teacherImportCandidate_0_1"));
+    QVERIFY(selectM1);
+    QVERIFY(noneM2);
+    QVERIFY(allH1);
+    QVERIFY(firstM1);
+    QVERIFY(secondM1);
+
+    selectM1->setChecked(true);
+    firstM1->setChecked(true);
+    secondM1->setChecked(false);
+    noneM2->setChecked(true);
+    allH1->setChecked(true);
+    QVERIFY(importButton->isEnabled());
+
+    const TeacherImportPlan plan = dialog.importPlan();
+    QVERIFY(plan.review.has_value());
+    QCOMPARE(plan.review->candidateGroups.size(), 3);
+    QCOMPARE(plan.review->groupSelections.size(), 3);
+    QCOMPARE(plan.koreanTeachers.size(), 2);
+    QCOMPARE(plan.nativeEnglishTeachers.size(), 1);
+    QCOMPARE(plan.gsTeamMembers.size(), 1);
+    QCOMPARE(plan.review->groupSelections.at(0).mode,
+             TeacherImportSelectionMode::Selected);
+    QCOMPARE(plan.review->groupSelections.at(0).selectedCandidateIndexes,
+             QList<int>{0});
+    QCOMPARE(plan.review->groupSelections.at(1).mode,
+             TeacherImportSelectionMode::None);
+    QCOMPARE(plan.review->groupSelections.at(2).mode,
+             TeacherImportSelectionMode::All);
+
+    QCOMPARE(plan.templateId, QStringLiteral("sectioned-contact-list-v1"));
+    QCOMPARE(plan.sourceDate, QDate(2026, 9, 1));
+    QCOMPARE(plan.koreanTeachers.at(0).teacherKr, QStringLiteral("홍길동"));
+    QCOMPARE(plan.koreanTeachers.at(1).teacherKr, QStringLiteral("박민준"));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString connectionName =
+        QStringLiteral("teacher-import-dialog-e2e-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(
+            temporaryDirectory.filePath(QStringLiteral("teacher-import.sqlite")));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery seed(database);
+        QVERIFY(seed.exec(R"(
+            INSERT INTO native_english_teachers
+                (name, position, phone_number, birthday, nationality, email)
+            VALUES ('Alex', 'NET', '010-9999-8888', '02-01', 'Canadian', 'alex@example.com')
+        )"));
+
+        TeacherImportRepository repository(database);
+        const auto imported = repository.importTeachers(plan);
+        QVERIFY2(imported.has_value(),
+                 imported.has_value() ? "" : qPrintable(imported.error()));
+        QCOMPARE(imported->koreanTeachers.created, 2);
+        QCOMPARE(imported->koreanTeachers.updated, 0);
+        QCOMPARE(imported->koreanTeachers.unchanged, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.created, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.updated, 1);
+        QCOMPARE(imported->nativeEnglishTeachers.unchanged, 0);
+        QCOMPARE(imported->gsTeamMembers.created, 1);
+        QCOMPARE(imported->gsTeamMembers.updated, 0);
+        QCOMPARE(imported->gsTeamMembers.unchanged, 0);
+
+        QSqlQuery persisted(database);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT teacher_kr, room_number FROM teachers ORDER BY room_number")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("홍길동"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("413"));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("박민준"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("510"));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM teachers WHERE teacher_kr IN ('김하늘', '이서연')")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 0);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT position, phone_number, birthday, nationality, email "
+            "FROM native_english_teachers WHERE name='Alex'")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("Team Leader"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("010-9999-8888"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("03-07"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("Canadian"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("alex@example.com"));
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT name, position, phone_number, birthday FROM gs_team")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("Taylor"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("M2"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("010-5555-5555"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("06-10"));
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 QTEST_MAIN(TeacherImportDialogTests)

@@ -4,16 +4,22 @@
 #include "features/teacher/import/sectioned_contact_list_template.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
 #include "features/teacher/import/teacher_import_template_registry.h"
+#include "next/application/import_review_session.h"
 
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest>
 
 #include <zlib.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <vector>
 
 class TeacherImportTests : public QObject
 {
@@ -26,8 +32,11 @@ private slots:
     void validatorReportsRecognitionStatusesAndMetadata();
     void registryAcceptsAdditionalTemplateAdapters();
     void unreadableDataFailsValidation();
+    void reviewContractAcceptsAllSelectedAndNone();
+    void reviewContractRejectsInvalidDecisions();
     void matchesStoredKoreanTeacherAfterRemovingSuffix();
     void importsIntoSeparateTablesAndPreservesManualFields();
+    void importsCheckedInWorkbookUsingValidatedReviewChoices();
     void sortsGsTeamPositions();
     void validatesExternalSampleWhenProvided();
 };
@@ -240,6 +249,81 @@ public:
         return preview;
     }
 };
+
+QString teacherImportReviewFixturePath()
+{
+    const QString sourceDirectory =
+        QFileInfo(QString::fromUtf8(__FILE__)).absolutePath();
+    return QDir(sourceDirectory).filePath(
+        QStringLiteral("fixtures/teacher_import/sectioned_review.xlsx"));
+}
+
+ClassMngr::Next::Application::TeacherImportReviewResolution resolveReview(
+    const TeacherImportReview& review
+    )
+{
+    using namespace ClassMngr::Next::Application;
+    std::vector<TeacherImportCandidateGroup> groups;
+    std::vector<TeacherImportGroupDecision> decisions;
+    groups.reserve(static_cast<std::size_t>(review.candidateGroups.size()));
+    decisions.reserve(static_cast<std::size_t>(review.groupSelections.size()));
+    for (const KoreanTeacherImportGroup& group : review.candidateGroups)
+    {
+        groups.push_back({group.level.toUtf8().toStdString(),
+                          static_cast<std::size_t>(group.candidates.size())});
+    }
+    for (const TeacherImportGroupSelection& selection : review.groupSelections)
+    {
+        TeacherImportGroupMode mode;
+        switch (selection.mode)
+        {
+        case TeacherImportSelectionMode::All:
+            mode = TeacherImportGroupMode::All;
+            break;
+        case TeacherImportSelectionMode::Selected:
+            mode = TeacherImportGroupMode::Selected;
+            break;
+        case TeacherImportSelectionMode::None:
+            mode = TeacherImportGroupMode::None;
+            break;
+        default:
+            mode = static_cast<TeacherImportGroupMode>(-1);
+            break;
+        }
+        TeacherImportGroupDecision decision{
+            selection.level.toUtf8().toStdString(), mode, {}};
+        for (const int index : selection.selectedCandidateIndexes)
+        {
+            decision.selectedCandidateIndexes.push_back(index);
+        }
+        decisions.push_back(std::move(decision));
+    }
+    return resolveTeacherImportReview(groups, decisions);
+}
+
+QList<Teacher> selectedKoreanTeachers(const TeacherImportReview& review)
+{
+    QList<Teacher> selected;
+    const auto resolution = resolveReview(review);
+    if (!resolution.accepted())
+    {
+        return selected;
+    }
+    for (std::size_t groupIndex = 0;
+         groupIndex < resolution.selectedCandidateIndexes.size();
+         ++groupIndex)
+    {
+        const KoreanTeacherImportGroup& group =
+            review.candidateGroups.at(static_cast<qsizetype>(groupIndex));
+        for (const std::size_t candidateIndex :
+             resolution.selectedCandidateIndexes[groupIndex])
+        {
+            selected.append(group.candidates.at(
+                static_cast<qsizetype>(candidateIndex)).teacher);
+        }
+    }
+    return selected;
+}
 }
 
 void TeacherImportTests::parsesSectionedTemplate()
@@ -378,6 +462,83 @@ void TeacherImportTests::unreadableDataFailsValidation()
         validateTeacherImportData(QByteArrayLiteral("not an xlsx"), registry);
     QCOMPARE(validation.status, TeacherImportFileStatus::Unreadable);
     QVERIFY(!validation.diagnostics.isEmpty());
+}
+
+void TeacherImportTests::reviewContractAcceptsAllSelectedAndNone()
+{
+    using namespace ClassMngr::Next::Application;
+    const std::vector<TeacherImportCandidateGroup> groups{
+        {"M1", 3}, {"M2", 2}, {"H1", 1}};
+    const std::vector<TeacherImportGroupDecision> decisions{
+        {"H1", TeacherImportGroupMode::All, {}},
+        {"M1", TeacherImportGroupMode::Selected, {2, 0}},
+        {"M2", TeacherImportGroupMode::None, {}}
+    };
+
+    const auto resolution = resolveTeacherImportReview(groups, decisions);
+    QVERIFY(resolution.accepted());
+    QCOMPARE(resolution.selectedCandidateIndexes.size(), std::size_t(3));
+    QCOMPARE(resolution.selectedCandidateIndexes[0].size(), std::size_t(2));
+    QCOMPARE(resolution.selectedCandidateIndexes[0][0], std::size_t(0));
+    QCOMPARE(resolution.selectedCandidateIndexes[0][1], std::size_t(2));
+    QVERIFY(resolution.selectedCandidateIndexes[1].empty());
+    QCOMPARE(resolution.selectedCandidateIndexes[2].size(), std::size_t(1));
+    QCOMPARE(resolution.selectedCandidateIndexes[2][0], std::size_t(0));
+}
+
+void TeacherImportTests::reviewContractRejectsInvalidDecisions()
+{
+    using namespace ClassMngr::Next::Application;
+    const std::vector<TeacherImportCandidateGroup> groups{{"M1", 2}, {"H1", 1}};
+    const auto issueFor = [&groups](
+                              const std::vector<TeacherImportGroupDecision>& decisions,
+                              const std::vector<TeacherImportCandidateGroup>& candidates = {}) {
+        const auto resolution = resolveTeacherImportReview(
+            candidates.empty() ? groups : candidates, decisions);
+        return resolution.issue;
+    };
+
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::All, {}},
+                 {"H1", TeacherImportGroupMode::All, {}}},
+                 {{"M1", 2}, {"M1", 1}})),
+             static_cast<int>(TeacherImportReviewIssue::DuplicateCandidateGroup));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::All, {}},
+                 {"H1", TeacherImportGroupMode::All, {}}},
+                 {{"", 2}, {"H1", 1}})),
+             static_cast<int>(TeacherImportReviewIssue::EmptyGroupId));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::All, {}},
+                 {"M1", TeacherImportGroupMode::None, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::DuplicateDecisionGroup));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::All, {}},
+                 {"Unknown", TeacherImportGroupMode::None, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::UnknownDecisionGroup));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::All, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::MissingDecisionGroup));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", static_cast<TeacherImportGroupMode>(99), {}},
+                 {"H1", TeacherImportGroupMode::All, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::InvalidMode));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::All, {0}},
+                 {"H1", TeacherImportGroupMode::All, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::UnexpectedCandidateIndexes));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::Selected, {1, 1}},
+                 {"H1", TeacherImportGroupMode::All, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::DuplicateCandidateIndex));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::Selected, {-1}},
+                 {"H1", TeacherImportGroupMode::All, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::CandidateIndexOutOfRange));
+    QCOMPARE(static_cast<int>(issueFor({
+                 {"M1", TeacherImportGroupMode::Selected, {2}},
+                 {"H1", TeacherImportGroupMode::All, {}}})),
+             static_cast<int>(TeacherImportReviewIssue::CandidateIndexOutOfRange));
 }
 
 void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
@@ -536,6 +697,155 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='원자성교사'")));
         QVERIFY(counts.next());
         QCOMPARE(counts.value(0).toInt(), 0);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
+{
+    QFile fixture(teacherImportReviewFixturePath());
+    QVERIFY2(fixture.open(QIODevice::ReadOnly),
+             qPrintable(QStringLiteral("Unable to open fixture: %1")
+                            .arg(fixture.fileName())));
+    const TeacherImportTemplateRegistry registry =
+        createDefaultTeacherImportTemplateRegistry();
+    const TeacherImportFileValidation validation =
+        validateTeacherImportData(fixture.readAll(), registry);
+    QVERIFY2(validation.isValid(),
+             qPrintable(validation.diagnostics.join(QLatin1Char('\n'))));
+    QCOMPARE(validation.templateId, QStringLiteral("sectioned-contact-list-v1"));
+    QCOMPARE(validation.preview.sourceDate, QDate(2026, 9, 1));
+    QCOMPARE(validation.preview.koreanGroups.size(), 3);
+    QCOMPARE(validation.preview.nativeEnglishTeachers.size(), 1);
+    QCOMPARE(validation.preview.gsTeamMembers.size(), 1);
+    QCOMPARE(validation.preview.koreanGroups.at(0).level, QStringLiteral("M1"));
+    QCOMPARE(validation.preview.koreanGroups.at(0).candidates.size(), 2);
+    QCOMPARE(validation.preview.koreanGroups.at(1).level, QStringLiteral("M2"));
+    QCOMPARE(validation.preview.koreanGroups.at(2).level, QStringLiteral("H1"));
+
+    TeacherImportPlan plan;
+    plan.templateId = validation.templateId;
+    plan.sourceDate = validation.sourceDate;
+    plan.nativeEnglishTeachers = validation.preview.nativeEnglishTeachers;
+    plan.gsTeamMembers = validation.preview.gsTeamMembers;
+    plan.review.emplace();
+    plan.review->candidateGroups = validation.preview.koreanGroups;
+    plan.review->groupSelections = {
+        {QStringLiteral("M1"), TeacherImportSelectionMode::Selected, {0}},
+        {QStringLiteral("M2"), TeacherImportSelectionMode::None, {}},
+        {QStringLiteral("H1"), TeacherImportSelectionMode::All, {}}
+    };
+    QVERIFY(resolveReview(*plan.review).accepted());
+    plan.koreanTeachers = selectedKoreanTeachers(*plan.review);
+    QCOMPARE(plan.koreanTeachers.size(), 2);
+    QCOMPARE(plan.koreanTeachers.at(0).teacherKr, QStringLiteral("홍길동"));
+    QCOMPARE(plan.koreanTeachers.at(1).teacherKr, QStringLiteral("박민준"));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString connectionName =
+        QStringLiteral("teacher-import-reviewed-%1").arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(
+            temporaryDirectory.filePath(QStringLiteral("teacher-import.sqlite")));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery seed(database);
+        QVERIFY(seed.exec(R"(
+            INSERT INTO native_english_teachers
+                (name, position, phone_number, birthday, nationality, email)
+            VALUES ('Alex', 'NET', '010-9999-8888', '02-01', 'Canadian', 'alex@example.com')
+        )"));
+
+        TeacherImportRepository repository(database);
+        const auto imported = repository.importTeachers(plan);
+        QVERIFY2(imported.has_value(),
+                 imported.has_value() ? "" : qPrintable(imported.error()));
+        QCOMPARE(imported->koreanTeachers.created, 2);
+        QCOMPARE(imported->koreanTeachers.updated, 0);
+        QCOMPARE(imported->koreanTeachers.unchanged, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.created, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.updated, 1);
+        QCOMPARE(imported->nativeEnglishTeachers.unchanged, 0);
+        QCOMPARE(imported->gsTeamMembers.created, 1);
+        QCOMPARE(imported->gsTeamMembers.updated, 0);
+        QCOMPARE(imported->gsTeamMembers.unchanged, 0);
+
+        QSqlQuery persisted(database);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT teacher_kr, room_number, birthday, phone_number "
+            "FROM teachers ORDER BY room_number")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("홍길동"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("413"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("02-29"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("010-1111-1111"));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("박민준"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("510"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("05-09"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("010-4444-4444"));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM teachers WHERE teacher_kr IN ('김하늘', '이서연')")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 0);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT position, phone_number, birthday, nationality, email "
+            "FROM native_english_teachers WHERE name='Alex'")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("Team Leader"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("010-9999-8888"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("03-07"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("Canadian"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("alex@example.com"));
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT name, position, phone_number, birthday FROM gs_team")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("Taylor"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("M2"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("010-5555-5555"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("06-10"));
+
+        TeacherImportPlan rejected = plan;
+        rejected.sourceDate = QDate(2026, 9, 2);
+        rejected.review->groupSelections[0].selectedCandidateIndexes.append(99);
+        Teacher injected;
+        injected.teacherKr = QStringLiteral("신규유입");
+        rejected.koreanTeachers.append(injected);
+        QVERIFY(!repository.importTeachers(rejected).has_value());
+
+        TeacherImportPlan mismatchedSelection = plan;
+        mismatchedSelection.sourceDate = QDate(2026, 9, 3);
+        mismatchedSelection.koreanTeachers.append(injected);
+        QVERIFY(!repository.importTeachers(mismatchedSelection).has_value());
+
+        QVERIFY(persisted.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 2);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM teachers WHERE teacher_kr='신규유입'")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 0);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM native_english_teachers")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 1);
+        QVERIFY(persisted.exec(QStringLiteral("SELECT COUNT(*) FROM gs_team")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 1);
+        persisted.prepare(QStringLiteral("SELECT value FROM app_settings WHERE key=?"));
+        persisted.addBindValue(QString::fromLatin1(
+            TeacherImportRepository::LatestSourceDateSetting));
+        QVERIFY(persisted.exec());
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("2026-09-01"));
+
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

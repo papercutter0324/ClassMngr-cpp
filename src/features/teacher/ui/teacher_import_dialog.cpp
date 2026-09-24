@@ -3,6 +3,7 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "features/teacher/import/teacher_import_file_validator.h"
+#include "next/application/import_review_session.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
@@ -23,6 +24,63 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QtConcurrentRun>
+
+#include <cstdint>
+#include <vector>
+
+namespace
+{
+struct TeacherImportReviewRequest
+{
+    std::vector<ClassMngr::Next::Application::TeacherImportCandidateGroup> groups;
+    std::vector<ClassMngr::Next::Application::TeacherImportGroupDecision> decisions;
+};
+
+TeacherImportReviewRequest reviewRequest(const TeacherImportReview& review)
+{
+    using namespace ClassMngr::Next::Application;
+    TeacherImportReviewRequest request;
+    request.groups.reserve(static_cast<std::size_t>(review.candidateGroups.size()));
+    request.decisions.reserve(static_cast<std::size_t>(review.groupSelections.size()));
+
+    for (const KoreanTeacherImportGroup& group : review.candidateGroups)
+    {
+        request.groups.push_back({
+            group.level.toUtf8().toStdString(),
+            static_cast<std::size_t>(group.candidates.size())
+        });
+    }
+    for (const TeacherImportGroupSelection& selection : review.groupSelections)
+    {
+        TeacherImportGroupMode mode;
+        switch (selection.mode)
+        {
+        case TeacherImportSelectionMode::All:
+            mode = TeacherImportGroupMode::All;
+            break;
+        case TeacherImportSelectionMode::Selected:
+            mode = TeacherImportGroupMode::Selected;
+            break;
+        case TeacherImportSelectionMode::None:
+            mode = TeacherImportGroupMode::None;
+            break;
+        default:
+            mode = static_cast<TeacherImportGroupMode>(-1);
+            break;
+        }
+        TeacherImportGroupDecision decision{
+            selection.level.toUtf8().toStdString(), mode, {}};
+        decision.selectedCandidateIndexes.reserve(
+            static_cast<std::size_t>(selection.selectedCandidateIndexes.size()));
+        for (const int index : selection.selectedCandidateIndexes)
+        {
+            decision.selectedCandidateIndexes.push_back(index);
+        }
+        request.decisions.push_back(std::move(decision));
+    }
+    return request;
+}
+}
 
 TeacherImportDialog::TeacherImportDialog(QWidget* parent)
     : DialogShell(QStringLiteral("teacherImport"), parent)
@@ -421,22 +479,55 @@ TeacherImportPlan TeacherImportDialog::importPlan() const
     plan.sourceDate = m_preview.sourceDate;
     plan.nativeEnglishTeachers = m_preview.nativeEnglishTeachers;
     plan.gsTeamMembers = m_preview.gsTeamMembers;
+    plan.review.emplace();
+    plan.review->candidateGroups = m_preview.koreanGroups;
 
     for (int groupIndex = 0; groupIndex < m_preview.koreanGroups.size(); ++groupIndex)
     {
         const KoreanTeacherImportGroup& group = m_preview.koreanGroups.at(groupIndex);
         const GroupControls& controls = m_groupControls.at(groupIndex);
+        TeacherImportGroupSelection selection;
+        selection.level = group.level;
         if (controls.none->isChecked())
         {
+            selection.mode = TeacherImportSelectionMode::None;
+            plan.review->groupSelections.append(selection);
             continue;
         }
+        if (controls.selected->isChecked())
+            selection.mode = TeacherImportSelectionMode::Selected;
+        else if (controls.all->isChecked())
+            selection.mode = TeacherImportSelectionMode::All;
+        else
+            selection.mode = static_cast<TeacherImportSelectionMode>(-1);
+
         for (int candidateIndex = 0; candidateIndex < group.candidates.size(); ++candidateIndex)
         {
-            if (controls.all->isChecked()
-                || (controls.selected->isChecked()
-                    && controls.candidateChecks.at(candidateIndex)->isChecked()))
+            if (controls.selected->isChecked()
+                && controls.candidateChecks.at(candidateIndex)->isChecked())
             {
-                plan.koreanTeachers.append(group.candidates.at(candidateIndex).teacher);
+                selection.selectedCandidateIndexes.append(candidateIndex);
+            }
+        }
+        plan.review->groupSelections.append(selection);
+    }
+
+    const TeacherImportReviewRequest request = reviewRequest(*plan.review);
+    const auto resolution = ClassMngr::Next::Application::resolveTeacherImportReview(
+        request.groups, request.decisions);
+    if (resolution.accepted())
+    {
+        for (std::size_t groupIndex = 0;
+             groupIndex < resolution.selectedCandidateIndexes.size();
+             ++groupIndex)
+        {
+            const KoreanTeacherImportGroup& group =
+                plan.review->candidateGroups.at(static_cast<qsizetype>(groupIndex));
+            for (const std::size_t candidateIndex :
+                 resolution.selectedCandidateIndexes[groupIndex])
+            {
+                plan.koreanTeachers.append(
+                    group.candidates.at(static_cast<qsizetype>(candidateIndex)).teacher);
             }
         }
     }
@@ -451,6 +542,18 @@ void TeacherImportDialog::updateImportEnabled()
         return;
     }
     const TeacherImportPlan plan = importPlan();
+    if (!plan.review)
+    {
+        m_importButton->setEnabled(false);
+        return;
+    }
+    const TeacherImportReviewRequest request = reviewRequest(*plan.review);
+    if (!ClassMngr::Next::Application::resolveTeacherImportReview(
+            request.groups, request.decisions).accepted())
+    {
+        m_importButton->setEnabled(false);
+        return;
+    }
     m_importButton->setEnabled(
         !plan.koreanTeachers.isEmpty()
         || !plan.nativeEnglishTeachers.isEmpty()

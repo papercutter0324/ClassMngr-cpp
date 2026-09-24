@@ -3,11 +3,15 @@
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/import_review_session.h"
 
 #include <QObject>
 #include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
+
+#include <cstdint>
+#include <vector>
 
 namespace
 {
@@ -21,6 +25,105 @@ QString koreanTeacherNameKey(const QString& value)
     return TeacherImportNameUtils::hangulOnly(value);
 }
 
+struct TeacherImportReviewRequest
+{
+    std::vector<ClassMngr::Next::Application::TeacherImportCandidateGroup> groups;
+    std::vector<ClassMngr::Next::Application::TeacherImportGroupDecision> decisions;
+};
+
+TeacherImportReviewRequest reviewRequest(const TeacherImportReview& review)
+{
+    using namespace ClassMngr::Next::Application;
+    TeacherImportReviewRequest request;
+    request.groups.reserve(static_cast<std::size_t>(review.candidateGroups.size()));
+    request.decisions.reserve(static_cast<std::size_t>(review.groupSelections.size()));
+
+    for (const KoreanTeacherImportGroup& group : review.candidateGroups)
+    {
+        request.groups.push_back({
+            group.level.toUtf8().toStdString(),
+            static_cast<std::size_t>(group.candidates.size())
+        });
+    }
+    for (const TeacherImportGroupSelection& selection : review.groupSelections)
+    {
+        TeacherImportGroupMode mode;
+        switch (selection.mode)
+        {
+        case TeacherImportSelectionMode::All:
+            mode = TeacherImportGroupMode::All;
+            break;
+        case TeacherImportSelectionMode::Selected:
+            mode = TeacherImportGroupMode::Selected;
+            break;
+        case TeacherImportSelectionMode::None:
+            mode = TeacherImportGroupMode::None;
+            break;
+        default:
+            mode = static_cast<TeacherImportGroupMode>(-1);
+            break;
+        }
+        TeacherImportGroupDecision decision{
+            selection.level.toUtf8().toStdString(), mode, {}};
+        decision.selectedCandidateIndexes.reserve(
+            static_cast<std::size_t>(selection.selectedCandidateIndexes.size()));
+        for (const int index : selection.selectedCandidateIndexes)
+        {
+            decision.selectedCandidateIndexes.push_back(index);
+        }
+        request.decisions.push_back(std::move(decision));
+    }
+    return request;
+}
+
+Status validateReviewPlan(const TeacherImportPlan& plan)
+{
+    if (!plan.review)
+    {
+        return {};
+    }
+
+    const TeacherImportReviewRequest request = reviewRequest(*plan.review);
+    const auto resolution = ClassMngr::Next::Application::resolveTeacherImportReview(
+        request.groups, request.decisions);
+    if (!resolution.accepted())
+    {
+        return std::unexpected(QObject::tr("The teacher import review choices are invalid."));
+    }
+
+    QList<QString> expectedTeacherKeys;
+    for (std::size_t groupIndex = 0;
+         groupIndex < resolution.selectedCandidateIndexes.size();
+         ++groupIndex)
+    {
+        const KoreanTeacherImportGroup& group =
+            plan.review->candidateGroups.at(static_cast<qsizetype>(groupIndex));
+        for (const std::size_t candidateIndex :
+             resolution.selectedCandidateIndexes[groupIndex])
+        {
+            expectedTeacherKeys.append(koreanTeacherNameKey(
+                group.candidates.at(static_cast<qsizetype>(candidateIndex))
+                    .teacher.teacherKr));
+        }
+    }
+
+    if (expectedTeacherKeys.size() != plan.koreanTeachers.size())
+    {
+        return std::unexpected(QObject::tr(
+            "The reviewed Korean teachers do not match the import selection."));
+    }
+    for (int index = 0; index < expectedTeacherKeys.size(); ++index)
+    {
+        if (expectedTeacherKeys.at(index)
+            != koreanTeacherNameKey(plan.koreanTeachers.at(index).teacherKr))
+        {
+            return std::unexpected(QObject::tr(
+                "The reviewed Korean teachers do not match the import selection."));
+        }
+    }
+    return {};
+}
+
 QString queryFailure(const QSqlQuery& query, const QString& action)
 {
     return SqlQueryUtils::errorFor(query, action).userMessage();
@@ -28,6 +131,12 @@ QString queryFailure(const QSqlQuery& query, const QString& action)
 
 Status validatePlan(const TeacherImportPlan& plan)
 {
+    const Status reviewStatus = validateReviewPlan(plan);
+    if (!reviewStatus)
+    {
+        return reviewStatus;
+    }
+
     if (!plan.sourceDate.isValid())
     {
         return std::unexpected(QObject::tr("The teacher import date is invalid."));
