@@ -1507,3 +1507,37 @@ separate on a host with Xvfb and loopback access.
   settings, remaining feature-service migrations, and broader calendar/UI and
   document work. Preserve the Sub Prep current-and-following-year cap; F40 did
   not change Sub Prep or `cmake/sources.cmake`.
+
+### F41 Schedule Import review decisions
+
+- F41 is committed as `30ec8d7512a8847a5b1d32addabf25f252b0eabb`
+  (`Phase2 - Validate Schedule Import review decisions`). It adds the Qt-free
+  `ScheduleImportReviewDecisionRequest` contract and structured issue codes in
+  `src/next/application/schedule_import_review_decisions.h`. The dialog uses
+  the shared result for readiness and duplicate-target details; the plan
+  validator adapts legacy choices into the same contract. Workbook content,
+  colors/meeting checks, SQL writes, and F37 current-state validation remain at
+  their existing owners.
+- The required `schedule_review.xlsx` path now applies explicit accepted
+  choices through the production repository and asserts result counts plus
+  persisted teachers/classes/colors/schedule entries, retaining unrelated
+  seeded metadata. The checked-in conflict fixture still displays a warning
+  and disables Import; repository apply rejects it with zero teachers, classes,
+  or schedule rows written. The F37 trigger sentinel passes.
+- Independent fresh Windows x64 Debug/Ninja/MSVC verification validated 899
+  handwritten source owners; four focused targets built and CTest passed 4/4.
+  QtTest totals: review-decision Application contract 26/0/0, Schedule Import
+  repository 25/0/1, review dialog 21/0/0, and state validation 13/0/0
+  (85 passed, 0 failed, one existing optional external-workbook skip because
+  `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset). `git diff --check` passed.
+- Gate audit after F41: Gate 1 Domain/Application is Partial with broader
+  Domain models incomplete. Gate 2 baseline parity is Partial and improves
+  with fixture-backed Schedule preview, conflict rejection, and accepted apply,
+  but wider parity remains. Gate 3 workspace boundary is Partial because
+  FileController still requires MainWindow dirty approval and closes the old
+  session before replacement success. Gate 4 audited `src/next` dependency
+  isolation remains Satisfied. Phase 2 is In Progress; the exit gate remains
+  Open. Remaining work includes shared workbook decoding, broader Domain
+  models, generic settings, remaining feature-service migrations, broader
+  calendar/UI/document work, and the workspace replacement caveat. Preserve the
+  Sub Prep current-and-following-year cap; `cmake/sources.cmake` was untouched.

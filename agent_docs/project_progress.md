@@ -666,3 +666,24 @@ baseline parity open; Gate 3 remains partial at FileController replacement;
 the audited `src/next` dependency boundary remains satisfied. Phase 2 remains
 open. Preserve the Sub Prep current-and-following-year limit and the unrelated
 user modification to `cmake/sources.cmake`; neither was changed in F40.
+
+### Phase 2 Schedule Import review decisions - 2026-09-24
+
+F41 adds a Qt-free Application contract for teacher/class review choices and
+uses it from both the dialog readiness path and legacy plan validator adapter.
+The checked-in `schedule_review.xlsx` now follows production parse, preview,
+explicit accepted choices, and repository apply, with assertions for summary,
+persisted teachers/classes/colors/schedule times, and unrelated seeded state.
+F39 conflict review/disabled-import/zero-write behavior and the F37 pre-write
+trigger sentinel remain passing.
+
+Independent fresh Windows x64 Ninja/MSVC verification validated 899 handwritten
+source owners and passed the four focused CTest targets 4/4. QtTest totals were
+85 passed, 0 failed, and one existing optional external-workbook skip. F41 is
+committed as `30ec8d7512a8847a5b1d32addabf25f252b0eabb`.
+
+Gates 1 and 2 advance but remain partial: broader Domain models and baseline
+parity are incomplete. Gate 3 remains partial at FileController replacement;
+the audited `src/next` dependency boundary remains satisfied. Phase 2 remains
+open. Keep Sub Prep within the current and following calendar years at most;
+the unrelated user change to `cmake/sources.cmake` was preserved.

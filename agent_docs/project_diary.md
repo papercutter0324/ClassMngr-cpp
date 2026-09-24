@@ -736,3 +736,11 @@ invalid values to the existing labeled validation error before conflict
 projection, then carry the typed value through review/apply overlap checks.
 This avoids repeating validation during pairwise conflict comparisons while
 preserving the half-open rule.
+
+## Phase 2 Schedule Import review-decision contract - 2026-09-24
+
+Keep choice acceptance in one Qt-free Application contract used by both review
+readiness and repository plan validation. Leave workbook/content checks at the
+feature edge, and keep current-state validation immediately before database
+writes. Pair the required fixture's successful parse-preview-apply path with
+the existing conflict/rejection fixture so baseline parity has both outcomes.
