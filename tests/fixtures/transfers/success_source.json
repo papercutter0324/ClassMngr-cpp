@@ -1,0 +1,51 @@
+{
+    "format": "ClassMngr Classes",
+    "version": 1,
+    "exported_at_utc": "2026-09-24T09:00:00.000Z",
+    "teachers": [
+        {
+            "key": "teacher-success-1",
+            "teacher_kr": "Kim",
+            "teacher_en": "Alex Kim",
+            "preferred_romanization": "Gim Allekseu",
+            "preferred_name": "Alex",
+            "room_number": "504",
+            "birthday": "02-29",
+            "phone_number": "010-1234-5678",
+            "wifi_name": "Fixture WiFi",
+            "wifi_password": "fixture-password",
+            "internet_type": "Both",
+            "zoom_id": "123 456 7890",
+            "zoom_password": "zoom-password",
+            "projection_type": "Any",
+            "notes": "Fixture teacher notes"
+        }
+    ],
+    "classes": [
+        {
+            "key": "class-success-1",
+            "name": "Fixture Stored Class",
+            "teacher_ref": "teacher-success-1",
+            "info": {
+                "class_grade": "E3",
+                "class_level": "Orion",
+                "reading_book": "Reading Explorer 2",
+                "essay_book": "3C",
+                "class_color": "#2468AC",
+                "font_color": "#FFFFFF",
+                "notes": "Fixture class notes",
+                "time_filler_activities": "Word chain",
+                "regular_times": [
+                    {"day": "Tuesday", "start_time": "3:00 PM", "end_time": "3:50 PM"}
+                ],
+                "intensive_times": []
+            },
+            "roster": {
+                "columns": ["English", "Korean", "Memo"],
+                "column_widths": [180, 190, 240],
+                "rows": [["Avery", "Fixture student", "Transferred row"]]
+            },
+            "speaking_evaluations": []
+        }
+    ]
+}

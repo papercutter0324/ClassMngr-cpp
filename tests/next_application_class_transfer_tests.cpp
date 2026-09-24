@@ -92,6 +92,49 @@ ClassTransferProjectionInput validInput()
     return input;
 }
 
+ClassTransferReviewDecisionRequest validReviewRequest()
+{
+    ClassTransferReviewDecisionRequest request;
+    request.classes = {
+        {0, {41, 42}},
+        {1, {41, 43}},
+        {2, {}}
+    };
+    request.teachers = {
+        {"teacher-ambiguous", {11, 12}},
+        {"teacher-two", {12, 13}},
+        {"teacher-unique", {14}},
+        {"teacher-new", {}}
+    };
+    request.classResolutions = {
+        {0, ClassTransferReviewClassAction::Replace, 41},
+        {1, ClassTransferReviewClassAction::Create, -1},
+        {2, ClassTransferReviewClassAction::Skip, -1}
+    };
+    request.teacherResolutions = {
+        {"teacher-ambiguous", ClassTransferReviewTeacherAction::Create, -1},
+        {"teacher-two", ClassTransferReviewTeacherAction::KeepExisting, 13},
+        {"teacher-unique", ClassTransferReviewTeacherAction::ReplaceExisting, 14},
+        {"teacher-new", ClassTransferReviewTeacherAction::Create, -1}
+    };
+    return request;
+}
+
+bool hasReviewIssue(
+    const ClassTransferReviewDecisionResult& result,
+    const ClassTransferReviewDecisionIssueCode code
+    )
+{
+    return std::any_of(
+        result.issues.cbegin(),
+        result.issues.cend(),
+        [code](const ClassTransferReviewDecisionIssue& issue)
+        {
+            return issue.code == code;
+        }
+        );
+}
+
 void verifyInvalid(
     const Result<ClassTransferProjection>& result
     )
@@ -134,6 +177,8 @@ private slots:
     void lookupsReturnIndependentValueCopies();
     void recordsAndProjectionAreCopyableEqualAndReleasable();
     void contractHasNoExternalOwnersOrRawSourceAccessors();
+    void reviewDecisionsPreserveMatchChoiceSemantics();
+    void reviewDecisionMatrixRejectsIncompleteDuplicateAndInvalidChoices();
     void existingNextContractsRemainUsable();
 };
 
@@ -604,6 +649,148 @@ void NextApplicationClassTransferTests::contractHasNoExternalOwnersOrRawSourceAc
     static_assert(!HasRawSourceAccessor<ClassTransferStagingPackage>);
 
     QVERIFY(true);
+}
+
+void NextApplicationClassTransferTests::reviewDecisionsPreserveMatchChoiceSemantics()
+{
+    const auto request = validReviewRequest();
+    const auto result = validateClassTransferReviewDecisions(request);
+    QVERIFY(result.accepted());
+    QVERIFY(result.issues.empty());
+
+    auto uniqueTeacherCreate = request;
+    uniqueTeacherCreate.teacherResolutions[2].action =
+        ClassTransferReviewTeacherAction::Create;
+    uniqueTeacherCreate.teacherResolutions[2].targetTeacherId = -1;
+    const auto uniqueResult =
+        validateClassTransferReviewDecisions(uniqueTeacherCreate);
+    QVERIFY(!uniqueResult.accepted());
+    QVERIFY(hasReviewIssue(
+        uniqueResult,
+        ClassTransferReviewDecisionIssueCode::UniqueTeacherCannotBeCreated
+        ));
+
+    auto ambiguousTeacherReuse = request;
+    ambiguousTeacherReuse.teacherResolutions[0].action =
+        ClassTransferReviewTeacherAction::KeepExisting;
+    ambiguousTeacherReuse.teacherResolutions[0].targetTeacherId = 12;
+    QVERIFY(validateClassTransferReviewDecisions(ambiguousTeacherReuse).accepted());
+
+    auto ambiguousTeacherReplacement = request;
+    ambiguousTeacherReplacement.teacherResolutions[0].action =
+        ClassTransferReviewTeacherAction::ReplaceExisting;
+    ambiguousTeacherReplacement.teacherResolutions[0].targetTeacherId = 11;
+    QVERIFY(validateClassTransferReviewDecisions(
+        ambiguousTeacherReplacement).accepted());
+}
+
+void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDuplicateAndInvalidChoices()
+{
+    using ClassAction = ClassTransferReviewClassAction;
+    using TeacherAction = ClassTransferReviewTeacherAction;
+    using IssueCode = ClassTransferReviewDecisionIssueCode;
+
+    auto request = validReviewRequest();
+    request.classResolutions.erase(request.classResolutions.begin());
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::MissingClassResolution
+        ));
+
+    request = validReviewRequest();
+    request.teacherResolutions.pop_back();
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::MissingTeacherResolution
+        ));
+
+    request = validReviewRequest();
+    request.classResolutions.push_back(request.classResolutions.front());
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::DuplicateClassResolution
+        ));
+
+    request = validReviewRequest();
+    request.teacherResolutions.push_back(request.teacherResolutions.front());
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::DuplicateTeacherResolution
+        ));
+
+    request = validReviewRequest();
+    request.classResolutions[0].action = ClassAction::Invalid;
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::InvalidClassAction
+        ));
+
+    request = validReviewRequest();
+    request.classResolutions[0].targetClassId = -1;
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::ReplaceClassMissingTarget
+        ));
+
+    request = validReviewRequest();
+    request.classResolutions[0].targetClassId = 99;
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::ClassTargetNotInMatchSet
+        ));
+
+    request = validReviewRequest();
+    request.classResolutions[1].targetClassId = 41;
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::NonReplaceClassHasTarget
+        ));
+
+    request = validReviewRequest();
+    request.classResolutions[1] = {1, ClassAction::Replace, 41};
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::DuplicateClassReplacementTarget
+        ));
+
+    request = validReviewRequest();
+    request.teacherResolutions[0].action = TeacherAction::Invalid;
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::InvalidTeacherAction
+        ));
+
+    request = validReviewRequest();
+    request.teacherResolutions[1].targetTeacherId = -1;
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::TeacherActionMissingTarget
+        ));
+
+    request = validReviewRequest();
+    request.teacherResolutions[1].targetTeacherId = 99;
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::TeacherTargetNotInMatchSet
+        ));
+
+    request = validReviewRequest();
+    request.teacherResolutions[0] = {
+        "teacher-ambiguous", TeacherAction::Create, 11};
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::CreateTeacherHasTarget
+        ));
+
+    request = validReviewRequest();
+    request.teacherResolutions[0] = {
+        "teacher-ambiguous", TeacherAction::ReplaceExisting, 12};
+    request.teacherResolutions[1] = {
+        "teacher-two", TeacherAction::ReplaceExisting, 12};
+    QVERIFY(hasReviewIssue(
+        validateClassTransferReviewDecisions(request),
+        IssueCode::DuplicateTeacherReplacementTarget
+        ));
 }
 
 void NextApplicationClassTransferTests::existingNextContractsRemainUsable()

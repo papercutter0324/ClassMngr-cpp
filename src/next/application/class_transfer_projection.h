@@ -6,6 +6,7 @@
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -706,5 +707,394 @@ private:
 
 using ClassTransferSnapshot = ClassTransferProjection;
 using TransferProjection = ClassTransferProjection;
+
+// Class Transfer review is validated against the match set produced by the
+// current preview. Keeping these inputs and decisions as standard-C++ values
+// lets the dialog and the apply boundary share the same choice rules without
+// moving matching or persistence into the Application layer.
+enum class ClassTransferReviewClassAction
+{
+    Create,
+    Replace,
+    Skip,
+    Unselected,
+    Invalid
+};
+
+enum class ClassTransferReviewTeacherAction
+{
+    Create,
+    KeepExisting,
+    ReplaceExisting,
+    Unselected,
+    Invalid
+};
+
+struct ClassTransferReviewClassCandidate final
+{
+    int packageClassIndex = -1;
+    std::vector<int> matchingClassIds;
+};
+
+struct ClassTransferReviewTeacherCandidate final
+{
+    std::string teacherKey;
+    std::vector<int> matchingTeacherIds;
+};
+
+struct ClassTransferReviewClassResolution final
+{
+    int packageClassIndex = -1;
+    ClassTransferReviewClassAction action =
+        ClassTransferReviewClassAction::Unselected;
+    int targetClassId = -1;
+};
+
+struct ClassTransferReviewTeacherResolution final
+{
+    std::string teacherKey;
+    ClassTransferReviewTeacherAction action =
+        ClassTransferReviewTeacherAction::Unselected;
+    int targetTeacherId = -1;
+};
+
+struct ClassTransferReviewDecisionRequest final
+{
+    std::vector<ClassTransferReviewClassCandidate> classes;
+    std::vector<ClassTransferReviewTeacherCandidate> teachers;
+    std::vector<ClassTransferReviewClassResolution> classResolutions;
+    std::vector<ClassTransferReviewTeacherResolution> teacherResolutions;
+};
+
+enum class ClassTransferReviewDecisionIssueCode
+{
+    InvalidClassAction,
+    InvalidClassIndex,
+    DuplicateClassResolution,
+    UnknownClassResolution,
+    MissingClassResolution,
+    ReplaceClassMissingTarget,
+    ClassTargetNotInMatchSet,
+    NonReplaceClassHasTarget,
+    DuplicateClassReplacementTarget,
+    InvalidTeacherAction,
+    EmptyTeacherKey,
+    DuplicateTeacherResolution,
+    UnknownTeacherResolution,
+    MissingTeacherResolution,
+    UniqueTeacherCannotBeCreated,
+    TeacherActionMissingTarget,
+    TeacherTargetNotInMatchSet,
+    CreateTeacherHasTarget,
+    DuplicateTeacherReplacementTarget
+};
+
+struct ClassTransferReviewDecisionIssue final
+{
+    ClassTransferReviewDecisionIssueCode code;
+    int packageClassIndex = -1;
+    std::string teacherKey;
+    int targetId = -1;
+};
+
+struct ClassTransferReviewDecisionResult final
+{
+    std::vector<ClassTransferReviewDecisionIssue> issues;
+
+    [[nodiscard]] bool accepted() const noexcept
+    {
+        return issues.empty();
+    }
+};
+
+[[nodiscard]] inline ClassTransferReviewDecisionResult
+validateClassTransferReviewDecisions(
+    const ClassTransferReviewDecisionRequest& request
+    )
+{
+    using Issue = ClassTransferReviewDecisionIssue;
+    using IssueCode = ClassTransferReviewDecisionIssueCode;
+    using ClassAction = ClassTransferReviewClassAction;
+    using TeacherAction = ClassTransferReviewTeacherAction;
+
+    ClassTransferReviewDecisionResult result;
+    std::map<int, const ClassTransferReviewClassCandidate*> classCandidates;
+    for (const auto& candidate : request.classes)
+    {
+        if (candidate.packageClassIndex < 0)
+        {
+            result.issues.push_back(
+                Issue{IssueCode::InvalidClassIndex,
+                      candidate.packageClassIndex}
+                );
+            continue;
+        }
+        classCandidates.emplace(candidate.packageClassIndex, &candidate);
+    }
+
+    std::map<std::string, const ClassTransferReviewTeacherCandidate*>
+        teacherCandidates;
+    for (const auto& candidate : request.teachers)
+    {
+        if (candidate.teacherKey.empty())
+        {
+            result.issues.push_back(Issue{IssueCode::EmptyTeacherKey});
+            continue;
+        }
+        teacherCandidates.emplace(candidate.teacherKey, &candidate);
+    }
+
+    const auto validClassAction = [](const ClassAction action)
+    {
+        switch (action)
+        {
+        case ClassAction::Create:
+        case ClassAction::Replace:
+        case ClassAction::Skip:
+            return true;
+        case ClassAction::Unselected:
+        case ClassAction::Invalid:
+            return false;
+        }
+        return false;
+    };
+    const auto validTeacherAction = [](const TeacherAction action)
+    {
+        switch (action)
+        {
+        case TeacherAction::Create:
+        case TeacherAction::KeepExisting:
+        case TeacherAction::ReplaceExisting:
+            return true;
+        case TeacherAction::Unselected:
+        case TeacherAction::Invalid:
+            return false;
+        }
+        return false;
+    };
+
+    std::map<int, const ClassTransferReviewClassResolution*> classResolutions;
+    std::map<int, std::vector<int>> classTargetClaimants;
+    for (const auto& resolution : request.classResolutions)
+    {
+        if (resolution.packageClassIndex < 0)
+        {
+            result.issues.push_back(
+                Issue{IssueCode::InvalidClassIndex,
+                      resolution.packageClassIndex}
+                );
+            continue;
+        }
+        const auto candidate = classCandidates.find(
+            resolution.packageClassIndex);
+        if (candidate == classCandidates.end())
+        {
+            result.issues.push_back(
+                Issue{IssueCode::UnknownClassResolution,
+                      resolution.packageClassIndex}
+                );
+            continue;
+        }
+        if (classResolutions.contains(resolution.packageClassIndex))
+        {
+            result.issues.push_back(
+                Issue{IssueCode::DuplicateClassResolution,
+                      resolution.packageClassIndex}
+                );
+            continue;
+        }
+        classResolutions.emplace(resolution.packageClassIndex, &resolution);
+
+        if (!validClassAction(resolution.action))
+        {
+            result.issues.push_back(
+                Issue{IssueCode::InvalidClassAction,
+                      resolution.packageClassIndex}
+                );
+            continue;
+        }
+
+        if (resolution.action == ClassAction::Replace)
+        {
+            if (resolution.targetClassId <= 0)
+            {
+                result.issues.push_back(
+                    Issue{IssueCode::ReplaceClassMissingTarget,
+                          resolution.packageClassIndex,
+                          {},
+                          resolution.targetClassId}
+                    );
+                continue;
+            }
+            const auto& matchIds = candidate->second->matchingClassIds;
+            if (std::find(
+                    matchIds.cbegin(),
+                    matchIds.cend(),
+                    resolution.targetClassId
+                    ) == matchIds.cend())
+            {
+                result.issues.push_back(
+                    Issue{IssueCode::ClassTargetNotInMatchSet,
+                          resolution.packageClassIndex,
+                          {},
+                          resolution.targetClassId}
+                    );
+                continue;
+            }
+            auto& claimants = classTargetClaimants[resolution.targetClassId];
+            if (!claimants.empty())
+            {
+                result.issues.push_back(
+                    Issue{IssueCode::DuplicateClassReplacementTarget,
+                          resolution.packageClassIndex,
+                          {},
+                          resolution.targetClassId}
+                    );
+            }
+            claimants.push_back(resolution.packageClassIndex);
+        }
+        else if (resolution.targetClassId != -1)
+        {
+            result.issues.push_back(
+                Issue{IssueCode::NonReplaceClassHasTarget,
+                      resolution.packageClassIndex,
+                      {},
+                      resolution.targetClassId}
+                );
+        }
+    }
+
+    for (const auto& [packageClassIndex, candidate] : classCandidates)
+    {
+        static_cast<void>(candidate);
+        if (!classResolutions.contains(packageClassIndex))
+        {
+            result.issues.push_back(
+                Issue{IssueCode::MissingClassResolution, packageClassIndex}
+                );
+        }
+    }
+
+    std::map<std::string, const ClassTransferReviewTeacherResolution*>
+        teacherResolutions;
+    std::map<int, std::vector<std::string>> teacherReplacementClaimants;
+    for (const auto& resolution : request.teacherResolutions)
+    {
+        if (resolution.teacherKey.empty())
+        {
+            result.issues.push_back(Issue{IssueCode::EmptyTeacherKey});
+            continue;
+        }
+        const auto candidate = teacherCandidates.find(resolution.teacherKey);
+        if (candidate == teacherCandidates.end())
+        {
+            result.issues.push_back(
+                Issue{IssueCode::UnknownTeacherResolution,
+                      -1,
+                      resolution.teacherKey}
+                );
+            continue;
+        }
+        if (teacherResolutions.contains(resolution.teacherKey))
+        {
+            result.issues.push_back(
+                Issue{IssueCode::DuplicateTeacherResolution,
+                      -1,
+                      resolution.teacherKey}
+                );
+            continue;
+        }
+        teacherResolutions.emplace(resolution.teacherKey, &resolution);
+
+        if (!validTeacherAction(resolution.action))
+        {
+            result.issues.push_back(
+                Issue{IssueCode::InvalidTeacherAction,
+                      -1,
+                      resolution.teacherKey}
+                );
+            continue;
+        }
+
+        const auto& matchIds = candidate->second->matchingTeacherIds;
+        if (resolution.action == TeacherAction::Create)
+        {
+            if (matchIds.size() == 1)
+            {
+                result.issues.push_back(
+                    Issue{IssueCode::UniqueTeacherCannotBeCreated,
+                          -1,
+                          resolution.teacherKey,
+                          resolution.targetTeacherId}
+                    );
+            }
+            if (resolution.targetTeacherId != -1)
+            {
+                result.issues.push_back(
+                    Issue{IssueCode::CreateTeacherHasTarget,
+                          -1,
+                          resolution.teacherKey,
+                          resolution.targetTeacherId}
+                    );
+            }
+            continue;
+        }
+
+        if (resolution.targetTeacherId <= 0)
+        {
+            result.issues.push_back(
+                Issue{IssueCode::TeacherActionMissingTarget,
+                      -1,
+                      resolution.teacherKey,
+                      resolution.targetTeacherId}
+                );
+            continue;
+        }
+        if (std::find(
+                matchIds.cbegin(),
+                matchIds.cend(),
+                resolution.targetTeacherId
+                ) == matchIds.cend())
+        {
+            result.issues.push_back(
+                Issue{IssueCode::TeacherTargetNotInMatchSet,
+                      -1,
+                      resolution.teacherKey,
+                      resolution.targetTeacherId}
+                );
+            continue;
+        }
+        if (resolution.action == TeacherAction::ReplaceExisting)
+        {
+            auto& claimants = teacherReplacementClaimants[
+                resolution.targetTeacherId];
+            if (!claimants.empty())
+            {
+                result.issues.push_back(
+                    Issue{IssueCode::DuplicateTeacherReplacementTarget,
+                          -1,
+                          resolution.teacherKey,
+                          resolution.targetTeacherId}
+                    );
+            }
+            claimants.push_back(resolution.teacherKey);
+        }
+    }
+
+    for (const auto& [teacherKey, candidate] : teacherCandidates)
+    {
+        static_cast<void>(candidate);
+        if (!teacherResolutions.contains(teacherKey))
+        {
+            result.issues.push_back(
+                Issue{IssueCode::MissingTeacherResolution,
+                      -1,
+                      teacherKey}
+                );
+        }
+    }
+
+    return result;
+}
 
 }

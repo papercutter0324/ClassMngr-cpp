@@ -43,6 +43,7 @@ private:
     void updateImportEnabled();
 
     ClassTransferPackage m_package;
+    ClassImportPreview m_preview;
     QList<ClassRow> m_classRows;
     QList<TeacherRow> m_teacherRows;
     QLabel* m_validationLabel = nullptr;

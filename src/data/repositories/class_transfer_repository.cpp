@@ -7,6 +7,7 @@
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/classroom.h"
+#include "next/application/class_transfer_projection.h"
 
 #include <QHash>
 #include <QObject>
@@ -14,6 +15,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStringList>
+
+#include <algorithm>
 
 namespace
 {
@@ -43,6 +46,175 @@ QString normalized(
     )
 {
     return value.simplified().toCaseFolded();
+}
+
+std::string decisionKey(const QString& value)
+{
+    return value.trimmed().isEmpty() ? std::string{} : value.toStdString();
+}
+
+ClassMngr::Next::Application::ClassTransferReviewDecisionRequest
+reviewDecisionRequest(
+    const ClassTransferPackage& package,
+    const ClassImportPreview& preview,
+    const ClassImportPlan& plan
+    )
+{
+    using namespace ClassMngr::Next::Application;
+    ClassTransferReviewDecisionRequest request;
+
+    for (int index = 0; index < package.classes.size(); ++index)
+    {
+        ClassTransferReviewClassCandidate candidate;
+        candidate.packageClassIndex = index;
+        const auto previewEntry = std::find_if(
+            preview.classes.cbegin(),
+            preview.classes.cend(),
+            [index](const ClassImportClassPreview& item)
+            {
+                return item.packageClassIndex == index;
+            }
+            );
+        if (previewEntry != preview.classes.cend())
+        {
+            candidate.matchingClassIds.reserve(
+                static_cast<std::size_t>(previewEntry->matchingClassIds.size())
+                );
+            for (const int classId : previewEntry->matchingClassIds)
+            {
+                candidate.matchingClassIds.push_back(classId);
+            }
+        }
+        request.classes.push_back(std::move(candidate));
+    }
+
+    for (const ClassTransferTeacher& transferTeacher : package.teachers)
+    {
+        ClassTransferReviewTeacherCandidate candidate;
+        candidate.teacherKey = decisionKey(transferTeacher.key);
+        const auto previewEntry = std::find_if(
+            preview.teachers.cbegin(),
+            preview.teachers.cend(),
+            [&transferTeacher](const ClassImportTeacherPreview& item)
+            {
+                return item.teacherKey == transferTeacher.key;
+            }
+            );
+        if (previewEntry != preview.teachers.cend())
+        {
+            candidate.matchingTeacherIds.reserve(
+                static_cast<std::size_t>(previewEntry->matchingTeacherIds.size())
+                );
+            for (const int teacherId : previewEntry->matchingTeacherIds)
+            {
+                candidate.matchingTeacherIds.push_back(teacherId);
+            }
+        }
+        request.teachers.push_back(std::move(candidate));
+    }
+
+    request.classResolutions.reserve(
+        static_cast<std::size_t>(plan.classes.size())
+        );
+    for (const ClassImportResolution& resolution : plan.classes)
+    {
+        using ReviewAction = ClassTransferReviewClassAction;
+        ReviewAction action = ReviewAction::Invalid;
+        switch (resolution.action)
+        {
+        case ClassImportAction::Create:
+            action = ReviewAction::Create;
+            break;
+        case ClassImportAction::Replace:
+            action = ReviewAction::Replace;
+            break;
+        case ClassImportAction::Skip:
+            action = ReviewAction::Skip;
+            break;
+        }
+        request.classResolutions.push_back({
+            resolution.packageClassIndex,
+            action,
+            resolution.targetClassId
+        });
+    }
+
+    request.teacherResolutions.reserve(
+        static_cast<std::size_t>(plan.teachers.size())
+        );
+    for (const TeacherImportResolution& resolution : plan.teachers)
+    {
+        using ReviewAction = ClassTransferReviewTeacherAction;
+        ReviewAction action = ReviewAction::Invalid;
+        switch (resolution.action)
+        {
+        case TeacherImportAction::Create:
+            action = ReviewAction::Create;
+            break;
+        case TeacherImportAction::KeepExisting:
+            action = ReviewAction::KeepExisting;
+            break;
+        case TeacherImportAction::ReplaceExisting:
+            action = ReviewAction::ReplaceExisting;
+            break;
+        }
+        request.teacherResolutions.push_back({
+            decisionKey(resolution.teacherKey),
+            action,
+            resolution.targetTeacherId
+        });
+    }
+
+    return request;
+}
+
+QString reviewIssueMessage(
+    const ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode code
+    )
+{
+    using IssueCode =
+        ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode;
+    switch (code)
+    {
+    case IssueCode::InvalidClassAction:
+    case IssueCode::InvalidClassIndex:
+    case IssueCode::DuplicateClassResolution:
+    case IssueCode::UnknownClassResolution:
+        return QObject::tr(
+            "The class import plan contains an invalid or duplicate class entry.");
+    case IssueCode::MissingClassResolution:
+        return QObject::tr("Every package class must have an import action.");
+    case IssueCode::ReplaceClassMissingTarget:
+    case IssueCode::ClassTargetNotInMatchSet:
+        return QObject::tr(
+            "A replacement class is not one of the inferred matches.");
+    case IssueCode::NonReplaceClassHasTarget:
+        return QObject::tr(
+            "Only replacement actions may specify a destination class.");
+    case IssueCode::DuplicateClassReplacementTarget:
+        return QObject::tr(
+            "Two package classes cannot replace the same destination class.");
+    case IssueCode::InvalidTeacherAction:
+    case IssueCode::EmptyTeacherKey:
+    case IssueCode::DuplicateTeacherResolution:
+    case IssueCode::UnknownTeacherResolution:
+        return QObject::tr(
+            "The teacher import plan contains an invalid or duplicate teacher entry.");
+    case IssueCode::MissingTeacherResolution:
+        return QObject::tr("Every package teacher must have an import action.");
+    case IssueCode::UniqueTeacherCannotBeCreated:
+    case IssueCode::CreateTeacherHasTarget:
+        return QObject::tr(
+            "An unambiguous teacher match must reuse the local teacher.");
+    case IssueCode::TeacherActionMissingTarget:
+    case IssueCode::TeacherTargetNotInMatchSet:
+        return QObject::tr(
+            "A selected teacher is not one of the inferred matches.");
+    case IssueCode::DuplicateTeacherReplacementTarget:
+        return QObject::tr(
+            "Two different package teachers cannot replace the same local teacher.");
+    }
+    return QObject::tr("The class import choices are invalid.");
 }
 
 bool teacherMatches(
@@ -532,129 +704,24 @@ Result<ValidatedPlan> validatePlan(
         return std::unexpected(previewResult.error());
     }
 
-    QHash<int, QList<int>> classMatches;
-    QHash<QString, QList<int>> teacherMatchesByKey;
-
-    for (const ClassImportClassPreview& entry : previewResult->classes)
+    const auto decision =
+        ClassMngr::Next::Application::validateClassTransferReviewDecisions(
+            reviewDecisionRequest(package, *previewResult, plan)
+            );
+    if (!decision.accepted())
     {
-        classMatches.insert(entry.packageClassIndex, entry.matchingClassIds);
-    }
-
-    for (const ClassImportTeacherPreview& entry : previewResult->teachers)
-    {
-        teacherMatchesByKey.insert(entry.teacherKey, entry.matchingTeacherIds);
+        return std::unexpected(reviewIssueMessage(decision.issues.front().code));
     }
 
     ValidatedPlan validated;
-    QSet<int> replacementTargets;
-    QSet<int> teacherReplacementTargets;
-
     for (const ClassImportResolution& resolution : plan.classes)
     {
-        const int index = resolution.packageClassIndex;
-
-        if (index < 0 || index >= package.classes.size()
-            || validated.classes.contains(index))
-        {
-            return std::unexpected(
-                QObject::tr("The class import plan contains an invalid or duplicate class entry.")
-                );
-        }
-
-        const QList<int> matches = classMatches.value(index);
-
-        if (resolution.action == ClassImportAction::Replace)
-        {
-            if (!matches.contains(resolution.targetClassId))
-            {
-                return std::unexpected(
-                    QObject::tr("A replacement class is not one of the inferred matches.")
-                    );
-            }
-
-            if (replacementTargets.contains(resolution.targetClassId))
-            {
-                return std::unexpected(
-                    QObject::tr("Two package classes cannot replace the same destination class.")
-                    );
-            }
-
-            replacementTargets.insert(resolution.targetClassId);
-        }
-        else if (resolution.targetClassId > 0)
-        {
-            return std::unexpected(
-                QObject::tr("Only replacement actions may specify a destination class.")
-                );
-        }
-
-        validated.classes.insert(index, resolution);
+        validated.classes.insert(resolution.packageClassIndex, resolution);
     }
-
-    if (validated.classes.size() != package.classes.size())
-    {
-        return std::unexpected(
-            QObject::tr("Every package class must have an import action.")
-            );
-    }
-
     for (const TeacherImportResolution& resolution : plan.teachers)
     {
-        if (resolution.teacherKey.trimmed().isEmpty()
-            || !teacherMatchesByKey.contains(resolution.teacherKey)
-            || validated.teachers.contains(resolution.teacherKey))
-        {
-            return std::unexpected(
-                QObject::tr("The teacher import plan contains an invalid or duplicate teacher entry.")
-                );
-        }
-
-        const QList<int> matches =
-            teacherMatchesByKey.value(resolution.teacherKey);
-
-        if (resolution.action == TeacherImportAction::Create)
-        {
-            if (matches.size() == 1 || resolution.targetTeacherId > 0)
-            {
-                return std::unexpected(
-                    QObject::tr("An unambiguous teacher match must reuse the local teacher.")
-                    );
-            }
-        }
-        else
-        {
-            if (!matches.contains(resolution.targetTeacherId))
-            {
-                return std::unexpected(
-                    QObject::tr("A selected teacher is not one of the inferred matches.")
-                    );
-            }
-
-            if (resolution.action == TeacherImportAction::ReplaceExisting)
-            {
-                if (teacherReplacementTargets.contains(
-                        resolution.targetTeacherId))
-                {
-                    return std::unexpected(
-                        QObject::tr("Two different package teachers cannot replace the same local teacher.")
-                        );
-                }
-
-                teacherReplacementTargets.insert(
-                    resolution.targetTeacherId);
-            }
-        }
-
         validated.teachers.insert(resolution.teacherKey, resolution);
     }
-
-    if (validated.teachers.size() != package.teachers.size())
-    {
-        return std::unexpected(
-            QObject::tr("Every package teacher must have an import action.")
-            );
-    }
-
     return validated;
 }
 
