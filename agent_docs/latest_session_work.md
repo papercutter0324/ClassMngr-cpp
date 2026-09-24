@@ -1541,3 +1541,54 @@ separate on a host with Xvfb and loopback access.
   models, generic settings, remaining feature-service migrations, broader
   calendar/UI/document work, and the workspace replacement caveat. Preserve the
   Sub Prep current-and-following-year cap; `cmake/sources.cmake` was untouched.
+
+
+### F42 failure-atomic workspace replacement
+
+- F42 is committed as `8b2eb8a2a7a0dae6a22ce8a4163b35d5d9dd24ee`
+  (`Phase2 - Preserve workspace on failed replacement`). The exact source
+  paths are `src/data/database/database_session.cpp/.h`,
+  `src/app/controllers/file_controller.cpp`,
+  `tests/data_service_lifecycle_tests.cpp`, and
+  `tests/file_controller_workspace_lifecycle_tests.cpp`.
+- `DatabaseSession::open` stages a candidate on a unique SQL connection and
+  only replaces the active session after candidate setup succeeds.
+  `FileController` no longer closes the old session before replacement has
+  succeeded. Repository adapters retain references to the database object, so
+  F42 stores it at a stable heap address and transfers ownership with the
+  repositories. This fixed a dangling-reference crash caught by the first
+  independent test run during the initial settings write.
+- Failed replacement preserves profile A, the same session/repository
+  identity, readable settings, recent/current-file metadata, enabled actions,
+  and autosave. Invalid candidate connections are cleaned up. Successful
+  replacement switches to B, updates service reads and FileController
+  metadata, and removes the old connection. Same-path reopen passes at the
+  DataService/session layer. Coordinator tests cover dirty rejection, failed
+  open snapshot preservation, and successful selection clearing; missing-path,
+  invalid-startup, New Profile, Initial Setup backup, and close lifecycle cases
+  also pass.
+- Fresh isolated Windows x64 Ninja/MSVC with Qt 6.12.0 reconfigured the repaired
+  source and verified 899 handwritten owners, each with exactly one explicit
+  owner. Four focused targets built and CTest passed 4/4. QtTest totals:
+  DataService lifecycle 17/0/0, FileController lifecycle 33/0/0, Workspace
+  Coordinator 25/0/0, ApplicationServices workspace port 11/0/0 (passed/fail/
+  errors; no skips; 86 passed overall). `git diff --check` passed with only
+  line-ending notices; the production diff adds no `src/next` or
+  `ClassMngrNext::` dependency. CMake warned that `vswhere.exe` was unavailable
+  and about long object paths for unrelated targets, but all four assigned
+  targets built. `cmake/sources.cmake` remains the user-owned uncommitted
+  change and was untouched.
+- Formal exit-gate audit after F42: Gates 1 and 2 remain Partial due to
+  incomplete Domain models and wider baseline parity. The workspace criterion
+  as written is Satisfied by the app-less coordinator create tests: dirty
+  replacement is rejected, success opens WorkspaceState and clears
+  SelectionState, and gateway/invalid-session failures preserve both snapshots.
+  F42 additionally fixes failed production profile replacement. Direct
+  FileController snapshot comparisons for invalid SQLite and same-path reopen
+  remain integration coverage gaps outside that explicit criterion. Gate 4
+  dependency isolation remains Satisfied. Phase 2 and the formal exit gate
+  remain Open. Sub Prep stays limited to the current and following calendar
+  years at most.
+- Next: use a fresh three-lane Heavy-route investigation to select the next
+  bounded slice from the remaining Domain and parity gaps; update the plan and
+  mapping handoff before implementation.

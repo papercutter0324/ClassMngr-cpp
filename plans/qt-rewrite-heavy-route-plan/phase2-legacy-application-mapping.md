@@ -123,7 +123,7 @@ The v2 coordinator guards dirty replacement and dirty close before gateway
 calls, commits state only after a successful result, and clears selection only
 after a successful open/create/close. Closed-workspace save, save-as, and
 export return structured `NotFound` without calling the use case. These are
-the committed v2 semantics in [`workspace_coordinator.h`](../../src/next/application/workspace_coordinator.h). FileController composes `ApplicationServicesWorkspacePort` with the gateway, use case, and coordinator for create/open/close/save/save-as/export. Its MainWindow dirty-page approval and close-before-replacement sequence remain an end-to-end replacement-preservation caveat.
+the committed v2 semantics in [`workspace_coordinator.h`](../../src/next/application/workspace_coordinator.h). FileController composes `ApplicationServicesWorkspacePort` with the gateway, use case, and coordinator for create/open/close/save/save-as/export. The [`F42 FileController tests`](../../tests/file_controller_workspace_lifecycle_tests.cpp) verify that failed production replacement-open preserves the active database, settings sentinel, recent/last-file entries, and action availability; create aborts before target preparation if coordinator close fails. The formal WorkspaceGateway/WorkspaceCoordinator create criterion is satisfied. Separate non-gating UI caveats remain: FileController obtains dirty-page approval from MainWindow, and new/initial-setup create closes the active session before later file preparation and coordinator creation succeed. Same-path replacement and the complete MainWindow snapshot have no direct integration coverage.
 
 `WorkspaceGateway::createWorkspace` has no one-to-one public
 `ApplicationServices` method. The current new/initial-setup paths perform file
@@ -213,7 +213,7 @@ and the explicit adapter-neutral seams in the current v2 headers.
 | --- | --- | --- |
 | 0. Mapping and bounded document slice | Keep remaining uncutover legacy paths unchanged and record the committed document metadata adapter, bounded folder `parentPath` prerequisite, typed Sidebar/MainWindow projection cutover, content-reference projection, bounded resource/platform resolver, and partial `PdfViewerPage` content-session lifecycle integration. | Configure/source-ownership/dependency checks pass; focused projection/adapter CTest passes 2/2; focused resolver/navigation CTest passes 2/2; Sidebar CTest passes 1/1; adjacent catalog/projection/port tests pass 4/4; the exact nine-target CTest passes 9/9; resource validation covers 6 RCC packs, 7 runtime IDs, and 7 references. Referenced descriptors cover request/load/Ready-or-Error/close-before-release while direct no-reference descriptors preserve legacy loading. The embedded fixture has root folders only, so nested adapter transfer remains a non-blocking runtime-coverage gap; no live MainWindow projection-failure/retranslation integration test exists. |
 | 1. Workspace gateway adapter | Completed: `ApplicationServicesWorkspacePort` implements the gateway around `ApplicationServices`; its create/open/close/save/save-as/export mappings retain the separate non-destructive create hook and tested legacy result handling. | Existing app-less coordinator and adapter suites cover lifecycle behavior, path conversion, legacy error text, the void-save postcondition, create mapping, and failure atomicity; this read-only audit did not rerun them. |
-| 2. File-controller integration | Completed: FileController routes create/open/close/save/save-as/export through the adapter and coordinator while dialogs, recent files, warnings, and window/action updates remain in the Qt/controller layer. | Existing integration coverage records the migrated actions and coordinator snapshot behavior; this audit did not rerun tests. End-to-end replacement preservation remains an open integration caveat, as noted above. |
+| 2. File-controller integration | Completed: FileController routes create/open/close/save/save-as/export through the adapter and coordinator while dialogs, recent files, warnings, and window/action updates remain in the Qt/controller layer. | F42 adds integration verification that failed replacement-open preserves the active database/UI action state and create stops without target preparation after close failure. Interactive new/initial-setup create still closes before later preparation/create; dirty approval still comes from MainWindow. Same-path and full MainWindow snapshot coverage remain non-gating gaps. |
 | 3. Worker bridge | Qt worker delivery to the existing import/report sinks and application-owner `pump()` is committed behind the worker ports. | Bounded FIFO, generation isolation, cancellation request/acknowledgement, and terminal release tests passed with no worker/widget mutation. Stress/TSAN and direct report queue-post-failure coverage remain non-blocking gaps. |
 | 4. Feature slices | Migrate generic settings persistence, teachers, classes, schedule, calendar, roster, speaking evaluation, and the remaining document ownership/content boundaries as separate typed contracts. Calendar database-query/worker ownership, the dialog edit-draft and constructor/input ownership boundaries, the narrow typed cache/model boundary, the narrow upcoming-events read path, the typed activation-read seam, the non-repeat single-event save and delete seams, the repeat-occurrence save seam, the this-and-following repeat-series edit/save seam, the new-repeat series-create/batch-save seam, and the repeat-series suffix-delete seam are complete; broader typed calendar UI/page migration remains a separate future slice. The accepted preference work includes the theme, language, and schedule-output explicit-theme boundaries; accepted document work includes metadata projection, typed Sidebar/MainWindow catalog ownership, content-reference propagation, the bounded resource/platform resolver, and the partial `PdfViewerPage` session lifecycle. | Each slice has its own owner, adapter, parity tests, and release boundary; no v2 contract exposes a legacy service pointer. The theme, language, and schedule-output explicit-theme boundaries, typed `MainWindow`/`Sidebar` catalog ownership, narrow typed calendar cache/model boundary, narrow upcoming-events read path, typed activation-read seam, non-repeat single-event save and delete seams, repeat-occurrence save seam, this-and-following repeat-series edit/save seam, new-repeat series-create/batch-save seam, repeat-series suffix-delete seam, and dialog edit-draft and constructor/input ownership boundaries are complete; generic settings persistence, full document-service migration, dialog ownership, broader typed calendar UI/page migration, and other unstarted services remain future slices, with legacy accessors retained until their own cutovers. |
 
@@ -3412,3 +3412,23 @@ F41 is committed as `30ec8d7512a8847a5b1d32addabf25f252b0eabb`. Fixture-backed
 Schedule review/apply parity improves, but wider baseline parity and the
 Phase 2 gate remain open. Sub Prep's current-plus-following-calendar-year
 maximum is unchanged.
+
+## Verified F42 workspace replacement failure handling - commit `8b2eb8a2a7a0dae6a22ce8a4163b35d5d9dd24ee`
+
+[`FileController` replacement-open coverage](../../tests/file_controller_workspace_lifecycle_tests.cpp)
+verifies that an invalid replacement profile leaves the active database,
+settings sentinel, recent/last-file entries, and file-action availability
+unchanged. Interactive create also aborts before target preparation when
+coordinator close fails. F42 adds no new `src/next` production file; the formal
+`WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` criterion is
+satisfied by the dirty-rejection, successful-state-transition, and
+failure-atomicity cases in the focused workspace suites.
+
+Independent fresh x64 Ninja/MSVC verification validated 899 handwritten
+owners; the four focused CTest targets passed 17/17, 33/33, 25/25, and 11/11.
+`git diff --check` was clean. FileController integration remains a separate,
+non-gating caveat: dirty-page approval still comes from `MainWindow`, and
+normal new/initial-setup creation closes the active session before target
+preparation and create succeed. Same-path replacement and the complete live
+MainWindow snapshot have no direct coverage. The formal Phase 2 gate remains
+open.

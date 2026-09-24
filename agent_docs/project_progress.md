@@ -687,3 +687,29 @@ parity are incomplete. Gate 3 remains partial at FileController replacement;
 the audited `src/next` dependency boundary remains satisfied. Phase 2 remains
 open. Keep Sub Prep within the current and following calendar years at most;
 the unrelated user change to `cmake/sources.cmake` was preserved.
+
+
+### Phase 2 failure-atomic workspace replacement - 2026-09-24
+
+F42 stages replacement databases and preserves the active workspace when a
+replacement is invalid. It is committed as
+`8b2eb8a2a7a0dae6a22ce8a4163b35d5d9dd24ee`. Independent fresh Windows x64
+Ninja/MSVC verification reconfigured 899 handwritten sources with exactly one
+owner each. Four focused CTest targets passed (17, 33, 25, and 11 QtTest cases;
+86 total, no failures/errors/skips). `git diff --check` passed and no new
+`src/next` dependency was introduced.
+
+The initial verification exposed dangling `QSqlDatabase` references after
+moving a candidate connection. F42 now keeps the database object at a stable
+heap address and transfers its ownership with the repository adapters. Failed
+candidate connections are cleaned up; successful and same-path replacements
+retain readable settings and correct service references. The formal workspace
+exit criterion is satisfied by the passing app-less coordinator create tests:
+dirty replacement is rejected, success opens WorkspaceState and clears
+SelectionState, and gateway/invalid-session failures preserve both snapshots.
+F42 also fixes production profile replacement. Direct FileController snapshot
+comparisons for invalid SQLite and same-path reopen remain integration coverage
+gaps. Gates 1 and 2 remain partial for broader Domain models and baseline
+parity; Gate 4 remains satisfied. Phase 2 and its exit gate remain open.
+Preserve the Sub Prep bound of the current and following calendar years at
+most and the user-owned `cmake/sources.cmake` modification.

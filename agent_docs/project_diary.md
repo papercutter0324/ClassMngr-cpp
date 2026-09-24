@@ -744,3 +744,14 @@ readiness and repository plan validation. Leave workbook/content checks at the
 feature edge, and keep current-state validation immediately before database
 writes. Pair the required fixture's successful parse-preview-apply path with
 the existing conflict/rejection fixture so baseline parity has both outcomes.
+
+
+## Phase 2 failure-atomic workspace replacement - 2026-09-24
+
+When repository adapters hold `QSqlDatabase&`, moving a database wrapper out of
+a temporary candidate leaves those references dangling even if the SQL
+connection handle itself remains registered. Keep the referenced database
+object at a stable address and transfer ownership of that object together with
+the repositories. Exercise the first settings write after open, failed and
+successful replacement, same-path reopen, and candidate-connection cleanup;
+the original snapshot tests alone did not expose the lifetime defect.
