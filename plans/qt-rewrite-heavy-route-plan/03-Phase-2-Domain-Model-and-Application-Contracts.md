@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-25
-- Latest code slice: F49 adds the Qt-free Calendar Import use case, composing the existing signature-query port, duplicate planner, and batch-save port; the feature service delegates query, deduplication, ordered candidate mapping, save, and counts. The required `calendar_import_parity_2026.xlsx` production fixture verifies persisted rows and counts. Executor and independent Tester fresh builds both passed focused CTest 2/2; app-less tests cover ordering, duplicates, parser skips, empty/duplicate-only candidates, exact UTF-16 signatures, and query/save failures. Committed as `6a41e958671b7fa93c301d8b25c9c4381178fd7f`. Gate 1 and Gate 2 advance but remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 remains In Progress with the exit gate Open.
+- Latest code slice: F50 adds Qt-free `Application::CalendarEventImportSignature` as the shared six-field legacy import-key value used by the parser and signature-query port. Simplified title, normalized type/time status, and ISO date conversion remain at the Qt adapters; the value preserves field order, delimiters, exact UTF-16, and the all-day `1/0` flag while excluding times, database ID, and repeat-series ID. App-less tests cover format, all six fields, UTF-16 code units, `%2` title text, and type members without metadata; existing CalendarImportTests covers normalization and excluded metadata. Executor and independent Tester each freshly configured Windows x64 MSVC/Ninja, validated 906 owners, built three focused targets, and passed CTest 3/3 including required `calendar_import_parity_2026.xlsx` production parity. Committed as `92d001db11d8c8eb973de5f238444abe855ea5c5`; no full suite was run. Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 remains In Progress with the exit gate Open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed calendar import planning and signature reads, ordered calendar-import batch save, and the Qt-free Calendar Import use case are implemented. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -499,6 +499,27 @@ records, generic settings persistence, remaining feature migrations, and
 broader calendar/UI and document work remain open. Phase 2 remains In Progress
 and the formal exit gate remains open. Sub Prep remains capped at the current
 and following calendar years at most.
+
+### Exit-gate status after F50 - 2026-09-25 (commit `92d001db11d8c8eb973de5f238444abe855ea5c5`)
+
+This audit adds the independently verified F50 signature-identity and
+Calendar Import fixture evidence to the F49 audit above; no tests were rerun
+for this documentation update.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F50 adds a Qt-free six-field signature value shared by the parser and query port. App-less cases verify formatting, all fields, exact UTF-16 code units, `%2` title text, and type members without metadata. This advances a narrow Calendar Import behavior contract; broader Domain records remain incomplete. |
+| Baseline parity | Partial | Required `calendar_import_parity_2026.xlsx` production parity passed through the Calendar Import path. This advances fixture-backed import parity; wider baseline parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal workspace create criterion and its prior coverage are unchanged by F50. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The shared signature value and query contract remain Qt-free; string normalization and date conversion remain at the Qt adapters. Existing audited `src/next` isolation remains satisfied. |
+
+Executor and independent Tester each freshly configured Windows x64 MSVC/Ninja,
+validated 906 source owners, built three focused targets, and passed CTest 3/3,
+including the required fixture path. No full suite was run. Wider baseline
+parity, shared workbook decoding, broader Domain records, generic settings,
+remaining feature migrations, and broader calendar/UI and document work remain
+open. Phase 2 remains In Progress with its exit gate Open. Sub Prep remains
+capped at the current and following calendar years at most.
 
 ## Heavy-route requirements
 
@@ -4562,3 +4583,26 @@ F49 is committed as `6a41e958671b7fa93c301d8b25c9c4381178fd7f`. Gate 1 and Gate
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
 Open. Sub Prep remains limited to the current and following calendar years at
 most.
+
+#### Progress update - 2026-09-25 (F50 Calendar Import signature identity)
+
+Qt-free [`Application::CalendarEventImportSignature`](../../src/next/application/calendar_event_import_signature.h)
+is the shared six-field key value used by
+[`academic_calendar_event_parser.cpp`](../../src/features/calendar/academic_calendar_event_parser.cpp)
+and the signature-query port. The Qt adapters retain title simplification,
+type/time-status normalization, and ISO date conversion; the value preserves
+field order, delimiters, exact UTF-16 code units, and the all-day `1/0` flag,
+and excludes times, database ID, and repeat-series ID. App-less coverage checks
+the format, every field, UTF-16 code units, `%2` title text, and type members
+without metadata. Existing CalendarImportTests covers normalization and
+excluded metadata; a Qt 6.12 probe confirmed inserted `%2` text is not rescanned
+by the legacy six-argument `QString::arg` call.
+
+Executor and independent Tester each freshly configured Windows x64
+MSVC/Ninja, validated 906 source owners, built three focused targets, and
+passed CTest 3/3, including required `calendar_import_parity_2026.xlsx`
+production parity. No full suite was run. F50 is committed as
+`92d001db11d8c8eb973de5f238444abe855ea5c5`. Gate 1 and Gate 2 remain Partial;
+Workspace boundary and audited `src/next` dependency isolation remain
+Satisfied. Phase 2 remains In Progress with its exit gate Open. Sub Prep stays
+capped at the current and following calendar years at most.

@@ -14,7 +14,8 @@ this-event-only repeat-occurrence save, and new-repeat series-create
 and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
 palette caller boundary, Calendar Import planning/signature-query/application
-use-case seams, the partial Schedule import state-validation contract and repository
+use-case seams and shared six-field signature identity, the partial Schedule
+import state-validation contract and repository
 pre-write cutover, the shared Qt-free Class Transfer review-decision contract
 and repository validation,
 and Sub Prep print-source, selected-class details, and schedule-summary read
@@ -2970,19 +2971,20 @@ while a save safely does nothing. Current-campus options and remaining
 upcoming-events preferences remain separate legacy-access slices.
 
 
-## Current calendar import signature-query boundary - 2026-09-24
+## Current calendar import signature-query and identity boundary - 2026-09-25
 
-Existing-event signature lookup now uses the Qt-free
+Existing-event signature lookup uses the Qt-free
 `Application::CalendarEventImportSignatureQueryPort` and dedicated
 `Platform::ApplicationServicesCalendarEventImportSignatureQueryPort`; the
-former `ApplicationServicesCalendarEventPort` method has been removed. The
-contract preserves the exact six-field QString/UTF-16 signature, result order,
-availability and failure behavior, and reads beyond the general projection
-cap. Independent focused CTest passed 2/2; Windows x64 Debug built `ClassMngr`
-and both port targets, CMake validated 874 source owners, and `git diff
---check` passed. Workbook parsing and campus-directory lookup remain legacy;
-broader import and Phase 2 work remain open. See the Phase 2 plan's
-[signature-query update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-calendar-import-signature-query-contract).
+former `ApplicationServicesCalendarEventPort` method has been removed. F50
+adds the shared Qt-free `Application::CalendarEventImportSignature` value used
+by the parser and query port. It preserves the six-field legacy key's order,
+delimiters, exact UTF-16 code units, and all-day flag; title simplification,
+type/time-status normalization, and ISO date conversion remain in Qt adapters.
+The key excludes times, database ID, and repeat-series ID. The read port retains
+result order, availability/failure behavior, and access beyond the general
+projection cap. See the Phase 2 plan's
+[F50 signature-identity update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-25-f50-calendar-import-signature-identity).
 
 
 ## Personal display-name caller boundary - 2026-09-24
@@ -3552,3 +3554,26 @@ focused CTest 2/2; no full suite was run. Gate 1 and Gate 2 advance but remain
 Partial; Workspace boundary and audited v2 dependency isolation remain
 Satisfied. Phase 2 remains In Progress and the exit gate Open. Sub Prep stays
 capped at the current and following calendar years at most.
+
+## Verified F50 Calendar Import signature identity - commit `92d001db11d8c8eb973de5f238444abe855ea5c5`
+
+Qt-free [`Application::CalendarEventImportSignature`](../../src/next/application/calendar_event_import_signature.h)
+is the shared legacy six-field key value used by
+[`academic_calendar_event_parser.cpp`](../../src/features/calendar/academic_calendar_event_parser.cpp)
+and [`application_services_calendar_event_import_signature_query_port.h`](../../src/next/platform/application_services_calendar_event_import_signature_query_port.h).
+It preserves field order, delimiters, exact UTF-16 code units, and the all-day
+`1/0` value; it excludes time fields, database ID, and repeat-series ID. The
+Qt adapters continue to own simplified title, normalized type/time status, and
+ISO date conversion. App-less tests cover key formatting, each field, UTF-16,
+placeholder-like `%2` title text, and type members excluding metadata;
+existing `CalendarImportTests` covers normalization and excluded metadata. A
+Qt 6.12 probe confirms legacy six-argument `QString::arg` does not rescan
+inserted `%2` title text.
+
+Executor and independent Tester each freshly configured Windows x64 MSVC/Ninja,
+validated 906 source owners, built three focused targets, and passed CTest 3/3,
+including required `calendar_import_parity_2026.xlsx` production parity. No
+full suite was run. Gate 1 and Gate 2 remain Partial; Workspace boundary and
+audited `src/next` dependency isolation remain Satisfied. Phase 2 remains In
+Progress with its exit gate Open. Sub Prep remains capped at the current and
+following calendar years at most.

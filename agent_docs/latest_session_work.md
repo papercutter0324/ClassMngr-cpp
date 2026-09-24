@@ -1896,3 +1896,41 @@ separate on a host with Xvfb and loopback access.
   In Progress and its exit gate remains Open. Sub Prep covers at most the
   current and following calendar years. Next, three investigators will compare
   remaining Domain, baseline-parity, and architecture gaps for the next slice.
+
+
+### Phase 2 Calendar Import signature identity - 2026-09-25
+
+- F50 is committed as
+  `92d001db11d8c8eb973de5f238444abe855ea5c5` (`Phase2 - Add Calendar Import
+  signature identity`). Its six paths are `cmake/next.cmake`,
+  `cmake/tests/next.cmake`,
+  `src/next/application/calendar_event_import_signature.h`,
+  `src/features/calendar/academic_calendar_event_parser.cpp`,
+  `src/next/platform/application_services_calendar_event_import_signature_query_port.h`,
+  and `tests/next_application_calendar_event_import_signature_tests.cpp`.
+- `Application::CalendarEventImportSignature` centralizes the legacy duplicate
+  key used at workbook parsing and database lookup. The ordered fields are
+  simplified title, normalized event type, ISO start and end dates, all-day
+  `1`/`0`, and normalized time status, joined by the same delimiters. Qt
+  normalization/date conversion remain at the adapters. The UTF-16 code units
+  are preserved; event times, database ID, and repeat-series ID are excluded.
+- The app-less test covers field order and formatting, changes to each key
+  field, exact UTF-16 including placeholder-like title text, and absence of
+  metadata fields. Existing `CalendarImportTests` retains coverage for
+  normalization and ignored times/ID/series metadata. A Qt 6.12 probe confirmed
+  the old six-argument `QString::arg` does not rescan inserted `%2` title text.
+- Executor and independent Tester each configured fresh Windows x64 builds
+  under MSVC 19.51.36257, Ninja 1.13.2, CMake 4.4.2, and Qt 6.12.0. Each
+  configure validated 906 handwritten source owners; the signature contract,
+  `ClassMngrCalendarImportTests`, and the required
+  `ClassMngrCalendarEventImportParityTests` targets built, and focused CTest
+  passed 3/3. The fixture `calendar_import_parity_2026.xlsx` verified the
+  production parser/query path. `git diff --check` passed. The full suite was
+  not run. Protected `cmake/sources.cmake` retained SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF` and was
+  not part of the commit.
+- Gate 1 and Gate 2 advance but remain Partial; workspace create and audited
+  v2 dependency isolation remain Satisfied. Phase 2 is In Progress and the
+  formal exit gate remains Open. Sub Prep stays capped at the current and
+  following calendar years at most. Next, three investigators will compare
+  remaining Domain, baseline-parity, and architecture gaps.

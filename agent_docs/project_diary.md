@@ -821,3 +821,14 @@ Qt-free use case can compose existing query, planner, and batch-save contracts;
 an observer at the adapter boundary preserves existing profiler timing. Verify
 the contract app-less and run a required checked-in fixture through the actual
 production service path.
+
+
+## Phase 2 Calendar Import signature identity - 2026-09-25
+
+Use one Qt-free Application value for the duplicate key shared by workbook
+candidate deduplication and the database signature query. Keep Qt title/type/
+status normalization and ISO date formatting at both adapter edges, then pass
+the normalized UTF-16 fields into the common six-field formatter. Preserve the
+legacy order, separators, exact code units, all-day bit, and exclusion of
+times/row metadata; check placeholder-like title text against Qt's existing
+multi-argument formatter semantics.
