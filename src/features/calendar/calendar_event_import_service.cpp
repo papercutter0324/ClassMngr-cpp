@@ -5,10 +5,9 @@
 #include "calendar_workbook_reader.h"
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
-#include "next/application/calendar_event_import_plan.h"
 #include "next/application/calendar_event_import_campus_code_query_port.h"
+#include "next/application/calendar_event_import_use_case.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
-#include "next/application/calendar_event_import_save_port.h"
 #include "next/platform/calendar_event_import_campus_code_query_adapter.h"
 #include "next/platform/application_services_calendar_event_import_save_port.h"
 #include "next/platform/application_services_calendar_event_import_signature_query_port.h"
@@ -37,6 +36,30 @@ struct CalendarImportOperationReleaseGuard
     ~CalendarImportOperationReleaseGuard()
     {
         StartupProfiler::recordCalendarImportOperationReleased();
+    }
+};
+
+class CalendarImportProfilerObserver final
+    : public ClassMngr::Next::Application::
+        CalendarEventImportUseCaseObserver
+{
+public:
+    void existingSignaturesLoaded(const std::size_t count) override
+    {
+        StartupProfiler::recordCalendarImportExistingEventsLoaded(
+            static_cast<int>(count)
+            );
+    }
+
+    void savePrepared(
+        const std::size_t eventCount,
+        const int skippedCount
+        ) override
+    {
+        StartupProfiler::recordCalendarImportSavePrepared(
+            static_cast<int>(eventCount),
+            skippedCount
+            );
     }
 };
 
@@ -278,82 +301,50 @@ void CalendarEventImportService::handleFinished(
         return;
     }
 
-    const ClassMngr::Next::Platform::
-        ApplicationServicesCalendarEventImportSignatureQueryPort
-            signatureQueryAdapter(*m_services);
-    const ClassMngr::Next::Application::
-        CalendarEventImportSignatureQueryPort& signatureQueryPort =
-            signatureQueryAdapter;
-    auto existingSignatures = signatureQueryPort.loadSignaturesInRange({
+    ClassMngr::Next::Application::CalendarEventImportUseCaseRequest
+        useCaseRequest;
+    useCaseRequest.signatureRange = {
         .startDate = ClassMngr::Next::Application::CalendarEventDate(
             firstDate.toString(Qt::ISODate).toStdString()
             ),
         .endDate = ClassMngr::Next::Application::CalendarEventDate(
             lastDate.toString(Qt::ISODate).toStdString()
             )
-    });
-    if (!existingSignatures)
-    {
-        const std::string& errorText =
-            existingSignatures.error().message;
-        const QString message = QString::fromUtf8(
-            errorText.data(),
-            static_cast<qsizetype>(errorText.size())
-            );
-        StartupProfiler::recordCalendarImportFailed(message);
-        emit importFailed(message);
-        return;
-    }
-
-    StartupProfiler::recordCalendarImportExistingEventsLoaded(
-        static_cast<int>(existingSignatures.value().size())
-        );
-
-    ClassMngr::Next::Application::CalendarEventImportPlanRequest planRequest;
-    planRequest.initiallySkippedCount = parsed.skippedCount;
-    planRequest.existingSignatures =
-        std::move(existingSignatures.value());
-
-    planRequest.candidateSignatures.reserve(
+    };
+    useCaseRequest.initiallySkippedCount = parsed.skippedCount;
+    useCaseRequest.candidates.reserve(
         static_cast<std::size_t>(parsed.events.size())
         );
     for (const CalendarEvent& event : parsed.events)
     {
-        planRequest.candidateSignatures.push_back(
-            calendarEventSignatureKey(event)
-            );
+        useCaseRequest.candidates.push_back({
+            .signature = calendarEventSignatureKey(event),
+            .saveRequest = calendarEventImportSaveRequest(event)
+        });
     }
 
-    const ClassMngr::Next::Application::CalendarEventImportPlan importPlan =
-        ClassMngr::Next::Application::planCalendarEventImport(planRequest);
-
-    ClassMngr::Next::Application::CalendarEventImportSaveRequest saveRequest;
-    saveRequest.events.reserve(
-        importPlan.acceptedCandidateIndices.size()
-        );
-    for (const std::size_t candidateIndex :
-         importPlan.acceptedCandidateIndices)
-    {
-        saveRequest.events.push_back(
-            calendarEventImportSaveRequest(
-                parsed.events.at(static_cast<qsizetype>(candidateIndex))
-                )
-            );
-    }
-
-    StartupProfiler::recordCalendarImportSavePrepared(
-        static_cast<int>(saveRequest.events.size()),
-        importPlan.skippedCount
-        );
+    const ClassMngr::Next::Platform::
+        ApplicationServicesCalendarEventImportSignatureQueryPort
+            signatureQueryAdapter(*m_services);
+    const ClassMngr::Next::Application::
+        CalendarEventImportSignatureQueryPort& signatureQueryPort =
+            signatureQueryAdapter;
 
     ClassMngr::Next::Platform::
         ApplicationServicesCalendarEventImportSavePort importSavePort(
             *m_services
             );
-    const auto saved = importSavePort.saveImportedEvents(saveRequest);
-    if (!saved)
+    CalendarImportProfilerObserver profilerObserver;
+    const auto imported =
+        ClassMngr::Next::Application::CalendarEventImportUseCase::execute(
+            useCaseRequest,
+            signatureQueryPort,
+            importSavePort,
+            &profilerObserver
+            );
+    if (!imported)
     {
-        const std::string& errorText = saved.error().message;
+        const std::string& errorText = imported.error().message;
         const QString message = QString::fromUtf8(
             errorText.data(),
             static_cast<qsizetype>(errorText.size())
@@ -363,14 +354,13 @@ void CalendarEventImportService::handleFinished(
         return;
     }
 
-    const int savedCount = static_cast<int>(saved.value().size());
     StartupProfiler::recordCalendarImportApplied(
-        savedCount,
-        importPlan.skippedCount
+        imported.value().importedCount,
+        imported.value().skippedCount
         );
 
     emit importFinished(
-        savedCount,
-        importPlan.skippedCount
+        imported.value().importedCount,
+        imported.value().skippedCount
         );
 }

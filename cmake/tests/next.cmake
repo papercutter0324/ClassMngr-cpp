@@ -226,6 +226,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationCalendarEventImportUseCase
+    SOURCES
+        tests/next_application_calendar_event_import_use_case_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationScheduleImportStateValidation
     SOURCES
         tests/next_application_schedule_import_state_validation_tests.cpp
