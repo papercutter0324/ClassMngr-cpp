@@ -787,3 +787,15 @@ code-unit ranges and leave trimming, normalization, empty-value policy, and
 localized errors at their existing call boundaries. Test both the shared
 value and each production caller so adapters do not silently change identity
 matching.
+
+## Phase 2 weekly course meeting-day rule - 2026-09-24
+
+Keep allowed weekday patterns in `Domain::Course` as typed `Domain::Weekday`
+values, while Schedule Import retains workbook parsing, course-name
+normalization, and localized diagnostics at the feature edge. Preserve the
+legacy separation between Course validity and pattern policy: unsupported
+`M3 Zeus` has no pattern error, but Course validation still rejects the pair.
+Use one Course rule for both parse partitioning and apply validation. A
+fixture-derived prohibited pattern plus seeded persisted-state snapshots
+proves validation runs before writes; the existing Skip case with prohibited
+E5/Zeus Tuesday behavior also needs to remain covered.

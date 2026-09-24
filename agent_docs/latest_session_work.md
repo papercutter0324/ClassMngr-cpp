@@ -1778,12 +1778,46 @@ separate on a host with Xvfb and loopback access.
   isolation remain Satisfied. Phase 2 remains In Progress with the exit gate
   open. Preserve the Sub Prep cap of the current and following calendar years
   at most.
-- Three post-F46 investigators compared Domain, parity, and architecture
-  candidates. F47 is selected to move weekly meeting-day policy into the
-  existing Domain `Course` value and route Schedule Import parse/apply checks
-  through it. Preserve grade trimming/case normalization and the existing
-  behavior for unsupported courses with no pattern error; a separate exact
-  Course validity check rejects invalid grade/level before writes. The
-  acceptance must use the required workbook path for valid persistence and a
-  fixture-derived prohibited pattern with seeded-state preservation. Do not
-  touch `cmake/sources.cmake` or expand Sub Prep beyond its year cap.
+- F47 completed the selected Domain Course weekly meeting-day rule; its
+  implementation, independent verification, gate audit, and F48 handoff follow.
+
+
+### Phase 2 Course weekly meeting-day rule - 2026-09-24
+
+- F47 is committed as `7cba8abf952b5b32f90391844beec68eac2c3f69` (`Phase2 -
+  Add Course meeting-day rule`). The commit contains only
+  `src/next/domain/course.h`, `src/domain/rules/schedule_import_rules.cpp`,
+  `tests/next_domain_contract_tests.cpp`, and `tests/schedule_import_tests.cpp`.
+- `Domain::Course` owns typed weekly weekday patterns using
+  `Domain::Weekday`. Schedule Import uses that policy for production parsing,
+  partitioning, and apply validation; raw weekday text, course-name
+  normalization, and localized messages remain at the feature edge. Grade
+  trim+uppercase, trimmed case-insensitive Athena/Song's names, order-insensitive
+  matching, duplicate/weekend rejection, and the `M3 Zeus` no-pattern-error
+  behavior remain. The separate Course catalog still rejects `M3 Zeus`.
+- App-less Domain tests cover paired, Athena/Song's, and single-day categories,
+  allowed and rejected patterns, order, duplicates, weekends, and invalid
+  enum values. The required `schedule_review.xlsx` production path persisted
+  accepted rows. The fixture-derived one-day E4/Theseus pattern was rejected
+  before writes; seeded teacher, class, class-info, class-time, and app-setting
+  snapshots stayed unchanged. Existing invalid-course, overlap no-write, and
+  Skip+prohibited-pattern (`E5`/`Zeus`, Tuesday-only) cases passed.
+- Executor and independent Tester each configured fresh Windows x64 builds
+  with MSVC 19.51.36257, Ninja 1.13.2, CMake 4.4.2, and Qt 6.12.0. Both built
+  `ClassMngrNextDomainContractTests` and `ClassMngrScheduleImportTests`; focused
+  CTest passed 2/2 in each build. Direct fixture and Domain cases passed. The
+  full suite was not run. `git diff --check` passed. User-owned
+  `cmake/sources.cmake` retained SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF` and was
+  not included in the commit.
+- After F47, Gate 1 and Gate 2 advance but remain Partial because broader Domain
+  records and baseline parity are incomplete. The workspace boundary and
+  audited v2 dependency isolation remain Satisfied. Phase 2 and its exit gate
+  remain open. Sub Prep is capped at the current and following calendar years
+  at most.
+- F48 is selected to add a typed `Domain::ScheduleEntry` at the real Schedule
+  Import persistence boundary after class and teacher IDs are resolved. Reuse
+  `schedule_review.xlsx` for persisted acceptance and
+  `schedule_overlap_conflict.xlsx` for pre-write rejection. Keep the Domain
+  value distinct from the existing UI schedule-row projection; preserve
+  `cmake/sources.cmake` and the Sub Prep year cap.

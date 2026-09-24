@@ -83,14 +83,23 @@ plus Teacher Import Dialog (1/1); CMake ownership validated 901 sources.
 Fixture-backed Teacher and Schedule paths passed. Optional external-workbook
 checks skipped as expected.
 
+F47 moves weekly meeting-day policy into typed `Domain::Course` behavior and
+routes Schedule Import partitioning and apply validation through that policy.
+It is committed as `7cba8abf952b5b32f90391844beec68eac2c3f69`. Independent fresh
+Windows x64 MSVC/Ninja builds with Qt 6.12.0 passed both focused CTest targets
+(2/2). The required schedule fixture persisted accepted rows; a fixture-derived
+prohibited pattern was rejected before writes with five seeded snapshots
+unchanged. The existing Skip regression covers a prohibited E5/Zeus Tuesday
+candidate and preserves its saved schedule.
+
 The formal gate remains open. Gates 1 and 2 advance but remain Partial because
 broader Domain records and baseline parity are incomplete; the workspace
-criterion and audited v2 dependency isolation remain Satisfied. F47 is selected:
-move Schedule Import's weekly meeting-day rule into the existing Domain
-`Course` value and use it in parse/apply validation, preserving current name
-normalization and rejected-state behavior. Keep Sub Prep to the current and
-following calendar years at most. Preserve the user-owned
-`cmake/sources.cmake` change; F44 through F46 did not modify it.
+criterion and audited v2 dependency isolation remain Satisfied. F48 is selected:
+add a typed Domain schedule-entry value at the real Schedule Import persistence
+boundary, after class and teacher IDs are resolved, and reuse the accepted and
+conflict fixtures. Keep the value independent from the existing UI row model.
+Sub Prep remains capped at the current and following calendar years at most.
+Preserve the user-owned `cmake/sources.cmake` change; F47 did not modify it.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 
