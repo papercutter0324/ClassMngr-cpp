@@ -47,6 +47,7 @@ private slots:
     void ranksEveryMatchCategoryAndKeepsStableTies();
     void reportsNoMatchAndInitiallyAbsentInventory();
     void preservesNormalAndIntensiveFallbackSemantics();
+    void preservesEmptyTeacherKeyMatchingSemantics();
 };
 
 void ScheduleImportMatchingProjectionTests::
@@ -183,6 +184,35 @@ preservesNormalAndIntensiveFallbackSemantics()
     QCOMPARE(
         intensive.classes[0].explanation,
         ScheduleImportMatchingExplanation::PossibleWithOtherHours
+        );
+}
+
+void ScheduleImportMatchingProjectionTests::
+preservesEmptyTeacherKeyMatchingSemantics()
+{
+    ScheduleImportMatchingInput input;
+    ScheduleImportMatchingCandidate imported = candidate();
+    imported.teacherName = u"English";
+    imported.teacherKey =
+        ClassMngr::Next::Domain::KoreanTeacherKey::fromName(u"English").value();
+    input.candidates = {imported};
+    input.teachers = {{1, u"English"}};
+    input.classes = {
+        matchingClass(14, 1, u"416", {{"Tuesday"}})
+    };
+
+    const ScheduleImportMatchingProjection projection =
+        projectScheduleImportMatching(input);
+
+    QVERIFY(projection.teachers[0].teacherKey.empty());
+    QVERIFY(
+        projection.teachers[0].matchingTeacherIds
+        == (std::vector<std::int32_t>{1})
+        );
+    QCOMPARE(projection.teachers[0].affectedClassCount, std::size_t{1});
+    QVERIFY(
+        projection.classes[0].matchingClassIds
+        == (std::vector<std::int32_t>{14})
         );
 }
 

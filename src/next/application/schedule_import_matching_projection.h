@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/korean_teacher_key.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -160,28 +162,6 @@ struct ScheduleImportMatchingProjection final
 
 namespace ScheduleImportMatchingProjectionDetail
 {
-
-[[nodiscard]] inline std::u16string hangulOnly(
-    const std::u16string_view value
-    )
-{
-    std::u16string result;
-    result.reserve(value.size());
-    for (const char16_t character : value)
-    {
-        if (
-            (character >= 0x1100 && character <= 0x11ff)
-            || (character >= 0x3130 && character <= 0x318f)
-            || (character >= 0xa960 && character <= 0xa97f)
-            || (character >= 0xac00 && character <= 0xd7af)
-            || (character >= 0xd7b0 && character <= 0xd7ff)
-            )
-        {
-            result.push_back(character);
-        }
-    }
-    return result;
-}
 
 [[nodiscard]] inline int dayGroup(
     const std::vector<ScheduleImportMatchingTime>& times
@@ -407,7 +387,10 @@ projectScheduleImportMatching(
         }
         for (const ScheduleImportMatchingTeacher& teacher : input.teachers)
         {
-            if (hangulOnly(teacher.koreanName) == candidate.teacherKey)
+            if (
+                Domain::KoreanTeacherKey::fromName(teacher.koreanName).value()
+                == candidate.teacherKey
+                )
             {
                 teacherProjection.matchingTeacherIds.push_back(teacher.id);
             }

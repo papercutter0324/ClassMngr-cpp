@@ -1,30 +1,38 @@
 #pragma once
 
+#include "next/domain/korean_teacher_key.h"
+
 #include <QChar>
 #include <QString>
+
+#include <cstddef>
+#include <string>
 
 namespace TeacherImportNameUtils
 {
 inline bool isHangul(QChar character)
 {
-    const ushort code = character.unicode();
-    return (code >= 0x1100 && code <= 0x11ff)
-        || (code >= 0x3130 && code <= 0x318f)
-        || (code >= 0xa960 && code <= 0xa97f)
-        || (code >= 0xac00 && code <= 0xd7af)
-        || (code >= 0xd7b0 && code <= 0xd7ff);
+    return ClassMngr::Next::Domain::KoreanTeacherKey::isHangulCodeUnit(
+        static_cast<char16_t>(character.unicode())
+        );
 }
 
 inline QString hangulOnly(const QString& value)
 {
-    QString result;
-    result.reserve(value.size());
+    std::u16string codeUnits;
+    codeUnits.reserve(static_cast<std::size_t>(value.size()));
     for (const QChar character : value)
     {
-        if (isHangul(character))
-        {
-            result.append(character);
-        }
+        codeUnits.push_back(static_cast<char16_t>(character.unicode()));
+    }
+
+    const auto key =
+        ClassMngr::Next::Domain::KoreanTeacherKey::fromName(codeUnits);
+    QString result;
+    result.reserve(static_cast<qsizetype>(key.value().size()));
+    for (const char16_t codeUnit : key.value())
+    {
+        result.append(QChar(static_cast<ushort>(codeUnit)));
     }
     return result;
 }

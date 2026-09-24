@@ -1,5 +1,6 @@
 #include "next/domain/course.h"
 #include "next/domain/domain_types.h"
+#include "next/domain/korean_teacher_key.h"
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_time.h"
 
@@ -27,6 +28,9 @@ private slots:
     void coursesExposeOrderedSupportedPairs();
     void coursesHaveValueAndAccessorSemantics();
     void coursesRejectInvalidNamesAndCrossGradePairs();
+    void koreanTeacherKeysKeepEveryAcceptedRangeAndBoundary();
+    void koreanTeacherKeysDiscardOtherCodeUnitsWithoutNormalization();
+    void koreanTeacherKeysExposeEmptyAndValueSemantics();
 };
 
 void NextDomainContractTests::typedIdentifiersRejectEmptyValues()
@@ -219,6 +223,78 @@ void NextDomainContractTests::coursesRejectInvalidNamesAndCrossGradePairs()
     QVERIFY(!Course::fromNames("e4", "Theseus").has_value());
     QVERIFY(!Course::fromNames("E4", "theseus").has_value());
     QVERIFY(Course::levelsForGrade("E7").empty());
+}
+
+void NextDomainContractTests::
+koreanTeacherKeysKeepEveryAcceptedRangeAndBoundary()
+{
+    const std::u16string accepted{
+        u'\u1100', u'\u1101', u'\u11ff',
+        u'\u3130', u'\u3131', u'\u318f',
+        u'\ua960', u'\ua961', u'\ua97f',
+        u'\uac00', u'\uac01', u'\ud7af',
+        u'\ud7b0', u'\ud7b1', u'\ud7ff'
+    };
+    const KoreanTeacherKey key = KoreanTeacherKey::fromName(accepted);
+    QVERIFY(key.value() == accepted);
+
+    for (const char16_t codeUnit : accepted)
+    {
+        QVERIFY(KoreanTeacherKey::isHangulCodeUnit(codeUnit));
+    }
+
+    const std::u16string rejected{
+        u'\u10ff', u'\u1200',
+        u'\u312f', u'\u3190',
+        u'\ua95f', u'\ua980',
+        u'\uabff', static_cast<char16_t>(0xd800), u'\ue000'
+    };
+    const KoreanTeacherKey empty = KoreanTeacherKey::fromName(rejected);
+    QVERIFY(empty.empty());
+    QVERIFY(empty.value().empty());
+    for (const char16_t codeUnit : rejected)
+    {
+        QVERIFY(!KoreanTeacherKey::isHangulCodeUnit(codeUnit));
+    }
+}
+
+void NextDomainContractTests::
+koreanTeacherKeysDiscardOtherCodeUnitsWithoutNormalization()
+{
+    const KoreanTeacherKey mixed = KoreanTeacherKey::fromName(
+        u"A\u1100-\u3131 \uac00\ud7ffZ"
+        );
+    QVERIFY(mixed.value() == u"\u1100\u3131\uac00\ud7ff");
+
+    const KoreanTeacherKey composed = KoreanTeacherKey::fromName(u"\ud55c");
+    const KoreanTeacherKey decomposed =
+        KoreanTeacherKey::fromName(u"\u1112\u1161\u11ab");
+    QVERIFY(composed.value() == u"\ud55c");
+    QVERIFY(decomposed.value() == u"\u1112\u1161\u11ab");
+    QVERIFY(composed != decomposed);
+
+    const KoreanTeacherKey compatibility =
+        KoreanTeacherKey::fromName(u"\u3131");
+    const KoreanTeacherKey leadingJamo =
+        KoreanTeacherKey::fromName(u"\u1100");
+    QVERIFY(compatibility.value() == u"\u3131");
+    QVERIFY(leadingJamo.value() == u"\u1100");
+    QVERIFY(compatibility != leadingJamo);
+}
+
+void NextDomainContractTests::koreanTeacherKeysExposeEmptyAndValueSemantics()
+{
+    const KoreanTeacherKey empty = KoreanTeacherKey::fromName(u"A 1");
+    QVERIFY(empty.empty());
+    QVERIFY(empty.value().empty());
+
+    const KoreanTeacherKey first = KoreanTeacherKey::fromName(u"A\uac00");
+    const KoreanTeacherKey sameValue = KoreanTeacherKey::fromName(u"\uac00");
+    const KoreanTeacherKey different = KoreanTeacherKey::fromName(u"\uac01");
+    QVERIFY(!first.empty());
+    QVERIFY(first.value() == u"\uac00");
+    QVERIFY(first == sameValue);
+    QVERIFY(first != different);
 }
 
 QTEST_APPLESS_MAIN(NextDomainContractTests)

@@ -3,6 +3,7 @@
 #include "data/repositories/teacher_import_repository.h"
 #include "features/teacher/import/sectioned_contact_list_template.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
+#include "features/teacher/import/teacher_import_name_utils.h"
 #include "features/teacher/import/teacher_import_template_registry.h"
 #include "next/application/import_review_session.h"
 
@@ -37,6 +38,8 @@ private slots:
     void matchesStoredKoreanTeacherAfterRemovingSuffix();
     void importsIntoSeparateTablesAndPreservesManualFields();
     void importsCheckedInWorkbookUsingValidatedReviewChoices();
+    void teacherNameKeyAdapterPreservesCodeUnitFiltering();
+    void sectionedParserRejectsNameThatFiltersToEmpty();
     void sortsGsTeamPositions();
     void validatesExternalSampleWhenProvided();
 };
@@ -356,6 +359,66 @@ void TeacherImportTests::parsesSectionedTemplate()
     QCOMPARE(preview->gsTeamMembers.at(1).position, QStringLiteral("Branch Manager"));
 }
 
+void TeacherImportTests::teacherNameKeyAdapterPreservesCodeUnitFiltering()
+{
+    QString value;
+    value.append(QChar(u'A'));
+    value.append(QChar(0x3131));
+    value.append(QChar(0x1100));
+    value.append(QChar(0xd800));
+    value.append(QChar(u' '));
+
+    QString expected;
+    expected.append(QChar(0x3131));
+    expected.append(QChar(0x1100));
+
+    QCOMPARE(TeacherImportNameUtils::hangulOnly(value), expected);
+    QVERIFY(TeacherImportNameUtils::hangulOnly(QStringLiteral("English 123"))
+                .isEmpty());
+    QVERIFY(TeacherImportNameUtils::isHangul(QChar(0x3131)));
+    QVERIFY(!TeacherImportNameUtils::isHangul(QChar(0x312f)));
+
+    QString composed;
+    composed.append(QChar(0xd55c));
+    QString decomposed;
+    decomposed.append(QChar(0x1112));
+    decomposed.append(QChar(0x1161));
+    decomposed.append(QChar(0x11ab));
+    QString compatibility;
+    compatibility.append(QChar(0x3131));
+    QCOMPARE(TeacherImportNameUtils::hangulOnly(composed), composed);
+    QCOMPARE(TeacherImportNameUtils::hangulOnly(decomposed), decomposed);
+    QVERIFY(
+        TeacherImportNameUtils::hangulOnly(composed)
+        != TeacherImportNameUtils::hangulOnly(decomposed)
+        );
+    QCOMPARE(TeacherImportNameUtils::hangulOnly(compatibility), compatibility);
+}
+
+void TeacherImportTests::sectionedParserRejectsNameThatFiltersToEmpty()
+{
+    CalendarImport::Workbook workbook = sectionedWorkbook();
+    auto& worksheet = workbook.worksheets.first();
+    const auto koreanName = std::find_if(
+        worksheet.cells.begin(),
+        worksheet.cells.end(),
+        [](const CalendarImport::Cell& cell)
+        {
+            return cell.row == 4 && cell.column == 3;
+        }
+        );
+    QVERIFY(koreanName != worksheet.cells.end());
+    koreanName->value = QStringLiteral("English only");
+
+    SectionedContactListTemplate importTemplate;
+    const auto preview = importTemplate.parse(workbook);
+    QVERIFY(!preview.has_value());
+    QCOMPARE(
+        preview.error(),
+        QStringLiteral("Korean teacher name in row 4 is empty.")
+        );
+}
+
 void TeacherImportTests::invalidVersionIsRecognizedButRejected()
 {
     CalendarImport::Workbook workbook = sectionedWorkbook();
@@ -661,6 +724,13 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         Teacher duplicateRollbackTeacher;
         duplicateRollbackTeacher.teacherKr = QStringLiteral("롤백교사");
         duplicatePlan.koreanTeachers.append(duplicateRollbackTeacher);
+        const QString duplicateKoreanKey = QString::fromUtf8("\xED\x95\x9C");
+        Teacher firstWithKoreanKey;
+        firstWithKoreanKey.teacherKr = QStringLiteral("First ") + duplicateKoreanKey;
+        Teacher secondWithKoreanKey;
+        secondWithKoreanKey.teacherKr = duplicateKoreanKey + QStringLiteral(" Second");
+        duplicatePlan.koreanTeachers.append(firstWithKoreanKey);
+        duplicatePlan.koreanTeachers.append(secondWithKoreanKey);
         duplicatePlan.nativeEnglishTeachers.append(
             {-1, QStringLiteral("Duplicate"), QStringLiteral("NET"),
              QString(), QString(), QString()});
@@ -672,6 +742,26 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='롤백교사'")));
         QVERIFY(counts.next());
         QCOMPARE(counts.value(0).toInt(), 0);
+        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
+        QVERIFY(counts.next());
+        QCOMPARE(counts.value(0).toInt(), 1);
+
+        TeacherImportPlan emptyKoreanPlan;
+        emptyKoreanPlan.templateId = QStringLiteral("empty-korean-name-test");
+        emptyKoreanPlan.sourceDate = QDate(2026, 8, 3);
+        Teacher emptyKoreanTeacher;
+        emptyKoreanTeacher.teacherKr = QStringLiteral("English only");
+        emptyKoreanPlan.koreanTeachers.append(emptyKoreanTeacher);
+        const auto emptyKoreanImport =
+            repository.importTeachers(emptyKoreanPlan);
+        QVERIFY(!emptyKoreanImport.has_value());
+        QCOMPARE(
+            emptyKoreanImport.error(),
+            QStringLiteral("Every imported Korean teacher must have a name.")
+            );
+        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
+        QVERIFY(counts.next());
+        QCOMPARE(counts.value(0).toInt(), 1);
 
         QVERIFY(seed.exec(R"(
             INSERT INTO native_english_teachers
