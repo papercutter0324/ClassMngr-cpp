@@ -14,6 +14,7 @@
 #include "features/schedule/ui/schedule_import_resolution_view.h"
 #include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/services/schedule_import_review_summary.h"
+#include "next/application/schedule_import_review_decisions.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -44,6 +45,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <cstddef>
 #include <utility>
 
 namespace
@@ -56,6 +58,94 @@ constexpr int MaximumPreviewVisibleRows = 6;
 constexpr int InitialPreviewWidth = 540;
 constexpr int PreviewHeadingSpacer = 16;
 constexpr int PreferredResolutionPaneWidth = 380;
+
+using ReviewTeacherAction =
+    ClassMngr::Next::Application::ScheduleImportReviewTeacherAction;
+using ReviewClassAction =
+    ClassMngr::Next::Application::ScheduleImportReviewClassAction;
+using ReviewDecisionIssue =
+    ClassMngr::Next::Application::ScheduleImportReviewDecisionIssue;
+using ReviewDecisionIssueCode =
+    ClassMngr::Next::Application::ScheduleImportReviewDecisionIssueCode;
+
+ReviewTeacherAction reviewTeacherAction(int action)
+{
+    if (action < 0)
+    {
+        return ReviewTeacherAction::Unselected;
+    }
+    switch (static_cast<ScheduleImportTeacherAction>(action))
+    {
+    case ScheduleImportTeacherAction::Reuse:
+        return ReviewTeacherAction::Reuse;
+    case ScheduleImportTeacherAction::UpdateRoom:
+        return ReviewTeacherAction::UpdateRoom;
+    case ScheduleImportTeacherAction::Create:
+        return ReviewTeacherAction::Create;
+    case ScheduleImportTeacherAction::Skip:
+        return ReviewTeacherAction::Skip;
+    }
+    return ReviewTeacherAction::Invalid;
+}
+
+ReviewClassAction reviewClassAction(int action)
+{
+    if (action < 0)
+    {
+        return ReviewClassAction::Unselected;
+    }
+    switch (static_cast<ScheduleImportClassAction>(action))
+    {
+    case ScheduleImportClassAction::UpdateExisting:
+        return ReviewClassAction::UpdateExisting;
+    case ScheduleImportClassAction::CreateNew:
+        return ReviewClassAction::CreateNew;
+    case ScheduleImportClassAction::Skip:
+        return ReviewClassAction::Skip;
+    }
+    return ReviewClassAction::Invalid;
+}
+
+QString reviewDecisionMessage(const ReviewDecisionIssue& issue)
+{
+    using Code = ReviewDecisionIssueCode;
+    switch (issue.code)
+    {
+    case Code::InvalidTeacherAction:
+    case Code::EmptyTeacherKey:
+    case Code::DuplicateTeacherResolution:
+        return QObject::tr("Choose a resolution for every Korean teacher.");
+    case Code::UnknownTeacherResolution:
+    case Code::MissingTeacherResolution:
+        return QObject::tr("Choose a resolution for every Korean teacher.");
+    case Code::MissingTeacherRoom:
+    case Code::ForeignTeacherRoom:
+        return QObject::tr(
+            "Choose one imported room for this Korean teacher resolution."
+            );
+    case Code::InvalidClassAction:
+    case Code::CandidateIndexOutOfRange:
+    case Code::DuplicateClassResolution:
+    case Code::MissingClassResolution:
+        return QObject::tr("Choose an action for every class.");
+    case Code::UpdateClassMissingTarget:
+        return QObject::tr("Choose an existing class to update.");
+    case Code::CreateNewClassHasTarget:
+        return QObject::tr(
+            "A newly created class cannot have an existing target."
+            );
+    case Code::DuplicateUpdatedClassTarget:
+    case Code::DuplicateSkippedClassTarget:
+        return QObject::tr(
+            "Multiple imported classes cannot use the same existing class."
+            );
+    case Code::ActiveClassAssignedToSkippedTeacher:
+        return QObject::tr(
+            "Classes assigned to a skipped Korean teacher must also be skipped."
+            );
+    }
+    return QObject::tr("Review the Schedule Import choices.");
+}
 }
 
 ScheduleImportReviewDialog::ScheduleImportReviewDialog(
@@ -666,6 +756,32 @@ void ScheduleImportReviewDialog::updateReviewState()
     QHash<QString, int> teacherActions;
     QHash<QString, int> teacherTargets;
     QHash<QString, QString> teacherRooms;
+    ClassMngr::Next::Application::ScheduleImportReviewDecisionRequest
+        decisions;
+    decisions.candidates.reserve(
+        static_cast<std::size_t>(m_preview.user.classes.size())
+        );
+    for (const ScheduleImportClassCandidate& candidate :
+         m_preview.user.classes)
+    {
+        ClassMngr::Next::Application::ScheduleImportReviewDecisionCandidate
+            decisionCandidate;
+        decisionCandidate.teacherKey = candidate.teacherKey.toStdString();
+        decisionCandidate.importedRooms.reserve(
+            static_cast<std::size_t>(candidate.rooms.size())
+            );
+        for (const QString& room : candidate.rooms)
+        {
+            const QString normalizedRoom = room.trimmed();
+            if (!normalizedRoom.isEmpty())
+            {
+                decisionCandidate.importedRooms.push_back(
+                    normalizedRoom.toStdString()
+                    );
+            }
+        }
+        decisions.candidates.push_back(std::move(decisionCandidate));
+    }
 
     for (const TeacherControl& control : m_teacherControls)
     {
@@ -681,43 +797,14 @@ void ScheduleImportReviewDialog::updateReviewState()
             control.action->currentData(TargetRole).toInt()
             );
         teacherRooms.insert(control.teacherKey, room);
+        decisions.teachers.push_back(
+            {
+                control.teacherKey.toStdString(),
+                reviewTeacherAction(action),
+                room.trimmed().toStdString()
+            }
+            );
 
-        if (action < 0)
-        {
-            valid = false;
-            if (message.isEmpty())
-            {
-                message =
-                    tr("Choose a resolution for every Korean teacher.");
-            }
-            continue;
-        }
-        if (
-            (
-                action == static_cast<int>(
-                    ScheduleImportTeacherAction::Create
-                    )
-                || action == static_cast<int>(
-                    ScheduleImportTeacherAction::UpdateRoom
-                    )
-                || (
-                    action == static_cast<int>(
-                        ScheduleImportTeacherAction::Reuse
-                        )
-                    && control.room->findData(QString()) >= 0
-                    )
-                )
-            && room.isEmpty()
-            )
-        {
-            valid = false;
-            if (message.isEmpty())
-            {
-                message =
-                    tr("Choose one imported room for this Korean teacher resolution.");
-            }
-            continue;
-        }
         if (
             action == static_cast<int>(
                 ScheduleImportTeacherAction::Skip
@@ -727,20 +814,6 @@ void ScheduleImportReviewDialog::updateReviewState()
             skippedTeachers.insert(
                 control.teacherKey
                 );
-        }
-        else if (
-            action == static_cast<int>(
-                ScheduleImportTeacherAction::Create
-                )
-            )
-        {
-        }
-        else if (
-            action == static_cast<int>(
-                ScheduleImportTeacherAction::UpdateRoom
-                )
-            )
-        {
         }
     }
 
@@ -786,7 +859,6 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
     }
     QSet<int> targets;
-    QMap<int, QList<int>> candidateIndexesByTarget;
     QHash<int, int> classActions;
     QHash<int, int> classTargets;
     QStringList scheduleConflicts;
@@ -818,15 +890,16 @@ void ScheduleImportReviewDialog::updateReviewState()
                 ).toInt();
         classActions.insert(control.candidateIndex, action);
         classTargets.insert(control.candidateIndex, target);
+        decisions.classes.push_back(
+            {
+                control.candidateIndex,
+                reviewClassAction(action),
+                target
+            }
+            );
 
         if (action < 0)
         {
-            valid = false;
-            if (message.isEmpty())
-            {
-                message =
-                    tr("Choose an action for every class.");
-            }
             if (control.details)
             {
                 control.details->setText(
@@ -842,12 +915,6 @@ void ScheduleImportReviewDialog::updateReviewState()
                 )
             )
         {
-            if (target <= 0)
-            {
-                valid = false;
-                message =
-                    tr("Choose an existing class to update.");
-            }
             if (control.details)
             {
                 control.details->setText(
@@ -980,32 +1047,32 @@ void ScheduleImportReviewDialog::updateReviewState()
         if (target > 0)
         {
             targets.insert(target);
-            candidateIndexesByTarget[target].append(
-                control.candidateIndex
-                );
         }
     }
 
-    for (
-        auto iterator = candidateIndexesByTarget.cbegin();
-        iterator != candidateIndexesByTarget.cend();
-        ++iterator
-        )
+    const auto decisionResult =
+        ClassMngr::Next::Application::validateScheduleImportReviewDecisions(
+            decisions
+            );
+    for (const ReviewDecisionIssue& issue : decisionResult.issues)
     {
-        if (iterator.value().size() < 2)
+        valid = false;
+        if (message.isEmpty())
+        {
+            message = reviewDecisionMessage(issue);
+        }
+
+        if (
+            issue.code != ReviewDecisionIssueCode::DuplicateUpdatedClassTarget
+            && issue.code
+                != ReviewDecisionIssueCode::DuplicateSkippedClassTarget
+            )
         {
             continue;
         }
 
-        valid = false;
-        if (message.isEmpty())
-        {
-            message =
-                tr("Multiple imported classes cannot use the same existing class.");
-        }
-
         QStringList importedClasses;
-        for (int candidateIndex : iterator.value())
+        for (int candidateIndex : issue.candidateIndexes)
         {
             if (
                 candidateIndex < 0
@@ -1025,10 +1092,10 @@ void ScheduleImportReviewDialog::updateReviewState()
                 ? classLabel(
                     classService,
                     teacherService,
-                    iterator.key(),
+                    issue.targetClassId,
                     m_request.kind
                     )
-                : tr("Class %1").arg(iterator.key());
+                : tr("Class %1").arg(issue.targetClassId);
         scheduleConflicts.append(
             tr("Multiple imported classes are assigned to %1: %2.")
                 .arg(

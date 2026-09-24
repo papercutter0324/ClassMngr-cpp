@@ -27,7 +27,7 @@ private slots:
     void partitionsRepeatedCourseIntoValidClasses();
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
-    void previewsCheckedInWorkbookAgainstSeededDatabase();
+    void previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase();
     void previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites();
     void reportsScheduleInventoryStates_data();
     void reportsScheduleInventoryStates();
@@ -1140,7 +1140,8 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
-void ScheduleImportTests::previewsCheckedInWorkbookAgainstSeededDatabase()
+void ScheduleImportTests::
+previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
 {
     QFile file(
         QStringLiteral(
@@ -1317,6 +1318,40 @@ void ScheduleImportTests::previewsCheckedInWorkbookAgainstSeededDatabase()
         query.addBindValue(QStringLiteral("5:55 PM"));
         QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
 
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO classes (id, name) VALUES (?, ?)"
+                )
+            );
+        query.addBindValue(77);
+        query.addBindValue(QStringLiteral("Unrelated retained class"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level, "
+                "class_color, font_color) VALUES (?, ?, ?, ?, ?, ?)"
+                )
+            );
+        query.addBindValue(77);
+        query.addBindValue(kimTeacherId);
+        query.addBindValue(QStringLiteral("M2"));
+        query.addBindValue(QStringLiteral("Atlas"));
+        query.addBindValue(QStringLiteral("#1A2B3C"));
+        query.addBindValue(QStringLiteral("#FFFFFF"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) VALUES (?, ?, ?, ?)"
+                )
+            );
+        query.addBindValue(77);
+        query.addBindValue(QStringLiteral("Friday"));
+        query.addBindValue(QStringLiteral("7:00 PM"));
+        query.addBindValue(QStringLiteral("7:55 PM"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
         ScheduleImportRepository repository(database);
         const auto preview = repository.preview(user, ScheduleImportKind::Normal);
         const QString previewError =
@@ -1334,10 +1369,194 @@ void ScheduleImportTests::previewsCheckedInWorkbookAgainstSeededDatabase()
             match.matchConfidence,
             ScheduleImportClassMatchConfidence::Confident
             );
-        QCOMPARE(preview->inventory.classCount, 2);
+        QCOMPARE(preview->inventory.classCount, 3);
         QVERIFY(preview->inventory.hasRegularHours);
         QVERIFY(!preview->inventory.hasIntensiveHours);
-        QCOMPARE(preview->initiallyAbsentClassIds, QList<int>{42});
+        QCOMPARE(preview->initiallyAbsentClassIds, (QList<int>{42, 77}));
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = user.name;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = user.classes;
+        const QString parkTeacherKey = user.classes[0].teacherKey;
+        const QString choiTeacherKey = user.classes[1].teacherKey;
+        const QString kimTeacherKey = user.classes[2].teacherKey;
+        plan.teachers = {
+            {
+                parkTeacherKey,
+                ScheduleImportTeacherAction::Create,
+                -1,
+                QStringLiteral("415")
+            },
+            {
+                choiTeacherKey,
+                ScheduleImportTeacherAction::Reuse,
+                choiTeacherId,
+                QStringLiteral("416")
+            },
+            {
+                kimTeacherKey,
+                ScheduleImportTeacherAction::Reuse,
+                kimTeacherId,
+                QStringLiteral("413")
+            }
+        };
+        plan.classes = {
+            {
+                0,
+                ScheduleImportClassAction::CreateNew,
+                -1,
+                QStringLiteral("#778899"),
+                QStringLiteral("#000000")
+            },
+            {
+                1,
+                ScheduleImportClassAction::UpdateExisting,
+                43,
+                QStringLiteral("#223344"),
+                QStringLiteral("#FFFFFF")
+            },
+            {
+                2,
+                ScheduleImportClassAction::CreateNew,
+                -1,
+                QStringLiteral("#556677"),
+                QStringLiteral("#000000")
+            }
+        };
+
+        const auto applied = repository.apply(plan);
+        const QString applyError =
+            applied.has_value() ? QString() : applied.error();
+        QVERIFY2(applied.has_value(), qPrintable(applyError));
+        QCOMPARE(applied->teachersCreated, 1);
+        QCOMPARE(applied->teachersUpdated, 0);
+        QCOMPARE(applied->classesCreated, 2);
+        QCOMPARE(applied->classesUpdated, 1);
+        QCOMPARE(applied->classesSkipped, 0);
+        QCOMPARE(applied->schedulesCleared, 2);
+        QCOMPARE(applied->ignoredCells, user.diagnostics.size());
+
+        QStringList persistedTeachers;
+        int parkTeacherId = -1;
+        const QString parkName =
+            QString::fromUtf8("\xEB\xB0\x95\xEC\x84\xA0\xEC\x83\x9D");
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, teacher_kr, room_number FROM teachers ORDER BY id"
+                )
+            );
+        while (query.next())
+        {
+            const QString teacherName = query.value(1).toString();
+            if (teacherName == parkName)
+            {
+                parkTeacherId = query.value(0).toInt();
+            }
+            persistedTeachers.append(
+                teacherName
+                + QLatin1Char('|')
+                + query.value(2).toString()
+                );
+        }
+        QVERIFY(parkTeacherId > 0);
+        QCOMPARE(
+            persistedTeachers,
+            QStringList({
+                QString::fromUtf8("\xEC\xB5\x9C\xEC\x84\xA0\xEC\x83\x9D")
+                    + QStringLiteral("| 416 "),
+                QString::fromUtf8("\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D")
+                    + QStringLiteral("|413"),
+                QString::fromUtf8("\xEB\xB0\x95\xEC\x84\xA0\xEC\x83\x9D")
+                    + QStringLiteral("|415")
+            })
+            );
+
+        QStringList persistedClasses;
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT c.name, ci.teacher_id, ci.class_grade, ci.class_level, "
+                "ci.class_color, ci.font_color "
+                "FROM classes c JOIN class_info ci ON ci.class_id=c.id "
+                "ORDER BY c.name"
+                )
+            );
+        while (query.next())
+        {
+            persistedClasses.append(
+                query.value(0).toString()
+                + QLatin1Char('|')
+                + QString::number(query.value(1).toInt())
+                + QLatin1Char('|')
+                + query.value(2).toString()
+                + QLatin1Char('|')
+                + query.value(3).toString()
+                + QLatin1Char('|')
+                + query.value(4).toString()
+                + QLatin1Char('|')
+                + query.value(5).toString()
+                );
+        }
+        QCOMPARE(
+            persistedClasses,
+            QStringList({
+                QStringLiteral("A weaker Hercules candidate|%1|E4|Hercules|#FFFFFF|#000000")
+                    .arg(kimTeacherId),
+                QStringLiteral("B exact Hercules candidate|%1|E4|Hercules|#223344|#FFFFFF")
+                    .arg(choiTeacherId),
+                QStringLiteral("E4 Theseus|%1|E4|Theseus|#556677|#000000")
+                    .arg(kimTeacherId),
+                QStringLiteral("M3 Song's|%1|M3|Song's|#778899|#000000")
+                    .arg(parkTeacherId),
+                QStringLiteral("Unrelated retained class|%1|M2|Atlas|#1A2B3C|#FFFFFF")
+                    .arg(kimTeacherId)
+            })
+            );
+
+        QStringList persistedTimes;
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT c.name, ct.day, ct.start_time, ct.end_time "
+                "FROM class_times ct JOIN classes c ON c.id=ct.class_id "
+                "ORDER BY c.name, ct.day"
+                )
+            );
+        while (query.next())
+        {
+            persistedTimes.append(
+                query.value(0).toString()
+                + QLatin1Char('|')
+                + query.value(1).toString()
+                + QLatin1Char('|')
+                + query.value(2).toString()
+                + QLatin1Char('|')
+                + query.value(3).toString()
+                );
+        }
+        QCOMPARE(
+            persistedTimes,
+            QStringList({
+                QStringLiteral("B exact Hercules candidate|Thursday|5:00 PM|5:55 PM"),
+                QStringLiteral("B exact Hercules candidate|Tuesday|5:00 PM|5:55 PM"),
+                QStringLiteral("E4 Theseus|Monday|6:00 PM|6:55 PM"),
+                QStringLiteral("E4 Theseus|Wednesday|6:00 PM|6:55 PM"),
+                QStringLiteral("M3 Song's|Friday|4:00 PM|4:55 PM"),
+                QStringLiteral("M3 Song's|Monday|4:00 PM|4:55 PM")
+            })
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT COUNT(*) FROM class_times "
+                "WHERE class_id IN (42, 77)"
+                )
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
 
         database.close();
     }

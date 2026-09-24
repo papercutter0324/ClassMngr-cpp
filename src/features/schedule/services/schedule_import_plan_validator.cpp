@@ -3,13 +3,32 @@
 #include "domain/rules/schedule_import_rules.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/schedule_import_review_decisions.h"
 
 #include <QObject>
 #include <QRegularExpression>
-#include <QSet>
+
+#include <cstddef>
+#include <set>
+#include <string>
 
 namespace
 {
+using ClassMngr::Next::Application::
+    ScheduleImportReviewClassAction;
+using ClassMngr::Next::Application::
+    ScheduleImportReviewClassResolution;
+using ClassMngr::Next::Application::
+    ScheduleImportReviewDecisionIssue;
+using ClassMngr::Next::Application::
+    ScheduleImportReviewDecisionIssueCode;
+using ClassMngr::Next::Application::
+    ScheduleImportReviewDecisionRequest;
+using ClassMngr::Next::Application::
+    ScheduleImportReviewTeacherAction;
+using ClassMngr::Next::Application::
+    ScheduleImportReviewTeacherResolution;
+
 bool validCourse(const QString& grade, const QString& level)
 {
     return ClassInfoConfig::Grades.contains(grade)
@@ -25,6 +44,121 @@ QString normalizedHexColor(const QString& value)
     return expression.match(color).hasMatch()
         ? color.toUpper()
         : QString();
+}
+
+ScheduleImportReviewTeacherAction decisionAction(
+    ScheduleImportTeacherAction action
+    )
+{
+    switch (action)
+    {
+    case ScheduleImportTeacherAction::Reuse:
+        return ScheduleImportReviewTeacherAction::Reuse;
+    case ScheduleImportTeacherAction::UpdateRoom:
+        return ScheduleImportReviewTeacherAction::UpdateRoom;
+    case ScheduleImportTeacherAction::Create:
+        return ScheduleImportReviewTeacherAction::Create;
+    case ScheduleImportTeacherAction::Skip:
+        return ScheduleImportReviewTeacherAction::Skip;
+    }
+    return ScheduleImportReviewTeacherAction::Invalid;
+}
+
+ScheduleImportReviewClassAction decisionAction(
+    ScheduleImportClassAction action
+    )
+{
+    switch (action)
+    {
+    case ScheduleImportClassAction::UpdateExisting:
+        return ScheduleImportReviewClassAction::UpdateExisting;
+    case ScheduleImportClassAction::CreateNew:
+        return ScheduleImportReviewClassAction::CreateNew;
+    case ScheduleImportClassAction::Skip:
+        return ScheduleImportReviewClassAction::Skip;
+    }
+    return ScheduleImportReviewClassAction::Invalid;
+}
+
+QString decisionFailure(
+    const ScheduleImportReviewDecisionIssue& issue,
+    const ScheduleImportReviewDecisionRequest& request
+    )
+{
+    using Code = ScheduleImportReviewDecisionIssueCode;
+    const auto genericIncompleteResolutionMessage = []()
+    {
+        return QObject::tr(
+            "Every imported teacher and class requires a resolution."
+            );
+    };
+    switch (issue.code)
+    {
+    case Code::InvalidTeacherAction:
+    case Code::EmptyTeacherKey:
+    case Code::DuplicateTeacherResolution:
+        return QObject::tr(
+            "The teacher import plan contains an invalid or duplicate resolution."
+            );
+    case Code::UnknownTeacherResolution:
+    case Code::MissingClassResolution:
+        if (issue.code == Code::MissingClassResolution)
+        {
+            return genericIncompleteResolutionMessage();
+        }
+        break;
+    case Code::MissingTeacherResolution:
+        break;
+    case Code::MissingTeacherRoom:
+    case Code::ForeignTeacherRoom:
+        return QObject::tr(
+            "Choose one of the imported rooms for every unresolved Korean teacher."
+            );
+    case Code::InvalidClassAction:
+    case Code::CandidateIndexOutOfRange:
+    case Code::DuplicateClassResolution:
+        return QObject::tr(
+            "The class import plan contains an invalid or duplicate resolution."
+            );
+    case Code::UpdateClassMissingTarget:
+    case Code::DuplicateUpdatedClassTarget:
+        return QObject::tr(
+            "Each updated class must have a unique existing target."
+            );
+    case Code::CreateNewClassHasTarget:
+        return QObject::tr(
+            "A newly created class cannot have an existing target."
+            );
+    case Code::DuplicateSkippedClassTarget:
+        return QObject::tr(
+            "Each imported class must resolve to a unique existing target."
+            );
+    case Code::ActiveClassAssignedToSkippedTeacher:
+        return QObject::tr(
+            "Classes assigned to a skipped Korean teacher must also be skipped."
+            );
+    }
+
+    std::set<std::string> candidateTeacherKeys;
+    for (const auto& candidate : request.candidates)
+    {
+        candidateTeacherKeys.insert(candidate.teacherKey);
+    }
+    std::set<std::string> resolvedTeacherKeys;
+    for (const auto& resolution : request.teachers)
+    {
+        if (!resolution.teacherKey.empty())
+        {
+            resolvedTeacherKeys.insert(resolution.teacherKey);
+        }
+    }
+    if (resolvedTeacherKeys.size() != candidateTeacherKeys.size())
+    {
+        return genericIncompleteResolutionMessage();
+    }
+    return QObject::tr(
+        "Every imported teacher requires a matching resolution."
+        );
 }
 }
 
@@ -54,103 +188,86 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
             );
     }
 
+    ScheduleImportReviewDecisionRequest decisions;
+    decisions.candidates.reserve(
+        static_cast<std::size_t>(plan.candidates.size())
+        );
+    for (const ScheduleImportClassCandidate& candidate : plan.candidates)
+    {
+        ClassMngr::Next::Application::ScheduleImportReviewDecisionCandidate
+            decisionCandidate;
+        decisionCandidate.teacherKey = candidate.teacherKey.toStdString();
+        decisionCandidate.importedRooms.reserve(
+            static_cast<std::size_t>(candidate.rooms.size())
+            );
+        for (const QString& room : candidate.rooms)
+        {
+            const QString normalizedRoom = room.trimmed();
+            if (!normalizedRoom.isEmpty())
+            {
+                decisionCandidate.importedRooms.push_back(
+                    normalizedRoom.toStdString()
+                    );
+            }
+        }
+        decisions.candidates.push_back(std::move(decisionCandidate));
+    }
+
+    decisions.teachers.reserve(
+        static_cast<std::size_t>(plan.teachers.size())
+        );
+    for (const ScheduleImportTeacherResolution& resolution : plan.teachers)
+    {
+        decisions.teachers.push_back(
+            ScheduleImportReviewTeacherResolution{
+                resolution.teacherKey.toStdString(),
+                decisionAction(resolution.action),
+                resolution.selectedRoom.trimmed().toStdString()
+            }
+            );
+    }
+
+    decisions.classes.reserve(
+        static_cast<std::size_t>(plan.classes.size())
+        );
+    for (const ScheduleImportClassResolution& resolution : plan.classes)
+    {
+        decisions.classes.push_back(
+            ScheduleImportReviewClassResolution{
+                resolution.candidateIndex,
+                decisionAction(resolution.action),
+                resolution.targetClassId
+            }
+            );
+    }
+
+    const auto decisionResult =
+        ClassMngr::Next::Application::validateScheduleImportReviewDecisions(
+            decisions
+            );
+    if (!decisionResult.accepted())
+    {
+        return std::unexpected(
+            decisionFailure(decisionResult.issues.front(), decisions)
+            );
+    }
+
     ValidatedScheduleImportPlan validated;
     for (const ScheduleImportTeacherResolution& resolution : plan.teachers)
     {
-        const bool validAction =
-            resolution.action == ScheduleImportTeacherAction::Reuse
-            || resolution.action == ScheduleImportTeacherAction::UpdateRoom
-            || resolution.action == ScheduleImportTeacherAction::Create
-            || resolution.action == ScheduleImportTeacherAction::Skip;
-        if (
-            !validAction
-            || resolution.teacherKey.isEmpty()
-            || validated.teacherResolutions.contains(resolution.teacherKey)
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "The teacher import plan contains an invalid or duplicate resolution."
-                    )
-                );
-        }
         validated.teacherResolutions.insert(
             resolution.teacherKey,
             resolution
             );
     }
-
-    QSet<int> claimedTargets;
     for (const ScheduleImportClassResolution& resolution : plan.classes)
     {
-        const bool validAction =
-            resolution.action == ScheduleImportClassAction::UpdateExisting
-            || resolution.action == ScheduleImportClassAction::CreateNew
-            || resolution.action == ScheduleImportClassAction::Skip;
-        if (
-            !validAction
-            || resolution.candidateIndex < 0
-            || resolution.candidateIndex >= plan.candidates.size()
-            || validated.classResolutions.contains(resolution.candidateIndex)
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "The class import plan contains an invalid or duplicate resolution."
-                    )
-                );
-        }
-        if (
-            resolution.action == ScheduleImportClassAction::UpdateExisting
-            && (
-                resolution.targetClassId <= 0
-                || claimedTargets.contains(resolution.targetClassId)
-                )
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "Each updated class must have a unique existing target."
-                    )
-                );
-        }
-        if (
-            resolution.targetClassId > 0
-            && (
-                resolution.action == ScheduleImportClassAction::UpdateExisting
-                || resolution.action == ScheduleImportClassAction::Skip
-                )
-            )
-        {
-            if (claimedTargets.contains(resolution.targetClassId))
-            {
-                return std::unexpected(
-                    QObject::tr(
-                        "Each imported class must resolve to a unique existing target."
-                        )
-                    );
-            }
-            claimedTargets.insert(resolution.targetClassId);
-        }
-        if (
-            resolution.action == ScheduleImportClassAction::CreateNew
-            && resolution.targetClassId > 0
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "A newly created class cannot have an existing target."
-                    )
-                );
-        }
         validated.classResolutions.insert(
             resolution.candidateIndex,
             resolution
             );
     }
 
-    QSet<QString> candidateTeacherKeys;
-    QHash<QString, QStringList> importedRooms;
     for (const ScheduleImportClassCandidate& candidate : plan.candidates)
     {
         if (
@@ -165,85 +282,10 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
                 QObject::tr("The import contains an invalid class.")
                 );
         }
-        candidateTeacherKeys.insert(candidate.teacherKey);
-        for (const QString& room : candidate.rooms)
-        {
-            const QString trimmedRoom = room.trimmed();
-            if (
-                !trimmedRoom.isEmpty()
-                && !importedRooms[candidate.teacherKey].contains(trimmedRoom)
-                )
-            {
-                importedRooms[candidate.teacherKey].append(trimmedRoom);
-            }
-        }
-    }
-
-    if (
-        validated.teacherResolutions.size() != candidateTeacherKeys.size()
-        || validated.classResolutions.size() != plan.candidates.size()
-        )
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Every imported teacher and class requires a resolution."
-                )
-            );
-    }
-
-    for (const QString& key : candidateTeacherKeys)
-    {
-        if (!validated.teacherResolutions.contains(key))
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "Every imported teacher requires a matching resolution."
-                    )
-                );
-        }
-
-        const ScheduleImportTeacherResolution resolution =
-            validated.teacherResolutions.value(key);
-        const QString room = resolution.selectedRoom.trimmed();
-        const bool roomMustBeSelected =
-            resolution.action == ScheduleImportTeacherAction::Create
-            || resolution.action == ScheduleImportTeacherAction::UpdateRoom
-            || (
-                resolution.action != ScheduleImportTeacherAction::Skip
-                && importedRooms.value(key).size() > 1
-                );
-        if (
-            roomMustBeSelected
-            && (room.isEmpty() || !importedRooms.value(key).contains(room))
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "Choose one of the imported rooms for every unresolved Korean teacher."
-                    )
-                );
-        }
     }
 
     for (int index = 0; index < plan.candidates.size(); ++index)
     {
-        const ScheduleImportTeacherResolution teacherResolution =
-            validated.teacherResolutions.value(
-                plan.candidates[index].teacherKey
-                );
-        if (
-            teacherResolution.action == ScheduleImportTeacherAction::Skip
-            && validated.classResolutions.value(index).action
-                != ScheduleImportClassAction::Skip
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "Classes assigned to a skipped Korean teacher must also be skipped."
-                    )
-                );
-        }
-
         const ScheduleImportClassResolution classResolution =
             validated.classResolutions.value(index);
         const QString meetingPatternError =

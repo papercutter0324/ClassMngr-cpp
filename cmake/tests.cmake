@@ -184,6 +184,14 @@ function(classmngr_finalize_test_targets)
             continue()
         endif()
 
+        get_target_property(test_is_standalone_cpp
+            "${test_name}"
+            CLASSMNGR_STANDALONE_CPP_TEST
+        )
+        if(test_is_standalone_cpp)
+            continue()
+        endif()
+
         if(WIN32)
             get_property(test_environment_modifications
                 TEST "${test_name}"

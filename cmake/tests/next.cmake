@@ -243,6 +243,37 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise the review decision contract without Qt or the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+    tests/next_application_schedule_import_review_decisions_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+    COMMAND ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+)
+
 classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES
