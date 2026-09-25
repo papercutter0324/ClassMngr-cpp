@@ -27,6 +27,7 @@ private slots:
     void scheduleTimesAcceptWeekdayAndMinuteBoundaries();
     void scheduleTimesRejectInvalidDaysAndIntervals();
     void scheduleTimesHaveValueAndOverlapSemantics();
+    void calendarEventNamesClassifyKnownValuesAndRejectUnknownTokens();
     void calendarEventTimingsValidateGregorianDateBoundaries();
     void calendarEventTimingsEnforceDateAndClockOrdering();
     void calendarEventTimingsEnforceTimeAndStatusPolicy();
@@ -143,6 +144,65 @@ void NextDomainContractTests::scheduleTimesHaveValueAndOverlapSemantics()
     QVERIFY(!first->overlaps(*adjacent));
     QVERIFY(first->overlaps(*overlapping));
     QVERIFY(!first->overlaps(*differentWeekday));
+}
+
+void NextDomainContractTests::
+calendarEventNamesClassifyKnownValuesAndRejectUnknownTokens()
+{
+    const std::array eventTypes = {
+        std::pair{std::string_view("Vacation"), CalendarEventType::Vacation},
+        std::pair{std::string_view("Holiday"), CalendarEventType::Holiday},
+        std::pair{std::string_view("Workshop"), CalendarEventType::Workshop},
+        std::pair{std::string_view("CM"), CalendarEventType::CM},
+        std::pair{std::string_view("Meeting"), CalendarEventType::Meeting},
+        std::pair{std::string_view("Other"), CalendarEventType::Other}
+    };
+    for (const auto& [name, expected] : eventTypes)
+    {
+        const auto actual = calendarEventTypeFromName(name);
+        QVERIFY(actual.has_value());
+        QVERIFY(*actual == expected);
+    }
+
+    for (const std::string_view unknown : {
+             "",
+             "vacation",
+             "Workshop ",
+             "CM2",
+             "Conference"
+         })
+    {
+        QVERIFY(!calendarEventTypeFromName(unknown).has_value());
+    }
+
+    const std::array timeStatuses = {
+        std::pair{std::string_view("Timed"), CalendarEventTimeStatus::Timed},
+        std::pair{
+            std::string_view("Unknown"),
+            CalendarEventTimeStatus::Unknown
+        },
+        std::pair{
+            std::string_view("Unconfirmed"),
+            CalendarEventTimeStatus::Unconfirmed
+        }
+    };
+    for (const auto& [name, expected] : timeStatuses)
+    {
+        const auto actual = calendarEventTimeStatusFromName(name);
+        QVERIFY(actual.has_value());
+        QVERIFY(*actual == expected);
+    }
+
+    for (const std::string_view unknown : {
+             "",
+             "timed",
+             "Timed ",
+             "Pending",
+             "Not applicable"
+         })
+    {
+        QVERIFY(!calendarEventTimeStatusFromName(unknown).has_value());
+    }
 }
 
 void NextDomainContractTests::

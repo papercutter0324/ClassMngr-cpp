@@ -217,6 +217,7 @@ private slots:
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
     void timingErrorsKeepFeatureMessagesAndValidationPrecedence();
+    void calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText();
     void timingAcceptsFullGregorianRangeAndCrossDayClocks();
     void saveRequestContractHasNoQtOrLegacySurface();
     void importSaveRequestBoundsOrderedCreateBatchAndNoOp();
@@ -1149,6 +1150,118 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         seriesPairPrecedence.validate(),
         "Calendar repeat-series edit times must be both absent or both present."
         );
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText()
+{
+    const auto acceptsTrimmedNamesAndPreservesInput = [](auto request)
+    {
+        request.eventType = " \tWorkshop \n";
+        request.timeStatus = " \tTimed \n";
+        if (!request.validate())
+        {
+            return false;
+        }
+
+        return request.eventType == " \tWorkshop \n"
+            && request.timeStatus == " \tTimed \n";
+    };
+
+    const auto acceptsRawLimitsAndRejectsOverflow = [](
+        auto request,
+        const std::size_t eventTypeLimit,
+        const std::size_t timeStatusLimit,
+        const std::string_view errorMessage
+        )
+    {
+        request.eventType = "Workshop";
+        request.eventType.append(
+            eventTypeLimit - request.eventType.size(),
+            ' '
+            );
+        request.timeStatus = "Timed";
+        request.timeStatus.append(
+            timeStatusLimit - request.timeStatus.size(),
+            ' '
+            );
+        if (request.eventType.size() != eventTypeLimit
+            || request.timeStatus.size() != timeStatusLimit
+            || !request.validate())
+        {
+            return false;
+        }
+
+        request.eventType.push_back(' ');
+        auto oversizedEventType = request.validate();
+        if (oversizedEventType
+            || oversizedEventType.error().message != errorMessage)
+        {
+            return false;
+        }
+
+        request.eventType.pop_back();
+        request.timeStatus.push_back(' ');
+        const auto oversizedTimeStatus = request.validate();
+        return !oversizedTimeStatus
+            && oversizedTimeStatus.error().message == errorMessage;
+    };
+
+    const auto rejectsUnknownNamesWithFeatureMessage = [](
+        auto request,
+        const std::string_view errorMessage
+        )
+    {
+        request.eventType = "Webinar";
+        const auto invalidEventType = request.validate();
+        if (invalidEventType
+            || invalidEventType.error().message != errorMessage)
+        {
+            return false;
+        }
+
+        request.eventType = "Workshop";
+        request.timeStatus = "Pending";
+        const auto invalidTimeStatus = request.validate();
+        return !invalidTimeStatus
+            && invalidTimeStatus.error().message == errorMessage;
+    };
+
+    QVERIFY(acceptsTrimmedNamesAndPreservesInput(validSaveRequest()));
+    QVERIFY(acceptsTrimmedNamesAndPreservesInput(validEditDraft()));
+    QVERIFY(acceptsTrimmedNamesAndPreservesInput(validSeriesEditRequest()));
+
+    QVERIFY(acceptsRawLimitsAndRejectsOverflow(
+        validSaveRequest(),
+        kCalendarEventSaveMaxEventTypeLength,
+        kCalendarEventSaveMaxTimeStatusLength,
+        "Calendar event text fields must be non-blank and bounded."
+        ));
+    QVERIFY(acceptsRawLimitsAndRejectsOverflow(
+        validEditDraft(),
+        kCalendarEventEditDraftMaxEventTypeLength,
+        kCalendarEventEditDraftMaxTimeStatusLength,
+        "Calendar event draft text fields must be non-blank and bounded."
+        ));
+    QVERIFY(acceptsRawLimitsAndRejectsOverflow(
+        validSeriesEditRequest(),
+        kCalendarEventSeriesEditMaxEventTypeLength,
+        kCalendarEventSeriesEditMaxTimeStatusLength,
+        "Calendar repeat-series edit text fields must be non-blank and bounded."
+        ));
+
+    QVERIFY(rejectsUnknownNamesWithFeatureMessage(
+        validSaveRequest(),
+        "Calendar event text fields must be non-blank and bounded."
+        ));
+    QVERIFY(rejectsUnknownNamesWithFeatureMessage(
+        validEditDraft(),
+        "Calendar event draft text fields must be non-blank and bounded."
+        ));
+    QVERIFY(rejectsUnknownNamesWithFeatureMessage(
+        validSeriesEditRequest(),
+        "Calendar repeat-series edit text fields must be non-blank and bounded."
+        ));
 }
 
 void NextApplicationCalendarEventTests::

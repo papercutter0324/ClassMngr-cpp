@@ -111,29 +111,6 @@ namespace CalendarEventEditDraftDetail
     return isRequiredText(value, kCalendarEventEditDraftMaxIdentifierLength);
 }
 
-[[nodiscard]] inline bool isEventType(
-    const std::string_view value
-    ) noexcept
-{
-    const std::string_view normalized = trimAscii(value);
-    return normalized == "Vacation"
-        || normalized == "Holiday"
-        || normalized == "Workshop"
-        || normalized == "CM"
-        || normalized == "Meeting"
-        || normalized == "Other";
-}
-
-[[nodiscard]] inline bool isTimeStatus(
-    const std::string_view value
-    ) noexcept
-{
-    const std::string_view normalized = trimAscii(value);
-    return normalized == "Timed"
-        || normalized == "Unknown"
-        || normalized == "Unconfirmed";
-}
-
 [[nodiscard]] inline Domain::Result<void> invalid(
     const char* message
     )
@@ -204,9 +181,13 @@ validateCalendarEventEditDraft(
             draft.title,
             kCalendarEventEditDraftMaxTitleLength
             )
-        || !isEventType(draft.eventType)
+        || !Domain::calendarEventTypeFromName(
+                trimAscii(draft.eventType)
+                ).has_value()
         || draft.eventType.size() > kCalendarEventEditDraftMaxEventTypeLength
-        || !isTimeStatus(draft.timeStatus)
+        || !Domain::calendarEventTimeStatusFromName(
+                trimAscii(draft.timeStatus)
+                ).has_value()
         || draft.timeStatus.size()
             > kCalendarEventEditDraftMaxTimeStatusLength)
     {
@@ -215,13 +196,10 @@ validateCalendarEventEditDraft(
             );
     }
 
-    const std::string_view timeStatus = trimAscii(draft.timeStatus);
     const Domain::CalendarEventTimeStatus domainTimeStatus =
-        timeStatus == "Timed"
-            ? Domain::CalendarEventTimeStatus::Timed
-            : timeStatus == "Unknown"
-                ? Domain::CalendarEventTimeStatus::Unknown
-                : Domain::CalendarEventTimeStatus::Unconfirmed;
+        Domain::calendarEventTimeStatusFromName(
+            trimAscii(draft.timeStatus)
+            ).value();
     const Domain::CalendarEventTiming timing(
         draft.startDate,
         draft.endDate,

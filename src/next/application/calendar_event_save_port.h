@@ -111,29 +111,6 @@ namespace CalendarEventSaveRequestDetail
         && value.size() <= kCalendarEventSaveMaxIdentifierLength;
 }
 
-[[nodiscard]] inline bool isEventType(
-    const std::string_view value
-    ) noexcept
-{
-    const std::string_view normalized = trimAscii(value);
-    return normalized == "Vacation"
-        || normalized == "Holiday"
-        || normalized == "Workshop"
-        || normalized == "CM"
-        || normalized == "Meeting"
-        || normalized == "Other";
-}
-
-[[nodiscard]] inline bool isTimeStatus(
-    const std::string_view value
-    ) noexcept
-{
-    const std::string_view normalized = trimAscii(value);
-    return normalized == "Timed"
-        || normalized == "Unknown"
-        || normalized == "Unconfirmed";
-}
-
 [[nodiscard]] inline Domain::Result<void> invalid(
     const char* message
     )
@@ -192,9 +169,13 @@ namespace CalendarEventSaveRequestDetail
             request.title,
             kCalendarEventSaveMaxTitleLength
             )
-        || !isEventType(request.eventType)
+        || !Domain::calendarEventTypeFromName(
+                trimAscii(request.eventType)
+                ).has_value()
         || request.eventType.size() > kCalendarEventSaveMaxEventTypeLength
-        || !isTimeStatus(request.timeStatus)
+        || !Domain::calendarEventTimeStatusFromName(
+                trimAscii(request.timeStatus)
+                ).has_value()
         || request.timeStatus.size() > kCalendarEventSaveMaxTimeStatusLength)
     {
         return invalid(
@@ -202,13 +183,10 @@ namespace CalendarEventSaveRequestDetail
             );
     }
 
-    const std::string_view timeStatus = trimAscii(request.timeStatus);
     const Domain::CalendarEventTimeStatus domainTimeStatus =
-        timeStatus == "Timed"
-            ? Domain::CalendarEventTimeStatus::Timed
-            : timeStatus == "Unknown"
-                ? Domain::CalendarEventTimeStatus::Unknown
-                : Domain::CalendarEventTimeStatus::Unconfirmed;
+        Domain::calendarEventTimeStatusFromName(
+            trimAscii(request.timeStatus)
+            ).value();
     const Domain::CalendarEventTiming timing(
         request.startDate,
         request.endDate,

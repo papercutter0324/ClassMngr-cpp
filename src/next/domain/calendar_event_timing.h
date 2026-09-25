@@ -9,12 +9,78 @@
 namespace ClassMngr::Next::Domain
 {
 
+enum class CalendarEventType
+{
+    Vacation,
+    Holiday,
+    Workshop,
+    CM,
+    Meeting,
+    Other
+};
+
 enum class CalendarEventTimeStatus
 {
     Timed,
     Unknown,
     Unconfirmed
 };
+
+// These classifiers recognize canonical persisted names. Callers that accept
+// surrounding whitespace should trim at their own boundary before parsing.
+[[nodiscard]] inline std::optional<CalendarEventType>
+calendarEventTypeFromName(
+    const std::string_view name
+    ) noexcept
+{
+    if (name == "Vacation")
+    {
+        return CalendarEventType::Vacation;
+    }
+    if (name == "Holiday")
+    {
+        return CalendarEventType::Holiday;
+    }
+    if (name == "Workshop")
+    {
+        return CalendarEventType::Workshop;
+    }
+    if (name == "CM")
+    {
+        return CalendarEventType::CM;
+    }
+    if (name == "Meeting")
+    {
+        return CalendarEventType::Meeting;
+    }
+    if (name == "Other")
+    {
+        return CalendarEventType::Other;
+    }
+
+    return std::nullopt;
+}
+
+[[nodiscard]] inline std::optional<CalendarEventTimeStatus>
+calendarEventTimeStatusFromName(
+    const std::string_view name
+    ) noexcept
+{
+    if (name == "Timed")
+    {
+        return CalendarEventTimeStatus::Timed;
+    }
+    if (name == "Unknown")
+    {
+        return CalendarEventTimeStatus::Unknown;
+    }
+    if (name == "Unconfirmed")
+    {
+        return CalendarEventTimeStatus::Unconfirmed;
+    }
+
+    return std::nullopt;
+}
 
 enum class CalendarEventTimingIssue
 {
