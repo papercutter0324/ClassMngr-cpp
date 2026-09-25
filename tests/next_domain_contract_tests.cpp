@@ -1,4 +1,5 @@
 #include "next/domain/course.h"
+#include "next/domain/calendar_event_timing.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/korean_teacher_key.h"
 #include "next/domain/operation_result.h"
@@ -26,6 +27,9 @@ private slots:
     void scheduleTimesAcceptWeekdayAndMinuteBoundaries();
     void scheduleTimesRejectInvalidDaysAndIntervals();
     void scheduleTimesHaveValueAndOverlapSemantics();
+    void calendarEventTimingsValidateGregorianDateBoundaries();
+    void calendarEventTimingsEnforceDateAndClockOrdering();
+    void calendarEventTimingsEnforceTimeAndStatusPolicy();
     void scheduleEntriesKeepTypedClassAndValidatedTime();
     void coursesExposeOrderedSupportedPairs();
     void coursesHaveValueAndAccessorSemantics();
@@ -139,6 +143,239 @@ void NextDomainContractTests::scheduleTimesHaveValueAndOverlapSemantics()
     QVERIFY(!first->overlaps(*adjacent));
     QVERIFY(first->overlaps(*overlapping));
     QVERIFY(!first->overlaps(*differentWeekday));
+}
+
+void NextDomainContractTests::
+calendarEventTimingsValidateGregorianDateBoundaries()
+{
+    QVERIFY(CalendarEventTiming::isCanonicalDate("0001-01-01"));
+    QVERIFY(CalendarEventTiming::isCanonicalDate("9999-12-31"));
+    QVERIFY(CalendarEventTiming::isCanonicalDate("2000-02-29"));
+    QVERIFY(CalendarEventTiming::isCanonicalDate("2024-02-29"));
+    QVERIFY(!CalendarEventTiming::isCanonicalDate("1900-02-29"));
+    QVERIFY(!CalendarEventTiming::isCanonicalDate("2023-02-29"));
+    QVERIFY(!CalendarEventTiming::isCanonicalDate("0000-01-01"));
+    QVERIFY(!CalendarEventTiming::isCanonicalDate("2026-2-01"));
+    QVERIFY(!CalendarEventTiming::isCanonicalDate("2026/02/01"));
+    QVERIFY(!CalendarEventTiming::isCanonicalDate("2026006010"));
+    QVERIFY(!CalendarEventTiming::isCanonicalDate("2026-06110"));
+
+    const CalendarEventTiming valid(
+        "2024-02-29",
+        "2024-02-29",
+        std::optional<std::string>("09:00"),
+        std::optional<std::string>("10:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(!valid.validate().has_value());
+
+    const CalendarEventTiming invalidDate(
+        "1900-02-29",
+        "1900-02-29",
+        std::optional<std::string>("09:00"),
+        std::optional<std::string>("10:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        invalidDate.validate()
+        == CalendarEventTimingIssue::InvalidDate
+        );
+}
+
+void NextDomainContractTests::
+calendarEventTimingsEnforceDateAndClockOrdering()
+{
+    const CalendarEventTiming reversedDates(
+        "2026-09-21",
+        "2026-09-20",
+        std::optional<std::string>("09:00"),
+        std::optional<std::string>("10:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        reversedDates.validate()
+        == CalendarEventTimingIssue::EndDateBeforeStartDate
+        );
+
+    const CalendarEventTiming sameTime(
+        "2026-09-20",
+        "2026-09-20",
+        std::optional<std::string>("09:00"),
+        std::optional<std::string>("09:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        sameTime.validate()
+        == CalendarEventTimingIssue::EndTimeMustFollowStartTime
+        );
+
+    const CalendarEventTiming reversedTimes(
+        "2026-09-20",
+        "2026-09-20",
+        std::optional<std::string>("10:00"),
+        std::optional<std::string>("09:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        reversedTimes.validate()
+        == CalendarEventTimingIssue::EndTimeMustFollowStartTime
+        );
+
+    const CalendarEventTiming overnight(
+        "2026-09-20",
+        "2026-09-21",
+        std::optional<std::string>("23:59"),
+        std::optional<std::string>("00:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(!overnight.validate().has_value());
+
+    const CalendarEventTiming crossDayEqualTimes(
+        "2026-09-20",
+        "2026-09-21",
+        std::optional<std::string>("12:00"),
+        std::optional<std::string>("12:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(!crossDayEqualTimes.validate().has_value());
+}
+
+void NextDomainContractTests::
+calendarEventTimingsEnforceTimeAndStatusPolicy()
+{
+    const CalendarEventTiming partialTimes(
+        "2026-09-20",
+        "2026-09-20",
+        std::optional<std::string>("09:00"),
+        std::nullopt,
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        partialTimes.validate()
+        == CalendarEventTimingIssue::TimesMustBePaired
+        );
+
+    const CalendarEventTiming malformedTime(
+        "2026-09-20",
+        "2026-09-20",
+        std::optional<std::string>("9:00"),
+        std::optional<std::string>("10:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        malformedTime.validate()
+        == CalendarEventTimingIssue::InvalidTime
+        );
+
+    const CalendarEventTiming outOfRangeTime(
+        "2026-09-20",
+        "2026-09-20",
+        std::optional<std::string>("23:59"),
+        std::optional<std::string>("24:00"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        outOfRangeTime.validate()
+        == CalendarEventTimingIssue::InvalidTime
+        );
+
+    const CalendarEventTiming minuteBoundaries(
+        "2026-09-20",
+        "2026-09-20",
+        std::optional<std::string>("00:00"),
+        std::optional<std::string>("23:59"),
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(!minuteBoundaries.validate().has_value());
+
+    const CalendarEventTiming allDay(
+        "2026-09-20",
+        "2026-09-20",
+        std::nullopt,
+        std::nullopt,
+        true,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(!allDay.validate().has_value());
+
+    const CalendarEventTiming allDayWithUnconfirmedStatus(
+        "2026-09-20",
+        "2026-09-20",
+        std::nullopt,
+        std::nullopt,
+        true,
+        CalendarEventTimeStatus::Unconfirmed
+        );
+    QVERIFY(
+        allDayWithUnconfirmedStatus.validate()
+        == CalendarEventTimingIssue::AllDayRequiresTimedStatusAndNoTimes
+        );
+
+    const CalendarEventTiming allDayWithTimes(
+        "2026-09-20",
+        "2026-09-20",
+        std::optional<std::string>("09:00"),
+        std::optional<std::string>("10:00"),
+        true,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        allDayWithTimes.validate()
+        == CalendarEventTimingIssue::AllDayRequiresTimedStatusAndNoTimes
+        );
+
+    const CalendarEventTiming timedWithoutTimes(
+        "2026-09-20",
+        "2026-09-20",
+        std::nullopt,
+        std::nullopt,
+        false,
+        CalendarEventTimeStatus::Timed
+        );
+    QVERIFY(
+        timedWithoutTimes.validate()
+        == CalendarEventTimingIssue::TimedRequiresBothTimes
+        );
+
+    for (const CalendarEventTimeStatus status : {
+             CalendarEventTimeStatus::Unknown,
+             CalendarEventTimeStatus::Unconfirmed
+         })
+    {
+        const CalendarEventTiming noTimes(
+            "2026-09-20",
+            "2026-09-20",
+            std::nullopt,
+            std::nullopt,
+            false,
+            status
+            );
+        QVERIFY(!noTimes.validate().has_value());
+
+        const CalendarEventTiming withTimes(
+            "2026-09-20",
+            "2026-09-20",
+            std::optional<std::string>("09:00"),
+            std::optional<std::string>("10:00"),
+            false,
+            status
+            );
+        QVERIFY(
+            withTimes.validate()
+            == CalendarEventTimingIssue::NonTimedStatusRequiresNoTimes
+            );
+    }
 }
 
 void NextDomainContractTests::scheduleEntriesKeepTypedClassAndValidatedTime()

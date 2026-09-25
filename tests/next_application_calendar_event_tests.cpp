@@ -12,8 +12,10 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -178,6 +180,18 @@ void verifyInvalidValidation(
     QVERIFY(!result.error().recoverable);
 }
 
+void verifyInvalidValidation(
+    const Result<void>& result,
+    const std::string_view expectedMessage
+    )
+{
+    QVERIFY(!result);
+    QVERIFY(!result.hasValue());
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(result.error().message, std::string(expectedMessage));
+    QVERIFY(!result.error().recoverable);
+}
+
 template <typename Value>
 concept HasRawSourceAccessor = requires(const Value& value)
 {
@@ -202,6 +216,8 @@ private slots:
     void exactCapsAreAcceptedAndOverflowIsRejected();
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
+    void timingErrorsKeepFeatureMessagesAndValidationPrecedence();
+    void timingAcceptsFullGregorianRangeAndCrossDayClocks();
     void saveRequestContractHasNoQtOrLegacySurface();
     void importSaveRequestBoundsOrderedCreateBatchAndNoOp();
     void importSaveRequestRejectsUpdatesAndInvalidEvents();
@@ -850,6 +866,318 @@ saveRequestAllDayAndTimeStatusPolicyIsExplicit()
     unknownWithTime.startTime = "09:00";
     unknownWithTime.endTime = "10:00";
     QVERIFY(!unknownWithTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+timingErrorsKeepFeatureMessagesAndValidationPrecedence()
+{
+    using TimingCase = std::pair<CalendarEventSaveRequest, std::string_view>;
+    std::vector<TimingCase> saveCases;
+    const auto addSaveCase = [&saveCases](
+        const auto& mutate,
+        const std::string_view message
+        )
+    {
+        auto request = validSaveRequest();
+        mutate(request);
+        saveCases.emplace_back(std::move(request), message);
+    };
+    addSaveCase(
+        [](auto& request) { request.startDate = "2026-02-30"; },
+        "Calendar event dates must be valid canonical ISO dates."
+        );
+    addSaveCase(
+        [](auto& request) { request.startDate = "2026-09-21"; },
+        "Calendar event end date must not precede its start date."
+        );
+    addSaveCase(
+        [](auto& request) { request.endTime.reset(); },
+        "Calendar event start and end times must be both absent or both present."
+        );
+    addSaveCase(
+        [](auto& request) { request.startTime = "9:00"; },
+        "Calendar event times must be valid canonical 24-hour times."
+        );
+    addSaveCase(
+        [](auto& request)
+        {
+            request.allDay = true;
+            request.timeStatus = "Unknown";
+            request.startTime.reset();
+            request.endTime.reset();
+        },
+        "All-day calendar events require Timed status and no times."
+        );
+    addSaveCase(
+        [](auto& request)
+        {
+            request.startTime.reset();
+            request.endTime.reset();
+        },
+        "Timed calendar events require both start and end times."
+        );
+    addSaveCase(
+        [](auto& request) { request.endTime = "09:00"; },
+        "Calendar event end time must be after its start time."
+        );
+    addSaveCase(
+        [](auto& request) { request.timeStatus = "Unknown"; },
+        "Unknown or unconfirmed calendar events require no times."
+        );
+    for (const auto& [request, message] : saveCases)
+    {
+        verifyInvalidValidation(request.validate(), message);
+    }
+
+    auto saveTextPrecedence = validSaveRequest();
+    saveTextPrecedence.title.clear();
+    saveTextPrecedence.startDate = "2026-02-30";
+    verifyInvalidValidation(
+        saveTextPrecedence.validate(),
+        "Calendar event text fields must be non-blank and bounded."
+        );
+
+    auto saveDatePrecedence = validSaveRequest();
+    saveDatePrecedence.startDate = "2026-02-30";
+    saveDatePrecedence.endTime.reset();
+    verifyInvalidValidation(
+        saveDatePrecedence.validate(),
+        "Calendar event dates must be valid canonical ISO dates."
+        );
+
+    auto saveRangePrecedence = validSaveRequest();
+    saveRangePrecedence.startDate = "2026-09-21";
+    saveRangePrecedence.endTime.reset();
+    verifyInvalidValidation(
+        saveRangePrecedence.validate(),
+        "Calendar event end date must not precede its start date."
+        );
+
+    auto savePairPrecedence = validSaveRequest();
+    savePairPrecedence.startTime = "9:00";
+    savePairPrecedence.endTime.reset();
+    verifyInvalidValidation(
+        savePairPrecedence.validate(),
+        "Calendar event start and end times must be both absent or both present."
+        );
+
+    using DraftCase = std::pair<CalendarEventEditDraft, std::string_view>;
+    std::vector<DraftCase> draftCases;
+    const auto addDraftCase = [&draftCases](
+        const auto& mutate,
+        const std::string_view message
+        )
+    {
+        auto draft = validEditDraft();
+        mutate(draft);
+        draftCases.emplace_back(std::move(draft), message);
+    };
+    addDraftCase(
+        [](auto& draft) { draft.startDate = "2026-02-30"; },
+        "Calendar event draft dates must be valid canonical ISO dates."
+        );
+    addDraftCase(
+        [](auto& draft) { draft.startDate = "2026-09-21"; },
+        "Calendar event draft end date must not precede its start date."
+        );
+    addDraftCase(
+        [](auto& draft) { draft.endTime.reset(); },
+        "Calendar event draft start and end times must be both absent or both present."
+        );
+    addDraftCase(
+        [](auto& draft) { draft.startTime = "9:00"; },
+        "Calendar event draft times must be valid canonical 24-hour times."
+        );
+    addDraftCase(
+        [](auto& draft)
+        {
+            draft.allDay = true;
+            draft.timeStatus = "Unknown";
+            draft.startTime.reset();
+            draft.endTime.reset();
+        },
+        "All-day calendar event drafts require Timed status and no times."
+        );
+    addDraftCase(
+        [](auto& draft)
+        {
+            draft.startTime.reset();
+            draft.endTime.reset();
+        },
+        "Timed calendar event drafts require both start and end times."
+        );
+    addDraftCase(
+        [](auto& draft) { draft.endTime = "09:00"; },
+        "Calendar event draft end time must be after its start time."
+        );
+    addDraftCase(
+        [](auto& draft) { draft.timeStatus = "Unknown"; },
+        "Unknown or unconfirmed calendar event drafts require no times."
+        );
+    for (const auto& [draft, message] : draftCases)
+    {
+        verifyInvalidValidation(draft.validate(), message);
+    }
+
+    auto draftTextPrecedence = validEditDraft();
+    draftTextPrecedence.title.clear();
+    draftTextPrecedence.startDate = "2026-02-30";
+    verifyInvalidValidation(
+        draftTextPrecedence.validate(),
+        "Calendar event draft text fields must be non-blank and bounded."
+        );
+
+    auto draftDatePrecedence = validEditDraft();
+    draftDatePrecedence.startDate = "2026-02-30";
+    draftDatePrecedence.endTime.reset();
+    verifyInvalidValidation(
+        draftDatePrecedence.validate(),
+        "Calendar event draft dates must be valid canonical ISO dates."
+        );
+
+    auto draftRangePrecedence = validEditDraft();
+    draftRangePrecedence.startDate = "2026-09-21";
+    draftRangePrecedence.endTime.reset();
+    verifyInvalidValidation(
+        draftRangePrecedence.validate(),
+        "Calendar event draft end date must not precede its start date."
+        );
+
+    auto draftPairPrecedence = validEditDraft();
+    draftPairPrecedence.startTime = "9:00";
+    draftPairPrecedence.endTime.reset();
+    verifyInvalidValidation(
+        draftPairPrecedence.validate(),
+        "Calendar event draft start and end times must be both absent or both present."
+        );
+
+    using SeriesCase = std::pair<
+        CalendarEventSeriesEditRequest,
+        std::string_view
+        >;
+    std::vector<SeriesCase> seriesCases;
+    const auto addSeriesCase = [&seriesCases](
+        const auto& mutate,
+        const std::string_view message
+        )
+    {
+        auto request = validSeriesEditRequest();
+        mutate(request);
+        seriesCases.emplace_back(std::move(request), message);
+    };
+    addSeriesCase(
+        [](auto& request) { request.editedStartDate = "2026-02-30"; },
+        "Calendar repeat-series edit dates must be valid canonical ISO dates."
+        );
+    addSeriesCase(
+        [](auto& request) { request.editedEndDate = "2026-09-21"; },
+        "Calendar repeat-series edit end date must not precede its start date."
+        );
+    addSeriesCase(
+        [](auto& request) { request.endTime.reset(); },
+        "Calendar repeat-series edit times must be both absent or both present."
+        );
+    addSeriesCase(
+        [](auto& request) { request.startTime = "9:00"; },
+        "Calendar repeat-series edit times must be valid canonical 24-hour times."
+        );
+    addSeriesCase(
+        [](auto& request)
+        {
+            request.allDay = true;
+            request.timeStatus = "Unknown";
+            request.startTime.reset();
+            request.endTime.reset();
+        },
+        "All-day repeat-series edits require Timed status and no times."
+        );
+    addSeriesCase(
+        [](auto& request)
+        {
+            request.startTime.reset();
+            request.endTime.reset();
+        },
+        "Timed repeat-series edits require both start and end times."
+        );
+    addSeriesCase(
+        [](auto& request)
+        {
+            request.editedEndDate = request.editedStartDate;
+            request.endTime = "09:00";
+        },
+        "Calendar repeat-series edit end time must be after its start time."
+        );
+    addSeriesCase(
+        [](auto& request) { request.timeStatus = "Unknown"; },
+        "Unknown or unconfirmed repeat-series edits require no times."
+        );
+    for (const auto& [request, message] : seriesCases)
+    {
+        verifyInvalidValidation(request.validate(), message);
+    }
+
+    auto seriesTextPrecedence = validSeriesEditRequest();
+    seriesTextPrecedence.title.clear();
+    seriesTextPrecedence.startDate = "2026-02-30";
+    verifyInvalidValidation(
+        seriesTextPrecedence.validate(),
+        "Calendar repeat-series edit text fields must be non-blank and bounded."
+        );
+
+    auto seriesSourceDatePrecedence = validSeriesEditRequest();
+    seriesSourceDatePrecedence.startDate = "2026-02-30";
+    seriesSourceDatePrecedence.editedStartDate = "2026-09-24";
+    seriesSourceDatePrecedence.editedEndDate = "2026-09-23";
+    seriesSourceDatePrecedence.endTime.reset();
+    verifyInvalidValidation(
+        seriesSourceDatePrecedence.validate(),
+        "Calendar repeat-series edit dates must be valid canonical ISO dates."
+        );
+
+    auto seriesRangePrecedence = validSeriesEditRequest();
+    seriesRangePrecedence.editedEndDate = "2026-09-21";
+    seriesRangePrecedence.endTime.reset();
+    verifyInvalidValidation(
+        seriesRangePrecedence.validate(),
+        "Calendar repeat-series edit end date must not precede its start date."
+        );
+
+    auto seriesPairPrecedence = validSeriesEditRequest();
+    seriesPairPrecedence.startTime = "9:00";
+    seriesPairPrecedence.endTime.reset();
+    verifyInvalidValidation(
+        seriesPairPrecedence.validate(),
+        "Calendar repeat-series edit times must be both absent or both present."
+        );
+}
+
+void NextApplicationCalendarEventTests::
+timingAcceptsFullGregorianRangeAndCrossDayClocks()
+{
+    auto save = validSaveRequest();
+    save.startDate = "0001-01-01";
+    save.endDate = "9999-12-31";
+    save.startTime = "23:59";
+    save.endTime = "00:00";
+    save.timeStatus = " \tTimed \n";
+    QVERIFY(save.validate());
+
+    auto draft = validEditDraft();
+    draft.startDate = "0001-01-01";
+    draft.endDate = "9999-12-31";
+    draft.startTime = "23:59";
+    draft.endTime = "00:00";
+    draft.timeStatus = " \tTimed \n";
+    QVERIFY(draft.validate());
+
+    auto series = validSeriesEditRequest();
+    series.startDate = "0001-01-01";
+    series.editedStartDate = "0001-01-01";
+    series.editedEndDate = "9999-12-31";
+    series.startTime = "23:59";
+    series.endTime = "00:00";
+    series.timeStatus = " \tTimed \n";
+    QVERIFY(series.validate());
 }
 
 void NextApplicationCalendarEventTests::

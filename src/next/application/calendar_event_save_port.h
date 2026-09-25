@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/domain/calendar_event_timing.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -110,83 +111,6 @@ namespace CalendarEventSaveRequestDetail
         && value.size() <= kCalendarEventSaveMaxIdentifierLength;
 }
 
-[[nodiscard]] inline bool isCanonicalDate(
-    const std::string_view value
-    ) noexcept
-{
-    if (value.size() != kCalendarEventSaveMaxDateLength)
-    {
-        return false;
-    }
-
-    for (std::size_t index = 0; index < value.size(); ++index)
-    {
-        if ((index == 4 || index == 7) && value.at(index) == '-')
-        {
-            continue;
-        }
-
-        if (value.at(index) < '0' || value.at(index) > '9')
-        {
-            return false;
-        }
-    }
-
-    const int year =
-        (value.at(0) - '0') * 1000
-        + (value.at(1) - '0') * 100
-        + (value.at(2) - '0') * 10
-        + (value.at(3) - '0');
-    const int month =
-        (value.at(5) - '0') * 10
-        + (value.at(6) - '0');
-    const int day =
-        (value.at(8) - '0') * 10
-        + (value.at(9) - '0');
-    if (year <= 0 || month < 1 || month > 12 || day < 1)
-    {
-        return false;
-    }
-
-    constexpr int daysInMonth[] = {
-        31, 28, 31, 30, 31, 30,
-        31, 31, 30, 31, 30, 31
-    };
-    int maximumDay = daysInMonth[month - 1];
-    if (month == 2
-        && (year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)))
-    {
-        maximumDay = 29;
-    }
-
-    return day <= maximumDay;
-}
-
-[[nodiscard]] inline bool isCanonicalTime(
-    const std::string_view value
-    ) noexcept
-{
-    if (value.size() != kCalendarEventSaveMaxTimeLength
-        || value.at(2) != ':')
-    {
-        return false;
-    }
-
-    for (std::size_t index : {0U, 1U, 3U, 4U})
-    {
-        if (value.at(index) < '0' || value.at(index) > '9')
-        {
-            return false;
-        }
-    }
-
-    const int hour =
-        (value.at(0) - '0') * 10 + (value.at(1) - '0');
-    const int minute =
-        (value.at(3) - '0') * 10 + (value.at(4) - '0');
-    return hour <= 23 && minute <= 59;
-}
-
 [[nodiscard]] inline bool isEventType(
     const std::string_view value
     ) noexcept
@@ -221,6 +145,34 @@ namespace CalendarEventSaveRequestDetail
     });
 }
 
+[[nodiscard]] inline const char* calendarEventTimingIssueMessage(
+    const Domain::CalendarEventTimingIssue issue
+    ) noexcept
+{
+    switch (issue)
+    {
+    case Domain::CalendarEventTimingIssue::InvalidDate:
+        return "Calendar event dates must be valid canonical ISO dates.";
+    case Domain::CalendarEventTimingIssue::EndDateBeforeStartDate:
+        return "Calendar event end date must not precede its start date.";
+    case Domain::CalendarEventTimingIssue::TimesMustBePaired:
+        return "Calendar event start and end times must be both absent or both present.";
+    case Domain::CalendarEventTimingIssue::InvalidTime:
+        return "Calendar event times must be valid canonical 24-hour times.";
+    case Domain::CalendarEventTimingIssue::
+        AllDayRequiresTimedStatusAndNoTimes:
+        return "All-day calendar events require Timed status and no times.";
+    case Domain::CalendarEventTimingIssue::TimedRequiresBothTimes:
+        return "Timed calendar events require both start and end times.";
+    case Domain::CalendarEventTimingIssue::EndTimeMustFollowStartTime:
+        return "Calendar event end time must be after its start time.";
+    case Domain::CalendarEventTimingIssue::NonTimedStatusRequiresNoTimes:
+        return "Unknown or unconfirmed calendar events require no times.";
+    }
+
+    return "Calendar event timing is invalid.";
+}
+
 } // namespace CalendarEventSaveRequestDetail
 
 [[nodiscard]] inline Domain::Result<void> validateCalendarEventSaveRequest(
@@ -250,73 +202,24 @@ namespace CalendarEventSaveRequestDetail
             );
     }
 
-    if (!isCanonicalDate(request.startDate)
-        || !isCanonicalDate(request.endDate))
-    {
-        return invalid(
-            "Calendar event dates must be valid canonical ISO dates."
-            );
-    }
-
-    if (request.endDate < request.startDate)
-    {
-        return invalid(
-            "Calendar event end date must not precede its start date."
-            );
-    }
-
     const std::string_view timeStatus = trimAscii(request.timeStatus);
-    const bool hasStartTime = request.startTime.has_value();
-    const bool hasEndTime = request.endTime.has_value();
-    if (hasStartTime != hasEndTime)
+    const Domain::CalendarEventTimeStatus domainTimeStatus =
+        timeStatus == "Timed"
+            ? Domain::CalendarEventTimeStatus::Timed
+            : timeStatus == "Unknown"
+                ? Domain::CalendarEventTimeStatus::Unknown
+                : Domain::CalendarEventTimeStatus::Unconfirmed;
+    const Domain::CalendarEventTiming timing(
+        request.startDate,
+        request.endDate,
+        request.startTime,
+        request.endTime,
+        request.allDay,
+        domainTimeStatus
+        );
+    if (const auto issue = timing.validate())
     {
-        return invalid(
-            "Calendar event start and end times must be both absent or both present."
-            );
-    }
-
-    if ((hasStartTime && !isCanonicalTime(*request.startTime))
-        || (hasEndTime && !isCanonicalTime(*request.endTime)))
-    {
-        return invalid(
-            "Calendar event times must be valid canonical 24-hour times."
-            );
-    }
-
-    if (request.allDay)
-    {
-        if (timeStatus != "Timed" || hasStartTime || hasEndTime)
-        {
-            return invalid(
-                "All-day calendar events require Timed status and no times."
-                );
-        }
-
-        return Domain::Result<void>::success();
-    }
-
-    if (timeStatus == "Timed")
-    {
-        if (!hasStartTime || !hasEndTime)
-        {
-            return invalid(
-                "Timed calendar events require both start and end times."
-                );
-        }
-
-        if (request.startDate == request.endDate
-            && *request.endTime <= *request.startTime)
-        {
-            return invalid(
-                "Calendar event end time must be after its start time."
-                );
-        }
-    }
-    else if (hasStartTime || hasEndTime)
-    {
-        return invalid(
-            "Unknown or unconfirmed calendar events require no times."
-            );
+        return invalid(calendarEventTimingIssueMessage(*issue));
     }
 
     return Domain::Result<void>::success();
