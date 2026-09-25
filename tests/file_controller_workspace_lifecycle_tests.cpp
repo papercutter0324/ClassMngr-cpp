@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
+#include "data/database/database_schema_manager.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/platform/settings_manager_last_database_directory_port.h"
@@ -14,7 +15,11 @@
 #include <QFileInfo>
 #include <QMenu>
 #include <QRegularExpression>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QUuid>
 #include <QtTest/QtTest>
 
 namespace
@@ -44,6 +49,129 @@ QByteArray readFile(
     }
 
     return file.readAll();
+}
+
+bool materializeSqlFixture(
+    const QString& fixturePath,
+    const QString& databasePath,
+    QString* errorMessage
+    )
+{
+    QFile fixture(fixturePath);
+    if (!fixture.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        *errorMessage = QStringLiteral("Opening SQL fixture failed: %1")
+            .arg(fixture.errorString());
+        return false;
+    }
+
+    const QString connectionName =
+        QStringLiteral("file-controller-legacy-fixture-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(databasePath);
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else
+        {
+            success = true;
+            QSqlQuery query(database);
+            const QStringList statements = QString::fromUtf8(fixture.readAll())
+                .split(QChar(';'), Qt::SkipEmptyParts);
+            for (const QString& rawStatement : statements)
+            {
+                const QString statement = rawStatement.trimmed();
+                if (!statement.isEmpty() && !query.exec(statement))
+                {
+                    *errorMessage = QStringLiteral(
+                        "Executing SQL fixture statement failed: %1 (%2)"
+                        ).arg(
+                            statement.simplified().left(160),
+                            query.lastError().text()
+                            );
+                    success = false;
+                    break;
+                }
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
+
+struct LegacyDatabaseInspection
+{
+    int schemaVersion = -1;
+    int unassignedTeacherIsNull = -1;
+};
+
+bool inspectLegacyDatabase(
+    const QString& databasePath,
+    LegacyDatabaseInspection* inspection,
+    QString* errorMessage
+    )
+{
+    const QString connectionName =
+        QStringLiteral("file-controller-legacy-inspection-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(databasePath);
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else
+        {
+            const Result<int> schemaVersion =
+                DatabaseSchemaManager::schemaVersion(database);
+            if (!schemaVersion)
+            {
+                *errorMessage = schemaVersion.error();
+            }
+            else
+            {
+                inspection->schemaVersion = *schemaVersion;
+                QSqlQuery query(database);
+                if (!query.exec(QStringLiteral(
+                    "SELECT teacher_id IS NULL FROM class_info WHERE class_id=1"
+                    )))
+                {
+                    *errorMessage = query.lastError().text();
+                }
+                else if (!query.next())
+                {
+                    *errorMessage = QStringLiteral(
+                        "The legacy class information row was not readable."
+                        );
+                }
+                else
+                {
+                    inspection->unassignedTeacherIsNull = query.value(0).toInt();
+                    success = true;
+                }
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
 }
 
 QStringList initialSetupBackups(
@@ -115,6 +243,7 @@ private slots:
     void missingStartupPathUsesCapturedWarning();
     void invalidStartupDatabaseUsesLegacyErrorText();
     void startupLoadUsesCoordinatorAndLegacyFallback();
+    void startupMigratesLegacyDbThroughCoordinatorAndRetainsBackup();
     void autosaveUsesCoordinatorForOpenWorkspace();
     void autosaveWarnsAndPreservesStaleCoordinatorState();
     void autosaveUsesLegacyFallbackForCompatibilityWorkspace();
@@ -946,6 +1075,113 @@ void FileControllerWorkspaceLifecycleTests::startupLoadUsesCoordinatorAndLegacyF
         services.currentDatabasePath(),
         QFileInfo(secondPath).absoluteFilePath()
         );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+startupMigratesLegacyDbThroughCoordinatorAndRetainsBackup()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString legacyDatabasePath = workspaceRoot.filePath(
+        QStringLiteral("legacy-startup.db")
+        );
+    const QString fixturePath = QDir(
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        ).filePath(QStringLiteral("tests/fixtures/workspaces/legacy_startup.sql"));
+    QString setupError;
+    QVERIFY2(
+        materializeSqlFixture(fixturePath, legacyDatabasePath, &setupError),
+        qPrintable(setupError)
+        );
+
+    SettingsManager::instance().clear();
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(legacyDatabasePath);
+
+    const QString normalizedPath =
+        QFileInfo(legacyDatabasePath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedPath);
+    QVERIFY(QFileInfo::exists(normalizedPath));
+
+    const Result<QList<Teacher>> teachers =
+        services.teacherService()->teachers();
+    QVERIFY(teachers.has_value());
+    QCOMPARE(teachers->size(), 1);
+    QCOMPARE(teachers->constFirst().id, 1);
+    QCOMPARE(teachers->constFirst().teacherKr, QStringLiteral("Legacy Teacher"));
+    QCOMPARE(teachers->constFirst().teacherEn, QStringLiteral("Legacy Teacher"));
+    QCOMPARE(teachers->constFirst().roomNumber, QStringLiteral("201"));
+    QCOMPARE(teachers->constFirst().wifiName, QStringLiteral("Legacy-WiFi"));
+
+    const Result<QList<Classroom>> classes = services.classService()->classes();
+    QVERIFY(classes.has_value());
+    QCOMPARE(classes->size(), 1);
+    QCOMPARE(classes->constFirst().id, 1);
+    QCOMPARE(classes->constFirst().name, QStringLiteral("Legacy E4"));
+
+    const Result<ClassInfo> classInfo = services.classService()->classInfo(1);
+    QVERIFY(classInfo.has_value());
+    QCOMPARE(classInfo->classId, 1);
+    QCOMPARE(classInfo->teacherId, -1);
+    QCOMPARE(classInfo->classGrade, QStringLiteral("E4"));
+    QCOMPARE(classInfo->classLevel, QStringLiteral("Blue"));
+    QCOMPARE(classInfo->readingBook, QStringLiteral("Legacy Reading"));
+    QCOMPARE(classInfo->essayBook, QStringLiteral("Legacy Essay"));
+    QCOMPARE(classInfo->classColor, QStringLiteral("#DDEBFF"));
+    QCOMPARE(classInfo->fontColor, QStringLiteral("#172B4D"));
+
+    const Result<QList<ClassInfo>> scheduleInfos =
+        services.classService()->scheduleClassInfos();
+    QVERIFY(scheduleInfos.has_value());
+    QCOMPARE(scheduleInfos->size(), 1);
+    const ClassInfo& scheduledClass = scheduleInfos->constFirst();
+    QCOMPARE(scheduledClass.classId, 1);
+    QCOMPARE(scheduledClass.teacherId, -1);
+    QCOMPARE(scheduledClass.classTimes.size(), 1);
+    QCOMPARE(scheduledClass.classTimes.constFirst().day, QStringLiteral("Monday"));
+    QCOMPARE(
+        scheduledClass.classTimes.constFirst().startTime,
+        QStringLiteral("4:00 PM")
+        );
+    QCOMPARE(
+        scheduledClass.classTimes.constFirst().endTime,
+        QStringLiteral("4:50 PM")
+        );
+
+    LegacyDatabaseInspection activeInspection;
+    QString inspectionError;
+    QVERIFY2(
+        inspectLegacyDatabase(
+            normalizedPath,
+            &activeInspection,
+            &inspectionError
+            ),
+        qPrintable(inspectionError)
+        );
+    QCOMPARE(
+        activeInspection.schemaVersion,
+        DatabaseSchemaManager::LatestSchemaVersion
+        );
+    QCOMPARE(activeInspection.unassignedTeacherIsNull, 1);
+
+    const QString backupPath = normalizedPath
+        + QStringLiteral(".pre-schema-v4-backup");
+    QVERIFY(QFileInfo::exists(backupPath));
+    LegacyDatabaseInspection backupInspection;
+    inspectionError.clear();
+    QVERIFY2(
+        inspectLegacyDatabase(
+            backupPath,
+            &backupInspection,
+            &inspectionError
+            ),
+        qPrintable(inspectionError)
+        );
+    QCOMPARE(backupInspection.schemaVersion, 3);
+    QCOMPARE(backupInspection.unassignedTeacherIsNull, 1);
 }
 
 void FileControllerWorkspaceLifecycleTests::autosaveUsesCoordinatorForOpenWorkspace()
