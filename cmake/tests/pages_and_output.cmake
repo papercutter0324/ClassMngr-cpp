@@ -144,6 +144,16 @@ qt_add_executable(ClassMngrClassesPageTests
             resources/assets/icons/keyboard_light.svg
     )
 
+classmngr_add_qt_test(
+    NAME RosterEditorWidgetImport
+    SOURCES
+        tests/roster_editor_widget_import_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_executable(ClassMngrScheduleImportDialogTests
         tests/schedule_import_dialog_tests.cpp
         src/core/settingsmanager.cpp
