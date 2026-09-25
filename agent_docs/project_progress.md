@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-09-25
+### Current state - 2026-09-26
 
 F44 adds Qt-free Teacher Import review-decision validation shared by production
 dialog readiness/plan creation and repository apply. The required checked-in
@@ -158,16 +158,27 @@ passed 4/4. No full suite was run. The evaluation test covers the exact
 school-level helper used by `forClass`, without constructing the full
 ApplicationServices path.
 
+F56 centralizes the six-score overall grade as a Qt-free Domain rule, reused by
+the repository roster importer, report assembler, and report widget. The
+repository retains trimming, while the report inputs still require exact
+labels. The widget-path cases verify padded grade acceptance, incomplete-score
+`N/A`, the mixed 16/6 to B+ result, and persistence; report tests verify B+ and
+N/A output. F56 is committed as
+`c73e896fe34e186a045d73b653aa8ec9dfa89e83`. A fresh independent MSVC
+19.51/Ninja/Qt 6.12 configure validated 909 handwritten source owners; four
+focused Domain, roster-import, speaking-service, and report-widget CTests
+passed 4/4. No full suite was run.
+
 The formal gate remains open. Gate 1 and Gate 2 remain Partial because broader
-Domain/application contracts and baseline parity are incomplete. F53 advances
-Gate 2 evidence; F54 and F55 add Gate 1 evidence. The workspace criterion and
-audited v2 dependency isolation remain Satisfied. Two independent Explorers
-selected F55 to unify the existing grade-band rule across its three consumers;
-the grade-to-school-level helper test remains narrower than full service
-integration. Next, compare the remaining Domain/Application and baseline
-parity gaps to select another bounded slice. Sub Prep remains capped at the
-current and following calendar years at most. The user-owned
-`cmake/sources.cmake` change remains outside these commits.
+Domain/application contracts and baseline parity are incomplete. F53 and F56
+add Gate 2 evidence; F54, F55, and F56 add Gate 1 evidence. The workspace
+criterion and audited v2 dependency isolation remain Satisfied. F55's
+grade-to-school-level helper test still does not instantiate the full
+`forClass` ApplicationServices path. Three independent Investigators compared
+that path with F56's shared grade aggregation; the latter is complete. Next,
+compare the remaining Gate 1 and Gate 2 gaps for another bounded slice. Sub
+Prep remains capped at the current and following calendar years at most. The
+user-owned `cmake/sources.cmake` change remains outside these commits.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

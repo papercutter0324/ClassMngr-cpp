@@ -7,8 +7,8 @@
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-25
-- Latest code slice: F55 exposes Qt-free, grade-only `Course::gradeBandForName` classification and shares it across Classes, Evaluation Default Selection, and Schedule while retaining each caller's trimming/case-normalization boundary and distinct policy. Fresh MSVC 19.51/Ninja/Qt 6.12 verification validated 908 handwritten owners, built four focused targets, and passed exact CTest 4/4; no full suite was run. F55 adds Gate 1 evidence only: Gate 1 and Gate 2 remain Partial, Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
+- Last updated: 2026-09-26
+- Latest code slice: F56 adds Qt-free `Domain::SpeakingEvaluationGrade` and replaces duplicated grade calculation in roster import and speaking-evaluation reports while preserving repository trimming and exact-label report inputs. Fresh MSVC 19.51/Ninja/Qt 6.12 verification validated 909 handwritten owners, built four focused targets, and passed exact CTest 4/4; no full suite was run. F56 adds Gate 1 and Gate 2 evidence, but both remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -520,6 +520,28 @@ parity, shared workbook decoding, broader Domain records, generic settings,
 remaining feature migrations, and broader calendar/UI and document work remain
 open. Phase 2 remains In Progress with its exit gate Open. Sub Prep remains
 capped at the current and following calendar years at most.
+
+### Exit-gate status after F56 - 2026-09-26 (commit `c73e896fe34e186a045d73b653aa8ec9dfa89e83`)
+
+This audit adds F56 speaking-evaluation grade-contract and production-path
+evidence to the F50 audit above; no tests were rerun for this documentation
+update.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | `Domain::SpeakingEvaluationGrade` represents six criteria and C/B/B+/A/A+ values, parses exact labels, and centralizes legacy aggregation, rounding, invalid/missing outcomes, and clamping. Exhaustive valid-combination and boundary coverage adds evidence; broader Domain/Application behavior remains incomplete. |
+| Baseline parity | Partial | Roster widget import verifies a padded saved label, incomplete evaluation to N/A, retained 16/6-to-B+ result, persistence, and idempotence. The report widget path verifies B+ and N/A through assembly/rendering. Wider baseline parity remains incomplete. |
+| Workspace boundary | Satisfied | F56 does not change the formal workspace create criterion or its focused app-less coverage. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The new grade contract is Qt-free; F56 does not change the audited `src/next` dependency-isolation finding. |
+
+Fresh independent MSVC 19.51/Ninja/Qt 6.12 verification validated 909
+handwritten source owners, built `ClassMngrNextDomainContractTests`,
+`ClassMngrRosterEditorWidgetImportTests`,
+`ClassMngrSpeakingEvaluationServiceTests`, and
+`ClassMngrSpeakingEvalReportWidgetTests`, and passed exact CTest 4/4. No full
+suite was run. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress
+with its exit gate Open. Sub Prep remains capped at the current and following
+calendar years at most.
 
 ## Heavy-route requirements
 
@@ -4714,4 +4736,31 @@ handwritten owners, built `ClassMngrNextDomainContractTests`,
 full suite was run. F55 adds Gate 1 evidence only: Gate 1 and Gate 2 remain
 Partial; Workspace boundary and audited `src/next` dependency isolation remain
 Satisfied; the Phase 2 exit gate remains Open. Sub Prep remains capped at the
+current and following calendar years at most.
+
+#### Progress update - 2026-09-26 (F56 Speaking Evaluation grade contract)
+
+Qt-free [`Domain::SpeakingEvaluationGrade`](../../src/next/domain/speaking_evaluation_grade.h)
+represents the six evaluation criteria and C/B/B+/A/A+ values, parses exact
+labels, and centralizes legacy aggregation, >=0.4 rounding, invalid/missing
+outcomes, and clamping. It replaces duplicated calculation in roster import,
+the report data assembler, and the report widget. Repository import continues
+to trim input; report paths continue to require exact labels.
+
+Domain coverage exhausts all 15,625 valid combinations and checks invalid or
+missing values, labels, and rounding. The real roster widget-import test adds a
+padded saved label and incomplete evaluation (N/A), retaining F53's mixed
+16/6-to-B+ result, persistence, and idempotence coverage. Report-widget tests
+check B+ and N/A through assembly and rendering. Independent fresh
+MSVC 19.51/Ninja/Qt 6.12 verification validated 909 handwritten source owners,
+built `ClassMngrNextDomainContractTests`,
+`ClassMngrRosterEditorWidgetImportTests`,
+`ClassMngrSpeakingEvaluationServiceTests`, and
+`ClassMngrSpeakingEvalReportWidgetTests`, and passed exact CTest 4/4. No full
+suite was run. F56 is committed as
+`c73e896fe34e186a045d73b653aa8ec9dfa89e83`. Gate 1 and Gate 2 advance but
+remain Partial; Workspace boundary and audited `src/next` dependency isolation
+remain Satisfied; the Phase 2 exit gate remains Open. The Evaluation Default
+Selection test still exercises its policy helper rather than full
+`ApplicationServices::forClass` integration. Sub Prep remains capped at the
 current and following calendar years at most.

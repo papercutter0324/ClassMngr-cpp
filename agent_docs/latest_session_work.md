@@ -2083,3 +2083,34 @@ separate on a host with Xvfb and loopback access.
 - Next: compare the remaining Domain/Application and baseline-parity gaps for
   another bounded slice. Keep commits path-limited and independently verify
   each focused acceptance target before documenting its gate impact.
+
+### Phase 2 Speaking Evaluation aggregate grade - 2026-09-26
+
+- F56 is committed as
+  `c73e896fe34e186a045d73b653aa8ec9dfa89e83` (`Phase2 - Centralize Speaking
+  Evaluation grades`). The Qt-free Domain rule defines six criteria and
+  supported grade values, parses exact labels, and calculates the overall
+  grade with the existing `>= 0.4` rounding and invalid/missing outcome.
+- The rule now serves `SpeakingEvalRepository::buildRosterScoreImport`, the
+  report data assembler, and the live report widget. Repository parsing still
+  trims labels; report paths still require exact labels. The widget import
+  test saves a padded component and an incomplete evaluation, then verifies
+  B+ and N/A in a fresh roster read. The original mixed 16/6 -> B+ persistence
+  and idempotence checks remain. Report tests compare the mixed grade and N/A
+  through the assembler and rendered output; Domain coverage exhausts all
+  15,625 valid combinations.
+- A fresh independent MSVC 19.51/Ninja/Qt 6.12 configure validated 909
+  handwritten source owners. `ClassMngrNextDomainContractTests`,
+  `ClassMngrRosterEditorWidgetImportTests`,
+  `ClassMngrSpeakingEvaluationServiceTests`, and
+  `ClassMngrSpeakingEvalReportWidgetTests` built and passed exact CTest 4/4.
+  No full suite was run.
+- The three-investigator comparison selected this named Domain gap over a
+  full Evaluation Default Selection `forClass` integration test. Gate 1 and
+  Gate 2 both gain evidence but remain Partial; workspace boundary and audited
+  `src/next` dependency isolation remain Satisfied; the formal Phase 2 exit
+  gate remains Open. Full `forClass` integration and wider parity remain open.
+  Sub Prep stays capped at the current and following calendar years at most.
+- Next: review the remaining Phase 2 Gate 1 and Gate 2 gaps and select the next
+  bounded slice. Leave the user-owned `cmake/sources.cmake` untouched and
+  commit source and documentation paths separately after each slice.

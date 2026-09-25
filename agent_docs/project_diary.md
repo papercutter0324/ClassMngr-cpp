@@ -875,3 +875,11 @@ Prep's queried interval to the current and following calendar years at most.
 - Test consumer policy through the shared helper when full service setup would
   add unrelated infrastructure; verify the production service calls that same
   helper and record the narrower integration coverage.
+
+## Phase 2 Speaking Evaluation aggregate grade - 2026-09-26
+
+- Put the six-score average and rounding in one Qt-free Domain rule, but keep
+  parsing policy at each caller: the repository trims saved labels and report
+  paths require exact labels. Exercise all valid score combinations, the
+  rounding transition, and invalid/missing values; verify import and report
+  consumers agree on the same mixed input.

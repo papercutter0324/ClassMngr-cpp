@@ -3684,3 +3684,31 @@ suite was run. F55 adds Gate 1 evidence only: Gate 1 and Gate 2 remain Partial,
 the Workspace boundary and audited `src/next` dependency isolation remain
 Satisfied, and the Phase 2 exit gate remains Open. Sub Prep remains capped at
 the current and following calendar years at most.
+
+## Verified F56 Speaking Evaluation grade mapping - commit `c73e896fe34e186a045d73b653aa8ec9dfa89e83`
+
+Qt-free [`Domain::SpeakingEvaluationGrade`](../../src/next/domain/speaking_evaluation_grade.h)
+is shared by repository roster import, the speaking-evaluation report data
+assembler, and the report widget for the six criteria and C/B/B+/A/A+ values.
+It owns exact-label parsing and legacy aggregate behavior, including >=0.4
+rounding, invalid/missing outcomes, and clamping. Input normalization remains
+at the legacy boundaries: repository import trims saved labels, while report
+paths require exact labels.
+
+The real roster widget-import test verifies trimming of a padded saved label
+and an incomplete evaluation producing N/A; it retains the mixed 16/6-to-B+
+result, persistence, and idempotence assertions. The report-widget path checks
+B+ and N/A through assembly and rendering. Domain tests cover all 15,625 valid
+six-criterion combinations plus labels, invalid/missing inputs, and rounding.
+
+Independent fresh Ninja/MSVC 19.51/Qt 6.12 verification validated 909 source
+owners, built `ClassMngrNextDomainContractTests`,
+`ClassMngrRosterEditorWidgetImportTests`,
+`ClassMngrSpeakingEvaluationServiceTests`, and
+`ClassMngrSpeakingEvalReportWidgetTests`, and passed exact CTest 4/4. No full
+suite was run. F56 adds Gate 1 and Gate 2 evidence, but both remain Partial;
+the Workspace boundary and audited `src/next` dependency isolation remain
+Satisfied, and the Phase 2 exit gate remains Open. F55 Evaluation Default
+Selection coverage remains limited to the policy helper rather than full
+`ApplicationServices::forClass` integration. Sub Prep remains capped at the
+current and following calendar years at most.
