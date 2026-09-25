@@ -87,6 +87,37 @@ bool executeSql(
     return query.exec(statement);
 }
 
+bool updateTeacherDisplayNames(
+    ApplicationServices& services,
+    const int teacherId,
+    const QString& koreanName,
+    const QString& englishName,
+    const QString& preferredRomanization,
+    const QString& preferredName
+    )
+{
+    DataService* dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return false;
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    if (!query.prepare(QStringLiteral(
+        "UPDATE teachers SET teacher_kr = ?, teacher_en = ?, "
+        "preferred_romanization = ?, preferred_name = ? WHERE id = ?"
+        )))
+    {
+        return false;
+    }
+    query.addBindValue(koreanName);
+    query.addBindValue(englishName);
+    query.addBindValue(preferredRomanization);
+    query.addBindValue(preferredName);
+    query.addBindValue(teacherId);
+    return query.exec();
+}
+
 int createTeacher(
     ApplicationServices& services,
     const QString& englishName,
@@ -235,6 +266,7 @@ private slots:
     void rejectsOversizedTeacherSummaryFields();
     void summaryPerClassMeetingOverflowSurfacesValidation();
     void summaryAggregateMeetingOverflowSurfacesValidation();
+    void allEmptyTeacherNamesKeepAdapterFallbacks();
     void selectedClassDetailsReadUsesOnlyScopedSessionData();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
@@ -270,6 +302,14 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
         QStringLiteral("summary")
     );
     QVERIFY(teacher > 0);
+    QVERIFY(updateTeacherDisplayNames(
+        services,
+        teacher,
+        QStringLiteral("  \uac00\ub098  "),
+        QStringLiteral("  English Name  "),
+        QStringLiteral("  Romanized Name  "),
+        QStringLiteral("  Preferred Name  ")
+        ));
     const int secondClass = createClass(
         services,
         QStringLiteral("Second class"),
@@ -787,6 +827,64 @@ summaryAggregateMeetingOverflowSurfacesValidation()
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+allEmptyTeacherNamesKeepAdapterFallbacks()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("empty-display-name")
+        );
+    QVERIFY(teacher > 0);
+
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Empty teacher display name"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Class notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(selectedClass > 0);
+    QVERIFY(updateTeacherDisplayNames(
+        services,
+        teacher,
+        {},
+        {},
+        {},
+        {}
+        ));
+
+    ApplicationServicesSubPrepScheduleSummaryPort summaryPort(services);
+    const SubPrepScheduleSummaryQuery summaryQuery(summaryPort);
+    const auto summary = summaryQuery.execute(summaryRequestFor(
+        {classId(selectedClass)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(summary);
+    const auto summaryTeacher = summary.value().teacherIndex().find(
+        teacherId(teacher)
+        );
+    QVERIFY(summaryTeacher.has_value());
+    QCOMPARE(summaryTeacher->displayName, std::string("N/A"));
+
+    ApplicationServicesSubPrepClassDetailsPort detailsPort(services);
+    const auto details = detailsPort.loadDetails(classId(selectedClass));
+    QVERIFY(details);
+    QVERIFY(details.value().teacherId == teacherId(teacher));
+    QVERIFY(details.value().teacherDisplayName.empty());
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
 selectedClassDetailsReadUsesOnlyScopedSessionData()
 {
     ApplicationServices services;
@@ -799,6 +897,14 @@ selectedClassDetailsReadUsesOnlyScopedSessionData()
         QStringLiteral("details")
         );
     QVERIFY(teacher > 0);
+    QVERIFY(updateTeacherDisplayNames(
+        services,
+        teacher,
+        QStringLiteral("  \uad8c\uc601\uc0dd  "),
+        QStringLiteral("  English Name  "),
+        QStringLiteral("  Romanized Name  "),
+        QStringLiteral("  Preferred Name  ")
+        ));
     const int selectedClass = createClass(
         services,
         QStringLiteral("Selected details"),

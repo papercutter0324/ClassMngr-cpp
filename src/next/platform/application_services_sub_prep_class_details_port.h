@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "next/application/sub_prep_class_details_query.h"
+#include "next/domain/teacher_display_name.h"
 
 #include <QByteArray>
 #include <QString>
@@ -240,25 +241,22 @@ private:
         const SubPrepClassDetailsRecord& record
         )
     {
-        const QString selected = record.teacherPreferredName.trimmed();
-        if (!selected.isEmpty())
-        {
-            return selected;
-        }
-
-        const QString english = record.teacherEn.trimmed();
-        if (!english.isEmpty())
-        {
-            return english;
-        }
-
-        const QString romanized = record.teacherPreferredRomanization.trimmed();
-        if (!romanized.isEmpty())
-        {
-            return romanized;
-        }
-
-        return record.teacherKr.trimmed();
+        const std::u16string preferredName =
+            record.teacherPreferredName.trimmed().toStdU16String();
+        const std::u16string englishName =
+            record.teacherEn.trimmed().toStdU16String();
+        const std::u16string preferredRomanization =
+            record.teacherPreferredRomanization.trimmed().toStdU16String();
+        const std::u16string koreanName =
+            record.teacherKr.trimmed().toStdU16String();
+        const Domain::TeacherDisplayName selected =
+            Domain::TeacherDisplayName::select(
+                preferredName,
+                englishName,
+                preferredRomanization,
+                koreanName
+                );
+        return QString::fromStdU16String(selected.value());
     }
 
     [[nodiscard]] static std::optional<std::string> boundedUtf8(

@@ -7,6 +7,7 @@
 #include "next/domain/schedule_time.h"
 #include "next/domain/speaking_evaluation_grade.h"
 #include "next/domain/student_name_pair.h"
+#include "next/domain/teacher_display_name.h"
 
 #include <QtTest/QtTest>
 
@@ -52,6 +53,9 @@ private slots:
     void studentNamePairsRequireBothNames();
     void studentNamePairsCompareExactUtf16PartsAndOrder();
     void studentNamePairsKeepPartsDistinctAcrossDelimiter();
+    void teacherDisplayNamesSelectPreferredAndEnglishNames();
+    void teacherDisplayNamesSelectRomanizationAndKoreanNames();
+    void teacherDisplayNamesKeepEmptyAndCopiedValues();
 };
 
 void NextDomainContractTests::typedIdentifiersRejectEmptyValues()
@@ -1041,6 +1045,70 @@ void NextDomainContractTests::studentNamePairsKeepPartsDistinctAcrossDelimiter()
         {*second, 2}
     };
     QCOMPARE(pairs.size(), std::size_t{2});
+}
+
+void NextDomainContractTests::
+teacherDisplayNamesSelectPreferredAndEnglishNames()
+{
+    const TeacherDisplayName preferred = TeacherDisplayName::select(
+        u"Preferred Name",
+        u"English Name",
+        u"Romanized Name",
+        u"\uad8c\uc601\uc0dd"
+        );
+    QVERIFY(preferred.value() == u"Preferred Name");
+
+    const TeacherDisplayName english = TeacherDisplayName::select(
+        u"",
+        u"English Name",
+        u"Romanized Name",
+        u"\uad8c\uc601\uc0dd"
+        );
+    QVERIFY(english.value() == u"English Name");
+}
+
+void NextDomainContractTests::
+teacherDisplayNamesSelectRomanizationAndKoreanNames()
+{
+    const TeacherDisplayName romanization = TeacherDisplayName::select(
+        u"",
+        u"",
+        u"Romanized Name",
+        u"\uad8c\uc601\uc0dd"
+        );
+    QVERIFY(romanization.value() == u"Romanized Name");
+
+    const TeacherDisplayName korean = TeacherDisplayName::select(
+        u"",
+        u"",
+        u"",
+        u"\uad8c\uc601\uc0dd"
+        );
+    QVERIFY(korean.value() == u"\uad8c\uc601\uc0dd");
+}
+
+void NextDomainContractTests::teacherDisplayNamesKeepEmptyAndCopiedValues()
+{
+    const TeacherDisplayName empty = TeacherDisplayName::select(
+        u"", u"", u"", u""
+        );
+    QVERIFY(empty.empty());
+    QVERIFY(empty.value().empty());
+
+    const std::u16string source = u"\uac00\ub098\U0001f600";
+    const TeacherDisplayName selected = TeacherDisplayName::select(
+        u"", source, u"", u""
+        );
+    const TeacherDisplayName copy = selected;
+    QVERIFY(!selected.empty());
+    QVERIFY(selected.value() == u"\uac00\ub098\U0001f600");
+    QVERIFY(copy == selected);
+    QVERIFY(copy.value() == u"\uac00\ub098\U0001f600");
+
+    const TeacherDisplayName untrimmed = TeacherDisplayName::select(
+        u"  ", u"English", u"", u""
+        );
+    QVERIFY(untrimmed.value() == u"  ");
 }
 
 QTEST_APPLESS_MAIN(NextDomainContractTests)
