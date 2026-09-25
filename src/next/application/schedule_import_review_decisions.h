@@ -1,8 +1,11 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -51,7 +54,7 @@ struct ScheduleImportReviewClassResolution final
     int candidateIndex = -1;
     ScheduleImportReviewClassAction action =
         ScheduleImportReviewClassAction::Unselected;
-    int targetClassId = -1;
+    std::optional<Domain::ClassId> targetClassId;
 };
 
 struct ScheduleImportReviewDecisionRequest final
@@ -86,7 +89,7 @@ struct ScheduleImportReviewDecisionIssue final
     ScheduleImportReviewDecisionIssueCode code;
     std::string teacherKey;
     int candidateIndex = -1;
-    int targetClassId = -1;
+    std::optional<Domain::ClassId> targetClassId;
     std::vector<int> candidateIndexes;
 };
 
@@ -206,20 +209,15 @@ validateScheduleImportReviewDecisions(
         candidateCount,
         nullptr
         );
-    std::map<int, std::vector<int>> claimedClassTargets;
-    std::map<int, std::size_t> duplicateTargetIssueIndexes;
+    std::map<Domain::ClassId, std::vector<int>> claimedClassTargets;
+    std::map<Domain::ClassId, std::size_t> duplicateTargetIssueIndexes;
 
     const auto claimClassTarget = [&] (
-        int targetClassId,
+        const Domain::ClassId& targetClassId,
         int candidateIndex,
         ClassAction action
         )
     {
-        if (targetClassId <= 0)
-        {
-            return;
-        }
-
         auto& claimants = claimedClassTargets[targetClassId];
         if (claimants.empty())
         {
@@ -287,7 +285,7 @@ validateScheduleImportReviewDecisions(
 
         if (resolution.action == ClassAction::UpdateExisting)
         {
-            if (resolution.targetClassId <= 0)
+            if (!resolution.targetClassId)
             {
                 Issue issue{IssueCode::UpdateClassMissingTarget};
                 issue.candidateIndex = resolution.candidateIndex;
@@ -296,7 +294,7 @@ validateScheduleImportReviewDecisions(
             else
             {
                 claimClassTarget(
-                    resolution.targetClassId,
+                    *resolution.targetClassId,
                     resolution.candidateIndex,
                     resolution.action
                     );
@@ -304,19 +302,19 @@ validateScheduleImportReviewDecisions(
         }
         else if (resolution.action == ClassAction::CreateNew)
         {
-            if (resolution.targetClassId > 0)
+            if (resolution.targetClassId)
             {
                 Issue issue{IssueCode::CreateNewClassHasTarget};
                 issue.candidateIndex = resolution.candidateIndex;
-                issue.targetClassId = resolution.targetClassId;
+                issue.targetClassId = *resolution.targetClassId;
                 result.issues.push_back(std::move(issue));
             }
         }
         else if (resolution.action == ClassAction::Skip
-                 && resolution.targetClassId > 0)
+                 && resolution.targetClassId)
         {
             claimClassTarget(
-                resolution.targetClassId,
+                *resolution.targetClassId,
                 resolution.candidateIndex,
                 resolution.action
                 );

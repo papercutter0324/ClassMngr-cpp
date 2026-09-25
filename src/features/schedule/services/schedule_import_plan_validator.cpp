@@ -4,11 +4,13 @@
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_decisions.h"
 #include "next/domain/course.h"
+#include "next/domain/domain_types.h"
 
 #include <QObject>
 #include <QRegularExpression>
 
 #include <cstddef>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -28,6 +30,19 @@ using ClassMngr::Next::Application::
     ScheduleImportReviewTeacherAction;
 using ClassMngr::Next::Application::
     ScheduleImportReviewTeacherResolution;
+
+std::optional<ClassMngr::Next::Domain::ClassId> decisionTargetId(
+    int legacyTargetId
+    )
+{
+    if (legacyTargetId <= 0)
+    {
+        return std::nullopt;
+    }
+    return ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(legacyTargetId)
+        );
+}
 
 bool validCourse(const QString& grade, const QString& level)
 {
@@ -238,7 +253,7 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
             ScheduleImportReviewClassResolution{
                 resolution.candidateIndex,
                 decisionAction(resolution.action),
-                resolution.targetClassId
+                decisionTargetId(resolution.targetClassId)
             }
             );
     }

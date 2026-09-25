@@ -1,9 +1,12 @@
 #include "next/application/schedule_import_review_decisions.h"
+#include "next/domain/domain_types.h"
 
 #include <algorithm>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -15,6 +18,27 @@ using TeacherAction = ScheduleImportReviewTeacherAction;
 using ClassAction = ScheduleImportReviewClassAction;
 using IssueCode = ScheduleImportReviewDecisionIssueCode;
 using Request = ScheduleImportReviewDecisionRequest;
+using ClassId = ClassMngr::Next::Domain::ClassId;
+using TeacherId = ClassMngr::Next::Domain::TeacherId;
+
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewClassResolution{}.targetClassId),
+    std::optional<ClassId>
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewDecisionIssue{}.targetClassId),
+    std::optional<ClassId>
+    >);
+static_assert(!std::is_same_v<ClassId, TeacherId>);
+static_assert(!std::is_assignable_v<
+    std::optional<ClassId>&,
+    std::optional<TeacherId>
+    >);
+
+ClassId classId(int numericId)
+{
+    return *ClassId::fromString(std::to_string(numericId));
+}
 
 Request validRequest()
 {
@@ -27,8 +51,8 @@ Request validRequest()
         {"teacher-a", TeacherAction::Reuse, "415"}
     };
     request.classes = {
-        {0, ClassAction::UpdateExisting, 21},
-        {1, ClassAction::Skip, 22}
+        {0, ClassAction::UpdateExisting, classId(21)},
+        {1, ClassAction::Skip, classId(22)}
     };
     return request;
 }
@@ -146,7 +170,7 @@ int main()
         {
             auto request = validRequest();
             request.classes.push_back(
-                {0, ClassAction::CreateNew, -1}
+                {0, ClassAction::CreateNew, std::nullopt}
                 );
             expectRejected(
                 "duplicate class decision",
@@ -157,13 +181,20 @@ int main()
         }
         {
             auto request = validRequest();
-            request.classes.push_back(
-                {2, ClassAction::Skip, -1}
-                );
+            request.classes.push_back({2, ClassAction::Skip, std::nullopt});
             expectRejected(
                 "out of range class decision",
                 request,
                 IssueCode::CandidateIndexOutOfRange
+                );
+            ++cases;
+        }
+        {
+            auto request = validRequest();
+            request.classes[0] = {0, ClassAction::CreateNew, std::nullopt};
+            require(
+                validateScheduleImportReviewDecisions(request).accepted(),
+                "create without target was rejected"
                 );
             ++cases;
         }
@@ -179,7 +210,7 @@ int main()
         }
         {
             auto request = validRequest();
-            request.classes[0].targetClassId = 0;
+            request.classes[0].targetClassId = std::nullopt;
             expectRejected(
                 "update without target",
                 request,
@@ -189,7 +220,11 @@ int main()
         }
         {
             auto request = validRequest();
-            request.classes[0] = {0, ClassAction::CreateNew, 21};
+            request.classes[0] = {
+                0,
+                ClassAction::CreateNew,
+                classId(21)
+            };
             expectRejected(
                 "create with existing target",
                 request,
@@ -199,7 +234,11 @@ int main()
         }
         {
             auto request = validRequest();
-            request.classes[1] = {1, ClassAction::UpdateExisting, 21};
+            request.classes[1] = {
+                1,
+                ClassAction::UpdateExisting,
+                classId(21)
+            };
             expectRejected(
                 "duplicate updated class target",
                 request,
@@ -218,7 +257,7 @@ int main()
                 );
             require(
                 issue != result.issues.end()
-                    && issue->targetClassId == 21
+                    && issue->targetClassId == classId(21)
                     && issue->candidateIndexes == std::vector<int>({0, 1}),
                 "duplicate target issue omitted its UI detail"
                 );
@@ -226,12 +265,29 @@ int main()
         }
         {
             auto request = validRequest();
-            request.classes[0] = {0, ClassAction::Skip, 22};
-            request.classes[1] = {1, ClassAction::Skip, 22};
+            request.classes[0] = {0, ClassAction::Skip, classId(22)};
+            request.classes[1] = {1, ClassAction::Skip, classId(22)};
             expectRejected(
                 "duplicate skipped class target",
                 request,
                 IssueCode::DuplicateSkippedClassTarget
+                );
+            const auto result =
+                validateScheduleImportReviewDecisions(request);
+            const auto issue = std::find_if(
+                result.issues.begin(),
+                result.issues.end(),
+                [](const auto& value)
+                {
+                    return value.code
+                        == IssueCode::DuplicateSkippedClassTarget;
+                }
+                );
+            require(
+                issue != result.issues.end()
+                    && issue->targetClassId == classId(22)
+                    && issue->candidateIndexes == std::vector<int>({0, 1}),
+                "duplicate skipped target issue omitted its UI detail"
                 );
             ++cases;
         }
@@ -345,7 +401,11 @@ int main()
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::Skip;
             request.teachers[0].selectedRoom = "foreign";
-            request.classes[0] = {0, ClassAction::CreateNew, -1};
+            request.classes[0] = {
+                0,
+                ClassAction::CreateNew,
+                std::nullopt
+            };
             expectRejected(
                 "active class assigned to skipped teacher",
                 request,
@@ -356,11 +416,20 @@ int main()
         {
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::Skip;
-            request.classes[0] = {0, ClassAction::Skip, 21};
-            request.classes[1] = {1, ClassAction::Skip, 22};
+            request.classes[0] = {0, ClassAction::Skip, classId(21)};
+            request.classes[1] = {1, ClassAction::Skip, classId(22)};
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "skipped classes lost their existing target meaning"
+                );
+            ++cases;
+        }
+        {
+            auto request = validRequest();
+            request.classes[1].targetClassId = std::nullopt;
+            require(
+                validateScheduleImportReviewDecisions(request).accepted(),
+                "skip without an existing target was rejected"
                 );
             ++cases;
         }

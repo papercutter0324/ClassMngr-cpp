@@ -15,6 +15,7 @@
 #include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/services/schedule_import_review_summary.h"
 #include "next/application/schedule_import_review_decisions.h"
+#include "next/domain/domain_types.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -46,6 +47,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <optional>
+#include <string>
 #include <utility>
 
 namespace
@@ -104,6 +107,19 @@ ReviewClassAction reviewClassAction(int action)
         return ReviewClassAction::Skip;
     }
     return ReviewClassAction::Invalid;
+}
+
+std::optional<ClassMngr::Next::Domain::ClassId> decisionTargetId(
+    int legacyTargetId
+    )
+{
+    if (legacyTargetId <= 0)
+    {
+        return std::nullopt;
+    }
+    return ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(legacyTargetId)
+        );
 }
 
 QString reviewDecisionMessage(const ReviewDecisionIssue& issue)
@@ -894,7 +910,7 @@ void ScheduleImportReviewDialog::updateReviewState()
             {
                 control.candidateIndex,
                 reviewClassAction(action),
-                target
+                decisionTargetId(target)
             }
             );
 
@@ -1087,15 +1103,22 @@ void ScheduleImportReviewDialog::updateReviewState()
                     )
                 );
         }
+        const QString targetClassIdText = issue.targetClassId
+            ? QString::fromStdString(issue.targetClassId->value())
+            : QStringLiteral("-1");
+        bool targetClassIdIsNumeric = false;
+        const int targetClassId = targetClassIdText.toInt(
+            &targetClassIdIsNumeric
+            );
         const QString targetLabel =
-            classService && teacherService
+            classService && teacherService && targetClassIdIsNumeric
                 ? classLabel(
                     classService,
                     teacherService,
-                    issue.targetClassId,
+                    targetClassId,
                     m_request.kind
                     )
-                : tr("Class %1").arg(issue.targetClassId);
+                : tr("Class %1").arg(targetClassIdText);
         scheduleConflicts.append(
             tr("Multiple imported classes are assigned to %1: %2.")
                 .arg(
