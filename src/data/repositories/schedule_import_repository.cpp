@@ -387,11 +387,22 @@ ScheduleImportStateValidationRequest stateValidationRequest(
             action = ScheduleImportStateTeacherAction::Skip;
             break;
         }
+        // Reuse and room-update actions always name a target, even when the
+        // legacy value is nonpositive. Create and skip use nonpositive values
+        // as their no-target sentinel; positive values remain visible to the
+        // Application validator so it can preserve the existing error.
+        std::optional<Domain::TeacherId> targetTeacherId;
+        if (action == ScheduleImportStateTeacherAction::Reuse
+            || action == ScheduleImportStateTeacherAction::UpdateRoom
+            || resolution.targetTeacherId > 0)
+        {
+            targetTeacherId = teacherDomainId(resolution.targetTeacherId);
+        }
         request.teacherResolutions.push_back(
             {
                 utf8String(resolution.teacherKey),
                 action,
-                resolution.targetTeacherId,
+                std::move(targetTeacherId),
                 !resolution.selectedRoom.trimmed().isEmpty()
             }
             );
@@ -417,11 +428,20 @@ ScheduleImportStateValidationRequest stateValidationRequest(
             action = ScheduleImportStateClassAction::Skip;
             break;
         }
+        // Updating an existing class always carries the selected legacy ID.
+        // Create-new and skip use nonpositive values to mean no selected
+        // target; positive values are retained for the existing validation.
+        std::optional<Domain::ClassId> targetClassId;
+        if (action == ScheduleImportStateClassAction::UpdateExisting
+            || resolution.targetClassId > 0)
+        {
+            targetClassId = classDomainId(resolution.targetClassId);
+        }
         request.classResolutions.push_back(
             {
                 static_cast<std::size_t>(index),
                 action,
-                resolution.targetClassId
+                std::move(targetClassId)
             }
             );
     }
@@ -433,7 +453,7 @@ ScheduleImportStateValidationRequest stateValidationRequest(
     {
         request.existingTeachers.push_back(
             {
-                teacher.id,
+                teacherDomainId(teacher.id),
                 utf8String(teacherKey(teacher.teacherKr))
             }
             );
@@ -450,8 +470,8 @@ ScheduleImportStateValidationRequest stateValidationRequest(
             .simplified();
         request.existingClasses.push_back(
             {
-                classroom.id,
-                info.teacherId,
+                classDomainId(classroom.id),
+                teacherDomainId(info.teacherId),
                 utf8String(normalizedIdentity(info.classGrade)),
                 utf8String(normalizedIdentity(info.classLevel)),
                 utf8String(label),

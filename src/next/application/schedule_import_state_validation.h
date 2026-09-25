@@ -1,10 +1,13 @@
 #pragma once
 
 #include "next/application/schedule_import_overlap_projection.h"
+#include "next/domain/domain_types.h"
 
+#include <charconv>
 #include <map>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -73,7 +76,7 @@ struct ScheduleImportStateTeacherResolution
     std::string teacherKey;
     ScheduleImportStateTeacherAction action =
         ScheduleImportStateTeacherAction::Create;
-    int targetTeacherId = -1;
+    std::optional<Domain::TeacherId> targetTeacherId;
     bool roomSelected = false;
 };
 
@@ -82,19 +85,19 @@ struct ScheduleImportStateClassResolution
     std::size_t candidateIndex = 0;
     ScheduleImportStateClassAction action =
         ScheduleImportStateClassAction::CreateNew;
-    int targetClassId = -1;
+    std::optional<Domain::ClassId> targetClassId;
 };
 
 struct ScheduleImportStateTeacherSnapshot
 {
-    int id = -1;
+    Domain::TeacherId id;
     std::string teacherKey;
 };
 
 struct ScheduleImportStateClassSnapshot
 {
-    int id = -1;
-    int teacherId = -1;
+    Domain::ClassId id;
+    Domain::TeacherId teacherId;
     std::string normalizedGrade;
     std::string normalizedLevel;
     std::string classLabel;
@@ -114,6 +117,49 @@ struct ScheduleImportStateValidationRequest
     std::vector<ScheduleImportStateClassSnapshot> existingClasses;
 };
 
+// Legacy apply state projected into the Qt-free contract still orders classes
+// by their numeric database IDs. TypedId's default ordering compares strings,
+// which would put "10" before "2" and change which conflict is reported first.
+struct ScheduleImportStateClassIdNumericLess
+{
+    [[nodiscard]] bool operator()(
+        const Domain::ClassId& left,
+        const Domain::ClassId& right
+        ) const
+    {
+        const auto leftNumber = numericValue(left);
+        const auto rightNumber = numericValue(right);
+        if (leftNumber.has_value() != rightNumber.has_value())
+        {
+            return leftNumber.has_value();
+        }
+        if (leftNumber && rightNumber)
+        {
+            return *leftNumber < *rightNumber;
+        }
+        return left.value() < right.value();
+    }
+
+private:
+    [[nodiscard]] static std::optional<int> numericValue(
+        const Domain::ClassId& id
+        )
+    {
+        int value = 0;
+        const auto [end, error] = std::from_chars(
+            id.value().data(),
+            id.value().data() + id.value().size(),
+            value
+            );
+        if (error != std::errc{}
+            || end != id.value().data() + id.value().size())
+        {
+            return std::nullopt;
+        }
+        return value;
+    }
+};
+
 [[nodiscard]] inline std::optional<ScheduleImportStateValidationError>
 validateScheduleImportState(
     const ScheduleImportStateValidationRequest& request
@@ -126,12 +172,18 @@ validateScheduleImportState(
             );
     };
 
-    const auto teacherForId = [&request](int id)
+    const auto teacherForId = [&request](
+                                   const std::optional<Domain::TeacherId>& id
+                                   )
         -> const ScheduleImportStateTeacherSnapshot*
     {
+        if (!id)
+        {
+            return nullptr;
+        }
         for (const auto& teacher : request.existingTeachers)
         {
-            if (teacher.id == id)
+            if (teacher.id == *id)
             {
                 return &teacher;
             }
@@ -139,12 +191,18 @@ validateScheduleImportState(
         return nullptr;
     };
 
-    const auto classForId = [&request](int id)
+    const auto classForId = [&request](
+                                 const std::optional<Domain::ClassId>& id
+                                 )
         -> const ScheduleImportStateClassSnapshot*
     {
+        if (!id)
+        {
+            return nullptr;
+        }
         for (const auto& classroom : request.existingClasses)
         {
-            if (classroom.id == id)
+            if (classroom.id == *id)
             {
                 return &classroom;
             }
@@ -168,7 +226,7 @@ validateScheduleImportState(
         }
         if ((resolution.action == ScheduleImportStateTeacherAction::Create
              || resolution.action == ScheduleImportStateTeacherAction::Skip)
-            && resolution.targetTeacherId > 0)
+            && resolution.targetTeacherId)
         {
             return failure(
                 ScheduleImportStateValidationErrorCode::InvalidTeacherTarget
@@ -193,14 +251,14 @@ validateScheduleImportState(
                 );
         }
         if (resolution.action != ScheduleImportStateClassAction::Skip
-            || resolution.targetClassId <= 0
+            || !resolution.targetClassId
             || resolution.candidateIndex >= request.candidates.size())
         {
             continue;
         }
 
         const auto& candidate = request.candidates[resolution.candidateIndex];
-        std::vector<int> exactTargets;
+        std::vector<Domain::ClassId> exactTargets;
         for (const auto& classroom : request.existingClasses)
         {
             const auto* teacher = teacherForId(classroom.teacherId);
@@ -213,7 +271,7 @@ validateScheduleImportState(
             }
         }
         if (exactTargets.size() != 1
-            || exactTargets.front() != resolution.targetClassId)
+            || exactTargets.front() != *resolution.targetClassId)
         {
             return failure(
                 ScheduleImportStateValidationErrorCode::
@@ -231,7 +289,11 @@ validateScheduleImportState(
         request.kind == ScheduleImportStateKind::Intensive
         && request.intensiveMode
             == ScheduleImportStateIntensiveMode::UpdateExisting;
-    std::map<int, ProjectedClass> projectedClasses;
+    std::map<
+        Domain::ClassId,
+        ProjectedClass,
+        ScheduleImportStateClassIdNumericLess
+        > projectedClasses;
     const auto selectedTimes = [&request](
                                   const ScheduleImportStateClassSnapshot& classroom
                                   ) -> const std::vector<ScheduleImportStateTime>&
@@ -266,7 +328,7 @@ validateScheduleImportState(
         if (resolution.action == ScheduleImportStateClassAction::Skip)
         {
             if (!preservesAbsentIntensiveClasses
-                && resolution.targetClassId > 0)
+                && resolution.targetClassId)
             {
                 if (const auto* classroom = classForId(resolution.targetClassId))
                 {
@@ -282,10 +344,12 @@ validateScheduleImportState(
             continue;
         }
 
-        const int projectedId =
+        const Domain::ClassId projectedId =
             resolution.action == ScheduleImportStateClassAction::UpdateExisting
-                ? resolution.targetClassId
-                : -static_cast<int>(resolution.candidateIndex + 1);
+                ? *resolution.targetClassId
+                : Domain::ClassId::fromString(std::to_string(
+                      -static_cast<int>(resolution.candidateIndex + 1)
+                      )).value();
         projectedClasses.insert_or_assign(
             projectedId,
             ProjectedClass{candidate.classLabel, candidate.times}
