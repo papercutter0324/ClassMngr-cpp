@@ -116,15 +116,24 @@ production `calendar_import_parity_2026.xlsx` fixture. After restoring detailed
 `QCOMPARE` output in signature tests, `ClassMngrCalendarImportTests` was
 rebuilt and rerun by both, passing 1/1. The full suite was not run.
 
+F52 centralizes Gregorian calendar-event timing validation in the Qt-free
+`Domain::CalendarEventTiming`, shared by event save, edit-draft, and
+repeat-series edit contracts. It is committed as
+`9cd9a2a4469482bc803cdc172d18a072c0fb3949`. Independent fresh MSVC/Ninja
+verification validated 907 handwritten source owners, built the three focused
+targets, and passed CTest 3/3, including the checked-in Calendar Import parity
+fixture. Domain tests reject missing/replaced ISO date separators and cover
+leap years, event timing policy, and the cross-day clock rule. The full suite
+was not run.
+
 The formal gate remains open. Gate 1 advances but remains Partial because the
-broader Domain and application-contract inventory is incomplete. Gate 2 gains
-Calendar Import production-path evidence but remains Partial because baseline
-parity is incomplete. The workspace criterion and audited v2 dependency
-isolation remain Satisfied. Next, three independent investigators will compare
-the remaining Domain, baseline-parity, and architecture gaps for the next
-bounded slice. Sub Prep remains capped at the current and following calendar
-years at most. Preserve the user-owned `cmake/sources.cmake` change; F49-F51 did
-not modify it.
+broader Domain and application-contract inventory is incomplete. Gate 2 remains
+Partial; F52 reran Calendar Import fixture parity but broader baseline parity
+is incomplete. The workspace criterion and audited v2 dependency isolation
+remain Satisfied. Next, three independent investigators will compare the
+remaining Domain, baseline-parity, and architecture gaps for the next bounded
+slice. Sub Prep remains capped at the current and following calendar years at
+most. Preserve the user-owned `cmake/sources.cmake` change; F52 did not modify it.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

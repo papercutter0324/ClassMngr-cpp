@@ -3606,3 +3606,14 @@ With QCOMPARE diagnostics restored, ClassMngrCalendarImportTests was rebuilt
 and rerun, passing 1/1. No full suite was run. Gate 1 and baseline parity Gate 2
 remain Partial; workspace create and audited v2 dependency isolation remain
 Satisfied. Phase 2 remains In Progress with its exit gate Open.
+
+## Verified F52 shared calendar timing validation - commit `9cd9a2a4469482bc803cdc172d18a072c0fb3949`
+
+Qt-free [`Domain::CalendarEventTiming`](../../src/next/domain/calendar_event_timing.h)
+now supplies timing validation to [`CalendarEventEditDraft`](../../src/next/application/calendar_event_edit_draft.h),
+[`CalendarEventSavePort`](../../src/next/application/calendar_event_save_port.h),
+and [`CalendarEventSeriesEditPort`](../../src/next/application/calendar_event_series_edit_port.h).
+The feature-facing application boundaries retain their specific error messages
+and validation order, including the existing cross-day clock rule. F52 changes
+no legacy service-call mapping; the save and series-edit adapters continue to
+map their typed requests to the existing `CalendarService` operations.

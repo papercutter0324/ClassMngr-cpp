@@ -1968,3 +1968,29 @@ separate on a host with Xvfb and loopback access.
 - Next: start three independent investigations to select the next bounded
   Phase 2 slice from the remaining Domain, baseline-parity, and architecture
   gaps, then continue one source commit per slice.
+
+### Phase 2 shared Calendar event timing - 2026-09-25
+
+- F52 is committed as
+  `9cd9a2a4469482bc803cdc172d18a072c0fb3949` (`Phase2 - Centralize Calendar
+  event timing`). It adds Qt-free `Domain::CalendarEventTiming` and routes
+  event-save, edit-draft, and repeat-series-edit timing validation through
+  it. Application boundaries retain their feature-specific errors and
+  validation order; cross-day earlier/equal clock times remain valid.
+- The exact date format now requires hyphens at positions 4 and 7 and ASCII
+  digits elsewhere. App-less Domain cases reject `2026006010` and
+  `2026-06110`, and cover Gregorian/leap-year boundaries, paired times,
+  all-day/status policy, same-day ordering, and cross-day ordering.
+- A fresh independent MSVC 19.51/Ninja/Qt 6.12 configure validated 907
+  handwritten source owners. The Domain contract, Application calendar-event
+  contract, and Calendar Import parity targets built. Their exact CTest cases
+  passed 3/3; the parity test used the checked-in
+  `calendar_import_parity_2026.xlsx` fixture. The full suite was not run.
+- The plan audit leaves Gate 1 and Gate 2 Partial; workspace boundary and
+  audited v2 dependency isolation remain Satisfied. Phase 2 remains In
+  Progress with its exit gate Open. Sub Prep remains limited to the current
+  and following calendar years at most. The user-owned
+  `cmake/sources.cmake` change was not part of F52.
+- Next: compare three independent investigations of the remaining Domain,
+  baseline-parity, and architecture gaps, then implement and verify the next
+  bounded slice.

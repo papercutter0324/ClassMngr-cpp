@@ -840,3 +840,13 @@ query, planner, and use-case boundaries instead of converting it back to raw
 UTF-16 strings between layers. Hash the encapsulated exact code units for
 membership while preserving the parser's emitted order. When adapting legacy
 assertions to a new value type, keep `QCOMPARE` expected/actual diagnostics.
+
+## Phase 2 shared Calendar event timing - 2026-09-25
+
+Share Gregorian date, clock-format, and event-ordering rules in a Qt-free
+Domain contract while keeping feature-specific errors and validation order in
+Application. Fixed-format validation must require separators at their exact
+positions; accepting a separator only when present can let digits pass in its
+place. Add malformed-separator regression cases. Preserve the existing rule
+that cross-day events may have an earlier or equal end clock time. Keep Sub
+Prep's queried interval to the current and following calendar years at most.
