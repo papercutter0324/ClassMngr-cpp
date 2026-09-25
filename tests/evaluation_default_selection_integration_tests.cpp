@@ -116,6 +116,7 @@ class EvaluationDefaultSelectionIntegrationTests final : public QObject
 
 private slots:
     void productionPathUsesSavedPolicyScheduleAndEvaluations();
+    void failedCurrentEvaluationReadReturnsNoDefault();
     void missingScheduleOrRequiredClassDataReturnsNoDefault();
 
 private:
@@ -193,6 +194,53 @@ productionPathUsesSavedPolicyScheduleAndEvaluations()
         );
 
     setSelectionPolicy(services, Application::EvaluationDefaultPolicy::All);
+    QVERIFY(
+        EvaluationDefaultSelection::forClass(
+            &services,
+            middleClass,
+            fixedDate
+            ).isEmpty()
+        );
+}
+
+void EvaluationDefaultSelectionIntegrationTests::
+failedCurrentEvaluationReadReturnsNoDefault()
+{
+    QVERIFY(m_directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(m_directory)));
+
+    const int middleClass = createClass(
+        services,
+        QStringLiteral("Middle Class With Unavailable Evaluation Data"),
+        QStringLiteral("M2")
+        );
+    QVERIFY(middleClass > 0);
+    QVERIFY(saveSchedule(services));
+    setSelectionPolicy(
+        services,
+        Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        );
+
+    const QDate fixedDate(2026, 9, 7);
+    QCOMPARE(
+        EvaluationDefaultSelection::forClass(&services, middleClass, fixedDate),
+        QStringLiteral("Summer")
+        );
+
+    QVERIFY(services.dataService());
+    QVERIFY(services.dataService()->databaseSession());
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE speaking_evaluations")));
+
+    const Result<SpeakingEvalRows> failedEvaluation =
+        services.speakingEvaluationService()->evaluation(
+            middleClass,
+            QStringLiteral("Fall")
+            );
+    QVERIFY(!failedEvaluation);
     QVERIFY(
         EvaluationDefaultSelection::forClass(
             &services,
