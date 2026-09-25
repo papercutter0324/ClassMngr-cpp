@@ -2055,3 +2055,31 @@ separate on a host with Xvfb and loopback access.
   suppression while preserving each caller's normalization and distinct
   policy. The lack of a direct `forClass` grade-choice test is an acceptance
   concern; F55 is underway to cover that seam if practical.
+
+### Phase 2 Course grade-band classification - 2026-09-25
+
+- F55 is committed as
+  `87b7bfff66bf13cc5b79180cd1142101875be3cf` (`Phase2 - Share Course grade
+  band classification`). It exposes `Course::gradeBandForName` and uses the
+  grade-only Domain classifier in Classes tab visibility, evaluation default
+  selection, and Schedule testing suppression.
+- Each feature retains `trimmed().toUpper()` at its Qt edge and keeps its
+  policy: Classes hides Analytics/Evaluations for M1-M3 subject to preference;
+  evaluation selects Middle for M1-M3 and Elementary otherwise; Schedule
+  suppresses M2/M3 and M1 only when configured. Domain coverage confirms an
+  incomplete grade/level pair can still classify by grade alone.
+- A fresh independent MSVC 19.51/Ninja/Qt 6.12 configure validated 908
+  handwritten source owners. `ClassMngrNextDomainContractTests`,
+  `ClassMngrClassesPageTests`, `ClassMngrSchedulePrintModelTests`, and
+  `ClassMngrEvaluationDefaultSelectionTests` built and passed exact CTest 4/4.
+  No full suite was run. The evaluation test invokes the same school-level
+  policy helper used by `forClass`; it does not instantiate the full
+  ApplicationServices path.
+- F55 adds Gate 1 evidence; Gate 1 and Gate 2 remain Partial. Workspace
+  boundary and audited `src/next` dependency isolation remain Satisfied, and
+  the Phase 2 exit gate remains Open. The user-owned `cmake/sources.cmake`
+  change was not part of F55. Sub Prep stays capped at the current and
+  following calendar years at most.
+- Next: compare the remaining Domain/Application and baseline-parity gaps for
+  another bounded slice. Keep commits path-limited and independently verify
+  each focused acceptance target before documenting its gate impact.

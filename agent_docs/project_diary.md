@@ -866,3 +866,12 @@ Prep's queried interval to the current and following calendar years at most.
   retains raw strings, boundary trimming, its own length limit, validation
   order, and error wording. Shared classification should not make projections
   stricter or combine operation-specific diagnostics.
+
+## Phase 2 Course grade-band classification - 2026-09-25
+
+- Expose grade-only classification without requiring a valid grade/level
+  catalog pair. Keep Qt trimming and uppercasing at each feature boundary and
+  preserve the distinct Classes, evaluation-default, and Schedule policies.
+- Test consumer policy through the shared helper when full service setup would
+  add unrelated infrastructure; verify the production service calls that same
+  helper and record the narrower integration coverage.
