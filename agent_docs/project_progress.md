@@ -989,3 +989,29 @@ Sub Prep remains bounded to the current and following calendar years
 excluded; its SHA-256 is
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: compare remaining Gate 1 and Gate 2 gaps for F63.
+
+## Current Phase 2 position - 2026-09-26 (F63)
+
+F63 is committed as `bf4251eca530066ba65b00021f63779d185bd64e` (`Phase2 -
+Cover Schedule Import missing suggestions`). The checked-workbook production
+preview now asserts the first M3/Song's candidate has no matching class IDs,
+legacy `suggestedClassId == -1`, `exactMatch == false`, and confidence
+`None`. This exercises the repository adapter when the typed matching
+projection has no suggestion; the existing app-less projection coverage
+already verifies the optional absence.
+
+Two fresh independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds each
+validated 912 handwritten source owners and built
+`ClassMngrScheduleImportTests` plus
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests`. The exact
+CTest names passed 2/2 in both trees. The checked-in
+`schedule_review.xlsx` apply fixture passed. No full suite was run.
+
+F63 closes the directly observable F58 production no-suggestion sentinel gap.
+Gate 1 and Gate 2 remain Partial; the workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep remains bounded to the current and following calendar years
+(2026-2027). The protected user change to `cmake/sources.cmake` remains
+excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: compare remaining Gate 1 and Gate 2 gaps for F64.

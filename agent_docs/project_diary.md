@@ -944,3 +944,10 @@ Prep's queried interval to the current and following calendar years at most.
   normalizes an ID before the adapter sees it, end-to-end success cannot prove
   that adapter conversion; state that observability limit rather than claiming
   direct coverage.
+
+## Phase 2 Schedule Import optional preview adapter - 2026-09-26
+
+- When a typed projection uses an optional suggestion but the legacy preview
+  requires an integer sentinel, assert the no-match case through the production
+  repository adapter. Pair the adapter assertion with the app-less optional
+  contract check so both representations stay aligned.

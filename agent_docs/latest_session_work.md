@@ -2308,3 +2308,28 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: select F63 from the remaining Gate 1/2 gaps. Keep source and audit
   commits separate and preserve the protected CMake change.
+
+### Phase 2 Schedule Import no-suggestion preview sentinel - 2026-09-26
+
+- F63 is committed as
+  `bf4251eca530066ba65b00021f63779d185bd64e` (`Phase2 - Cover Schedule Import
+  missing suggestions`). In the checked-workbook production preview test, the
+  first M3/Song's candidate has empty matching IDs, legacy suggestion `-1`,
+  `exactMatch == false`, and confidence `None`. This covers the repository
+  adapter result when the Qt-free matching projection has no suggested class;
+  the app-less projection tests already assert optional absence.
+- Two fresh independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 trees
+  validated 912 handwritten source owners each, built
+  `ClassMngrScheduleImportTests` and
+  `ClassMngrNextApplicationScheduleImportMatchingProjectionTests`, and passed
+  those exact CTests 2/2 in each tree. The first target includes the checked-in
+  `tests/fixtures/imports/schedule_review.xlsx` apply fixture. No full suite
+  was run; `git diff --check` passed.
+- F63 closes the directly observable F58 no-suggestion sentinel gap. Gates 1
+  and 2 remain Partial; workspace boundary and audited `src/next` dependency
+  isolation remain Satisfied; Phase 2 exit gate remains Open. Sub Prep remains
+  capped at the current and following calendar years (2026-2027). Protected
+  `cmake/sources.cmake` remains excluded with SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: select F64 from remaining Gate 1/2 gaps. Continue separate source and
+  audit commits; preserve the protected CMake change.
