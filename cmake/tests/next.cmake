@@ -1,5 +1,36 @@
 include_guard(GLOBAL)
 
+# Keep the cycle-selection rule independent of Qt and the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationEvaluationDefaultSelectionTests
+    tests/next_application_evaluation_default_selection_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationEvaluationDefaultSelectionTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationEvaluationDefaultSelectionTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationEvaluationDefaultSelectionTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationEvaluationDefaultSelectionTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationEvaluationDefaultSelectionTests
+    COMMAND ClassMngrNextApplicationEvaluationDefaultSelectionTests
+)
+
 classmngr_add_qt_test(
     NAME NextPlatformQSettingsFileDialogDirectoryPreferencesAdapter
     SOURCES

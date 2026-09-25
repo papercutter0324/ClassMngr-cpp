@@ -77,6 +77,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/excel_import_timeout_preferences.h
     src/next/application/automatic_update_preferences.h
     src/next/application/evaluation_default_policy_preferences.h
+    src/next/application/evaluation_default_selection.h
     src/next/application/ai_comment_custom_website_port.h
     src/next/application/ai_comment_provider_preferences.h
     src/next/application/ai_comment_voice_preferences.h

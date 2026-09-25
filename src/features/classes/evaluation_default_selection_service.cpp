@@ -53,10 +53,14 @@ QString forClass(
         return {};
     }
 
+    const Result<ClassInfo> classInfo = classService->classInfo(classId);
+    if (!classInfo)
+    {
+        return {};
+    }
+
     const SchoolLevel schoolLevel = Private::schoolLevelForClassGrade(
-        classService->classInfo(classId)
-            .value_or(ClassInfo{})
-            .classGrade
+        classInfo->classGrade
         );
     auto schedulePreferences = std::make_unique<
         ClassMngr::Next::Platform::
@@ -87,11 +91,16 @@ QString forClass(
         classId,
         currentEvaluation
         );
+    if (!rows)
+    {
+        return {};
+    }
+
     return forTermSchedule(
         calendar.schedule(),
         schoolLevel,
         date,
-        rows && isPopulated(*rows)
+        isPopulated(*rows)
         );
 }
 

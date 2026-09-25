@@ -1,25 +1,42 @@
 #include "features/classes/evaluation_default_selection.h"
 
+#include "next/application/evaluation_default_selection.h"
 #include "next/domain/course.h"
 
 #include <algorithm>
+#include <optional>
 #include <ranges>
 
 #include <string>
 
 namespace
 {
-AcademicTerm previousTerm(AcademicTerm term)
+using ClassMngr::Next::Application::EvaluationPeriod;
+
+std::optional<EvaluationPeriod> evaluationPeriodFor(AcademicTerm term)
 {
     switch (term)
     {
-    case AcademicTerm::Winter: return AcademicTerm::Fall;
-    case AcademicTerm::Spring: return AcademicTerm::Winter;
-    case AcademicTerm::Summer: return AcademicTerm::Spring;
-    case AcademicTerm::Fall: return AcademicTerm::Summer;
+    case AcademicTerm::Winter: return EvaluationPeriod::Winter;
+    case AcademicTerm::Spring: return EvaluationPeriod::Spring;
+    case AcademicTerm::Summer: return EvaluationPeriod::Summer;
+    case AcademicTerm::Fall: return EvaluationPeriod::Fall;
     }
 
-    return AcademicTerm::Winter;
+    return std::nullopt;
+}
+
+QString evaluationNameForPeriod(EvaluationPeriod period)
+{
+    switch (period)
+    {
+    case EvaluationPeriod::Winter: return QStringLiteral("Winter");
+    case EvaluationPeriod::Spring: return QStringLiteral("Speech Contest");
+    case EvaluationPeriod::Summer: return QStringLiteral("Summer");
+    case EvaluationPeriod::Fall: return QStringLiteral("Fall");
+    }
+
+    return {};
 }
 
 } // namespace
@@ -60,15 +77,8 @@ namespace EvaluationDefaultSelection
 
 QString evaluationNameForTerm(AcademicTerm term)
 {
-    switch (term)
-    {
-    case AcademicTerm::Winter: return QStringLiteral("Winter");
-    case AcademicTerm::Spring: return QStringLiteral("Speech Contest");
-    case AcademicTerm::Summer: return QStringLiteral("Summer");
-    case AcademicTerm::Fall: return QStringLiteral("Fall");
-    }
-
-    return {};
+    const auto period = evaluationPeriodFor(term);
+    return period ? evaluationNameForPeriod(*period) : QString{};
 }
 
 bool isPopulated(const SpeakingEvalRows& rows)
@@ -106,11 +116,21 @@ QString forTermSchedule(
         return {};
     }
 
-    return evaluationNameForTerm(
-        currentTermEvaluationIsPopulated
-            ? position.term
-            : previousTerm(position.term)
-        );
+    const auto currentPeriod = evaluationPeriodFor(position.term);
+    if (!currentPeriod)
+    {
+        return {};
+    }
+
+    const auto selectedPeriod =
+        ClassMngr::Next::Application::selectDefaultEvaluationPeriod(
+            ClassMngr::Next::Application::EvaluationDefaultPolicy::
+                CurrentOrPreviousTerm,
+            *currentPeriod,
+            currentTermEvaluationIsPopulated
+            );
+    return selectedPeriod ? evaluationNameForPeriod(*selectedPeriod)
+                          : QString{};
 }
 
 } // namespace EvaluationDefaultSelection
