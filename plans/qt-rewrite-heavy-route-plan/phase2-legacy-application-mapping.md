@@ -18,7 +18,8 @@ use-case seams with the shared six-field signature identity carried as a typed
 value end-to-end, the partial Schedule Import state-validation and repository
 pre-write cutovers, F60 typed review-decision targets, F62 apply-boundary action/sentinel
 characterization, F63 production no-suggestion sentinel assertion, F64's
-typed student-name pair at the roster score-import join, the shared
+typed student-name pair at the roster score-import join, and F65's verified
+legacy profile startup/migration path through FileController, the shared
 Qt-free Class Transfer review-decision contract and repository validation,
 and Sub Prep print-source, selected-class details, and schedule-summary read
 adapters plus the Sub Prep information-sheet output wiring. Personal-details
@@ -115,7 +116,7 @@ with `Domain::OperationError`.
 
 | Legacy symbol | Current call sites / role | v2 destination / status | Owner / layer |
 | --- | --- | --- | --- |
-| `openDatabase(QString)` | [`FileController::loadDatabase`](../../src/app/controllers/file_controller.cpp#L552) routes the selected path through the workspace coordinator; new-database and initial-setup paths prepare replacement in FileController before coordinator create/open. | `WorkspaceGateway::openWorkspace` -> `WorkspaceUseCase::openWorkspace` -> `WorkspaceCoordinator::openWorkspace`; successful commit uses `WorkspaceState::open` and clears `SelectionState`. Integrated in FileController through `ApplicationServicesWorkspacePort` and `WorkspaceCoordinator`. | Qt/file outer adapter; v2 application use case, coordinator, and state. |
+| `openDatabase(QString)` | [`FileController::loadDatabase`](../../src/app/controllers/file_controller.cpp#L552) routes the selected path through the workspace coordinator; startup uses `FileController::loadDatabaseOnStartup`. New-database and initial-setup paths prepare replacement in FileController before coordinator create/open. F65 verifies legacy `.db` startup, migrated service values, latest schema, and retained pre-v4 backup. | `WorkspaceGateway::openWorkspace` -> `WorkspaceUseCase::openWorkspace` -> `WorkspaceCoordinator::openWorkspace`; successful commit uses `WorkspaceState::open` and clears `SelectionState`. Integrated in FileController through `ApplicationServicesWorkspacePort` and `WorkspaceCoordinator`. | Qt/file outer adapter; v2 application use case, coordinator, and state. |
 | `closeDatabase()` | [`FileController::closeActiveDatabase`](../../src/app/controllers/file_controller.cpp#L1108) uses the workspace coordinator for an open v2 session, then clears UI file state on success. | `WorkspaceGateway::closeWorkspace` -> `WorkspaceUseCase::closeWorkspace` -> `WorkspaceCoordinator::closeWorkspace`; successful close uses `WorkspaceState::close` and clears `SelectionState`. Integrated in FileController through `ApplicationServicesWorkspacePort` and `WorkspaceCoordinator`. | FileController UI boundary, `ApplicationServicesWorkspacePort`, and v2 coordinator/state. |
 | `hasOpenDatabase()` | FileController and MainWindow retain direct `ApplicationServices::hasOpenDatabase()` guards; the workspace port also provides the gateway read used for handle validation. | Read `WorkspaceState::snapshot()` and its optional session/lifecycle; do not add a v2 boolean wrapper around `ApplicationServices`. `ApplicationServicesWorkspacePort` provides the gateway read; FileController and MainWindow retain direct legacy availability guards at the outer UI boundary. | v2 application state; UI adapter consumes a copy. |
 | `currentDatabasePath()` | [`FileController`](../../src/app/controllers/file_controller.cpp) still reads it for UI dialog/current-file paths; the workspace port normalizes it into the gateway handle and session location. | Read the current `WorkspaceSession::location()` from `WorkspaceStateSnapshot`; convert the adapter-neutral location back to a UI path at the outer boundary. The port normalizes the legacy path into the workspace gateway; FileController retains legacy path reads for UI location and fallback behavior. | v2 workspace state; Qt/file adapter owns conversion. |
@@ -3850,5 +3851,26 @@ the exact `ClassMngrNextDomainContractTests` and
 F64 adds Gate 1 Domain evidence and Gate 2 widget-import parity evidence; both
 remain Partial. The workspace boundary and audited `src/next` dependency
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
-Open. Next slice: select F65. Sub Prep remains capped at the current and
+Open. Next slice: select F66. Sub Prep remains capped at the current and
 following calendar years, 2026-2027.
+
+## Verified F65 legacy profile startup migration coverage - commit `a4fbffb91228ab1d783ac782ff572d49d3c28b65`
+
+[`FileControllerWorkspaceLifecycleTests`](../../tests/file_controller_workspace_lifecycle_tests.cpp)
+materializes the checked-in
+[`legacy_startup.sql`](../../tests/fixtures/workspaces/legacy_startup.sql)
+fixture as a database and opens it through `FileController`,
+`ApplicationServices`, and `WorkspaceCoordinator`. The test asserts the
+normalized active path; migrated teacher, class, ClassInfo, and schedule
+values; and latest schema version 6. The service exposes the unassigned
+teacher as `-1` while SQLite retains `NULL`. The
+`.pre-schema-v4-backup` remains present at schema version 3.
+
+Executor and independent Tester each freshly configured Windows x64 Debug
+Ninja/MSVC 19.51/Qt 6.12, validated 913 handwritten source owners, built
+`ClassMngrFileControllerWorkspaceLifecycleTests` and
+`ClassMngrDatabaseSchemaManagerTests`, and passed their exact CTests 2/2. No
+full suite was run. F65 adds explicit production-path legacy open/migration
+baseline evidence; Gate 2 remains Partial and Phase 2 remains open. It changes
+no production source or v2 dependency finding. Sub Prep remains capped at the
+current and following calendar years, 2026-2027.

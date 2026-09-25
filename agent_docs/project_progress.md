@@ -1042,3 +1042,29 @@ excluded; its SHA-256 is
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: select F65 from remaining Phase 2 gaps and keep source and documentation
 commits separate.
+
+## Current Phase 2 position - 2026-09-26 (F65)
+
+F65 is committed as `a4fbffb91228ab1d783ac782ff572d49d3c28b65` (`Cover legacy
+profile migration through FileController`). The lifecycle integration test
+materializes `legacy_startup.sql` as a `.db`, opens it through FileController
+and the workspace coordinator, and verifies the active path, teacher, class,
+ClassInfo, and schedule data. Migration repairs the invalid teacher link to
+SQL NULL while the service retains its `-1` unassigned sentinel; the active
+schema reaches version 6 and the retained `.pre-schema-v4-backup` contains
+schema version 3.
+
+Fresh independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds each
+validated 913 handwritten source owners and passed
+`ClassMngrFileControllerWorkspaceLifecycleTests` and
+`ClassMngrDatabaseSchemaManagerTests` (2/2). No full suite was run.
+
+Gate 2 gains production-path legacy `.db` migration evidence and remains
+Partial; Gate 1 remains Partial. The workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep remains bounded to the current and following calendar years
+(2026-2027). The protected user change to `cmake/sources.cmake` remains
+excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: select F66 from the remaining Phase 2 gaps; keep source and documentation
+commits separate.

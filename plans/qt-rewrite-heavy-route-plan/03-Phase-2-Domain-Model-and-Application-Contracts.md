@@ -8,26 +8,23 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Previous code slice: F63 extends
-  `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` to assert the first fixture
-  candidate M3/Song has no matching IDs, legacy `suggestedClassId == -1`, `exactMatch == false`,
-  and confidence None. The seeded classes E4/Hercules and M2/Atlas make this production
-  no-match reachable; the positive-suggestion case remains. This closes the F58
-  production-adapter no-suggestion assertion gap; app-less projection absence was already
-  covered. Fresh independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12.0 verification
-  validated 912 handwritten source owners and passed `ClassMngrScheduleImportTests` and
-  `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` 2/2 in separate Executor
-  and Tester fresh trees. No full suite. Source commit:
-  `bf4251eca530066ba65b00021f63779d185bd64e`.
-- Latest code slice: F64 adds Qt-free `Domain::StudentNamePair` with separate exact UTF-16
+- Previous code slice: F64 adds Qt-free `Domain::StudentNamePair` with separate exact UTF-16
   components, empty-half rejection, equality, and ordering. The roster score-import join trims
   at the Qt boundary, skips empty pairs, and preserves last-write-wins duplicates. Fresh
   independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds passed the exact Domain
   contract and roster widget import CTests 2/2 each; no full suite. Source commit:
-  `559b4feaa8fd67c01cd2f4d0f3ddd7dc0f166de5`. Gate 1 and Gate 2 remain Partial; Workspace
-  boundary and audited `src/next` dependency isolation remain Satisfied; Phase 2 exit gate
-  remains Open. Next slice: select F65. Sub Prep remains capped at 2026-2027, the current and
-  following calendar years.
+  `559b4feaa8fd67c01cd2f4d0f3ddd7dc0f166de5`.
+- Latest code slice: F65 adds a production-path startup migration test: a checked-in legacy SQL
+  fixture is materialized as a `.db` and opened through `FileController` and the workspace
+  coordinator. The test verifies normalized active path, teacher/class/ClassInfo/schedule
+  values, latest schema version 6, NULL-to-`-1` unassigned-teacher projection, and retained
+  schema-v3 pre-schema-v4 backup. Fresh independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12
+  builds validated 913 handwritten owners and passed the FileController lifecycle and schema
+  manager CTests 2/2 each; no full suite. Gate 2 gains legacy open/migration baseline evidence
+  but remains Partial; Gate 1 remains Partial; Workspace boundary and audited `src/next`
+  dependency isolation remain Satisfied. Source commit:
+  `a4fbffb91228ab1d783ac782ff572d49d3c28b65`. Phase 2 exit gate remains Open. F66 selection is
+  pending. Sub Prep remains capped at 2026-2027, the current and following calendar years.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5087,6 +5084,44 @@ suite was run.
 Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
 dependency isolation remain Satisfied. Phase 2 remains In Progress and its
 exit gate remains Open. F59's action/sentinel coverage remains bounded; F62's
-CreateNew class conversion limitation still applies. F65 selection is pending.
+CreateNew class conversion limitation still applies. F66 selection is pending.
+Sub Prep remains capped at the current and following calendar years,
+2026-2027.
+
+#### Progress update - 2026-09-26 (F65 legacy profile startup migration coverage, commit `a4fbffb91228ab1d783ac782ff572d49d3c28b65`)
+
+[`FileControllerWorkspaceLifecycleTests`](../../tests/file_controller_workspace_lifecycle_tests.cpp)
+now materializes the checked-in
+[`legacy_startup.sql`](../../tests/fixtures/workspaces/legacy_startup.sql)
+fixture as a `.db` and opens it through `FileController` into
+`ApplicationServices`/`WorkspaceCoordinator`. The test checks the normalized
+active path; migrated teacher, class, ClassInfo, and schedule values; schema
+version 6; the service projection of the unassigned teacher as `-1` while the
+database stores `NULL`; and the retained `.pre-schema-v4-backup` at schema
+version 3.
+
+Fresh Executor and independent Tester Windows x64 Debug Ninja/MSVC 19.51/Qt
+6.12 builds each validated 913 handwritten source owners, built
+`ClassMngrFileControllerWorkspaceLifecycleTests` and
+`ClassMngrDatabaseSchemaManagerTests`, and passed their exact CTests 2/2. No
+full suite was run.
+
+#### Exit-gate status after F65
+
+This cumulative audit applies the formal exit criteria through F65. The two
+focused F65 targets were freshly and independently built; no full suite was
+run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F64 adds a directly tested Qt-free student name-pair value; the broader Domain and Application behavior remains incomplete. F65 adds no Gate 1 behavior. |
+| Baseline parity | Partial | F65 adds production-path legacy `.db` startup/open and schema-migration evidence, including migrated service values and retained pre-v4 backup. Wider fixture-backed baseline parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F65 adds startup lifecycle integration evidence without changing that criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F65 changes tests only. |
+
+Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress and its
+exit gate remains Open. F59's action/sentinel coverage remains bounded; F62's
+CreateNew class conversion limitation still applies. F66 selection is pending.
 Sub Prep remains capped at the current and following calendar years,
 2026-2027.

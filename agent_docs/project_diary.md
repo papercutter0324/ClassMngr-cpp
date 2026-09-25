@@ -959,3 +959,11 @@ Prep's queried interval to the current and following calendar years at most.
   duplicate overwrite order, and test the real import path for boundary trim
   and persisted results. When current validation forbids duplicate pairs,
   exercise legacy stored duplicates by filling an in-range persisted row.
+
+## Phase 2 legacy profile migration parity - 2026-09-26
+
+- Test legacy profile migration through the production FileController and
+  workspace coordinator, not only the schema manager. Assert both the
+  user-visible unassigned-teacher sentinel and the stored NULL repair. Backup
+  filenames label the migration being applied: `.pre-schema-v4-backup`
+  contains the prior schema version 3.

@@ -2365,3 +2365,31 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: compare remaining Gate 1 and Gate 2 gaps for F65. Keep source and
   documentation commits separate and preserve the protected user change.
+
+### Phase 2 legacy profile migration through workspace open - 2026-09-26
+
+- F65 is committed as
+  `a4fbffb91228ab1d783ac782ff572d49d3c28b65` (`Cover legacy profile migration
+  through FileController`). Only
+  `tests/file_controller_workspace_lifecycle_tests.cpp` changed. The new test
+  materializes the checked-in `legacy_startup.sql` fixture into a temporary
+  `.db` and opens it through FileController and WorkspaceCoordinator.
+- The test reads teacher, class, ClassInfo, and schedule values through the
+  production services and asserts the normalized active path. The legacy
+  nonpositive teacher reference is repaired to SQL NULL; the service maps the
+  unassigned relationship to `-1`. The active profile reaches
+  `DatabaseSchemaManager::LatestSchemaVersion` (6). Migration retains
+  `.pre-schema-v4-backup`, whose stored schema version is 3 and whose class
+  teacher link is already repaired.
+- Executor and independent Tester each configured a fresh Windows x64 Debug
+  Ninja/MSVC 19.51/Qt 6.12 tree, validated 913 handwritten source owners, built
+  `ClassMngrFileControllerWorkspaceLifecycleTests` and
+  `ClassMngrDatabaseSchemaManagerTests`, and passed exactly those CTests 2/2.
+  `git diff --check` passed; no full suite was run. Protected
+  `cmake/sources.cmake` remained excluded with SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- F65 adds Gate 2 legacy `.db` production-open parity evidence; Gate 2 remains
+  Partial and Gate 1 remains Partial. Workspace boundary and audited
+  `src/next` dependency isolation remain Satisfied; Phase 2 exit remains Open.
+  Sub Prep remains capped at 2026-2027. Next: select F66 from the remaining
+  gate gaps; keep source and documentation commits separate.
