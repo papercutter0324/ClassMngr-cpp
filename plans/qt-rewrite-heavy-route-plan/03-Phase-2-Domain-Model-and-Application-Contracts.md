@@ -8,19 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Previous code slice: F62 characterizes reachable Schedule Import apply-boundary sentinel behavior in
-  `schedule_import_tests.cpp`: Reuse/UpdateRoom teacher targets -1/0 with matching teacher
-  present/absent; Create/Skip with -1/0 and positive foreign teacher targets; class CreateNew
-  and targetless Skip sentinels, exact/mismatching positive Skip targets, stale positive
-  UpdateExisting, plus F60 PlanValidator rejection of positive CreateNew/nonpositive
-  UpdateExisting. Rejected cases assert persisted snapshots are unchanged. CreateNew class
-  sentinel conversion is not isolated: F60 PlanValidator normalizes nonpositive targets to
-  absence and state validation ignores CreateNew targets, so those rows prove overall apply
-  behavior only. Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 verification passed
-  `ClassMngrNextApplicationScheduleImportStateValidationTests` and
-  `ClassMngrScheduleImportTests` 2/2; the latter includes checked-in `schedule_review.xlsx`.
-  No full suite. Source commit: `691e56fbdcc536aaaf577602feeac25fc5b7227f`.
-- Latest code slice: F63 extends
+- Previous code slice: F63 extends
   `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` to assert the first fixture
   candidate M3/Song has no matching IDs, legacy `suggestedClassId == -1`, `exactMatch == false`,
   and confidence None. The seeded classes E4/Hercules and M2/Atlas make this production
@@ -30,9 +18,15 @@
   validated 912 handwritten source owners and passed `ClassMngrScheduleImportTests` and
   `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` 2/2 in separate Executor
   and Tester fresh trees. No full suite. Source commit:
-  `bf4251eca530066ba65b00021f63779d185bd64e`. Gate 1 and Gate 2 remain Partial; Workspace
+  `bf4251eca530066ba65b00021f63779d185bd64e`.
+- Latest code slice: F64 adds Qt-free `Domain::StudentNamePair` with separate exact UTF-16
+  components, empty-half rejection, equality, and ordering. The roster score-import join trims
+  at the Qt boundary, skips empty pairs, and preserves last-write-wins duplicates. Fresh
+  independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds passed the exact Domain
+  contract and roster widget import CTests 2/2 each; no full suite. Source commit:
+  `559b4feaa8fd67c01cd2f4d0f3ddd7dc0f166de5`. Gate 1 and Gate 2 remain Partial; Workspace
   boundary and audited `src/next` dependency isolation remain Satisfied; Phase 2 exit gate
-  remains Open. Next slice: select F64. Sub Prep remains capped at 2026-2027, the current and
+  remains Open. Next slice: select F65. Sub Prep remains capped at 2026-2027, the current and
   following calendar years.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
@@ -5058,3 +5052,41 @@ isolation remain Satisfied. Phase 2 remains In Progress and its exit gate
 remains Open. F59's action/sentinel coverage remains bounded; F62's
 CreateNew class conversion limitation still applies. Next slice: select F64.
 Sub Prep remains capped at 2026-2027, the current and following calendar years.
+
+#### Progress update - 2026-09-26 (F64 StudentNamePair Domain value and roster score-import join, commit `559b4feaa8fd67c01cd2f4d0f3ddd7dc0f166de5`)
+
+Qt-free `Domain::StudentNamePair` stores exact English and Korean UTF-16
+components separately, rejects either empty half, and provides equality and
+ordering. `RosterEditorWidget::importScores` trims both names at the Qt
+boundary, skips incomplete pairs, and joins using the typed pair while
+preserving last-write-wins behavior for duplicate imported score pairs.
+Separate components remove delimiter ambiguity for invalid stored names
+containing U+001F.
+
+Domain coverage includes empty components; exact, case, internal-whitespace,
+UTF-16, and ordering behavior; and separator-containing pairs. The real widget
+fixture verifies one-sided outer trimming and later-grade persistence for a
+duplicate pair in the second saved speaking-evaluation row; current validation
+rejects new duplicates. Fresh independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds
+each passed exact CTest 2/2: `ClassMngrNextDomainContractTests` and
+`ClassMngrRosterEditorWidgetImportTests`. No full suite was run.
+
+#### Exit-gate status after F64
+
+This cumulative audit applies the formal exit criteria through F64. Executor
+and independent Tester freshly built the two focused F64 targets; no full
+suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F64 adds a Qt-free, directly tested student name-pair value; broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F64 adds a real widget-import check for one-sided trim and persisted duplicate-row behavior; broader baseline parity remains incomplete and the full suite has not run. |
+| Workspace boundary | Satisfied | The `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less tests remain satisfied; F64 does not change this boundary. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F64's new Domain value remains Qt-free. |
+
+Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress and its
+exit gate remains Open. F59's action/sentinel coverage remains bounded; F62's
+CreateNew class conversion limitation still applies. F65 selection is pending.
+Sub Prep remains capped at the current and following calendar years,
+2026-2027.

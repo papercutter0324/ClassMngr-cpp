@@ -2333,3 +2333,35 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: select F64 from remaining Gate 1/2 gaps. Continue separate source and
   audit commits; preserve the protected CMake change.
+
+### Phase 2 student name-pair identity - 2026-09-26
+
+- F64 is committed as
+  `559b4feaa8fd67c01cd2f4d0f3ddd7dc0f166de5` (`Add typed student name pairs
+  to roster score import`). Added Qt-free
+  `src/next/domain/student_name_pair.h` and registered it in
+  `cmake/next.cmake`. The value stores independent UTF-16 fields, rejects
+  either empty component, and compares/orders the exact fields. Only the
+  roster score-import join now uses this value; `QString::trimmed()` remains
+  at the feature boundary and `insert_or_assign` preserves last-write-wins.
+- `tests/next_domain_contract_tests.cpp` covers empty halves, exact equality,
+  case/internal-whitespace distinction, UTF-16 supplementary characters,
+  ordering, and formerly ambiguous U+001F-separated component pairs.
+  `tests/roster_editor_widget_import_tests.cpp` retains real full-pair,
+  partial-pair, persistence, and idempotence coverage, adds a one-sided trim
+  regression, and verifies a later duplicate legacy row overwrites an earlier
+  score. Current validation rejects duplicates; the fixture directly populates
+  existing in-range row 1 to represent legacy stored data.
+- Executor and independent Tester each configured or used a fresh Windows
+  x64 Debug Ninja/MSVC 19.51/Qt 6.12 tree. Both focused targets built and exact
+  CTests `ClassMngrNextDomainContractTests` and
+  `ClassMngrRosterEditorWidgetImportTests` passed 2/2. The Tester build
+  reported 913 handwritten source owners. `git diff --check` passed; no full
+  suite was run.
+- Gates 1 and 2 remain Partial; workspace boundary and audited `src/next`
+  dependency isolation remain Satisfied; Phase 2 exit remains Open. Sub Prep
+  remains capped to 2026-2027. Protected `cmake/sources.cmake` stayed excluded
+  at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: compare remaining Gate 1 and Gate 2 gaps for F65. Keep source and
+  documentation commits separate and preserve the protected user change.

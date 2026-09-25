@@ -951,3 +951,11 @@ Prep's queried interval to the current and following calendar years at most.
   requires an integer sentinel, assert the no-match case through the production
   repository adapter. Pair the adapter assertion with the app-less optional
   contract check so both representations stay aligned.
+
+## Phase 2 student name-pair identity - 2026-09-26
+
+- Represent a composite identity as separate typed fields instead of joining
+  with a delimiter. Keep trimming at the Qt feature edge, preserve legacy
+  duplicate overwrite order, and test the real import path for boundary trim
+  and persisted results. When current validation forbids duplicate pairs,
+  exercise legacy stored duplicates by filling an in-range persisted row.

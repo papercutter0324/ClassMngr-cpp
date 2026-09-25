@@ -1015,3 +1015,30 @@ Sub Prep remains bounded to the current and following calendar years
 excluded; its SHA-256 is
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: compare remaining Gate 1 and Gate 2 gaps for F64.
+
+## Current Phase 2 position - 2026-09-26 (F64)
+
+F64 is committed as `559b4feaa8fd67c01cd2f4d0f3ddd7dc0f166de5` (`Add typed
+student name pairs to roster score import`). The Qt-free
+`Domain::StudentNamePair` stores exact UTF-16 English and Korean components,
+rejects an empty half, and provides equality and ordering. Roster score import
+now uses the typed pair after trimming at the Qt boundary; empty-pair skipping
+and last-write-wins behavior for duplicate saved scores are preserved. The
+structured key removes delimiter ambiguity for invalid stored names containing
+U+001F.
+
+Two fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds passed
+`ClassMngrNextDomainContractTests` and
+`ClassMngrRosterEditorWidgetImportTests` (2/2 each). Coverage includes exact
+pair identity, empty halves, ordering, UTF-16 values, one-sided trim through
+the real import, persistence/idempotence, and a legacy stored duplicate pair
+whose later grade wins. No full suite was run.
+
+Gate 1 and Gate 2 remain Partial; the workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep remains bounded to the current and following calendar years
+(2026-2027). The protected user change to `cmake/sources.cmake` remains
+excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: select F65 from remaining Phase 2 gaps and keep source and documentation
+commits separate.
