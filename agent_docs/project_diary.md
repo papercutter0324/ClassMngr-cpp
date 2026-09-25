@@ -967,3 +967,11 @@ Prep's queried interval to the current and following calendar years at most.
   user-visible unassigned-teacher sentinel and the stored NULL repair. Backup
   filenames label the migration being applied: `.pre-schema-v4-backup`
   contains the prior schema version 3.
+
+## Phase 2 teacher display-name precedence - 2026-09-26
+
+- Share legacy name precedence as a Qt-free Domain rule, while keeping
+  `QString::trimmed()` at each platform input edge. Preserve adapter-specific
+  empty-name outputs in their adapters (`N/A` for schedule summaries and
+  empty for class details); the Domain value should represent the selected
+  name only.

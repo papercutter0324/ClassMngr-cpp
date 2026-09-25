@@ -1068,3 +1068,26 @@ excluded; its SHA-256 is
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: select F66 from the remaining Phase 2 gaps; keep source and documentation
 commits separate.
+
+## Current Phase 2 position - 2026-09-26 (F66)
+
+F66 is committed as `9afa17f47aadb7188916cc091e370f5d0bea98bb` (`Extract Sub
+Prep teacher display name rule`). The new Qt-free `Domain::TeacherDisplayName`
+owns the selected UTF-16 value and applies preferred name, English name,
+preferred romanization, then Korean name precedence. Both Sub Prep platform
+adapters trim with Qt at their boundaries and keep their existing empty
+fallbacks: summary `N/A`, class details empty. No interval logic changed.
+
+Two fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds each validated
+914 handwritten source owners, built the Domain contract and Sub Prep print
+source-port test targets, and passed the exact two CTests (2/2). No full suite
+was run.
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep remains bounded to the current and following calendar years
+(2026-2027). The protected user change to `cmake/sources.cmake` remains
+excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: compare the remaining Phase 2 Gate 1 and Gate 2 gaps for F67; keep source
+and documentation commits separate.

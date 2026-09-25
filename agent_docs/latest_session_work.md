@@ -2393,3 +2393,33 @@ separate on a host with Xvfb and loopback access.
   `src/next` dependency isolation remain Satisfied; Phase 2 exit remains Open.
   Sub Prep remains capped at 2026-2027. Next: select F66 from the remaining
   gate gaps; keep source and documentation commits separate.
+
+### Phase 2 teacher display-name precedence - 2026-09-26
+
+- F66 source/test commit: `9afa17f47aadb7188916cc091e370f5d0bea98bb`
+  (`Extract Sub Prep teacher display name rule`). Added the Qt-free
+  `src/next/domain/teacher_display_name.h` and registered it in
+  `cmake/next.cmake`. It owns the selected exact UTF-16 name in legacy order:
+  preferred name, English, preferred romanization, Korean.
+- The Sub Prep schedule-summary and class-details adapters trim their Qt
+  inputs at the platform boundary and use the shared Domain rule. Summary
+  retains `N/A` for no name; class details retains an empty value. Added
+  app-less precedence/empty/copy/non-ASCII tests and production adapter
+  coverage for padded preferred names and both empty fallbacks. No range logic
+  changed.
+- Executor tree `build/phase2-f66-teacher-display-name-executor-20260926` and
+  independent Tester tree
+  `build/phase2-f66-teacher-display-name-tester-20260926-independent-01`
+  each used a fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 build,
+  validated 914 handwritten source owners, built
+  `ClassMngrNextDomainContractTests` and
+  `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+  passed those exact CTests 2/2. No full suite was run. `git diff --check`
+  passed.
+- Gate 1 and Gate 2 remain Partial; workspace boundary and audited `src/next`
+  dependency isolation remain Satisfied; Phase 2 exit gate remains Open. Sub
+  Prep remains capped at the current and following years (2026-2027). The
+  protected user change `cmake/sources.cmake` stayed excluded with SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: select F67 from the remaining Phase 2 gaps after the three independent
+  Investigator reviews. Keep source and documentation commits separate.

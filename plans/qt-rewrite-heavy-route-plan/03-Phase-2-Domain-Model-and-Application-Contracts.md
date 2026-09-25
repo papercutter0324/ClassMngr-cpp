@@ -8,23 +8,20 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Previous code slice: F64 adds Qt-free `Domain::StudentNamePair` with separate exact UTF-16
-  components, empty-half rejection, equality, and ordering. The roster score-import join trims
-  at the Qt boundary, skips empty pairs, and preserves last-write-wins duplicates. Fresh
-  independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds passed the exact Domain
-  contract and roster widget import CTests 2/2 each; no full suite. Source commit:
-  `559b4feaa8fd67c01cd2f4d0f3ddd7dc0f166de5`.
-- Latest code slice: F65 adds a production-path startup migration test: a checked-in legacy SQL
-  fixture is materialized as a `.db` and opened through `FileController` and the workspace
-  coordinator. The test verifies normalized active path, teacher/class/ClassInfo/schedule
-  values, latest schema version 6, NULL-to-`-1` unassigned-teacher projection, and retained
-  schema-v3 pre-schema-v4 backup. Fresh independent Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12
-  builds validated 913 handwritten owners and passed the FileController lifecycle and schema
-  manager CTests 2/2 each; no full suite. Gate 2 gains legacy open/migration baseline evidence
-  but remains Partial; Gate 1 remains Partial; Workspace boundary and audited `src/next`
-  dependency isolation remain Satisfied. Source commit:
-  `a4fbffb91228ab1d783ac782ff572d49d3c28b65`. Phase 2 exit gate remains Open. F66 selection is
-  pending. Sub Prep remains capped at 2026-2027, the current and following calendar years.
+- Previous code slice: F65 adds production-path legacy `.db` startup and schema-migration
+  evidence through `FileController` and `WorkspaceCoordinator`, including migrated service
+  values and the retained schema-v3 pre-schema-v4 backup. Independent fresh Windows x64 Debug
+  builds passed the FileController lifecycle and schema-manager CTests 2/2; no full suite.
+  Source commit: `a4fbffb91228ab1d783ac782ff572d49d3c28b65`.
+- Latest code slice: F66 adds Qt-free `Domain::TeacherDisplayName`, preserving precedence
+  preferred name > English > preferred romanization > Korean. Both Sub Prep adapters trim at
+  the Qt edge and pass UTF-16 values to the rule; the schedule summary retains `N/A` for an
+  empty name and class details retains empty. Independent fresh Windows x64 Debug Ninja/MSVC
+  19.51.36257/Qt 6.12 builds validated 914 handwritten owners and passed the Domain contract
+  and Sub Prep print-source adapter CTests 2/2 each; no full suite. Gate 1 and Gate 2 advance
+  but remain Partial; Workspace boundary and audited `src/next` dependency isolation remain
+  Satisfied. Source commit: `9afa17f47aadb7188916cc091e370f5d0bea98bb`. Phase 2 exit gate
+  remains Open. Sub Prep remains capped at 2026-2027, the current and following calendar years.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5084,7 +5081,7 @@ suite was run.
 Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
 dependency isolation remain Satisfied. Phase 2 remains In Progress and its
 exit gate remains Open. F59's action/sentinel coverage remains bounded; F62's
-CreateNew class conversion limitation still applies. F66 selection is pending.
+CreateNew class conversion limitation still applies. F65 selection is pending.
 Sub Prep remains capped at the current and following calendar years,
 2026-2027.
 
@@ -5123,5 +5120,44 @@ Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
 dependency isolation remain Satisfied. Phase 2 remains In Progress and its
 exit gate remains Open. F59's action/sentinel coverage remains bounded; F62's
 CreateNew class conversion limitation still applies. F66 selection is pending.
+Sub Prep remains capped at the current and following calendar years,
+2026-2027.
+
+#### Progress update - 2026-09-26 (F66 Sub Prep teacher display-name rule, commit `9afa17f47aadb7188916cc091e370f5d0bea98bb`)
+
+Qt-free [`Domain::TeacherDisplayName`](../../src/next/domain/teacher_display_name.h)
+owns the selected UTF-16 display value using the existing precedence: preferred
+name, English, preferred romanization, then Korean. Both Sub Prep platform
+adapters trim the source `QString` fields at the Qt boundary before calling the
+Domain rule. The schedule-summary adapter retains its `N/A` empty fallback;
+class details retains an empty value.
+
+Domain tests cover each precedence branch, empty and copied values, and
+non-ASCII text. Production adapter tests cover padded preferred-name input and
+both all-empty fallbacks. Fresh Executor and independent Tester Windows x64
+Debug Ninja/MSVC 19.51.36257/Qt 6.12 builds each validated 914 handwritten
+owners and passed exact CTests 2/2:
+`ClassMngrNextDomainContractTests` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. No full
+suite was run. F66 does not change Sub Prep range logic; the query remains
+capped at the current and following calendar years, 2026-2027.
+
+#### Exit-gate status after F66
+
+This cumulative audit applies the formal exit criteria through F66. The two
+focused F66 targets were freshly and independently built; no full suite was
+run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F64 adds the typed student-name pair; F66 adds the Qt-free teacher display-name precedence rule with direct tests. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F65 adds production-path legacy profile startup/migration coverage; F66 adds Sub Prep adapter parity for boundary trimming and the two existing empty fallbacks. Wider fixture-backed baseline parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F65 startup integration and F66 do not change that criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies. F66 keeps the selection rule Qt-free and normalization in the platform adapters. |
+
+Gate 1 and Gate 2 advance but remain Partial; Workspace boundary and audited
+`src/next` dependency isolation remain Satisfied. Phase 2 remains In Progress
+with its exit gate Open. F59's action/sentinel coverage remains bounded; F62's
+CreateNew class conversion limitation still applies. Next entry: select F67.
 Sub Prep remains capped at the current and following calendar years,
 2026-2027.

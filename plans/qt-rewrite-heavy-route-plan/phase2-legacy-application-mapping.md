@@ -3874,3 +3874,26 @@ full suite was run. F65 adds explicit production-path legacy open/migration
 baseline evidence; Gate 2 remains Partial and Phase 2 remains open. It changes
 no production source or v2 dependency finding. Sub Prep remains capped at the
 current and following calendar years, 2026-2027.
+
+## Verified F66 Sub Prep teacher display-name rule - commit `9afa17f47aadb7188916cc091e370f5d0bea98bb`
+
+Qt-free [`Domain::TeacherDisplayName`](../../src/next/domain/teacher_display_name.h)
+owns the selected UTF-16 display value and preserves the legacy precedence:
+preferred name, English, preferred romanization, then Korean. The Sub Prep
+schedule-summary and class-details platform adapters trim each source
+`QString` at the Qt boundary, convert it to UTF-16, and call the shared Domain
+rule. The summary maps an empty selection to `N/A`; class details keeps the
+empty string.
+
+Domain tests cover every precedence branch, empty and copied values, and
+non-ASCII text. Production adapter tests cover padded preferred-name values
+and each adapter's all-empty fallback. Fresh Executor and independent Tester
+Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 builds each validated 914
+handwritten owners and passed the exact
+`ClassMngrNextDomainContractTests` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` CTests
+2/2. No full suite was run. F66 adds app-less Domain and production adapter
+parity evidence; Gate 1 and Gate 2 remain Partial. Workspace boundary and
+audited `src/next` dependency isolation remain Satisfied, and Phase 2 remains
+open. It changes no range logic; Sub Prep remains capped at the current and
+following calendar years, 2026-2027.
