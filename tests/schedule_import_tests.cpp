@@ -46,6 +46,12 @@ private slots:
     void fullSnapshotPreservesUnrelatedData();
     void skippedExactMatchPreservesItsSchedule();
     void rejectsDuplicateExistingTargetsBeforeWrites();
+    void preservesNonpositiveExistingTeacherTargetsAtApply_data();
+    void preservesNonpositiveExistingTeacherTargetsAtApply();
+    void convertsNonpositiveCreateAndSkipTeacherTargetsAtApply_data();
+    void convertsNonpositiveCreateAndSkipTeacherTargetsAtApply();
+    void characterizesClassTargetsAtApply_data();
+    void characterizesClassTargetsAtApply();
     void staleSelectedClassPreservesPersistedSnapshotBeforeWrites();
     void conflictsRollBackBeforeWrites();
     void writeFailureRollsBackEveryChange();
@@ -361,6 +367,98 @@ void execOrFail(
     {
         QFAIL(qPrintable(query.lastError().text()));
     }
+}
+
+ScheduleImportClassCandidate stateValidationCandidate(
+    const QString& teacherKey,
+    const QString& classLevel
+    )
+{
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = teacherKey;
+    candidate.teacherKr = teacherKey;
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E5");
+    candidate.classLevel = classLevel;
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"),
+            QStringLiteral("9:55 AM")
+        },
+        {
+            QStringLiteral("Wednesday"),
+            QStringLiteral("9:00 AM"),
+            QStringLiteral("9:55 AM")
+        }
+    };
+    return candidate;
+}
+
+QString sentinelTeacherName()
+{
+    return QString::fromUtf8(
+        "\xEA\xB9\x80\xED\x95\x98\xEB\x8A\x98"
+        );
+}
+
+QString foreignTeacherName()
+{
+    return QString::fromUtf8(
+        "\xEB\xB0\x95\xEB\xB0\x94\xEB\x8B\xA4"
+        );
+}
+
+QStringList persistedScheduleImportSnapshot(QSqlDatabase& database)
+{
+    const QList<QString> statements{
+        QStringLiteral("SELECT * FROM teachers ORDER BY id"),
+        QStringLiteral("SELECT * FROM classes ORDER BY id"),
+        QStringLiteral("SELECT * FROM class_info ORDER BY class_id"),
+        QStringLiteral(
+            "SELECT * FROM class_times "
+            "ORDER BY class_id, day, start_time, end_time, id"
+            ),
+        QStringLiteral(
+            "SELECT * FROM class_intensive_times "
+            "ORDER BY class_id, day, start_time, end_time, id"
+            ),
+        QStringLiteral(
+            "SELECT * FROM intensive_slot_states "
+            "ORDER BY day, start_time, id"
+            ),
+        QStringLiteral("SELECT * FROM app_settings ORDER BY key")
+    };
+
+    QStringList rows;
+    for (const QString& statement : statements)
+    {
+        QSqlQuery query(database);
+        execOrFail(query, statement);
+        const int statementRowStart = rows.size();
+        while (query.next())
+        {
+            QStringList columns;
+            const QSqlRecord record = query.record();
+            for (int column = 0; column < record.count(); ++column)
+            {
+                const QVariant value = query.value(column);
+                columns.append(
+                    value.isNull()
+                        ? QStringLiteral("<NULL>")
+                        : value.toString()
+                    );
+            }
+            rows.append(
+                statement + QChar(0x1e) + columns.join(QChar(0x1f))
+                );
+        }
+        if (rows.size() == statementRowStart)
+        {
+            rows.append(statement + QChar(0x1e) + QStringLiteral("<empty>"));
+        }
+    }
+    return rows;
 }
 }
 
@@ -3061,6 +3159,485 @@ void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
                 QStringLiteral("unique existing target")
                 )
             );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+preservesNonpositiveExistingTeacherTargetsAtApply_data()
+{
+    QTest::addColumn<int>("action");
+    QTest::addColumn<int>("targetTeacherId");
+    QTest::addColumn<bool>("seedSelectedTeacher");
+
+    const int reuse =
+        static_cast<int>(ScheduleImportTeacherAction::Reuse);
+    const int updateRoom =
+        static_cast<int>(ScheduleImportTeacherAction::UpdateRoom);
+    for (const int targetId : {-1, 0})
+    {
+        const QString idLabel = QString::number(targetId);
+        QTest::newRow(qPrintable("reuse-present-" + idLabel))
+            << reuse << targetId << true;
+        QTest::newRow(qPrintable("reuse-absent-" + idLabel))
+            << reuse << targetId << false;
+        QTest::newRow(qPrintable("room-update-present-" + idLabel))
+            << updateRoom << targetId << true;
+        QTest::newRow(qPrintable("room-update-absent-" + idLabel))
+            << updateRoom << targetId << false;
+    }
+}
+
+void ScheduleImportTests::
+preservesNonpositiveExistingTeacherTargetsAtApply()
+{
+    QFETCH(int, action);
+    QFETCH(int, targetTeacherId);
+    QFETCH(bool, seedSelectedTeacher);
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-teacher-sentinel-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        const QString teacherName = sentinelTeacherName();
+        QSqlQuery query(database);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('schedule-import-snapshot', 'preserve-me')"
+                )
+            );
+        if (seedSelectedTeacher)
+        {
+            query.prepare(
+                QStringLiteral(
+                    "INSERT INTO teachers (id, teacher_kr, room_number) "
+                    "VALUES (?, ?, '413')"
+                    )
+                );
+            query.addBindValue(targetTeacherId);
+            query.addBindValue(teacherName);
+            QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        }
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = QStringLiteral("Must not be saved");
+        plan.updateProfileName = true;
+        plan.unknownCellsAcknowledged = true;
+        ScheduleImportClassCandidate candidate =
+            stateValidationCandidate(teacherName, QStringLiteral("Zeus"));
+        candidate.rooms = {
+            QStringLiteral("413"),
+            QStringLiteral("414")
+        };
+        plan.candidates = {candidate};
+        plan.teachers = {
+            {
+                teacherName,
+                static_cast<ScheduleImportTeacherAction>(action),
+                targetTeacherId,
+                QStringLiteral("414")
+            }
+        };
+        plan.classes = {
+            {0, ScheduleImportClassAction::Skip, -1}
+        };
+
+        const QStringList before = persistedScheduleImportSnapshot(database);
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+        if (!seedSelectedTeacher)
+        {
+            QVERIFY(!imported.has_value());
+            QVERIFY(
+                imported.error().contains(
+                    QStringLiteral("selected Korean teacher is no longer available")
+                    )
+                );
+            QCOMPARE(persistedScheduleImportSnapshot(database), before);
+        }
+        else
+        {
+            const QString error =
+                imported.has_value() ? QString() : imported.error();
+            QVERIFY2(imported.has_value(), qPrintable(error));
+            QCOMPARE(imported->classesSkipped, 1);
+
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "SELECT room_number FROM teachers WHERE id=%1"
+                    ).arg(targetTeacherId)
+                );
+            QVERIFY(query.next());
+            if (action == static_cast<int>(ScheduleImportTeacherAction::UpdateRoom))
+            {
+                QCOMPARE(imported->teachersUpdated, 1);
+                QCOMPARE(query.value(0).toString(), QStringLiteral("414"));
+            }
+            else
+            {
+                QCOMPARE(imported->teachersUpdated, 0);
+                QCOMPARE(query.value(0).toString(), QStringLiteral("413"));
+            }
+        }
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+convertsNonpositiveCreateAndSkipTeacherTargetsAtApply_data()
+{
+    QTest::addColumn<int>("action");
+    QTest::addColumn<int>("targetTeacherId");
+    QTest::addColumn<bool>("expectedSuccess");
+
+    const int create =
+        static_cast<int>(ScheduleImportTeacherAction::Create);
+    const int skip =
+        static_cast<int>(ScheduleImportTeacherAction::Skip);
+    for (const int targetId : {-1, 0})
+    {
+        const QString idLabel = QString::number(targetId);
+        QTest::newRow(qPrintable("create-no-target-" + idLabel))
+            << create << targetId << true;
+        QTest::newRow(qPrintable("skip-no-target-" + idLabel))
+            << skip << targetId << true;
+    }
+    QTest::newRow("create-positive-foreign-target")
+        << create << 8241 << false;
+    QTest::newRow("skip-positive-foreign-target")
+        << skip << 8241 << false;
+}
+
+void ScheduleImportTests::
+convertsNonpositiveCreateAndSkipTeacherTargetsAtApply()
+{
+    QFETCH(int, action);
+    QFETCH(int, targetTeacherId);
+    QFETCH(bool, expectedSuccess);
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-create-skip-sentinel-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        const QString teacherName = sentinelTeacherName();
+        QSqlQuery query(database);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('schedule-import-snapshot', 'preserve-me')"
+                )
+            );
+        if (targetTeacherId > 0)
+        {
+            query.prepare(
+                QStringLiteral(
+                    "INSERT INTO teachers (id, teacher_kr, room_number) "
+                    "VALUES (?, ?, 'foreign-room')"
+                    )
+                );
+            query.addBindValue(targetTeacherId);
+            query.addBindValue(foreignTeacherName());
+            QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        }
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = QStringLiteral("Must not be saved");
+        plan.updateProfileName = true;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = {
+            stateValidationCandidate(teacherName, QStringLiteral("Zeus"))
+        };
+        plan.teachers = {
+            {
+                teacherName,
+                static_cast<ScheduleImportTeacherAction>(action),
+                targetTeacherId,
+                QStringLiteral("413")
+            }
+        };
+        plan.classes = {
+            {0, ScheduleImportClassAction::Skip, -1}
+        };
+
+        const QStringList before = persistedScheduleImportSnapshot(database);
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+        if (!expectedSuccess)
+        {
+            QVERIFY(!imported.has_value());
+            QVERIFY(
+                imported.error().contains(
+                    QStringLiteral("cannot have an existing target")
+                    )
+                );
+            QCOMPARE(persistedScheduleImportSnapshot(database), before);
+        }
+        else
+        {
+            const QString error =
+                imported.has_value() ? QString() : imported.error();
+            QVERIFY2(imported.has_value(), qPrintable(error));
+            QCOMPARE(imported->classesSkipped, 1);
+            if (action == static_cast<int>(ScheduleImportTeacherAction::Create))
+            {
+                QCOMPARE(imported->teachersCreated, 1);
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "SELECT teacher_kr FROM teachers ORDER BY id"
+                        )
+                    );
+                QVERIFY(query.next());
+                QCOMPARE(query.value(0).toString(), teacherName);
+                QVERIFY(!query.next());
+            }
+            else
+            {
+                QCOMPARE(imported->teachersCreated, 0);
+                execOrFail(
+                    query,
+                    QStringLiteral("SELECT COUNT(*) FROM teachers")
+                    );
+                QVERIFY(query.next());
+                QCOMPARE(query.value(0).toInt(), 0);
+            }
+        }
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::characterizesClassTargetsAtApply_data()
+{
+    QTest::addColumn<int>("action");
+    QTest::addColumn<int>("targetClassId");
+    QTest::addColumn<bool>("seedExistingClass");
+    QTest::addColumn<bool>("exactExistingClass");
+    QTest::addColumn<QString>("expectedError");
+
+    const int updateExisting =
+        static_cast<int>(ScheduleImportClassAction::UpdateExisting);
+    const int createNew =
+        static_cast<int>(ScheduleImportClassAction::CreateNew);
+    const int skip =
+        static_cast<int>(ScheduleImportClassAction::Skip);
+    QTest::newRow("create-new-negative-sentinel")
+        << createNew << -1 << false << false << QString();
+    QTest::newRow("create-new-zero-sentinel")
+        << createNew << 0 << false << false << QString();
+    QTest::newRow("create-new-positive-target-rejected-upstream")
+        << createNew << 8101 << false << false
+        << QStringLiteral("cannot have an existing target");
+    QTest::newRow("targetless-skip-negative-sentinel")
+        << skip << -1 << false << false << QString();
+    QTest::newRow("targetless-skip-zero-sentinel")
+        << skip << 0 << false << false << QString();
+    QTest::newRow("skip-keeps-positive-exact-target")
+        << skip << 8102 << true << true << QString();
+    QTest::newRow("skip-rejects-positive-nonmatch")
+        << skip << 8103 << true << false
+        << QStringLiteral("unique exact existing match");
+    QTest::newRow("update-nonpositive-target-rejected-upstream")
+        << updateExisting << -1 << false << false
+        << QStringLiteral("unique existing target");
+    QTest::newRow("update-zero-target-rejected-upstream")
+        << updateExisting << 0 << false << false
+        << QStringLiteral("unique existing target");
+    QTest::newRow("update-positive-stale-target-rejected")
+        << updateExisting << 8104 << false << false
+        << QStringLiteral("selected class is no longer available");
+}
+
+void ScheduleImportTests::characterizesClassTargetsAtApply()
+{
+    QFETCH(int, action);
+    QFETCH(int, targetClassId);
+    QFETCH(bool, seedExistingClass);
+    QFETCH(bool, exactExistingClass);
+    QFETCH(QString, expectedError);
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-class-sentinel-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        const QString teacherName = sentinelTeacherName();
+        const bool needsExistingTeacher =
+            targetClassId > 0
+            && (action == static_cast<int>(ScheduleImportClassAction::Skip)
+                || action
+                    == static_cast<int>(ScheduleImportClassAction::UpdateExisting));
+        int existingTeacherId = -1;
+        QSqlQuery query(database);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('schedule-import-snapshot', 'preserve-me')"
+                )
+            );
+        if (needsExistingTeacher)
+        {
+            query.prepare(
+                QStringLiteral(
+                    "INSERT INTO teachers (teacher_kr, room_number) "
+                    "VALUES (?, '413')"
+                    )
+                );
+            query.addBindValue(teacherName);
+            QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+            existingTeacherId = query.lastInsertId().toInt();
+            QVERIFY(existingTeacherId > 0);
+        }
+        if (seedExistingClass)
+        {
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "INSERT INTO classes (id, name) "
+                    "VALUES (%1, 'Existing Class')"
+                    ).arg(targetClassId)
+                );
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "INSERT INTO class_info "
+                    "(class_id, teacher_id, class_grade, class_level) "
+                    "VALUES (%1, %2, 'E5', '%3')"
+                    )
+                    .arg(targetClassId)
+                    .arg(existingTeacherId)
+                    .arg(exactExistingClass
+                             ? QStringLiteral("Zeus")
+                             : QStringLiteral("Apollo"))
+                );
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "INSERT INTO class_times "
+                    "(class_id, day, start_time, end_time) "
+                    "VALUES (%1, 'Tuesday', '2:00 PM', '2:55 PM')"
+                    ).arg(targetClassId)
+                );
+        }
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = QStringLiteral("Must not be saved");
+        plan.updateProfileName = true;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = {
+            stateValidationCandidate(teacherName, QStringLiteral("Zeus"))
+        };
+        plan.teachers = {
+            {
+                teacherName,
+                needsExistingTeacher
+                    ? ScheduleImportTeacherAction::Reuse
+                    : ScheduleImportTeacherAction::Create,
+                needsExistingTeacher ? existingTeacherId : -1,
+                QStringLiteral("413")
+            }
+        };
+        plan.classes = {
+            {
+                0,
+                static_cast<ScheduleImportClassAction>(action),
+                targetClassId
+            }
+        };
+
+        const QStringList before = persistedScheduleImportSnapshot(database);
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+        if (!expectedError.isEmpty())
+        {
+            QVERIFY(!imported.has_value());
+            QVERIFY2(
+                imported.error().contains(expectedError),
+                qPrintable(imported.error())
+                );
+            QCOMPARE(persistedScheduleImportSnapshot(database), before);
+        }
+        else
+        {
+            const QString error =
+                imported.has_value() ? QString() : imported.error();
+            QVERIFY2(imported.has_value(), qPrintable(error));
+            if (action == static_cast<int>(ScheduleImportClassAction::CreateNew))
+            {
+                QCOMPARE(imported->classesCreated, 1);
+                QCOMPARE(imported->classesSkipped, 0);
+                QCOMPARE(imported->teachersCreated, 1);
+                execOrFail(
+                    query,
+                    QStringLiteral("SELECT COUNT(*) FROM classes")
+                    );
+                QVERIFY(query.next());
+                QCOMPARE(query.value(0).toInt(), 1);
+            }
+            else
+            {
+                QCOMPARE(imported->classesSkipped, 1);
+                if (targetClassId > 0)
+                {
+                    QCOMPARE(imported->schedulesCleared, 0);
+                    execOrFail(
+                        query,
+                        QStringLiteral(
+                            "SELECT day, start_time, end_time "
+                            "FROM class_times WHERE class_id=%1"
+                            ).arg(targetClassId)
+                        );
+                    QVERIFY(query.next());
+                    QCOMPARE(query.value(0).toString(), QStringLiteral("Tuesday"));
+                    QCOMPARE(query.value(1).toString(), QStringLiteral("2:00 PM"));
+                    QCOMPARE(query.value(2).toString(), QStringLiteral("2:55 PM"));
+                    QVERIFY(!query.next());
+                }
+                else
+                {
+                    QCOMPARE(imported->teachersCreated, 1);
+                    execOrFail(
+                        query,
+                        QStringLiteral("SELECT COUNT(*) FROM classes")
+                        );
+                    QVERIFY(query.next());
+                    QCOMPARE(query.value(0).toInt(), 0);
+                }
+            }
+        }
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
