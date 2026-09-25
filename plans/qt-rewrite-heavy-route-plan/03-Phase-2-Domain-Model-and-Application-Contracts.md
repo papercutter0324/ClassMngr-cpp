@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-25
-- Latest code slice: F52 centralizes calendar timing validation in Qt-free `Domain::CalendarEventTiming`, shared by edit-draft, single-event save, and repeat-series edit validation. The independent Tester verified a fresh MSVC 19.51/Ninja/Qt 6.12 configure with 907 source owners, three focused targets built, exact CTest passing 3/3, and the checked-in Calendar Import parity fixture passing. Commit `9cd9a2a4469482bc803cdc172d18a072c0fb3949`; no full suite was run. Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 remains In Progress with the exit gate Open.
+- Latest code slice: F53 adds full Roster Score Import widget-path parity coverage, exercising the real `RosterEditorWidget::importScores` slot, autosave, and persisted roster readback. Independent fresh MSVC 19.51/Ninja/Qt 6.12 verification validated 908 source owners, built three focused targets, and passed exact CTest 3/3; no full suite was run. F53 expands Gate 2 evidence only: Gate 1 and Gate 2 remain Partial, Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4648,3 +4648,24 @@ Import parity fixture passed. No full suite was run. F52 is committed as
 Workspace boundary and audited `src/next` dependency isolation remain
 Satisfied. Phase 2 remains In Progress with its exit gate Open. Sub Prep stays
 capped at the current and following calendar years at most.
+
+#### Progress update - 2026-09-25 (F53 Roster Score Import parity)
+
+[`roster_editor_widget_import_tests.cpp`](../../tests/roster_editor_widget_import_tests.cpp)
+exercises the real `RosterEditorWidget::importScores` slot through
+`ClassMngrRuntime`. It seeds saved evaluations through production services in
+a temporary database; this workflow reads saved evaluations and does not parse
+a workbook. Coverage verifies all four grade columns, English/Korean name-pair
+matching including collisions, preservation of unmatched, empty, and
+English-only partial rows, autosave persistence via a fresh roster-service
+read, idempotent re-import, and missing-English/Korean-column warnings with no
+persisted changes. A mixed Winter score totaling 16/6 is asserted as B+.
+
+Fresh independent Ninja/MSVC 19.51/Qt 6.12 configure validated 908 source
+owners; `ClassMngrRosterEditorWidgetImportTests`,
+`ClassMngrRosterModelTests`, and `ClassMngrSpeakingEvaluationServiceTests`
+built and exact CTest passed 3/3. No full suite was run. F53 expands Gate 2
+parity evidence only: Gate 1 and Gate 2 remain Partial; Workspace boundary
+and audited `src/next` dependency isolation remain Satisfied. Phase 2 remains
+In Progress with its exit gate Open. Sub Prep remains capped at the current
+and following calendar years at most.

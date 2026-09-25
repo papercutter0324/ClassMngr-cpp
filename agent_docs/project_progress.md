@@ -126,14 +126,28 @@ fixture. Domain tests reject missing/replaced ISO date separators and cover
 leap years, event timing policy, and the cross-day clock rule. The full suite
 was not run.
 
-The formal gate remains open. Gate 1 advances but remains Partial because the
-broader Domain and application-contract inventory is incomplete. Gate 2 remains
-Partial; F52 reran Calendar Import fixture parity but broader baseline parity
-is incomplete. The workspace criterion and audited v2 dependency isolation
-remain Satisfied. Next, three independent investigators will compare the
-remaining Domain, baseline-parity, and architecture gaps for the next bounded
-slice. Sub Prep remains capped at the current and following calendar years at
-most. Preserve the user-owned `cmake/sources.cmake` change; F52 did not modify it.
+F53 adds real Roster Score Import widget-path parity coverage through the
+production `RosterEditorWidget::importScores` slot, autosave, and persisted
+roster readback. The temporary-database fixture seeds saved evaluations through
+production services; this workflow reads saved evaluations and does not parse a
+workbook. It covers all four grade columns, name-pair matches and collisions,
+unmatched/empty/English-only rows, autosave persistence, idempotent re-import,
+and missing-name-column warnings. A mixed Winter score sums to 16/6 ~= 2.667
+and imports as B+. F53 is committed as
+`de763a0e64b3139a2c51b99bcdd610364861b920`. Fresh independent MSVC
+19.51/Ninja/Qt 6.12 verification validated 908 handwritten source owners,
+built the widget-import, roster-model, and speaking-evaluation targets, and
+passed their CTests 3/3. No full suite was run.
+
+The formal gate remains open. Gate 1 and Gate 2 remain Partial because broader
+Domain/application contracts and baseline parity are incomplete. F53 advances
+Gate 2 evidence only. The workspace criterion and audited v2 dependency
+isolation remain Satisfied. Three independent reviews compared the grade-band
+classification and Calendar vocabulary candidates; F54 is now implementing
+the tighter Qt-free Calendar event-type/status vocabulary contract, preserving
+the three Application validators' existing policies. Sub Prep remains capped
+at the current and following calendar years at most. The user-owned
+`cmake/sources.cmake` change remains outside these commits.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

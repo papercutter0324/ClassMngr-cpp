@@ -3617,3 +3617,25 @@ The feature-facing application boundaries retain their specific error messages
 and validation order, including the existing cross-day clock rule. F52 changes
 no legacy service-call mapping; the save and series-edit adapters continue to
 map their typed requests to the existing `CalendarService` operations.
+
+## Verified F53 Roster Score Import parity
+
+[`roster_editor_widget_import_tests.cpp`](../../tests/roster_editor_widget_import_tests.cpp)
+exercises the production `RosterEditorWidget::importScores` slot through
+`ClassMngrRuntime`. The legacy workflow reads saved speaking evaluations from
+production services and maps their grades into the four roster evaluation
+columns; it does not parse a workbook. Temporary-database setup seeds the
+evaluations through production services. Tests cover English/Korean name-pair
+matching including collisions, unmatched/empty/English-only partial-row
+preservation, autosave and persistence through a fresh roster-service read,
+idempotent re-import, and missing English/Korean column warnings without
+persisted changes. A mixed Winter score totaling 16/6 is asserted as B+.
+
+The registered CTest is `ClassMngrRosterEditorWidgetImportTests`. Independent
+fresh Ninja/MSVC 19.51/Qt 6.12 verification validated 908 source owners, built
+that target plus `ClassMngrRosterModelTests` and
+`ClassMngrSpeakingEvaluationServiceTests`, and passed CTest 3/3. No full suite
+was run. F53 adds Gate 2 parity evidence only; Gate 1 and Gate 2 remain
+Partial, the workspace boundary and audited `src/next` dependency isolation
+remain Satisfied, and the Phase 2 exit gate remains Open. Sub Prep remains
+limited to the current and following calendar years at most.

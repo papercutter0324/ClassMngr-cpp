@@ -850,3 +850,12 @@ positions; accepting a separator only when present can let digits pass in its
 place. Add malformed-separator regression cases. Preserve the existing rule
 that cross-day events may have an earlier or equal end clock time. Keep Sub
 Prep's queried interval to the current and following calendar years at most.
+
+## Phase 2 Roster Score Import parity - 2026-09-25
+
+- This legacy workflow imports already-saved speaking evaluations into the
+  roster; it does not parse a workbook. Verify parity through the real widget
+  slot, autosave, and a fresh service read of persisted roster values.
+- Include aggregate-score and partial-name-pair cases. A blank English or
+  Korean component must not match a roster student, while a mixed six-score
+  evaluation must produce its expected grade through the import path.

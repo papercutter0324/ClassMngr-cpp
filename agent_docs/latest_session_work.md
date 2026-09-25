@@ -1994,3 +1994,38 @@ separate on a host with Xvfb and loopback access.
 - Next: compare three independent investigations of the remaining Domain,
   baseline-parity, and architecture gaps, then implement and verify the next
   bounded slice.
+
+### Phase 2 Roster Score Import parity - 2026-09-25
+
+- F53 is committed as
+  `de763a0e64b3139a2c51b99bcdd610364861b920` (`Phase2 - Verify Roster score
+  import parity`). It adds `tests/roster_editor_widget_import_tests.cpp` and
+  registers `ClassMngrRosterEditorWidgetImportTests` in
+  `cmake/tests/pages_and_output.cmake`.
+- The test uses `ClassMngrRuntime` and invokes the real private import slot. It
+  seeds saved evaluations through production services in a temporary database;
+  this workflow reads evaluations already saved in the database and does not
+  parse a workbook. Assertions cover all four grade columns, full English /
+  Korean name-pair matching including collisions, preservation of unmatched,
+  empty, and English-only partial rows, autosave followed by a fresh
+  `RosterService` read, idempotent re-import, and missing English/Korean column
+  warnings with no persistence. Mixed Winter components total 16 points across
+  six scores (about 2.667), yielding the expected B+ under the existing
+  `>= 0.4` rounding rule.
+- A fresh independent MSVC 19.51/Ninja/Qt 6.12 configure validated 908
+  handwritten source owners. The three targets
+  `ClassMngrRosterEditorWidgetImportTests`, `ClassMngrRosterModelTests`, and
+  `ClassMngrSpeakingEvaluationServiceTests` built and passed exact CTest 3/3.
+  No full suite was run. The first Visual Studio build attempt failed before
+  compilation in `ZERO_CHECK`; the independent fresh Ninja build passed.
+- The plan and parity mapping now record F53 as Gate 2 evidence only. Gate 1
+  and Gate 2 remain Partial; workspace boundary and audited `src/next`
+  dependency isolation remain Satisfied. Phase 2 remains In Progress and the
+  formal exit gate remains Open. Sub Prep stays capped at the current and
+  following calendar years at most. The modified user-owned
+  `cmake/sources.cmake` was excluded from the commit.
+- Three independent solution reviews compared grade-band classification
+  against centralizing the repeated Qt-free Calendar event/status vocabulary.
+  F54 is underway on the latter, retaining per-request trimming, limits,
+  validation order, and error behavior. Continue with independent verification
+  and commit each bounded slice.
