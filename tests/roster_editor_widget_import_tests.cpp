@@ -227,6 +227,110 @@ public:
         return updated;
     }
 
+    bool updateStoredDuplicateScoreRow(
+        const QString& evaluationName,
+        const QString& englishName,
+        const QString& koreanName,
+        const QStringList& componentGrades,
+        QString* error
+        ) const
+    {
+        constexpr int ComponentCount = 6;
+        if (componentGrades.size() != ComponentCount)
+        {
+            if (error)
+            {
+                *error = QStringLiteral(
+                    "A duplicate score row must contain all six components."
+                    );
+            }
+            return false;
+        }
+
+        const QString connectionName = QUuid::createUuid().toString();
+        bool updated = false;
+        QString failure;
+
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+            database.setDatabaseName(
+                m_directory.filePath(QStringLiteral("roster-score-import.db"))
+                );
+            if (!database.open())
+            {
+                failure = database.lastError().text();
+            }
+            else
+            {
+                {
+                    QSqlQuery query(database);
+                    query.prepare(QStringLiteral(
+                        "UPDATE speaking_eval_data SET col_1=?, col_2=? "
+                        "WHERE row_index=1 AND evaluation_id=("
+                        "SELECT id FROM speaking_evaluations "
+                        "WHERE class_id=? AND evaluation_name=?)"
+                        ));
+                    query.addBindValue(englishName);
+                    query.addBindValue(koreanName);
+                    query.addBindValue(classId);
+                    query.addBindValue(evaluationName);
+                    updated = query.exec() && query.numRowsAffected() == 1;
+                    if (!updated)
+                    {
+                        failure = query.lastError().text();
+                        if (failure.isEmpty())
+                        {
+                            failure = QStringLiteral(
+                                "The duplicate speaking evaluation score row was not updated."
+                                );
+                        }
+                    }
+                }
+
+                for (int index = 0; updated && index < componentGrades.size(); ++index)
+                {
+                    QSqlQuery query(database);
+                    const int componentColumn =
+                        SpeakingEval::toInt(SpeakingEvalColumn::Grammar) + index;
+                    query.prepare(
+                        QStringLiteral(
+                            "UPDATE speaking_eval_data SET col_%1=? "
+                            "WHERE row_index=1 AND evaluation_id=("
+                            "SELECT id FROM speaking_evaluations "
+                            "WHERE class_id=? AND evaluation_name=?)"
+                            ).arg(componentColumn)
+                        );
+                    query.addBindValue(componentGrades.at(index));
+                    query.addBindValue(classId);
+                    query.addBindValue(evaluationName);
+                    updated = query.exec() && query.numRowsAffected() == 1;
+                    if (!updated)
+                    {
+                        failure = query.lastError().text();
+                        if (failure.isEmpty())
+                        {
+                            failure = QStringLiteral(
+                                "The duplicate speaking evaluation score component was not updated."
+                                );
+                        }
+                    }
+                }
+
+                database.close();
+            }
+        }
+
+        QSqlDatabase::removeDatabase(connectionName);
+        if (!updated && error)
+        {
+            *error = failure;
+        }
+        return updated;
+    }
+
     bool initialize(QString* error)
     {
         if (!m_directory.isValid())
@@ -261,9 +365,11 @@ public:
             QStringLiteral("Room")
         });
         roster.columnWidths = QVector<int>(roster.columns.size(), 120);
+        // The imported full-pair match has a padded roster English name, while
+        // the saved evaluation name is unpadded. This exercises edge trimming.
         roster.rows = {
             {
-                QStringLiteral("Alex"), QStringLiteral("김민지"),
+                QStringLiteral(" Alex "), QStringLiteral("김민지"),
                 QStringLiteral("C"), QStringLiteral("C"),
                 QStringLiteral("C"), QStringLiteral("C"),
                 QStringLiteral("Keep Alex's existing note"),
@@ -349,6 +455,7 @@ class RosterEditorWidgetImportTests final : public QObject
 private slots:
     void importScoresPersistsGradesAndRepeatedImportIsIdempotent();
     void paddedAndIncompleteScoresKeepRepositoryImportPolicy();
+    void laterDuplicateScorePairOverwritesEarlierGrade();
     void partialNamePairIsNotMatchedOrModified();
     void missingNameColumnsWarnWithoutChangingOrPersistingData();
 };
@@ -467,6 +574,67 @@ void RosterEditorWidgetImportTests
     {
         QCOMPARE(afterRepeatedImport->rows.at(row), persisted->rows.at(row));
     }
+}
+
+void RosterEditorWidgetImportTests::laterDuplicateScorePairOverwritesEarlierGrade()
+{
+    RosterScoreImportFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+    QVERIFY2(
+        // Current validation rejects duplicate pairs. Populate the already
+        // persisted blank second row directly to model legacy stored data.
+        fixture.updateStoredDuplicateScoreRow(
+            QStringLiteral("Winter"),
+            QStringLiteral("Alex"),
+            QStringLiteral("김민지"),
+            QStringList(6, QStringLiteral("A+")),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    const Result<QList<SpeakingEvalScore>> savedScores =
+        fixture.m_services.speakingEvaluationService()->rosterScoreImport(
+            fixture.classId,
+            QStringLiteral("Winter")
+            );
+    QVERIFY(savedScores);
+    QCOMPARE(savedScores->size(), 2);
+    QCOMPARE(savedScores->at(0).finalGrade, QStringLiteral("B+"));
+    QCOMPARE(savedScores->at(1).finalGrade, QStringLiteral("A+"));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.m_services, true);
+    editor.loadClass(
+        Classroom(
+            QStringLiteral("Roster score import fixture"),
+            fixture.classId
+            )
+        );
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &editor,
+        "importScores",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Scores imported successfully.")
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(!editor.hasUnsavedChanges(), 5'000);
+
+    const Result<Roster> persisted = fixture.m_services.rosterService()->roster(
+        fixture.classId
+        );
+    QVERIFY(persisted);
+    QCOMPARE(
+        rosterCell(*persisted, 0, QStringLiteral("Winter")),
+        QStringLiteral("A+")
+        );
 }
 
 void RosterEditorWidgetImportTests::partialNamePairIsNotMatchedOrModified()

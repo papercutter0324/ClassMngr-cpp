@@ -3,13 +3,14 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "core/utils/student_name_utils.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_print_dialog.h"
 #include "features/roster/services/roster_template_print_service.h"
+#include "next/domain/student_name_pair.h"
 
 #include <QDialog>
-#include <QHash>
+
+#include <map>
 
 void RosterEditorWidget::importScores()
 {
@@ -70,14 +71,23 @@ void RosterEditorWidget::importScores()
             continue;
         }
 
-        QHash<QString, QString> lookup;
+        std::map<ClassMngr::Next::Domain::StudentNamePair, QString> lookup;
         for (const SpeakingEvalScore& score : scores)
         {
-            lookup.insert(
-                StudentNameUtils::namePairKey(
-                    score.englishName,
-                    score.koreanName
-                    ),
+            const auto namePair =
+                ClassMngr::Next::Domain::StudentNamePair::fromNames(
+                    score.englishName.trimmed().toStdU16String(),
+                    score.koreanName.trimmed().toStdU16String()
+                    );
+            if (!namePair)
+            {
+                continue;
+            }
+
+            // Preserve QHash::insert's last-write-wins behavior for duplicate
+            // imported student pairs.
+            lookup.insert_or_assign(
+                *namePair,
                 score.finalGrade
                 );
         }
@@ -92,23 +102,23 @@ void RosterEditorWidget::importScores()
                                            .data(Qt::EditRole)
                                            .toString()
                                            .trimmed();
-            const QString namePairKey =
-                StudentNameUtils::namePairKey(
-                    englishName,
-                    koreanName
+            const auto namePair =
+                ClassMngr::Next::Domain::StudentNamePair::fromNames(
+                    englishName.toStdU16String(),
+                    koreanName.toStdU16String()
                     );
-
-            if (namePairKey.isEmpty())
+            if (!namePair)
             {
                 continue;
             }
 
-            if (!lookup.contains(namePairKey))
+            const auto score = lookup.find(*namePair);
+            if (score == lookup.end())
             {
                 continue;
             }
 
-            const QString finalGrade = lookup.value(namePairKey);
+            const QString& finalGrade = score->second;
 
             const QModelIndex index = m_model->index(row, scoreColumn);
             if (!index.isValid() || index.data(Qt::EditRole).toString() == finalGrade)

@@ -6,11 +6,13 @@
 #include "next/domain/schedule_entry.h"
 #include "next/domain/schedule_time.h"
 #include "next/domain/speaking_evaluation_grade.h"
+#include "next/domain/student_name_pair.h"
 
 #include <QtTest/QtTest>
 
 #include <algorithm>
 #include <array>
+#include <map>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -47,6 +49,9 @@ private slots:
     void koreanTeacherKeysKeepEveryAcceptedRangeAndBoundary();
     void koreanTeacherKeysDiscardOtherCodeUnitsWithoutNormalization();
     void koreanTeacherKeysExposeEmptyAndValueSemantics();
+    void studentNamePairsRequireBothNames();
+    void studentNamePairsCompareExactUtf16PartsAndOrder();
+    void studentNamePairsKeepPartsDistinctAcrossDelimiter();
 };
 
 void NextDomainContractTests::typedIdentifiersRejectEmptyValues()
@@ -942,6 +947,100 @@ void NextDomainContractTests::koreanTeacherKeysExposeEmptyAndValueSemantics()
     QVERIFY(first.value() == u"\uac00");
     QVERIFY(first == sameValue);
     QVERIFY(first != different);
+}
+
+void NextDomainContractTests::studentNamePairsRequireBothNames()
+{
+    QVERIFY(!StudentNamePair::fromNames(u"", u"Korean").has_value());
+    QVERIFY(!StudentNamePair::fromNames(u"English", u"").has_value());
+    QVERIFY(!StudentNamePair::fromNames(u"", u"").has_value());
+
+    const auto pair = StudentNamePair::fromNames(u"English", u"Korean");
+    QVERIFY(pair.has_value());
+    QVERIFY(pair->englishName() == u"English");
+    QVERIFY(pair->koreanName() == u"Korean");
+}
+
+void NextDomainContractTests::studentNamePairsCompareExactUtf16PartsAndOrder()
+{
+    const auto first = StudentNamePair::fromNames(
+        u"Alex",
+        u"\uae40\ubbfc\uc9c0"
+        );
+    const auto same = StudentNamePair::fromNames(
+        u"Alex",
+        u"\uae40\ubbfc\uc9c0"
+        );
+    const auto splitPair = StudentNamePair::fromNames(u"Alex Kim", u"Lee");
+    const auto differentCase = StudentNamePair::fromNames(u"alex", u"Kim");
+    const auto differentWhitespace =
+        StudentNamePair::fromNames(u"Al  ex", u"Kim");
+    const auto supplementary =
+        StudentNamePair::fromNames(
+            u"Alex\U0001f600",
+            u"\uae40\ubbfc\uc9c0"
+            );
+    const auto decomposedKorean = StudentNamePair::fromNames(
+        u"Alex",
+        u"\u1100\u1161\u1106\u1175\u110c\u1175"
+        );
+
+    QVERIFY(first.has_value());
+    QVERIFY(same.has_value());
+    QVERIFY(splitPair.has_value());
+    QVERIFY(differentCase.has_value());
+    QVERIFY(differentWhitespace.has_value());
+    QVERIFY(supplementary.has_value());
+    QVERIFY(decomposedKorean.has_value());
+
+    QVERIFY(*first == *same);
+    QVERIFY(*first != *differentCase);
+    QVERIFY(*first != *differentWhitespace);
+    QVERIFY(*first != *supplementary);
+    QVERIFY(*first != *decomposedKorean);
+    QVERIFY(first->koreanName() == u"\uae40\ubbfc\uc9c0");
+    QCOMPARE(supplementary->englishName().size(), std::size_t{6});
+
+    QVERIFY(*first != *splitPair);
+
+    const auto sameJoinedTextFirst =
+        StudentNamePair::fromNames(u"Alex", u"KimLee");
+    const auto sameJoinedTextSecond =
+        StudentNamePair::fromNames(u"AlexKim", u"Lee");
+    QVERIFY(sameJoinedTextFirst.has_value());
+    QVERIFY(sameJoinedTextSecond.has_value());
+    QVERIFY(*sameJoinedTextFirst != *sameJoinedTextSecond);
+
+    const std::map<StudentNamePair, int> ordered{
+        {*differentCase, 1},
+        {*first, 2},
+        {*splitPair, 3}
+    };
+    QCOMPARE(ordered.size(), std::size_t{3});
+    QVERIFY(ordered.begin()->first == *first);
+    QVERIFY(ordered.rbegin()->first == *differentCase);
+}
+
+void NextDomainContractTests::studentNamePairsKeepPartsDistinctAcrossDelimiter()
+{
+    const auto first = StudentNamePair::fromNames(
+        u"Alpha\u001fBeta",
+        u"Gamma"
+        );
+    const auto second = StudentNamePair::fromNames(
+        u"Alpha",
+        u"Beta\u001fGamma"
+        );
+
+    QVERIFY(first.has_value());
+    QVERIFY(second.has_value());
+    QVERIFY(*first != *second);
+
+    const std::map<StudentNamePair, int> pairs{
+        {*first, 1},
+        {*second, 2}
+    };
+    QCOMPARE(pairs.size(), std::size_t{2});
 }
 
 QTEST_APPLESS_MAIN(NextDomainContractTests)
