@@ -1,6 +1,7 @@
 #include "schedule_view_model.h"
 
 #include "features/schedule/ui/schedule_time_formatter.h"
+#include "next/domain/course.h"
 
 #include <algorithm>
 
@@ -126,14 +127,16 @@ bool testingSuppressesEntry(
     bool testingAffectsM1
     )
 {
-    const QString grade =
-        entry.classGrade.trimmed().toUpper();
+    const auto gradeBand =
+        ClassMngr::Next::Domain::Course::gradeBandForName(
+            entry.classGrade.trimmed().toUpper().toStdString()
+            );
 
-    return grade == QStringLiteral("M2")
-        || grade == QStringLiteral("M3")
+    return gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M2
+        || gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M3
         || (
             testingAffectsM1
-            && grade == QStringLiteral("M1")
+            && gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M1
             );
 }
 }

@@ -92,6 +92,7 @@ private slots:
     void footerTotalsMatchExcelScreenshotConvention();
     void teacherRoomLineRespectsSelectedNameLanguage();
     void testingModeFiltersAffectedGradesAndPreservesPriority();
+    void testingModeSuppressesAffectedGradesWithoutAssignments();
     void testingClassAssignmentsOverrideUnderlyingCells();
 };
 
@@ -538,6 +539,65 @@ void SchedulePrintModelTests
         model.rows.first().cells.at(2).testingRoom,
         QStringLiteral("Library")
         );
+}
+
+void SchedulePrintModelTests
+    ::testingModeSuppressesAffectedGradesWithoutAssignments()
+{
+    const QStringList days{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday")
+    };
+    ScheduleBuildResult result =
+        blankResult(days, {QStringLiteral("16:00")});
+
+    ScheduleEntry m2 = entry(1);
+    m2.classGrade = QStringLiteral(" m2 ");
+    ScheduleEntry m3 = entry(2);
+    m3.classGrade = QStringLiteral("m3");
+    ScheduleEntry m1 = entry(3);
+    m1.classGrade = QStringLiteral(" M1 ");
+    ScheduleEntry unknown = entry(4);
+    unknown.classGrade = QStringLiteral("G7");
+    ScheduleEntry elementary = entry(5);
+    elementary.classGrade = QStringLiteral("E6");
+
+    result.schedule[days.at(0)][QStringLiteral("16:00")] = {m2};
+    result.schedule[days.at(1)][QStringLiteral("16:00")] = {m3};
+    result.schedule[days.at(2)][QStringLiteral("16:00")] = {m1};
+    result.schedule[days.at(3)][QStringLiteral("16:00")] = {unknown};
+    result.schedule[days.at(4)][QStringLiteral("16:00")] = {elementary};
+
+    ScheduleViewRequest request;
+    request.days = days;
+    request.displayMode = ScheduleDisplayMode::Testing;
+
+    ScheduleViewModel model = buildScheduleViewModel(result, request);
+    const ScheduleRowView& row = model.rows.first();
+    for (const int index : {0, 1})
+    {
+        const ScheduleCellView& cell = row.cells.at(index);
+        QVERIFY(cell.entries.isEmpty());
+        QCOMPARE(cell.slotState, scheduleEssaySlotState());
+        QVERIFY(cell.testingBlockCreationEnabled);
+    }
+    QCOMPARE(row.cells.at(2).entries.size(), 1);
+    QCOMPARE(row.cells.at(2).entries.first().classId, 3);
+    QVERIFY(!row.cells.at(2).testingBlockCreationEnabled);
+    QCOMPARE(row.cells.at(3).entries.size(), 1);
+    QCOMPARE(row.cells.at(3).entries.first().classId, 4);
+    QCOMPARE(row.cells.at(4).entries.size(), 1);
+    QCOMPARE(row.cells.at(4).entries.first().classId, 5);
+
+    request.testingAffectsM1 = true;
+    model = buildScheduleViewModel(result, request);
+    const ScheduleCellView& affectedM1 = model.rows.first().cells.at(2);
+    QVERIFY(affectedM1.entries.isEmpty());
+    QCOMPARE(affectedM1.slotState, scheduleEssaySlotState());
+    QVERIFY(affectedM1.testingBlockCreationEnabled);
 }
 
 void SchedulePrintModelTests

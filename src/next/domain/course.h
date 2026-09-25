@@ -118,6 +118,37 @@ public:
         return std::nullopt;
     }
 
+    [[nodiscard]] static CourseGradeBand gradeBandForName(
+        std::string_view grade
+        ) noexcept
+    {
+        if (grade == "E4")
+        {
+            return CourseGradeBand::E4;
+        }
+        if (grade == "E5")
+        {
+            return CourseGradeBand::E5;
+        }
+        if (grade == "E6")
+        {
+            return CourseGradeBand::E6;
+        }
+        if (grade == "M1")
+        {
+            return CourseGradeBand::M1;
+        }
+        if (grade == "M2")
+        {
+            return CourseGradeBand::M2;
+        }
+        if (grade == "M3")
+        {
+            return CourseGradeBand::M3;
+        }
+        return CourseGradeBand::Other;
+    }
+
     [[nodiscard]] static std::vector<std::string_view> grades()
     {
         std::vector<std::string_view> result;
@@ -266,37 +297,6 @@ public:
         ) = default;
 
 private:
-    [[nodiscard]] static CourseGradeBand gradeBandForName(
-        std::string_view grade
-        ) noexcept
-    {
-        if (grade == "E4")
-        {
-            return CourseGradeBand::E4;
-        }
-        if (grade == "E5")
-        {
-            return CourseGradeBand::E5;
-        }
-        if (grade == "E6")
-        {
-            return CourseGradeBand::E6;
-        }
-        if (grade == "M1")
-        {
-            return CourseGradeBand::M1;
-        }
-        if (grade == "M2")
-        {
-            return CourseGradeBand::M2;
-        }
-        if (grade == "M3")
-        {
-            return CourseGradeBand::M3;
-        }
-        return CourseGradeBand::Other;
-    }
-
     [[nodiscard]] static CourseLevelCategory levelCategoryForName(
         std::string_view level
         ) noexcept

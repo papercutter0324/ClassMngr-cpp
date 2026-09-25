@@ -2,6 +2,11 @@
 
 #include <QtTest>
 
+namespace EvaluationDefaultSelection::Private
+{
+[[nodiscard]] SchoolLevel schoolLevelForClassGrade(const QString& grade);
+}
+
 class EvaluationDefaultSelectionTests : public QObject
 {
     Q_OBJECT
@@ -11,6 +16,7 @@ private slots:
     void selectsPreviousTermWhenCurrentTermIsEmpty();
     void requiresSavedTermSchedules();
     void populatedRowsRequireActualContent();
+    void classGradeChoiceUsesCourseGradeBands();
 };
 
 namespace
@@ -136,6 +142,31 @@ void EvaluationDefaultSelectionTests::populatedRowsRequireActualContent()
     rows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
         QStringLiteral("Amy");
     QVERIFY(EvaluationDefaultSelection::isPopulated(rows));
+}
+
+void EvaluationDefaultSelectionTests::classGradeChoiceUsesCourseGradeBands()
+{
+    using EvaluationDefaultSelection::Private::schoolLevelForClassGrade;
+
+    for (const QString& grade : {
+             QStringLiteral("M1"),
+             QStringLiteral("m2"),
+             QStringLiteral(" M3 ")
+         })
+    {
+        QCOMPARE(schoolLevelForClassGrade(grade), SchoolLevel::Middle);
+    }
+
+    for (const QString& grade : {
+             QStringLiteral("E4"),
+             QStringLiteral("E5"),
+             QStringLiteral("e6"),
+             QStringLiteral("Unknown"),
+             QString()
+         })
+    {
+        QCOMPARE(schoolLevelForClassGrade(grade), SchoolLevel::Elementary);
+    }
 }
 
 QTEST_APPLESS_MAIN(EvaluationDefaultSelectionTests)

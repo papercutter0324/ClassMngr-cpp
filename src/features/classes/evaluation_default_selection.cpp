@@ -1,7 +1,11 @@
 #include "features/classes/evaluation_default_selection.h"
 
+#include "next/domain/course.h"
+
 #include <algorithm>
 #include <ranges>
+
+#include <string>
 
 namespace
 {
@@ -19,6 +23,37 @@ AcademicTerm previousTerm(AcademicTerm term)
 }
 
 } // namespace
+
+namespace EvaluationDefaultSelection::Private
+{
+
+SchoolLevel schoolLevelForClassGrade(const QString& grade)
+{
+    const std::string normalizedGrade =
+        grade.trimmed().toUpper().toStdString();
+
+    switch (
+        ClassMngr::Next::Domain::Course::gradeBandForName(
+            normalizedGrade
+            )
+        )
+    {
+    case ClassMngr::Next::Domain::CourseGradeBand::M1:
+    case ClassMngr::Next::Domain::CourseGradeBand::M2:
+    case ClassMngr::Next::Domain::CourseGradeBand::M3:
+        return SchoolLevel::Middle;
+
+    case ClassMngr::Next::Domain::CourseGradeBand::E4:
+    case ClassMngr::Next::Domain::CourseGradeBand::E5:
+    case ClassMngr::Next::Domain::CourseGradeBand::E6:
+    case ClassMngr::Next::Domain::CourseGradeBand::Other:
+        return SchoolLevel::Elementary;
+    }
+
+    return SchoolLevel::Elementary;
+}
+
+} // namespace EvaluationDefaultSelection::Private
 
 namespace EvaluationDefaultSelection
 {

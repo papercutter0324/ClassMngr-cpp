@@ -265,7 +265,8 @@ void ClassesPageTests
     for (const QString& grade : {
              QStringLiteral("M1"),
              QStringLiteral("M2"),
-             QStringLiteral("M3")
+             QStringLiteral("M3"),
+             QStringLiteral(" m1 ")
          })
     {
         ScheduleWidgetTestStubs::setClassGrade(42, grade);
@@ -278,8 +279,22 @@ void ClassesPageTests
         }
     }
 
+    for (const QString& grade : {
+             QStringLiteral(" e5 "),
+             QStringLiteral("Unknown")
+         })
+    {
+        ScheduleWidgetTestStubs::setClassGrade(42, grade);
+        QVERIFY(page.openClass(42));
+        QCOMPARE(sectionTabs->count(), 6);
+        QCOMPARE(sectionTabs->tabText(2), QStringLiteral("Analytics"));
+        QCOMPARE(sectionTabs->tabText(3), QStringLiteral("Evaluations"));
+    }
+
     ClassMngr::Next::Platform::
         ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
+    ScheduleWidgetTestStubs::setClassGrade(42, QStringLiteral("M3"));
+    QVERIFY(page.openClass(42));
     port.save(true);
     page.refreshNavigationPreferences();
 

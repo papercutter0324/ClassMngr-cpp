@@ -35,6 +35,7 @@ private slots:
     void coursesExposeOrderedSupportedPairs();
     void coursesHaveValueAndAccessorSemantics();
     void coursesRejectInvalidNamesAndCrossGradePairs();
+    void courseGradeBandsClassifyGradeWithoutLevelValidation();
     void coursesExposeWeeklyMeetingDayRules();
     void weeklyMeetingDayRulesRejectInvalidPatterns();
     void koreanTeacherKeysKeepEveryAcceptedRangeAndBoundary();
@@ -568,6 +569,32 @@ void NextDomainContractTests::coursesRejectInvalidNamesAndCrossGradePairs()
     QVERIFY(!Course::fromNames("e4", "Theseus").has_value());
     QVERIFY(!Course::fromNames("E4", "theseus").has_value());
     QVERIFY(Course::levelsForGrade("E7").empty());
+}
+
+void NextDomainContractTests::
+    courseGradeBandsClassifyGradeWithoutLevelValidation()
+{
+    const std::array<std::pair<std::string_view, CourseGradeBand>, 7> cases{{
+        {"E4", CourseGradeBand::E4},
+        {"E5", CourseGradeBand::E5},
+        {"E6", CourseGradeBand::E6},
+        {"M1", CourseGradeBand::M1},
+        {"M2", CourseGradeBand::M2},
+        {"M3", CourseGradeBand::M3},
+        {"E7", CourseGradeBand::Other}
+    }};
+
+    for (const auto& [grade, expected] : cases)
+    {
+        QVERIFY(Course::gradeBandForName(grade) == expected);
+    }
+    QVERIFY(Course::gradeBandForName("") == CourseGradeBand::Other);
+    QVERIFY(Course::gradeBandForName("m1") == CourseGradeBand::Other);
+    QVERIFY(Course::gradeBandForName(" M1 ") == CourseGradeBand::Other);
+    QVERIFY(!Course::fromNames("M1", "Unknown").has_value());
+    QVERIFY(
+        Course::gradeBandForName("M1") == CourseGradeBand::M1
+        );
 }
 
 void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()

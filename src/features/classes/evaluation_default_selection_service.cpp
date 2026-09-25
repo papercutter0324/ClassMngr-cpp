@@ -11,18 +11,10 @@
 #include <memory>
 #include <utility>
 
-namespace
+namespace EvaluationDefaultSelection::Private
 {
-
-bool isMiddleSchoolGrade(const QString& grade)
-{
-    const QString normalized = grade.trimmed().toUpper();
-    return normalized == QStringLiteral("M1")
-        || normalized == QStringLiteral("M2")
-        || normalized == QStringLiteral("M3");
+[[nodiscard]] SchoolLevel schoolLevelForClassGrade(const QString& grade);
 }
-
-} // namespace
 
 namespace EvaluationDefaultSelection
 {
@@ -61,13 +53,11 @@ QString forClass(
         return {};
     }
 
-    const SchoolLevel schoolLevel = isMiddleSchoolGrade(
+    const SchoolLevel schoolLevel = Private::schoolLevelForClassGrade(
         classService->classInfo(classId)
             .value_or(ClassInfo{})
             .classGrade
-        )
-        ? SchoolLevel::Middle
-        : SchoolLevel::Elementary;
+        );
     auto schedulePreferences = std::make_unique<
         ClassMngr::Next::Platform::
             ApplicationServicesAcademicCalendarSchedulePreferencesPort

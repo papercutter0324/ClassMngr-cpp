@@ -14,6 +14,7 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "next/domain/course.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
@@ -68,10 +69,15 @@ QString classesSectionIdentifier(ClassesSection section)
 
 bool isMiddleSchoolGrade(const QString& grade)
 {
-    const QString normalizedGrade = grade.trimmed().toUpper();
-    return normalizedGrade == QStringLiteral("M1")
-        || normalizedGrade == QStringLiteral("M2")
-        || normalizedGrade == QStringLiteral("M3");
+    const auto normalizedGrade =
+        grade.trimmed().toUpper().toStdString();
+    const auto gradeBand =
+        ClassMngr::Next::Domain::Course::gradeBandForName(
+            normalizedGrade
+            );
+    return gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M1
+        || gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M2
+        || gradeBand == ClassMngr::Next::Domain::CourseGradeBand::M3;
 }
 
 QString classesSectionText(ClassesSection section)
