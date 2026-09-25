@@ -2238,8 +2238,8 @@ separate on a host with Xvfb and loopback access.
   `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` loading the
   checked-in `schedule_review.xlsx` fixture. The app-less target also passed
   1/1 after the added Skip-without-target regression. `git diff --check`
-  passed. No full suite was run. Dialog coverage does not directly assert the
-  resolved existing-target label text.
+  passed. No full suite was run. The duplicate-target warning test also
+  asserts the resolved existing class label `E5 Athena`.
 - Gates 1 and 2 remain Partial; workspace boundary and audited `src/next`
   dependency isolation remain Satisfied; the Phase 2 exit gate remains Open.
   The F59 action-specific sentinel matrix remains an uncovered parity detail.
@@ -2273,9 +2273,38 @@ separate on a host with Xvfb and loopback access.
 - Gate 2 gains a distinct production-path error case; Gates 1 and 2 remain
   Partial. Workspace boundary and audited `src/next` dependency isolation
   remain Satisfied; Phase 2 exit gate remains Open. F59's action/sentinel
-  matrix and F60's direct resolved-label assertion remain uncovered. Sub Prep
+  matrix remains uncovered. Sub Prep
   remains capped to 2026-2027. Protected `cmake/sources.cmake` was excluded and
   SHA-256 remained
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-- Next: compare remaining Gate 1/2 gaps for F62 and preserve the separate
+- Next: compare remaining Gate 1/2 gaps for F63 and preserve the separate
   source/documentation commit sequence.
+
+### Phase 2 Schedule Import sentinel characterization - 2026-09-26
+
+- F62 is committed as
+  `691e56fbdcc536aaaf577602feeac25fc5b7227f` (`Phase2 - Characterize Schedule
+  Import sentinels`). The repository-boundary matrix covers Reuse and
+  UpdateRoom with teacher IDs -1/0 and matching rows present or absent; Create
+  and Skip teacher actions with nonpositive and positive foreign targets; and
+  class CreateNew/Skip sentinels, exact/mismatching positive Skip targets, and
+  stale positive UpdateExisting targets. Rejected cases compare persisted
+  database snapshots. Positive CreateNew and nonpositive UpdateExisting class
+  targets are documented as F60 PlanValidator rejections.
+- A fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 configure built
+  `ClassMngrNextApplicationScheduleImportStateValidationTests` and
+  `ClassMngrScheduleImportTests`; exact CTest passed 2/2. The latter includes
+  `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` with
+  `tests/fixtures/imports/schedule_review.xlsx`. No full suite was run.
+- Coverage limit: F60 already converts nonpositive class target IDs to absence
+  before state validation, which does not inspect CreateNew targets. Therefore
+  CreateNew class sentinel rows verify end-to-end apply behavior but do not
+  isolate F59's adapter conversion.
+- F62 adds reachable action/sentinel evidence to Gates 1 and 2; both remain
+  Partial. Workspace boundary and audited `src/next` dependency isolation
+  remain Satisfied; Phase 2 exit gate remains Open. Sub Prep remains capped at
+  the current and following calendar years (2026-2027). The protected
+  `cmake/sources.cmake` file was excluded; SHA-256 remains
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: select F63 from the remaining Gate 1/2 gaps. Keep source and audit
+  commits separate and preserve the protected CMake change.

@@ -8,8 +8,8 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Previous code slice: F60 types Schedule Import review-decision request and issue targets as optional `Domain::ClassId`; PlanValidator and dialog feature edges convert legacy integers, treating nonpositive values as absent. App-less tests preserve UpdateExisting-required, CreateNew-no-target, and Skip-optional-target rules, duplicate claimant and issue details/order, and translated UI/class-label behavior. Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 verification validated 912 handwritten source owners, built three targets in 321 steps, and passed exact CTest 3/3: `ClassMngrNextApplicationScheduleImportReviewDecisionsTests`, `ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`, including the checked-in `schedule_review.xlsx` apply fixture. Executor reran the app-less suite after adding Skip-without-target acceptance (1/1); `git diff --check` passed. No full suite was run. Residuals: no exhaustive F59 action/sentinel matrix and no direct dialog assertion of the resolved existing-target label. Source commit: `730955dd1feb24e5a46dd0bfef9f86b8ff619621`.
-- Latest code slice: F61 adds `failedCurrentEvaluationReadReturnsNoDefault()` integration coverage for Evaluation Default Selection: an empty Fall evaluation selects Summer under `CurrentOrPreviousTerm` before the `speaking_evaluations` table is dropped; afterward, the production service read reports an error and `EvaluationDefaultSelection::forClass` returns no default. No production code changed. Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 configure validated 912 handwritten source owners and passed exact CTest 1/1, `ClassMngrEvaluationDefaultSelectionIntegrationTests`; executor and independent verifier both passed. No full suite was run. Source commit: `5e08c2aab8c4c326463e969445757fa90e25d79c`. Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied; Phase 2 exit gate remains Open. Residuals: no exhaustive F59 action/sentinel matrix and no direct F60 dialog assertion of the resolved existing-target label. Sub Prep remains capped at 2026-2027, the current and following calendar years.
+- Previous code slice: F61 adds `failedCurrentEvaluationReadReturnsNoDefault()` integration coverage: after an empty Fall evaluation selects Summer under `CurrentOrPreviousTerm`, dropping `speaking_evaluations` makes the production read fail and `forClass` return no default. Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 verification passed `ClassMngrEvaluationDefaultSelectionIntegrationTests` 1/1; no full suite. The F60 dialog test `reviewWarnsForDuplicateClassTargets` also directly asserts the warning includes existing class label `E5 Athena`. Source commit: `5e08c2aab8c4c326463e969445757fa90e25d79c`.
+- Latest code slice: F62 characterizes reachable Schedule Import apply-boundary sentinel behavior in `schedule_import_tests.cpp`: Reuse/UpdateRoom teacher targets -1/0 with matching teacher present/absent; Create/Skip with -1/0 and positive foreign teacher targets; class CreateNew and targetless Skip sentinels, exact/mismatching positive Skip targets, stale positive UpdateExisting, plus F60 PlanValidator rejection of positive CreateNew/nonpositive UpdateExisting. Rejected cases assert persisted snapshots are unchanged. CreateNew class sentinel conversion is not isolated: F60 PlanValidator normalizes nonpositive targets to absence and state validation ignores CreateNew targets, so those rows prove overall apply behavior only. Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 verification passed `ClassMngrNextApplicationScheduleImportStateValidationTests` and `ClassMngrScheduleImportTests` 2/2; the latter includes checked-in `schedule_review.xlsx`. No full suite. Source commit: `691e56fbdcc536aaaf577602feeac25fc5b7227f`. Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied; Phase 2 exit gate remains Open. Next slice: F63 selection. Sub Prep remains capped at 2026-2027, the current and following calendar years.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4901,8 +4901,9 @@ latter includes `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` with
 the checked-in [`schedule_review.xlsx`](../../tests/fixtures/imports/schedule_review.xlsx).
 After adding Skip-without-target acceptance, the executor reran the app-less
 suite successfully (1/1); `git diff --check` passed. No full suite was run.
-Remaining coverage gaps are an exhaustive F59 action/sentinel matrix and a
-direct dialog assertion for the resolved existing-target label.
+The remaining coverage gap is the F59 action/sentinel matrix.
+`reviewWarnsForDuplicateClassTargets` directly asserts that the warning
+includes the resolved existing class label `E5 Athena`.
 
 #### Exit-gate status after F60
 
@@ -4950,6 +4951,49 @@ suite was run.
 
 Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
 dependency isolation remain Satisfied. Phase 2 remains In Progress and its
-exit gate remains Open. F59's exhaustive action/sentinel matrix and F60's
-resolved existing-target label assertion remain uncovered. Sub Prep remains
-limited to the current and following calendar years, 2026-2027.
+exit gate remains Open. F59's exhaustive action/sentinel matrix remains a
+follow-up. Sub Prep remains limited to the current and following calendar years, 2026-2027.
+
+#### Progress update - 2026-09-26 (F62 Schedule Import apply-boundary sentinel characterization, commit `691e56fbdcc536aaaf577602feeac25fc5b7227f`)
+
+F62 adds data-driven production apply tests for the action/sentinel behavior that
+can reach `ScheduleImportRepository::scheduleService()`. Reuse/UpdateRoom
+teacher targets -1/0 are checked with matching snapshot rows present and
+absent; Create/Skip teacher targets cover -1/0 and positive foreign IDs. Class
+cases cover CreateNew sentinels, targetless Skip sentinels, exact and mismatched
+positive Skip targets, and stale positive UpdateExisting targets. Rejected
+applies compare persisted snapshots and confirm no changes. Positive CreateNew
+and nonpositive UpdateExisting class targets are rejected upstream by the F60
+PlanValidator.
+
+The CreateNew class sentinel conversion itself is not isolated: F60
+PlanValidator canonicalizes nonpositive IDs to absence and state validation does
+not inspect CreateNew targets. Those test rows establish overall apply behavior,
+not the repository conversion. The F62 matrix therefore adds bounded
+characterization without claiming exhaustive adapter-branch coverage.
+
+Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 verification built
+`ClassMngrNextApplicationScheduleImportStateValidationTests` and
+`ClassMngrScheduleImportTests` and passed the exact CTest filter 2/2. The latter
+includes `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` with the
+checked-in [`schedule_review.xlsx`](../../tests/fixtures/imports/schedule_review.xlsx).
+No full suite was run.
+
+#### Exit-gate status after F62
+
+This cumulative audit applies the formal exit criteria above through F62. The
+focused F62 targets were freshly and independently built; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | Typed Schedule Import matching, apply-state validation, and review-decision contracts remain covered; broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F62 adds apply-boundary action/sentinel characterization and preserves the checked workbook apply path; wider baseline fixture parity remains incomplete and the full suite has not run. |
+| Workspace boundary | Satisfied | The `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less tests remain satisfied; F62 does not change this boundary. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F62 changes tests only. |
+
+Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress and its
+exit gate remains Open. F62 narrows but does not exhaust the F59 action/sentinel
+matrix, with the CreateNew class conversion limitation above. Next slice:
+select F63. Sub Prep remains capped at 2026-2027, the current and following
+calendar years.

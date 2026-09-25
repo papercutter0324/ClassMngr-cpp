@@ -930,8 +930,8 @@ passed `ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
 `ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`
 (3/3). The Schedule Import fixture still applies `schedule_review.xlsx`; the
 app-less contract separately passed 1/1 after adding explicit Skip-without-
-target coverage. No full suite was run. The dialog tests do not directly assert
-the resolved existing-target label text.
+target coverage. No full suite was run. The duplicate-target warning test also
+asserts the resolved existing class label `E5 Athena`.
 
 Gates 1 and 2 remain Partial; the workspace boundary and audited `src/next`
 dependency isolation remain Satisfied. The Phase 2 exit gate remains Open.
@@ -956,9 +956,36 @@ handwritten source owners and passed
 run. Gates 1 and 2 remain Partial; workspace boundary and audited `src/next`
 dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
 Sub Prep remains bounded to the current and following calendar years
-(2026–2027). The F59 action/sentinel matrix and F60 resolved-label assertion
-remain separate coverage gaps. The protected user change to
+(2026–2027). F59's action/sentinel matrix remains a separate coverage gap. The
+protected user change to
 `cmake/sources.cmake` remains excluded, with SHA-256
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-Next: select a bounded F62 slice and continue separate source and documentation
+Next: select a bounded F63 slice and continue separate source and documentation
 commits.
+
+## Current Phase 2 position - 2026-09-26 (F62)
+
+F62 is committed as `691e56fbdcc536aaaf577602feeac25fc5b7227f` (`Phase2 -
+Characterize Schedule Import sentinels`). The repository apply tests now cover
+the reachable action-specific teacher and class sentinel behavior, including
+Reuse/UpdateRoom with teacher IDs -1/0, Create/Skip teacher targets, CreateNew
+and Skip class targets, exact and mismatched Skip targets, and stale positive
+UpdateExisting IDs. Rejected apply cases compare persisted database snapshots.
+F60's PlanValidator rejects some class-target combinations before repository
+state validation; those cases are recorded as upstream rejections.
+
+Independent fresh x64 Ninja/MSVC 19.51/Qt 6.12 verification built
+`ClassMngrNextApplicationScheduleImportStateValidationTests` and
+`ClassMngrScheduleImportTests`; exact CTest passed 2/2, including the existing
+`schedule_review.xlsx` apply fixture. No full suite was run. CreateNew class
+sentinels cannot independently prove F59 adapter conversion because F60
+normalizes nonpositive targets to absence before state validation; the cases
+assert end-to-end apply behavior only.
+
+Gates 1 and 2 remain Partial; the workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep remains bounded to the current and following calendar years
+(2026-2027). The protected user change to `cmake/sources.cmake` remains
+excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: compare remaining Gate 1 and Gate 2 gaps for F63.

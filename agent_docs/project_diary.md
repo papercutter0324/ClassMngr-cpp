@@ -929,3 +929,18 @@ Prep's queried interval to the current and following calendar years at most.
   first assert a successful empty current-period read still selects the
   previous term. Use a fixed date, valid saved schedule, policy, and class data
   so the database-read result is the only changed condition.
+
+## F60 audit correction - 2026-09-26
+
+- `ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets` directly
+  asserts that the conflict warning contains the resolved existing class label
+  `E5 Athena`. Do not carry this as an uncovered F60 gap; inspect the named
+  production test before retaining a coverage residual in a later audit.
+
+## Phase 2 Schedule Import sentinel matrix - 2026-09-26
+
+- Test legacy sentinels at the narrowest reachable boundary, and separate
+  upstream validation from adapter behavior. When an earlier contract
+  normalizes an ID before the adapter sees it, end-to-end success cannot prove
+  that adapter conversion; state that observability limit rather than claiming
+  direct coverage.
