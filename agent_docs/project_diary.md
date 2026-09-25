@@ -901,3 +901,13 @@ Prep's queried interval to the current and following calendar years at most.
   not match suggestions but remain in the initially-absent inventory, while
   teacher IDs are not positivity-filtered. Test each rule instead of deriving
   them from the new type representation.
+
+## Phase 2 Schedule Import state validation identities - 2026-09-26
+
+- Carry typed teacher/class IDs through apply-state snapshots, resolutions,
+  links, and projections. Translate action-specific absence and sentinel rules
+  only at the repository adapter, and preserve numeric ordering for integer
+  database IDs when using typed IDs as map keys. Test mismatched teacher keys
+  in skip decisions and conflict ordering across IDs such as 2 and 10. Keep an
+  explicit residual note when the full action/sentinel matrix lacks direct
+  assertions.

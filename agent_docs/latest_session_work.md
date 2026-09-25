@@ -2180,3 +2180,38 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: compare remaining Gate 1 and Gate 2 gaps and select another bounded
   slice; preserve the Sub Prep cap.
+
+### Phase 2 Schedule Import state validation identities - 2026-09-26
+
+- F59 source is committed as
+  `7769912e1a8ccec02ecc3ace2de11ff98c719327` (`Phase2 - Type Schedule Import
+  state validation IDs`). The Qt-free `ScheduleImportStateValidationRequest`
+  now uses `Domain::TeacherId` and `Domain::ClassId` for resolution targets,
+  teacher/class snapshots, teacher links, and projected classes. Candidate
+  indexes remain integers. The repository constructs typed IDs and performs
+  action-aware conversion of the legacy absence/sentinel values at the
+  `scheduleService()` boundary; no UI or persistence behavior was moved into
+  Application.
+- Numeric database ordering is preserved with an explicit numeric comparator
+  for projected class IDs, including the 2-versus-10 ordering case and
+  synthetic negative IDs. App-less coverage includes compile-time ID
+  distinction, selected/missing/absent/stale targets, exact skip uniqueness,
+  a skipped class with a mismatched teacher key, and conflict behavior.
+- Independent fresh x64 Ninja/MSVC 19.51/Qt 6.12 configuration validated 912
+  handwritten source owners. Both
+  `ClassMngrNextApplicationScheduleImportStateValidationTests` and
+  `ClassMngrScheduleImportTests` built and passed exact CTest 2/2. The focused
+  Schedule Import target includes
+  `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase`; the state target
+  includes the mismatched teacher-key skip regression. `git diff --check`
+  passed before commit. No full suite was run. The targeted review did not add
+  an exhaustive direct matrix for every action-specific sentinel conversion.
+- Gates 1 and 2 gain evidence and remain Partial. Workspace boundary and
+  audited `src/next` dependency isolation remain Satisfied; the Phase 2 exit
+  gate remains Open. Sub Prep remains capped at the current and following
+  calendar years. The protected user-owned `cmake/sources.cmake` was not
+  staged or committed; SHA-256 remained
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: compare remaining Gate 1/2 contracts and baseline parity for the next
+  bounded slice. Keep source and documentation commits separate and preserve
+  the protected CMake change.

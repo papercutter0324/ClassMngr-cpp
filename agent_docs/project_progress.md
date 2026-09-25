@@ -885,3 +885,30 @@ Domain completeness and baseline parity. The formal workspace criterion and
 audited dependency isolation remain Satisfied; Phase 2 and its exit gate remain
 open. Preserve the Sub Prep maximum of the current and following calendar
 years and the user-owned `cmake/sources.cmake` modification.
+
+## Current Phase 2 position - 2026-09-26
+
+F59 is committed as `7769912e1a8ccec02ecc3ace2de11ff98c719327` (`Phase2 -
+Type Schedule Import state validation IDs`). Its Qt-free apply-state
+validation contract now carries typed teacher and class identities through
+resolutions, snapshots, links, and projected classes. The repository adapter
+retains action-aware conversion of legacy nonpositive sentinels. Tests cover
+typed-ID separation, missing and stale selections, skip validity and
+uniqueness, mismatch rejection, numeric conflict ordering, and projected
+overlap behavior.
+
+Independent fresh x64 Ninja/MSVC 19.51/Qt 6.12 verification validated 912
+handwritten source owners, built the state-validation and Schedule Import
+targets, and passed `ClassMngrNextApplicationScheduleImportStateValidationTests`
+and `ClassMngrScheduleImportTests` (2/2). Coverage includes the mismatched
+teacher-key skip regression and `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase`.
+No full suite was run. There is no exhaustive direct test matrix for every
+action-specific sentinel conversion.
+
+Gates 1 and 2 remain Partial. The workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep is bounded to the current and following calendar years. The user
+change to `cmake/sources.cmake` was excluded; its SHA-256 remains
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: compare the remaining Phase 2 gaps for a bounded F60 slice and continue
+the source-then-documentation commit sequence.
