@@ -47,6 +47,7 @@ enum class ScheduleImportStateValidationErrorCode
     InvalidTeacherTarget,
     MissingTeacherRoom,
     SelectedClassUnavailable,
+    CreateNewClassHasTarget,
     SkippedClassNotUniqueExactMatch,
     InvalidProjectedTime,
     ProjectedScheduleOverlap
@@ -243,6 +244,14 @@ validateScheduleImportState(
 
     for (const auto& resolution : request.classResolutions)
     {
+        if (resolution.action == ScheduleImportStateClassAction::CreateNew
+            && resolution.targetClassId)
+        {
+            return failure(
+                ScheduleImportStateValidationErrorCode::
+                    CreateNewClassHasTarget
+                );
+        }
         if (resolution.action == ScheduleImportStateClassAction::UpdateExisting
             && !classForId(resolution.targetClassId))
         {

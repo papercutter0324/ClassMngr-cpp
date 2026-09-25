@@ -499,6 +499,10 @@ QString stateValidationMessage(
         return QObject::tr("Choose a room before updating a Korean teacher.");
     case ScheduleImportStateValidationErrorCode::SelectedClassUnavailable:
         return QObject::tr("A selected class is no longer available.");
+    case ScheduleImportStateValidationErrorCode::CreateNewClassHasTarget:
+        return QObject::tr(
+            "A class created as new cannot have an existing target."
+            );
     case ScheduleImportStateValidationErrorCode::SkippedClassNotUniqueExactMatch:
         return QObject::tr(
             "A skipped imported class can preserve only its unique exact existing match."

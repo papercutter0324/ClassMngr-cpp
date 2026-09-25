@@ -148,6 +148,7 @@ private slots:
     void requiresSelectedTeacherAndAllowsAbsentActionTarget();
     void rejectsStaleClassTarget();
     void requiresSelectedClassAndAllowsUntargetedSkip();
+    void rejectsCreateNewClassWithTarget();
     void requiresUniqueExactSkipTarget();
     void rejectsSkippedClassWithMismatchedTeacherKey();
     void rejectsInvalidProjectedTimes();
@@ -343,6 +344,26 @@ requiresSelectedClassAndAllowsUntargetedSkip()
     request.classResolutions = {
         {0, ScheduleImportStateClassAction::Skip, std::nullopt}
     };
+    QVERIFY(!errorCode(request).has_value());
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+rejectsCreateNewClassWithTarget()
+{
+    ScheduleImportStateValidationRequest request;
+    request.candidates = {candidate("teacher-a")};
+    request.classResolutions = {
+        {0, ScheduleImportStateClassAction::CreateNew, classId(42)}
+    };
+
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::CreateNewClassHasTarget
+        }
+        );
+
+    request.classResolutions[0].targetClassId = std::nullopt;
     QVERIFY(!errorCode(request).has_value());
 }
 
