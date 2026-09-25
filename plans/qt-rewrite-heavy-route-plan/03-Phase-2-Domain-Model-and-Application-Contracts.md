@@ -8,7 +8,8 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Latest code slice: F57 adds a Qt-free `EvaluationPeriod` selector for term/current-versus-previous/All selection and wires Evaluation Default Selection through it, preserving exact labels and schedule/service edges. Executor verification built five focused targets and passed exact CTest 5/5. Fresh independent Ninja/MSVC 19.51/Qt 6.12 verification validated 912 handwritten owners, built four targets, and passed exact CTest 4/4; an unchanged generated-MOC target failed to build under MSVC C1083, so its CTest was not run. No full suite was run. F57 closes F55's helper-only integration limitation; Gate 1 and Gate 2 remain Partial, Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
+- Previous code slice: F57 adds a Qt-free `EvaluationPeriod` selector for term/current-versus-previous/All selection and wires Evaluation Default Selection through it, preserving exact labels and schedule/service edges. Executor verification built five focused targets and passed exact CTest 5/5. Fresh independent Ninja/MSVC 19.51/Qt 6.12 verification validated 912 handwritten owners, built four targets, and passed exact CTest 4/4; an unchanged generated-MOC target failed to build under MSVC C1083, so its CTest was not run. No full suite was run. F57 closes F55's helper-only integration limitation; Gate 1 and Gate 2 remain Partial, Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
+- Latest code slice: F58 types Schedule Import matching identities at the app-less boundary with `Domain::TeacherId`/`Domain::ClassId` and an optional suggested class; the legacy repository adapter converts numeric IDs to the existing integer preview. Matching preserves ordering, ranks, confidence, explanations, intensive fallback, empty teacher-key behavior, unfiltered teacher IDs including 0/-1, and exclusion of nonpositive class IDs from matching/suggestion while retaining them in `initiallyAbsentClassIds`. Executor focused CTest passed 1/1. Independent fresh x64 Ninja/MSVC 19.51/Qt 6.12 verification validated 912 handwritten source owners and passed exact CTest 2/2, including checked-in `schedule_review.xlsx` path `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase`. No full suite was run; the production adapter no-suggestion `-1` sentinel lacks a direct assertion, while the data model retains its `-1` default and app-less tests assert an absent optional suggestion. Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied; Phase 2 exit gate remains Open. Sub Prep remains capped at the current and following calendar years at most.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -542,6 +543,29 @@ handwritten source owners, built `ClassMngrNextDomainContractTests`,
 suite was run. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress
 with its exit gate Open. Sub Prep remains capped at the current and following
 calendar years at most.
+
+### Cumulative exit-gate status after F58 - 2026-09-26 (commit `9b9183818fc2163d625a8ffb088a492a4aa631a9`)
+
+This audit carries forward the verified F48-F57 findings and adds F58; no
+checks were rerun for this documentation update.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F48 adds typed schedule entries; F54-F57 add shared event, course-grade, speaking-grade, and evaluation-period rules; F58 adds typed teacher/class matching identities and an optional class suggestion. Focused contracts exercise these rules, but broader Domain/Application behavior remains incomplete. |
+| Baseline parity | Partial | Fixture-backed evidence includes typed Schedule Import persistence/no-write checks, roster-score persistence, and F58's checked-in `schedule_review.xlsx` preview/apply path against a seeded database. F58 preserves matching order, ranks, confidence, explanations, fallback and legacy edge behavior; broader baseline parity remains incomplete. |
+| Workspace boundary | Satisfied | F58 does not change the formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` criterion or its focused app-less coverage. FileController integration caveats remain non-gating. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | F58's matching contract uses typed Domain identifiers and an optional suggestion; the legacy repository adapter owns conversion to integer preview IDs. The audited `src/next` isolation finding remains unchanged. |
+
+Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 verification validated 912
+handwritten source owners, built the matching projection and
+`ClassMngrScheduleImportTests`, and passed exact CTest 2/2, including
+`previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` with the checked-in
+fixture. Executor focused CTest passed 1/1. No full suite was run. There is no
+direct production assertion for the adapter's no-suggestion `-1` sentinel;
+the data model retains that default and app-less contract tests assert an
+absent optional suggestion. Gate 1 and Gate 2 remain Partial; Phase 2 remains
+In Progress and its exit gate Open. Sub Prep remains capped at the current and
+following calendar years at most.
 
 ## Heavy-route requirements
 
@@ -4796,3 +4820,28 @@ integration limitation and adds Gate 1 and Gate 2 evidence; both remain
 Partial. Workspace boundary and audited `src/next` dependency isolation remain
 Satisfied, and the Phase 2 exit gate remains Open. Sub Prep remains capped at
 the current and following calendar years at most.
+
+#### Progress update - 2026-09-26 (F58 typed Schedule Import matching identities, commit `9b9183818fc2163d625a8ffb088a492a4aa631a9`)
+
+[`ScheduleImportMatchingProjection`](../../src/next/application/schedule_import_matching_projection.h)
+now uses `Domain::TeacherId`/`Domain::ClassId` in its app-less matching
+contract and represents the suggested class as optional. The legacy repository
+adapter converts resolved numeric IDs back to the existing integer preview.
+Parity retains ordering, ranks, confidence and explanations, intensive
+fallback, empty teacher-key behavior, unfiltered teacher IDs including 0/-1,
+and nonpositive class IDs excluded from match/suggestion but retained in
+`initiallyAbsentClassIds`.
+
+Executor focused CTest passed 1/1. Independent fresh x64 Ninja/MSVC
+19.51.36257/Qt 6.12 verification in
+`build/phase2-f58-schedule-matching-tester-20260926` validated 912 handwritten
+source owners, built the matching projection and
+`ClassMngrScheduleImportTests`, and passed exact CTest 2/2, including the
+checked-in [`schedule_review.xlsx`](../../tests/fixtures/imports/schedule_review.xlsx)
+path `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase`. No full suite
+was run. The production adapter's no-suggestion `-1` sentinel has no direct
+assertion; the data model retains its `-1` default and app-less contract tests
+assert absent optional suggestion. Gate 1 and Gate 2 remain Partial; Workspace
+boundary and audited `src/next` dependency isolation remain Satisfied; the
+Phase 2 exit gate remains Open. Sub Prep remains capped at the current and
+following calendar years at most.

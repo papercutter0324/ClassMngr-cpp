@@ -892,3 +892,12 @@ Prep's queried interval to the current and following calendar years at most.
   verifies the production `forClass` path while app-less cases exhaust the
   cycle, All, and invalid period behavior. Record focused executor and
   independent verification separately when their target results differ.
+
+## Phase 2 Schedule Import matching identities - 2026-09-26
+
+- Use typed TeacherId/ClassId values and an optional suggestion in the
+  app-less matching contract; convert to legacy integers at the repository
+  edge. Preserve small legacy rules independently: nonpositive class IDs are
+  not match suggestions but remain in the initially-absent inventory, while
+  teacher IDs are not positivity-filtered. Test each rule instead of deriving
+  them from the new type representation.

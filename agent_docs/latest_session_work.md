@@ -2148,3 +2148,35 @@ separate on a host with Xvfb and loopback access.
 - Next: compare the remaining Gate 1 and Gate 2 gaps and select another
   bounded slice. Keep the current Sub Prep cap and the explicit-manifest
   boundary.
+
+### Phase 2 Schedule Import typed matching identities - 2026-09-26
+
+- F58 is committed as
+  `9b9183818fc2163d625a8ffb088a492a4aa631a9` (`Phase2 - Type Schedule Import
+  matching identities`). The Qt-free matching contract now carries
+  `Domain::TeacherId` and `Domain::ClassId` through inputs and results, and
+  represents an absent suggested class with `std::optional<ClassId>`. The
+  repository converts between these typed values and the existing integer
+  preview at the compatibility edge.
+- Matching order, tie order, categories, confidence/explanations, intensive
+  fallback, and empty teacher-key behavior are preserved. Teacher IDs 0 and
+  -1 remain matchable; class IDs 0 and -7 cannot become matches or suggestions
+  but still appear in the initially absent inventory, matching the old rules.
+  Compile-time assertions confirm teacher and class IDs cannot be assigned
+  across categories.
+- The executor built the matching projection target and passed its focused
+  CTest 1/1. Independent fresh x64 Ninja/MSVC 19.51/Qt 6.12 configuration
+  validated 912 handwritten source owners; the matching target and
+  `ClassMngrScheduleImportTests` built, and both CTests passed 2/2. The latter
+  includes `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` with
+  `schedule_review.xlsx`. No full suite was run. No direct production test
+  asserts the no-suggestion `-1` adapter value; the existing preview model
+  default remains `-1`.
+- F58 adds Gate 1 typed-identity and Gate 2 fixture-parity evidence; Gate 1 and
+  Gate 2 remain Partial. Workspace boundary and audited `src/next`
+  dependency-isolation statuses remain Satisfied, and Phase 2 remains open.
+  Sub Prep remains capped at the current and following calendar years at
+  most. `cmake/sources.cmake` was excluded and its SHA-256 remained
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: compare remaining Gate 1 and Gate 2 gaps and select another bounded
+  slice; preserve the Sub Prep cap.

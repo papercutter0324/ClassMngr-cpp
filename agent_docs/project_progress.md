@@ -179,16 +179,29 @@ focused CTests; fresh independent verification passed the four selection
 targets, while an unchanged supporting calendar-preference target failed its
 generated `.moc` compile with MSVC C1083. No full suite was run.
 
+F58 moves Schedule Import matching identities to Qt-free `Domain::TeacherId`
+and `Domain::ClassId`, represents an absent suggestion with
+`std::optional<ClassId>`, and keeps the legacy integer preview conversion at
+the repository boundary. It is committed as
+`9b9183818fc2163d625a8ffb088a492a4aa631a9`. Executor focused CTest passed
+1/1. Fresh independent MSVC 19.51/Ninja/Qt 6.12 verification validated
+912 handwritten source owners, built the matching-contract and fixture-backed
+Schedule Import targets, and passed 2/2 CTests, including the checked-in
+`schedule_review.xlsx` path. No full suite was run. The adapter's absent
+suggestion continues to use the legacy model's `-1` default, but has no direct
+adapter assertion yet.
+
 The formal gate remains open. Gate 1 and Gate 2 remain Partial because broader
 Domain/application contracts and baseline parity are incomplete. F53 and F56
 add Gate 2 evidence; F54, F55, F56, and F57 add Gate 1 evidence; F57 adds
-Gate 2 production-path evidence. The workspace criterion and audited v2
+Gate 2 production-path evidence; F58 adds Gate 1 typed-identity and Gate 2
+Schedule Import parity evidence. The workspace criterion and audited v2
 dependency isolation remain Satisfied. F57 closes F55's full `forClass`
-integration gap, though broader parity remains. Three independent Investigators
-selected the typed rule plus real service test. Next, compare remaining Gate 1
-and Gate 2 gaps for another bounded slice. Sub Prep remains capped at the
-current and following calendar years at most. The user-owned
-`cmake/sources.cmake` change remains outside these commits.
+integration gap, though broader parity remains. Three independent
+Investigators selected Schedule Import matching identities for F58. Next,
+compare remaining Gate 1 and Gate 2 gaps for another bounded slice. Sub Prep
+remains capped at the current and following calendar years at most. The
+user-owned `cmake/sources.cmake` change remains outside these commits.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 
