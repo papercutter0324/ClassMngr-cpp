@@ -165,6 +165,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
         tests/speaking_eval_report_widget_tests.cpp
         src/core/fontmanager.cpp
+        src/features/speaking_eval/services/speaking_eval_report_data_assembler.cpp
         src/features/speaking_eval/ui/speaking_eval_comment_edit.cpp
         src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp

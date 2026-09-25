@@ -10,11 +10,15 @@
 #include <QHash>
 #include <QList>
 #include <QSignalSpy>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QSet>
 #include <QStringList>
 #include <QTemporaryDir>
 #include <QVector>
 #include <QtTest>
+#include <QUuid>
 
 // RosterModel always restores Roster::BaseColumns in setRoster(). Expose its
 // private column list here only to drive the import slot's defensive warning
@@ -160,6 +164,69 @@ private:
     QTemporaryDir m_directory;
 
 public:
+    bool setStoredComponentScore(
+        const QString& evaluationName,
+        SpeakingEvalColumn component,
+        const QString& score,
+        QString* error
+        ) const
+    {
+        const QString connectionName = QUuid::createUuid().toString();
+        bool updated = false;
+        QString failure;
+
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+            database.setDatabaseName(
+                m_directory.filePath(QStringLiteral("roster-score-import.db"))
+                );
+            if (!database.open())
+            {
+                failure = database.lastError().text();
+            }
+            else
+            {
+                const QString queryText =
+                    QStringLiteral(
+                        "UPDATE speaking_eval_data SET col_%1=? "
+                        "WHERE row_index=0 AND evaluation_id=("
+                        "SELECT id FROM speaking_evaluations "
+                        "WHERE class_id=? AND evaluation_name=?)"
+                        )
+                        .arg(SpeakingEval::toInt(component));
+                {
+                    QSqlQuery query(database);
+                    query.prepare(queryText);
+                    query.addBindValue(score);
+                    query.addBindValue(classId);
+                    query.addBindValue(evaluationName);
+                    updated = query.exec() && query.numRowsAffected() == 1;
+                    if (!updated)
+                    {
+                        failure = query.lastError().text();
+                        if (failure.isEmpty())
+                        {
+                            failure = QStringLiteral(
+                                "The expected speaking evaluation score row was not updated."
+                                );
+                        }
+                    }
+                }
+                database.close();
+            }
+        }
+
+        QSqlDatabase::removeDatabase(connectionName);
+        if (!updated && error)
+        {
+            *error = failure;
+        }
+        return updated;
+    }
+
     bool initialize(QString* error)
     {
         if (!m_directory.isValid())
@@ -281,6 +348,7 @@ class RosterEditorWidgetImportTests final : public QObject
 
 private slots:
     void importScoresPersistsGradesAndRepeatedImportIsIdempotent();
+    void paddedAndIncompleteScoresKeepRepositoryImportPolicy();
     void partialNamePairIsNotMatchedOrModified();
     void missingNameColumnsWarnWithoutChangingOrPersistingData();
 };
@@ -484,6 +552,95 @@ void RosterEditorWidgetImportTests::partialNamePairIsNotMatchedOrModified()
     QCOMPARE(persisted->columns, fixture.initialRoster.columns);
     QCOMPARE(persisted->rows.size(), fixture.initialRoster.rows.size());
     for (int row = 0; row < fixture.initialRoster.rows.size(); ++row)
+    {
+        QCOMPARE(persisted->rows.at(row), fixture.initialRoster.rows.at(row));
+    }
+}
+
+void RosterEditorWidgetImportTests::
+    paddedAndIncompleteScoresKeepRepositoryImportPolicy()
+{
+    RosterScoreImportFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    // Bypass the speaking-evaluation editor's normalizer so the repository
+    // receives a persisted padded label and must retain its own trim policy.
+    QVERIFY2(
+        fixture.setStoredComponentScore(
+            QStringLiteral("Winter"),
+            SpeakingEvalColumn::OverallEffort,
+            QStringLiteral(" C "),
+            &error
+            ),
+        qPrintable(error)
+        );
+    const Result<SpeakingEvalRows> paddedWinter =
+        fixture.m_services.speakingEvaluationService()->evaluation(
+            fixture.classId,
+            QStringLiteral("Winter")
+            );
+    QVERIFY(paddedWinter);
+    QCOMPARE(
+        paddedWinter->constFirst().at(
+            SpeakingEval::toInt(SpeakingEvalColumn::OverallEffort)
+            ),
+        QStringLiteral(" C ")
+        );
+
+    // An absent final component remains valid saved data and imports as N/A.
+    QVERIFY2(
+        fixture.setStoredComponentScore(
+            QStringLiteral("Summer"),
+            SpeakingEvalColumn::OverallEffort,
+            QString(),
+            &error
+            ),
+        qPrintable(error)
+        );
+    const Result<SpeakingEvalRows> incompleteSummer =
+        fixture.m_services.speakingEvaluationService()->evaluation(
+            fixture.classId,
+            QStringLiteral("Summer")
+            );
+    QVERIFY(incompleteSummer);
+    QVERIFY(
+        incompleteSummer->constFirst().at(
+            SpeakingEval::toInt(SpeakingEvalColumn::OverallEffort)
+            ).isEmpty()
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.m_services, true);
+    editor.loadClass(
+        Classroom(
+            QStringLiteral("Roster score import fixture"),
+            fixture.classId
+            )
+        );
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &editor,
+        "importScores",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Scores imported successfully.")
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(!editor.hasUnsavedChanges(), 5'000);
+
+    const Result<Roster> persisted =
+        fixture.m_services.rosterService()->roster(fixture.classId);
+    QVERIFY(persisted);
+    QCOMPARE(rosterCell(*persisted, 0, QStringLiteral("Winter")),
+        QStringLiteral("B+"));
+    QCOMPARE(rosterCell(*persisted, 0, QStringLiteral("Summer")),
+        QStringLiteral("N/A"));
+    for (int row = 1; row < fixture.initialRoster.rows.size(); ++row)
     {
         QCOMPARE(persisted->rows.at(row), fixture.initialRoster.rows.at(row));
     }

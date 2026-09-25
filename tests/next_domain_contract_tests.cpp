@@ -5,9 +5,11 @@
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_entry.h"
 #include "next/domain/schedule_time.h"
+#include "next/domain/speaking_evaluation_grade.h"
 
 #include <QtTest/QtTest>
 
+#include <algorithm>
 #include <array>
 #include <string_view>
 #include <type_traits>
@@ -36,6 +38,10 @@ private slots:
     void coursesHaveValueAndAccessorSemantics();
     void coursesRejectInvalidNamesAndCrossGradePairs();
     void courseGradeBandsClassifyGradeWithoutLevelValidation();
+    void speakingEvaluationGradesParseExactSupportedLabels();
+    void speakingEvaluationGradesAggregateAllSixComponents();
+    void speakingEvaluationGradeAggregationRejectsInvalidOrMissingScores();
+    void speakingEvaluationGradeAggregationClampsToSupportedRange();
     void coursesExposeWeeklyMeetingDayRules();
     void weeklyMeetingDayRulesRejectInvalidPatterns();
     void koreanTeacherKeysKeepEveryAcceptedRangeAndBoundary();
@@ -594,6 +600,156 @@ void NextDomainContractTests::
     QVERIFY(!Course::fromNames("M1", "Unknown").has_value());
     QVERIFY(
         Course::gradeBandForName("M1") == CourseGradeBand::M1
+    );
+}
+
+void NextDomainContractTests::
+    speakingEvaluationGradesParseExactSupportedLabels()
+{
+    struct GradeCase
+    {
+        std::string_view label;
+        int value;
+        SpeakingEvaluationGrade grade;
+    };
+    const std::array<GradeCase, 5> grades{{
+            {"C", 1, SpeakingEvaluationGrade::C},
+            {"B", 2, SpeakingEvaluationGrade::B},
+            {"B+", 3, SpeakingEvaluationGrade::BPlus},
+            {"A", 4, SpeakingEvaluationGrade::A},
+            {"A+", 5, SpeakingEvaluationGrade::APlus}
+        }};
+
+    for (const GradeCase& gradeCase : grades)
+    {
+        const auto parsed = speakingEvaluationGradeFromLabel(gradeCase.label);
+        QVERIFY(parsed.has_value());
+        QVERIFY(*parsed == gradeCase.grade);
+        QVERIFY(speakingEvaluationGradeLabel(*parsed) == gradeCase.label);
+        QVERIFY(
+            speakingEvaluationGradeFromValue(gradeCase.value)
+            == gradeCase.grade
+            );
+    }
+
+    for (const std::string_view invalid : {
+             "", "c", " B", "B ", "A-", "N/A"
+         })
+    {
+        QVERIFY(!speakingEvaluationGradeFromLabel(invalid).has_value());
+    }
+    QVERIFY(!speakingEvaluationGradeFromValue(0).has_value());
+    QVERIFY(!speakingEvaluationGradeFromValue(6).has_value());
+}
+
+void NextDomainContractTests::
+    speakingEvaluationGradesAggregateAllSixComponents()
+{
+    static_assert(SpeakingEvaluationCriterionCount == 6);
+
+    // Exhaust every one of the 5^6 valid six-component combinations.
+    constexpr int CombinationCount = 15625;
+    for (int combination = 0; combination < CombinationCount; ++combination)
+    {
+        int encoded = combination;
+        int sum = 0;
+        SpeakingEvaluationComponentScores scores{};
+        for (std::size_t index = 0; index < scores.size(); ++index)
+        {
+            const int value = encoded % 5 + 1;
+            encoded /= 5;
+            sum += value;
+            scores[index] = speakingEvaluationGradeFromValue(value);
+        }
+
+        const double average = static_cast<double>(sum) / scores.size();
+        int expectedValue = static_cast<int>(average);
+        if (average - expectedValue >= 0.4)
+        {
+            ++expectedValue;
+        }
+        expectedValue = std::clamp(expectedValue, 1, 5);
+
+        const auto actual = calculateOverallSpeakingEvaluationGrade(scores);
+        QVERIFY(actual.has_value());
+        const auto expected = speakingEvaluationGradeFromValue(expectedValue);
+        QVERIFY(expected.has_value());
+        QVERIFY(*actual == *expected);
+    }
+
+    // Six values cannot produce an exact 0.4 fraction: 14/6 stays at B,
+    // while 15/6 crosses the existing >= 0.4 rounding boundary to B+.
+    const SpeakingEvaluationComponentScores belowRoundingThreshold{
+        SpeakingEvaluationGrade::C,
+        SpeakingEvaluationGrade::C,
+        SpeakingEvaluationGrade::B,
+        SpeakingEvaluationGrade::BPlus,
+        SpeakingEvaluationGrade::BPlus,
+        SpeakingEvaluationGrade::A
+    };
+    QVERIFY(
+        calculateOverallSpeakingEvaluationGrade(belowRoundingThreshold)
+        == SpeakingEvaluationGrade::B
+        );
+
+    const SpeakingEvaluationComponentScores atRoundingThreshold{
+        SpeakingEvaluationGrade::C,
+        SpeakingEvaluationGrade::C,
+        SpeakingEvaluationGrade::B,
+        SpeakingEvaluationGrade::BPlus,
+        SpeakingEvaluationGrade::A,
+        SpeakingEvaluationGrade::A
+    };
+    QVERIFY(
+        calculateOverallSpeakingEvaluationGrade(atRoundingThreshold)
+        == SpeakingEvaluationGrade::BPlus
+        );
+
+    const SpeakingEvaluationComponentScores mixedSixteenOfSix{
+        SpeakingEvaluationGrade::APlus,
+        SpeakingEvaluationGrade::C,
+        SpeakingEvaluationGrade::BPlus,
+        SpeakingEvaluationGrade::B,
+        SpeakingEvaluationGrade::C,
+        SpeakingEvaluationGrade::A
+    };
+    QVERIFY(
+        calculateOverallSpeakingEvaluationGrade(mixedSixteenOfSix)
+        == SpeakingEvaluationGrade::BPlus
+        );
+}
+
+void NextDomainContractTests::
+    speakingEvaluationGradeAggregationRejectsInvalidOrMissingScores()
+{
+    SpeakingEvaluationComponentScores missing{};
+    missing.fill(SpeakingEvaluationGrade::BPlus);
+    missing[static_cast<std::size_t>(SpeakingEvaluationCriterion::Content)] =
+        std::nullopt;
+    QVERIFY(!calculateOverallSpeakingEvaluationGrade(missing).has_value());
+
+    SpeakingEvaluationComponentScores invalid{};
+    invalid.fill(SpeakingEvaluationGrade::BPlus);
+    invalid[static_cast<std::size_t>(SpeakingEvaluationCriterion::Fluency)] =
+        static_cast<SpeakingEvaluationGrade>(0);
+    QVERIFY(!calculateOverallSpeakingEvaluationGrade(invalid).has_value());
+}
+
+void NextDomainContractTests::
+    speakingEvaluationGradeAggregationClampsToSupportedRange()
+{
+    SpeakingEvaluationComponentScores allLowest{};
+    allLowest.fill(SpeakingEvaluationGrade::C);
+    QVERIFY(
+        calculateOverallSpeakingEvaluationGrade(allLowest)
+        == SpeakingEvaluationGrade::C
+        );
+
+    SpeakingEvaluationComponentScores allHighest{};
+    allHighest.fill(SpeakingEvaluationGrade::APlus);
+    QVERIFY(
+        calculateOverallSpeakingEvaluationGrade(allHighest)
+        == SpeakingEvaluationGrade::APlus
         );
 }
 

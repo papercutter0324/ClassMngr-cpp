@@ -34,6 +34,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/operation_result.h
     src/next/domain/schedule_entry.h
     src/next/domain/schedule_time.h
+    src/next/domain/speaking_evaluation_grade.h
 )
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES

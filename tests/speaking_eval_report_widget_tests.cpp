@@ -1,6 +1,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 
 #include "domain/models/speaking_evaluation.h"
+#include "features/speaking_eval/services/speaking_eval_report_data_assembler.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 
 #include <QtTest>
@@ -292,6 +293,7 @@ private slots:
     void advancedStudentGradesAreCenteredInTheirMetricCells();
     void everyScoreHighlightAndInvalidScoreAreHandled_data();
     void everyScoreHighlightAndInvalidScoreAreHandled();
+    void overallGradeConsumersShareTheDomainRule();
     void interactiveTemplateEditsScoresAndComments_data();
     void interactiveTemplateEditsScoresAndComments();
     void signaturesKeepAspectRatioWithinManifestBounds_data();
@@ -1363,6 +1365,69 @@ void SpeakingEvalReportWidgetTests::
         }
         overallImages.append(overallImage);
     }
+}
+
+void SpeakingEvalReportWidgetTests::
+    overallGradeConsumersShareTheDomainRule()
+{
+    const std::array<QString, 6> mixedScores{
+        QStringLiteral("A+"),
+        QStringLiteral("C"),
+        QStringLiteral("B+"),
+        QStringLiteral("B"),
+        QStringLiteral("C"),
+        QStringLiteral("A")
+    };
+    QCOMPARE(
+        SpeakingEvalReportDataAssembler::overallGrade(mixedScores),
+        QStringLiteral("B+")
+        );
+    auto exactLabelScores = mixedScores;
+    exactLabelScores[0] = QStringLiteral(" A+");
+    QCOMPARE(
+        SpeakingEvalReportDataAssembler::overallGrade(exactLabelScores),
+        QStringLiteral("N/A")
+        );
+
+    SpeakingEvalReportData mixedData;
+    mixedData.scores = mixedScores;
+    const SpeakingEvalTemplateAssets& assets =
+        speakingEvalTemplateAssets(mixedData.reportTemplate);
+    const QRect overallRect =
+        rasterRect(
+            assets.overallGrades.value(QStringLiteral("B+")).destination
+            );
+    const QImage mixedOverall =
+        renderReport(mixedData).copy(overallRect);
+
+    SpeakingEvalReportData expectedData = mixedData;
+    expectedData.scores.fill(QStringLiteral("B+"));
+    const QImage expectedBPlus =
+        renderReport(expectedData).copy(overallRect);
+    QVERIFY(mixedOverall == expectedBPlus);
+
+    SpeakingEvalReportData invalidData = mixedData;
+    invalidData.scores[2] = QString();
+    const QRect notAvailableRect =
+        rasterRect(
+            assets.overallGrades.value(QStringLiteral("N/A")).destination
+            );
+    const QImage invalidOverall =
+        renderReport(invalidData).copy(notAvailableRect);
+    const QImage expectedNotAvailable =
+        renderReport(
+            SpeakingEvalReportData{
+                .scores = {
+                    QStringLiteral("A+"),
+                    QStringLiteral("C"),
+                    QStringLiteral("invalid"),
+                    QStringLiteral("B"),
+                    QStringLiteral("C"),
+                    QStringLiteral("A")
+                }
+            }
+            ).copy(notAvailableRect);
+    QVERIFY(invalidOverall == expectedNotAvailable);
 }
 
 void SpeakingEvalReportWidgetTests::

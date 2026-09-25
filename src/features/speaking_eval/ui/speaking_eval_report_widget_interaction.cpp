@@ -2,7 +2,9 @@
 
 #include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "next/domain/speaking_evaluation_grade.h"
 
+#include <QByteArray>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPlainTextEdit>
@@ -11,6 +13,9 @@
 #include <QTextDocument>
 
 #include <algorithm>
+#include <string_view>
+
+namespace NextDomain = ClassMngr::Next::Domain;
 
 void SpeakingEvalReportWidget::paintEvent(
     QPaintEvent* event
@@ -242,47 +247,30 @@ void SpeakingEvalReportWidget::updateCommentEditor()
 
 QString SpeakingEvalReportWidget::overallGrade() const
 {
-    const QHash<QString, int> gradeValues{
-        { QStringLiteral("C"), 1 },
-        { QStringLiteral("B"), 2 },
-        { QStringLiteral("B+"), 3 },
-        { QStringLiteral("A"), 4 },
-        { QStringLiteral("A+"), 5 }
-    };
-    const QStringList grades{
-        QStringLiteral("C"),
-        QStringLiteral("B"),
-        QStringLiteral("B+"),
-        QStringLiteral("A"),
-        QStringLiteral("A+")
-    };
-
-    int sum = 0;
-
-    for (const QString& score : m_data.scores)
+    NextDomain::SpeakingEvaluationComponentScores componentScores{};
+    for (std::size_t index = 0; index < m_data.scores.size(); ++index)
     {
-        if (!gradeValues.contains(score))
-        {
-            return QStringLiteral("N/A");
-        }
-
-        sum +=
-            gradeValues.value(score);
+        const QByteArray label = m_data.scores[index].toLatin1();
+        componentScores[index] =
+            NextDomain::speakingEvaluationGradeFromLabel(
+                std::string_view(
+                    label.constData(),
+                    static_cast<std::size_t>(label.size())
+                    )
+            );
     }
 
-    const double average =
-        static_cast<double>(sum) / m_data.scores.size();
-
-    int rounded =
-        static_cast<int>(average);
-
-    if (average - rounded >= 0.4)
+    const auto overallGrade =
+        NextDomain::calculateOverallSpeakingEvaluationGrade(componentScores);
+    if (!overallGrade)
     {
-        ++rounded;
+        return QStringLiteral("N/A");
     }
 
-    return grades.value(
-        qBound(1, rounded, 5) - 1,
-        QStringLiteral("N/A")
+    const std::string_view label =
+        NextDomain::speakingEvaluationGradeLabel(*overallGrade);
+    return QString::fromLatin1(
+        label.data(),
+        static_cast<qsizetype>(label.size())
         );
 }

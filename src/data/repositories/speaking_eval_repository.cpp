@@ -2,13 +2,20 @@
 
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
+#include "next/domain/speaking_evaluation_grade.h"
 
+#include <QByteArray>
 #include <QDebug>
 #include <QHash>
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QtGlobal>
+
+#include <array>
+#include <string_view>
+
+namespace NextDomain = ClassMngr::Next::Domain;
 
 SpeakingEvalRepository::SpeakingEvalRepository(
     QSqlDatabase& database
@@ -355,23 +362,8 @@ Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
         return scores;
     }
 
-    const QHash<QString, int> gradeToNumber{
-        { QStringLiteral("C"), 1 },
-        { QStringLiteral("B"), 2 },
-        { QStringLiteral("B+"), 3 },
-        { QStringLiteral("A"), 4 },
-        { QStringLiteral("A+"), 5 }
-    };
-
-    const QHash<int, QString> numberToGrade{
-        { 1, QStringLiteral("C") },
-        { 2, QStringLiteral("B") },
-        { 3, QStringLiteral("B+") },
-        { 4, QStringLiteral("A") },
-        { 5, QStringLiteral("A+") }
-    };
-
-    const QList<int> scoreColumns{
+    const std::array<int, NextDomain::SpeakingEvaluationCriterionCount>
+        scoreColumns{
         SpeakingEval::toInt(SpeakingEvalColumn::Grammar),
         SpeakingEval::toInt(SpeakingEvalColumn::Pronunciation),
         SpeakingEval::toInt(SpeakingEvalColumn::Fluency),
@@ -400,61 +392,35 @@ Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
             continue;
         }
 
-        QList<int> numericScores;
-        bool valid = true;
-
-        for (int column : scoreColumns)
+        NextDomain::SpeakingEvaluationComponentScores componentScores{};
+        for (std::size_t index = 0; index < scoreColumns.size(); ++index)
         {
             const QString value =
-                row[column].trimmed();
-
-            if (!gradeToNumber.contains(value))
-            {
-                valid = false;
-                break;
-            }
-
-            numericScores.append(
-                gradeToNumber.value(value)
+                row[scoreColumns[index]].trimmed();
+            const QByteArray label = value.toLatin1();
+            componentScores[index] =
+                NextDomain::speakingEvaluationGradeFromLabel(
+                    std::string_view(
+                        label.constData(),
+                        static_cast<std::size_t>(label.size())
+                        )
                 );
         }
 
         QString finalGrade =
             QStringLiteral("N/A");
-
-        if (valid && numericScores.size() == scoreColumns.size())
+        const auto overallGrade =
+            NextDomain::calculateOverallSpeakingEvaluationGrade(
+                componentScores
+                );
+        if (overallGrade)
         {
-            int sum = 0;
-
-            for (int score : numericScores)
-            {
-                sum += score;
-            }
-
-            const double average =
-                static_cast<double>(sum)
-                / numericScores.size();
-
-            int rounded =
-                static_cast<int>(average);
-
-            if (average - rounded >= 0.4)
-            {
-                ++rounded;
-            }
-
-            rounded =
-                qBound(
-                    1,
-                    rounded,
-                    5
-                    );
-
-            finalGrade =
-                numberToGrade.value(
-                    rounded,
-                    QStringLiteral("N/A")
-                    );
+            const std::string_view label =
+                NextDomain::speakingEvaluationGradeLabel(*overallGrade);
+            finalGrade = QString::fromLatin1(
+                label.data(),
+                static_cast<qsizetype>(label.size())
+                );
         }
 
         scores.append(
