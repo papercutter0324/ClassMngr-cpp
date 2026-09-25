@@ -912,3 +912,32 @@ change to `cmake/sources.cmake` was excluded; its SHA-256 remains
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: compare the remaining Phase 2 gaps for a bounded F60 slice and continue
 the source-then-documentation commit sequence.
+
+## Current Phase 2 position - 2026-09-26 (F60)
+
+F60 is committed as `730955dd1feb24e5a46dd0bfef9f86b8ff619621` (`Phase2 -
+Type Schedule Import review decision IDs`). The Qt-free review-decision
+contract uses optional `Domain::ClassId` targets for class resolutions and
+issues. The PlanValidator and review dialog translate legacy positive integer
+targets at their feature boundaries; nonpositive sentinels become absence.
+UpdateExisting still requires a target, CreateNew forbids one, and Skip keeps
+an optional exact-match target. Duplicate-target issue details and claim order
+remain covered.
+
+Fresh independent x64 Ninja/MSVC 19.51/Qt 6.12 verification validated 912
+handwritten source owners, built the three focused targets in 321 steps, and
+passed `ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`
+(3/3). The Schedule Import fixture still applies `schedule_review.xlsx`; the
+app-less contract separately passed 1/1 after adding explicit Skip-without-
+target coverage. No full suite was run. The dialog tests do not directly assert
+the resolved existing-target label text.
+
+Gates 1 and 2 remain Partial; the workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. The Phase 2 exit gate remains Open.
+F59's exhaustive per-action sentinel matrix remains a coverage gap. Sub Prep
+remains bounded to 2026–2027. The protected user change to
+`cmake/sources.cmake` remains excluded with SHA-256
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: compare the remaining gated gaps for F61 and keep source and
+documentation commits separate.

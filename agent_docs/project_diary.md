@@ -911,3 +911,12 @@ Prep's queried interval to the current and following calendar years at most.
   in skip decisions and conflict ordering across IDs such as 2 and 10. Keep an
   explicit residual note when the full action/sentinel matrix lacks direct
   assertions.
+
+## Phase 2 Schedule Import review-decision identities - 2026-09-26
+
+- Represent an optional selected class target as `std::optional<ClassId>` in
+  the app-less contract. Convert positive legacy IDs at each feature boundary
+  and map nonpositive sentinel values to absence. Keep UpdateExisting required,
+  CreateNew target-free, and Skip target-optional; directly test that absent
+  Skip targets remain valid. Preserve issue order/details and convert typed IDs
+  only for the UI's legacy class-label lookup.

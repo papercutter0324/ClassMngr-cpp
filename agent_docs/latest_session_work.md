@@ -2215,3 +2215,37 @@ separate on a host with Xvfb and loopback access.
 - Next: compare remaining Gate 1/2 contracts and baseline parity for the next
   bounded slice. Keep source and documentation commits separate and preserve
   the protected CMake change.
+
+### Phase 2 Schedule Import review-decision identities - 2026-09-26
+
+- F60 is committed as
+  `730955dd1feb24e5a46dd0bfef9f86b8ff619621` (`Phase2 - Type Schedule Import
+  review decision IDs`). `ScheduleImportReviewClassResolution` and
+  `ScheduleImportReviewDecisionIssue` now carry optional `Domain::ClassId`
+  values. The feature PlanValidator and dialog explicitly convert legacy
+  integer selections; targets <= 0 become absent. Application remains Qt-free.
+- The validator preserves UpdateExisting's required-target rule, CreateNew's
+  no-target rule, optional Skip targets, target-claim ordering, duplicate
+  update/skip issue codes, and claimant-index details. The dialog converts
+  typed target values only at the class-label boundary. Compile-time assertions
+  distinguish class and teacher IDs. App-less cases assert CreateNew and Skip
+  accept absent targets and preserve duplicate issue details.
+- Independent fresh x64 Ninja/MSVC 19.51/Qt 6.12 configure validated 912
+  handwritten source owners. Three targets built in 321 Ninja steps and
+  `ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+  `ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`
+  passed exact CTest 3/3. The latter includes
+  `previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase` loading the
+  checked-in `schedule_review.xlsx` fixture. The app-less target also passed
+  1/1 after the added Skip-without-target regression. `git diff --check`
+  passed. No full suite was run. Dialog coverage does not directly assert the
+  resolved existing-target label text.
+- Gates 1 and 2 remain Partial; workspace boundary and audited `src/next`
+  dependency isolation remain Satisfied; the Phase 2 exit gate remains Open.
+  The F59 action-specific sentinel matrix remains an uncovered parity detail.
+  Sub Prep stays capped to the current and following calendar years
+  (2026–2027). The protected `cmake/sources.cmake` file was excluded and its
+  SHA-256 remained
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: select a bounded F61 slice from remaining Gate 1/2 gaps. Preserve the
+  separate source/documentation commit sequence and protected CMake change.
