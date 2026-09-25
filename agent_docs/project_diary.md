@@ -920,3 +920,12 @@ Prep's queried interval to the current and following calendar years at most.
   CreateNew target-free, and Skip target-optional; directly test that absent
   Skip targets remain valid. Preserve issue order/details and convert typed IDs
   only for the UI's legacy class-label lookup.
+
+## Phase 2 Evaluation Default Selection read failure - 2026-09-26
+
+- Prove failure-path behavior through the real `ApplicationServices` adapter:
+  verify the repository returns an error after the read table is removed, then
+  assert the production default selector returns empty. In the same fixture,
+  first assert a successful empty current-period read still selects the
+  previous term. Use a fixed date, valid saved schedule, policy, and class data
+  so the database-read result is the only changed condition.

@@ -941,3 +941,24 @@ remains bounded to 2026–2027. The protected user change to
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: compare the remaining gated gaps for F61 and keep source and
 documentation commits separate.
+
+## Current Phase 2 position - 2026-09-26 (F61)
+
+F61 is committed as `5e08c2aab8c4c326463e969445757fa90e25d79c` (`Phase2 -
+Cover evaluation default read failure`). The production integration test now
+distinguishes a successful empty current evaluation, which selects Summer for
+M2 on 2026-09-07, from an evaluation query failure after the table is removed,
+which returns no default. It also confirms the repository read itself fails.
+
+Independent fresh x64 Ninja/MSVC 19.51/Qt 6.12 verification validated 912
+handwritten source owners and passed
+`ClassMngrEvaluationDefaultSelectionIntegrationTests` (1/1). No full suite was
+run. Gates 1 and 2 remain Partial; workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep remains bounded to the current and following calendar years
+(2026–2027). The F59 action/sentinel matrix and F60 resolved-label assertion
+remain separate coverage gaps. The protected user change to
+`cmake/sources.cmake` remains excluded, with SHA-256
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: select a bounded F62 slice and continue separate source and documentation
+commits.

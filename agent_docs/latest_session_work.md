@@ -2249,3 +2249,33 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: select a bounded F61 slice from remaining Gate 1/2 gaps. Preserve the
   separate source/documentation commit sequence and protected CMake change.
+
+### Phase 2 Evaluation Default Selection read failure - 2026-09-26
+
+- F61 is committed as
+  `5e08c2aab8c4c326463e969445757fa90e25d79c` (`Phase2 - Cover evaluation
+  default read failure`). It adds
+  `failedCurrentEvaluationReadReturnsNoDefault()` to
+  `tests/evaluation_default_selection_integration_tests.cpp`; production code
+  is unchanged.
+- The test opens a unique temporary database, creates an M2 class with valid
+  ClassInfo, saves the 2026 academic schedule, and sets
+  `CurrentOrPreviousTerm`. Before altering storage, the successful empty Fall
+  evaluation read produces Summer for 2026-09-07. It then drops
+  `speaking_evaluations`, asserts the repository evaluation read is an error,
+  and asserts the production `EvaluationDefaultSelection::forClass` result is
+  empty. Existing missing-schedule and missing-class-info tests are retained.
+- Executor verification built the target and passed
+  `ClassMngrEvaluationDefaultSelectionIntegrationTests` (1/1). Independent
+  fresh x64 Ninja/MSVC 19.51/Qt 6.12 configuration validated 912 source
+  owners, built the integration target, and passed the exact CTest 1/1.
+  `git diff --check` passed; no full suite was run.
+- Gate 2 gains a distinct production-path error case; Gates 1 and 2 remain
+  Partial. Workspace boundary and audited `src/next` dependency isolation
+  remain Satisfied; Phase 2 exit gate remains Open. F59's action/sentinel
+  matrix and F60's direct resolved-label assertion remain uncovered. Sub Prep
+  remains capped to 2026-2027. Protected `cmake/sources.cmake` was excluded and
+  SHA-256 remained
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: compare remaining Gate 1/2 gaps for F62 and preserve the separate
+  source/documentation commit sequence.
