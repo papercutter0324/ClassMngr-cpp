@@ -1548,6 +1548,15 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         QCOMPARE(preview->kind, ScheduleImportKind::Normal);
         QCOMPARE(preview->user.classes.size(), user.classes.size());
         QCOMPARE(preview->classes.size(), 3);
+        const ScheduleImportClassPreview& noMatch = preview->classes[0];
+        QCOMPARE(noMatch.candidateIndex, 0);
+        QVERIFY(noMatch.matchingClassIds.isEmpty());
+        QCOMPARE(noMatch.suggestedClassId, -1);
+        QVERIFY(!noMatch.exactMatch);
+        QCOMPARE(
+            noMatch.matchConfidence,
+            ScheduleImportClassMatchConfidence::None
+            );
         const ScheduleImportClassPreview& match = preview->classes[1];
         QCOMPARE(match.candidateIndex, 1);
         QCOMPARE(match.matchingClassIds, (QList<int>{43, 42}));
