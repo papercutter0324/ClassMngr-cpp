@@ -169,16 +169,26 @@ N/A output. F56 is committed as
 focused Domain, roster-import, speaking-service, and report-widget CTests
 passed 4/4. No full suite was run.
 
+F57 adds the Qt-free `EvaluationPeriod` selector and wires it through
+`EvaluationDefaultSelection::forClass`. It preserves the four-term
+current/previous cycle and legacy evaluation labels; a temporary-database test
+calls the real service path and checks grade-specific current/fallback results,
+All, and missing required data. F57 is committed as
+`b38b3afef0088b4c05d6d540dda15600f48c7f59`. The executor passed all five
+focused CTests; fresh independent verification passed the four selection
+targets, while an unchanged supporting calendar-preference target failed its
+generated `.moc` compile with MSVC C1083. No full suite was run.
+
 The formal gate remains open. Gate 1 and Gate 2 remain Partial because broader
 Domain/application contracts and baseline parity are incomplete. F53 and F56
-add Gate 2 evidence; F54, F55, and F56 add Gate 1 evidence. The workspace
-criterion and audited v2 dependency isolation remain Satisfied. F55's
-grade-to-school-level helper test still does not instantiate the full
-`forClass` ApplicationServices path. Three independent Investigators compared
-that path with F56's shared grade aggregation; the latter is complete. Next,
-compare the remaining Gate 1 and Gate 2 gaps for another bounded slice. Sub
-Prep remains capped at the current and following calendar years at most. The
-user-owned `cmake/sources.cmake` change remains outside these commits.
+add Gate 2 evidence; F54, F55, F56, and F57 add Gate 1 evidence; F57 adds
+Gate 2 production-path evidence. The workspace criterion and audited v2
+dependency isolation remain Satisfied. F57 closes F55's full `forClass`
+integration gap, though broader parity remains. Three independent Investigators
+selected the typed rule plus real service test. Next, compare remaining Gate 1
+and Gate 2 gaps for another bounded slice. Sub Prep remains capped at the
+current and following calendar years at most. The user-owned
+`cmake/sources.cmake` change remains outside these commits.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

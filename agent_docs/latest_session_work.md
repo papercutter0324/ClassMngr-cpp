@@ -2114,3 +2114,37 @@ separate on a host with Xvfb and loopback access.
 - Next: review the remaining Phase 2 Gate 1 and Gate 2 gaps and select the next
   bounded slice. Leave the user-owned `cmake/sources.cmake` untouched and
   commit source and documentation paths separately after each slice.
+
+### Phase 2 Evaluation Default Selection - 2026-09-26
+
+- F57 is committed as
+  `b38b3afef0088b4c05d6d540dda15600f48c7f59` (`Phase2 - Add Evaluation
+  Default Selection contract`). It adds the Qt-free `EvaluationPeriod`
+  current/previous selector and adapts both `forTermSchedule` and `forClass`
+  while keeping dates, persisted-service access, and exact evaluation labels
+  at the feature edge.
+- App-less tests cover populated/current, empty/previous for all four periods,
+  Winter-to-Fall wraparound, All, and invalid period. The production
+  integration target uses real `ApplicationServices` and a temporary database;
+  at 2026-09-07 it verifies M2 current Fall vs previous Summer and E4 current
+  Summer vs previous Speech Contest, plus All, missing schedule, and unavailable
+  class information. Failed evaluation-read behavior returns no default in
+  code, though the integration test does not inject that specific service
+  failure.
+- The executor built five focused targets and passed 5/5 CTests. Independent
+  fresh Ninja/MSVC 19.51/Qt 6.12 configuration validated 912 handwritten
+  source owners; the new contract, integration, existing helper, and policy
+  port tests passed 4/4. The unchanged Academic Calendar schedule-preferences
+  port target repeatedly failed compilation at its generated `.moc` include
+  with MSVC C1083, even though the file appeared in autogen output after the
+  failure; its CTest did not run independently. The executor's separate run
+  passed that target. No full suite was run; baseline cause is unconfirmed.
+- F57 closes F55's test gap for the full `ApplicationServices::forClass` path
+  and adds evidence to Gate 1 and Gate 2, both of which remain Partial. The
+  workspace boundary and audited `src/next` dependency isolation remain
+  Satisfied; the formal Phase 2 exit gate remains Open. Sub Prep remains capped
+  at the current and following calendar years at most. The user-owned
+  `cmake/sources.cmake` file was excluded.
+- Next: compare the remaining Gate 1 and Gate 2 gaps and select another
+  bounded slice. Keep the current Sub Prep cap and the explicit-manifest
+  boundary.

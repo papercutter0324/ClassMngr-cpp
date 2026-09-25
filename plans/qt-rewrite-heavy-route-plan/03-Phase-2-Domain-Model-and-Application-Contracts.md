@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Latest code slice: F56 adds Qt-free `Domain::SpeakingEvaluationGrade` and replaces duplicated grade calculation in roster import and speaking-evaluation reports while preserving repository trimming and exact-label report inputs. Fresh MSVC 19.51/Ninja/Qt 6.12 verification validated 909 handwritten owners, built four focused targets, and passed exact CTest 4/4; no full suite was run. F56 adds Gate 1 and Gate 2 evidence, but both remain Partial; Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
+- Latest code slice: F57 adds a Qt-free `EvaluationPeriod` selector for term/current-versus-previous/All selection and wires Evaluation Default Selection through it, preserving exact labels and schedule/service edges. Executor verification built five focused targets and passed exact CTest 5/5. Fresh independent Ninja/MSVC 19.51/Qt 6.12 verification validated 912 handwritten owners, built four targets, and passed exact CTest 4/4; an unchanged generated-MOC target failed to build under MSVC C1083, so its CTest was not run. No full suite was run. F57 closes F55's helper-only integration limitation; Gate 1 and Gate 2 remain Partial, Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4764,3 +4764,35 @@ remain Satisfied; the Phase 2 exit gate remains Open. The Evaluation Default
 Selection test still exercises its policy helper rather than full
 `ApplicationServices::forClass` integration. Sub Prep remains capped at the
 current and following calendar years at most.
+
+#### Progress update - 2026-09-26 (F57 Evaluation Default Selection contract, commit `b38b3afef0088b4c05d6d540dda15600f48c7f59`)
+
+Qt-free `Application::EvaluationPeriod` now selects Winter, Speech Contest,
+Summer, Fall, or no evaluation for All, supporting current/previous period
+selection and the Winter-to-Fall cycle. The feature adapter preserves exact
+legacy labels and schedule/service boundaries. App-less tests cover populated
+and empty current/previous cycles, All, and invalid input. Temporary-database
+integration invokes production `EvaluationDefaultSelection::forClass`: at
+2026-09-07 it selects current Fall for M2 with Summer fallback, and current
+Summer for E4 with Speech Contest fallback; it also covers All, missing saved
+schedule, and missing ClassInfo. Failed class-info or evaluation reads return
+no default; the integration test does not explicitly simulate an evaluation
+read failure.
+
+Executor verification built `ClassMngrEvaluationDefaultSelectionTests`,
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`,
+`ClassMngrNextApplicationEvaluationDefaultSelectionTests`,
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`,
+and `ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`;
+exact CTest passed 5/5. Fresh independent Ninja/MSVC 19.51/Qt 6.12 verification
+validated 912 handwritten owners, built the selection, integration, app-less
+contract, and Evaluation Default Policy port targets, and passed exact CTest
+4/4. The unchanged
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`
+target failed MSVC build with C1083 for a generated `.moc` include, despite
+the file appearing after failure; its CTest was not run and the baseline cause
+was not established. No full suite was run. F57 closes F55's helper-only
+integration limitation and adds Gate 1 and Gate 2 evidence; both remain
+Partial. Workspace boundary and audited `src/next` dependency isolation remain
+Satisfied, and the Phase 2 exit gate remains Open. Sub Prep remains capped at
+the current and following calendar years at most.

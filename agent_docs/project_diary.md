@@ -883,3 +883,12 @@ Prep's queried interval to the current and following calendar years at most.
   paths require exact labels. Exercise all valid score combinations, the
   rounding transition, and invalid/missing values; verify import and report
   consumers agree on the same mixed input.
+
+## Phase 2 Evaluation Default Selection - 2026-09-26
+
+- Keep the current/previous term cycle in a Qt-free Application contract and
+  leave calendar dates, saved-service access, and exact legacy labels at the
+  feature edge. A fixed-date integration fixture with persisted schedules
+  verifies the production `forClass` path while app-less cases exhaust the
+  cycle, All, and invalid period behavior. Record focused executor and
+  independent verification separately when their target results differ.
