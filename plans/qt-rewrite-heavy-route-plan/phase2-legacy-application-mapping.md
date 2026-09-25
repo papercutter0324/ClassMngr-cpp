@@ -3639,3 +3639,23 @@ was run. F53 adds Gate 2 parity evidence only; Gate 1 and Gate 2 remain
 Partial, the workspace boundary and audited `src/next` dependency isolation
 remain Satisfied, and the Phase 2 exit gate remains Open. Sub Prep remains
 limited to the current and following calendar years at most.
+
+## Verified F54 Calendar event vocabulary - commit `3739f2aaca23587c732dc77d6e77eddb16d92d88`
+
+Qt-free Domain classifiers in
+[`calendar_event_timing.h`](../../src/next/domain/calendar_event_timing.h)
+define the six Calendar event type names and three time statuses. The calendar
+edit-draft, single-save, and repeat-series-edit validators reuse them while
+preserving request strings and raw fields, trimming at each Application
+boundary, 64-character limits, validation order, feature-specific errors, and
+projection behavior.
+
+Domain and Application tests cover known, unknown, mis-cased, and untrimmed
+values, padded inputs with raw-field preservation, length boundary/overflow,
+and per-request errors. Fresh independent Ninja/MSVC 19.51/Qt 6.12
+configure/build ran `ClassMngrNextDomainContractTests` and
+`ClassMngrNextApplicationCalendarEventTests`; exact CTest passed 2/2. No full
+suite was run. F54 adds Gate 1 evidence only: Gate 1 and Gate 2 remain Partial,
+Workspace boundary and audited `src/next` dependency isolation remain
+Satisfied, and the Phase 2 exit gate remains Open. Sub Prep remains capped at
+the current and following calendar years at most.

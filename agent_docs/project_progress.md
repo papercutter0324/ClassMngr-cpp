@@ -139,15 +139,25 @@ and imports as B+. F53 is committed as
 built the widget-import, roster-model, and speaking-evaluation targets, and
 passed their CTests 3/3. No full suite was run.
 
+F54 centralizes calendar event-type and time-status vocabulary recognition in
+the Qt-free Domain contract and reuses it in the edit-draft, single-save, and
+repeat-series validators. It preserves raw request fields, Application-edge
+trimming, 64-character limits, validation order, and operation-specific
+errors. F54 is committed as
+`3739f2aaca23587c732dc77d6e77eddb16d92d88`. A fresh independent Ninja/MSVC
+19.51/Qt 6.12 Debug configure and build passed the Domain and Application
+calendar-event contract CTests 2/2. No full suite was run.
+
 The formal gate remains open. Gate 1 and Gate 2 remain Partial because broader
 Domain/application contracts and baseline parity are incomplete. F53 advances
-Gate 2 evidence only. The workspace criterion and audited v2 dependency
-isolation remain Satisfied. Three independent reviews compared the grade-band
-classification and Calendar vocabulary candidates; F54 is now implementing
-the tighter Qt-free Calendar event-type/status vocabulary contract, preserving
-the three Application validators' existing policies. Sub Prep remains capped
-at the current and following calendar years at most. The user-owned
-`cmake/sources.cmake` change remains outside these commits.
+Gate 2 evidence; F54 adds Gate 1 evidence. The workspace criterion and audited
+v2 dependency isolation remain Satisfied. Two independent Explorers recommend
+F55: expose the existing Qt-free Course grade-band classifier and reuse it in
+Classes, evaluation defaulting, and Schedule while keeping their distinct
+policies. F55 is now underway, including focused consumer coverage and the
+evaluation-service test seam. Sub Prep remains capped at the current and
+following calendar years at most. The user-owned `cmake/sources.cmake` change
+remains outside these commits.
 
 ### Windows/macOS source ownership regression — 2026-09-19
 

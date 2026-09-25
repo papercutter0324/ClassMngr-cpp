@@ -8,7 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-25
-- Latest code slice: F53 adds full Roster Score Import widget-path parity coverage, exercising the real `RosterEditorWidget::importScores` slot, autosave, and persisted roster readback. Independent fresh MSVC 19.51/Ninja/Qt 6.12 verification validated 908 source owners, built three focused targets, and passed exact CTest 3/3; no full suite was run. F53 expands Gate 2 evidence only: Gate 1 and Gate 2 remain Partial, Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
+- Latest code slice: F54 adds Qt-free Domain classifiers for Calendar event types and time statuses, reused by the edit-draft, single-save, and repeat-series-edit validators. Fresh MSVC 19.51/Ninja/Qt 6.12 verification built the Domain and Application Calendar Event targets and passed exact CTest 2/2; no full suite was run. F54 adds Gate 1 evidence only: Gate 1 and Gate 2 remain Partial, Workspace boundary and audited `src/next` dependency isolation remain Satisfied, and the Phase 2 exit gate remains Open.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -4669,3 +4669,22 @@ parity evidence only: Gate 1 and Gate 2 remain Partial; Workspace boundary
 and audited `src/next` dependency isolation remain Satisfied. Phase 2 remains
 In Progress with its exit gate Open. Sub Prep remains capped at the current
 and following calendar years at most.
+
+#### Progress update - 2026-09-25 (F54 Calendar event vocabulary)
+
+F54 adds Qt-free Domain classifiers for the six Calendar event type names and
+three time statuses in `calendar_event_timing.h`. The calendar edit-draft,
+single-save, and repeat-series-edit validators reuse these classifiers while
+preserving request strings and raw fields, trimming at each Application
+boundary, 64-character limits, validation order, feature-specific errors, and
+projection behavior. Domain and Application tests cover known and unknown
+values, casing/whitespace, raw-field preservation, length boundaries, and
+request-specific errors.
+
+Fresh independent Ninja/MSVC 19.51/Qt 6.12 configure/build ran
+`ClassMngrNextDomainContractTests` and
+`ClassMngrNextApplicationCalendarEventTests`; exact CTest passed 2/2. No full
+suite was run. F54 adds Gate 1 evidence only; Gate 1 and Gate 2 remain Partial,
+Workspace boundary and audited `src/next` dependency isolation remain
+Satisfied, and the Phase 2 exit gate remains Open. Sub Prep remains capped at
+the current and following calendar years at most.

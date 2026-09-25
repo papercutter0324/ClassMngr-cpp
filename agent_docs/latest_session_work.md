@@ -2029,3 +2029,29 @@ separate on a host with Xvfb and loopback access.
   F54 is underway on the latter, retaining per-request trimming, limits,
   validation order, and error behavior. Continue with independent verification
   and commit each bounded slice.
+
+### Phase 2 Calendar event vocabulary - 2026-09-25
+
+- F54 is committed as
+  `3739f2aaca23587c732dc77d6e77eddb16d92d88` (`Phase2 - Centralize Calendar
+  event vocabulary`). It adds Domain classifiers for the six Calendar event
+  types and the `Timed`, `Unknown`, and `Unconfirmed` statuses, then reuses them
+  in edit-draft, single-save, and repeat-series validators.
+- The Application contracts keep raw fields and trim at their own boundaries;
+  existing 64-character limits, validation order, feature-specific error
+  messages, and projection behavior remain unchanged. Domain and Application
+  tests cover every accepted name, unknown/case/untrimmed rejection, padded
+  valid strings with raw preservation, bounds, and operation-specific errors.
+- A fresh independent Ninja/MSVC 19.51/Qt 6.12 Debug configure and build
+  passed `ClassMngrNextDomainContractTests` and
+  `ClassMngrNextApplicationCalendarEventTests`; exact CTest passed 2/2. No full
+  suite was run. F54 adds Gate 1 evidence; Gate 1 and Gate 2 remain Partial,
+  workspace boundary and audited `src/next` dependency isolation remain
+  Satisfied, and the formal Phase 2 exit gate remains Open. Sub Prep stays
+  capped at the current and following calendar years at most.
+- Two independent Explorers compared remaining Phase 2 gaps and both selected
+  exposing the existing `CourseGradeBand` classifier as F55. Route it through
+  Classes tab visibility, evaluation defaulting, and Schedule's testing
+  suppression while preserving each caller's normalization and distinct
+  policy. The lack of a direct `forClass` grade-choice test is an acceptance
+  concern; F55 is underway to cover that seam if practical.

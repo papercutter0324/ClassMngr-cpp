@@ -859,3 +859,10 @@ Prep's queried interval to the current and following calendar years at most.
 - Include aggregate-score and partial-name-pair cases. A blank English or
   Korean component must not match a roster student, while a mixed six-score
   evaluation must produce its expected grade through the import path.
+
+## Phase 2 Calendar event vocabulary - 2026-09-25
+
+- Keep vocabulary membership in Qt-free Domain while each Application request
+  retains raw strings, boundary trimming, its own length limit, validation
+  order, and error wording. Shared classification should not make projections
+  stricter or combine operation-specific diagnostics.
