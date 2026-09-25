@@ -3897,3 +3897,22 @@ parity evidence; Gate 1 and Gate 2 remain Partial. Workspace boundary and
 audited `src/next` dependency isolation remain Satisfied, and Phase 2 remains
 open. It changes no range logic; Sub Prep remains capped at the current and
 following calendar years, 2026-2027.
+
+## Verified F67 targeted Schedule Import CreateNew state - commit `4081cc0fcbfb504766e8e10f98839f9eeffbf6ce`
+
+`Application::validateScheduleImportState` now reports the distinct
+`CreateNewClassHasTarget` error when a CreateNew class decision carries target
+ID 42; a targetless CreateNew decision remains accepted. The repository maps
+the new error to user-facing text. App-less tests cover both states, and the
+existing review-decision contract continues to reject the same action/target
+combination.
+
+Fresh Executor and independent Tester Windows x64 Debug Ninja/MSVC 19.51/Qt
+6.12 builds each validated 914 handwritten source owners and passed the exact
+state-validation, review-decision, and production Schedule Import CTests 3/3.
+The production suite is a regression guard only: `PlanValidator` rejects this
+input upstream, so the new branch is not directly exercised end-to-end. F67
+adds Gate 1 app-less behavior evidence but no Gate 2 parity evidence; both
+gates remain Partial. The F62 CreateNew sentinel-conversion observability
+limitation remains separate. No full suite was run. Sub Prep remains capped at
+the current and following calendar years, 2026-2027.

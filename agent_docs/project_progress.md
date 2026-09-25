@@ -1091,3 +1091,27 @@ excluded; its SHA-256 is
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: compare the remaining Phase 2 Gate 1 and Gate 2 gaps for F67; keep source
 and documentation commits separate.
+
+## Current Phase 2 position - 2026-09-26 (F67)
+
+F67 is committed as `4081cc0fcbfb504766e8e10f98839f9eeffbf6ce` (`Reject
+targeted Schedule Import CreateNew state`). The app-less state validator now
+rejects a CreateNew class resolution that carries a target, matching the
+review-decision contract; targetless CreateNew remains valid. The repository
+maps the typed error to a user-facing message.
+
+Two fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds each validated
+914 handwritten source owners and passed the state-validation, review-decision,
+and Schedule Import CTests (3/3). No full suite was run. Normal planning already
+rejects this combination upstream, so Gate 2's existing evidence was
+revalidated but this slice adds no new production parity claim.
+
+Gate 1 advances and remains Partial; Gate 2 remains Partial; workspace
+boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2
+and its exit gate remain Open. F62's separate upstream-unreachable class-target
+conversion observation limit remains. Sub Prep remains bounded to the current
+and following calendar years (2026-2027). The protected user change to
+`cmake/sources.cmake` remains excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: compare remaining Phase 2 gaps for F68 and keep source/documentation
+commits separate.

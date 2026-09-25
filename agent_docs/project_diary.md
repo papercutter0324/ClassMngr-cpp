@@ -975,3 +975,11 @@ Prep's queried interval to the current and following calendar years at most.
   empty-name outputs in their adapters (`N/A` for schedule summaries and
   empty for class details); the Domain value should represent the selected
   name only.
+
+## Phase 2 Schedule Import class target consistency - 2026-09-26
+
+- Keep the app-less review-decision and apply-state validation contracts
+  aligned on action/target combinations. Test the state validator directly,
+  including valid targetless CreateNew. Record upstream validation limits
+  separately: a production path rejected before the repository cannot prove
+  that repository conversion branch.

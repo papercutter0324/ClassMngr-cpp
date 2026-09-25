@@ -2423,3 +2423,36 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: select F67 from the remaining Phase 2 gaps after the three independent
   Investigator reviews. Keep source and documentation commits separate.
+
+### Phase 2 Schedule Import CreateNew target consistency - 2026-09-26
+
+- F67 source/test commit: `4081cc0fcbfb504766e8e10f98839f9eeffbf6ce`
+  (`Reject targeted Schedule Import CreateNew state`). The application state
+  validator now returns typed `CreateNewClassHasTarget` when CreateNew carries
+  a class ID; targetless CreateNew still passes. The repository maps the new
+  error to a translated message. Direct app-less tests cover target ID 42 and
+  the valid absent target. The existing ReviewDecisions contract continues to
+  reject the same combination.
+- The focused production Schedule Import CTest was rerun as a regression
+  guard. Normal plan validation rejects this input upstream, so F67 does not
+  directly exercise the new state-validation branch through the production
+  import workflow and does not add new Gate 2 parity evidence. F62's distinct
+  CreateNew adapter conversion observability limit remains.
+- Executor tree `build/phase2-f67-create-new-state-target-executor-20260926`
+  and independent Tester tree
+  `build/phase2-f67-create-new-state-target-tester-20260926-independent-01`
+  each used fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds, validated
+  914 handwritten source owners, built and passed exactly these CTests 3/3:
+  `ClassMngrNextApplicationScheduleImportStateValidationTests`,
+  `ClassMngrNextApplicationScheduleImportReviewDecisionsTests`, and
+  `ClassMngrScheduleImportTests`. No full suite was run; `git diff --check`
+  passed.
+- Gate 1 gains direct app-less state-validation evidence and remains Partial.
+  Gate 2 remains Partial with existing production evidence revalidated;
+  workspace boundary and audited `src/next` dependency isolation remain
+  Satisfied. Phase 2 exit remains Open. Sub Prep remains capped at the current
+  and following calendar years (2026-2027). The protected user change
+  `cmake/sources.cmake` stayed excluded at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: select F68 from the remaining gates with three independent
+  Investigator reviews. Keep source and documentation commits separate.
