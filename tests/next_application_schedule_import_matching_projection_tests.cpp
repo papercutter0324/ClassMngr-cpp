@@ -2,10 +2,33 @@
 
 #include <QtTest>
 
+#include <cstdint>
+#include <string>
+#include <type_traits>
+
 using namespace ClassMngr::Next::Application;
+
+namespace Domain = ClassMngr::Next::Domain;
+
+static_assert(
+    !std::is_assignable_v<Domain::TeacherId&, const Domain::ClassId&>
+    );
+static_assert(
+    !std::is_assignable_v<Domain::ClassId&, const Domain::TeacherId&>
+    );
 
 namespace
 {
+Domain::TeacherId teacherIdentity(const std::int32_t value)
+{
+    return *Domain::TeacherId::fromString(std::to_string(value));
+}
+
+Domain::ClassId classIdentity(const std::int32_t value)
+{
+    return *Domain::ClassId::fromString(std::to_string(value));
+}
+
 ScheduleImportMatchingCandidate candidate()
 {
     ScheduleImportMatchingCandidate result;
@@ -27,15 +50,16 @@ ScheduleImportMatchingClass matchingClass(
     std::vector<ScheduleImportMatchingTime> intensiveTimes = {}
     )
 {
-    ScheduleImportMatchingClass result;
-    result.id = id;
-    result.teacherId = teacherId;
-    result.roomMatchKey = std::move(roomMatchKey);
-    result.gradeMatchKey = u"e4";
-    result.levelMatchKey = u"hercules";
-    result.regularTimes = std::move(regularTimes);
-    result.intensiveTimes = std::move(intensiveTimes);
-    return result;
+    return {
+        classIdentity(id),
+        teacherIdentity(teacherId),
+        id > 0,
+        std::move(roomMatchKey),
+        u"e4",
+        u"hercules",
+        std::move(regularTimes),
+        std::move(intensiveTimes)
+    };
 }
 }
 
@@ -46,6 +70,7 @@ class ScheduleImportMatchingProjectionTests final : public QObject
 private slots:
     void ranksEveryMatchCategoryAndKeepsStableTies();
     void reportsNoMatchAndInitiallyAbsentInventory();
+    void excludesNonpositiveClassIdsFromMatchesAndSuggestions();
     void preservesNormalAndIntensiveFallbackSemantics();
     void preservesEmptyTeacherKeyMatchingSemantics();
 };
@@ -57,8 +82,8 @@ ranksEveryMatchCategoryAndKeepsStableTies()
     input.kind = ScheduleImportMatchingKind::Intensive;
     input.candidates = {candidate()};
     input.teachers = {
-        {1, u"Dr. 최 선생 (room 416)"},
-        {2, u"김선생"}
+        {teacherIdentity(1), u"Dr. 최 선생 (room 416)"},
+        {teacherIdentity(2), u"김선생"}
     };
     input.classes = {
         matchingClass(81, 1, u"416", {}, {{"Tuesday"}}),
@@ -83,16 +108,25 @@ ranksEveryMatchCategoryAndKeepsStableTies()
         );
     QVERIFY(
         projection.teachers[0].matchingTeacherIds
-        == (std::vector<std::int32_t>{1})
+        == (std::vector<Domain::TeacherId>{teacherIdentity(1)})
         );
     QCOMPARE(projection.teachers[0].affectedClassCount, std::size_t{6});
     QCOMPARE(projection.classes.size(), std::size_t{1});
     QVERIFY(
         projection.classes[0].matchingClassIds
-        == (std::vector<std::int32_t>{81, 82, 92, 12, 94, 95, 96, 97})
+        == (std::vector<Domain::ClassId>{
+            classIdentity(81),
+            classIdentity(82),
+            classIdentity(92),
+            classIdentity(12),
+            classIdentity(94),
+            classIdentity(95),
+            classIdentity(96),
+            classIdentity(97)
+        })
         );
     QCOMPARE(projection.classes[0].candidateIndex, std::size_t{0});
-    QCOMPARE(projection.classes[0].suggestedClassId, 81);
+    QVERIFY(projection.classes[0].suggestedClassId == classIdentity(81));
     QVERIFY(projection.classes[0].exactMatch);
     QCOMPARE(
         projection.classes[0].confidence,
@@ -107,7 +141,15 @@ ranksEveryMatchCategoryAndKeepsStableTies()
     QVERIFY(projection.inventory.hasIntensiveHours);
     QVERIFY(
         projection.initiallyAbsentClassIds
-        == (std::vector<std::int32_t>{82, 92, 12, 94, 95, 96, 97})
+        == (std::vector<Domain::ClassId>{
+            classIdentity(82),
+            classIdentity(92),
+            classIdentity(12),
+            classIdentity(94),
+            classIdentity(95),
+            classIdentity(96),
+            classIdentity(97)
+        })
         );
 }
 
@@ -126,7 +168,7 @@ reportsNoMatchAndInitiallyAbsentInventory()
 
     QCOMPARE(projection.classes.size(), std::size_t{1});
     QVERIFY(projection.classes[0].matchingClassIds.empty());
-    QCOMPARE(projection.classes[0].suggestedClassId, -1);
+    QVERIFY(!projection.classes[0].suggestedClassId.has_value());
     QVERIFY(!projection.classes[0].exactMatch);
     QCOMPARE(
         projection.classes[0].confidence,
@@ -141,7 +183,38 @@ reportsNoMatchAndInitiallyAbsentInventory()
     QVERIFY(!projection.inventory.hasIntensiveHours);
     QVERIFY(
         projection.initiallyAbsentClassIds
-        == (std::vector<std::int32_t>{7})
+        == (std::vector<Domain::ClassId>{classIdentity(7)})
+        );
+}
+
+void ScheduleImportMatchingProjectionTests::
+excludesNonpositiveClassIdsFromMatchesAndSuggestions()
+{
+    ScheduleImportMatchingInput input;
+    input.candidates = {candidate()};
+    input.teachers = {{teacherIdentity(1), u"최선생"}};
+    input.classes = {
+        matchingClass(0, 1, u"416", {{"Tuesday"}}),
+        matchingClass(-7, 1, u"416", {{"Tuesday"}})
+    };
+
+    const ScheduleImportMatchingProjection projection =
+        projectScheduleImportMatching(input);
+
+    QCOMPARE(projection.classes.size(), std::size_t{1});
+    QVERIFY(projection.classes[0].matchingClassIds.empty());
+    QVERIFY(!projection.classes[0].suggestedClassId.has_value());
+    QVERIFY(!projection.classes[0].exactMatch);
+    QCOMPARE(
+        projection.classes[0].confidence,
+        ScheduleImportMatchingConfidence::None
+        );
+    QVERIFY(
+        projection.initiallyAbsentClassIds
+        == (std::vector<Domain::ClassId>{
+            classIdentity(0),
+            classIdentity(-7)
+        })
         );
 }
 
@@ -150,7 +223,7 @@ preservesNormalAndIntensiveFallbackSemantics()
 {
     ScheduleImportMatchingInput input;
     input.candidates = {candidate()};
-    input.teachers = {{1, u"최선생"}};
+    input.teachers = {{teacherIdentity(1), u"최선생"}};
     input.classes = {
         matchingClass(43, 1, u"416", {{"Tuesday"}})
     };
@@ -159,9 +232,9 @@ preservesNormalAndIntensiveFallbackSemantics()
         projectScheduleImportMatching(input);
     QVERIFY(
         normal.classes[0].matchingClassIds
-        == (std::vector<std::int32_t>{43})
+        == (std::vector<Domain::ClassId>{classIdentity(43)})
         );
-    QCOMPARE(normal.classes[0].suggestedClassId, 43);
+    QVERIFY(normal.classes[0].suggestedClassId == classIdentity(43));
     QVERIFY(normal.classes[0].exactMatch);
     QCOMPARE(
         normal.classes[0].confidence,
@@ -173,9 +246,9 @@ preservesNormalAndIntensiveFallbackSemantics()
         projectScheduleImportMatching(input);
     QVERIFY(
         intensive.classes[0].matchingClassIds
-        == (std::vector<std::int32_t>{43})
+        == (std::vector<Domain::ClassId>{classIdentity(43)})
         );
-    QCOMPARE(intensive.classes[0].suggestedClassId, 43);
+    QVERIFY(intensive.classes[0].suggestedClassId == classIdentity(43));
     QVERIFY(!intensive.classes[0].exactMatch);
     QCOMPARE(
         intensive.classes[0].confidence,
@@ -196,9 +269,13 @@ preservesEmptyTeacherKeyMatchingSemantics()
     imported.teacherKey =
         ClassMngr::Next::Domain::KoreanTeacherKey::fromName(u"English").value();
     input.candidates = {imported};
-    input.teachers = {{1, u"English"}};
+    input.teachers = {
+        {teacherIdentity(-1), u"English"},
+        {teacherIdentity(0), u"English"}
+    };
     input.classes = {
-        matchingClass(14, 1, u"416", {{"Tuesday"}})
+        matchingClass(14, -1, u"416", {{"Tuesday"}}),
+        matchingClass(15, 0, u"416", {{"Tuesday"}})
     };
 
     const ScheduleImportMatchingProjection projection =
@@ -207,13 +284,21 @@ preservesEmptyTeacherKeyMatchingSemantics()
     QVERIFY(projection.teachers[0].teacherKey.empty());
     QVERIFY(
         projection.teachers[0].matchingTeacherIds
-        == (std::vector<std::int32_t>{1})
+        == (std::vector<Domain::TeacherId>{
+            teacherIdentity(-1),
+            teacherIdentity(0)
+        })
         );
-    QCOMPARE(projection.teachers[0].affectedClassCount, std::size_t{1});
+    QCOMPARE(projection.teachers[0].affectedClassCount, std::size_t{2});
     QVERIFY(
         projection.classes[0].matchingClassIds
-        == (std::vector<std::int32_t>{14})
+        == (std::vector<Domain::ClassId>{
+            classIdentity(14),
+            classIdentity(15)
+        })
         );
+    QVERIFY(projection.classes[0].suggestedClassId == classIdentity(14));
+    QVERIFY(!projection.classes[0].exactMatch);
 }
 
 QTEST_GUILESS_MAIN(ScheduleImportMatchingProjectionTests)

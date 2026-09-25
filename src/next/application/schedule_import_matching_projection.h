@@ -1,10 +1,11 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
 #include "next/domain/korean_teacher_key.h"
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -65,7 +66,7 @@ struct ScheduleImportMatchingCandidate final
 
 struct ScheduleImportMatchingTeacher final
 {
-    std::int32_t id = -1;
+    Domain::TeacherId id;
     std::u16string koreanName;
 
     friend bool operator==(
@@ -76,8 +77,9 @@ struct ScheduleImportMatchingTeacher final
 
 struct ScheduleImportMatchingClass final
 {
-    std::int32_t id = -1;
-    std::int32_t teacherId = -1;
+    Domain::ClassId id;
+    Domain::TeacherId teacherId;
+    bool hasMatchableId;
     std::u16string roomMatchKey;
     std::u16string gradeMatchKey;
     std::u16string levelMatchKey;
@@ -108,7 +110,7 @@ struct ScheduleImportMatchingTeacherProjection final
     std::u16string teacherKey;
     std::u16string teacherName;
     std::vector<std::u16string> importedRooms;
-    std::vector<std::int32_t> matchingTeacherIds;
+    std::vector<Domain::TeacherId> matchingTeacherIds;
     std::size_t affectedClassCount = 0;
 
     friend bool operator==(
@@ -120,8 +122,8 @@ struct ScheduleImportMatchingTeacherProjection final
 struct ScheduleImportMatchingClassProjection final
 {
     std::size_t candidateIndex = 0;
-    std::vector<std::int32_t> matchingClassIds;
-    std::int32_t suggestedClassId = -1;
+    std::vector<Domain::ClassId> matchingClassIds;
+    std::optional<Domain::ClassId> suggestedClassId;
     bool exactMatch = false;
     ScheduleImportMatchingConfidence confidence =
         ScheduleImportMatchingConfidence::None;
@@ -152,7 +154,7 @@ struct ScheduleImportMatchingProjection final
     ScheduleImportMatchingInventory inventory;
     std::vector<ScheduleImportMatchingTeacherProjection> teachers;
     std::vector<ScheduleImportMatchingClassProjection> classes;
-    std::vector<std::int32_t> initiallyAbsentClassIds;
+    std::vector<Domain::ClassId> initiallyAbsentClassIds;
 
     friend bool operator==(
         const ScheduleImportMatchingProjection&,
@@ -314,11 +316,10 @@ targetTimesForKind(
 }
 
 template <typename T>
-inline void appendUnique(std::vector<T>& values, const T value)
+inline void appendUnique(std::vector<T>& values, const T& value)
 {
     if (
-        value > 0
-        && std::find(values.cbegin(), values.cend(), value) == values.cend()
+        std::find(values.cbegin(), values.cend(), value) == values.cend()
         )
     {
         values.push_back(value);
@@ -411,7 +412,7 @@ projectScheduleImportMatching(
         result.teachers.push_back(std::move(teacherProjection));
     }
 
-    std::vector<std::int32_t> exactTargets;
+    std::vector<Domain::ClassId> exactTargets;
     for (
         std::size_t candidateIndex = 0;
         candidateIndex < input.candidates.size();
@@ -423,7 +424,7 @@ projectScheduleImportMatching(
         ScheduleImportMatchingClassProjection classProjection;
         classProjection.candidateIndex = candidateIndex;
 
-        std::vector<std::int32_t> importedTeacherIds;
+        std::vector<Domain::TeacherId> importedTeacherIds;
         const auto matchingTeacher = std::find_if(
             result.teachers.cbegin(),
             result.teachers.cend(),
@@ -439,17 +440,20 @@ projectScheduleImportMatching(
             importedTeacherIds = matchingTeacher->matchingTeacherIds;
         }
 
-        std::vector<std::int32_t> exact;
-        std::vector<std::int32_t> sameCourseTeacherRoomSameDays;
-        std::vector<std::int32_t> sameCourseTeacherRoom;
-        std::vector<std::int32_t> sameCourseTeacherSameDays;
-        std::vector<std::int32_t> sameCourseTeacher;
-        std::vector<std::int32_t> sameCourseSameDays;
-        std::vector<std::int32_t> sameCourse;
+        std::vector<Domain::ClassId> exact;
+        std::vector<Domain::ClassId> sameCourseTeacherRoomSameDays;
+        std::vector<Domain::ClassId> sameCourseTeacherRoom;
+        std::vector<Domain::ClassId> sameCourseTeacherSameDays;
+        std::vector<Domain::ClassId> sameCourseTeacher;
+        std::vector<Domain::ClassId> sameCourseSameDays;
+        std::vector<Domain::ClassId> sameCourse;
 
         for (const ScheduleImportMatchingClass& value : input.classes)
         {
-            if (!isEligible(candidate, value, input.kind))
+            if (
+                !value.hasMatchableId
+                || !isEligible(candidate, value, input.kind)
+                )
             {
                 continue;
             }
@@ -505,7 +509,7 @@ projectScheduleImportMatching(
             }
         }
 
-        const std::vector<const std::vector<std::int32_t>*> rankedMatches{
+        const std::vector<const std::vector<Domain::ClassId>*> rankedMatches{
             &exact,
             &sameCourseTeacherRoomSameDays,
             &sameCourseTeacherRoom,
@@ -516,7 +520,7 @@ projectScheduleImportMatching(
         };
         for (const auto* matches : rankedMatches)
         {
-            for (const std::int32_t classId : *matches)
+            for (const Domain::ClassId& classId : *matches)
             {
                 appendUnique(classProjection.matchingClassIds, classId);
             }
@@ -540,12 +544,15 @@ projectScheduleImportMatching(
                 ScheduleImportMatchingConfidence::Possible;
             bool hasTargetHours = false;
             bool hasOtherHours = false;
-            for (const std::int32_t classId : classProjection.matchingClassIds)
+            for (
+                const Domain::ClassId& classId :
+                classProjection.matchingClassIds
+                )
             {
                 const auto existing = std::find_if(
                     input.classes.cbegin(),
                     input.classes.cend(),
-                    [classId](const ScheduleImportMatchingClass& value)
+                    [&classId](const ScheduleImportMatchingClass& value)
                     {
                         return value.id == classId;
                     }

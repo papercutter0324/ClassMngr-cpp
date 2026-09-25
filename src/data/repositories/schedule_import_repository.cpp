@@ -24,6 +24,7 @@
 #include <QTime>
 
 #include <algorithm>
+#include <charconv>
 #include <optional>
 #include <string>
 #include <utility>
@@ -58,6 +59,33 @@ std::vector<ScheduleImportMatchingTime> matchingTimes(
 std::u16string matchingKey(const QString& value)
 {
     return value.simplified().toCaseFolded().toStdU16String();
+}
+
+Domain::TeacherId teacherDomainId(const int legacyId)
+{
+    return Domain::TeacherId::fromString(std::to_string(legacyId)).value();
+}
+
+Domain::ClassId classDomainId(const int legacyId)
+{
+    return Domain::ClassId::fromString(std::to_string(legacyId)).value();
+}
+
+template <typename Id>
+std::optional<int> legacyId(const Id& id)
+{
+    const std::string& value = id.value();
+    int result = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        result
+        );
+    if (error != std::errc{} || end != value.data() + value.size())
+    {
+        return std::nullopt;
+    }
+    return result;
 }
 
 ScheduleImportMatchingInput matchingInput(
@@ -97,7 +125,7 @@ ScheduleImportMatchingInput matchingInput(
     for (const Teacher& teacher : teachers)
     {
         result.teachers.push_back({
-            teacher.id,
+            teacherDomainId(teacher.id),
             teacher.teacherKr.toStdU16String()
         });
     }
@@ -106,14 +134,16 @@ ScheduleImportMatchingInput matchingInput(
     for (const Classroom& classroom : classrooms)
     {
         const ClassInfo info = classInfo.value(classroom.id);
-        ScheduleImportMatchingClass projected;
-        projected.id = classroom.id;
-        projected.teacherId = info.teacherId;
-        projected.roomMatchKey = matchingKey(info.roomNumber);
-        projected.gradeMatchKey = matchingKey(info.classGrade);
-        projected.levelMatchKey = matchingKey(info.classLevel);
-        projected.regularTimes = matchingTimes(info.classTimes);
-        projected.intensiveTimes = matchingTimes(info.intensiveTimes);
+        ScheduleImportMatchingClass projected{
+            classDomainId(classroom.id),
+            teacherDomainId(info.teacherId),
+            classroom.id > 0,
+            matchingKey(info.roomNumber),
+            matchingKey(info.classGrade),
+            matchingKey(info.classLevel),
+            matchingTimes(info.classTimes),
+            matchingTimes(info.intensiveTimes)
+        };
         result.classes.push_back(std::move(projected));
     }
     return result;
@@ -696,9 +726,12 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         projected.matchingTeacherIds.reserve(
             static_cast<qsizetype>(teacher.matchingTeacherIds.size())
             );
-        for (const std::int32_t teacherId : teacher.matchingTeacherIds)
+        for (const Domain::TeacherId& teacherId : teacher.matchingTeacherIds)
         {
-            projected.matchingTeacherIds.append(teacherId);
+            if (const auto value = legacyId(teacherId))
+            {
+                projected.matchingTeacherIds.append(*value);
+            }
         }
         projected.importedRooms.reserve(
             static_cast<qsizetype>(teacher.importedRooms.size())
@@ -721,11 +754,18 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         projected.matchingClassIds.reserve(
             static_cast<qsizetype>(value.matchingClassIds.size())
             );
-        for (const std::int32_t classId : value.matchingClassIds)
+        for (const Domain::ClassId& classId : value.matchingClassIds)
         {
-            projected.matchingClassIds.append(classId);
+            if (const auto legacy = legacyId(classId))
+            {
+                projected.matchingClassIds.append(*legacy);
+            }
         }
-        projected.suggestedClassId = value.suggestedClassId;
+        if (value.suggestedClassId)
+        {
+            projected.suggestedClassId =
+                legacyId(*value.suggestedClassId).value_or(-1);
+        }
         projected.exactMatch = value.exactMatch;
         switch (value.confidence)
         {
@@ -748,9 +788,12 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     result.initiallyAbsentClassIds.reserve(
         static_cast<qsizetype>(projection.initiallyAbsentClassIds.size())
         );
-    for (const std::int32_t classId : projection.initiallyAbsentClassIds)
+    for (const Domain::ClassId& classId : projection.initiallyAbsentClassIds)
     {
-        result.initiallyAbsentClassIds.append(classId);
+        if (const auto legacy = legacyId(classId))
+        {
+            result.initiallyAbsentClassIds.append(*legacy);
+        }
     }
     return result;
 }
