@@ -1312,3 +1312,11 @@ F83 is selected to compare the `schedule_overlap_conflict.xlsx` preview/apply re
 F83 source/test commit `2e8bbab2` pins the Schedule Import overlap fixture's teacher keys/names and rooms, preview inventory and unmatched candidates, exact Monday rejection, and normalized no-write state across seven tables. Legacy `48fc5c5c` and current code matched on the same workbook bytes and deterministic seed. Independent fresh verification passed the normal `ClassMngrScheduleImportTests` CTest (1/1) using CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0, 921 source owners, and 309 build actions. The fixture postdates the baseline; this is common-input differential evidence, not historical workbook parity. Gate 2 remains Partial; Gate 1 remains Partial; Phase 2 exit remains Open.
 
 F84 is selected to type Schedule Import's Qt-free candidate and teacher-projection matching keys as `Domain::KoreanTeacherKey`, keep display names separate, and convert only at the repository adapter. Preserve empty-key matching, match ordering, and room aggregation. Verify `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and `ClassMngrScheduleImportTests`. Sub Prep remains capped at 2026-2027.
+
+## Current Phase 2 position - 2026-09-26 (F84)
+
+F84 source commit `5207d65a` types both Schedule Import matching keys as `Domain::KoreanTeacherKey`; display names remain separate and QString conversion stays at the repository edge. The valid empty-key behavior and existing matching and aggregation results are preserved.
+
+Executor and independent fresh Windows x64 Debug verification passed `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and `ClassMngrScheduleImportTests` (2/2). CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0 validated 921 handwritten owners and 313 build actions; `git diff --check` passed. No full suite ran.
+
+F84 adds typed app-less behavior to Gate 1, which remains Partial. Gate 2 remains Partial without new parity evidence. Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027. F85 is selected to extract Teacher Import plan validation into a Qt-free Application policy while retaining Qt normalization, date interpretation, translation, validation order, and exact diagnostics at the repository adapter.

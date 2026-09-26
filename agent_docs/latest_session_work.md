@@ -2787,3 +2787,14 @@ separate on a host with Xvfb and loopback access.
 
 - Use `Domain::KoreanTeacherKey` for the matching key in both `ScheduleImportMatchingCandidate` and `ScheduleImportMatchingTeacherProjection`. Keep teacher display names separate and perform QString conversions at the repository edge.
 - Preserve the valid empty-key behavior in `preservesEmptyTeacherKeyMatchingSemantics`, existing match ordering, room aggregation, and F82/F83 repository fixture expectations. Verify `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and `ClassMngrScheduleImportTests`. This advances Gate 1 but does not complete it; it adds no new historical-parity claim. Sub Prep remains capped at 2026-2027.
+
+### Phase 2 Schedule Import typed teacher key - F84 verified
+
+- Source commit `5207d65a` types `ScheduleImportMatchingCandidate::teacherKey` and `ScheduleImportMatchingTeacherProjection::teacherKey` as `Domain::KoreanTeacherKey`. The repository adapter owns QString conversion; display names remain separate. Explicit initialization preserves a valid empty key, and the typed comparison keeps existing empty-key matching behavior.
+- Executor and independent fresh Tester passed `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and `ClassMngrScheduleImportTests` (2/2). Fresh Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0, 921 handwritten source owners, and 313 build actions. `git diff --check` passed; no full suite ran.
+- Gate 1 and Gate 2 remain Partial; workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep stays capped at 2026-2027.
+
+### Phase 2 Teacher Import full-plan validation - F85 selected
+
+- Extract the Teacher Import plan's deterministic validation into a Qt-free Application policy. Keep Qt name normalization, date interpretation, translation, SQL, and repository transaction behavior at the adapter; preserve validation precedence and exact existing diagnostics.
+- Supply normalized identity keys and date validity to the policy, retain the existing Qt-free review-decision resolver, and test policy outcomes app-less plus repository message mapping and rejection-before-write behavior. Focused targets are the new policy CTest and `ClassMngrTeacherImportTests`. This adds Gate 1 evidence; it does not claim historical-output parity. Sub Prep remains capped at 2026-2027.

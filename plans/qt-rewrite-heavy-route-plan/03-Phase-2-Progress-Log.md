@@ -5500,3 +5500,64 @@ current code with the same seed, covering preview values, overlap rejection,
 and persisted state before and after apply. The fixture postdates the baseline,
 so the result is common-input regression, not historical-output parity. Sub
 Prep remains capped at 2026-2027.
+
+## Verified F83 Schedule Import overlap-conflict differential regression - commit 2e8bbab2
+
+Only `tests/schedule_import_tests.cpp` changed. Legacy `48fc5c5c` and current
+code `1236e9cb` ran identical fixture bytes and a deterministic SQLite seed
+through parser, preview, and apply harnesses. The
+`schedule_overlap_conflict.xlsx` fixture has SHA-256
+`2de93c4abdc5e82390adede250e8313501a38d4be2053e929c4adbed6d745312` and was
+introduced at `3121d90c`, after the legacy baseline.
+
+Semantic transcripts matched for teacher keys and display names 김선생/이선생,
+rooms 413/415, and preview inventory `classCount=1`, `regular=true`, and
+`intensive=false`. Class ID 9901 was initially absent; both candidate classes
+were unmatched, with no suggestion and `None` confidence. Both paths rejected
+with the exact message: `The
+proposed schedule overlaps: E4 Hercules conflicts with E4 Theseus on Monday.`
+Normalized state was unchanged across teachers, classes, class_info, regular
+times, intensive times, intensive slot states, and app_settings. The test pins
+those preview fields, the exact message, and the seven-table snapshot.
+
+Independent fresh Windows x64 Debug verification used archive `1236e9cb` plus
+the final test patch, CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt
+6.12.0. CMake validated 921 handwritten source owners; the build completed
+309 actions; `ClassMngrScheduleImportTests` passed (1/1), and `git diff
+--check` passed. Executor QtTest reported 51 passed, 0 failed, and one optional
+external-workbook skip. No full suite was run. Since the fixture was added
+after baseline `48fc5c5c`, F83 is common-input differential regression, not
+historical workbook parity.
+
+F83 advances Gate 2 with checked common-input differential evidence, but Gate
+2 remains Partial. Gate 1 remains Partial; workspace boundary and audited
+`src/next` dependency isolation remain Satisfied. Phase 2 remains In Progress
+with its exit gate Open. Sub Prep remains capped at 2026-2027.
+
+#### Cumulative exit-gate status after F83
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F79 adds validated Class Transfer intervals; F80 and F81 add Qt-free Teacher Import update policies. F82 and F83 change tests only; broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F82 and F83 compare legacy/current semantic behavior on checked inputs and identical seeds, but both fixtures postdate the legacy baseline. They add common-input differential regression, not historical-output parity. Earlier fixture regressions remain; broader parity is incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F83 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F83 changes tests only. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress with its
+exit gate Open. Next selected bounded slice: F84 types Schedule Import matching
+teacher keys. Represent
+`ScheduleImportMatchingCandidate::teacherKey` and
+`ScheduleImportMatchingTeacherProjection::teacherKey` as
+`Domain::KoreanTeacherKey`; preserve a valid empty key with explicit default
+member initialization or the existing factory, without adding a Domain
+constructor unless justified. Keep `teacherName` separate and convert to/from
+the legacy representation only at `schedule_import_repository.cpp`. Preserve
+ordering, room aggregation, match results, and especially
+`preservesEmptyTeacherKeyMatchingSemantics`. Verify with
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and
+`ClassMngrScheduleImportTests`; no new target is expected. This adds Gate 1
+evidence but does not close it and adds no historical parity. Broader Teacher
+Import plan-validation extraction remains a separate candidate.
+This is selected work, not implementation evidence. Sub Prep remains capped at
+2026-2027.

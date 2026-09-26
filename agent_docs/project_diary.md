@@ -1083,3 +1083,8 @@ Prep's queried interval to the current and following calendar years at most.
 
 - For legacy/current overlap comparisons, pin the fixture's parsed teacher identity and room values, the ordered conflict diagnostic, and the full persisted snapshot. Include regular and intensive schedules plus settings so rejection-before-write evidence covers rollback scope, not just newly imported rows.
 - Preserve common-input wording when the workbook postdates the legacy revision, even when parser, preview, rejection, and database outputs match exactly.
+
+## Phase 2 Teacher Import plan validation boundary - 2026-09-26
+
+- Move deterministic import-plan rules into a Qt-free policy using adapter-normalized identity keys and explicit date validity. Keep Qt normalization, `QDate` interpretation, translation, SQL, and the established validation order at the repository boundary so the policy can be app-less without changing user-facing diagnostics.
+- Preserve typed matching identities while keeping display names separate; a valid empty Korean key remains a distinct supported value and must not be confused with an uninitialized key.
