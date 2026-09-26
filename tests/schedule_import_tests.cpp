@@ -37,6 +37,7 @@ private slots:
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
     void previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase();
+    void previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase();
     void rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites();
     void previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites();
     void reportsScheduleInventoryStates_data();
@@ -2570,6 +2571,343 @@ void ScheduleImportTests::regularImportMatchesIntensiveOnlyClasses()
             preview->classes.first().matchConfidence,
             ScheduleImportClassMatchConfidence::Possible
             );
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase()
+{
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_intensive_synthetic_worksheet.xml"
+            )
+        );
+    QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+
+    const auto workbook = parseScheduleImportWorkbook(
+        singleSheetWorkbookData(file.readAll()),
+        ScheduleImportKind::Intensive
+        );
+    const QString parseError =
+        workbook.has_value() ? QString() : workbook.error();
+    QVERIFY2(workbook.has_value(), qPrintable(parseError));
+    QCOMPARE(workbook->sheets.size(), 1);
+    QCOMPARE(workbook->sheets.first().name, QStringLiteral("Intensive"));
+    QCOMPARE(workbook->sheets.first().users.size(), 1);
+
+    const ScheduleImportUserBlock user =
+        workbook->sheets.first().users.first();
+    QCOMPARE(user.name, QStringLiteral("Alice"));
+    QVERIFY(user.diagnostics.isEmpty());
+    QCOMPARE(user.classes.size(), 1);
+
+    const QString expectedTeacher = QString::fromUtf8(
+        "\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99"
+        );
+    const ScheduleImportClassCandidate& candidate = user.classes.first();
+    QCOMPARE(candidate.teacherKey, expectedTeacher);
+    QCOMPARE(candidate.teacherKr, expectedTeacher);
+    QCOMPARE(candidate.rooms, QStringList{QStringLiteral("413")});
+    QCOMPARE(candidate.classGrade, QStringLiteral("E5"));
+    QCOMPARE(candidate.classLevel, QStringLiteral("Zeus"));
+    QVERIFY(candidate.meetingPatternError.isEmpty());
+    const QStringList expectedCandidateRows{
+        QStringLiteral("Monday|10:00 AM|10:55 AM"),
+        QStringLiteral("Wednesday|10:00 AM|10:55 AM")
+    };
+    QStringList candidateRows;
+    for (const ClassTime& time : candidate.times)
+    {
+        candidateRows.append(
+            QStringLiteral("%1|%2|%3")
+                .arg(time.day, time.startTime, time.endTime)
+            );
+    }
+    QCOMPARE(candidateRows, expectedCandidateRows);
+
+    constexpr int teacherId = 7301;
+    constexpr int targetClassId = 7401;
+    const QString connectionName =
+        QStringLiteral("schedule-import-synthetic-intensive-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+        QSqlQuery query(database);
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO teachers (id, teacher_kr, room_number) "
+                "VALUES (?, ?, ?)"
+                )
+            );
+        query.addBindValue(teacherId);
+        query.addBindValue(expectedTeacher);
+        query.addBindValue(QStringLiteral("413"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO classes (id, name) VALUES "
+                "(7401, 'E5 Zeus target'), (7402, 'E5 Apollo untouched')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level, "
+                "class_color, font_color) VALUES "
+                "(7401, 7301, 'E5', 'Zeus', '#112233', '#FFFFFF'), "
+                "(7402, 7301, 'E5', 'Apollo', '#445566', '#FFFFFF')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(id, class_id, day, start_time, end_time) VALUES "
+                "(8101, 7401, 'Tuesday', '4:00 PM', '4:55 PM'), "
+                "(8102, 7402, 'Thursday', '5:00 PM', '5:55 PM')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_intensive_times "
+                "(id, class_id, day, start_time, end_time) VALUES "
+                "(8201, 7401, 'Monday', '9:00 AM', '9:50 AM'), "
+                "(8202, 7401, 'Wednesday', '9:00 AM', '9:50 AM'), "
+                "(8203, 7402, 'Friday', '9:00 AM', '9:50 AM')"
+                )
+            );
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, class_id, day, start_time, end_time "
+                "FROM class_times WHERE class_id IN (7401, 7402) "
+                "ORDER BY id"
+                )
+            );
+        QStringList regularRowsBefore;
+        while (query.next())
+        {
+            regularRowsBefore.append(
+                QStringLiteral("%1|%2|%3|%4|%5")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString(),
+                        query.value(4).toString()
+                        )
+                );
+        }
+        const QStringList expectedRegularRows{
+            QStringLiteral("8101|7401|Tuesday|4:00 PM|4:55 PM"),
+            QStringLiteral("8102|7402|Thursday|5:00 PM|5:55 PM")
+        };
+        QCOMPARE(regularRowsBefore, expectedRegularRows);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, class_id, day, start_time, end_time "
+                "FROM class_intensive_times WHERE class_id=7402 ORDER BY id"
+                )
+            );
+        QStringList untouchedIntensiveRowsBefore;
+        while (query.next())
+        {
+            untouchedIntensiveRowsBefore.append(
+                QStringLiteral("%1|%2|%3|%4|%5")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString(),
+                        query.value(4).toString()
+                        )
+                );
+        }
+        const QStringList expectedUntouchedIntensiveRows{
+            QStringLiteral("8203|7402|Friday|9:00 AM|9:50 AM")
+        };
+        QCOMPARE(
+            untouchedIntensiveRowsBefore,
+            expectedUntouchedIntensiveRows
+            );
+
+        ScheduleImportRepository repository(database);
+        const auto preview =
+            repository.preview(user, ScheduleImportKind::Intensive);
+        const QString previewError =
+            preview.has_value() ? QString() : preview.error();
+        QVERIFY2(preview.has_value(), qPrintable(previewError));
+        QCOMPARE(preview->kind, ScheduleImportKind::Intensive);
+        QCOMPARE(preview->inventory.classCount, 2);
+        QVERIFY(preview->inventory.hasRegularHours);
+        QVERIFY(preview->inventory.hasIntensiveHours);
+        QCOMPARE(preview->teachers.size(), 1);
+        QCOMPARE(
+            preview->teachers.first().matchingTeacherIds,
+            QList<int>({teacherId})
+            );
+        QCOMPARE(preview->classes.size(), 1);
+        QCOMPARE(
+            preview->classes.first().matchingClassIds,
+            QList<int>({targetClassId})
+            );
+        QCOMPARE(preview->classes.first().suggestedClassId, targetClassId);
+        QVERIFY(preview->classes.first().exactMatch);
+        QCOMPARE(
+            preview->classes.first().matchConfidence,
+            ScheduleImportClassMatchConfidence::Confident
+            );
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Intensive;
+        plan.intensiveMode = ScheduleImportIntensiveMode::UpdateExisting;
+        plan.selectedUserName = user.name;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = user.classes;
+        plan.intensiveSlotStates = user.intensiveSlotStates;
+        plan.teachers = {
+            {
+                candidate.teacherKey,
+                ScheduleImportTeacherAction::Reuse,
+                teacherId,
+                QStringLiteral("413")
+            }
+        };
+        plan.classes = {
+            {
+                0,
+                ScheduleImportClassAction::UpdateExisting,
+                targetClassId,
+                QStringLiteral("#112233"),
+                QStringLiteral("#FFFFFF")
+            }
+        };
+
+        const auto updated = repository.apply(plan);
+        const QString applyError =
+            updated.has_value() ? QString() : updated.error();
+        QVERIFY2(updated.has_value(), qPrintable(applyError));
+        QCOMPARE(updated->classesCreated, 0);
+        QCOMPARE(updated->classesUpdated, 1);
+        QCOMPARE(updated->teachersCreated, 0);
+        QCOMPARE(updated->schedulesCleared, 0);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT class_id, day, start_time, end_time "
+                "FROM class_intensive_times WHERE class_id=7401 "
+                "ORDER BY day, start_time, end_time, id"
+                )
+            );
+        QStringList persistedTargetRows;
+        while (query.next())
+        {
+            persistedTargetRows.append(
+                QStringLiteral("%1|%2|%3|%4")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString()
+                        )
+                );
+        }
+        const QStringList expectedPersistedTargetRows{
+            QStringLiteral("7401|Monday|10:00 AM|10:55 AM"),
+            QStringLiteral("7401|Wednesday|10:00 AM|10:55 AM")
+        };
+        QCOMPARE(persistedTargetRows, expectedPersistedTargetRows);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, class_id, day, start_time, end_time "
+                "FROM class_intensive_times WHERE class_id=7402 ORDER BY id"
+                )
+            );
+        QStringList untouchedIntensiveRowsAfter;
+        while (query.next())
+        {
+            untouchedIntensiveRowsAfter.append(
+                QStringLiteral("%1|%2|%3|%4|%5")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString(),
+                        query.value(4).toString()
+                        )
+                );
+        }
+        QCOMPARE(
+            untouchedIntensiveRowsAfter,
+            untouchedIntensiveRowsBefore
+            );
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, class_id, day, start_time, end_time "
+                "FROM class_times WHERE class_id IN (7401, 7402) "
+                "ORDER BY id"
+                )
+            );
+        QStringList regularRowsAfter;
+        while (query.next())
+        {
+            regularRowsAfter.append(
+                QStringLiteral("%1|%2|%3|%4|%5")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString(),
+                        query.value(4).toString()
+                        )
+                );
+        }
+        QCOMPARE(regularRowsAfter, regularRowsBefore);
+
+        execOrFail(
+            query,
+            QStringLiteral("SELECT id FROM classes ORDER BY id")
+            );
+        QStringList classIdsAfter;
+        while (query.next())
+        {
+            classIdsAfter.append(query.value(0).toString());
+        }
+        const QStringList expectedClassIds{
+            QStringLiteral("7401"),
+            QStringLiteral("7402")
+        };
+        QCOMPARE(classIdsAfter, expectedClassIds);
+        execOrFail(
+            query,
+            QStringLiteral("SELECT id FROM teachers ORDER BY id")
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), teacherId);
+        QVERIFY(!query.next());
 
         database.close();
     }
