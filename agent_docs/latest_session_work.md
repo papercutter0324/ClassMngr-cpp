@@ -2523,7 +2523,49 @@ separate on a host with Xvfb and loopback access.
   calendar years (2026-2027). Protected `cmake/sources.cmake` stayed excluded
   at SHA-256
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-- Source/test commit is complete. The Archivist is updating the Phase 2 plan
-  and legacy mapping in the separate documentation slice; root will commit
-  those along with these canonical deployment notes. Next: compare the
-  remaining exit-gate gaps for F70 with three fresh Investigator lanes.
+- F69 source/test and separate documentation commits are complete
+  (`95aaefa4` and `4140b6b1`). F70's bounded work and verification are recorded
+  below.
+
+### Phase 2 Class Transfer matching policy - 2026-09-26 (F70)
+
+- Source/test commit: `2f3d414c` (`Extract Class Transfer preview matching
+  policy`). Added Qt-free `Application::matchClassTransferCandidates` in
+  `src/next/application/class_transfer_matching_policy.h`. The repository
+  adapter keeps Qt whitespace simplification and case folding, snapshots
+  database candidates, delegates the rule, then maps typed domain IDs to the
+  legacy integer preview.
+- Changed source/test files: `cmake/next.cmake`,
+  `src/next/application/class_transfer_matching_policy.h`,
+  `src/data/repositories/class_transfer_repository.cpp`,
+  `src/next/application/class_transfer_projection.h`,
+  `tests/next_application_class_transfer_tests.cpp`, and
+  `tests/class_transfer_tests.cpp`.
+- App-less tests cover both-name and single-name teacher matching, empty-name
+  rejection, class course and teacher identity, assigned-but-unloaded teacher
+  placeholders, unassigned fallback, and result ordering. Production adapter
+  coverage verifies whitespace and ASCII case normalization. The checked-in
+  `success_source.json` and `conflict_source.json` paths assert preview IDs;
+  the conflict path rejects a schedule collision without changing destination
+  data. Unicode case-fold equivalence is not exhaustively tested.
+- Executor tree
+  `build/f70-class-transfer-preview-application-msvc-ninja-x64` and
+  independent Tester tree
+  `C:\Users\wfelt\AppData\Local\Temp\phase2-f70-transfer-matching-tester-20260926`
+  each used a fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 build,
+  validated 917 handwritten source owners, and built and passed exactly
+  `ClassMngrNextApplicationClassTransferTests` and
+  `ClassMngrClassTransferTests` (2/2). `git diff --check` passed; no full suite
+  was run. Optional Vulkan/vswhere and long-path warnings did not affect the
+  independent build or tests.
+- Gate 1 gains direct app-less matching-policy evidence. Gate 2 revalidates
+  checked-in preview and conflict no-write behavior through the moved rule;
+  both remain Partial. Workspace boundary and audited `src/next` isolation
+  remain Satisfied; Phase 2 exit remains Open. Sub Prep stays capped at the
+  current and following calendar years (2026-2027). Protected
+  `cmake/sources.cmake` stayed excluded at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- F70 source/test commit is complete. The Archivist is updating the plan and
+  legacy mapping; root will commit those with these deployment notes as a
+  separate documentation slice. Next: choose F71 from three independent
+  Investigator reviews after the documentation commit.

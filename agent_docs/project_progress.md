@@ -1144,5 +1144,36 @@ and its exit gate remain Open. Sub Prep remains capped at the current and
 following calendar years (2026-2027). The protected user change to
 `cmake/sources.cmake` remains excluded; its SHA-256 is
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-Next: finish the separate plan/mapping documentation commit, then compare the
-remaining exit-gate gaps for F70.
+F69 plan and mapping documentation was committed separately as `4140b6b1`.
+Next: finish F70 plan/mapping and deployment documentation in a separate
+commit, then select F71 from three independent Investigator reviews.
+
+## Current Phase 2 position - 2026-09-26 (F70)
+
+F70 source/test commit `2f3d414c` (`Extract Class Transfer preview matching
+policy`) moves candidate matching from the Qt repository implementation into
+`src/next/application/class_transfer_matching_policy.h`. The adapter retains
+`QString::simplified().toCaseFolded()` normalization and maps typed
+`ClassId`/`TeacherId` matches to the legacy integer preview. App-less tests
+cover both-name and single-name teacher rules, course and teacher identity,
+assigned-but-unloaded teacher identity, the unassigned fallback, and stable
+source/destination order. Production tests cover Qt whitespace and ASCII case
+normalization plus the checked-in success/conflict preview IDs and conflict
+no-write path. This does not claim exhaustive Unicode case-fold equivalence.
+
+Executor and independent Tester used separate fresh Windows x64 Debug
+Ninja/MSVC 19.51.36257/Qt 6.12 builds. Each validated 917 handwritten source
+owners, built the two Class Transfer test targets, and passed exactly
+`ClassMngrNextApplicationClassTransferTests` and `ClassMngrClassTransferTests`
+(2/2). `git diff --check` passed; no full suite was run.
+
+Gate 1 gains direct app-less matching-policy evidence. Gate 2 revalidates
+fixture-backed preview and conflict no-write behavior through the moved rule;
+both remain Partial. Workspace boundary and audited `src/next` dependency
+isolation remain Satisfied. Phase 2 and its exit gate remain Open. Sub Prep
+remains capped at the current and following calendar years (2026-2027). The
+protected user change to `cmake/sources.cmake` remains excluded; its SHA-256
+is `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+The separate F70 plan/mapping and canonical deployment-documentation commit
+is pending. Next: complete that documentation slice, then select F71 from
+three independent Investigator reviews.

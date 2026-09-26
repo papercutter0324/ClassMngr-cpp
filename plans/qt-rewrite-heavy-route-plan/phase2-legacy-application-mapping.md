@@ -20,8 +20,9 @@ projection/persistence cutovers, F60 typed review-decision targets, F62
 apply-boundary action/sentinel
 characterization, F63 production no-suggestion sentinel assertion, F64's
 typed student-name pair at the roster score-import join, and F65's verified
-legacy profile startup/migration path through FileController, the shared
-Qt-free Class Transfer review-decision contract and repository validation,
+legacy profile startup/migration path through FileController, the F70 Class
+Transfer preview-matching policy, and the shared Qt-free Class Transfer
+review-decision contract and repository validation,
 and Sub Prep print-source, selected-class details, and schedule-summary read
 adapters plus the Sub Prep information-sheet output wiring. Personal-details
 save, personal-signature, and current-campus preference caller boundaries
@@ -3969,3 +3970,24 @@ projection evidence to Gate 1 and fixture-backed persisted-row parity to Gate 2;
 both remain Partial and Phase 2's exit gate remains Open. Sub Prep remains limited
 to the current and following calendar years, 2026-2027. Next entry: select F70
 from the remaining Phase 2 gaps.
+
+## Verified F70 Class Transfer preview matching policy - commit `2f3d414c`
+
+The Qt-free Application matching policy
+([`matchClassTransferCandidates`](../../src/next/application/class_transfer_matching_policy.h))
+owns preview matching over normalized source values and ordered destination
+snapshots. The repository adapter keeps Qt `simplified()` and case-fold input
+normalization, and maps typed `TeacherId`/`ClassId` results to the existing
+integer preview representation. The policy preserves teacher matching rules,
+course and teacher identity, assigned-but-unloaded teacher handling versus
+unassigned fallback, and destination order.
+
+App-less policy tests exercise those rules and order. Production tests retain
+normalized input matching, checked-in success/conflict fixture preview IDs, and
+the conflict no-write path. These checks establish existing fixture parity for
+the migrated matcher; they do not establish exhaustive Unicode case-fold
+equivalence. Independent and executor fresh Windows x64 Debug Ninja/MSVC
+19.51.36257/Qt 6.12 builds each validated 917 handwritten source owners and
+passed `ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). No full suite was run. Gate 1 and Gate 2
+remain Partial; Phase 2 remains open.

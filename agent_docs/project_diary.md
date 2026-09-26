@@ -1004,3 +1004,10 @@ Prep's queried interval to the current and following calendar years at most.
 - In Qt tests, do not place a braced container initializer directly in a
   `QCOMPARE` argument: its commas are parsed as macro separators. Assign it to
   a local first, then compare the local values.
+
+## Phase 2 Class Transfer matching policy - 2026-09-26
+
+- Keep `QString::simplified().toCaseFolded()` at the Qt adapter edge when
+  moving matching into a Qt-free policy. Verify assumptions about Qt Unicode
+  folding against the supported Qt version; the F70 regression covers ASCII
+  case and whitespace and does not claim exhaustive Unicode equivalence.

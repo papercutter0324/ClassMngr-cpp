@@ -8,16 +8,7 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Previous code slice: F68 extracts campus-token matching into the Qt-free
-  `Application::CalendarEventCampusVisibilityPolicy`; the Qt feature edge retains
-  QString trimming, code normalization, and one-to-one case-fold preprocessing.
-  App-less policy and typed-summary/legacy adapter tests cover defaults, punctuation,
-  S2/S20, lower-case boundaries, Kelvin U+212A, and dotless i U+0131. Two fresh Windows
-  x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds validated 915 handwritten owners and passed
-  the application, cache, and calendar-import CTests 3/3; `git diff --check` passed,
-  no full suite. Unicode cases are not exhaustive. Gate 1 gained app-less behavior;
-  Gate 2 remained Partial without baseline fixture parity. Source commit: `3ee0b1c6`.
-- Latest code slice: F69 extracts final Schedule Import state projection into Qt-free
+- Previous code slice: F69 extracts final Schedule Import state projection into Qt-free
   Application code. Typed `ClassId | candidate-index` references and explicit
   `ReplaceRows`/`KeepExistingRows` dispositions let one projection feed overlap
   validation and repository persistence; generated IDs are resolved after inserts.
@@ -28,8 +19,19 @@
   Import CTests 2/2; `git diff --check` passed, no full suite. Gate 1 gains direct
   projection evidence and Gate 2 gains fixture-backed persisted-row parity; both remain
   Partial. Workspace boundary and audited `src/next` dependency isolation remain
-  Satisfied. Source commit: `95aaefa4`. Phase 2 exit gate remains Open. Sub Prep remains
-  limited to the current and following calendar years, 2026-2027.
+  Satisfied. Source commit: `95aaefa4`.
+- Latest code slice: F70 moves Class Transfer preview matching into a Qt-free
+  Application policy (`matchClassTransferCandidates`). The repository adapter retains Qt
+  simplified/case-folded input normalization and legacy integer preview presentation.
+  App-less tests cover teacher-match rules, course and teacher identity, assigned but
+  unloaded teachers versus unassigned fallback, and output order; production tests
+  preserve normalized matching, checked-in success/conflict preview IDs, and conflict
+  no-write behavior. Two fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees
+  validated 917 handwritten source owners and passed the application and production
+  Class Transfer CTests 2/2. Existing fixture parity is verified; Unicode case-fold
+  equivalence is not exhaustive. Gate 1 and Gate 2 advance but remain Partial. Source
+  commit: `2f3d414c`. Phase 2 exit gate remains Open. Sub Prep remains limited to the
+  current and following calendar years, 2026-2027.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5286,3 +5288,41 @@ gate Open. F62's CreateNew sentinel-conversion observability limitation and
 F67's upstream-unreachable production validation branch remain distinct. Next
 entry: select F70 from the remaining Phase 2 gaps. Sub Prep remains limited to
 the current and following calendar years, 2026-2027.
+
+## Verified F70 Class Transfer preview matching policy - commit `2f3d414c`
+
+The Qt-free Application matching policy
+([`matchClassTransferCandidates`](../../src/next/application/class_transfer_matching_policy.h))
+now owns preview matching over normalized source values and ordered
+destination snapshots. The repository adapter retains Qt simplified/case-fold
+normalization and converts typed teacher/class identities to the legacy integer
+preview representation. App-less coverage checks teacher-match rules, course
+and teacher identity, assigned-but-unloaded teacher handling versus unassigned
+fallback, and destination order. Production coverage preserves normalized
+matching, the checked-in success/conflict fixture preview IDs, and conflict
+no-write behavior. Fixture parity is covered; exhaustive Unicode case-fold
+equivalence is not claimed.
+
+Independent and executor fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt
+6.12 builds each validated 917 handwritten source owners and passed
+`ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). No full suite was run.
+
+#### Exit-gate status after F70
+
+This cumulative audit applies the formal exit criteria through F70. Both focused
+targets were independently built and passed; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F70 adds direct Qt-free Class Transfer matching rules and ordering tests. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F70 rechecks checked-in success/conflict preview IDs and conflict no-write behavior after moving matching into Application. Broader baseline fixture parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F70 does not change that criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; the new matching policy is Qt-free and repository-owned normalization/presentation remain at the adapter. |
+
+Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress with its exit
+gate Open. F70 verifies existing fixture parity without claiming exhaustive
+Unicode case-fold coverage. Next entry: select F71 from the remaining Phase 2
+gaps. Sub Prep remains limited to the current and following calendar years,
+2026-2027.
