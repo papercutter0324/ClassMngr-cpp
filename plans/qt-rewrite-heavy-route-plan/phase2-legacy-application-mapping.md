@@ -3916,3 +3916,32 @@ adds Gate 1 app-less behavior evidence but no Gate 2 parity evidence; both
 gates remain Partial. The F62 CreateNew sentinel-conversion observability
 limitation remains separate. No full suite was run. Sub Prep remains capped at
 the current and following calendar years, 2026-2027.
+
+## Verified Qt-free calendar campus visibility policy handoff
+
+Commit `3ee0b1c6` adds
+[`Application::CalendarEventCampusVisibilityPolicy`](../../src/next/application/calendar_event_campus_visibility_policy.h)
+and routes the existing
+[`CalendarEventCampusFilter`](../../src/features/calendar/calendar_event_campus_filter.cpp)
+through it. The Qt feature edge keeps QString trimming, duplicate removal,
+uppercase campus-code normalization, and one-to-one Unicode case-folding, then
+passes normalized and folded UTF-8 values to the Qt-free policy. Typed
+`CalendarEventSummary` and legacy `CalendarEvent` callers retain their adapter
+overloads.
+
+The application policy owns show-all/empty defaults and literal campus-token
+matching: a current-campus token remains visible, an event matching only a
+different known campus is filtered, and unmatched or unknown-campus events
+remain visible. Matching preserves punctuation and token boundaries such as
+S2 versus S20. Tests include Kelvin U+212A and dotless i U+0131 in typed-summary
+and legacy adapter paths; these targeted cases do not prove exhaustive Unicode
+equivalence.
+
+Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds each
+validated 915 handwritten source owners and passed the exact
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrCalendarEventCacheTests`, and `ClassMngrCalendarImportTests` CTests
+3/3. `git diff --check` passed; no full suite was run. F68 adds direct app-less
+behavior evidence and adapter regression checks, not checked-in baseline
+fixture parity. The campus-token policy extraction does not complete broader
+typed calendar UI/page migration, which remains open. Phase 2 remains open.

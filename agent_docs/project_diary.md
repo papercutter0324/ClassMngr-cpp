@@ -983,3 +983,12 @@ Prep's queried interval to the current and following calendar years at most.
   including valid targetless CreateNew. Record upstream validation limits
   separately: a production path rejected before the repository cannot prove
   that repository conversion branch.
+
+## Phase 2 calendar campus visibility - 2026-09-26
+
+- When moving a Qt regex rule into an app-less policy, preserve Qt trimming,
+  code normalization, and Unicode case-fold behavior at the adapter edge.
+  Case-folded ASCII input needs lowercase letters in its token-boundary class.
+  Test letters adjacent to campus tokens and Unicode neighbors such as Kelvin
+  sign and dotless i; ordinary visible-by-default results can otherwise hide
+  a broken match assertion.

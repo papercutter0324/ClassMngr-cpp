@@ -2456,3 +2456,34 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: select F68 from the remaining gates with three independent
   Investigator reviews. Keep source and documentation commits separate.
+
+### Phase 2 calendar campus visibility - 2026-09-26
+
+- F68 source/test commit: `3ee0b1c6` (`Extract Qt-free calendar campus
+  visibility policy`). Added the Qt-free
+  `Application::CalendarEventCampusVisibilityPolicy`; the existing Qt feature
+  adapter retains `QString` trimming, campus-code normalization, one-to-one
+  case folding, and the legacy typed-summary and `CalendarEvent` entry points.
+- App-less policy tests cover default-visible cases, exact campus identity,
+  literal punctuation, token boundaries including `S2`/`S20`, and lower-case
+  neighbors. Feature-adapter tests cover the Kelvin sign U+212A and dotless i
+  U+0131 boundary behavior. These Unicode cases are targeted regressions, not
+  an exhaustive equivalence proof for all Qt regex case folding.
+- Executor tree
+  `build/phase2-f68-calendar-campus-policy-executor-recheck-20260926-01` and
+  independent Tester tree
+  `build/phase2-f68-calendar-campus-policy-tester-20260926-independent-01`
+  each used a fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 build,
+  validated 915 handwritten source owners, and built and passed exactly
+  `ClassMngrNextApplicationCalendarEventTests`,
+  `ClassMngrCalendarEventCacheTests`, and `ClassMngrCalendarImportTests`
+  (3/3). `git diff --check` passed; no full suite was run.
+- Gate 1 gains direct app-less policy evidence and remains Partial. Gate 2
+  remains Partial; the adapter checks do not provide additional checked-in
+  baseline fixture parity. Workspace boundary and audited `src/next`
+  dependency isolation remain Satisfied; Phase 2 exit gate remains Open. Sub
+  Prep stays capped at the current and following calendar years (2026-2027).
+  Protected user change `cmake/sources.cmake` remains excluded at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Next: select F69 from three independent Investigator reviews. Keep source
+  and documentation commits separate.
