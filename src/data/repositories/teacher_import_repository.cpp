@@ -4,6 +4,7 @@
 #include "data/database/sql_query_utils.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/import_review_session.h"
+#include "next/application/gs_team_import_update.h"
 #include "next/application/korean_teacher_import_update.h"
 #include "next/application/native_english_teacher_import_update.h"
 #include "next/application/teacher_import_plan_validation.h"
@@ -604,15 +605,30 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         }
 
         const GsTeamMember& existing = gs.at(matches.first());
-        GsTeamMember updated = existing;
-        if (!source.name.trimmed().isEmpty()) updated.name = source.name.simplified();
-        if (!source.koreanName.trimmed().isEmpty()) updated.koreanName = source.koreanName.simplified();
-        if (!source.position.trimmed().isEmpty()) updated.position = source.position.trimmed();
-        if (!source.phoneNumber.trimmed().isEmpty()) updated.phoneNumber = source.phoneNumber.trimmed();
-        if (!source.birthday.trimmed().isEmpty()) updated.birthday = source.birthday.trimmed();
-        if (updated.name == existing.name && updated.koreanName == existing.koreanName
-            && updated.position == existing.position && updated.phoneNumber == existing.phoneNumber
-            && updated.birthday == existing.birthday)
+        using ClassMngr::Next::Application::GsTeamImportFields;
+        using ClassMngr::Next::Application::GsTeamImportProfile;
+        using ClassMngr::Next::Application::mergeGsTeamImport;
+
+        const auto update = mergeGsTeamImport(
+            GsTeamImportProfile{
+                .id = existing.id,
+                .name = existing.name.toStdU16String(),
+                .koreanName = existing.koreanName.toStdU16String(),
+                .position = existing.position.toStdU16String(),
+                .phoneNumber = existing.phoneNumber.toStdU16String(),
+                .birthday = existing.birthday.toStdU16String()
+            },
+            GsTeamImportFields{
+                .name = source.name.trimmed().isEmpty()
+                    ? std::u16string{} : source.name.simplified().toStdU16String(),
+                .koreanName = source.koreanName.trimmed().isEmpty()
+                    ? std::u16string{} : source.koreanName.simplified().toStdU16String(),
+                .position = source.position.trimmed().toStdU16String(),
+                .phoneNumber = source.phoneNumber.trimmed().toStdU16String(),
+                .birthday = source.birthday.trimmed().toStdU16String()
+            }
+            );
+        if (!update.changed)
         {
             ++summary.gsTeamMembers.unchanged;
             continue;
@@ -624,12 +640,12 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
             SET name=?, korean_name=?, position=?, phone_number=?, birthday=?
             WHERE id=?
         )");
-        query.addBindValue(updated.name);
-        query.addBindValue(updated.koreanName);
-        query.addBindValue(updated.position);
-        query.addBindValue(updated.phoneNumber);
-        query.addBindValue(updated.birthday);
-        query.addBindValue(existing.id);
+        query.addBindValue(QString::fromStdU16String(update.profile.name));
+        query.addBindValue(QString::fromStdU16String(update.profile.koreanName));
+        query.addBindValue(QString::fromStdU16String(update.profile.position));
+        query.addBindValue(QString::fromStdU16String(update.profile.phoneNumber));
+        query.addBindValue(QString::fromStdU16String(update.profile.birthday));
+        query.addBindValue(update.profile.id);
         if (!query.exec())
         {
             return std::unexpected(queryFailure(query, QObject::tr("Updating a GS Team member")));

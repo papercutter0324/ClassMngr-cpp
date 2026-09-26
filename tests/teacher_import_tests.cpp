@@ -38,6 +38,7 @@ private slots:
     void reviewContractRejectsInvalidDecisions();
     void matchesStoredKoreanTeacherAfterRemovingSuffix();
     void importsIntoSeparateTablesAndPreservesManualFields();
+    void gsTeamImportMergesSparseMatchedRecordsAndSkipsNoOpUpdates();
     void importsCheckedInWorkbookUsingValidatedReviewChoices();
     void teacherNameKeyAdapterPreservesCodeUnitFiltering();
     void sectionedParserRejectsNameThatFiltersToEmpty();
@@ -874,6 +875,170 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='원자성교사'")));
         QVERIFY(counts.next());
         QCOMPARE(counts.value(0).toInt(), 0);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TeacherImportTests::gsTeamImportMergesSparseMatchedRecordsAndSkipsNoOpUpdates()
+{
+    const QString connectionName =
+        QStringLiteral("gs-team-import-update-test-%1").arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        const QString koreanName = QString::fromUtf8(
+            "\xEA\xB9\x80\xED\x95\x98\xEB\x8A\x98");
+        const QString otherKoreanName = QString::fromUtf8(
+            "\xEC\x9D\xB4\xEC\x84\x9C\xEC\x97\xB0");
+        QSqlQuery seed(database);
+        seed.prepare(QStringLiteral(
+            "INSERT INTO gs_team "
+            "(id, name, korean_name, position, phone_number, birthday) "
+            "VALUES (?, ?, ?, ?, ?, ?)"));
+        seed.addBindValue(9101);
+        seed.addBindValue(QStringLiteral("Taylor"));
+        seed.addBindValue(koreanName);
+        seed.addBindValue(QStringLiteral("M2"));
+        seed.addBindValue(QStringLiteral("010-1111-2222"));
+        seed.addBindValue(QStringLiteral("05-09"));
+        QVERIFY(seed.exec());
+        seed.prepare(QStringLiteral(
+            "INSERT INTO gs_team "
+            "(id, name, korean_name, position, phone_number, birthday) "
+            "VALUES (?, ?, ?, ?, ?, ?)"));
+        seed.addBindValue(9102);
+        seed.addBindValue(QStringLiteral("Casey"));
+        seed.addBindValue(otherKoreanName);
+        seed.addBindValue(QStringLiteral("NET"));
+        seed.addBindValue(QStringLiteral("010-3333-4444"));
+        seed.addBindValue(QStringLiteral("04-12"));
+        QVERIFY(seed.exec());
+
+        QVERIFY(seed.exec(R"(
+            CREATE TABLE gs_team_import_update_probe (updates INTEGER NOT NULL)
+        )"));
+        QVERIFY(seed.exec(R"(
+            INSERT INTO gs_team_import_update_probe (updates) VALUES (0)
+        )"));
+        QVERIFY(seed.exec(R"(
+            CREATE TRIGGER gs_team_import_update_probe_trigger
+            AFTER UPDATE ON gs_team
+            BEGIN
+                UPDATE gs_team_import_update_probe SET updates=updates+1;
+            END
+        )"));
+
+        TeacherImportPlan plan;
+        plan.templateId = QStringLiteral("gs-team-sparse-update-test");
+        plan.sourceDate = QDate(2026, 9, 10);
+        plan.gsTeamMembers.append({
+            -1,
+            QStringLiteral(" Taylor   Updated "),
+            QStringLiteral("  ") + koreanName + QStringLiteral("  "),
+            QStringLiteral("  M3  "),
+            QStringLiteral("   "),
+            QStringLiteral(" 07-08 ")
+        });
+        plan.gsTeamMembers.append({
+            -1,
+            QStringLiteral(" Jordan "),
+            QString(),
+            QStringLiteral(" M1 "),
+            QStringLiteral("010-5555-6666"),
+            QStringLiteral("08-15")
+        });
+        plan.gsTeamMembers.append({
+            -1,
+            QStringLiteral(" Casey "),
+            QStringLiteral(" \t "),
+            QStringLiteral(" "),
+            QString(),
+            QString()
+        });
+
+        TeacherImportRepository repository(database);
+        const auto imported = repository.importTeachers(plan);
+        QVERIFY2(imported.has_value(),
+                 imported.has_value() ? "" : qPrintable(imported.error()));
+        QCOMPARE(imported->gsTeamMembers.created, 1);
+        QCOMPARE(imported->gsTeamMembers.updated, 1);
+        QCOMPARE(imported->gsTeamMembers.unchanged, 1);
+        QCOMPARE(imported->koreanTeachers.total(), 0);
+        QCOMPARE(imported->nativeEnglishTeachers.total(), 0);
+
+        QSqlQuery persisted(database);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT id, name, korean_name, position, phone_number, birthday "
+            "FROM gs_team WHERE id=9101")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 9101);
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("Taylor Updated"));
+        QCOMPARE(persisted.value(2).toString(), koreanName);
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("M3"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("010-1111-2222"));
+        QCOMPARE(persisted.value(5).toString(), QStringLiteral("07-08"));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT id, name, korean_name, position, phone_number, birthday "
+            "FROM gs_team WHERE id=9102")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 9102);
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("Casey"));
+        QCOMPARE(persisted.value(2).toString(), otherKoreanName);
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("NET"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("010-3333-4444"));
+        QCOMPARE(persisted.value(5).toString(), QStringLiteral("04-12"));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT name, korean_name, position, phone_number, birthday "
+            "FROM gs_team WHERE name='Jordan'")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("Jordan"));
+        QCOMPARE(persisted.value(1).toString(), QString());
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("M1"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("010-5555-6666"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("08-15"));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT updates FROM gs_team_import_update_probe")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 1);
+
+        QSqlQuery duplicate(database);
+        duplicate.prepare(QStringLiteral(
+            "INSERT INTO gs_team (name, korean_name) VALUES (?, ?)"));
+        duplicate.addBindValue(QStringLiteral("Second Taylor"));
+        duplicate.addBindValue(koreanName);
+        QVERIFY(duplicate.exec());
+
+        TeacherImportPlan ambiguousPlan;
+        ambiguousPlan.templateId = QStringLiteral("gs-team-ambiguous-match-test");
+        ambiguousPlan.sourceDate = QDate(2026, 9, 11);
+        ambiguousPlan.gsTeamMembers.append({
+            -1, QStringLiteral("Any Name"), koreanName, QString(), QString(), QString()
+        });
+        const auto ambiguous = repository.importTeachers(ambiguousPlan);
+        QVERIFY(!ambiguous.has_value());
+        QCOMPARE(
+            ambiguous.error(),
+            QStringLiteral("More than one stored GS Team member matches %1.")
+                .arg(koreanName));
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT updates FROM gs_team_import_update_probe")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 1);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM gs_team WHERE name='Jordan'")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 1);
+
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
