@@ -117,6 +117,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/gs_team_import_update.h
     src/next/application/teacher_import_plan_validation.h
     src/next/application/teacher_import_match_cardinality.h
+    src/next/application/teacher_import_use_case.h
     src/next/application/report_job_coordinator.h
     src/next/application/report_job_state.h
     src/next/application/recent_workspace_history.h

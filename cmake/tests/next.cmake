@@ -500,6 +500,44 @@ add_test(
     COMMAND ClassMngrNextApplicationTeacherImportMatchCardinalityTests
 )
 
+# Exercise the application-owned Teacher Import apply orchestration without Qt.
+add_executable(
+    ClassMngrNextApplicationTeacherImportUseCaseTests
+    tests/next_application_teacher_import_use_case_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationTeacherImportUseCaseTests
+    PRIVATE
+        cxx_std_23
+)
+if(MSVC)
+    target_compile_options(
+        ClassMngrNextApplicationTeacherImportUseCaseTests
+        PRIVATE
+            /utf-8
+    )
+endif()
+set_target_properties(
+    ClassMngrNextApplicationTeacherImportUseCaseTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationTeacherImportUseCaseTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationTeacherImportUseCaseTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationTeacherImportUseCaseTests
+    COMMAND ClassMngrNextApplicationTeacherImportUseCaseTests
+)
+
 classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES
