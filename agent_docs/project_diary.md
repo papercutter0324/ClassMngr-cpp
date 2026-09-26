@@ -1098,3 +1098,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 GS Team sparse update policy - 2026-09-27
 
 - Keep Qt normalization at the repository boundary and pass normalized fields into the Qt-free merge policy. The policy preserves the matched row ID, blank fields, and no-op/change result; the adapter should skip SQL for unchanged rows. A database trigger is a direct way to prove the no-op issued no UPDATE.
+
+## Phase 2 intensive Schedule Import baseline comparison - 2026-09-27
+
+- Baseline-era source helpers and inline worksheet data can establish synthetic differential evidence when both revisions use the same generated workbook bytes and deterministic seed. Pin parsed, preview, applied, and full persisted state. Keep provenance explicit: this does not show that the generated workbook represents historical production data.
