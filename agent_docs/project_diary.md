@@ -1041,3 +1041,13 @@ Prep's queried interval to the current and following calendar years at most.
   literals. A synthetic workbook verifies parser-to-apply behavior, but cannot
   establish historical baseline parity without an independent legacy workbook
   or output oracle.
+
+## Phase 2 typed duplicate name-pair grouping - 2026-09-26
+
+- Put row grouping in the existing Qt-free `StudentNamePair` header to avoid
+  adding an unassigned standalone source while the handwritten source-owner
+  manifest is protected. Keep trim and incomplete-row decisions at adapters,
+  preserve diagnostic formatting, and return groups and row indexes in
+  first-seen order.
+- Do not repurpose duplicate name pairs as durable student identity or change
+  independent score-import lookup semantics such as last-write-wins.

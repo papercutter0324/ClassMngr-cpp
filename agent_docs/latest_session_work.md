@@ -2651,8 +2651,38 @@ separate on a host with Xvfb and loopback access.
   9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF.
   Git status marks it modified even though the Tester confirmed the worktree
   hash and index/blob match the baseline; leave it untouched and unstaged.
-- F74's Phase 2 plan update is included in the separate documentation commit.
-  F75 is selected: extract the Qt-free typed `StudentNamePair` duplicate-row
-  grouping policy used by roster and speaking-evaluation validation. Preserve
-  caller-side trimming, incomplete-row handling, row locations, and
-  caller-specific diagnostics; do not alter score-import last-write-wins.
+- F74 source/test and separate documentation commits are complete (`3e0a8d64`
+  and `55581417`). F75 source/test commit `3139bdf4` extracts ordered exact
+  typed duplicate-pair grouping into the existing Qt-free `StudentNamePair`
+  header and adapts shared, roster, and speaking-evaluation validation.
+- Executor passed four focused CTests; the independent fresh Tester passed the
+  same four plus `ClassMngrRosterEditorWidgetImportTests` (5/5 total). The
+  independent tree used Windows x64 Debug, CMake 4.4.2, Ninja 1.13.2, Qt 6.12.0,
+  and MSVC 19.51.36257. CMake validated 917 handwritten source owners and
+  `git diff --check` passed. No full suite was run.
+- F75 adds Gate 1 app-less behavior evidence; Gate 1 and Gate 2 remain Partial,
+  with no new historical baseline parity. Workspace boundary and audited
+  `src/next` isolation remain Satisfied; Phase 2 exit remains Open. Sub Prep
+  stays capped at 2026-2027. The protected `cmake/sources.cmake` remains
+  excluded at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- F76 is selected: add a populated speaking evaluation to the checked-in Class
+  Transfer success fixture and assert its full persisted row through the
+  fixture-driven review/apply path. This is checked-fixture regression
+  coverage, not historical baseline parity.
+
+### Phase 2 checked-fixture Class Transfer evaluation coverage - F76 selected
+
+- Two independent context reviews confirmed that
+  `tests/fixtures/transfers/success_source.json` has no speaking evaluation.
+  The fixture-driven production review/apply path checks class, teacher,
+  schedule, and roster persistence but not evaluation rows; replacement checks
+  destination-only evaluation clearing but not imported fixture evaluation rows.
+- The fixture entered the repository with its test and has no known historical
+  export or independent legacy-output oracle. Describe F76 as checked-fixture
+  persistence regression coverage only.
+- Planned acceptance: add a named evaluation with one distinctive 11-column
+  row; assert the persisted 25-row evaluation (row 0 literal plus remaining
+  blank rows) through create/apply and replacement, while retaining the
+  assertion that destination-only evaluation data is cleared. Focused target:
+  `ClassMngrClassTransferTests`.

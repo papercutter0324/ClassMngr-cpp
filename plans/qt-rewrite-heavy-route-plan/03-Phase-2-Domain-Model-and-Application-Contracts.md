@@ -52,7 +52,7 @@
   (2/2); Tester also ran the fixture test directly. `git diff --check` passed;
   no full suite. F73 adds Gate 2 fixture-backed action evidence; Gate 1 is
   unchanged and both remain Partial. Test-only commit: `60bbd015`.
-- Latest code slice: F74 adds synthetic Intensive Schedule Import production-flow
+- Previous code slice: F74 adds synthetic Intensive Schedule Import production-flow
   coverage: fixed preview values, explicit UpdateExisting apply, persisted target
   rows/class identity, no class creation, untouched Intensive row ID/value, and
   unchanged regular rows. No historical Intensive workbook or legacy-output
@@ -60,6 +60,13 @@
   Windows x64 Debug Ninja/Qt 6.12 Executor and Tester trees passed the three
   focused Schedule Import CTests (3/3); no full suite. Gate 1 is unchanged and
   Gate 2 remains Partial. Test-only commit: `3e0a8d64`.
+- Latest code slice: F75 extracts exact typed duplicate student-name-pair grouping
+  into Qt-free `Domain::duplicateStudentNamePairGroups`; roster, shared, and
+  speaking-evaluation callers retain trimming, incomplete-row handling, and their
+  diagnostics. Independent fresh Windows x64 Debug verification validated 917
+  source owners and passed four focused CTests plus the roster import test (5/5);
+  no full suite. Gate 1 gains app-less policy evidence; Gate 2 gains no historical
+  baseline parity. Source commit: `3139bdf4`.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5519,3 +5526,54 @@ preserving caller-side trimming, incomplete-row handling, and caller-specific
 diagnostics. This selection is not implementation evidence; score-import
 last-write-wins behavior remains distinct. Sub Prep remains capped at the
 current and following calendar years, 2026-2027.
+
+## Verified F75 typed duplicate student-pair grouping - commit `3139bdf4`
+
+[`student_name_pair.h`](../../src/next/domain/student_name_pair.h) adds the
+header-only, Qt-free `duplicateStudentNamePairGroups` policy. It accepts one
+`optional<StudentNamePair>` per row, skips incomplete (`nullopt`) rows, groups
+by exact equality of both UTF-16 name parts, and returns only duplicate groups.
+Groups follow each pair's first input occurrence; row indexes follow input
+order. It performs no trimming, case folding, or other name normalization.
+
+Shared validation, roster validation, and speaking-evaluation validation adapt
+their rows at the existing callers: they trim both names, represent incomplete
+pairs as absent, then retain their existing field/row locations, duplicate-row
+arguments, and caller-specific cell messages. Score-import last-write-wins
+lookup behavior is unchanged. App-less tests cover exact pair identity,
+delimiter-part separation, case sensitivity, skipped rows, group and row order,
+and deterministic repeated calls; adapter tests cover trimmed matching,
+incomplete rows, and preserved diagnostics.
+
+Independent fresh Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51.36257, and Qt 6.12.0, validated 917 handwritten source owners, and
+passed the four focused Domain/shared-policy/roster/speaking-evaluation CTests
+(4/4) plus `ClassMngrRosterEditorWidgetImportTests` (1/1). `git diff --check`
+passed; no full suite was run. Protected `cmake/sources.cmake` remains at
+SHA-256 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Gate 1 gains app-less policy evidence but remains Partial. F75 adds no historical
+baseline parity, so Gate 2 remains Partial. Workspace boundary and audited v2
+dependency isolation remain Satisfied; Phase 2 remains In Progress with its
+exit gate Open. Sub Prep remains capped at the current and following calendar
+years, 2026-2027.
+
+#### Cumulative exit-gate status after F75
+
+This audit applies the formal exit criteria through F75. The four focused CTests
+and additional roster import CTest passed independently; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F75 adds exact typed duplicate-pair grouping and deterministic group/order tests in the Qt-free Domain policy. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F75 adds no historical baseline parity. F71-F73 checked-fixture Class Transfer evidence and F74 synthetic Intensive production-flow evidence remain; broader baseline coverage is incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F75 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F75's Domain grouping policy remains Qt-free. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited v2 dependency
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+Next selected bounded slice: F76 adds a nonempty speaking evaluation to
+`tests/fixtures/transfers/success_source.json` and asserts the full persisted
+evaluation row through fixture-driven Class Transfer review/apply create and
+replacement. This is checked-fixture regression coverage, not evidence of
+historical baseline parity. Sub Prep remains capped at the current and following
+calendar years, 2026-2027.

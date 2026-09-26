@@ -1227,10 +1227,13 @@ and documentation `5af94f32` are complete. F74 source/test `3e0a8d64` adds
 synthetic Intensive workbook parse/apply coverage; the independent fresh build
 passed three focused Schedule Import targets (3/3) with 917 source owners. The
 synthetic path adds production-flow coverage but does not establish historical
-baseline parity; Gate 2 remains Partial. F75 is selected to extract the
-Qt-free typed duplicate-name-pair grouping policy used by roster and speaking-
-evaluation validation, preserving caller-side trimming, incomplete-row
-handling, and caller-specific diagnostics.
+baseline parity; Gate 2 remains Partial. F75 source/test commit 3139bdf4 adds a
+Qt-free exact typed duplicate-pair grouping policy and adapters for shared,
+roster, and speaking-evaluation validation. The fresh independent run passed
+four focused targets plus the existing score-import regression target (5/5).
+Gate 1 gains app-less contract evidence but remains Partial; Gate 2 remains
+Partial without new historical parity. Select F76 for checked-fixture Class
+Transfer evaluation persistence coverage.
 
 ## Current Phase 2 position - 2026-09-26 (F74)
 
@@ -1238,4 +1241,12 @@ F74 source/test commit 3e0a8d64 (Verify synthetic intensive schedule import flow
 
 Executor used build/phase2-f69-schedule-state-projection-executor-ninja-msvc-20260926 (Windows x64 Debug Ninja/MSVC 14.51.36231/Qt 6.12.0). Independent Tester used a fresh tree at C:\Users\wfelt\AppData\Local\Temp\f74_intensive_verify_20260926 (Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12.0). CMake validated 917 handwritten source owners. ClassMngrScheduleImportTests, ClassMngrNextApplicationScheduleImportStateValidationTests, and ClassMngrNextApplicationScheduleImportMatchingProjectionTests built and passed (3/3). git diff --check passed; no full suite was run.
 
-F74 is synthetic production-flow coverage only: the repository has no historical Intensive workbook paired with a legacy-output oracle. Gate 2 remains Partial; Gate 1 receives no new evidence. Workspace boundary and audited src/next dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open. Sub Prep stays capped at the current and following calendar years (2026-2027). The protected cmake/sources.cmake remains excluded at SHA-256 9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF. F75 is selected to extract a Qt-free typed duplicate-name-pair grouping policy for current roster and speaking-evaluation validation paths, preserving caller-specific behavior.
+F74 is synthetic production-flow coverage only: the repository has no historical Intensive workbook paired with a legacy-output oracle. Gate 2 remains Partial; Gate 1 receives no new evidence. Workspace boundary and audited src/next dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open. Sub Prep stays capped at the current and following calendar years (2026-2027). The protected cmake/sources.cmake remains excluded at SHA-256 9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF. F75 source/test commit 3139bdf4 adds exact typed duplicate-pair grouping and current roster/speaking-evaluation adapters; F76 is selected for checked-fixture Class Transfer evaluation persistence coverage.
+
+## Current Phase 2 position - 2026-09-26 (F75)
+
+F75 source/test commit 3139bdf4 (`Extract typed duplicate student pair grouping`) adds the ordered `duplicateStudentNamePairGroups` policy in the existing Qt-free `StudentNamePair` header. Shared validation, `RosterModel`, and `SpeakingEvalModel` adapt trimmed complete pairs while preserving incomplete-row handling and caller-specific diagnostics. Score-import matching and last-write-wins behavior are unchanged.
+
+Executor and independent fresh Tester builds validated 917 handwritten source owners. Windows x64 Debug Ninja builds passed `ClassMngrNextDomainContractTests`, `ClassMngrSharedPolicyTests`, `ClassMngrRosterModelTests`, and `ClassMngrSpeakingEvalBatchReportServiceTests` (4/4). Tester also built and passed `ClassMngrRosterEditorWidgetImportTests` (1/1). The independent tree used CMake 4.4.2, Ninja 1.13.2, Qt 6.12.0, and MSVC 19.51.36257. `git diff --check` passed; no full suite was run.
+
+Gate 1 gains app-less typed grouping behavior and remains Partial; Gate 2 remains Partial with no new historical baseline parity. Workspace boundary and audited `src/next` isolation remain Satisfied. Phase 2 and its exit gate remain Open. Sub Prep stays capped at the current and following calendar years (2026-2027). Protected `cmake/sources.cmake` remains unstaged at SHA-256 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`. F76 is selected to add checked-fixture Class Transfer speaking-evaluation persistence assertions; fixture provenance does not support a historical-baseline claim.
