@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -845,6 +846,19 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         QSqlQuery seed(database);
+        QVERIFY2(seed.exec(QString::fromUtf8(R"(
+            INSERT INTO teachers
+                (id, teacher_kr, teacher_en, preferred_romanization,
+                 preferred_name, room_number, birthday, phone_number,
+                 wifi_name, wifi_password, internet_type, zoom_id,
+                 zoom_password, projection_type, notes)
+            VALUES
+                (7001, '홍길동D', 'Manual English', 'Manual Romanization',
+                 'Manual preferred', 'Old room', 'Old birthday',
+                 '010-0000-0000', 'Manual WiFi', 'Manual WiFi Password',
+                 'LAN', 'manual.zoom', 'manual.zoom.password',
+                 'Any', 'Manual notes')
+        )")), qPrintable(seed.lastError().text()));
         QVERIFY(seed.exec(R"(
             INSERT INTO native_english_teachers
                 (name, position, phone_number, birthday, nationality, email)
@@ -855,8 +869,8 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         const auto imported = repository.importTeachers(plan);
         QVERIFY2(imported.has_value(),
                  imported.has_value() ? "" : qPrintable(imported.error()));
-        QCOMPARE(imported->koreanTeachers.created, 2);
-        QCOMPARE(imported->koreanTeachers.updated, 0);
+        QCOMPARE(imported->koreanTeachers.created, 1);
+        QCOMPARE(imported->koreanTeachers.updated, 1);
         QCOMPARE(imported->koreanTeachers.unchanged, 0);
         QCOMPARE(imported->nativeEnglishTeachers.created, 0);
         QCOMPARE(imported->nativeEnglishTeachers.updated, 1);
@@ -867,19 +881,38 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
 
         QSqlQuery persisted(database);
         QVERIFY(persisted.exec(QStringLiteral(
-            "SELECT teacher_kr, room_number, birthday, phone_number "
+            "SELECT id, teacher_kr, room_number, birthday, phone_number, "
+            "teacher_en, preferred_romanization, preferred_name, wifi_name, "
+            "wifi_password, internet_type, zoom_id, zoom_password, "
+            "projection_type, notes "
             "FROM teachers ORDER BY room_number")));
         QVERIFY(persisted.next());
-        QCOMPARE(persisted.value(0).toString(), QStringLiteral("홍길동"));
-        QCOMPARE(persisted.value(1).toString(), QStringLiteral("413"));
-        QCOMPARE(persisted.value(2).toString(), QStringLiteral("02-29"));
-        QCOMPARE(persisted.value(3).toString(), QStringLiteral("010-1111-1111"));
+        QCOMPARE(persisted.value(0).toInt(), 7001);
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("홍길동"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("413"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("02-29"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("010-1111-1111"));
+        QCOMPARE(persisted.value(5).toString(), QStringLiteral("Manual English"));
+        QCOMPARE(persisted.value(6).toString(), QStringLiteral("Manual Romanization"));
+        QCOMPARE(persisted.value(7).toString(), QStringLiteral("Manual preferred"));
+        QCOMPARE(persisted.value(8).toString(), QStringLiteral("Manual WiFi"));
+        QCOMPARE(persisted.value(9).toString(), QStringLiteral("Manual WiFi Password"));
+        QCOMPARE(persisted.value(10).toString(), QStringLiteral("LAN"));
+        QCOMPARE(persisted.value(11).toString(), QStringLiteral("manual.zoom"));
+        QCOMPARE(persisted.value(12).toString(), QStringLiteral("manual.zoom.password"));
+        QCOMPARE(persisted.value(13).toString(), QStringLiteral("Any"));
+        QCOMPARE(persisted.value(14).toString(), QStringLiteral("Manual notes"));
         QVERIFY(persisted.next());
-        QCOMPARE(persisted.value(0).toString(), QStringLiteral("박민준"));
-        QCOMPARE(persisted.value(1).toString(), QStringLiteral("510"));
-        QCOMPARE(persisted.value(2).toString(), QStringLiteral("05-09"));
-        QCOMPARE(persisted.value(3).toString(), QStringLiteral("010-4444-4444"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("박민준"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("510"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("05-09"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("010-4444-4444"));
         QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM teachers WHERE teacher_kr='홍길동'")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 1);
 
         QVERIFY(persisted.exec(QStringLiteral(
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr IN ('김하늘', '이서연')")));
@@ -901,6 +934,37 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         QCOMPARE(persisted.value(1).toString(), QStringLiteral("M2"));
         QCOMPARE(persisted.value(2).toString(), QStringLiteral("010-5555-5555"));
         QCOMPARE(persisted.value(3).toString(), QStringLiteral("06-10"));
+
+        QVERIFY(persisted.exec(R"(
+            CREATE TABLE teacher_import_update_probe (updates INTEGER NOT NULL)
+        )"));
+        QVERIFY(persisted.exec(R"(
+            INSERT INTO teacher_import_update_probe (updates) VALUES (0)
+        )"));
+        QVERIFY(persisted.exec(R"(
+            CREATE TRIGGER teacher_import_update_probe_trigger
+            BEFORE UPDATE ON teachers
+            BEGIN
+                UPDATE teacher_import_update_probe SET updates=updates+1;
+            END
+        )"));
+
+        TeacherImportPlan unchangedPlan;
+        unchangedPlan.templateId = plan.templateId;
+        unchangedPlan.sourceDate = plan.sourceDate;
+        Teacher sparseKorean;
+        sparseKorean.teacherKr = plan.koreanTeachers.at(0).teacherKr;
+        unchangedPlan.koreanTeachers.append(sparseKorean);
+        const auto unchanged = repository.importTeachers(unchangedPlan);
+        QVERIFY2(unchanged.has_value(),
+                 unchanged.has_value() ? "" : qPrintable(unchanged.error()));
+        QCOMPARE(unchanged->koreanTeachers.created, 0);
+        QCOMPARE(unchanged->koreanTeachers.updated, 0);
+        QCOMPARE(unchanged->koreanTeachers.unchanged, 1);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT updates FROM teacher_import_update_probe")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 0);
 
         TeacherImportPlan rejected = plan;
         rejected.sourceDate = QDate(2026, 9, 2);

@@ -4,6 +4,7 @@
 #include "data/database/sql_query_utils.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/import_review_session.h"
+#include "next/application/korean_teacher_import_update.h"
 
 #include <QObject>
 #include <QSet>
@@ -11,6 +12,7 @@
 #include <QSqlQuery>
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace
@@ -416,15 +418,53 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         }
 
         const Teacher& existing = korean.at(matches.first());
-        const QString name = key;
-        const QString room = source.roomNumber.trimmed().isEmpty()
-            ? existing.roomNumber : source.roomNumber.trimmed();
-        const QString birthday = source.birthday.trimmed().isEmpty()
-            ? existing.birthday : source.birthday.trimmed();
-        const QString phone = source.phoneNumber.trimmed().isEmpty()
-            ? existing.phoneNumber : source.phoneNumber.trimmed();
-        if (name == existing.teacherKr && room == existing.roomNumber
-            && birthday == existing.birthday && phone == existing.phoneNumber)
+        using ClassMngr::Next::Application::KoreanTeacherImportFields;
+        using ClassMngr::Next::Application::KoreanTeacherImportProfile;
+        using ClassMngr::Next::Application::mergeMatchedKoreanTeacherImport;
+        using ClassMngr::Next::Domain::TeacherId;
+
+        const auto existingId = TeacherId::fromString(
+            std::to_string(existing.id));
+        if (!existingId)
+        {
+            return std::unexpected(QObject::tr(
+                "The matched Korean teacher has an invalid identifier."));
+        }
+        const std::u16string existingName =
+            existing.teacherKr.toStdU16String();
+        const std::u16string importedName =
+            source.teacherKr.toStdU16String();
+        const auto update = mergeMatchedKoreanTeacherImport(
+            KoreanTeacherImportProfile{
+                .teacherId = *existingId,
+                .key = ClassMngr::Next::Domain::KoreanTeacherKey::fromName(
+                    existingName),
+                .teacherKr = existingName,
+                .roomNumber = existing.roomNumber.toStdU16String(),
+                .birthday = existing.birthday.toStdU16String(),
+                .phoneNumber = existing.phoneNumber.toStdU16String()
+            },
+            KoreanTeacherImportFields{
+                .key = ClassMngr::Next::Domain::KoreanTeacherKey::fromName(
+                    importedName),
+                .teacherKr = importedName,
+                .roomNumber = source.roomNumber.trimmed().toStdU16String(),
+                .birthday = source.birthday.trimmed().toStdU16String(),
+                .phoneNumber = source.phoneNumber.trimmed().toStdU16String()
+            }
+            );
+        if (!update)
+        {
+            return std::unexpected(QObject::tr(
+                "The matched Korean teacher no longer matches the import key."));
+        }
+        if (update->profile.teacherId != *existingId
+            || update->profile.teacherId.value() != std::to_string(existing.id))
+        {
+            return std::unexpected(QObject::tr(
+                "The Korean teacher import update changed the stored identity."));
+        }
+        if (!update->changed)
         {
             ++summary.koreanTeachers.unchanged;
             continue;
@@ -436,10 +476,10 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
             SET teacher_kr=?, room_number=?, birthday=?, phone_number=?
             WHERE id=?
         )");
-        query.addBindValue(name);
-        query.addBindValue(room);
-        query.addBindValue(birthday);
-        query.addBindValue(phone);
+        query.addBindValue(QString::fromStdU16String(update->profile.teacherKr));
+        query.addBindValue(QString::fromStdU16String(update->profile.roomNumber));
+        query.addBindValue(QString::fromStdU16String(update->profile.birthday));
+        query.addBindValue(QString::fromStdU16String(update->profile.phoneNumber));
         query.addBindValue(existing.id);
         if (!query.exec())
         {

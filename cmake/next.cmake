@@ -112,6 +112,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/import_job_coordinator.h
     src/next/application/import_review_session.h
     src/next/application/import_job_state.h
+    src/next/application/korean_teacher_import_update.h
     src/next/application/report_job_coordinator.h
     src/next/application/report_job_state.h
     src/next/application/recent_workspace_history.h

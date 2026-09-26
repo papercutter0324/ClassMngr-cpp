@@ -345,6 +345,37 @@ add_test(
     COMMAND ClassMngrNextApplicationScheduleImportReviewDecisionsTests
 )
 
+# Exercise the Korean teacher sparse update policy without Qt or the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+    tests/next_application_korean_teacher_import_update_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+    COMMAND ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+)
+
 classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES
