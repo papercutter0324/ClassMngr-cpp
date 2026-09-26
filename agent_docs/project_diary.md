@@ -1073,3 +1073,8 @@ Prep's queried interval to the current and following calendar years at most.
 - Keep sparse profile merging in a Qt-free policy with the matched typed identity, while leaving Qt's Unicode-aware `QString::trimmed()` and database row binding at the repository edge. Limit the policy to fields the import owns; assert manually maintained profile fields survive.
 - Verify both changed and unchanged imports. A database update trigger proves the all-blank no-op skips the UPDATE statement, and a checked workbook path verifies identity, persisted merge values, duplicate avoidance, and source date.
 - Treat the checked workbook as regression evidence only unless an independently sourced legacy-output oracle is available.
+
+## Phase 2 common-input differential regression - 2026-09-26
+
+- A later checked-in workbook can still support a useful differential check when both the legacy revision and current code run the same bytes against an identical seed. Record the baseline and fixture provenance, compare semantic preview and persisted-state values, and avoid generated IDs or ordering unless they are stable.
+- Label this as common-input differential evidence when the fixture postdates the baseline. It strengthens one path but does not establish broad parity or prove the workbook represents historical production data.

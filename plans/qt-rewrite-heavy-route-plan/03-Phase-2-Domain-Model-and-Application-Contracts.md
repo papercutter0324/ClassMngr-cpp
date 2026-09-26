@@ -80,11 +80,22 @@
   validated 917 source owners and passed both focused Class Transfer CTests
   (2/2); no full suite. Gate 1 gains app-less interval-validation evidence but
   remains Partial; Gate 2 remains Partial. Source commit: `947edd93`.
-- Latest code slice: F80 extracts Korean Teacher Import's sparse-update rule
+- Earlier code slice: F80 extracts Korean Teacher Import's sparse-update rule
   into an app-less policy and verifies a checked-workbook update/create path.
   Fresh isolated verification validated 919 handwritten source owners and
   passed the policy, teacher import, and dialog CTests (3/3); no full suite.
   Gate 1 and Gate 2 remain Partial. Source commit: `15cd876d`.
+- Previous code slice: F81 extracts Native English Teacher Import sparse
+  updates into a Qt-free policy while retaining matching, normalization, and
+  native row identity at the adapter. Fresh verification validated 921 source
+  owners and passed the teacher import and policy CTests (2/2); no full suite.
+  Source commit: `118baceb`.
+- Latest code slice: F82 adds Schedule Import differential regression against
+  legacy commit `48fc5c5c`; all 14 captured semantic outputs matched for the
+  checked common input and seeded database. Fresh verification validated 921
+  source owners and passed `ClassMngrScheduleImportTests` (1/1). The fixture
+  postdates the baseline, so this is not historical-output parity. Source
+  commit: `6d8fb296`.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5837,3 +5848,99 @@ row identity, no duplicate, and source date. Verify the policy and
 `ClassMngrTeacherImportTests`; include `ClassMngrTeacherImportDialogTests` only
 if the dialog path changes. This is selected regression work, not historical
 output parity. Sub Prep remains capped at 2026-2027.
+
+## Verified F81 Native English Teacher Import sparse-update policy - commit 118baceb
+
+The Qt-free Application policy models the Native English teacher profile with
+`std::u16string` fields while retaining the native table's raw integer row
+identity in the repository. It merges each nonempty normalized incoming
+position, phone, birthday, nationality, and email value; preserves stored
+values for blanks; takes the name from the adapter-simplified value; and reports
+unchanged when all six strings match. The repository retains Qt
+simplified/trimmed matching and normalization and the SQL identity boundary.
+
+The checked `sectioned_review.xlsx` case updates the matching Alex row seeded
+with ID 8104, verifies adapter padding, no duplicate, source date 2026-09-01,
+blank-field preservation, and that a repeated import issues no UPDATE. An
+independent fresh Windows x64 Debug tree based on archive `e49aaa15` plus the
+F81 overlay used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0;
+it validated 921 handwritten source owners, completed 311 build actions, and
+passed `ClassMngrTeacherImportTests` and
+`ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests` (2/2).
+Tracked and new-file diff checks passed. The optional external workbook was
+unset; no full suite was run.
+
+F81 adds app-less policy evidence to Gate 1, which remains Partial. Gate 2 gains
+checked-fixture regression, not historical-output parity, and remains Partial.
+Workspace boundary and audited `src/next` dependency isolation remain
+Satisfied. Phase 2 remains In Progress with its exit gate Open. Sub Prep
+remains capped at 2026-2027.
+
+#### Cumulative exit-gate status after F81
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F79 adds validated Class Transfer intervals; F80 and F81 add Qt-free Korean and Native English Teacher Import sparse-update policies. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F78, F80, and F81 add checked-fixture regressions; F79 adds interval and adapter-diagnostic regression coverage. These slices add no historical-output oracle, and broader parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F81 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F81's policy remains Qt-free. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited v2 dependency
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+Next selected bounded slice: F82 adds a Schedule Import differential test
+against legacy commit `48fc5c5c`, running the checked `schedule_review.xlsx`
+input against legacy and current code with the same seeded SQLite database.
+Capture and compare parser metadata, teacher/class previews, apply counters,
+teachers, classes, and regular schedule values. The fixture was added at
+`f5fdcc4a`, after the baseline; treat this as common-input differential
+regression evidence, not a historically present workbook oracle. Verify with
+`ClassMngrScheduleImportTests`; no full suite. This is selected work, not
+implementation evidence. Sub Prep remains capped at 2026-2027.
+
+## Verified F82 Schedule Import common-input differential regression - commit 6d8fb296
+
+Only `tests/schedule_import_tests.cpp` changed. A temporary harness ran legacy
+commit `48fc5c5c` and current code at `118baceb` on the checked
+`schedule_review.xlsx` input with the same seeded SQLite database. All 14
+captured semantic outputs matched, covering parser metadata, teacher/class
+previews, apply counters `(1,0,2,1,0,2,0,false)`, persisted teachers/classes,
+and six regular-hour values. Literal assertions also cover source cells,
+teacher matching arrays and affected classes, the unmatched third candidate,
+zero ignored cells, no profile-name update, and persisted class-to-teacher
+names.
+
+The independent fresh archive build used CMake 3.30.5, Ninja 1.12.1,
+MSVC 19.51.36257, and Qt 6.12.0; configuration validated 921 handwritten
+source owners and planned 309 build actions. `ClassMngrScheduleImportTests`
+passed (1/1), and `git diff --check` passed. The executor's focused QtTest run
+reported 51 passed, 0 failed, and one optional external-workbook skip. No full
+suite was run. Because `schedule_review.xlsx` was added at `f5fdcc4a` after
+baseline `48fc5c5c`, F82 establishes common-input differential regression,
+not historical-output parity.
+
+F82 advances Gate 2 with differential evidence but it remains Partial; Gate 1
+remains Partial. Workspace boundary and audited `src/next` dependency
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
+Open. Sub Prep remains capped at 2026-2027.
+
+#### Cumulative exit-gate status after F82
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F79 adds validated Class Transfer intervals; F80 and F81 add Qt-free Teacher Import update policies. Broader Domain and Application behavior remains incomplete; F82 changes tests only. |
+| Baseline parity | Partial | F82 compares 14 semantic outputs for the same checked input and seed against legacy/current code. The fixture postdates the legacy baseline, so this is common-input differential regression, not historical-output parity. F78/F80/F81 checked-fixture regressions remain; broader parity is incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F82 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F82 changes tests only. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited v2 dependency
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+Next selected bounded slice: F83 compares Schedule Import's checked
+`schedule_overlap_conflict.xlsx` path against legacy commit `48fc5c5c` and
+current code with an identical seed. Compare preview values, overlap rejection,
+and the persisted-state snapshot before and after apply, using the legacy
+`conflictsRollBackBeforeWrites()` case and the current
+`previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites` case. The fixture was
+added at `3121d90c`, after the baseline, so this is common-input differential
+regression only, not historical-output parity. Verify with
+`ClassMngrScheduleImportTests`; no full suite. This is selected work, not
+implementation evidence. Sub Prep remains capped at 2026-2027.

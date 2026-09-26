@@ -2756,3 +2756,22 @@ separate on a host with Xvfb and loopback access.
 - Extract the existing Native English Teacher matched-row merge into a Qt-free Application policy. Preserve adapter-owned Qt name matching/simplification and field trimming; keep the native table's integer row ID in the repository.
 - Test sparse nonblank updates, blank-field preservation, name simplification, and unchanged detection app-less. Route the matching Alex row in `sectioned_review.xlsx` through the policy and assert its persisted identity and fields with no duplicate. Focused targets: the app-less policy CTest and `ClassMngrTeacherImportTests`; include the dialog target if its plan path changes.
 - This is checked-fixture regression evidence, not historical-output parity. Gate 1 and Gate 2 remain Partial. Sub Prep remains capped at 2026-2027.
+
+### Phase 2 Native English Teacher Import sparse update - F81 verified
+
+- Source/test commit `118baceb` adds a Qt-free Native English Teacher update policy. It carries the separate native profile values as UTF-16 strings, merges the five optional fields only when incoming values normalize to nonempty, sets the imported name from the adapter-normalized value, and detects unchanged results. Qt trimming/simplification and native-table integer row identity remain in the repository adapter.
+- The checked `sectioned_review.xlsx` case imports Alex with padded name/position/birthday values and verifies normalization, retained row ID `8104`, preserved blank phone/nationality/email, no duplicate, source date `2026-09-01`, and no database update on repeated import.
+- Independent fresh Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0. Configure validated 921 handwritten owners; the build completed 311 actions. `ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests` and `ClassMngrTeacherImportTests` passed (2/2); `git diff --check` passed. The optional external workbook was unset; no full suite ran.
+- F81 adds app-less Gate 1 evidence; Gate 1 and Gate 2 remain Partial. Fixture coverage is not historical-output parity. Workspace boundary and audited `src/next` isolation remain Satisfied. Sub Prep remains capped at 2026-2027.
+
+### Phase 2 Schedule Import legacy differential regression - F82 verified
+
+- Source/test commit `6d8fb296` updates only `tests/schedule_import_tests.cpp`. A fixture-driven harness ran legacy commit `48fc5c5c` and current `118baceb` on the same seeded database and `schedule_review.xlsx`; all 14 semantic records matched: parser metadata, teacher/class preview data, apply counters `(1,0,2,1,0,2,0,false)`, and normalized persisted teacher, class, and six regular-hour rows.
+- The current regression now pins the missing parser/source-cell values, teacher match IDs and affected-class counts, third-candidate no-match result, apply counters, and persisted class-to-teacher names. The fixture was added later in `f5fdcc4a`, so this is common-input differential evidence, not a workbook historically present at the baseline.
+- The independent Tester built the repository's normal `ClassMngrScheduleImportTests` target from a fresh archive at `118baceb` plus the test patch. CMake 3.30.5, Ninja 1.12.1, MSVC 19.51.36257, Qt 6.12.0; 921 handwritten source owners; 309 build actions; CTest passed 1/1. `git diff --check` passed. The executor's focused QtTest run reported 51 passed, 0 failed, and one optional external-workbook skip. No full suite ran.
+- F82 advances Gate 2 differential evidence but leaves it Partial; Gate 1 remains Partial. Workspace boundary and audited `src/next` isolation remain Satisfied. Phase 2 exit remains open. Sub Prep remains capped at 2026-2027.
+
+### Phase 2 Schedule Import overlap-conflict differential - F83 selected
+
+- Run `schedule_overlap_conflict.xlsx` through the legacy `48fc5c5c` and current preview/apply paths using the same seeded database. Compare preview classification, overlap rejection, and the persisted-state snapshot. Reference the legacy `conflictsRollBackBeforeWrites()` test and current `previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites` test; focus on `ClassMngrScheduleImportTests`.
+- The conflict workbook was added after the baseline (`3121d90c`), so treat the result as common-input differential regression evidence. This is selected work, not implementation or verification evidence. Keep Gate 1 and Gate 2 Partial until broader exit criteria pass; Sub Prep stays capped at 2026-2027.
