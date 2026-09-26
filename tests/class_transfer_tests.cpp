@@ -775,6 +775,21 @@ void ClassTransferTests::
              QStringLiteral("Tuesday"));
     QCOMPARE(service.loadClassInfo(destinationClass)->classTimes.first().startTime,
              QStringLiteral("3:30 PM"));
+
+    package.classes.first().info.classTimes.first().day =
+        QStringLiteral("Funday");
+    const auto invalidScheduleResult = service.importClasses(
+        package,
+        createAllPlan(package)
+        );
+    QVERIFY(!invalidScheduleResult.has_value());
+    QCOMPARE(
+        invalidScheduleResult.error(),
+        QStringLiteral(
+            "E4 Theseus contains an invalid regular schedule entry: "
+            "Funday 4:00 PM\u20134:00 PM"
+            )
+        );
 }
 
 void ClassTransferTests::importedClassesConflictAtomically()

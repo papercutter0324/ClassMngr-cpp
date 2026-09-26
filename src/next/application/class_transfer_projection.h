@@ -66,19 +66,93 @@ enum class TransferTimeCategory
     Intensive
 };
 
+inline constexpr std::int64_t kClassTransferMinutesPerDay = 24 * 60;
+inline constexpr std::int64_t kClassTransferMinutesPerWeek =
+    7 * kClassTransferMinutesPerDay;
+
 // The repository adapter owns legacy weekday and time parsing. Once parsed,
 // schedule intervals use absolute minutes from Monday at 00:00; an overnight
 // interval may end after the final minute of the week.
-struct ClassTransferScheduleCandidate final
+class ClassTransferScheduleCandidate final
 {
-    TransferTimeCategory category = TransferTimeCategory::Regular;
-    std::int64_t startMinuteOfWeek = 0;
-    std::int64_t endMinuteOfWeek = 0;
+public:
+    [[nodiscard]] static Domain::Result<ClassTransferScheduleCandidate> create(
+        const TransferTimeCategory category,
+        const std::int64_t weekdayIndex,
+        const std::int64_t startMinuteOfDay,
+        const std::int64_t endMinuteOfDay
+        )
+    {
+        if ((category != TransferTimeCategory::Regular
+                && category != TransferTimeCategory::Intensive)
+            || weekdayIndex < 0 || weekdayIndex >= 7
+            || startMinuteOfDay < 0
+            || startMinuteOfDay >= kClassTransferMinutesPerDay
+            || endMinuteOfDay < 0
+            || endMinuteOfDay >= kClassTransferMinutesPerDay)
+        {
+            return Domain::Result<ClassTransferScheduleCandidate>::failure(
+                Domain::OperationError{
+                    .code = Domain::ErrorCode::InvalidInput,
+                    .message = "The class transfer schedule interval is invalid.",
+                    .recoverable = false
+                }
+                );
+        }
+
+        const std::int64_t startMinuteOfWeek =
+            weekdayIndex * kClassTransferMinutesPerDay + startMinuteOfDay;
+        std::int64_t endMinuteOfWeek =
+            weekdayIndex * kClassTransferMinutesPerDay + endMinuteOfDay;
+        if (endMinuteOfWeek <= startMinuteOfWeek)
+        {
+            endMinuteOfWeek += kClassTransferMinutesPerDay;
+        }
+
+        return Domain::Result<ClassTransferScheduleCandidate>::success(
+            ClassTransferScheduleCandidate(
+                category,
+                startMinuteOfWeek,
+                endMinuteOfWeek
+                )
+            );
+    }
+
+    [[nodiscard]] TransferTimeCategory category() const noexcept
+    {
+        return m_category;
+    }
+
+    [[nodiscard]] std::int64_t startMinuteOfWeek() const noexcept
+    {
+        return m_startMinuteOfWeek;
+    }
+
+    [[nodiscard]] std::int64_t endMinuteOfWeek() const noexcept
+    {
+        return m_endMinuteOfWeek;
+    }
 
     friend bool operator==(
         const ClassTransferScheduleCandidate&,
         const ClassTransferScheduleCandidate&
         ) = default;
+
+private:
+    ClassTransferScheduleCandidate(
+        const TransferTimeCategory category,
+        const std::int64_t startMinuteOfWeek,
+        const std::int64_t endMinuteOfWeek
+        ) noexcept
+        : m_category(category),
+          m_startMinuteOfWeek(startMinuteOfWeek),
+          m_endMinuteOfWeek(endMinuteOfWeek)
+    {
+    }
+
+    TransferTimeCategory m_category;
+    std::int64_t m_startMinuteOfWeek;
+    std::int64_t m_endMinuteOfWeek;
 };
 
 struct ClassTransferScheduleConflict final
@@ -93,10 +167,6 @@ struct ClassTransferScheduleConflict final
         ) = default;
 };
 
-inline constexpr std::int64_t kClassTransferMinutesPerDay = 24 * 60;
-inline constexpr std::int64_t kClassTransferMinutesPerWeek =
-    7 * kClassTransferMinutesPerDay;
-
 [[nodiscard]] inline bool classTransferScheduleIntervalsOverlap(
     const ClassTransferScheduleCandidate& first,
     const ClassTransferScheduleCandidate& second
@@ -106,10 +176,10 @@ inline constexpr std::int64_t kClassTransferMinutesPerWeek =
     {
         const std::int64_t offset =
             weekOffset * kClassTransferMinutesPerWeek;
-        if (first.startMinuteOfWeek
-                < second.endMinuteOfWeek + offset
-            && second.startMinuteOfWeek + offset
-                < first.endMinuteOfWeek)
+        if (first.startMinuteOfWeek()
+                < second.endMinuteOfWeek() + offset
+            && second.startMinuteOfWeek() + offset
+                < first.endMinuteOfWeek())
         {
             return true;
         }
@@ -137,7 +207,7 @@ findClassTransferScheduleConflicts(
     {
         for (std::size_t first = 0; first < incoming.size(); ++first)
         {
-            if (incoming[first].category != category)
+            if (incoming[first].category() != category)
             {
                 continue;
             }
@@ -146,7 +216,7 @@ findClassTransferScheduleConflicts(
                  second < incoming.size();
                  ++second)
             {
-                if (incoming[second].category == category
+                if (incoming[second].category() == category
                     && classTransferScheduleIntervalsOverlap(
                         incoming[first], incoming[second]))
                 {
@@ -156,7 +226,7 @@ findClassTransferScheduleConflicts(
 
             for (std::size_t second = 0; second < existing.size(); ++second)
             {
-                if (existing[second].category == category
+                if (existing[second].category() == category
                     && classTransferScheduleIntervalsOverlap(
                         incoming[first], existing[second]))
                 {

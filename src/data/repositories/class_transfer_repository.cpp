@@ -27,12 +27,6 @@
 
 namespace
 {
-struct TimeInterval
-{
-    int start = -1;
-    int end = -1;
-};
-
 struct ScheduledTime
 {
     QString classLabel;
@@ -45,8 +39,6 @@ struct ValidatedPlan
     QHash<int, ClassImportResolution> classes;
     QHash<QString, TeacherImportResolution> teachers;
 };
-
-constexpr int MinutesPerDay = 24 * 60;
 
 QString normalized(const QString& value)
 {
@@ -529,9 +521,10 @@ int timeToMinutes(
     return hour * 60 + minute;
 }
 
-bool intervalForTime(
+std::optional<ClassMngr::Next::Application::ClassTransferScheduleCandidate>
+candidateForTime(
     const ClassTime& time,
-    TimeInterval* interval
+    const ClassMngr::Next::Application::TransferTimeCategory category
     )
 {
     const int day = dayIndex(time.day);
@@ -540,19 +533,22 @@ bool intervalForTime(
 
     if (day < 0 || start < 0 || end < 0)
     {
-        return false;
+        return std::nullopt;
     }
 
-    interval->start = day * MinutesPerDay + start;
-    interval->end = day * MinutesPerDay + end;
-
-    if (interval->end <= interval->start)
+    const auto candidate =
+        ClassMngr::Next::Application::ClassTransferScheduleCandidate::create(
+            category,
+            day,
+            start,
+            end
+            );
+    if (!candidate)
     {
-        interval->end += static_cast<int>(
-            ClassMngr::Next::Application::kClassTransferMinutesPerDay);
+        return std::nullopt;
     }
 
-    return true;
+    return candidate.value();
 }
 
 QString timeDescription(
@@ -578,9 +574,8 @@ Status appendAndValidateTimes(
 {
     for (const ClassTime& time : times)
     {
-        TimeInterval interval;
-
-        if (!intervalForTime(time, &interval))
+        const auto candidate = candidateForTime(time, category);
+        if (!candidate)
         {
             return std::unexpected(
                 QObject::tr("%1 contains an invalid %2 schedule entry: %3 %4–%5")
@@ -597,11 +592,7 @@ Status appendAndValidateTimes(
         destination->append({
             classLabel,
             time,
-            {
-                category,
-                interval.start,
-                interval.end
-            }
+            *candidate
         });
     }
 
@@ -647,11 +638,11 @@ QStringList findScheduleConflicts(
             ? imported.at(static_cast<qsizetype>(conflict.otherIndex))
             : existing.at(static_cast<qsizetype>(conflict.otherIndex));
         const QString scheduleLabel =
-            first.candidate.category == TransferTimeCategory::Regular
+            first.candidate.category() == TransferTimeCategory::Regular
             ? QObject::tr("Regular schedule")
             : QObject::tr("Intensive schedule");
         QStringList& categoryConflicts =
-            first.candidate.category == TransferTimeCategory::Regular
+            first.candidate.category() == TransferTimeCategory::Regular
             ? regularConflicts
             : intensiveConflicts;
         const QString message = QObject::tr("%1: %2 conflicts with %3")
