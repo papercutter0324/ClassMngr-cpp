@@ -8,8 +8,12 @@
 #include "next/application/import_review_session.h"
 
 #include <QDir>
+#include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -32,6 +36,7 @@ private slots:
     void invalidVersionIsRecognizedButRejected();
     void readsNamedMultiSheetWorkbookMetadata();
     void validatorReportsRecognitionStatusesAndMetadata();
+    void appliesGeneratedWorkbookWithExplicitReviewDecision();
     void registryAcceptsAdditionalTemplateAdapters();
     void unreadableDataFailsValidation();
     void reviewContractAcceptsAllSelectedAndNone();
@@ -511,6 +516,280 @@ void TeacherImportTests::validatorReportsRecognitionStatusesAndMetadata()
     const auto alternate = validateTeacherImportData(testWorkbookData(), mockRegistry);
     QCOMPARE(alternate.status, TeacherImportFileStatus::Valid);
     QCOMPARE(alternate.previewCounts.nativeEnglishTeachers, 1);
+}
+
+void TeacherImportTests::appliesGeneratedWorkbookWithExplicitReviewDecision()
+{
+    const QByteArray workbook = testWorkbookData();
+    const QByteArray workbookSha256 =
+        QCryptographicHash::hash(workbook, QCryptographicHash::Sha256).toHex();
+    QCOMPARE(workbook.size(), 3422);
+    QCOMPARE(workbookSha256, QByteArrayLiteral(
+        "9cdccb43d7fe5e5e1abb83630ede8b18e6dd2c4824dbb288dc81d60371496daa"));
+    qInfo().noquote() << "F92_INPUT_SIZE=" << workbook.size();
+    qInfo().noquote() << "F92_INPUT_SHA256=" << workbookSha256;
+
+    const TeacherImportTemplateRegistry registry =
+        createDefaultTeacherImportTemplateRegistry();
+    const TeacherImportFileValidation validation =
+        validateTeacherImportData(workbook, registry);
+    QCOMPARE(validation.status, TeacherImportFileStatus::Valid);
+    QCOMPARE(validation.templateId, QStringLiteral("sectioned-contact-list-v1"));
+    QCOMPARE(validation.sourceDate, QDate(2026, 7, 9));
+    QCOMPARE(validation.discoveredSections, QStringList{QStringLiteral("M1")});
+    QCOMPARE(validation.preview.koreanGroups.size(), 1);
+    QCOMPARE(validation.preview.koreanGroups.first().level, QStringLiteral("M1"));
+    QCOMPARE(validation.preview.koreanGroups.first().candidates.size(), 1);
+
+    const KoreanTeacherImportCandidate candidate =
+        validation.preview.koreanGroups.first().candidates.first();
+    QCOMPARE(candidate.teacher.teacherKr, QStringLiteral("홍길동"));
+    QCOMPARE(candidate.teacher.roomNumber, QStringLiteral("413"));
+    QCOMPARE(candidate.teacher.birthday, QStringLiteral("02-29"));
+    QCOMPARE(candidate.teacher.phoneNumber, QStringLiteral("010-0000-0000"));
+    QVERIFY(candidate.selectedByDefault);
+
+    TeacherImportPlan plan;
+    plan.templateId = validation.templateId;
+    plan.sourceDate = validation.sourceDate;
+    plan.nativeEnglishTeachers = validation.preview.nativeEnglishTeachers;
+    plan.gsTeamMembers = validation.preview.gsTeamMembers;
+    plan.review.emplace();
+    plan.review->candidateGroups = validation.preview.koreanGroups;
+    plan.review->groupSelections.append({
+        QStringLiteral("M1"), TeacherImportSelectionMode::Selected, {0}});
+    plan.koreanTeachers.append(candidate.teacher);
+
+    const QString connectionName =
+        QStringLiteral("teacher-import-workbook-apply-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        const auto seedKoreanTeacher = [&database](
+                                               const int id,
+                                               const QStringList& fields) {
+            QSqlQuery seed(database);
+            seed.prepare(QStringLiteral(
+                "INSERT INTO teachers "
+                "(id, teacher_kr, teacher_en, preferred_romanization, "
+                "preferred_name, room_number, birthday, phone_number, "
+                "wifi_name, wifi_password, internet_type, zoom_id, "
+                "zoom_password, projection_type, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+            seed.addBindValue(id);
+            for (const QString& field : fields)
+            {
+                seed.addBindValue(field);
+            }
+            const bool inserted = seed.exec();
+            if (!inserted)
+            {
+                qWarning().noquote() << "F92 seed error:" << seed.lastError().text();
+            }
+            return inserted;
+        };
+        QVERIFY(seedKoreanTeacher(7201, {
+            QStringLiteral("홍길동D"), QStringLiteral("Manual English"),
+            QStringLiteral("Manual Romanization"), QStringLiteral("Manual preferred"),
+            QStringLiteral("Old room"), QStringLiteral("01-01"),
+            QStringLiteral("010-1111-1111"), QStringLiteral("Manual WiFi"),
+            QStringLiteral("Manual WiFi Password"), QStringLiteral("LAN"),
+            QStringLiteral("manual.zoom"), QStringLiteral("manual.zoom.password"),
+            QStringLiteral("Any"), QStringLiteral("Manual notes")}));
+        QVERIFY(seedKoreanTeacher(7202, {
+            QStringLiteral("박민준"), QStringLiteral("Other English"),
+            QStringLiteral("Other Romanization"), QStringLiteral("Other preferred"),
+            QStringLiteral("510"), QStringLiteral("05-09"),
+            QStringLiteral("010-5555-5555"), QStringLiteral("Other WiFi"),
+            QStringLiteral("Other WiFi Password"), QStringLiteral("WiFi"),
+            QStringLiteral("other.zoom"), QStringLiteral("other.zoom.password"),
+            QStringLiteral("Any"), QStringLiteral("Other notes")}));
+
+        QSqlQuery seed(database);
+        seed.prepare(QStringLiteral(
+            "INSERT INTO native_english_teachers "
+            "(id, name, position, phone_number, birthday, nationality, email) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)"));
+        seed.addBindValue(8104);
+        seed.addBindValue(QStringLiteral("Alex"));
+        seed.addBindValue(QStringLiteral("NET"));
+        seed.addBindValue(QStringLiteral("010-9999-8888"));
+        seed.addBindValue(QStringLiteral("02-01"));
+        seed.addBindValue(QStringLiteral("Canadian"));
+        seed.addBindValue(QStringLiteral("alex@example.com"));
+        QVERIFY(seed.exec());
+        seed.prepare(QStringLiteral(
+            "INSERT INTO gs_team "
+            "(id, name, korean_name, position, phone_number, birthday) "
+            "VALUES (?, ?, ?, ?, ?, ?)"));
+        seed.addBindValue(8201);
+        seed.addBindValue(QStringLiteral("Taylor"));
+        seed.addBindValue(QStringLiteral("김하늘"));
+        seed.addBindValue(QStringLiteral("Branch Manager"));
+        seed.addBindValue(QStringLiteral("010-6666-5555"));
+        seed.addBindValue(QStringLiteral("06-10"));
+        QVERIFY(seed.exec());
+
+        seed.prepare(QStringLiteral(
+            "INSERT INTO app_settings (key, value) VALUES (?, ?)"));
+        seed.addBindValue(QString::fromLatin1(
+            TeacherImportRepository::LatestSourceDateSetting));
+        seed.addBindValue(QStringLiteral("2026-07-01"));
+        QVERIFY(seed.exec());
+        seed.prepare(QStringLiteral(
+            "INSERT INTO app_settings (key, value) VALUES (?, ?)"));
+        seed.addBindValue(QStringLiteral("unrelated/theme"));
+        seed.addBindValue(QStringLiteral("dark"));
+        QVERIFY(seed.exec());
+
+        TeacherImportRepository repository(database);
+        const auto imported = repository.importTeachers(plan);
+        QVERIFY2(imported.has_value(),
+                 imported.has_value() ? "" : qPrintable(imported.error()));
+        QCOMPARE(imported->koreanTeachers.created, 0);
+        QCOMPARE(imported->koreanTeachers.updated, 1);
+        QCOMPARE(imported->koreanTeachers.unchanged, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.created, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.updated, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.unchanged, 0);
+        QCOMPARE(imported->gsTeamMembers.created, 0);
+        QCOMPARE(imported->gsTeamMembers.updated, 0);
+        QCOMPARE(imported->gsTeamMembers.unchanged, 0);
+
+        QList<QStringList> persistedTeachers;
+        QSqlQuery persisted(database);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT teacher_kr, teacher_en, preferred_romanization, "
+            "preferred_name, room_number, birthday, phone_number, wifi_name, "
+            "wifi_password, internet_type, zoom_id, zoom_password, "
+            "projection_type, notes FROM teachers "
+            "ORDER BY teacher_kr COLLATE BINARY")));
+        while (persisted.next())
+        {
+            QStringList fields;
+            for (int column = 0; column < 14; ++column)
+            {
+                fields.append(persisted.value(column).toString());
+            }
+            persistedTeachers.append(fields);
+        }
+        QCOMPARE(persistedTeachers.size(), 2);
+        QCOMPARE(persistedTeachers.at(0), QStringList({
+            QStringLiteral("박민준"), QStringLiteral("Other English"),
+            QStringLiteral("Other Romanization"), QStringLiteral("Other preferred"),
+            QStringLiteral("510"), QStringLiteral("05-09"),
+            QStringLiteral("010-5555-5555"), QStringLiteral("Other WiFi"),
+            QStringLiteral("Other WiFi Password"), QStringLiteral("WiFi"),
+            QStringLiteral("other.zoom"), QStringLiteral("other.zoom.password"),
+            QStringLiteral("Any"), QStringLiteral("Other notes")}));
+        QCOMPARE(persistedTeachers.at(1), QStringList({
+            QStringLiteral("홍길동"), QStringLiteral("Manual English"),
+            QStringLiteral("Manual Romanization"), QStringLiteral("Manual preferred"),
+            QStringLiteral("413"), QStringLiteral("02-29"),
+            QStringLiteral("010-0000-0000"), QStringLiteral("Manual WiFi"),
+            QStringLiteral("Manual WiFi Password"), QStringLiteral("LAN"),
+            QStringLiteral("manual.zoom"), QStringLiteral("manual.zoom.password"),
+            QStringLiteral("Any"), QStringLiteral("Manual notes")}));
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT name, position, phone_number, birthday, nationality, email "
+            "FROM native_english_teachers ORDER BY name COLLATE BINARY")));
+        QVERIFY(persisted.next());
+        const QStringList persistedNative{
+            persisted.value(0).toString(), persisted.value(1).toString(),
+            persisted.value(2).toString(), persisted.value(3).toString(),
+            persisted.value(4).toString(), persisted.value(5).toString()};
+        QCOMPARE(persistedNative, QStringList({
+            QStringLiteral("Alex"), QStringLiteral("NET"),
+            QStringLiteral("010-9999-8888"), QStringLiteral("02-01"),
+            QStringLiteral("Canadian"), QStringLiteral("alex@example.com")}));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT name, korean_name, position, phone_number, birthday "
+            "FROM gs_team ORDER BY name COLLATE BINARY")));
+        QVERIFY(persisted.next());
+        const QStringList persistedGs{
+            persisted.value(0).toString(), persisted.value(1).toString(),
+            persisted.value(2).toString(), persisted.value(3).toString(),
+            persisted.value(4).toString()};
+        QCOMPARE(persistedGs, QStringList({
+            QStringLiteral("Taylor"), QStringLiteral("김하늘"),
+            QStringLiteral("Branch Manager"), QStringLiteral("010-6666-5555"),
+            QStringLiteral("06-10")}));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.prepare(QStringLiteral(
+            "SELECT value FROM app_settings WHERE key=?")));
+        persisted.bindValue(0, QString::fromLatin1(
+            TeacherImportRepository::LatestSourceDateSetting));
+        QVERIFY(persisted.exec());
+        QVERIFY(persisted.next());
+        const QString latestSourceDate = persisted.value(0).toString();
+        QCOMPARE(latestSourceDate, QStringLiteral("2026-07-09"));
+        QVERIFY(!persisted.next());
+        QVERIFY(persisted.prepare(QStringLiteral(
+            "SELECT value FROM app_settings WHERE key=?")));
+        persisted.addBindValue(QStringLiteral("unrelated/theme"));
+        QVERIFY(persisted.exec());
+        QVERIFY(persisted.next());
+        const QString unrelatedSetting = persisted.value(0).toString();
+        QCOMPARE(unrelatedSetting, QStringLiteral("dark"));
+        QVERIFY(!persisted.next());
+
+        QJsonArray candidateTranscript;
+        candidateTranscript.append(candidate.teacher.teacherKr);
+        candidateTranscript.append(candidate.teacher.roomNumber);
+        candidateTranscript.append(candidate.teacher.birthday);
+        candidateTranscript.append(candidate.teacher.phoneNumber);
+        QJsonArray teacherTranscript;
+        for (const QStringList& fields : persistedTeachers)
+        {
+            QJsonArray row;
+            for (const QString& field : fields)
+            {
+                row.append(field);
+            }
+            teacherTranscript.append(row);
+        }
+        QJsonObject transcript{
+            {QStringLiteral("inputSha256"), QString::fromLatin1(workbookSha256)},
+            {QStringLiteral("inputSize"), workbook.size()},
+            {QStringLiteral("templateId"), validation.templateId},
+            {QStringLiteral("sourceDate"), validation.sourceDate.toString(Qt::ISODate)},
+            {QStringLiteral("decision"), QStringLiteral("M1:selected:0")},
+            {QStringLiteral("candidate"), candidateTranscript},
+            {QStringLiteral("counts"), QJsonObject{
+                {QStringLiteral("korean"), QJsonArray{0, 1, 0}},
+                {QStringLiteral("nativeEnglish"), QJsonArray{0, 0, 0}},
+                {QStringLiteral("gsTeam"), QJsonArray{0, 0, 0}}}},
+            {QStringLiteral("teachers"), teacherTranscript},
+            {QStringLiteral("nativeEnglishTeachers"), QJsonArray{
+                QStringLiteral("Alex"), QStringLiteral("NET"),
+                QStringLiteral("010-9999-8888"), QStringLiteral("02-01"),
+                QStringLiteral("Canadian"), QStringLiteral("alex@example.com")}},
+            {QStringLiteral("gsTeamMembers"), QJsonArray{
+                QStringLiteral("Taylor"), QStringLiteral("김하늘"),
+                QStringLiteral("Branch Manager"), QStringLiteral("010-6666-5555"),
+                QStringLiteral("06-10")}},
+            {QStringLiteral("latestSourceDate"), latestSourceDate},
+            {QStringLiteral("unrelatedSetting"), unrelatedSetting}};
+        const QByteArray semanticTranscript =
+            QJsonDocument(transcript).toJson(QJsonDocument::Compact);
+        const QByteArray semanticSha256 = QCryptographicHash::hash(
+            semanticTranscript, QCryptographicHash::Sha256).toHex();
+        qInfo().noquote() << "F92_SEMANTIC_TRANSCRIPT="
+                          << QString::fromUtf8(semanticTranscript);
+        qInfo().noquote() << "F92_SEMANTIC_SHA256=" << semanticSha256;
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 void TeacherImportTests::registryAcceptsAdditionalTemplateAdapters()
