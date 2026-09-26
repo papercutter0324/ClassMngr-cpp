@@ -1067,3 +1067,9 @@ Prep's queried interval to the current and following calendar years at most.
 
 - Keep interval construction behind a Qt-free factory that validates category, weekday, and minute-of-day bounds. The factory owns equal-endpoint rollover and Sunday week overflow; the repository remains responsible for parsing and legacy diagnostics.
 - A checked-fixture regression test is useful adapter evidence, but does not establish historical baseline parity without an independent legacy-output oracle.
+
+## Phase 2 Korean Teacher Import sparse updates - 2026-09-26
+
+- Keep sparse profile merging in a Qt-free policy with the matched typed identity, while leaving Qt's Unicode-aware `QString::trimmed()` and database row binding at the repository edge. Limit the policy to fields the import owns; assert manually maintained profile fields survive.
+- Verify both changed and unchanged imports. A database update trigger proves the all-blank no-op skips the UPDATE statement, and a checked workbook path verifies identity, persisted merge values, duplicate avoidance, and source date.
+- Treat the checked workbook as regression evidence only unless an independently sourced legacy-output oracle is available.
