@@ -5898,3 +5898,70 @@ and report baseline/current outcome parity. This is one bounded Gate 2 scenario,
 which remains Partial; Gate 1 remains Partial. Re-audit, then select F92. This
 is selected work, not implementation or test evidence. Sub Prep remains capped
 at 2026-2027.
+
+## Verified F91 Teacher Import generated-plan baseline parity - commit `e814b4fc`
+
+Commit `e814b4fc84d5c7e455a07688e096b077e3ed0f11` (`Phase2 - Pin Teacher
+Import generated baseline parity (F91)`) changes only
+`tests/teacher_import_tests.cpp`. The existing
+`importsIntoSeparateTablesAndPreservesManualFields` scenario labels its
+hand-built `TeacherImportPlan` as source-generated synthetic evidence. It pins
+apply counts (Korean 1/0/0, Native English 0/1/0, GS Team 1/0/0), every
+non-ID field of each single persisted table row, Alex's manual phone, birthday,
+nationality, and email plus the updated Team Leader position, and that source
+date `2026-01-01` does not move the latest date backward from `2026-07-09`.
+Existing duplicate, no-write, ambiguity, and rollback cases remain.
+
+Executor focused `ClassMngrTeacherImportTests` CTest passed 1/1. An independent
+Tester built from current docs HEAD `17bbc8d4` plus only the final test file
+(blob `786770ca816b40f00c7626461ed58ec0a3e66c22`, SHA-256
+`8BB8206A59D27E09E1C82BE918445670B32220F2CB4FD8011041646CD2BA0720`); the
+executable reported 20 passed, 0 failed, 1 skipped (the optional sample needs
+`CLASSMNGR_TEACHER_IMPORT_SAMPLE`), and CTest passed 1/1. Its narrow common-input
+harness passed on archived baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`
+and the current F90 repository, with equivalent synthetic plan and SQLite
+seed; exact JSON semantic outputs matched at SHA-256
+`755A2B7DF52B3DD8F111ADF2EC0D0127415689B2B08A68D008505079D887B2B6`.
+Current and legacy repository blobs were `7f2604023d1c7b8f8c3132acd1fcfe8e6ed2759a`
+and `058aa4d0b85fb05d5cc04a2c6d0f72d99ba9cc71`. The full current test file
+does not compile on baseline because `next/application/import_review_session.h`
+is absent there, so the narrow harness used baseline production sources and
+schema without overlaying current production code. Protected manifest blob
+`bf3afbe30c77e30be83df98434eda3ee466084b0` was neither overlaid nor consumed.
+Windows x64 used MSVC 19.51 and Qt 6.12.0. `git diff --check` passed; no full
+suite was run. This is source-generated synthetic plan/repository evidence,
+not workbook or historical production-workbook parity.
+
+### Cumulative exit-gate status after F91
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F91 changes tests only and adds no app-less contract behavior; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F91 advances parity by one baseline-present, source-generated synthetic plan/repository scenario. It does not cover workbook decode/preview or a historical production workbook; broader coverage remains incomplete. |
+| Workspace boundary | Satisfied | The formal documented WorkspaceGateway/WorkspaceCoordinator acceptance remains satisfied; F91 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Independent audits find audited `src/next` sources free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F91 changes tests only. |
+
+Gate 1 and Gate 2 remain Partial; the workspace boundary and audited
+`src/next` isolation remain Satisfied. Phase 2 remains In Progress with its exit
+gate Open. Broader calendar UI/contracts, generic settings persistence,
+remaining feature-service migrations, document-service migration,
+invalid-UTF-8 coverage, and live MainWindow projection-failure/retranslation
+integration remain open. Sub Prep remains capped at 2026-2027.
+
+Next selected bounded slice (2026-09-27): F92 extends Teacher Import parity
+upstream through baseline-present source-generated helper `testWorkbookData()`.
+Run identical generated workbook bytes through validation/parser, explicit M1
+review selection, plan creation, and `TeacherImportRepository::importTeachers`
+on baseline `48fc5c5c` and current sources using equivalent deterministic
+SQLite seeds. Pin the bytes/hash if stable, template/date/parsed Korean M1
+candidate, apply counts, normalized persisted teacher row, latest source date,
+and unrelated seeded state; exclude generated IDs. The helper creates
+source-generated synthetic XLSX bytes with one Korean M1 candidate and source
+date `2026-07-09`; this is synthetic workbook evidence, not historical
+production-workbook parity. The checked-in `sectioned_review.xlsx` postdates
+baseline. The current full test source needs a narrow legacy harness because
+`next/application/import_review_session.h` is absent at baseline. Focus
+`ClassMngrTeacherImportTests`; no full suite. Gate 2 advances but remains
+Partial, and Gate 1 remains Partial. Calendar start-of-term classification is
+a later Gate 1 candidate, not selected here. This is selected work, not
+implementation or test evidence. Sub Prep remains capped at 2026-2027.

@@ -163,47 +163,32 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Verified F91 Teacher Import generated-plan baseline parity - commit `e814b4fc`
+## Verified F92 Teacher Import generated-workbook baseline parity - commit `3f6ef73d`
 
-Commit `e814b4fc84d5c7e455a07688e096b077e3ed0f11` (`Phase2 - Pin Teacher
-Import generated baseline parity (F91)`) changes only
-`tests/teacher_import_tests.cpp`. The existing
-`importsIntoSeparateTablesAndPreservesManualFields` scenario labels its
-hand-built `TeacherImportPlan` as source-generated synthetic evidence. It pins
-apply counts (Korean 1/0/0, Native English 0/1/0, GS Team 1/0/0), every
-non-ID field of each single persisted table row, Alex's manual phone, birthday,
-nationality, and email plus the updated Team Leader position, and that source
-date `2026-01-01` does not move the latest date backward from `2026-07-09`.
-Existing duplicate, no-write, ambiguity, and rollback cases remain.
+Commit `3f6ef73d64c81b8e6e5f6ee665dc85e9b976408e` changes only
+`tests/teacher_import_tests.cpp`. F92 pins baseline-present helper
+`testWorkbookData()` output: a source-generated XLSX of 3,422 bytes with SHA-256
+`9cdccb43d7fe5e5e1abb83630ede8b18e6dd2c4824dbb288dc81d60371496daa`. The test
+validates and parses those bytes, explicitly selects the sole Korean M1
+candidate, creates and applies an import plan, then checks the seeded results
+and preserved manual and unrelated values. The baseline/current semantic
+transcript SHA-256 matches at
+`095d595311aaee2444d67a893d45a2d0f97fe366c2a667f90bdd690205a2bdb4`.
 
-Executor focused `ClassMngrTeacherImportTests` CTest passed 1/1. An independent
-Tester built from current docs HEAD `17bbc8d4` plus only the final test file
-(blob `786770ca816b40f00c7626461ed58ec0a3e66c22`, SHA-256
-`8BB8206A59D27E09E1C82BE918445670B32220F2CB4FD8011041646CD2BA0720`); the
-executable reported 20 passed, 0 failed, 1 skipped (the optional sample needs
-`CLASSMNGR_TEACHER_IMPORT_SAMPLE`), and CTest passed 1/1. Its narrow common-input
-harness passed on archived baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`
-and the current F90 repository, with equivalent synthetic plan and SQLite
-seed; exact JSON semantic outputs matched at SHA-256
-`755A2B7DF52B3DD8F111ADF2EC0D0127415689B2B08A68D008505079D887B2B6`.
-Current and legacy repository blobs were `7f2604023d1c7b8f8c3132acd1fcfe8e6ed2759a`
-and `058aa4d0b85fb05d5cc04a2c6d0f72d99ba9cc71`. The full current test file
-does not compile on baseline because `next/application/import_review_session.h`
-is absent there, so the narrow harness used baseline production sources and
-schema without overlaying current production code. Protected manifest blob
-`bf3afbe30c77e30be83df98434eda3ee466084b0` was neither overlaid nor consumed.
-Windows x64 used MSVC 19.51 and Qt 6.12.0. `git diff --check` passed; no full
-suite was run. This is source-generated synthetic plan/repository evidence,
-not workbook or historical production-workbook parity.
+Fresh focused CTest passed 1/1. The test executable reported 21 passed, 0
+failed, 1 optional external-sample skip; the selected scenario's 3 assertions
+passed. This is source-generated synthetic workbook evidence, not parity with
+a historical production workbook. Invalid-date validation parity and
+repository rollback parity remain open.
 
-### Cumulative exit-gate status after F91
+### Cumulative exit-gate status after F92
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | F91 changes tests only and adds no app-less contract behavior; broader behavior remains incomplete. |
-| Baseline parity (Gate 2) | Partial | F91 advances parity by one baseline-present, source-generated synthetic plan/repository scenario. It does not cover workbook decode/preview or a historical production workbook; broader coverage remains incomplete. |
-| Workspace boundary | Satisfied | The formal documented WorkspaceGateway/WorkspaceCoordinator acceptance remains satisfied; F91 changes no workspace behavior. |
-| v2 dependency isolation | Satisfied in the audited v2 scope | Independent audits find audited `src/next` sources free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F91 changes tests only. |
+| App-less Domain/Application behavior (Gate 1) | Partial | F92 changes tests only and adds no app-less contract behavior; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F92 compares a valid baseline-present source-generated workbook flow through validation, parsing, review selection, plan creation, and apply. It does not establish historical production-workbook parity; invalid-date validation and repository rollback parity remain open. |
+| Workspace boundary | Satisfied | The formal documented WorkspaceGateway/WorkspaceCoordinator acceptance remains satisfied; F92 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Two post-F92 audits find audited `src/next` sources free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F92 changes tests only. |
 
 Gate 1 and Gate 2 remain Partial; the workspace boundary and audited
 `src/next` isolation remain Satisfied. Phase 2 remains In Progress with its exit
@@ -212,20 +197,23 @@ remaining feature-service migrations, document-service migration,
 invalid-UTF-8 coverage, and live MainWindow projection-failure/retranslation
 integration remain open. Sub Prep remains capped at 2026-2027.
 
-Next selected bounded slice (2026-09-27): F92 extends Teacher Import parity
-upstream through baseline-present source-generated helper `testWorkbookData()`.
-Run identical generated workbook bytes through validation/parser, explicit M1
-review selection, plan creation, and `TeacherImportRepository::importTeachers`
-on baseline `48fc5c5c` and current sources using equivalent deterministic
-SQLite seeds. Pin the bytes/hash if stable, template/date/parsed Korean M1
-candidate, apply counts, normalized persisted teacher row, latest source date,
-and unrelated seeded state; exclude generated IDs. The helper creates
-source-generated synthetic XLSX bytes with one Korean M1 candidate and source
-date `2026-07-09`; this is synthetic workbook evidence, not historical
-production-workbook parity. The checked-in `sectioned_review.xlsx` postdates
-baseline. The current full test source needs a narrow legacy harness because
-`next/application/import_review_session.h` is absent at baseline. Focus
-`ClassMngrTeacherImportTests`; no full suite. Gate 2 advances but remains
-Partial, and Gate 1 remains Partial. Calendar start-of-term classification is
-a later Gate 1 candidate, not selected here. This is selected work, not
-implementation or test evidence. Sub Prep remains capped at 2026-2027.
+Next selected bounded slice (2026-09-27): F93 extracts the duplicated
+start-of-term calendar-event classification used by `CalendarEventModel` and
+the `CalendarPage` upcoming-event filter into an app-less policy. Preserve the
+current rule: simplify and lowercase the title; normalize the event type with
+unknown values mapped to `Other`; classify only `Other` events whose normalized
+title is exactly one of `new semester`, `start of term`, `term start`, and
+`term starts`; hide matching events only when the hide preference is true.
+Acceptance: one policy owns classification; app-less tests cover title and type
+normalization, all four exact titles, nonmatches, and both hide-preference
+states, while both production call sites suppress matches only when hiding is
+enabled. Use existing `NextApplicationCalendarEventTests` in
+`tests/next_application_calendar_event_tests.cpp`. This adds bounded Gate 1
+evidence but leaves Gate 1 Partial and does not itself complete Phase 2. This
+is selected work, not implementation or test evidence. Sub Prep remains capped
+at 2026-2027.
+
+After F93, the next Gate 2 candidate is baseline-present invalid-date synthetic
+Teacher Import workbook rejection parity: compare status and diagnostic on
+baseline/current inputs and prove repository state is unchanged. F92's valid
+workbook flow leaves that validation and rollback evidence open.

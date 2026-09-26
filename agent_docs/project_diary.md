@@ -1115,3 +1115,8 @@ Prep's queried interval to the current and following calendar years at most.
 
 - A baseline-present source-generated test plan can establish repository-level behavior, but it does not cover workbook parsing or historical production output. Extend the same input upstream through generated workbook bytes, validation, explicit review choices, and apply when those paths exist in both revisions. If the current full test source no longer compiles at the legacy baseline, use a narrow harness that preserves the entire legacy repository and schema implementation.
 - Keep `CalendarPage::filterUpcomingEvents` in the page boundary while its UI filters and next-ten search are composed there. A smaller duplicated start-of-term classification rule is a later app-less contract candidate; the next slice instead prioritizes Teacher Import parse-to-apply evidence for Gate 2.
+
+## Phase 2 Teacher Import generated-workbook parity - 2026-09-27
+
+- Pin generated workbook bytes and compare semantic output on baseline/current when extending parity from repository plans through validation, explicit review, and apply. A successful parse-to-apply case strengthens one path only; rejection parity and historical production-workbook evidence remain separate gaps.
+- After a parity-only slice, select bounded app-less behavior to keep Gate 1 progress moving. The Calendar start-of-term predicate is a compact candidate when its normalization, event-type fallback, option semantics, and recognized phrases can be preserved and tested independently of Qt.
