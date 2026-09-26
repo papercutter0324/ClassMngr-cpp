@@ -5598,3 +5598,47 @@ and date validity into the policy. Preserve Korean, Native English, and GS Team
 name rules and rejection-before-write behavior. Verify the app-less policy and
 focused Teacher Import repository tests. This is selected work, not
 implementation evidence. Sub Prep remains capped at 2026-2027.
+
+## Verified F85 Teacher Import full-plan validation - commit d5971ae1
+
+A Qt-free `TeacherImportPlanValidationInput` and issue policy now validate in
+established order: optional reviewed ordered Korean-key correspondence,
+source-date validity, Korean keys, Native English keys, and GS Team keys. The
+repository adapter resolves review choices first and retains Qt normalization,
+date interpretation, UTF-8 conversion, and `QObject::tr` diagnostic mapping.
+App-less and repository tests preserve exact existing messages, allow
+cross-language GS Team key collisions while rejecting duplicates within each
+namespace, and verify a rejected plan leaves imported rows and the latest
+source date unchanged.
+
+Executor and independent fresh archive Tester passed
+`ClassMngrNextApplicationTeacherImportPlanValidationTests` and
+`ClassMngrTeacherImportTests` (2/2). The Tester used archive `8e2ee2d6` plus
+only the six F85 paths. Windows x64 Debug verification used CMake 4.4.2,
+Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; configuration validated 923
+handwritten source owners and the build completed 311 actions. `git diff
+--check` passed. No full suite was run.
+
+### Cumulative exit-gate status after F85
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F79 adds validated Class Transfer intervals; F80 and F81 add Qt-free Teacher Import update policies; F84 types Schedule Import matching keys; F85 adds Qt-free Teacher Import plan validation. Broader behavior remains incomplete. |
+| Baseline parity | Partial | F82 and F83 compare legacy/current behavior on checked inputs and identical seeds, but both fixtures postdate the legacy baseline. They add common-input differential regression, not historical-output parity. F85 adds no parity claim; broader parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F85 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F85's policy remains Qt-free. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress with its
+exit gate Open. Sub Prep remains capped at 2026-2027.
+
+Next selected bounded slice (2026-09-27): F86 adds a baseline-era generated
+Schedule Import differential using `scheduleWorkbookData()` from baseline
+`48fc5c5c`. Run identical generated input bytes and a seeded
+database through legacy and current parser, preview,
+and apply paths, then pin a semantic transcript as literals: parse metadata,
+matches and suggestions, apply counters, and normalized persisted schedule
+state. Label this source-generated synthetic baseline comparison, not
+historical production-data parity. Verify with
+`ClassMngrScheduleImportTests`; no full suite. This is selected work, not
+implementation evidence. Sub Prep remains capped at 2026-2027.

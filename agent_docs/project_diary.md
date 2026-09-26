@@ -1089,3 +1089,8 @@ Prep's queried interval to the current and following calendar years at most.
 - Move deterministic import-plan rules into a Qt-free policy using adapter-normalized identity keys and explicit date validity. Keep Qt normalization, `QDate` interpretation, translation, SQL, and the established validation order at the repository boundary so the policy can be app-less without changing user-facing diagnostics.
 - Preserve typed matching identities while keeping display names separate; a valid empty Korean key remains a distinct supported value and must not be confused with an uninitialized key.
 - Keep generic review-decision resolution at the adapter boundary, then pass the resolved ordered Korean keys into the plan policy. The policy can validate selection-to-plan correspondence before date and roster checks without depending on review UI or Qt types.
+
+## Phase 2 generated Schedule Import baseline comparison - 2026-09-27
+
+- A source-generated workbook helper that exists in the legacy baseline can support a synthetic baseline comparison when both revisions consume the same pinned bytes and deterministic seed. Pin semantic parse, preview, apply, and full persisted-state outputs; label the result synthetic rather than historical production-workbook parity.
+- Normal Schedule Import apply replaces the regular schedule snapshot: unrelated teacher/class metadata and settings remain while prior regular time rows are cleared. Tests should make that full-snapshot behavior explicit in expected state.

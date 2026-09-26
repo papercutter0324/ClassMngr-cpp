@@ -1330,3 +1330,11 @@ Executor and independent fresh-archive verification passed `ClassMngrNextApplica
 F85 adds app-less validation behavior to Gate 1, which remains Partial. Gate 2 remains Partial; no historical-parity claim was added. Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027.
 
 F86 is selected to compare a generated Schedule Import scenario whose helper exists at legacy baseline `48fc5c5c` against current code, using identical generated input bytes and a deterministic database seed. Pin parsed candidates, preview matches, apply counters, and normalized persisted schedule state. This is source-generated synthetic baseline evidence, not historical production-workbook parity.
+
+## Current Phase 2 position - 2026-09-27 (F86)
+
+F86 source/test commit `c3029f14` adds a baseline-era generated Schedule Import regression. Legacy `48fc5c5c` and current `31057c00` consumed the same 5,352-byte workbook (`24cf273f…d48b49`) and produced identical semantic transcripts (`8A00E7A0…F0181DA8`). The test pins parser metadata and candidate values, preview match/suggestion, apply counters, and normalized persisted state. It records Normal import's full-snapshot behavior: unrelated teacher/class metadata and settings remain, while the old regular schedule row is cleared.
+
+Executor and independent fresh-base verification passed `ClassMngrScheduleImportTests` (1/1). The fresh CMake 4.4.2/Ninja 1.13.2/MSVC 19.51.36257/Qt 6.12.0 build validated 923 source owners and 309 build steps; `git diff --check` passed. No full suite ran. This is source-generated synthetic baseline evidence, not historical production-workbook parity.
+
+F86 adds one baseline comparison to Gate 2, which remains Partial; Gate 1 remains Partial. Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 exit remains Open. F87 is selected to move GS Team sparse merge/no-op behavior into a Qt-free Application policy while preserving repository matching, normalization, diagnostics, and no-op SQL behavior. Sub Prep remains capped at 2026-2027.
