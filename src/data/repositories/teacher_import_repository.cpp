@@ -5,6 +5,7 @@
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/import_review_session.h"
 #include "next/application/korean_teacher_import_update.h"
+#include "next/application/native_english_teacher_import_update.h"
 
 #include <QObject>
 #include <QSet>
@@ -521,16 +522,30 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         }
 
         const NativeEnglishTeacher& existing = native.at(matches.first());
-        NativeEnglishTeacher updated = existing;
-        updated.name = source.name.simplified();
-        if (!source.position.trimmed().isEmpty()) updated.position = source.position.trimmed();
-        if (!source.phoneNumber.trimmed().isEmpty()) updated.phoneNumber = source.phoneNumber.trimmed();
-        if (!source.birthday.trimmed().isEmpty()) updated.birthday = source.birthday.trimmed();
-        if (!source.nationality.trimmed().isEmpty()) updated.nationality = source.nationality.trimmed();
-        if (!source.email.trimmed().isEmpty()) updated.email = source.email.trimmed();
-        if (updated.name == existing.name && updated.position == existing.position
-            && updated.phoneNumber == existing.phoneNumber && updated.birthday == existing.birthday
-            && updated.nationality == existing.nationality && updated.email == existing.email)
+        using ClassMngr::Next::Application::NativeEnglishTeacherImportFields;
+        using ClassMngr::Next::Application::NativeEnglishTeacherImportProfile;
+        using ClassMngr::Next::Application::mergeNativeEnglishTeacherImport;
+
+        const auto update = mergeNativeEnglishTeacherImport(
+            NativeEnglishTeacherImportProfile{
+                .id = existing.id,
+                .name = existing.name.toStdU16String(),
+                .position = existing.position.toStdU16String(),
+                .phoneNumber = existing.phoneNumber.toStdU16String(),
+                .birthday = existing.birthday.toStdU16String(),
+                .nationality = existing.nationality.toStdU16String(),
+                .email = existing.email.toStdU16String()
+            },
+            NativeEnglishTeacherImportFields{
+                .name = source.name.simplified().toStdU16String(),
+                .position = source.position.trimmed().toStdU16String(),
+                .phoneNumber = source.phoneNumber.trimmed().toStdU16String(),
+                .birthday = source.birthday.trimmed().toStdU16String(),
+                .nationality = source.nationality.trimmed().toStdU16String(),
+                .email = source.email.trimmed().toStdU16String()
+            }
+            );
+        if (!update.changed)
         {
             ++summary.nativeEnglishTeachers.unchanged;
             continue;
@@ -542,13 +557,13 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
             SET name=?, position=?, phone_number=?, birthday=?, nationality=?, email=?
             WHERE id=?
         )");
-        query.addBindValue(updated.name);
-        query.addBindValue(updated.position);
-        query.addBindValue(updated.phoneNumber);
-        query.addBindValue(updated.birthday);
-        query.addBindValue(updated.nationality);
-        query.addBindValue(updated.email);
-        query.addBindValue(existing.id);
+        query.addBindValue(QString::fromStdU16String(update.profile.name));
+        query.addBindValue(QString::fromStdU16String(update.profile.position));
+        query.addBindValue(QString::fromStdU16String(update.profile.phoneNumber));
+        query.addBindValue(QString::fromStdU16String(update.profile.birthday));
+        query.addBindValue(QString::fromStdU16String(update.profile.nationality));
+        query.addBindValue(QString::fromStdU16String(update.profile.email));
+        query.addBindValue(update.profile.id);
         if (!query.exec())
         {
             return std::unexpected(queryFailure(query, QObject::tr("Updating a Native English Teacher")));

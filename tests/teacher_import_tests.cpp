@@ -809,6 +809,12 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
     QCOMPARE(validation.preview.sourceDate, QDate(2026, 9, 1));
     QCOMPARE(validation.preview.koreanGroups.size(), 3);
     QCOMPARE(validation.preview.nativeEnglishTeachers.size(), 1);
+    QCOMPARE(validation.preview.nativeEnglishTeachers.at(0).name,
+             QStringLiteral("Alex"));
+    QCOMPARE(validation.preview.nativeEnglishTeachers.at(0).position,
+             QStringLiteral("Team Leader"));
+    QCOMPARE(validation.preview.nativeEnglishTeachers.at(0).birthday,
+             QStringLiteral("03-07"));
     QCOMPARE(validation.preview.gsTeamMembers.size(), 1);
     QCOMPARE(validation.preview.koreanGroups.at(0).level, QStringLiteral("M1"));
     QCOMPARE(validation.preview.koreanGroups.at(0).candidates.size(), 2);
@@ -830,6 +836,11 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
     QVERIFY(resolveReview(*plan.review).accepted());
     plan.koreanTeachers = selectedKoreanTeachers(*plan.review);
     QCOMPARE(plan.koreanTeachers.size(), 2);
+    // Keep parser output asserted above and exercise the Qt normalization
+    // performed by the repository adapter on real import-plan values.
+    plan.nativeEnglishTeachers[0].name = QStringLiteral(" \t Alex   \t ");
+    plan.nativeEnglishTeachers[0].position = QStringLiteral(" \t Team Leader \t ");
+    plan.nativeEnglishTeachers[0].birthday = QStringLiteral(" \t 03-07 \t ");
     QCOMPARE(plan.koreanTeachers.at(0).teacherKr, QStringLiteral("홍길동"));
     QCOMPARE(plan.koreanTeachers.at(1).teacherKr, QStringLiteral("박민준"));
 
@@ -861,8 +872,9 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         )")), qPrintable(seed.lastError().text()));
         QVERIFY(seed.exec(R"(
             INSERT INTO native_english_teachers
-                (name, position, phone_number, birthday, nationality, email)
-            VALUES ('Alex', 'NET', '010-9999-8888', '02-01', 'Canadian', 'alex@example.com')
+                (id, name, position, phone_number, birthday, nationality, email)
+            VALUES (8104, '  Alex  ', 'NET', '010-9999-8888', '02-01',
+                    'Canadian', 'alex@example.com')
         )"));
 
         TeacherImportRepository repository(database);
@@ -919,14 +931,19 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         QVERIFY(persisted.next());
         QCOMPARE(persisted.value(0).toInt(), 0);
         QVERIFY(persisted.exec(QStringLiteral(
-            "SELECT position, phone_number, birthday, nationality, email "
+            "SELECT id, position, phone_number, birthday, nationality, email "
             "FROM native_english_teachers WHERE name='Alex'")));
         QVERIFY(persisted.next());
-        QCOMPARE(persisted.value(0).toString(), QStringLiteral("Team Leader"));
-        QCOMPARE(persisted.value(1).toString(), QStringLiteral("010-9999-8888"));
-        QCOMPARE(persisted.value(2).toString(), QStringLiteral("03-07"));
-        QCOMPARE(persisted.value(3).toString(), QStringLiteral("Canadian"));
-        QCOMPARE(persisted.value(4).toString(), QStringLiteral("alex@example.com"));
+        QCOMPARE(persisted.value(0).toInt(), 8104);
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("Team Leader"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("010-9999-8888"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("03-07"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("Canadian"));
+        QCOMPARE(persisted.value(5).toString(), QStringLiteral("alex@example.com"));
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM native_english_teachers WHERE name='Alex'")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 1);
         QVERIFY(persisted.exec(QStringLiteral(
             "SELECT name, position, phone_number, birthday FROM gs_team")));
         QVERIFY(persisted.next());
@@ -948,10 +965,24 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
                 UPDATE teacher_import_update_probe SET updates=updates+1;
             END
         )"));
+        QVERIFY(persisted.exec(R"(
+            CREATE TABLE native_teacher_import_update_probe (updates INTEGER NOT NULL)
+        )"));
+        QVERIFY(persisted.exec(R"(
+            INSERT INTO native_teacher_import_update_probe (updates) VALUES (0)
+        )"));
+        QVERIFY(persisted.exec(R"(
+            CREATE TRIGGER native_teacher_import_update_probe_trigger
+            BEFORE UPDATE ON native_english_teachers
+            BEGIN
+                UPDATE native_teacher_import_update_probe SET updates=updates+1;
+            END
+        )"));
 
         TeacherImportPlan unchangedPlan;
         unchangedPlan.templateId = plan.templateId;
         unchangedPlan.sourceDate = plan.sourceDate;
+        unchangedPlan.nativeEnglishTeachers = plan.nativeEnglishTeachers;
         Teacher sparseKorean;
         sparseKorean.teacherKr = plan.koreanTeachers.at(0).teacherKr;
         unchangedPlan.koreanTeachers.append(sparseKorean);
@@ -961,8 +992,14 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         QCOMPARE(unchanged->koreanTeachers.created, 0);
         QCOMPARE(unchanged->koreanTeachers.updated, 0);
         QCOMPARE(unchanged->koreanTeachers.unchanged, 1);
+        QCOMPARE(unchanged->nativeEnglishTeachers.updated, 0);
+        QCOMPARE(unchanged->nativeEnglishTeachers.unchanged, 1);
         QVERIFY(persisted.exec(QStringLiteral(
             "SELECT updates FROM teacher_import_update_probe")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 0);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT updates FROM native_teacher_import_update_probe")));
         QVERIFY(persisted.next());
         QCOMPARE(persisted.value(0).toInt(), 0);
 
