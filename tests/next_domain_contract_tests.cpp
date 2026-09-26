@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <map>
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -52,6 +53,7 @@ private slots:
     void koreanTeacherKeysExposeEmptyAndValueSemantics();
     void studentNamePairsRequireBothNames();
     void studentNamePairsCompareExactUtf16PartsAndOrder();
+    void duplicateStudentNamePairGroupsAreExactAndDeterministic();
     void studentNamePairsKeepPartsDistinctAcrossDelimiter();
     void teacherDisplayNamesSelectPreferredAndEnglishNames();
     void teacherDisplayNamesSelectRomanizationAndKoreanNames();
@@ -1023,6 +1025,72 @@ void NextDomainContractTests::studentNamePairsCompareExactUtf16PartsAndOrder()
     QCOMPARE(ordered.size(), std::size_t{3});
     QVERIFY(ordered.begin()->first == *first);
     QVERIFY(ordered.rbegin()->first == *differentCase);
+}
+
+void NextDomainContractTests::
+duplicateStudentNamePairGroupsAreExactAndDeterministic()
+{
+    const auto alex = StudentNamePair::fromNames(
+        u"Alex",
+        u"\uae40\ubbfc\uc9c0"
+        );
+    const auto jamie = StudentNamePair::fromNames(
+        u"Jamie",
+        u"\ubc15\uc9c0\ubbfc"
+        );
+    const auto differentCase = StudentNamePair::fromNames(
+        u"alex",
+        u"\uae40\ubbfc\uc9c0"
+        );
+    const auto delimiterPairFirst = StudentNamePair::fromNames(
+        u"Alpha\u001fBeta",
+        u"Gamma"
+        );
+    const auto delimiterPairSecond = StudentNamePair::fromNames(
+        u"Alpha",
+        u"Beta\u001fGamma"
+        );
+    QVERIFY(alex.has_value());
+    QVERIFY(jamie.has_value());
+    QVERIFY(differentCase.has_value());
+    QVERIFY(delimiterPairFirst.has_value());
+    QVERIFY(delimiterPairSecond.has_value());
+
+    const std::vector<std::optional<StudentNamePair>> rows{
+        *alex,
+        *jamie,
+        *alex,
+        std::nullopt,
+        *jamie,
+        *differentCase,
+        *delimiterPairFirst,
+        *delimiterPairSecond,
+        *delimiterPairFirst,
+        *delimiterPairSecond
+        };
+
+    const auto groups = duplicateStudentNamePairGroups(rows);
+    const std::vector<std::size_t> alexRows{0, 2};
+    const std::vector<std::size_t> jamieRows{1, 4};
+    const std::vector<std::size_t> delimiterPairFirstRows{6, 8};
+    const std::vector<std::size_t> delimiterPairSecondRows{7, 9};
+    QCOMPARE(groups.size(), std::size_t{4});
+    QVERIFY(groups[0].namePair == *alex);
+    QVERIFY(groups[0].rowIndexes == alexRows);
+    QVERIFY(groups[1].namePair == *jamie);
+    QVERIFY(groups[1].rowIndexes == jamieRows);
+    QVERIFY(groups[2].namePair == *delimiterPairFirst);
+    QVERIFY(groups[2].rowIndexes == delimiterPairFirstRows);
+    QVERIFY(groups[3].namePair == *delimiterPairSecond);
+    QVERIFY(groups[3].rowIndexes == delimiterPairSecondRows);
+
+    const auto repeatedCall = duplicateStudentNamePairGroups(rows);
+    QCOMPARE(repeatedCall.size(), groups.size());
+    for (std::size_t index = 0; index < groups.size(); ++index)
+    {
+        QVERIFY(repeatedCall[index].namePair == groups[index].namePair);
+        QVERIFY(repeatedCall[index].rowIndexes == groups[index].rowIndexes);
+    }
 }
 
 void NextDomainContractTests::studentNamePairsKeepPartsDistinctAcrossDelimiter()

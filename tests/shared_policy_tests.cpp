@@ -725,10 +725,17 @@ void SharedPolicyTests::enumAndRangeValidation()
 
 void SharedPolicyTests::structuredDuplicateNamePairs()
 {
+    const QString koreanName =
+        QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98");
     const QList<QStringList> rows{
-        {QStringLiteral("Alex"), QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98")},
-        {QStringLiteral("Alex"), QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98")},
-        {QStringLiteral("Jamie"), QString::fromUtf8("\xEB\xB0\x95\xEC\xA7\x80\xEB\xAF\xBC")}
+        {
+            QStringLiteral(" Alex "),
+            QStringLiteral(" ") + koreanName + QStringLiteral(" ")
+        },
+        {QStringLiteral("Alex"), koreanName},
+        {QStringLiteral("alex"), koreanName},
+        {QStringLiteral("Alex"), QString()},
+        {QStringLiteral("Alex"), koreanName}
     };
 
     const ValidationResult result = SharedValidation::duplicateNamePairs(
@@ -740,16 +747,19 @@ void SharedPolicyTests::structuredDuplicateNamePairs()
         );
 
     QVERIFY(result.hasErrors());
-    QCOMPARE(result.forField(QStringLiteral("englishName")).size(), 2);
-    QCOMPARE(result.forField(QStringLiteral("koreanName")).size(), 2);
+    QCOMPARE(result.forField(QStringLiteral("englishName")).size(), 3);
+    QCOMPARE(result.forField(QStringLiteral("koreanName")).size(), 3);
+    QCOMPARE(result.issues().size(), 6);
     const ValidationIssue& first = result.issues().first();
     QCOMPARE(first.row, 0);
     QCOMPARE(first.column, 0);
     QCOMPARE(first.code, QStringLiteral("student_name.duplicate_pair"));
     QCOMPARE(
         first.arguments.value(QStringLiteral("duplicateRows")).toList(),
-        QVariantList({0, 1})
+        QVariantList({0, 1, 4})
         );
+    QCOMPARE(result.issues().at(2).row, 1);
+    QCOMPARE(result.issues().at(4).row, 4);
 }
 
 void SharedPolicyTests::teacherValidatorNormalizesAndReportsFieldErrors()

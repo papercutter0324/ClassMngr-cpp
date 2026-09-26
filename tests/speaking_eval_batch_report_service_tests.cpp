@@ -419,6 +419,7 @@ class SpeakingEvalBatchReportServiceTests : public QObject
 
 private slots:
     void initTestCase();
+    void speakingEvalModelDuplicateValidationPreservesRowsAndIncompleteNames();
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
     void batchArchivePathUsesOutputFolderName();
@@ -468,6 +469,49 @@ void SpeakingEvalBatchReportServiceTests::initTestCase()
         m_settingsRoot.path().toUtf8()
         );
     SettingsManager::instance().clear();
+}
+
+void SpeakingEvalBatchReportServiceTests::
+speakingEvalModelDuplicateValidationPreservesRowsAndIncompleteNames()
+{
+    const int englishColumn = SpeakingEval::toInt(
+        SpeakingEvalColumn::EnglishName
+        );
+    const int koreanColumn = SpeakingEval::toInt(
+        SpeakingEvalColumn::KoreanName
+        );
+    const QString koreanName =
+        QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98");
+    SpeakingEvalRows rows = SpeakingEval::emptyRows();
+    rows[0][englishColumn] = QStringLiteral("Amy");
+    rows[0][koreanColumn] = koreanName;
+    rows[1][englishColumn] = QStringLiteral("Amy");
+    rows[1][koreanColumn] = koreanName;
+    rows[2][englishColumn] = QStringLiteral("Amy");
+    rows[2][koreanColumn] = koreanName + QStringLiteral("(A)");
+    rows[3][englishColumn] = QStringLiteral("Amy");
+
+    SpeakingEvalModel model;
+    model.loadData(rows);
+
+    const QString firstDuplicateMessage =
+        QStringLiteral("Duplicate student name pair. Also used on row(s): 2.");
+    const QString secondDuplicateMessage =
+        QStringLiteral("Duplicate student name pair. Also used on row(s): 1.");
+    QVERIFY(
+        model.errorsForCell(0, englishColumn).contains(firstDuplicateMessage)
+        );
+    QVERIFY(
+        model.errorsForCell(0, koreanColumn).contains(firstDuplicateMessage)
+        );
+    QVERIFY(
+        model.errorsForCell(1, englishColumn).contains(secondDuplicateMessage)
+        );
+    QVERIFY(
+        model.errorsForCell(1, koreanColumn).contains(secondDuplicateMessage)
+        );
+    QVERIFY(model.errorsForCell(2, englishColumn).isEmpty());
+    QVERIFY(model.errorsForCell(2, koreanColumn).isEmpty());
 }
 
 void SpeakingEvalBatchReportServiceTests::safeFileNameUsesStudentNamesAndRemovesReservedCharacters()

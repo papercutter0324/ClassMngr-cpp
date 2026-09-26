@@ -21,6 +21,7 @@ private slots:
     void insertTransferredRowRejectsFullTargetRoster();
     void transferredRowDetectsDuplicateStudentPair();
     void namePairHelpersDetectDuplicatesAndSuggestSuffix();
+    void duplicatePairValidationTrimsNamesAndSkipsIncompleteRows();
     void structuredValidationMarksAndClearsAffectedCells();
 };
 
@@ -613,6 +614,59 @@ void RosterModelTests::namePairHelpersDetectDuplicatesAndSuggestSuffix()
         model.suggestedKoreanNameWithSuffix(0),
         QStringLiteral("김민수(B)")
         );
+}
+
+void RosterModelTests::
+duplicatePairValidationTrimsNamesAndSkipsIncompleteRows()
+{
+    const QString koreanName =
+        QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98");
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral(" Alex "),
+            QStringLiteral(" ") + koreanName + QStringLiteral(" ")
+            ),
+        studentRow(
+            QStringLiteral("Alex"),
+            koreanName
+            ),
+        studentRow(
+            QStringLiteral("Alex"),
+            koreanName + QStringLiteral("(A)")
+            ),
+        studentRow(
+            QStringLiteral("Alex"),
+            QString()
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    const int englishColumn = model.englishNameColumn();
+    const int koreanColumn = model.koreanNameColumn();
+    const QString firstDuplicateMessage =
+        QStringLiteral("Duplicate student name pair. Also used on row(s): 2.");
+    const QString secondDuplicateMessage =
+        QStringLiteral("Duplicate student name pair. Also used on row(s): 1.");
+    QVERIFY(
+        model.errorsForCell(0, englishColumn).contains(firstDuplicateMessage)
+        );
+    QVERIFY(
+        model.errorsForCell(0, koreanColumn).contains(firstDuplicateMessage)
+        );
+    QVERIFY(
+        model.errorsForCell(1, englishColumn).contains(secondDuplicateMessage)
+        );
+    QVERIFY(
+        model.errorsForCell(1, koreanColumn).contains(secondDuplicateMessage)
+        );
+    QVERIFY(model.errorsForCell(2, englishColumn).isEmpty());
+    QVERIFY(model.errorsForCell(2, koreanColumn).isEmpty());
+    QVERIFY(model.errorsForCell(3, englishColumn).isEmpty());
+    QVERIFY(model.errorsForCell(3, koreanColumn).isEmpty());
 }
 
 void RosterModelTests::structuredValidationMarksAndClearsAffectedCells()

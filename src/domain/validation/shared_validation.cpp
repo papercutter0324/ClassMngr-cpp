@@ -4,10 +4,13 @@
 #include "core/utils/file_name_utils.h"
 #include "core/utils/student_name_utils.h"
 #include "domain/rules/schedule_value_parser.h"
+#include "next/domain/student_name_pair.h"
 
 #include <QVariantList>
 
+#include <optional>
 #include <utility>
+#include <vector>
 
 namespace SharedValidation
 {
@@ -130,23 +133,42 @@ ValidationResult duplicateNamePairs(
     )
 {
     ValidationResult result;
-    const auto duplicates = StudentNameUtils::duplicateRowsByNamePair(
-        rows,
-        englishColumn,
-        koreanColumn
-        );
+    std::vector<std::optional<ClassMngr::Next::Domain::StudentNamePair>>
+        namePairsByRow;
+    namePairsByRow.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& row : rows)
+    {
+        const std::u16string englishName =
+            row.value(englishColumn).trimmed().toStdU16String();
+        const std::u16string koreanName =
+            row.value(koreanColumn).trimmed().toStdU16String();
+        namePairsByRow.push_back(
+            ClassMngr::Next::Domain::StudentNamePair::fromNames(
+                englishName,
+                koreanName
+                )
+            );
+    }
 
-    for (auto it = duplicates.cbegin(); it != duplicates.cend(); ++it)
+    const auto duplicates =
+        ClassMngr::Next::Domain::duplicateStudentNamePairGroups(
+            namePairsByRow
+            );
+
+    for (const auto& duplicate : duplicates)
     {
         QVariantList duplicateRows;
-        duplicateRows.reserve(it.value().size());
-        for (const int row : it.value())
+        duplicateRows.reserve(
+            static_cast<qsizetype>(duplicate.rowIndexes.size())
+            );
+        for (const std::size_t rowIndex : duplicate.rowIndexes)
         {
-            duplicateRows.append(row);
+            duplicateRows.append(static_cast<int>(rowIndex));
         }
 
-        for (const int row : it.value())
+        for (const std::size_t rowIndex : duplicate.rowIndexes)
         {
+            const int row = static_cast<int>(rowIndex);
             for (const ValidationLocation& location : {
                      ValidationLocation{
                          .field = englishField,

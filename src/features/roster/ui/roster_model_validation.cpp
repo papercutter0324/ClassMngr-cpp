@@ -1,8 +1,11 @@
 #include "roster_model.h"
 
 #include "core/utils/student_name_utils.h"
+#include "next/domain/student_name_pair.h"
 
 #include <algorithm>
+#include <optional>
+#include <vector>
 
 QStringList RosterModel::validateCell(
     const QString& value,
@@ -176,26 +179,38 @@ void RosterModel::validateDuplicateNames()
         return;
     }
 
-    const QHash<QString, QList<int>> rowsByPair =
-        StudentNameUtils::duplicateRowsByNamePair(
-            m_rows,
-            englishColumn,
-            koreanColumn
+    std::vector<std::optional<ClassMngr::Next::Domain::StudentNamePair>>
+        namePairsByRow;
+    namePairsByRow.reserve(static_cast<std::size_t>(m_rows.size()));
+    for (const QStringList& row : m_rows)
+    {
+        const std::u16string englishName =
+            row.value(englishColumn).trimmed().toStdU16String();
+        const std::u16string koreanName =
+            row.value(koreanColumn).trimmed().toStdU16String();
+        namePairsByRow.push_back(
+            ClassMngr::Next::Domain::StudentNamePair::fromNames(
+                englishName,
+                koreanName
+                )
+            );
+    }
+
+    const auto duplicateGroups =
+        ClassMngr::Next::Domain::duplicateStudentNamePairGroups(
+            namePairsByRow
             );
 
-    for (auto it = rowsByPair.constBegin(); it != rowsByPair.constEnd(); ++it)
+    for (const auto& duplicate : duplicateGroups)
     {
-        if (it.value().size() < 2)
+        for (const std::size_t rowIndex : duplicate.rowIndexes)
         {
-            continue;
-        }
-
-        for (int row : it.value())
-        {
+            const int row = static_cast<int>(rowIndex);
             QStringList duplicateRows;
 
-            for (int otherRow : it.value())
+            for (const std::size_t otherRowIndex : duplicate.rowIndexes)
             {
+                const int otherRow = static_cast<int>(otherRowIndex);
                 if (otherRow != row)
                 {
                     duplicateRows.append(
