@@ -39,7 +39,7 @@
   source owners and passed both Class Transfer CTests 2/2; diff check passed, no full
   suite. Gate 2 gained fixture parity; Gate 1 was unchanged. Test-only commit:
   `aa1af5fe`.
-- Latest code slice: F73 extends the checked-in `conflict_source.json` production
+- Previous code slice: F73 extends the checked-in `conflict_source.json` production
   fixture test. Default schedule-collision rejection/no-write coverage remains;
   the test also selects class Skip and teacher ReplaceExisting through production
   dialog plan metadata. Import succeeds with one skipped class and no
@@ -52,6 +52,14 @@
   (2/2); Tester also ran the fixture test directly. `git diff --check` passed;
   no full suite. F73 adds Gate 2 fixture-backed action evidence; Gate 1 is
   unchanged and both remain Partial. Test-only commit: `60bbd015`.
+- Latest code slice: F74 adds synthetic Intensive Schedule Import production-flow
+  coverage: fixed preview values, explicit UpdateExisting apply, persisted target
+  rows/class identity, no class creation, untouched Intensive row ID/value, and
+  unchanged regular rows. No historical Intensive workbook or legacy-output
+  oracle exists, so this is not historical baseline parity. Independent fresh
+  Windows x64 Debug Ninja/Qt 6.12 Executor and Tester trees passed the three
+  focused Schedule Import CTests (3/3); no full suite. Gate 1 is unchanged and
+  Gate 2 remains Partial. Test-only commit: `3e0a8d64`.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5461,3 +5469,53 @@ Gate 1 remains Partial and unchanged; Gate 2 remains Partial with added Skip
 action fixture evidence. Workspace boundary and audited v2 dependency isolation
 remain Satisfied. Phase 2 remains In Progress with its exit gate Open. Sub Prep
 remains capped at the current and following calendar years, 2026-2027.
+
+## Verified F74 synthetic Intensive Schedule Import production flow - commit `3e0a8d64`
+
+[`tests/schedule_import_tests.cpp`](../../tests/schedule_import_tests.cpp) adds
+`previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase`, using the
+source-readable authored worksheet
+[`schedule_intensive_synthetic_worksheet.xml`](../../tests/fixtures/imports/schedule_intensive_synthetic_worksheet.xml).
+The test parses it as Intensive, asserts fixed candidate and preview values,
+explicitly applies UpdateExisting, and verifies persisted target Intensive rows
+and class identity with no class creation. An untouched Intensive row retains
+its ID and value, and regular schedule rows remain unchanged. This is synthetic
+production-flow coverage only: the repository has no historical Intensive
+workbook or legacy-output oracle, so historical baseline parity is not
+established.
+
+Executor and independent fresh Tester trees used Windows x64 Debug Ninja and
+Qt 6.12 (Executor MSVC 14.51.36231; Tester MSVC 19.51.36257). CMake validated
+917 handwritten source owners; `ClassMngrScheduleImportTests`,
+`ClassMngrNextApplicationScheduleImportStateValidationTests`, and
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests` passed 3/3
+independently. `git diff --check` passed; no full suite was run. Protected
+`cmake/sources.cmake` remains at SHA-256
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+F74 adds synthetic production-flow evidence but no historical baseline parity;
+Gate 1 is unchanged and Gate 2 remains Partial. Workspace boundary and audited
+v2 dependency isolation remain Satisfied. Phase 2's exit gate remains Open.
+Sub Prep remains capped at the current and following calendar years, 2026-2027.
+
+#### Cumulative exit-gate status after F74
+
+This audit applies the formal exit criteria through F74. The three focused
+CTests passed independently; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F74 is test-only and adds no app-less behavior evidence; F71's typed Class Transfer contract evidence remains. Broader Domain and Application behavior is incomplete. |
+| Baseline parity | Partial | F74 verifies a synthetic Intensive parse/preview/apply path and persisted-state invariants, but no historical Intensive workbook or legacy-output oracle exists; it does not establish historical baseline parity. F71-F73 Class Transfer fixture checks remain, and broader baseline parity is incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F74 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F74 changes tests only. |
+
+Gate 1 remains Partial and unchanged. Gate 2 remains Partial: F74 adds synthetic
+production-flow evidence but no historical parity evidence. Workspace boundary
+and audited v2 dependency isolation remain Satisfied. Phase 2 remains In
+Progress with its exit gate Open. Next selected bounded slice: F75 implements a
+Qt-free typed student-name-pair duplicate-grouping policy for roster and
+speaking-evaluation duplicate validation, adapted at current callers while
+preserving caller-side trimming, incomplete-row handling, and caller-specific
+diagnostics. This selection is not implementation evidence; score-import
+last-write-wins behavior remains distinct. Sub Prep remains capped at the
+current and following calendar years, 2026-2027.

@@ -1034,3 +1034,10 @@ Prep's queried interval to the current and following calendar years at most.
   Preserve a fixture-backed collision rejection case, then verify Skip plus
   teacher ReplaceExisting succeeds with the class, teacher, schedule, roster,
   and evaluation state unchanged.
+
+## Phase 2 synthetic Intensive workbook coverage - 2026-09-26
+
+- Keep authored worksheet cells and expected parsed/persisted rows as separate
+  literals. A synthetic workbook verifies parser-to-apply behavior, but cannot
+  establish historical baseline parity without an independent legacy workbook
+  or output oracle.

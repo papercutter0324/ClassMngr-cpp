@@ -2614,43 +2614,45 @@ separate on a host with Xvfb and loopback access.
 - F71 source/test and separate plan/mapping/deployment documentation commits
   are complete (`9b090cb5` and `5a9fe695`). F72's test and verification follow.
 
-### Phase 2 checked-fixture Class Transfer Skip - 2026-09-26 (F73)
+### Phase 2 synthetic Intensive workbook path - 2026-09-26 (F74)
 
-- Source/test commit: `60bbd015` (`Verify fixture-backed Class Transfer skip
-  behavior`). Extended
-  `permanentConflictFixturePresentsReviewAndRejectsScheduleCollision` in
-  `tests/class_transfer_tests.cpp`. It keeps the default schedule-conflict
-  rejection and no-write assertions, then selects class `Skip` plus teacher
-  `ReplaceExisting` through the production dialog metadata and applies the
-  same checked-in `conflict_source.json` package.
-- The selected plan is asserted. Apply succeeds with one skipped class, no
-  created/replaced classes, and unchanged counts, full teacher profile, class
-  and class-info fields, regular/intensive schedules, roster, and speaking
-  evaluation. Only `tests/class_transfer_tests.cpp` changed.
-- Executor used
-  `build/f72-class-transfer-teacher-replace-msvc-ninja-x64`. Independent
-  Tester used a fresh tree at
-  `%LOCALAPPDATA%/Temp/F73_SKIP_CONFLICT_PATH_VERIFY_20260926`; both used
-  Windows x64 Debug Ninja 1.13.2/MSVC 19.51.36257/Qt 6.12.0, validated 917
-  handwritten source owners, built both focused targets, and passed CTest
-  2/2. Tester also ran the fixture test directly. Exact focused commands:
-  `cmake --build <build-dir> --target ClassMngrClassTransferTests ClassMngrNextApplicationClassTransferTests`
+- Source/test commit: 3e0a8d64 (Verify synthetic intensive schedule import flow).
+  Added source-readable authored worksheet cells at
+  tests/fixtures/imports/schedule_intensive_synthetic_worksheet.xml and
+  previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase in
+  tests/schedule_import_tests.cpp. The test parses them as Intensive, checks
+  fixed candidate and preview expectations, selects UpdateExisting, and applies.
+- Assertions verify persisted target Intensive rows, retained class identity
+  and no class creation, unchanged ID/value snapshots for an untouched
+  Intensive row, and unchanged regular schedule rows. Existing workbook,
+  direct-plan Intensive, ReplaceWithNew, conflict, and rollback coverage remain.
+- Executor used build/phase2-f69-schedule-state-projection-executor-ninja-msvc-20260926
+  (Windows x64 Debug Ninja/MSVC 14.51.36231/Qt 6.12.0). Independent Tester
+  used a fresh tree at
+  C:\Users\wfelt\AppData\Local\Temp\f74_intensive_verify_20260926
+  (Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12.0). CMake validated 917
+  handwritten source owners; all three targets built and passed CTest 3/3:
+  ClassMngrScheduleImportTests,
+  ClassMngrNextApplicationScheduleImportStateValidationTests, and
+  ClassMngrNextApplicationScheduleImportMatchingProjectionTests.
+- Exact focused commands:
+  cmake --build <build-dir> --target ClassMngrScheduleImportTests ClassMngrNextApplicationScheduleImportStateValidationTests ClassMngrNextApplicationScheduleImportMatchingProjectionTests
   and
-  `ctest --test-dir <build-dir> -R "ClassMngrNextApplicationClassTransferTests|ClassMngrClassTransferTests" --output-on-failure`.
-- `git diff --check` passed. No full suite was run. Gate 2 gains
-  fixture-backed Skip behavior; Gate 1 is unchanged. Both remain Partial;
-  workspace boundary and audited `src/next` isolation remain Satisfied; Phase
-  2 exit remains Open. Sub Prep remains capped at the current and following
-  years (2026-2027). The protected `cmake/sources.cmake` remains excluded at
-  SHA-256
-  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-- F73 plan and deployment notes are included in the separate documentation
-  commit. F74 is selected: add a synthetic Intensive Schedule Import workbook
-  path through parse, preview, UpdateExisting, and apply with fixed expected
-  rows and preserved untouched-row identities. Three Investigators ranked
-  this as the strongest next production slice. Two Explorers found no
-  historical Intensive workbook paired with a legacy expected-result oracle
-  in the repository. This synthetic path adds production-flow coverage but
-  cannot establish historical baseline parity by itself; Gate 2 remains
-  Partial. Next: implement the bounded fixture/test, then independently verify
-  it.
+  ctest --test-dir <build-dir> -R "ClassMngrScheduleImportTests|ClassMngrNextApplicationScheduleImportStateValidationTests|ClassMngrNextApplicationScheduleImportMatchingProjectionTests" --output-on-failure.
+- git diff --check passed; no full suite was run. CMake emitted unrelated
+  object-path/Vulkan-header warnings; both focused builds succeeded. F74 is
+  synthetic production-flow coverage only; the repo has no historical
+  Intensive workbook paired with a legacy-output oracle, so this does not close
+  baseline parity. Gate 2 remains Partial; Gate 1 is unchanged. Workspace
+  boundary and audited src/next isolation remain Satisfied; Phase 2 exit
+  remains Open. Sub Prep remains capped at current and following years
+  (2026-2027).
+- The protected cmake/sources.cmake SHA-256 remains
+  9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF.
+  Git status marks it modified even though the Tester confirmed the worktree
+  hash and index/blob match the baseline; leave it untouched and unstaged.
+- F74's Phase 2 plan update is included in the separate documentation commit.
+  F75 is selected: extract the Qt-free typed `StudentNamePair` duplicate-row
+  grouping policy used by roster and speaking-evaluation validation. Preserve
+  caller-side trimming, incomplete-row handling, row locations, and
+  caller-specific diagnostics; do not alter score-import last-write-wins.

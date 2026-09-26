@@ -1222,37 +1222,20 @@ non-identity profile fields, retained teacher identity, and the imported
 class's teacher link. Executor and independent fresh builds passed the two
 focused Class Transfer CTests (2/2), each with 917 source owners. Gate 2 gains
 fixture-backed teacher replacement evidence; Gate 1 receives no new evidence.
-Both remain Partial and the exit gate remains Open. F73 source/test is
-committed as 60bbd015; its separate plan/mapping documentation is next. Select
-F74 from the three independent Investigator reviews.
+Both remain Partial and the exit gate remains Open. F73 source/test `60bbd015`
+and documentation `5af94f32` are complete. F74 source/test `3e0a8d64` adds
+synthetic Intensive workbook parse/apply coverage; the independent fresh build
+passed three focused Schedule Import targets (3/3) with 917 source owners. The
+synthetic path adds production-flow coverage but does not establish historical
+baseline parity; Gate 2 remains Partial. F75 is selected to extract the
+Qt-free typed duplicate-name-pair grouping policy used by roster and speaking-
+evaluation validation, preserving caller-side trimming, incomplete-row
+handling, and caller-specific diagnostics.
 
-## Current Phase 2 position - 2026-09-26 (F73)
+## Current Phase 2 position - 2026-09-26 (F74)
 
-F73 source/test commit `60bbd015` (`Verify fixture-backed Class Transfer
-skip behavior`) extends the checked-in `conflict_source.json` production
-review path. After retaining the default schedule-collision rejection and
-no-write assertions, the test selects class `Skip` and teacher
-`ReplaceExisting`. Apply succeeds with exactly one skipped class and no
-created or replaced classes; teacher profile, class details and schedules,
-roster, evaluation, and record counts remain unchanged.
+F74 source/test commit 3e0a8d64 (Verify synthetic intensive schedule import flow) adds a source-readable synthetic Intensive worksheet fixture and a production parser → repository preview → explicit UpdateExisting → apply test. Literal assertions verify parsed candidate rows and preview match, persisted Intensive rows, retained target class identity with no class creation, unchanged IDs and values for an untouched Intensive row, and unchanged regular schedule rows.
 
-Executor and independent Tester built separate Windows x64 Debug Ninja/MSVC
-19.51.36257/Qt 6.12 trees; each validated 917 handwritten source owners and
-passed `ClassMngrNextApplicationClassTransferTests` and
-`ClassMngrClassTransferTests` (2/2). The independent Tester also ran the
-fixture test directly. `git diff --check` passed; no full suite was run.
+Executor used build/phase2-f69-schedule-state-projection-executor-ninja-msvc-20260926 (Windows x64 Debug Ninja/MSVC 14.51.36231/Qt 6.12.0). Independent Tester used a fresh tree at C:\Users\wfelt\AppData\Local\Temp\f74_intensive_verify_20260926 (Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12.0). CMake validated 917 handwritten source owners. ClassMngrScheduleImportTests, ClassMngrNextApplicationScheduleImportStateValidationTests, and ClassMngrNextApplicationScheduleImportMatchingProjectionTests built and passed (3/3). git diff --check passed; no full suite was run.
 
-Gate 2 gains fixture-backed Skip behavior; Gate 1 receives no new evidence.
-Both gates remain Partial; workspace boundary and audited `src/next`
-dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
-Sub Prep remains capped at the current and following calendar years
-(2026-2027). The protected user change to `cmake/sources.cmake` remains
-excluded at SHA-256
-`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-The F73 plan and deployment notes are included in the documentation commit,
-separate from the source/test commit. For F74, three Investigators ranked an
-Intensive Schedule Import workbook path as the best next production slice. Two
-Explorers found no historical Intensive workbook with a paired expected-result
-oracle in the repository. A synthetic fixture with fixed, hand-reviewed
-expectations can test parse-preview-apply behavior, but does not establish
-historical baseline parity; Gate 2 remains Partial.
+F74 is synthetic production-flow coverage only: the repository has no historical Intensive workbook paired with a legacy-output oracle. Gate 2 remains Partial; Gate 1 receives no new evidence. Workspace boundary and audited src/next dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open. Sub Prep stays capped at the current and following calendar years (2026-2027). The protected cmake/sources.cmake remains excluded at SHA-256 9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF. F75 is selected to extract a Qt-free typed duplicate-name-pair grouping policy for current roster and speaking-evaluation validation paths, preserving caller-specific behavior.
