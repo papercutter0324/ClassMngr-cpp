@@ -2775,3 +2775,15 @@ separate on a host with Xvfb and loopback access.
 
 - Run `schedule_overlap_conflict.xlsx` through the legacy `48fc5c5c` and current preview/apply paths using the same seeded database. Compare preview classification, overlap rejection, and the persisted-state snapshot. Reference the legacy `conflictsRollBackBeforeWrites()` test and current `previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites` test; focus on `ClassMngrScheduleImportTests`.
 - The conflict workbook was added after the baseline (`3121d90c`), so treat the result as common-input differential regression evidence. This is selected work, not implementation or verification evidence. Keep Gate 1 and Gate 2 Partial until broader exit criteria pass; Sub Prep stays capped at 2026-2027.
+
+### Phase 2 Schedule Import overlap-conflict differential - F83 verified
+
+- Source/test commit `2e8bbab2` changes only `tests/schedule_import_tests.cpp`. Legacy `48fc5c5c` and current `1236e9cb` used identical `schedule_overlap_conflict.xlsx` bytes (SHA-256 `2de93c4abdc5e82390adede250e8313501a38d4be2053e929c4adbed6d745312`) and deterministic SQLite seed. Their parser, preview, apply-error, and normalized state transcripts matched.
+- Literal assertions now pin teacher key/display values 김선생 and 이선생, imported rooms 413 and 415, preview inventory and absent class 9901, unmatched candidates, and exact rejection text: `The proposed schedule overlaps: E4 Hercules conflicts with E4 Theseus on Monday.` The before/after persisted snapshot covers teachers, classes, class info, regular and intensive schedules, intensive slot state, and app settings.
+- Independent Tester used a fresh archive at `1236e9cb` plus the final test patch. Windows x64 Debug used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0; CMake validated 921 source owners, the target built in 309 actions, and `ClassMngrScheduleImportTests` passed 1/1. `git diff --check` passed. Executor QtTest output was 51 passed, 0 failed, and one optional external-workbook skip. No full suite ran.
+- The fixture was introduced at `3121d90c`, after legacy baseline `48fc5c5c`; this is common-input differential coverage, not historical production-workbook parity. Gate 2 gains conflict evidence but remains Partial; Gate 1 remains Partial. Workspace boundary and audited `src/next` isolation remain Satisfied. Phase 2 exit stays open; Sub Prep remains capped at 2026-2027.
+
+### Phase 2 Schedule Import typed teacher key - F84 selected
+
+- Use `Domain::KoreanTeacherKey` for the matching key in both `ScheduleImportMatchingCandidate` and `ScheduleImportMatchingTeacherProjection`. Keep teacher display names separate and perform QString conversions at the repository edge.
+- Preserve the valid empty-key behavior in `preservesEmptyTeacherKeyMatchingSemantics`, existing match ordering, room aggregation, and F82/F83 repository fixture expectations. Verify `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and `ClassMngrScheduleImportTests`. This advances Gate 1 but does not complete it; it adds no new historical-parity claim. Sub Prep remains capped at 2026-2027.

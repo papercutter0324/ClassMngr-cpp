@@ -1078,3 +1078,8 @@ Prep's queried interval to the current and following calendar years at most.
 
 - A later checked-in workbook can still support a useful differential check when both the legacy revision and current code run the same bytes against an identical seed. Record the baseline and fixture provenance, compare semantic preview and persisted-state values, and avoid generated IDs or ordering unless they are stable.
 - Label this as common-input differential evidence when the fixture postdates the baseline. It strengthens one path but does not establish broad parity or prove the workbook represents historical production data.
+
+## Phase 2 Schedule Import overlap differential - 2026-09-26
+
+- For legacy/current overlap comparisons, pin the fixture's parsed teacher identity and room values, the ordered conflict diagnostic, and the full persisted snapshot. Include regular and intensive schedules plus settings so rejection-before-write evidence covers rollback scope, not just newly imported rows.
+- Preserve common-input wording when the workbook postdates the legacy revision, even when parser, preview, rejection, and database outputs match exactly.

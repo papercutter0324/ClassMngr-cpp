@@ -90,12 +90,18 @@
   native row identity at the adapter. Fresh verification validated 921 source
   owners and passed the teacher import and policy CTests (2/2); no full suite.
   Source commit: `118baceb`.
-- Latest code slice: F82 adds Schedule Import differential regression against
+- Earlier code slice: F82 adds Schedule Import differential regression against
   legacy commit `48fc5c5c`; all 14 captured semantic outputs matched for the
   checked common input and seeded database. Fresh verification validated 921
   source owners and passed `ClassMngrScheduleImportTests` (1/1). The fixture
   postdates the baseline, so this is not historical-output parity. Source
   commit: `6d8fb296`.
+- Latest code slice: F83 adds Schedule Import overlap-conflict differential
+  regression against legacy commit `48fc5c5c`. The matching fixture-derived
+  preview, exact rejection, and seven-table no-write snapshot were verified;
+  `ClassMngrScheduleImportTests` passed (1/1). The fixture postdates the
+  baseline, so this is common-input regression, not historical-output parity.
+  Test commit: `2e8bbab2`.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5934,13 +5940,70 @@ Open. Sub Prep remains capped at 2026-2027.
 
 Gate 1 and Gate 2 remain Partial; workspace boundary and audited v2 dependency
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
-Next selected bounded slice: F83 compares Schedule Import's checked
-`schedule_overlap_conflict.xlsx` path against legacy commit `48fc5c5c` and
-current code with an identical seed. Compare preview values, overlap rejection,
-and the persisted-state snapshot before and after apply, using the legacy
-`conflictsRollBackBeforeWrites()` case and the current
-`previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites` case. The fixture was
-added at `3121d90c`, after the baseline, so this is common-input differential
-regression only, not historical-output parity. Verify with
-`ClassMngrScheduleImportTests`; no full suite. This is selected work, not
-implementation evidence. Sub Prep remains capped at 2026-2027.
+Selected F83 scope, verified below: compare the checked
+`schedule_overlap_conflict.xlsx` input against legacy commit `48fc5c5c` and
+current code with the same seed, covering preview values, overlap rejection,
+and persisted state before and after apply. The fixture postdates the baseline,
+so the result is common-input regression, not historical-output parity. Sub
+Prep remains capped at 2026-2027.
+
+## Verified F83 Schedule Import overlap-conflict differential regression - commit 2e8bbab2
+
+Only `tests/schedule_import_tests.cpp` changed. Legacy `48fc5c5c` and current
+code `1236e9cb` ran identical fixture bytes and a deterministic SQLite seed
+through parser, preview, and apply harnesses. The
+`schedule_overlap_conflict.xlsx` fixture has SHA-256
+`2de93c4abdc5e82390adede250e8313501a38d4be2053e929c4adbed6d745312` and was
+introduced at `3121d90c`, after the legacy baseline.
+
+Semantic transcripts matched for teacher keys and display names 김선생/이선생,
+rooms 413/415, and preview inventory `classCount=1`, `regular=true`, and
+`intensive=false`. Class ID 9901 was initially absent; both candidate classes
+were unmatched, with no suggestion and `None` confidence. Both paths rejected
+with the exact message: `The
+proposed schedule overlaps: E4 Hercules conflicts with E4 Theseus on Monday.`
+Normalized state was unchanged across teachers, classes, class_info, regular
+times, intensive times, intensive slot states, and app_settings. The test pins
+those preview fields, the exact message, and the seven-table snapshot.
+
+Independent fresh Windows x64 Debug verification used archive `1236e9cb` plus
+the final test patch, CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt
+6.12.0. CMake validated 921 handwritten source owners; the build completed
+309 actions; `ClassMngrScheduleImportTests` passed (1/1), and `git diff
+--check` passed. Executor QtTest reported 51 passed, 0 failed, and one optional
+external-workbook skip. No full suite was run. Since the fixture was added
+after baseline `48fc5c5c`, F83 is common-input differential regression, not
+historical workbook parity.
+
+F83 advances Gate 2 with checked common-input differential evidence, but Gate
+2 remains Partial. Gate 1 remains Partial; workspace boundary and audited
+`src/next` dependency isolation remain Satisfied. Phase 2 remains In Progress
+with its exit gate Open. Sub Prep remains capped at 2026-2027.
+
+#### Cumulative exit-gate status after F83
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F79 adds validated Class Transfer intervals; F80 and F81 add Qt-free Teacher Import update policies. F82 and F83 change tests only; broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F82 and F83 compare legacy/current semantic behavior on checked inputs and identical seeds, but both fixtures postdate the legacy baseline. They add common-input differential regression, not historical-output parity. Earlier fixture regressions remain; broader parity is incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F83 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F83 changes tests only. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress with its
+exit gate Open. Next selected bounded slice: F84 types Schedule Import matching
+teacher keys. Represent
+`ScheduleImportMatchingCandidate::teacherKey` and
+`ScheduleImportMatchingTeacherProjection::teacherKey` as
+`Domain::KoreanTeacherKey`; preserve a valid empty key with explicit default
+member initialization or the existing factory, without adding a Domain
+constructor unless justified. Keep `teacherName` separate and convert to/from
+the legacy representation only at `schedule_import_repository.cpp`. Preserve
+ordering, room aggregation, match results, and especially
+`preservesEmptyTeacherKeyMatchingSemantics`. Verify with
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and
+`ClassMngrScheduleImportTests`; no new target is expected. This adds Gate 1
+evidence but does not close it and adds no historical parity. Broader Teacher
+Import plan-validation extraction remains a separate candidate.
+This is selected work, not implementation evidence. Sub Prep remains capped at
+2026-2027.
