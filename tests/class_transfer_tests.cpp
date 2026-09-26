@@ -947,6 +947,9 @@ void ClassTransferTests::
     QVERIFY(classInfoBefore);
     const Result<Roster> rosterBefore = service.loadRoster(destinationClass);
     QVERIFY(rosterBefore);
+    const auto evaluationBefore = service.loadSpeakingEval(
+        destinationClass, QStringLiteral("Custom Evaluation"));
+    QVERIFY(evaluationBefore.has_value());
     const auto result = service.importClasses(
         *package, dialog.importPlan());
     QVERIFY(!result.has_value());
@@ -974,6 +977,148 @@ void ClassTransferTests::
         classInfoBefore->classTimes.first().endTime);
     QCOMPARE(service.loadRoster(destinationClass)->rows.first().first(),
              rosterBefore->rows.first().first());
+
+    int skipIndex = -1;
+    for (int index = 0; index < classChoice->count(); ++index)
+    {
+        if (classChoice->itemData(index, Qt::UserRole).toInt()
+                == static_cast<int>(ClassImportAction::Skip)
+            && classChoice->itemData(index, Qt::UserRole + 1).toInt() == -1)
+        {
+            QVERIFY(skipIndex < 0);
+            skipIndex = index;
+        }
+    }
+    QVERIFY(skipIndex >= 0);
+    classChoice->setCurrentIndex(skipIndex);
+
+    int replaceTeacherIndex = -1;
+    for (int index = 0; index < teacherChoice->count(); ++index)
+    {
+        if (teacherChoice->itemData(index, Qt::UserRole).toInt()
+                == static_cast<int>(TeacherImportAction::ReplaceExisting)
+            && teacherChoice->itemData(index, Qt::UserRole + 1).toInt()
+                == destinationTeacher)
+        {
+            QVERIFY(replaceTeacherIndex < 0);
+            replaceTeacherIndex = index;
+        }
+    }
+    QVERIFY(replaceTeacherIndex >= 0);
+    teacherChoice->setCurrentIndex(replaceTeacherIndex);
+    QVERIFY(importButton->isEnabled());
+
+    const ClassImportPlan skipPlan = dialog.importPlan();
+    QCOMPARE(skipPlan.classes.size(), 1);
+    QCOMPARE(skipPlan.classes.first().packageClassIndex, 0);
+    QCOMPARE(skipPlan.classes.first().action, ClassImportAction::Skip);
+    QCOMPARE(skipPlan.classes.first().targetClassId, -1);
+    QCOMPARE(skipPlan.teachers.size(), 1);
+    QCOMPARE(skipPlan.teachers.first().teacherKey,
+             package->teachers.first().key);
+    QCOMPARE(skipPlan.teachers.first().action,
+             TeacherImportAction::ReplaceExisting);
+    QCOMPARE(skipPlan.teachers.first().targetTeacherId, destinationTeacher);
+
+    const auto skipped = service.importClasses(*package, skipPlan);
+    QVERIFY2(skipped.has_value(),
+             skipped ? "" : qPrintable(skipped.error()));
+    QVERIFY(skipped->createdClassIds.isEmpty());
+    QVERIFY(skipped->replacedClassIds.isEmpty());
+    QCOMPARE(skipped->skippedClassCount, 1);
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
+
+    const Teacher teacherAfter = service.getTeacher(destinationTeacher)
+        .value_or(Teacher{});
+    QCOMPARE(teacherAfter.id, teacherBefore.id);
+    QCOMPARE(teacherAfter.teacherKr, teacherBefore.teacherKr);
+    QCOMPARE(teacherAfter.teacherEn, teacherBefore.teacherEn);
+    QCOMPARE(teacherAfter.preferredRomanization,
+             teacherBefore.preferredRomanization);
+    QCOMPARE(teacherAfter.preferredName, teacherBefore.preferredName);
+    QCOMPARE(teacherAfter.roomNumber, teacherBefore.roomNumber);
+    QCOMPARE(teacherAfter.birthday, teacherBefore.birthday);
+    QCOMPARE(teacherAfter.phoneNumber, teacherBefore.phoneNumber);
+    QCOMPARE(teacherAfter.wifiName, teacherBefore.wifiName);
+    QCOMPARE(teacherAfter.wifiPassword, teacherBefore.wifiPassword);
+    QCOMPARE(teacherAfter.internetType, teacherBefore.internetType);
+    QCOMPARE(teacherAfter.zoomId, teacherBefore.zoomId);
+    QCOMPARE(teacherAfter.zoomPassword, teacherBefore.zoomPassword);
+    QCOMPARE(teacherAfter.projectionType, teacherBefore.projectionType);
+    QCOMPARE(teacherAfter.notes, teacherBefore.notes);
+
+    const Classroom classAfter = service.getClassById(destinationClass)
+        .value_or(Classroom{});
+    QCOMPARE(classAfter.id, classBefore.id);
+    QCOMPARE(classAfter.name, classBefore.name);
+
+    const Result<ClassInfo> classInfoAfter =
+        service.loadClassInfo(destinationClass);
+    QVERIFY(classInfoAfter);
+    QCOMPARE(classInfoAfter->classId, classInfoBefore->classId);
+    QCOMPARE(classInfoAfter->teacherId, classInfoBefore->teacherId);
+    QCOMPARE(classInfoAfter->teacherKr, classInfoBefore->teacherKr);
+    QCOMPARE(classInfoAfter->teacherEn, classInfoBefore->teacherEn);
+    QCOMPARE(classInfoAfter->teacherPreferredName,
+             classInfoBefore->teacherPreferredName);
+    QCOMPARE(classInfoAfter->roomNumber, classInfoBefore->roomNumber);
+    QCOMPARE(classInfoAfter->wifiName, classInfoBefore->wifiName);
+    QCOMPARE(classInfoAfter->wifiPassword, classInfoBefore->wifiPassword);
+    QCOMPARE(classInfoAfter->internetType, classInfoBefore->internetType);
+    QCOMPARE(classInfoAfter->zoomId, classInfoBefore->zoomId);
+    QCOMPARE(classInfoAfter->zoomPassword, classInfoBefore->zoomPassword);
+    QCOMPARE(classInfoAfter->projectionType, classInfoBefore->projectionType);
+    QCOMPARE(classInfoAfter->classGrade, classInfoBefore->classGrade);
+    QCOMPARE(classInfoAfter->classLevel, classInfoBefore->classLevel);
+    QCOMPARE(classInfoAfter->readingBook, classInfoBefore->readingBook);
+    QCOMPARE(classInfoAfter->essayBook, classInfoBefore->essayBook);
+    QCOMPARE(classInfoAfter->classColor, classInfoBefore->classColor);
+    QCOMPARE(classInfoAfter->fontColor, classInfoBefore->fontColor);
+    QCOMPARE(classInfoAfter->notes, classInfoBefore->notes);
+    QCOMPARE(classInfoAfter->timeFillerActivities,
+             classInfoBefore->timeFillerActivities);
+    QCOMPARE(classInfoAfter->classTimes.size(),
+             classInfoBefore->classTimes.size());
+    for (int index = 0; index < classInfoBefore->classTimes.size(); ++index)
+    {
+        QCOMPARE(classInfoAfter->classTimes[index].day,
+                 classInfoBefore->classTimes[index].day);
+        QCOMPARE(classInfoAfter->classTimes[index].startTime,
+                 classInfoBefore->classTimes[index].startTime);
+        QCOMPARE(classInfoAfter->classTimes[index].endTime,
+                 classInfoBefore->classTimes[index].endTime);
+    }
+    QCOMPARE(classInfoAfter->intensiveTimes.size(),
+             classInfoBefore->intensiveTimes.size());
+    for (int index = 0;
+         index < classInfoBefore->intensiveTimes.size();
+         ++index)
+    {
+        QCOMPARE(classInfoAfter->intensiveTimes[index].day,
+                 classInfoBefore->intensiveTimes[index].day);
+        QCOMPARE(classInfoAfter->intensiveTimes[index].startTime,
+                 classInfoBefore->intensiveTimes[index].startTime);
+        QCOMPARE(classInfoAfter->intensiveTimes[index].endTime,
+                 classInfoBefore->intensiveTimes[index].endTime);
+    }
+
+    const Result<Roster> rosterAfter = service.loadRoster(destinationClass);
+    QVERIFY(rosterAfter);
+    QCOMPARE(rosterAfter->columns, rosterBefore->columns);
+    QCOMPARE(rosterAfter->columnWidths, rosterBefore->columnWidths);
+    QCOMPARE(rosterAfter->rows, rosterBefore->rows);
+
+    const auto evaluationAfter = service.loadSpeakingEval(
+        destinationClass, QStringLiteral("Custom Evaluation"));
+    QVERIFY(evaluationAfter.has_value());
+    QCOMPARE(evaluationAfter->size(), evaluationBefore->size());
+    for (int index = 0; index < evaluationBefore->size(); ++index)
+    {
+        QCOMPARE(evaluationAfter->at(index), evaluationBefore->at(index));
+    }
 }
 
 void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults()
