@@ -1011,3 +1011,13 @@ Prep's queried interval to the current and following calendar years at most.
   moving matching into a Qt-free policy. Verify assumptions about Qt Unicode
   folding against the supported Qt version; the F70 regression covers ASCII
   case and whitespace and does not claim exhaustive Unicode equivalence.
+
+## Phase 2 Class Transfer typed review targets - 2026-09-26
+
+- Keep category-typed targets and optional absence in the app-less contract.
+  Translate only the exact legacy `-1` sentinel to absence at adapters; reject
+  other nonpositive IDs there and preserve the existing action-specific error
+  message and validation precedence.
+- When both the UI and repository build the same typed request, test both
+  adapter boundaries. Keep fixture-backed successful replacement assertions
+  alongside the existing create and conflict/no-write paths.

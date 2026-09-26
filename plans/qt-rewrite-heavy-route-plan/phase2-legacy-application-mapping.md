@@ -21,8 +21,8 @@ apply-boundary action/sentinel
 characterization, F63 production no-suggestion sentinel assertion, F64's
 typed student-name pair at the roster score-import join, and F65's verified
 legacy profile startup/migration path through FileController, the F70 Class
-Transfer preview-matching policy, and the shared Qt-free Class Transfer
-review-decision contract and repository validation,
+Transfer preview-matching policy, and F71's typed Class Transfer review-decision
+identities with legacy integer adapters,
 and Sub Prep print-source, selected-class details, and schedule-summary read
 adapters plus the Sub Prep information-sheet output wiring. Personal-details
 save, personal-signature, and current-campus preference caller boundaries
@@ -3991,3 +3991,33 @@ equivalence. Independent and executor fresh Windows x64 Debug Ninja/MSVC
 passed `ClassMngrNextApplicationClassTransferTests` and
 `ClassMngrClassTransferTests` (2/2). No full suite was run. Gate 1 and Gate 2
 remain Partial; Phase 2 remains open.
+
+## Verified F71 typed Class Transfer review decision identities - commit `9b090cb5`
+
+[`class_transfer_projection.h`](../../src/next/application/class_transfer_projection.h)
+now uses `Domain::ClassId`/`TeacherId` for review candidate match identities and
+issue identities, and optional typed IDs for resolution targets. Both app-less
+validators continue enforcing action, membership, duplicate, and missing-target
+rules. The dialog UI and repository retain their legacy integer APIs at the
+adapter boundary: positive values convert to typed IDs, exactly `-1` maps to an
+absent target, and `0`/`-2` return the existing action-specific errors. Invalid
+action precedence is preserved.
+
+App-less assertions cover exact field categories, the lack of implicit integer
+conversion, optional target shape, and typed issue identity. Direct dialog tests
+cover class and teacher targets `0`/`-2` for both available actions. Repository
+coverage exercises `0`/`-2` for class Create/Replace and teacher Create/Keep
+decisions, invalid-action precedence, and no writes.
+
+The checked-in `success_source.json` now reaches a nonempty exact teacher/class
+match and a successful dialog-selected Replace. Assertions verify the destination
+class ID and teacher profile remain, while class details, schedule, and roster are
+replaced and the old evaluation is cleared. The existing Create fixture and
+checked-in `conflict_source.json` conflict/no-write case remain covered.
+
+Executor and independent Tester each configured a fresh Windows x64 Debug
+Ninja/MSVC 19.51.36257/Qt 6.12 tree, validated 917 handwritten source owners,
+and passed `ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). `git diff --check` passed; no full suite was
+run. F71 advances Gate 1 and Gate 2, both still Partial; workspace acceptance and
+audited v2 dependency isolation remain Satisfied. Phase 2 remains open.

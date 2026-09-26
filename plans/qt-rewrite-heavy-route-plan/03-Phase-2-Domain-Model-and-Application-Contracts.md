@@ -8,30 +8,29 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Previous code slice: F69 extracts final Schedule Import state projection into Qt-free
-  Application code. Typed `ClassId | candidate-index` references and explicit
-  `ReplaceRows`/`KeepExistingRows` dispositions let one projection feed overlap
-  validation and repository persistence; generated IDs are resolved after inserts.
-  Intensive UpdateExisting preserves untouched row identities. App-less projection
-  tests and production fixture, overlap, skip, pre-write, and rollback coverage passed.
-  Two fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees validated 916
-  handwritten source owners and passed the state-validation and production Schedule
-  Import CTests 2/2; `git diff --check` passed, no full suite. Gate 1 gains direct
-  projection evidence and Gate 2 gains fixture-backed persisted-row parity; both remain
-  Partial. Workspace boundary and audited `src/next` dependency isolation remain
-  Satisfied. Source commit: `95aaefa4`.
-- Latest code slice: F70 moves Class Transfer preview matching into a Qt-free
+- Previous code slice: F70 moves Class Transfer preview matching into a Qt-free
   Application policy (`matchClassTransferCandidates`). The repository adapter retains Qt
   simplified/case-folded input normalization and legacy integer preview presentation.
-  App-less tests cover teacher-match rules, course and teacher identity, assigned but
-  unloaded teachers versus unassigned fallback, and output order; production tests
-  preserve normalized matching, checked-in success/conflict preview IDs, and conflict
-  no-write behavior. Two fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees
-  validated 917 handwritten source owners and passed the application and production
-  Class Transfer CTests 2/2. Existing fixture parity is verified; Unicode case-fold
-  equivalence is not exhaustive. Gate 1 and Gate 2 advance but remain Partial. Source
-  commit: `2f3d414c`. Phase 2 exit gate remains Open. Sub Prep remains limited to the
-  current and following calendar years, 2026-2027.
+  App-less tests cover matching rules and order; production tests preserve normalized
+  matching, checked-in success/conflict preview IDs, and conflict no-write behavior.
+  Two fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees validated 917
+  handwritten source owners and passed the application and production Class Transfer
+  CTests 2/2. Fixture parity is verified; Unicode case-fold equivalence is not exhaustive.
+  Gate 1 and Gate 2 remain Partial. Source commit: `2f3d414c`.
+- Latest code slice: F71 gives Class Transfer review match and issue identities typed
+  `Domain::ClassId`/`TeacherId` values and optional typed resolution targets. UI and
+  repository adapters retain legacy integer APIs, map positive IDs and exactly `-1`,
+  reject `0`/`-2` with existing action-specific errors, and preserve invalid-action
+  precedence. App-less validators retain action, membership, duplicate, and missing-target
+  rules. The checked-in success fixture now exercises a nonempty exact teacher/class
+  match and dialog-selected Replace, asserting retained identity/profile, replaced class
+  details/schedule/roster, and cleared evaluation; Create and conflict/no-write fixtures
+  remain. UI/repository sentinel tests cover their assigned matrices. Two fresh Windows
+  x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees validated 917 handwritten source owners
+  and passed the app-less and production Class Transfer CTests 2/2; diff check passed,
+  no full suite. Gate 1 and Gate 2 advance but remain Partial. Source commit: `9b090cb5`.
+  Phase 2 exit gate remains Open. Sub Prep remains limited to the current and following
+  calendar years, 2026-2027.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5326,3 +5325,43 @@ gate Open. F70 verifies existing fixture parity without claiming exhaustive
 Unicode case-fold coverage. Next entry: select F71 from the remaining Phase 2
 gaps. Sub Prep remains limited to the current and following calendar years,
 2026-2027.
+
+## Verified F71 typed Class Transfer review decision identities - commit `9b090cb5`
+
+[`class_transfer_projection.h`](../../src/next/application/class_transfer_projection.h)
+now uses typed `Domain::ClassId`/`TeacherId` match and issue identities, with
+optional typed resolution targets. Both app-less validators preserve action,
+membership, duplicate, and missing-target rules. UI and repository adapters retain
+legacy integer APIs: positive values become typed IDs, exactly `-1` means absent,
+and `0`/`-2` retain existing action-specific errors and invalid-action precedence.
+
+App-less tests assert field categories, no implicit integer conversion, optional
+targets, and typed issue identity. UI tests cover class and teacher `0`/`-2` targets
+for both available actions. Repository tests cover class Create/Replace and teacher
+Create/Keep cases with `0`/`-2`, invalid-action precedence, and no writes. The checked-in
+`success_source.json` now exercises a nonempty exact teacher/class match and
+dialog-selected Replace: it asserts the destination class ID and teacher profile
+are retained, class details/schedule/roster are replaced, and old evaluation is
+cleared. The existing Create fixture and checked-in conflict/no-write path remain.
+
+Executor and independent Tester each used a fresh Windows x64 Debug Ninja/MSVC
+19.51.36257/Qt 6.12 tree, validated 917 handwritten source owners, and passed
+`ClassMngrNextApplicationClassTransferTests` and `ClassMngrClassTransferTests` (2/2).
+`git diff --check` passed; no full suite was run.
+
+#### Cumulative exit-gate status after F71
+
+This audit applies the formal exit criteria through F71. Both focused targets passed
+independently; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F71 adds typed Class Transfer match/issue identities and optional typed targets while preserving validator rules. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F71 exercises exact teacher/class matching and successful dialog-selected Replace through the checked-in success fixture, retaining the Create fixture and conflict/no-write coverage; sentinel and invalid-action matrices add adapter evidence. Broader baseline fixture parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F71 does not change that criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies. F71's review contract remains Qt-free; legacy integer conversion stays in UI/repository adapters. |
+
+Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress and its exit
+gate Open. Sub Prep remains limited to the current and following calendar years,
+2026-2027. Next entry: select F72 from the remaining Phase 2 gaps.

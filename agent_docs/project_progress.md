@@ -1174,6 +1174,47 @@ isolation remain Satisfied. Phase 2 and its exit gate remain Open. Sub Prep
 remains capped at the current and following calendar years (2026-2027). The
 protected user change to `cmake/sources.cmake` remains excluded; its SHA-256
 is `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-The separate F70 plan/mapping and canonical deployment-documentation commit
-is pending. Next: complete that documentation slice, then select F71 from
+F70 plan/mapping and canonical deployment documentation are committed
+separately as `91d01551`. F71 source/test commit `9b090cb5` types the
+Class Transfer review-decision IDs and verifies a successful replacement from
+the checked-in success fixture. The two focused Class Transfer CTests passed
+in separate executor and independent fresh builds, each with 917 handwritten
+source owners. Gate 1 and Gate 2 advance but remain Partial; the Phase 2 exit
+gate remains Open. Next: finish F71 plan/mapping and deployment documentation
+in a separate commit, then select F72 from three independent Investigator
+reviews.
+
+## Current Phase 2 position - 2026-09-26 (F71)
+
+F71 source/test commit `9b090cb5` (`Type Class Transfer review decision
+identities`) changes app-less match candidates and issue targets to typed
+`ClassId`/`TeacherId` values and selected targets to optional typed IDs. The UI
+and repository adapters retain legacy integer APIs, convert positive IDs,
+translate exactly `-1` to absence, and reject other nonpositive IDs with the
+existing action-specific messages and validation precedence.
+
+App-less tests assert field categories, optional target values, typed issue
+identities, and existing missing, invalid-action, match-set, and duplicate
+rules. The checked-in `success_source.json` now exercises a successful Replace
+with an exact class/teacher match: it retains the destination class ID and
+teacher profile, replaces course details, schedule, and roster, and clears old
+evaluation rows. Existing Create fixture behavior and conflict no-write
+coverage remain. Adapter tests cover malformed targets in both UI and
+repository paths.
+
+Executor and independent Tester used separate fresh Windows x64 Debug
+Ninja/MSVC 19.51.36257/Qt 6.12 builds. Each validated 917 handwritten source
+owners and passed `ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). `git diff --check` passed; no full suite
+was run.
+
+Gate 1 gains a typed app-less decision contract and Gate 2 gains
+fixture-backed successful replacement parity; both remain Partial. Workspace
+boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2
+and its exit gate remain Open. Sub Prep remains capped at the current and
+following calendar years (2026-2027). The protected user change to
+`cmake/sources.cmake` remains excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+The separate F71 plan/mapping and canonical deployment-documentation commit
+is pending. Next: complete that documentation slice, then select F72 from
 three independent Investigator reviews.

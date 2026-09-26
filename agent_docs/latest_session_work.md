@@ -2565,7 +2565,53 @@ separate on a host with Xvfb and loopback access.
   current and following calendar years (2026-2027). Protected
   `cmake/sources.cmake` stayed excluded at SHA-256
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-- F70 source/test commit is complete. The Archivist is updating the plan and
-  legacy mapping; root will commit those with these deployment notes as a
-  separate documentation slice. Next: choose F71 from three independent
+- F70 source/test and separate plan/mapping/deployment documentation commits
+  are complete (`2f3d414c` and `91d01551`). F71's implementation and evidence
+  follow below.
+
+### Phase 2 Class Transfer typed review identities and replacement parity - 2026-09-26 (F71)
+
+- Source/test commit: `9b090cb5` (`Type Class Transfer review decision
+  identities`). `ClassTransferReviewDecisionRequest` now stores candidate IDs
+  and issue targets as typed `Domain::ClassId`/`Domain::TeacherId`; selected
+  targets use `std::optional` rather than an integer sentinel. The Application
+  validator keeps action, membership, duplicate replacement, and missing-choice
+  rules app-less. Dialog and repository adapters retain legacy integer UI and
+  plan APIs, convert positive IDs, map exactly `-1` to absence, and reject
+  other nonpositive IDs with the existing action-specific messages and error
+  precedence.
+- Changed source/test files: `src/next/application/class_transfer_projection.h`,
+  `src/features/classes/ui/class_import_dialog.cpp`,
+  `src/data/repositories/class_transfer_repository.cpp`,
+  `tests/next_application_class_transfer_tests.cpp`, and
+  `tests/class_transfer_tests.cpp`.
+- App-less tests assert typed categories, absence, typed issue identity, and
+  existing validation rules. The checked-in `success_source.json` path seeds
+  matching destination teacher/class rows and applies dialog-selected Replace.
+  It asserts the retained destination ClassId and teacher profile, replaced
+  class details/schedule/roster, and cleared old evaluation rows. The existing
+  checked-in Create fixture and `conflict_source.json` no-write behavior remain.
+  Direct dialog checks cover class targets 0/-2 and teacher targets 0/-2 for
+  both available actions; repository checks cover class Create/Replace and
+  teacher Create/Keep with 0/-2 plus invalid-action precedence.
+- Executor tree `build/phase2-f71-typed-class-review-msvc-ninja-x64` and
+  independent Tester tree
+  `C:\Users\wfelt\AppData\Local\Temp\phase2-f71-typed-review-independent-20260926-v3`
+  used separate fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 builds.
+  Each validated 917 handwritten source owners and passed exactly
+  `ClassMngrNextApplicationClassTransferTests` and
+  `ClassMngrClassTransferTests` (2/2). The independent Tester reran after the
+  final dialog assertions. `git diff --check` passed; no full suite was run.
+  An initial Ninja preset invocation failed because it supplied an unsupported
+  x64 platform; direct Ninja configuration under the Visual Studio developer
+  environment succeeded.
+- Gate 1 gains a typed app-less review-decision contract and Gate 2 gains
+  fixture-backed successful replacement parity; both remain Partial. Workspace
+  boundary and audited `src/next` isolation remain Satisfied; Phase 2 exit
+  remains Open. Sub Prep stays capped at current and following years
+  (2026-2027). Protected `cmake/sources.cmake` stayed excluded at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- F71 source/test commit is complete. The Archivist is updating the plan and
+  legacy mapping; root will commit those with the deployment notes as a
+  separate documentation slice. Next: select F72 from three independent
   Investigator reviews after the documentation commit.
