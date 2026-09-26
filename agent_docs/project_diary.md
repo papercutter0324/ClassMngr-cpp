@@ -1102,3 +1102,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 intensive Schedule Import baseline comparison - 2026-09-27
 
 - Baseline-era source helpers and inline worksheet data can establish synthetic differential evidence when both revisions use the same generated workbook bytes and deterministic seed. Pin parsed, preview, applied, and full persisted state. Keep provenance explicit: this does not show that the generated workbook represents historical production data.
+
+## Phase 2 Teacher Import match cardinality - 2026-09-27
+
+- A Qt-free count classifier can centralize the zero/unique/multiple decision while leaving identity semantics at the repository. Integrate it in every import namespace and pin exact per-namespace ambiguity diagnostics and rollback; include counts above two in the pure-policy test to establish the 2+ boundary.
