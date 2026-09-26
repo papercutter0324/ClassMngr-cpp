@@ -6,9 +6,9 @@
 #include "next/application/import_review_session.h"
 #include "next/application/korean_teacher_import_update.h"
 #include "next/application/native_english_teacher_import_update.h"
+#include "next/application/teacher_import_plan_validation.h"
 
 #include <QObject>
-#include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -79,7 +79,10 @@ TeacherImportReviewRequest reviewRequest(const TeacherImportReview& review)
     return request;
 }
 
-Status validateReviewPlan(const TeacherImportPlan& plan)
+Status projectReviewPlan(
+    const TeacherImportPlan& plan,
+    ClassMngr::Next::Application::TeacherImportPlanValidationInput& input
+    )
 {
     if (!plan.review)
     {
@@ -94,7 +97,7 @@ Status validateReviewPlan(const TeacherImportPlan& plan)
         return std::unexpected(QObject::tr("The teacher import review choices are invalid."));
     }
 
-    QList<QString> expectedTeacherKeys;
+    auto& reviewedTeacherKeys = input.reviewedKoreanTeacherKeys.emplace();
     for (std::size_t groupIndex = 0;
          groupIndex < resolution.selectedCandidateIndexes.size();
          ++groupIndex)
@@ -104,24 +107,9 @@ Status validateReviewPlan(const TeacherImportPlan& plan)
         for (const std::size_t candidateIndex :
              resolution.selectedCandidateIndexes[groupIndex])
         {
-            expectedTeacherKeys.append(koreanTeacherNameKey(
+            reviewedTeacherKeys.push_back(koreanTeacherNameKey(
                 group.candidates.at(static_cast<qsizetype>(candidateIndex))
-                    .teacher.teacherKr));
-        }
-    }
-
-    if (expectedTeacherKeys.size() != plan.koreanTeachers.size())
-    {
-        return std::unexpected(QObject::tr(
-            "The reviewed Korean teachers do not match the import selection."));
-    }
-    for (int index = 0; index < expectedTeacherKeys.size(); ++index)
-    {
-        if (expectedTeacherKeys.at(index)
-            != koreanTeacherNameKey(plan.koreanTeachers.at(index).teacherKr))
-        {
-            return std::unexpected(QObject::tr(
-                "The reviewed Korean teachers do not match the import selection."));
+                    .teacher.teacherKr).toUtf8().toStdString());
         }
     }
     return {};
@@ -132,69 +120,79 @@ QString queryFailure(const QSqlQuery& query, const QString& action)
     return SqlQueryUtils::errorFor(query, action).userMessage();
 }
 
+QString validationMessage(
+    const ClassMngr::Next::Application::TeacherImportPlanValidationIssue issue
+    )
+{
+    using ClassMngr::Next::Application::TeacherImportPlanValidationIssue;
+    switch (issue)
+    {
+    case TeacherImportPlanValidationIssue::ReviewSelectionMismatch:
+        return QObject::tr(
+            "The reviewed Korean teachers do not match the import selection.");
+    case TeacherImportPlanValidationIssue::InvalidSourceDate:
+        return QObject::tr("The teacher import date is invalid.");
+    case TeacherImportPlanValidationIssue::MissingKoreanTeacherName:
+        return QObject::tr("Every imported Korean teacher must have a name.");
+    case TeacherImportPlanValidationIssue::DuplicateKoreanTeacherName:
+        return QObject::tr("The import contains a duplicate Korean teacher name.");
+    case TeacherImportPlanValidationIssue::MissingNativeEnglishTeacherName:
+        return QObject::tr("Every imported Native English Teacher must have a name.");
+    case TeacherImportPlanValidationIssue::DuplicateNativeEnglishTeacherName:
+        return QObject::tr("The import contains a duplicate Native English Teacher name.");
+    case TeacherImportPlanValidationIssue::MissingGsTeamMemberName:
+        return QObject::tr("Every imported GS Team member must have a name.");
+    case TeacherImportPlanValidationIssue::DuplicateGsTeamMemberName:
+        return QObject::tr("The import contains a duplicate GS Team name.");
+    case TeacherImportPlanValidationIssue::None:
+        break;
+    }
+    return {};
+}
+
 Status validatePlan(const TeacherImportPlan& plan)
 {
-    const Status reviewStatus = validateReviewPlan(plan);
+    ClassMngr::Next::Application::TeacherImportPlanValidationInput input;
+    const Status reviewStatus = projectReviewPlan(plan, input);
     if (!reviewStatus)
     {
         return reviewStatus;
     }
 
-    if (!plan.sourceDate.isValid())
-    {
-        return std::unexpected(QObject::tr("The teacher import date is invalid."));
-    }
-
-    QSet<QString> korean;
+    input.sourceDateValid = plan.sourceDate.isValid();
+    input.koreanTeacherKeys.reserve(
+        static_cast<std::size_t>(plan.koreanTeachers.size()));
     for (const Teacher& teacher : plan.koreanTeachers)
     {
-        const QString key = koreanTeacherNameKey(teacher.teacherKr);
-        if (key.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every imported Korean teacher must have a name."));
-        }
-        if (korean.contains(key))
-        {
-            return std::unexpected(QObject::tr("The import contains a duplicate Korean teacher name."));
-        }
-        korean.insert(key);
+        input.koreanTeacherKeys.push_back(
+            koreanTeacherNameKey(teacher.teacherKr).toUtf8().toStdString());
     }
 
-    QSet<QString> native;
+    input.nativeEnglishTeacherKeys.reserve(
+        static_cast<std::size_t>(plan.nativeEnglishTeachers.size()));
     for (const NativeEnglishTeacher& teacher : plan.nativeEnglishTeachers)
     {
-        const QString key = normalizedName(teacher.name);
-        if (key.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every imported Native English Teacher must have a name."));
-        }
-        if (native.contains(key))
-        {
-            return std::unexpected(QObject::tr("The import contains a duplicate Native English Teacher name."));
-        }
-        native.insert(key);
+        input.nativeEnglishTeacherKeys.push_back(
+            normalizedName(teacher.name).toUtf8().toStdString());
     }
 
-    QSet<QString> gsEnglish;
-    QSet<QString> gsKorean;
+    input.gsTeamMemberKeys.reserve(
+        static_cast<std::size_t>(plan.gsTeamMembers.size()));
     for (const GsTeamMember& member : plan.gsTeamMembers)
     {
-        const QString english = normalizedName(member.name);
-        const QString koreanName = normalizedName(member.koreanName);
-        if (english.isEmpty() && koreanName.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every imported GS Team member must have a name."));
-        }
-        if ((!english.isEmpty() && gsEnglish.contains(english))
-            || (!koreanName.isEmpty() && gsKorean.contains(koreanName)))
-        {
-            return std::unexpected(QObject::tr("The import contains a duplicate GS Team name."));
-        }
-        if (!english.isEmpty()) gsEnglish.insert(english);
-        if (!koreanName.isEmpty()) gsKorean.insert(koreanName);
+        input.gsTeamMemberKeys.push_back({
+            normalizedName(member.name).toUtf8().toStdString(),
+            normalizedName(member.koreanName).toUtf8().toStdString()
+        });
     }
 
-    return {};
+    const auto issue =
+        ClassMngr::Next::Application::validateTeacherImportPlan(input);
+    if (issue == ClassMngr::Next::Application::TeacherImportPlanValidationIssue::None)
+    {
+        return {};
+    }
+    return std::unexpected(validationMessage(issue));
 }
 
 Result<QList<Teacher>> loadKoreanTeachers(QSqlDatabase& database)

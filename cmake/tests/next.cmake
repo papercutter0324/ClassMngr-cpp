@@ -407,6 +407,37 @@ add_test(
     COMMAND ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests
 )
 
+# Exercise full Teacher Import plan validation without Qt or the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationTeacherImportPlanValidationTests
+    tests/next_application_teacher_import_plan_validation_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationTeacherImportPlanValidationTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationTeacherImportPlanValidationTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationTeacherImportPlanValidationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationTeacherImportPlanValidationTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationTeacherImportPlanValidationTests
+    COMMAND ClassMngrNextApplicationTeacherImportPlanValidationTests
+)
+
 classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES

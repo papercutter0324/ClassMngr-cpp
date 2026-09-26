@@ -738,7 +738,12 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         duplicatePlan.nativeEnglishTeachers.append(
             {-1, QStringLiteral(" duplicate "), QStringLiteral("NET"),
              QString(), QString(), QString()});
-        QVERIFY(!repository.importTeachers(duplicatePlan).has_value());
+        const auto duplicateImport = repository.importTeachers(duplicatePlan);
+        QVERIFY(!duplicateImport.has_value());
+        QCOMPARE(
+            duplicateImport.error(),
+            QStringLiteral("The import contains a duplicate Korean teacher name.")
+            );
         QVERIFY(counts.exec(QStringLiteral(
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='롤백교사'")));
         QVERIFY(counts.next());
@@ -746,6 +751,18 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
         QVERIFY(counts.next());
         QCOMPARE(counts.value(0).toInt(), 1);
+
+        const auto expectPreWriteError = [&repository](
+                                              const TeacherImportPlan& candidate,
+                                              const QString& expectedError) {
+            const auto rejected = repository.importTeachers(candidate);
+            if (rejected)
+            {
+                QFAIL("Invalid teacher import plan was accepted.");
+                return;
+            }
+            QCOMPARE(rejected.error(), expectedError);
+        };
 
         TeacherImportPlan emptyKoreanPlan;
         emptyKoreanPlan.templateId = QStringLiteral("empty-korean-name-test");
@@ -763,6 +780,75 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
         QVERIFY(counts.next());
         QCOMPARE(counts.value(0).toInt(), 1);
+
+        TeacherImportPlan invalidDatePlan;
+        invalidDatePlan.templateId = QStringLiteral("invalid-date-test");
+        Teacher invalidDateTeacher;
+        invalidDateTeacher.teacherKr = QStringLiteral("missing name key");
+        invalidDatePlan.koreanTeachers.append(invalidDateTeacher);
+        expectPreWriteError(
+            invalidDatePlan,
+            QStringLiteral("The teacher import date is invalid."));
+
+        TeacherImportPlan emptyNativePlan;
+        emptyNativePlan.templateId = QStringLiteral("empty-native-test");
+        emptyNativePlan.sourceDate = QDate(2026, 8, 4);
+        emptyNativePlan.nativeEnglishTeachers.append(
+            {-1, QStringLiteral(" \t "), QStringLiteral("NET"),
+             QString(), QString(), QString()});
+        expectPreWriteError(
+            emptyNativePlan,
+            QStringLiteral("Every imported Native English Teacher must have a name."));
+
+        TeacherImportPlan duplicateNativePlan;
+        duplicateNativePlan.templateId = QStringLiteral("duplicate-native-test");
+        duplicateNativePlan.sourceDate = QDate(2026, 8, 5);
+        duplicateNativePlan.nativeEnglishTeachers.append(
+            {-1, QStringLiteral("Duplicate Native"), QStringLiteral("NET"),
+             QString(), QString(), QString()});
+        duplicateNativePlan.nativeEnglishTeachers.append(
+            {-1, QStringLiteral(" duplicate native "), QStringLiteral("NET"),
+             QString(), QString(), QString()});
+        expectPreWriteError(
+            duplicateNativePlan,
+            QStringLiteral("The import contains a duplicate Native English Teacher name."));
+
+        TeacherImportPlan emptyGsPlan;
+        emptyGsPlan.templateId = QStringLiteral("empty-gs-test");
+        emptyGsPlan.sourceDate = QDate(2026, 8, 6);
+        emptyGsPlan.gsTeamMembers.append(GsTeamMember{});
+        expectPreWriteError(
+            emptyGsPlan,
+            QStringLiteral("Every imported GS Team member must have a name."));
+
+        TeacherImportPlan duplicateGsPlan;
+        duplicateGsPlan.templateId = QStringLiteral("duplicate-gs-test");
+        duplicateGsPlan.sourceDate = QDate(2026, 8, 7);
+        duplicateGsPlan.gsTeamMembers.append(
+            {-1, QStringLiteral("GS Member"), QString(), QString(), QString(), QString()});
+        duplicateGsPlan.gsTeamMembers.append(
+            {-1, QStringLiteral(" gs member "), QString(), QString(), QString(), QString()});
+        expectPreWriteError(
+            duplicateGsPlan,
+            QStringLiteral("The import contains a duplicate GS Team name."));
+
+        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
+        QVERIFY(counts.next());
+        QCOMPARE(counts.value(0).toInt(), 1);
+        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM native_english_teachers")));
+        QVERIFY(counts.next());
+        QCOMPARE(counts.value(0).toInt(), 1);
+        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM gs_team")));
+        QVERIFY(counts.next());
+        QCOMPARE(counts.value(0).toInt(), 1);
+        QSqlQuery unchangedDateQuery(database);
+        unchangedDateQuery.prepare(QStringLiteral(
+            "SELECT value FROM app_settings WHERE key=?"));
+        unchangedDateQuery.addBindValue(QString::fromLatin1(
+            TeacherImportRepository::LatestSourceDateSetting));
+        QVERIFY(unchangedDateQuery.exec());
+        QVERIFY(unchangedDateQuery.next());
+        QCOMPARE(unchangedDateQuery.value(0).toString(), QStringLiteral("2026-07-09"));
 
         QVERIFY(seed.exec(R"(
             INSERT INTO native_english_teachers
@@ -1004,17 +1090,26 @@ void TeacherImportTests::importsCheckedInWorkbookUsingValidatedReviewChoices()
         QCOMPARE(persisted.value(0).toInt(), 0);
 
         TeacherImportPlan rejected = plan;
-        rejected.sourceDate = QDate(2026, 9, 2);
+        rejected.sourceDate = QDate();
         rejected.review->groupSelections[0].selectedCandidateIndexes.append(99);
         Teacher injected;
         injected.teacherKr = QStringLiteral("신규유입");
         rejected.koreanTeachers.append(injected);
-        QVERIFY(!repository.importTeachers(rejected).has_value());
+        const auto invalidReview = repository.importTeachers(rejected);
+        QVERIFY(!invalidReview.has_value());
+        QCOMPARE(
+            invalidReview.error(),
+            QStringLiteral("The teacher import review choices are invalid."));
 
         TeacherImportPlan mismatchedSelection = plan;
-        mismatchedSelection.sourceDate = QDate(2026, 9, 3);
+        mismatchedSelection.sourceDate = QDate();
         mismatchedSelection.koreanTeachers.append(injected);
-        QVERIFY(!repository.importTeachers(mismatchedSelection).has_value());
+        const auto mismatchedReview =
+            repository.importTeachers(mismatchedSelection);
+        QVERIFY(!mismatchedReview.has_value());
+        QCOMPARE(
+            mismatchedReview.error(),
+            QStringLiteral("The reviewed Korean teachers do not match the import selection."));
 
         QVERIFY(persisted.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
         QVERIFY(persisted.next());
