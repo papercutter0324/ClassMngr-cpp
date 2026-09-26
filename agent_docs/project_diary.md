@@ -1027,3 +1027,10 @@ Prep's queried interval to the current and following calendar years at most.
 - For a fixture-backed profile replacement, vary every non-identity teacher
   field before applying the fixture and compare all fields afterward. Keep the
   identity names stable so preview matching still selects the same destination.
+
+## Phase 2 Class Transfer skip behavior - 2026-09-26
+
+- A skipped imported class must not trigger replacement of its matched teacher.
+  Preserve a fixture-backed collision rejection case, then verify Skip plus
+  teacher ReplaceExisting succeeds with the class, teacher, schedule, roster,
+  and evaluation state unchanged.

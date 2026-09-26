@@ -2614,39 +2614,43 @@ separate on a host with Xvfb and loopback access.
 - F71 source/test and separate plan/mapping/deployment documentation commits
   are complete (`9b090cb5` and `5a9fe695`). F72's test and verification follow.
 
-### Phase 2 checked-fixture Class Transfer teacher replacement - 2026-09-26 (F72)
+### Phase 2 checked-fixture Class Transfer Skip - 2026-09-26 (F73)
 
-- Source/test commit: `aa1af5fe` (`Verify fixture-backed teacher replacement`).
-  Added `successFixtureReplacesMatchingTeacherThroughReview` to
-  `tests/class_transfer_tests.cpp`. It loads checked-in `success_source.json`,
-  seeds a uniquely matching destination teacher whose non-identity profile
-  fields all differ from the fixture, selects `ReplaceExisting` by combo action
-  and target metadata, and applies through `DataService::importClasses`.
-- Assertions verify exact preview teacher ID, retained destination TeacherId,
-  fixture values for every teacher profile field, no duplicate teacher, and
-  that the newly created fixture class points to the retained teacher. The F71
-  KeepExisting/class replacement fixture and earlier Create and conflict/no-
-  write paths remain unchanged. Only `tests/class_transfer_tests.cpp` changed.
-- Executor tree `build/f72-class-transfer-teacher-replace-msvc-ninja-x64` and
-  independent Tester tree
-  `build/phase2-f72-teacher-replace-independent-20260926` used separate fresh
-  Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 builds, validated 917
-  handwritten source owners, and passed exactly
-  `ClassMngrNextApplicationClassTransferTests` and
-  `ClassMngrClassTransferTests` (2/2). The independent Tester rebuilt after
-  the complete profile assertions were added. `git diff --check` passed; no
-  full suite was run.
-- Exact focused commands:
-  `cmake --build build/f72-class-transfer-teacher-replace-msvc-ninja-x64 --target ClassMngrClassTransferTests ClassMngrNextApplicationClassTransferTests`
+- Source/test commit: `60bbd015` (`Verify fixture-backed Class Transfer skip
+  behavior`). Extended
+  `permanentConflictFixturePresentsReviewAndRejectsScheduleCollision` in
+  `tests/class_transfer_tests.cpp`. It keeps the default schedule-conflict
+  rejection and no-write assertions, then selects class `Skip` plus teacher
+  `ReplaceExisting` through the production dialog metadata and applies the
+  same checked-in `conflict_source.json` package.
+- The selected plan is asserted. Apply succeeds with one skipped class, no
+  created/replaced classes, and unchanged counts, full teacher profile, class
+  and class-info fields, regular/intensive schedules, roster, and speaking
+  evaluation. Only `tests/class_transfer_tests.cpp` changed.
+- Executor used
+  `build/f72-class-transfer-teacher-replace-msvc-ninja-x64`. Independent
+  Tester used a fresh tree at
+  `%LOCALAPPDATA%/Temp/F73_SKIP_CONFLICT_PATH_VERIFY_20260926`; both used
+  Windows x64 Debug Ninja 1.13.2/MSVC 19.51.36257/Qt 6.12.0, validated 917
+  handwritten source owners, built both focused targets, and passed CTest
+  2/2. Tester also ran the fixture test directly. Exact focused commands:
+  `cmake --build <build-dir> --target ClassMngrClassTransferTests ClassMngrNextApplicationClassTransferTests`
   and
-  `ctest --test-dir build/f72-class-transfer-teacher-replace-msvc-ninja-x64 -R "ClassMngrNextApplicationClassTransferTests|ClassMngrClassTransferTests" --output-on-failure`.
-- Gate 2 gains fixture-backed successful teacher replacement parity; Gate 1
-  receives no new evidence. Both remain Partial. Workspace boundary and audited
-  `src/next` isolation remain Satisfied; Phase 2 exit remains Open. Sub Prep
-  stays capped at current and following years (2026-2027). Protected
-  `cmake/sources.cmake` stayed excluded at SHA-256
+  `ctest --test-dir <build-dir> -R "ClassMngrNextApplicationClassTransferTests|ClassMngrClassTransferTests" --output-on-failure`.
+- `git diff --check` passed. No full suite was run. Gate 2 gains
+  fixture-backed Skip behavior; Gate 1 is unchanged. Both remain Partial;
+  workspace boundary and audited `src/next` isolation remain Satisfied; Phase
+  2 exit remains Open. Sub Prep remains capped at the current and following
+  years (2026-2027). The protected `cmake/sources.cmake` remains excluded at
+  SHA-256
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-- F72 source/test commit is complete. The Archivist is updating the plan and
-  legacy mapping; root will commit those with the deployment notes as a
-  separate documentation slice. Next: select F73 from three independent
-  Investigator reviews after the documentation commit.
+- F73 plan and deployment notes are included in the separate documentation
+  commit. F74 is selected: add a synthetic Intensive Schedule Import workbook
+  path through parse, preview, UpdateExisting, and apply with fixed expected
+  rows and preserved untouched-row identities. Three Investigators ranked
+  this as the strongest next production slice. Two Explorers found no
+  historical Intensive workbook paired with a legacy expected-result oracle
+  in the repository. This synthetic path adds production-flow coverage but
+  cannot establish historical baseline parity by itself; Gate 2 remains
+  Partial. Next: implement the bounded fixture/test, then independently verify
+  it.

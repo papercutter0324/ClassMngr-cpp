@@ -17,7 +17,7 @@
   handwritten source owners and passed the application and production Class Transfer
   CTests 2/2. Fixture parity is verified; Unicode case-fold equivalence is not exhaustive.
   Gate 1 and Gate 2 remain Partial. Source commit: `2f3d414c`.
-- Previous code slice: F71 gives Class Transfer review match and issue identities typed
+- Earlier code slice: F71 gives Class Transfer review match and issue identities typed
   `Domain::ClassId`/`TeacherId` values and optional typed resolution targets. UI and
   repository adapters retain legacy integer APIs, map positive IDs and exactly `-1`,
   reject `0`/`-2` with existing action-specific errors, and preserve invalid-action
@@ -31,17 +31,27 @@
   no full suite. Gate 1 and Gate 2 advance but remain Partial. Source commit: `9b090cb5`.
   Phase 2 exit gate remains Open. Sub Prep remains limited to the current and following
   calendar years, 2026-2027.
-- Latest code slice: F72 adds production parity coverage for Class Transfer teacher
-  replacement. From checked-in `success_source.json`, the test seeds a matching teacher
-  whose non-identity profile fields differ from the fixture, selects Teacher
-  ReplaceExisting using `ClassImportDialog` action/target item data, and applies through
-  `DataService::importClasses`. It asserts the retained `TeacherId`, fixture profile
-  values, no duplicate teacher, and a new class linked to the retained teacher. Existing
-  class replacement, Create, and checked-in conflict/no-write coverage remain. Two fresh
-  Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees each validated 917 handwritten
-  source owners and passed the application and production Class Transfer CTests 2/2;
-  diff check passed, no full suite. Gate 2 gains fixture parity; Gate 1 is unchanged;
-  both remain Partial. Test-only commit: `aa1af5fe`.
+- Previous code slice: F72 adds production parity coverage for Class Transfer teacher
+  replacement. The checked-in `success_source.json` test selects Teacher
+  ReplaceExisting using dialog action/target metadata, then verifies the retained
+  teacher identity/profile, absence of a duplicate, and class linkage. Two fresh
+  Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees validated 917 handwritten
+  source owners and passed both Class Transfer CTests 2/2; diff check passed, no full
+  suite. Gate 2 gained fixture parity; Gate 1 was unchanged. Test-only commit:
+  `aa1af5fe`.
+- Latest code slice: F73 extends the checked-in `conflict_source.json` production
+  fixture test. Default schedule-collision rejection/no-write coverage remains;
+  the test also selects class Skip and teacher ReplaceExisting through production
+  dialog plan metadata. Import succeeds with one skipped class and no
+  created/replaced class; teacher profile, class details and ClassInfo schedules,
+  roster, speaking evaluation, and record counts remain unchanged. The source
+  commit changes only `tests/class_transfer_tests.cpp`. Executor and independent
+  fresh Tester Windows x64 Debug Ninja 1.13.2/MSVC 19.51.36257/Qt 6.12.0 trees
+  each validated 917 source owners and passed
+  `ClassMngrNextApplicationClassTransferTests` and `ClassMngrClassTransferTests`
+  (2/2); Tester also ran the fixture test directly. `git diff --check` passed;
+  no full suite. F73 adds Gate 2 fixture-backed action evidence; Gate 1 is
+  unchanged and both remain Partial. Test-only commit: `60bbd015`.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5375,7 +5385,7 @@ independently; no full suite was run.
 Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
 dependency isolation remain Satisfied. Phase 2 remains In Progress and its exit
 gate Open. Sub Prep remains limited to the current and following calendar years,
-2026-2027. Next entry: select F72 from the remaining Phase 2 gaps.
+2026-2027.
 
 ## Verified F72 Class Transfer teacher replacement parity - commit `aa1af5fe`
 
@@ -5395,8 +5405,7 @@ passed `ClassMngrNextApplicationClassTransferTests` and
 run. F72 adds Gate 2 teacher-replacement fixture parity and no Gate 1 evidence;
 both gates remain Partial. Workspace boundary and audited v2 dependency isolation
 remain Satisfied. Phase 2 remains In Progress with its exit gate Open. Sub Prep
-remains limited to the current and following calendar years, 2026-2027. Next
-entry: select F73 from the remaining Phase 2 gaps.
+remains limited to the current and following calendar years, 2026-2027.
 
 #### Cumulative exit-gate status after F72
 
@@ -5413,3 +5422,42 @@ passed independently; no full suite was run.
 Gate 1 remains Partial and unchanged; Gate 2 remains Partial with added teacher
 replacement fixture evidence. Workspace boundary and audited v2 dependency
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+
+## Verified F73 Class Transfer Skip action fixture parity - commit `60bbd015`
+
+`tests/class_transfer_tests.cpp` extends
+`permanentConflictFixturePresentsReviewAndRejectsScheduleCollision` using the
+checked-in [`conflict_source.json`](../../tests/fixtures/transfers/conflict_source.json).
+It retains default schedule-collision rejection/no-write coverage and exercises
+class Skip with teacher ReplaceExisting selected through production dialog plan
+metadata. The import succeeds with one skipped class and no created/replaced
+class; teacher profile, class details and ClassInfo schedules, roster, speaking
+evaluation, and record counts remain unchanged. The source commit changes only
+this test file.
+
+Executor and independent fresh Tester trees used Windows x64 Debug, Ninja 1.13.2,
+MSVC 19.51.36257, and Qt 6.12.0; each validated 917 source owners and passed
+`ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). Tester also ran the fixture test directly.
+`git diff --check` passed; no full suite was run. F73 adds Gate 2 fixture-backed
+Skip-action evidence; Gate 1 is unchanged. Both gates remain Partial, workspace
+boundary and audited v2 dependency isolation remain Satisfied, and Phase 2's
+exit gate remains Open. Sub Prep remains capped at the current and following
+calendar years, 2026-2027.
+
+#### Cumulative exit-gate status after F73
+
+This audit applies the formal exit criteria through F73. Both focused targets
+passed independently; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F73 is test-only and adds no app-less behavior evidence; F71's typed Class Transfer contract evidence remains. Broader Domain and Application behavior is incomplete. |
+| Baseline parity | Partial | F73 adds checked-in conflict-fixture coverage for dialog-selected class Skip alongside teacher ReplaceExisting metadata, while preserving collision rejection/no-write and asserting unchanged teacher/class-related records. F72 teacher replacement and F71 class replacement fixture parity remain; broader baseline fixture parity is incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F73 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F73 changes tests only. |
+
+Gate 1 remains Partial and unchanged; Gate 2 remains Partial with added Skip
+action fixture evidence. Workspace boundary and audited v2 dependency isolation
+remain Satisfied. Phase 2 remains In Progress with its exit gate Open. Sub Prep
+remains capped at the current and following calendar years, 2026-2027.

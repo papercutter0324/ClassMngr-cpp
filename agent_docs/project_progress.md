@@ -1222,36 +1222,37 @@ non-identity profile fields, retained teacher identity, and the imported
 class's teacher link. Executor and independent fresh builds passed the two
 focused Class Transfer CTests (2/2), each with 917 source owners. Gate 2 gains
 fixture-backed teacher replacement evidence; Gate 1 receives no new evidence.
-Both remain Partial and the exit gate remains Open. Next: finish F72 plan/
-mapping and deployment documentation separately, then select F73 from three
-independent Investigator reviews.
+Both remain Partial and the exit gate remains Open. F73 source/test is
+committed as 60bbd015; its separate plan/mapping documentation is next. Select
+F74 from the three independent Investigator reviews.
 
-## Current Phase 2 position - 2026-09-26 (F72)
+## Current Phase 2 position - 2026-09-26 (F73)
 
-F72 source/test commit `aa1af5fe` (`Verify fixture-backed teacher replacement`)
-adds a separate `success_source.json` production-path test. The destination
-teacher begins with every non-identity profile field set differently from the
-fixture. The test confirms the exact preview match, selects `ReplaceExisting`
-through dialog action/target metadata, then applies through the repository. It
-asserts the original TeacherId remains, every fixture profile field is
-persisted, no duplicate teacher is created, and the imported class points to
-that retained teacher. F71's fixture-based `KeepExisting` and class replacement
-test remains intact, as do the existing Create and conflict/no-write paths.
+F73 source/test commit `60bbd015` (`Verify fixture-backed Class Transfer
+skip behavior`) extends the checked-in `conflict_source.json` production
+review path. After retaining the default schedule-collision rejection and
+no-write assertions, the test selects class `Skip` and teacher
+`ReplaceExisting`. Apply succeeds with exactly one skipped class and no
+created or replaced classes; teacher profile, class details and schedules,
+roster, evaluation, and record counts remain unchanged.
 
-Executor and independent Tester used separate fresh Windows x64 Debug
-Ninja/MSVC 19.51.36257/Qt 6.12 trees, each validated 917 handwritten source
-owners, and passed `ClassMngrNextApplicationClassTransferTests` and
-`ClassMngrClassTransferTests` (2/2). The independent Tester rebuilt after the
-full profile assertion was added. `git diff --check` passed; no full suite was
-run.
+Executor and independent Tester built separate Windows x64 Debug Ninja/MSVC
+19.51.36257/Qt 6.12 trees; each validated 917 handwritten source owners and
+passed `ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). The independent Tester also ran the
+fixture test directly. `git diff --check` passed; no full suite was run.
 
-Gate 2 gains fixture-backed successful teacher replacement parity; Gate 1
-receives no new evidence. Both gates remain Partial; workspace boundary and
-audited `src/next` dependency isolation remain Satisfied. Phase 2 and its exit
-gate remain Open. Sub Prep remains capped at the current and following
-calendar years (2026-2027). The protected user change to
-`cmake/sources.cmake` remains excluded; its SHA-256 is
+Gate 2 gains fixture-backed Skip behavior; Gate 1 receives no new evidence.
+Both gates remain Partial; workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 and its exit gate remain Open.
+Sub Prep remains capped at the current and following calendar years
+(2026-2027). The protected user change to `cmake/sources.cmake` remains
+excluded at SHA-256
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-The separate F72 plan/mapping and deployment-documentation commit is pending.
-Next: complete that documentation slice, then select F73 from three
-independent Investigator reviews.
+The F73 plan and deployment notes are included in the documentation commit,
+separate from the source/test commit. For F74, three Investigators ranked an
+Intensive Schedule Import workbook path as the best next production slice. Two
+Explorers found no historical Intensive workbook with a paired expected-result
+oracle in the repository. A synthetic fixture with fixed, hand-reviewed
+expectations can test parse-preview-apply behavior, but does not establish
+historical baseline parity; Gate 2 remains Partial.
