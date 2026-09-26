@@ -1088,3 +1088,4 @@ Prep's queried interval to the current and following calendar years at most.
 
 - Move deterministic import-plan rules into a Qt-free policy using adapter-normalized identity keys and explicit date validity. Keep Qt normalization, `QDate` interpretation, translation, SQL, and the established validation order at the repository boundary so the policy can be app-less without changing user-facing diagnostics.
 - Preserve typed matching identities while keeping display names separate; a valid empty Korean key remains a distinct supported value and must not be confused with an uninitialized key.
+- Keep generic review-decision resolution at the adapter boundary, then pass the resolved ordered Korean keys into the plan policy. The policy can validate selection-to-plan correspondence before date and roster checks without depending on review UI or Qt types.

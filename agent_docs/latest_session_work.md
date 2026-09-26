@@ -2798,3 +2798,15 @@ separate on a host with Xvfb and loopback access.
 
 - Extract the Teacher Import plan's deterministic validation into a Qt-free Application policy. Keep Qt name normalization, date interpretation, translation, SQL, and repository transaction behavior at the adapter; preserve validation precedence and exact existing diagnostics.
 - Supply normalized identity keys and date validity to the policy, retain the existing Qt-free review-decision resolver, and test policy outcomes app-less plus repository message mapping and rejection-before-write behavior. Focused targets are the new policy CTest and `ClassMngrTeacherImportTests`. This adds Gate 1 evidence; it does not claim historical-output parity. Sub Prep remains capped at 2026-2027.
+
+### Phase 2 Teacher Import full-plan validation - F85 verified
+
+- Source/test commit `d5971ae1` adds `TeacherImportPlanValidationInput` and a stable issue enum in a Qt-free Application header. The adapter runs existing review-choice resolution first, projects the resolved ordered Korean keys into the policy input, then maps policy issues to the exact existing translated diagnostics. Qt name normalization, `QDate` interpretation, UTF-8 conversion, SQL, and transactions remain at the repository boundary.
+- App-less tests cover valid plans, review count/order mismatch, review-before-date and category precedence, date validity, missing/duplicate Korean and Native English names, missing/duplicate GS Team names, and separate GS language namespaces. Repository tests pin exact messages and verify rejected plans preserve teacher/native/GS row counts and the latest source date.
+- Executor and independent fresh-archive verification passed `ClassMngrNextApplicationTeacherImportPlanValidationTests` and `ClassMngrTeacherImportTests` (2/2). The independent Windows x64 Debug tree used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; CMake validated 923 owners and Ninja completed 311 actions. The initial Visual Studio generator attempt hit an MSBuild FileTracker access denial in the temporary archive; reconfiguring with Ninja succeeded. Long-path and optional Vulkan-header warnings were nonfatal. `git diff --check` passed; no full suite ran.
+- F85 advances Gate 1, which remains Partial; Gate 2 remains Partial without new baseline-parity evidence. Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep stays capped at 2026-2027.
+
+### Phase 2 Schedule Import generated baseline scenario - F86 selected
+
+- Compare a pre-baseline generated Schedule Import workbook scenario from `scheduleWorkbookData()` across legacy commit `48fc5c5c` and current code with identical bytes and a deterministic database seed. Pin parser output, matching and suggestions, apply counters, and normalized persisted schedule state in `ClassMngrScheduleImportTests`.
+- This is source-generated synthetic baseline comparison, not historical production-workbook parity. Gate 2 remains Partial pending broader baseline evidence. Sub Prep remains capped at 2026-2027.

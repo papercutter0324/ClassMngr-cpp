@@ -5561,3 +5561,40 @@ evidence but does not close it and adds no historical parity. Broader Teacher
 Import plan-validation extraction remains a separate candidate.
 This is selected work, not implementation evidence. Sub Prep remains capped at
 2026-2027.
+
+## Verified F84 Schedule Import matching-key typing - commit 5207d65a
+
+The candidate and teacher projection now store `Domain::KoreanTeacherKey`;
+the empty key is explicitly initialized as a valid value, and the display name
+remains separate. `schedule_import_repository.cpp` owns conversion to and from
+the legacy representation. Matching behavior, including empty-key matching,
+remains covered.
+
+Executor and independent fresh Tester verification passed
+`ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and
+`ClassMngrScheduleImportTests` (2/2). The Windows x64 Debug verification used
+CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; CMake validated
+921 handwritten source owners and the build completed 313 actions. `git diff
+--check` passed. No full suite was run.
+
+### Cumulative exit-gate status after F84
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F79 adds validated Class Transfer intervals; F80 and F81 add Qt-free Teacher Import update policies; F84 adds typed Schedule Import matching keys. Broader behavior remains incomplete. |
+| Baseline parity | Partial | F82 and F83 compare legacy/current behavior on checked inputs and identical seeds, but both fixtures postdate the legacy baseline. They add common-input regression, not historical-output parity. Earlier fixture regressions remain; broader parity is incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F84 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F84's policy remains Qt-free. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress with its
+exit gate Open. Sub Prep remains capped at 2026-2027.
+
+Next selected bounded slice: F85 extracts Teacher Import full-plan validation
+from `teacher_import_repository.cpp` into a Qt-free Application policy. Keep
+Qt normalization and date interpretation, review/validation order, translation,
+and exact diagnostics at the repository adapter; pass normalized identity keys
+and date validity into the policy. Preserve Korean, Native English, and GS Team
+name rules and rejection-before-write behavior. Verify the app-less policy and
+focused Teacher Import repository tests. This is selected work, not
+implementation evidence. Sub Prep remains capped at 2026-2027.

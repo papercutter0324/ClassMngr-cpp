@@ -1320,3 +1320,13 @@ F84 source commit `5207d65a` types both Schedule Import matching keys as `Domain
 Executor and independent fresh Windows x64 Debug verification passed `ClassMngrNextApplicationScheduleImportMatchingProjectionTests` and `ClassMngrScheduleImportTests` (2/2). CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0 validated 921 handwritten owners and 313 build actions; `git diff --check` passed. No full suite ran.
 
 F84 adds typed app-less behavior to Gate 1, which remains Partial. Gate 2 remains Partial without new parity evidence. Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027. F85 is selected to extract Teacher Import plan validation into a Qt-free Application policy while retaining Qt normalization, date interpretation, translation, validation order, and exact diagnostics at the repository adapter.
+
+## Current Phase 2 position - 2026-09-26 (F85)
+
+F85 source/test commit `d5971ae1` extracts deterministic Teacher Import plan validation into a Qt-free Application policy. The repository resolves review choices first, projects selected Korean keys, and retains Qt normalization, date interpretation, UTF-8 conversion, and translated error mapping. The policy checks review-key count/order, source-date validity, then Korean, Native English, and GS Team identity rules in the existing order.
+
+Executor and independent fresh-archive verification passed `ClassMngrNextApplicationTeacherImportPlanValidationTests` and `ClassMngrTeacherImportTests` (2/2). The independent Windows x64 Debug Ninja build used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; CMake validated 923 handwritten source owners and Ninja completed 311 actions. `git diff --check` passed. No full suite ran.
+
+F85 adds app-less validation behavior to Gate 1, which remains Partial. Gate 2 remains Partial; no historical-parity claim was added. Workspace boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027.
+
+F86 is selected to compare a generated Schedule Import scenario whose helper exists at legacy baseline `48fc5c5c` against current code, using identical generated input bytes and a deterministic database seed. Pin parsed candidates, preview matches, apply counters, and normalized persisted schedule state. This is source-generated synthetic baseline evidence, not historical production-workbook parity.
