@@ -37,6 +37,7 @@ private slots:
     void reviewContractAcceptsAllSelectedAndNone();
     void reviewContractRejectsInvalidDecisions();
     void matchesStoredKoreanTeacherAfterRemovingSuffix();
+    void rejectsAmbiguousKoreanTeacherMatchWithoutWrites();
     void importsIntoSeparateTablesAndPreservesManualFields();
     void gsTeamImportMergesSparseMatchedRecordsAndSkipsNoOpUpdates();
     void importsCheckedInWorkbookUsingValidatedReviewChoices();
@@ -648,6 +649,95 @@ void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
+void TeacherImportTests::rejectsAmbiguousKoreanTeacherMatchWithoutWrites()
+{
+    const QString connectionName =
+        QStringLiteral("teacher-import-korean-ambiguous-test-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        const QString firstStoredName = QString::fromUtf8(
+            "\xEA\xB9\x80\xED\x95\x98\xEB\x8A\x98 A");
+        const QString secondStoredName = QString::fromUtf8(
+            "\xEA\xB9\x80\xED\x95\x98\xEB\x8A\x98 B");
+        const QString ambiguousName = QString::fromUtf8(
+            "\xEA\xB9\x80\xED\x95\x98\xEB\x8A\x98");
+        const QString precedingNewName = QString::fromUtf8(
+            "\xEC\x9D\xB4\xEC\x84\x9C\xEC\x97\xB0");
+
+        QSqlQuery seed(database);
+        seed.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, room_number) VALUES (?, ?, ?)"));
+        seed.addBindValue(9201);
+        seed.addBindValue(firstStoredName);
+        seed.addBindValue(QStringLiteral("Room A"));
+        QVERIFY(seed.exec());
+        seed.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, room_number) VALUES (?, ?, ?)"));
+        seed.addBindValue(9202);
+        seed.addBindValue(secondStoredName);
+        seed.addBindValue(QStringLiteral("Room B"));
+        QVERIFY(seed.exec());
+
+        TeacherImportPlan plan;
+        plan.templateId = QStringLiteral("korean-ambiguous-match-test");
+        plan.sourceDate = QDate(2026, 9, 27);
+        Teacher precedingTeacher;
+        precedingTeacher.teacherKr = precedingNewName;
+        plan.koreanTeachers.append(precedingTeacher);
+        Teacher ambiguousTeacher;
+        ambiguousTeacher.teacherKr = ambiguousName;
+        ambiguousTeacher.roomNumber = QStringLiteral("Should not persist");
+        plan.koreanTeachers.append(ambiguousTeacher);
+
+        TeacherImportRepository repository(database);
+        const auto imported = repository.importTeachers(plan);
+        QVERIFY(!imported.has_value());
+        QCOMPARE(
+            imported.error(),
+            QStringLiteral("More than one stored Korean teacher matches %1.")
+                .arg(ambiguousName));
+
+        QSqlQuery persisted(database);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT id, teacher_kr, room_number FROM teachers ORDER BY id")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 9201);
+        QCOMPARE(persisted.value(1).toString(), firstStoredName);
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("Room A"));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toInt(), 9202);
+        QCOMPARE(persisted.value(1).toString(), secondStoredName);
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("Room B"));
+        QVERIFY(!persisted.next());
+
+        QSqlQuery newTeacherQuery(database);
+        newTeacherQuery.prepare(QStringLiteral(
+            "SELECT COUNT(*) FROM teachers WHERE teacher_kr=?"));
+        newTeacherQuery.addBindValue(precedingNewName);
+        QVERIFY(newTeacherQuery.exec());
+        QVERIFY(newTeacherQuery.next());
+        QCOMPARE(newTeacherQuery.value(0).toInt(), 0);
+
+        QSqlQuery dateQuery(database);
+        dateQuery.prepare(QStringLiteral(
+            "SELECT COUNT(*) FROM app_settings WHERE key=?"));
+        dateQuery.addBindValue(QString::fromLatin1(
+            TeacherImportRepository::LatestSourceDateSetting));
+        QVERIFY(dateQuery.exec());
+        QVERIFY(dateQuery.next());
+        QCOMPARE(dateQuery.value(0).toInt(), 0);
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
 void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
 {
     const QString connectionName =
@@ -870,7 +960,12 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         ambiguousPlan.nativeEnglishTeachers.append(
             {-1, QStringLiteral("JAMIE"), QStringLiteral("Team Leader"),
              QString(), QString(), QString()});
-        QVERIFY(!repository.importTeachers(ambiguousPlan).has_value());
+        const auto ambiguousImport = repository.importTeachers(ambiguousPlan);
+        QVERIFY(!ambiguousImport.has_value());
+        QCOMPARE(
+            ambiguousImport.error(),
+            QStringLiteral(
+                "More than one stored Native English Teacher matches JAMIE."));
         QVERIFY(counts.exec(QStringLiteral(
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='원자성교사'")));
         QVERIFY(counts.next());

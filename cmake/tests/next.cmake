@@ -469,6 +469,37 @@ add_test(
     COMMAND ClassMngrNextApplicationTeacherImportPlanValidationTests
 )
 
+# Exercise Teacher Import match cardinality classification without Qt or the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+    tests/next_application_teacher_import_match_cardinality_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+    COMMAND ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+)
+
 classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES

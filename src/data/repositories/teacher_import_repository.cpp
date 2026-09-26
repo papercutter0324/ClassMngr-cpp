@@ -8,6 +8,7 @@
 #include "next/application/korean_teacher_import_update.h"
 #include "next/application/native_english_teacher_import_update.h"
 #include "next/application/teacher_import_plan_validation.h"
+#include "next/application/teacher_import_match_cardinality.h"
 
 #include <QObject>
 #include <QSqlError>
@@ -379,12 +380,17 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
     {
         const QString key = koreanTeacherNameKey(source.teacherKr);
         const QList<int> matches = matchingKoreanTeacherIndexes(korean, key);
-        if (matches.size() > 1)
+        const auto cardinality =
+            ClassMngr::Next::Application::classifyTeacherImportMatchCardinality(
+                static_cast<std::size_t>(matches.size()));
+        if (cardinality
+            == ClassMngr::Next::Application::TeacherImportMatchCardinality::MultipleMatches)
         {
             return std::unexpected(QObject::tr("More than one stored Korean teacher matches %1.").arg(source.teacherKr));
         }
 
-        if (matches.isEmpty())
+        if (cardinality
+            == ClassMngr::Next::Application::TeacherImportMatchCardinality::NoMatch)
         {
             QSqlQuery query(m_database);
             query.prepare(R"(
@@ -493,12 +499,17 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         const QString key = normalizedName(source.name);
         const QList<int> matches = matchingIndexes(
             native, key, [](const NativeEnglishTeacher& value) { return value.name; });
-        if (matches.size() > 1)
+        const auto cardinality =
+            ClassMngr::Next::Application::classifyTeacherImportMatchCardinality(
+                static_cast<std::size_t>(matches.size()));
+        if (cardinality
+            == ClassMngr::Next::Application::TeacherImportMatchCardinality::MultipleMatches)
         {
             return std::unexpected(QObject::tr("More than one stored Native English Teacher matches %1.").arg(source.name));
         }
 
-        if (matches.isEmpty())
+        if (cardinality
+            == ClassMngr::Next::Application::TeacherImportMatchCardinality::NoMatch)
         {
             QSqlQuery query(m_database);
             query.prepare(R"(
@@ -577,13 +588,18 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         const QList<int> matches = useKorean
             ? matchingIndexes(gs, key, [](const GsTeamMember& value) { return value.koreanName; })
             : matchingIndexes(gs, key, [](const GsTeamMember& value) { return value.name; });
-        if (matches.size() > 1)
+        const auto cardinality =
+            ClassMngr::Next::Application::classifyTeacherImportMatchCardinality(
+                static_cast<std::size_t>(matches.size()));
+        if (cardinality
+            == ClassMngr::Next::Application::TeacherImportMatchCardinality::MultipleMatches)
         {
             return std::unexpected(QObject::tr("More than one stored GS Team member matches %1.")
                 .arg(useKorean ? source.koreanName : source.name));
         }
 
-        if (matches.isEmpty())
+        if (cardinality
+            == ClassMngr::Next::Application::TeacherImportMatchCardinality::NoMatch)
         {
             QSqlQuery query(m_database);
             query.prepare(R"(
