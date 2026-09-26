@@ -4021,3 +4021,23 @@ and passed `ClassMngrNextApplicationClassTransferTests` and
 `ClassMngrClassTransferTests` (2/2). `git diff --check` passed; no full suite was
 run. F71 advances Gate 1 and Gate 2, both still Partial; workspace acceptance and
 audited v2 dependency isolation remain Satisfied. Phase 2 remains open.
+
+## Verified F72 Class Transfer teacher replacement parity - commit `aa1af5fe`
+
+The production test uses checked-in `success_source.json` and a seeded matching
+teacher whose non-identity profile fields all differ from the fixture. It selects
+Teacher ReplaceExisting through `ClassImportDialog` action/target item data and
+applies via `DataService::importClasses`. Assertions verify the retained
+`TeacherId`, fixture values for all profile fields, absence of a duplicate teacher,
+and the imported class linked to the retained teacher. F71 class replacement
+coverage remains; Create and checked-in conflict/no-write paths are unchanged.
+This is a test-only commit.
+
+Executor and independent Tester used separate fresh Windows x64 Debug Ninja/MSVC
+19.51.36257/Qt 6.12 trees, each validated 917 handwritten source owners and
+passed `ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). `git diff --check` passed; no full suite was
+run. F72 adds Gate 2 fixture parity and no Gate 1 evidence. Both gates remain
+Partial; workspace boundary and audited v2 dependency isolation remain Satisfied;
+the Phase 2 exit gate remains Open. Sub Prep remains capped at the current and
+following calendar years, 2026-2027.

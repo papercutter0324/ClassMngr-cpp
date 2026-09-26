@@ -1021,3 +1021,9 @@ Prep's queried interval to the current and following calendar years at most.
 - When both the UI and repository build the same typed request, test both
   adapter boundaries. Keep fixture-backed successful replacement assertions
   alongside the existing create and conflict/no-write paths.
+
+## Phase 2 fixture-backed teacher replacement - 2026-09-26
+
+- For a fixture-backed profile replacement, vary every non-identity teacher
+  field before applying the fixture and compare all fields afterward. Keep the
+  identity names stable so preview matching still selects the same destination.

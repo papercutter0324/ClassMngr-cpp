@@ -1215,6 +1215,43 @@ and its exit gate remain Open. Sub Prep remains capped at the current and
 following calendar years (2026-2027). The protected user change to
 `cmake/sources.cmake` remains excluded; its SHA-256 is
 `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
-The separate F71 plan/mapping and canonical deployment-documentation commit
-is pending. Next: complete that documentation slice, then select F72 from
-three independent Investigator reviews.
+F71 plan/mapping and canonical deployment documentation are committed
+separately as `5a9fe695`. F72 source/test commit `aa1af5fe` adds checked-in
+fixture parity for successful `Teacher::ReplaceExisting`, including all
+non-identity profile fields, retained teacher identity, and the imported
+class's teacher link. Executor and independent fresh builds passed the two
+focused Class Transfer CTests (2/2), each with 917 source owners. Gate 2 gains
+fixture-backed teacher replacement evidence; Gate 1 receives no new evidence.
+Both remain Partial and the exit gate remains Open. Next: finish F72 plan/
+mapping and deployment documentation separately, then select F73 from three
+independent Investigator reviews.
+
+## Current Phase 2 position - 2026-09-26 (F72)
+
+F72 source/test commit `aa1af5fe` (`Verify fixture-backed teacher replacement`)
+adds a separate `success_source.json` production-path test. The destination
+teacher begins with every non-identity profile field set differently from the
+fixture. The test confirms the exact preview match, selects `ReplaceExisting`
+through dialog action/target metadata, then applies through the repository. It
+asserts the original TeacherId remains, every fixture profile field is
+persisted, no duplicate teacher is created, and the imported class points to
+that retained teacher. F71's fixture-based `KeepExisting` and class replacement
+test remains intact, as do the existing Create and conflict/no-write paths.
+
+Executor and independent Tester used separate fresh Windows x64 Debug
+Ninja/MSVC 19.51.36257/Qt 6.12 trees, each validated 917 handwritten source
+owners, and passed `ClassMngrNextApplicationClassTransferTests` and
+`ClassMngrClassTransferTests` (2/2). The independent Tester rebuilt after the
+full profile assertion was added. `git diff --check` passed; no full suite was
+run.
+
+Gate 2 gains fixture-backed successful teacher replacement parity; Gate 1
+receives no new evidence. Both gates remain Partial; workspace boundary and
+audited `src/next` dependency isolation remain Satisfied. Phase 2 and its exit
+gate remain Open. Sub Prep remains capped at the current and following
+calendar years (2026-2027). The protected user change to
+`cmake/sources.cmake` remains excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+The separate F72 plan/mapping and deployment-documentation commit is pending.
+Next: complete that documentation slice, then select F73 from three
+independent Investigator reviews.
