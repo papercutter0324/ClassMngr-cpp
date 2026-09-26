@@ -5841,3 +5841,60 @@ latest-source-date setting. Add an app-less fake-port target and retain or
 extend repository and dialog tests as appropriate. Do not claim baseline parity
 without separate evidence. This is selected work, not implementation evidence.
 Sub Prep remains capped at 2026-2027.
+
+## Verified F90 Teacher Import apply use case - commit `df8ef0cb`
+
+Commit `df8ef0cb Phase2 - Add Qt-free Teacher Import apply use case (F90)`
+adds a Qt-free `TeacherImportUseCase` that owns review resolution, full-plan
+validation, match cardinality, Korean/Native English/GS Team match-update-
+create-no-op decisions and counts, latest-source-date advancement, and
+transaction decisions. One persistence port binds reads, writes, date-setting,
+commit, and rollback to the same transaction. The repository retains Qt
+normalization, SQL, localized diagnostics, and transaction implementation.
+
+Fake-port app-less coverage is paired with repository failure injection for a
+latest-date write after three namespace writes, proving transaction rollback.
+Coverage also pins padded-label handling, raw Native English and GS Team
+diagnostics, and a secondary rollback warning that preserves the primary
+diagnostic. Executor focused CTest passed 2/2. An independent fresh-base Tester
+used `ca72c47e` plus only the six F90 paths and preserved protected manifest
+blob `bf3afbe30c77e30be83df98434eda3ee466084b0`. Windows x64 Debug used CMake
+4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; 929 source owners were
+validated, focused targets built, and CTest passed 3/3 (`ClassMngrTeacherImportTests`
+and the F89/F90 app-less targets). No full suite was run.
+
+### Cumulative exit-gate status after F90
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F79, F80, F81, F84, F85, F87, and F89 add bounded contracts; F90 adds the Qt-free apply use case and atomic persistence port. Broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F82/F83 compare checked inputs; F86/F88 compare baseline-era source-generated inputs. F90 adds no parity evidence; historical production-workbook parity and broader coverage remain incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F90 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Post-F90 audits find audited `src/next` sources free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; the F90 use case is Qt-free. |
+
+Both post-F90 Explorer audits leave Gate 1 and Gate 2 Partial, and find the
+workspace boundary and audited `src/next` isolation satisfied. Phase 2 remains
+In Progress with its exit gate Open. Broader calendar UI, generic settings
+persistence, other feature-service migrations, and document-service migration
+remain open. Sub Prep remains capped at 2026-2027.
+
+Next selected bounded slice (2026-09-27): F91 adds a bounded source-generated
+Teacher Import baseline differential using the existing
+`TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields`
+scenario, present at baseline `48fc5c5c` and current `df8ef0cb`. Hand-build a
+`TeacherImportPlan` in memory and label the result source-generated synthetic
+plan evidence, not workbook or historical-production-workbook evidence. Seed
+deterministic in-memory SQLite with existing Native English Alex and manual
+phone/nationality/email, Korean 홍길동 in room 413, Native English Alex as Team
+Leader, GS Team 김하늘 as Branch Manager with phone/birthday, and source date
+`2026-07-09`; existing latest date `2026-01-01` must not move backward.
+Strengthen literal and normalized snapshots for all three tables and latest
+date, preserve manual-field/update/count checks, and exclude generated IDs.
+Compare current updated assertions against the legacy baseline using the same
+test source if it compiles there (the current test calls the legacy public
+`TeacherImportRepository` API); otherwise build a narrow compatible harness.
+Do not overlay current repository on baseline. Focus `ClassMngrTeacherImportTests`
+and report baseline/current outcome parity. This is one bounded Gate 2 scenario,
+which remains Partial; Gate 1 remains Partial. Re-audit, then select F92. This
+is selected work, not implementation or test evidence. Sub Prep remains capped
+at 2026-2027.

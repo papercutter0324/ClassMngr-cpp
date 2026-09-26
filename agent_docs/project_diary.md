@@ -1110,3 +1110,8 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Teacher Import transaction boundary - 2026-09-27
 
 - For a multi-namespace import use case, put reads, writes, latest-source metadata, commit, and rollback behind one transaction-bound persistence port. Test a late metadata-write failure after successful row writes to prove atomic rollback across every affected table and setting. Keep SQL and localized adapter diagnostics outside the Qt-free Application contract.
+
+## Phase 2 Teacher Import common-input evidence - 2026-09-27
+
+- A baseline-present source-generated test plan can establish repository-level behavior, but it does not cover workbook parsing or historical production output. Extend the same input upstream through generated workbook bytes, validation, explicit review choices, and apply when those paths exist in both revisions. If the current full test source no longer compiles at the legacy baseline, use a narrow harness that preserves the entire legacy repository and schema implementation.
+- Keep `CalendarPage::filterUpcomingEvents` in the page boundary while its UI filters and next-ten search are composed there. A smaller duplicated start-of-term classification rule is a later app-less contract candidate; the next slice instead prioritizes Teacher Import parse-to-apply evidence for Gate 2.
