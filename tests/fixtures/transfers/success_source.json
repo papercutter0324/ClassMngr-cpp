@@ -45,7 +45,14 @@
                 "column_widths": [180, 190, 240],
                 "rows": [["Avery", "Fixture student", "Transferred row"]]
             },
-            "speaking_evaluations": []
+            "speaking_evaluations": [
+                {
+                    "name": "Fixture Evaluation",
+                    "rows": [
+                        ["", "Avery", "Fixture student", "A", "B+", "B", "A", "C", "B+", "Fixture evaluation comment", "Fixture evaluation note"]
+                    ]
+                }
+            ]
         }
     ]
 }

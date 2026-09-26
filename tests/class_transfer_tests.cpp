@@ -120,6 +120,25 @@ SpeakingEvalRows completeEvaluation(
     return rows;
 }
 
+SpeakingEvalRows expectedFixtureEvaluationRows()
+{
+    SpeakingEvalRows rows = SpeakingEval::emptyRows();
+    rows[0] = {
+        QString(),
+        QStringLiteral("Avery"),
+        QStringLiteral("Fixture student"),
+        QStringLiteral("A"),
+        QStringLiteral("B+"),
+        QStringLiteral("B"),
+        QStringLiteral("A"),
+        QStringLiteral("C"),
+        QStringLiteral("B+"),
+        QStringLiteral("Fixture evaluation comment"),
+        QStringLiteral("Fixture evaluation note")
+    };
+    return rows;
+}
+
 int addCompleteClass(
     DataService& service,
     int teacherId,
@@ -1204,6 +1223,11 @@ void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults
     QCOMPARE(importedRoster->rows.size(), 1);
     QCOMPARE(importedRoster->rows.first(),
              QStringList({"Avery", "Fixture student", "Transferred row"}));
+    const auto importedEvaluation = service.loadSpeakingEval(
+        importedClassId, QStringLiteral("Fixture Evaluation"));
+    QVERIFY(importedEvaluation.has_value());
+    QCOMPARE(importedEvaluation->size(), SpeakingEval::RowCount);
+    QCOMPARE(*importedEvaluation, expectedFixtureEvaluationRows());
 }
 
 void ClassTransferTests::successFixtureReplacesMatchingTeacherThroughReview()
@@ -1541,6 +1565,11 @@ void ClassTransferTests::successFixtureReplacesMatchingDestinationAndChildren()
         QStringLiteral("Destination Only Evaluation"));
     QVERIFY(oldEvaluation.has_value());
     QVERIFY(oldEvaluation->isEmpty());
+    const auto importedEvaluation = service.loadSpeakingEval(
+        destinationClass, QStringLiteral("Fixture Evaluation"));
+    QVERIFY(importedEvaluation.has_value());
+    QCOMPARE(importedEvaluation->size(), SpeakingEval::RowCount);
+    QCOMPARE(*importedEvaluation, expectedFixtureEvaluationRows());
 
     const auto retainedTeacher = service.getTeacher(destinationTeacher);
     QVERIFY(retainedTeacher.has_value());
