@@ -38,6 +38,7 @@ private slots:
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
     void previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase();
+    void previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase();
     void previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase();
     void previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase();
     void rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites();
@@ -1570,6 +1571,480 @@ previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase()
     }
     QSqlDatabase::removeDatabase(connectionName);
 }
+
+void ScheduleImportTests::
+previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase()
+{
+    // Both the workbook wrapper and this inline intensive worksheet were
+    // present at legacy baseline 48fc5c5c. The pinned workbook and
+    // parsed/persisted slot transcripts matched on that source snapshot and
+    // current code with this same database seed. This is synthetic evidence,
+    // not historical production-workbook parity.
+    const QByteArray sheet = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <sheetData>
+            <row r="1">
+              <c r="A1" t="inlineStr"><is><t>Alice</t></is></c>
+              <c r="B1" t="inlineStr"><is><t>월</t></is></c>
+              <c r="C1" t="inlineStr"><is><t>화</t></is></c>
+              <c r="D1" t="inlineStr"><is><t>수</t></is></c>
+              <c r="E1" t="inlineStr"><is><t>목</t></is></c>
+              <c r="F1" t="inlineStr"><is><t>금</t></is></c>
+            </row>
+            <row r="2">
+              <c r="A2" t="inlineStr"><is><t>9:00~9:55</t></is></c>
+              <c r="C2" t="inlineStr"><is><t>홍 길동TR (413)&#10;E6-Song's</t></is></c>
+            </row>
+            <row r="3"><c r="A3" t="inlineStr"><is><t>10:00~10:55</t></is></c></row>
+            <row r="4">
+              <c r="A4" t="inlineStr"><is><t>11:00~11:55</t></is></c>
+              <c r="B4" t="inlineStr"><is><t>Lunch</t></is></c>
+            </row>
+            <row r="5"><c r="A5" t="inlineStr"><is><t>12:00~12:55</t></is></c></row>
+            <row r="6">
+              <c r="A6" t="inlineStr"><is><t>1:00~1:55</t></is></c>
+              <c r="E6" t="inlineStr"><is><t>홍길동 (413)&#10;E6-Song's</t></is></c>
+            </row>
+          </sheetData>
+        </worksheet>)");
+    const QByteArray workbookBytes = singleSheetWorkbookData(sheet);
+    QCOMPARE(workbookBytes.size(), 2359);
+    QCOMPARE(
+        QCryptographicHash::hash(
+            workbookBytes,
+            QCryptographicHash::Sha256
+            ).toHex(),
+        QByteArrayLiteral(
+            "228fc2ce924f2fd4ee340500c92178386868bc83231b076b74e081dd628b93b4"
+            )
+        );
+
+    const auto parsed = parseScheduleImportWorkbook(
+        workbookBytes,
+        ScheduleImportKind::Intensive
+        );
+    const QString parseError =
+        parsed.has_value() ? QString() : parsed.error();
+    QVERIFY2(parsed.has_value(), qPrintable(parseError));
+    QCOMPARE(parsed->sheets.size(), 1);
+    QCOMPARE(parsed->sheets.first().name, QStringLiteral("Intensive"));
+    QVERIFY(parsed->sheets.first().visible);
+    QCOMPARE(parsed->sheets.first().users.size(), 1);
+
+    const ScheduleImportUserBlock user = parsed->sheets.first().users.first();
+    QCOMPARE(user.name, QStringLiteral("Alice"));
+    QVERIFY(user.diagnostics.isEmpty());
+    QCOMPARE(user.classes.size(), 1);
+    const ScheduleImportClassCandidate& candidate = user.classes.first();
+    const QString teacherName = QString::fromUtf8(
+        "\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99"
+        );
+    QCOMPARE(candidate.teacherKey, teacherName);
+    QCOMPARE(candidate.teacherKr, teacherName);
+    QCOMPARE(candidate.rooms, QStringList{QStringLiteral("413")});
+    QCOMPARE(candidate.classGrade, QStringLiteral("E6"));
+    QCOMPARE(candidate.classLevel, QStringLiteral("Song's"));
+    QCOMPARE(
+        candidate.sourceCells,
+        (QStringList{QStringLiteral("C2"), QStringLiteral("E6")})
+        );
+    QVERIFY(candidate.meetingPatternError.isEmpty());
+    QCOMPARE(candidate.times.size(), 2);
+    QCOMPARE(candidate.times[0].day, QStringLiteral("Tuesday"));
+    QCOMPARE(candidate.times[0].startTime, QStringLiteral("9:00 AM"));
+    QCOMPARE(candidate.times[0].endTime, QStringLiteral("9:55 AM"));
+    QCOMPARE(candidate.times[1].day, QStringLiteral("Thursday"));
+    QCOMPARE(candidate.times[1].startTime, QStringLiteral("1:00 PM"));
+    QCOMPARE(candidate.times[1].endTime, QStringLiteral("1:55 PM"));
+
+    QCOMPARE(user.intensiveSlotStates.size(), 65);
+    const auto slotState = [&user](const QString& day, const QString& startTime)
+    {
+        for (const IntensiveSlotState& state : user.intensiveSlotStates)
+        {
+            if (state.day == day && state.startTime == startTime)
+            {
+                return state.state;
+            }
+        }
+        return QString();
+    };
+    QCOMPARE(
+        slotState(QStringLiteral("Monday"), QStringLiteral("11:00")),
+        QStringLiteral("lunch")
+        );
+    QCOMPARE(
+        slotState(QStringLiteral("Monday"), QStringLiteral("10:00")),
+        QStringLiteral("empty")
+        );
+    QCOMPARE(
+        slotState(QStringLiteral("Friday"), QStringLiteral("20:00")),
+        QStringLiteral("empty")
+        );
+    QStringList parsedSlotStates;
+    for (const IntensiveSlotState& state : user.intensiveSlotStates)
+    {
+        parsedSlotStates.append(
+            QStringLiteral("%1|%2|%3")
+                .arg(state.day, state.startTime, state.state)
+            );
+    }
+    parsedSlotStates.sort(Qt::CaseSensitive);
+    QCOMPARE(
+        std::count_if(
+            user.intensiveSlotStates.cbegin(),
+            user.intensiveSlotStates.cend(),
+            [](const IntensiveSlotState& state)
+            {
+                return state.state == QStringLiteral("lunch");
+            }
+            ),
+        1
+        );
+    QCOMPARE(
+        std::count_if(
+            user.intensiveSlotStates.cbegin(),
+            user.intensiveSlotStates.cend(),
+            [](const IntensiveSlotState& state)
+            {
+                return state.state == QStringLiteral("empty");
+            }
+            ),
+        62
+        );
+    QCOMPARE(
+        std::count_if(
+            user.intensiveSlotStates.cbegin(),
+            user.intensiveSlotStates.cend(),
+            [](const IntensiveSlotState& state)
+            {
+                return state.state == QStringLiteral("essay");
+            }
+            ),
+        2
+        );
+    QCOMPARE(
+        QCryptographicHash::hash(
+            parsedSlotStates.join(QLatin1Char('\n')).toUtf8(),
+            QCryptographicHash::Sha256
+            ).toHex(),
+        QByteArrayLiteral(
+            "7fdba13a48788441556050e17b6d0b5ca52b2b9df5a6d0c357815a6458f4a5cc"
+            )
+        );
+
+    constexpr int teacherId = 7301;
+    constexpr int targetClassId = 7401;
+    constexpr int unrelatedClassId = 7402;
+    const QString connectionName =
+        QStringLiteral("schedule-import-baseline-intensive-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+        QSqlQuery query(database);
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO teachers (id, teacher_kr, room_number) "
+                "VALUES (?, ?, ?)"
+                )
+            );
+        query.addBindValue(teacherId);
+        query.addBindValue(teacherName);
+        query.addBindValue(QStringLiteral("413"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO classes (id, name) VALUES "
+                "(7401, 'E6 Song''s target'), (7402, 'Unrelated class')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level, "
+                "class_color, font_color) VALUES "
+                "(7401, 7301, 'E6', 'Song''s', '#112233', '#FFFFFF'), "
+                "(7402, 7301, 'E5', 'Zeus', '#445566', '#FFFFFF')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(id, class_id, day, start_time, end_time) VALUES "
+                "(8101, 7401, 'Monday', '4:00 PM', '4:55 PM'), "
+                "(8102, 7402, 'Friday', '5:00 PM', '5:55 PM')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_intensive_times "
+                "(id, class_id, day, start_time, end_time) VALUES "
+                "(8201, 7401, 'Tuesday', '9:00 AM', '9:50 AM'), "
+                "(8202, 7401, 'Thursday', '1:00 PM', '1:50 PM'), "
+                "(8203, 7402, 'Friday', '9:00 AM', '9:50 AM')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO intensive_slot_states "
+                "(day, start_time, state) VALUES "
+                "('Friday', '20:00', 'lunch')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('preserved-setting', 'keep')"
+                )
+            );
+
+        ScheduleImportRepository repository(database);
+        const auto preview = repository.preview(
+            user,
+            ScheduleImportKind::Intensive
+            );
+        const QString previewError =
+            preview.has_value() ? QString() : preview.error();
+        QVERIFY2(preview.has_value(), qPrintable(previewError));
+        QCOMPARE(preview->kind, ScheduleImportKind::Intensive);
+        QCOMPARE(preview->inventory.classCount, 2);
+        QVERIFY(preview->inventory.hasRegularHours);
+        QVERIFY(preview->inventory.hasIntensiveHours);
+        QCOMPARE(preview->teachers.size(), 1);
+        QCOMPARE(preview->teachers.first().teacherKey, teacherName);
+        QCOMPARE(preview->teachers.first().teacherKr, teacherName);
+        QCOMPARE(
+            preview->teachers.first().matchingTeacherIds,
+            QList<int>{teacherId}
+            );
+        QCOMPARE(preview->teachers.first().affectedClassCount, 2);
+        QCOMPARE(preview->classes.size(), 1);
+        QCOMPARE(preview->classes.first().candidateIndex, 0);
+        QCOMPARE(
+            preview->classes.first().matchingClassIds,
+            QList<int>{targetClassId}
+            );
+        QCOMPARE(
+            preview->classes.first().suggestedClassId,
+            targetClassId
+            );
+        QVERIFY(preview->classes.first().exactMatch);
+        QCOMPARE(
+            preview->classes.first().matchConfidence,
+            ScheduleImportClassMatchConfidence::Confident
+            );
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Intensive;
+        plan.intensiveMode = ScheduleImportIntensiveMode::UpdateExisting;
+        plan.selectedUserName = user.name;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = user.classes;
+        plan.intensiveSlotStates = user.intensiveSlotStates;
+        plan.teachers = {
+            {
+                candidate.teacherKey,
+                ScheduleImportTeacherAction::Reuse,
+                teacherId,
+                QStringLiteral("413")
+            }
+        };
+        plan.classes = {
+            {
+                0,
+                ScheduleImportClassAction::UpdateExisting,
+                targetClassId,
+                QStringLiteral("#112233"),
+                QStringLiteral("#FFFFFF")
+            }
+        };
+
+        const auto applied = repository.apply(plan);
+        const QString applyError =
+            applied.has_value() ? QString() : applied.error();
+        QVERIFY2(applied.has_value(), qPrintable(applyError));
+        QCOMPARE(applied->teachersCreated, 0);
+        QCOMPARE(applied->teachersUpdated, 0);
+        QCOMPARE(applied->classesCreated, 0);
+        QCOMPARE(applied->classesUpdated, 1);
+        QCOMPARE(applied->classesSkipped, 0);
+        QCOMPARE(applied->schedulesCleared, 0);
+        QCOMPARE(applied->ignoredCells, 0);
+        QVERIFY(!applied->profileNameUpdated);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT class_id, day, start_time, end_time "
+                "FROM class_intensive_times "
+                "ORDER BY class_id, day, start_time, end_time"
+                )
+            );
+        QStringList persistedIntensiveSchedules;
+        while (query.next())
+        {
+            persistedIntensiveSchedules.append(
+                QStringLiteral("%1|%2|%3|%4")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString()
+                        )
+                );
+        }
+        const QStringList expectedIntensiveSchedules{
+            QStringLiteral("7401|Thursday|1:00 PM|1:55 PM"),
+            QStringLiteral("7401|Tuesday|9:00 AM|9:55 AM"),
+            QStringLiteral("7402|Friday|9:00 AM|9:50 AM")
+        };
+        QCOMPARE(persistedIntensiveSchedules, expectedIntensiveSchedules);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT day, start_time, state "
+                "FROM intensive_slot_states ORDER BY day, start_time"
+                )
+            );
+        QStringList persistedSlotStates;
+        while (query.next())
+        {
+            persistedSlotStates.append(
+                QStringLiteral("%1|%2|%3")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString()
+                        )
+                );
+        }
+        QCOMPARE(persistedSlotStates.size(), 65);
+        const QByteArray persistedSlotStatesHash =
+            QCryptographicHash::hash(
+                persistedSlotStates.join(QLatin1Char('\n')).toUtf8(),
+                QCryptographicHash::Sha256
+                ).toHex();
+        QCOMPARE(
+            persistedSlotStatesHash,
+            QByteArrayLiteral(
+                "7fdba13a48788441556050e17b6d0b5ca52b2b9df5a6d0c357815a6458f4a5cc"
+                )
+            );
+        QVERIFY(
+            persistedSlotStates.contains(
+                QStringLiteral("Monday|11:00|lunch")
+                )
+            );
+        QVERIFY(
+            persistedSlotStates.contains(
+                QStringLiteral("Monday|10:00|empty")
+                )
+            );
+        QVERIFY(
+            persistedSlotStates.contains(
+                QStringLiteral("Friday|20:00|empty")
+                )
+            );
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, class_id, day, start_time, end_time "
+                "FROM class_times ORDER BY id"
+                )
+            );
+        QStringList persistedRegularSchedules;
+        while (query.next())
+        {
+            persistedRegularSchedules.append(
+                QStringLiteral("%1|%2|%3|%4|%5")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString(),
+                        query.value(4).toString()
+                        )
+                );
+        }
+        const QStringList expectedRegularSchedules{
+            QStringLiteral("8101|7401|Monday|4:00 PM|4:55 PM"),
+            QStringLiteral("8102|7402|Friday|5:00 PM|5:55 PM")
+        };
+        QCOMPARE(persistedRegularSchedules, expectedRegularSchedules);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT c.id, c.name, ci.teacher_id, ci.class_grade, "
+                "ci.class_level, ci.class_color, ci.font_color "
+                "FROM classes c JOIN class_info ci ON ci.class_id=c.id "
+                "ORDER BY c.id"
+                )
+            );
+        QStringList persistedClasses;
+        while (query.next())
+        {
+            persistedClasses.append(
+                QStringLiteral("%1|%2|%3|%4|%5|%6|%7")
+                    .arg(
+                        query.value(0).toString(),
+                        query.value(1).toString(),
+                        query.value(2).toString(),
+                        query.value(3).toString(),
+                        query.value(4).toString(),
+                        query.value(5).toString(),
+                        query.value(6).toString()
+                        )
+                );
+        }
+        const QStringList expectedClasses{
+            QStringLiteral("7401|E6 Song's target|7301|E6|Song's|#112233|#FFFFFF"),
+            QStringLiteral("7402|Unrelated class|7301|E5|Zeus|#445566|#FFFFFF")
+        };
+        QCOMPARE(persistedClasses, expectedClasses);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, teacher_kr, room_number FROM teachers ORDER BY id"
+                )
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), teacherId);
+        QCOMPARE(query.value(1).toString(), teacherName);
+        QCOMPARE(query.value(2).toString(), QStringLiteral("413"));
+        QVERIFY(!query.next());
+
+        execOrFail(
+            query,
+            QStringLiteral("SELECT key, value FROM app_settings ORDER BY key")
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("preserved-setting"));
+        QCOMPARE(query.value(1).toString(), QStringLiteral("keep"));
+        QVERIFY(!query.next());
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
 void ScheduleImportTests::
 previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
 {
