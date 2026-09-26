@@ -1051,3 +1051,8 @@ Prep's queried interval to the current and following calendar years at most.
   first-seen order.
 - Do not repurpose duplicate name pairs as durable student identity or change
   independent score-import lookup semantics such as last-write-wins.
+
+## Phase 2 Class Transfer weekly overlap policy - 2026-09-26
+
+- Existing `Domain::ScheduleTime` deliberately models same-day end-after-start intervals; it cannot stand in for Class Transfer's weekly intervals, where end-at-or-before-start means an overnight meeting and Sunday may overlap early Monday. Keep these semantics explicit in a separate typed policy.
+- Keep ordered policy decisions and typed conflict references in the Qt-free layer; leave parsing of legacy text, class labels, localized diagnostics, and rendered-message deduplication in the repository adapter.

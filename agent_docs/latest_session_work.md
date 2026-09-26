@@ -2671,18 +2671,38 @@ separate on a host with Xvfb and loopback access.
   fixture-driven review/apply path. This is checked-fixture regression
   coverage, not historical baseline parity.
 
-### Phase 2 checked-fixture Class Transfer evaluation coverage - F76 selected
+### Phase 2 Class Transfer speaking-evaluation fixture regression - F76
 
-- Two independent context reviews confirmed that
-  `tests/fixtures/transfers/success_source.json` has no speaking evaluation.
-  The fixture-driven production review/apply path checks class, teacher,
-  schedule, and roster persistence but not evaluation rows; replacement checks
-  destination-only evaluation clearing but not imported fixture evaluation rows.
-- The fixture entered the repository with its test and has no known historical
-  export or independent legacy-output oracle. Describe F76 as checked-fixture
-  persistence regression coverage only.
-- Planned acceptance: add a named evaluation with one distinctive 11-column
-  row; assert the persisted 25-row evaluation (row 0 literal plus remaining
-  blank rows) through create/apply and replacement, while retaining the
-  assertion that destination-only evaluation data is cleared. Focused target:
+- Source/test commit `7a8b80c6` adds one named 11-column Fixture Evaluation
+  row to `tests/fixtures/transfers/success_source.json`. Create/apply and
+  replacement paths compare all 25 persisted rows against the literal expected
+  first row plus blank remainder; replacement also retains the destination-only
+  evaluation-clearing assertion.
+- Executor and independent fresh Windows x64 Debug builds used CMake 4.4.2,
+  Ninja 1.13.2, Qt 6.12.0, MSVC 19.51.36257; CMake validated 917 source owners
+  and `ClassMngrClassTransferTests` passed 1/1. `git diff --check` passed; no
+  full suite. CMake reported optional Vulkan-header/object-path warnings and a
+  non-blocking `vswhere.exe` setup message.
+- F76 is checked-fixture regression only: the fixture has no historical export
+  provenance or independent legacy-output oracle. Gate 2 gains checked-fixture
+  evidence and remains Partial; Gate 1 is unchanged and remains Partial.
+  Workspace boundary and audited `src/next` isolation remain Satisfied. Phase 2
+  remains Open. Sub Prep remains capped at 2026-2027; protected
+  `cmake/sources.cmake` stays unstaged at the recorded SHA-256.
+
+### Phase 2 weekly Class Transfer schedule-overlap policy - F77 selected
+
+- Move the overlap decision from `ClassTransferRepository::preflightSchedules`
+  helpers into a Qt-free Application policy; leave time parsing, class labels,
+  localized errors, and duplicate rendered-message suppression at the
+  repository adapter. Use an existing source-owned header.
+- Preserve half-open intervals, end-at-or-before-start overnight ranges,
+  Sunday-to-Monday weekly wrap, regular/intensive category separation,
+  imported-to-imported and imported-to-existing order, Skip/replacement
+  filtering, and pre-write rejection. `Domain::ScheduleTime` cannot represent
+  this rule because it only supports same-day end-after-start intervals.
+- Tests should cover ordinary overlaps, touching boundaries, overnight/week-wrap,
+  invalid imported entries, categories, filters, deterministic conflict order,
+  and adapter diagnostics/no-write through the checked-in conflict fixture.
+  Focused targets: `ClassMngrNextApplicationClassTransferTests` and
   `ClassMngrClassTransferTests`.
