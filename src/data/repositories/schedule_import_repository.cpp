@@ -104,7 +104,9 @@ ScheduleImportMatchingInput matchingInput(
     for (const ScheduleImportClassCandidate& candidate : user.classes)
     {
         ScheduleImportMatchingCandidate projected;
-        projected.teacherKey = candidate.teacherKey.toStdU16String();
+        projected.teacherKey = Domain::KoreanTeacherKey::fromName(
+            candidate.teacherKey.toStdU16String()
+            );
         projected.teacherName = candidate.teacherKr.toStdU16String();
         projected.gradeMatchKey = matchingKey(candidate.classGrade);
         projected.levelMatchKey = matchingKey(candidate.classLevel);
@@ -745,7 +747,9 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
          projection.teachers)
     {
         ScheduleImportTeacherPreview projected;
-        projected.teacherKey = QString::fromStdU16String(teacher.teacherKey);
+        projected.teacherKey = QString::fromStdU16String(
+            teacher.teacherKey.value()
+            );
         projected.teacherKr = QString::fromStdU16String(teacher.teacherName);
         projected.matchingTeacherIds.reserve(
             static_cast<qsizetype>(teacher.matchingTeacherIds.size())

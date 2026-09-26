@@ -16,6 +16,18 @@ static_assert(
 static_assert(
     !std::is_assignable_v<Domain::ClassId&, const Domain::TeacherId&>
     );
+static_assert(
+    std::is_same_v<
+        decltype(ScheduleImportMatchingCandidate::teacherKey),
+        Domain::KoreanTeacherKey
+        >
+    );
+static_assert(
+    std::is_same_v<
+        decltype(ScheduleImportMatchingTeacherProjection::teacherKey),
+        Domain::KoreanTeacherKey
+        >
+    );
 
 namespace
 {
@@ -32,7 +44,7 @@ Domain::ClassId classIdentity(const std::int32_t value)
 ScheduleImportMatchingCandidate candidate()
 {
     ScheduleImportMatchingCandidate result;
-    result.teacherKey = u"최선생";
+    result.teacherKey = Domain::KoreanTeacherKey::fromName(u"최선생");
     result.teacherName = u"최선생";
     result.rooms = {u"416"};
     result.roomMatchKeys = {u"416"};
@@ -101,7 +113,10 @@ ranksEveryMatchCategoryAndKeepsStableTies()
 
     QCOMPARE(projection.kind, ScheduleImportMatchingKind::Intensive);
     QCOMPARE(projection.teachers.size(), std::size_t{1});
-    QVERIFY(projection.teachers[0].teacherKey == u"최선생");
+    QVERIFY(
+        projection.teachers[0].teacherKey
+        == Domain::KoreanTeacherKey::fromName(u"최선생")
+        );
     QVERIFY(
         projection.teachers[0].importedRooms
         == (std::vector<std::u16string>{u"416"})
@@ -266,8 +281,7 @@ preservesEmptyTeacherKeyMatchingSemantics()
     ScheduleImportMatchingInput input;
     ScheduleImportMatchingCandidate imported = candidate();
     imported.teacherName = u"English";
-    imported.teacherKey =
-        ClassMngr::Next::Domain::KoreanTeacherKey::fromName(u"English").value();
+    imported.teacherKey = Domain::KoreanTeacherKey::fromName(u"English");
     input.candidates = {imported};
     input.teachers = {
         {teacherIdentity(-1), u"English"},
@@ -281,6 +295,10 @@ preservesEmptyTeacherKeyMatchingSemantics()
     const ScheduleImportMatchingProjection projection =
         projectScheduleImportMatching(input);
 
+    QVERIFY(
+        projection.teachers[0].teacherKey
+        == Domain::KoreanTeacherKey::fromName(u"")
+        );
     QVERIFY(projection.teachers[0].teacherKey.empty());
     QVERIFY(
         projection.teachers[0].matchingTeacherIds

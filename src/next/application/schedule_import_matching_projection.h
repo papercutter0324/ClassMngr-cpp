@@ -48,7 +48,8 @@ struct ScheduleImportMatchingTime final
 
 struct ScheduleImportMatchingCandidate final
 {
-    std::u16string teacherKey;
+    Domain::KoreanTeacherKey teacherKey =
+        Domain::KoreanTeacherKey::fromName(u"");
     std::u16string teacherName;
     std::vector<std::u16string> rooms;
     // Adapters supply QString::simplified().toCaseFolded() comparison keys;
@@ -107,7 +108,8 @@ struct ScheduleImportMatchingInput final
 
 struct ScheduleImportMatchingTeacherProjection final
 {
-    std::u16string teacherKey;
+    Domain::KoreanTeacherKey teacherKey =
+        Domain::KoreanTeacherKey::fromName(u"");
     std::u16string teacherName;
     std::vector<std::u16string> importedRooms;
     std::vector<Domain::TeacherId> matchingTeacherIds;
@@ -389,7 +391,7 @@ projectScheduleImportMatching(
         for (const ScheduleImportMatchingTeacher& teacher : input.teachers)
         {
             if (
-                Domain::KoreanTeacherKey::fromName(teacher.koreanName).value()
+                Domain::KoreanTeacherKey::fromName(teacher.koreanName)
                 == candidate.teacherKey
                 )
             {
