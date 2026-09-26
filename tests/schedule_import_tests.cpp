@@ -2157,6 +2157,11 @@ rejectsInvalidCourseAndPatternAtApplyBoundaryBeforeWrites()
 void ScheduleImportTests::
 previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
 {
+    // Common-input differential coverage: the exact fixture SHA-256
+    // 2de93c4abdc5e82390adede250e8313501a38d4be2053e929c4adbed6d745312
+    // produced these semantic results at legacy 48fc5c5c and current 1236e9cb.
+    // The fixture was added in 3121d90c, after the legacy baseline; this does
+    // not establish parity against a historical production workbook.
     QFile file(
         QStringLiteral(
             CLASSMNGR_SOURCE_DIR
@@ -2178,6 +2183,18 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
     const ScheduleImportUserBlock user =
         workbook->sheets.first().users.first();
     QCOMPARE(user.classes.size(), 2);
+    const QString firstTeacher = QString::fromUtf8(
+        "\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D"
+        );
+    const QString secondTeacher = QString::fromUtf8(
+        "\xEC\x9D\xB4\xEC\x84\xA0\xEC\x83\x9D"
+        );
+    QCOMPARE(user.classes[0].teacherKey, firstTeacher);
+    QCOMPARE(user.classes[0].teacherKr, firstTeacher);
+    QCOMPARE(user.classes[0].rooms, QStringList{QStringLiteral("413")});
+    QCOMPARE(user.classes[1].teacherKey, secondTeacher);
+    QCOMPARE(user.classes[1].teacherKr, secondTeacher);
+    QCOMPARE(user.classes[1].rooms, QStringList{QStringLiteral("415")});
     QVERIFY(user.classes[0].meetingPatternError.isEmpty());
     QVERIFY(user.classes[1].meetingPatternError.isEmpty());
     QCOMPARE(user.classes[0].times.size(), 2);
@@ -2295,6 +2312,27 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
         QVERIFY2(preview.has_value(), qPrintable(previewError));
         QCOMPARE(preview->user.classes.size(), 2);
         QCOMPARE(preview->classes.size(), 2);
+        QCOMPARE(preview->inventory.classCount, 1);
+        QVERIFY(preview->inventory.hasRegularHours);
+        QVERIFY(!preview->inventory.hasIntensiveHours);
+        QCOMPARE(preview->initiallyAbsentClassIds, QList<int>{preservedClassId});
+        QCOMPARE(preview->teachers.size(), 2);
+        for (int index = 0; index < user.classes.size(); ++index)
+        {
+            const ScheduleImportTeacherPreview& teacher = preview->teachers[index];
+            QCOMPARE(teacher.teacherKey, user.classes[index].teacherKey);
+            QCOMPARE(teacher.teacherKr, user.classes[index].teacherKr);
+            QCOMPARE(teacher.importedRooms, user.classes[index].rooms);
+            QVERIFY(teacher.matchingTeacherIds.isEmpty());
+            QCOMPARE(teacher.affectedClassCount, 0);
+            const ScheduleImportClassPreview& candidate = preview->classes[index];
+            QCOMPARE(candidate.candidateIndex, index);
+            QVERIFY(candidate.matchingClassIds.isEmpty());
+            QCOMPARE(candidate.suggestedClassId, -1);
+            QVERIFY(!candidate.exactMatch);
+            QCOMPARE(candidate.matchConfidence, ScheduleImportClassMatchConfidence::None);
+        }
+        const QStringList persistedBefore = persistedScheduleImportSnapshot(database);
 
         ScheduleImportPlan plan;
         plan.kind = ScheduleImportKind::Normal;
@@ -2338,7 +2376,53 @@ previewsAndRejectsCheckedInOverlapWorkbookBeforeWrites()
 
         const auto imported = repository.apply(plan);
         QVERIFY(!imported.has_value());
-        QVERIFY(imported.error().contains(QStringLiteral("overlaps")));
+        QCOMPARE(imported.error(), QStringLiteral(
+            "The proposed schedule overlaps: E4 Hercules conflicts with "
+            "E4 Theseus on Monday."
+            ));
+        QCOMPARE(persistedScheduleImportSnapshot(database), persistedBefore);
+
+        // Explicit columns omit schema defaults and incidental row IDs, giving
+        // the same normalized post-rejection state as the legacy harness.
+        const QChar separator(0x1f);
+        QCOMPARE(snapshotRows(QStringLiteral(
+            "SELECT id, teacher_kr, room_number, notes FROM teachers ORDER BY id"
+            )), (QStringList{QStringList{
+                QStringLiteral("1"), QStringLiteral("Preserved Teacher"),
+                QStringLiteral("R-KEEP"), QStringLiteral("Preserved notes")
+            }.join(separator)}));
+        QCOMPARE(snapshotRows(QStringLiteral(
+            "SELECT id, name FROM classes ORDER BY id"
+            )), (QStringList{QStringList{
+                QStringLiteral("9901"), QStringLiteral("Preserved Class")
+            }.join(separator)}));
+        QCOMPARE(snapshotRows(QStringLiteral(
+            "SELECT class_id, teacher_id, class_grade, class_level, "
+            "class_color, font_color, notes FROM class_info ORDER BY class_id"
+            )), (QStringList{QStringList{
+                QStringLiteral("9901"), QStringLiteral("1"),
+                QStringLiteral("M2"), QStringLiteral("Ursa"),
+                QStringLiteral("#112233"), QStringLiteral("#FFFFFF"),
+                QStringLiteral("Preserved class info")
+            }.join(separator)}));
+        QCOMPARE(snapshotRows(QStringLiteral(
+            "SELECT class_id, day, start_time, end_time FROM class_times "
+            "ORDER BY class_id, day, start_time, end_time"
+            )), (QStringList{QStringList{
+                QStringLiteral("9901"), QStringLiteral("Sunday"),
+                QStringLiteral("7:00 PM"), QStringLiteral("7:55 PM")
+            }.join(separator)}));
+        QCOMPARE(snapshotRows(QStringLiteral(
+            "SELECT key, value FROM app_settings ORDER BY key"
+            )), (QStringList{QStringList{
+                QStringLiteral("myInfo/name"), QStringLiteral("Preserved User")
+            }.join(separator)}));
+        QVERIFY(snapshotRows(QStringLiteral(
+            "SELECT class_id, day, start_time, end_time FROM class_intensive_times"
+            )).isEmpty());
+        QVERIFY(snapshotRows(QStringLiteral(
+            "SELECT day, start_time FROM intensive_slot_states"
+            )).isEmpty());
         QCOMPARE(
             snapshotRows(QStringLiteral("SELECT * FROM teachers ORDER BY id")),
             teachersBefore
