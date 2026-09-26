@@ -1,6 +1,9 @@
 #include "calendar_event_campus_filter.h"
 
-#include <QRegularExpression>
+#include "next/application/calendar_event_campus_visibility_policy.h"
+
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -27,23 +30,69 @@ QStringList normalizedCodes(
     return values;
 }
 
-bool containsCode(
-    const QString& title,
-    const QString& code
+QString simpleCaseFolded(
+    const QString& value
     )
 {
-    if (code.isEmpty())
+    // Use one-to-one Unicode folding to retain QRegularExpression's
+    // case-insensitive range behavior without multi-character expansions.
+    QString folded;
+    folded.reserve(value.size());
+
+    for (qsizetype index = 0; index < value.size();)
     {
-        return false;
+        char32_t codePoint = value.at(index).unicode();
+        ++index;
+        if (QChar::isHighSurrogate(codePoint) && index < value.size())
+        {
+            const char32_t lowSurrogate = value.at(index).unicode();
+            if (QChar::isLowSurrogate(lowSurrogate))
+            {
+                codePoint = QChar::surrogateToUcs4(
+                    value.at(index - 1),
+                    value.at(index)
+                    );
+                ++index;
+            }
+        }
+
+        const char32_t caseFoldedCodePoint =
+            QChar::toCaseFolded(codePoint);
+        if (QChar::requiresSurrogates(caseFoldedCodePoint))
+        {
+            folded.append(QChar(QChar::highSurrogate(caseFoldedCodePoint)));
+            folded.append(QChar(QChar::lowSurrogate(caseFoldedCodePoint)));
+        }
+        else
+        {
+            folded.append(QChar(
+                static_cast<char16_t>(caseFoldedCodePoint)
+                ));
+        }
     }
 
-    const QRegularExpression pattern(
-        QStringLiteral("(^|[^A-Z0-9])%1([^A-Z0-9]|$)")
-            .arg(QRegularExpression::escape(code)),
-        QRegularExpression::CaseInsensitiveOption
-        );
+    return folded;
+}
 
-    return pattern.match(title).hasMatch();
+std::vector<ClassMngr::Next::Application::CalendarEventCampusCode>
+utf8Codes(
+    const QStringList& codes
+    )
+{
+    using CampusCode =
+        ClassMngr::Next::Application::CalendarEventCampusCode;
+    std::vector<CampusCode> values;
+    values.reserve(static_cast<std::size_t>(codes.size()));
+
+    for (const QString& code : codes)
+    {
+        values.push_back({
+            code.toUtf8().toStdString(),
+            simpleCaseFolded(code).toUtf8().toStdString()
+            });
+    }
+
+    return values;
 }
 }
 
@@ -56,44 +105,20 @@ bool eventMatchesCampus(
     bool showAllCampuses
     )
 {
-    if (showAllCampuses)
-    {
-        return true;
-    }
-
-    const QString normalizedTitle = title.trimmed();
-    if (normalizedTitle.isEmpty())
-    {
-        return true;
-    }
-
     const QStringList allCodes =
         normalizedCodes(allCampusCodes);
     const QStringList currentCodes =
         normalizedCodes(currentCampusCodes);
 
-    if (allCodes.isEmpty() || currentCodes.isEmpty())
-    {
-        return true;
-    }
-
-    bool containsAnyKnownCampus = false;
-
-    for (const QString& code : allCodes)
-    {
-        if (!containsCode(normalizedTitle, code))
-        {
-            continue;
-        }
-
-        containsAnyKnownCampus = true;
-        if (currentCodes.contains(code))
-        {
-            return true;
-        }
-    }
-
-    return !containsAnyKnownCampus;
+    const std::string normalizedTitle =
+        simpleCaseFolded(title.trimmed()).toUtf8().toStdString();
+    return ClassMngr::Next::Application::
+        CalendarEventCampusVisibilityPolicy::eventMatchesCampus(
+            normalizedTitle,
+            utf8Codes(currentCodes),
+            utf8Codes(allCodes),
+            showAllCampuses
+            );
 }
 
 bool eventMatchesCampus(

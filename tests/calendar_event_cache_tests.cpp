@@ -875,6 +875,35 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
             )
         );
 
+    auto normalizedBoundaryEvent = projection.events().at(3);
+    normalizedBoundaryEvent.title = "  meeting s2  ";
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral(" s2 ")},
+            {QStringLiteral("s2"), QStringLiteral("s20")},
+            false
+            )
+        );
+    normalizedBoundaryEvent.title = "  meeting s20  ";
+    QVERIFY(
+        !CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral(" s2 ")},
+            {QStringLiteral("s2"), QStringLiteral("s20")},
+            false
+            )
+        );
+    normalizedBoundaryEvent.title = "  meeting xs2y  ";
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral("s2")},
+            {QStringLiteral("s2")},
+            false
+            )
+        );
+
     const QList<CalendarEvent> legacyEvents = cache.eventsInRange(
         QDate(2026, 7, 11),
         QDate(2026, 7, 12)

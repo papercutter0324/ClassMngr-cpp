@@ -218,6 +218,55 @@ void CalendarImportTests::appendsCampusCodesFromCellNotes()
             false
             )
         );
+
+    CalendarEvent normalizedBoundaryEvent = parsed.events.first();
+    normalizedBoundaryEvent.title = QStringLiteral("  dyb workshop (s2)  ");
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral(" s2 ")},
+            {QStringLiteral("s2"), QStringLiteral("s20")},
+            false
+            )
+        );
+    normalizedBoundaryEvent.title = QStringLiteral("  dyb workshop (s20)  ");
+    QVERIFY(
+        !CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral(" s2 ")},
+            {QStringLiteral("s2"), QStringLiteral("s20")},
+            false
+            )
+        );
+    normalizedBoundaryEvent.title = QStringLiteral("  dyb workshop (xs2y)  ");
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral("s2")},
+            {QStringLiteral("s2")},
+            false
+            )
+        );
+    normalizedBoundaryEvent.title =
+        QString(QChar(0x212A)) + QStringLiteral("S2");
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral("BDG")},
+            {QStringLiteral("S2")},
+            false
+            )
+        );
+    normalizedBoundaryEvent.title =
+        QString(QChar(0x0131)) + QStringLiteral("S2");
+    QVERIFY(
+        !CalendarEventCampusFilter::eventMatchesCampus(
+            normalizedBoundaryEvent,
+            {QStringLiteral("BDG")},
+            {QStringLiteral("S2")},
+            false
+            )
+        );
 }
 
 void CalendarImportTests::appendsVariableLengthCampusCodesFromCellNotes()

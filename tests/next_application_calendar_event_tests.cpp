@@ -1,5 +1,6 @@
-#include "next/application/calendar_event_edit_draft.h"
+#include "next/application/calendar_event_campus_visibility_policy.h"
 #include "next/application/calendar_event_delete_all_port.h"
+#include "next/application/calendar_event_edit_draft.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_save_port.h"
@@ -10,6 +11,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -198,6 +200,30 @@ concept HasRawSourceAccessor = requires(const Value& value)
     value.rawSource();
 };
 
+std::vector<CalendarEventCampusCode> campusCodes(
+    std::initializer_list<std::string_view> values
+    )
+{
+    std::vector<CalendarEventCampusCode> result;
+    result.reserve(values.size());
+
+    for (const std::string_view value : values)
+    {
+        std::string normalized(value);
+        std::string caseFolded = normalized;
+        for (char& character : caseFolded)
+        {
+            if (character >= 'A' && character <= 'Z')
+            {
+                character = static_cast<char>(character - 'A' + 'a');
+            }
+        }
+        result.push_back({std::move(normalized), std::move(caseFolded)});
+    }
+
+    return result;
+}
+
 }
 
 class NextApplicationCalendarEventTests final : public QObject
@@ -234,6 +260,7 @@ private slots:
     void seriesEditRequestContractHasNoQtOrLegacySurface();
     void recordsAndProjectionAreCopyableEqualAndIndependentlyReleasable();
     void contractHasNoMutablePointerOrRichRecordSurface();
+    void campusVisibilityPolicyMatchesNormalizedLiteralCampusTokens();
 };
 
 void NextApplicationCalendarEventTests::valid96ScaleEventsRetainTypedMetadataAndBounds()
@@ -1873,6 +1900,118 @@ void NextApplicationCalendarEventTests::contractHasNoMutablePointerOrRichRecordS
         >);
 
     QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+campusVisibilityPolicyMatchesNormalizedLiteralCampusTokens()
+{
+    using Policy = CalendarEventCampusVisibilityPolicy;
+
+    QVERIFY(Policy::eventMatchesCampus(
+        "snu meeting",
+        campusCodes({"BDG"}),
+        campusCodes({"SNU"}),
+        true
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "   ",
+        campusCodes({"BDG"}),
+        campusCodes({"SNU"}),
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "snu meeting",
+        campusCodes({"BDG"}),
+        {},
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "snu meeting",
+        {},
+        campusCodes({"SNU"}),
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "general meeting",
+        campusCodes({"BDG"}),
+        campusCodes({"SNU"}),
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "meeting (bdg)",
+        campusCodes({"BDG"}),
+        campusCodes({"BDG", "SNU"}),
+        false
+        ));
+    QVERIFY(!Policy::eventMatchesCampus(
+        "meeting (snu)",
+        campusCodes({"BDG"}),
+        campusCodes({"BDG", "SNU"}),
+        false
+        ));
+
+    QVERIFY(Policy::eventMatchesCampus(
+        "meeting (snu) (bdg)",
+        campusCodes({"BDG"}),
+        campusCodes({"BDG", "SNU"}),
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "open house (s2+)",
+        campusCodes({"S2+"}),
+        campusCodes({"S2+", "S.2"}),
+        false
+        ));
+    QVERIFY(!Policy::eventMatchesCampus(
+        "open house (s.2)",
+        campusCodes({"S2+"}),
+        campusCodes({"S2+", "S.2"}),
+        false
+        ));
+
+    QVERIFY(Policy::eventMatchesCampus(
+        "campus s20",
+        campusCodes({"S2"}),
+        campusCodes({"S2"}),
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "xs2y",
+        campusCodes({"S2"}),
+        campusCodes({"S2"}),
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "xs2y",
+        campusCodes({"BDG"}),
+        campusCodes({"S2"}),
+        false
+        ));
+    QVERIFY(!Policy::eventMatchesCampus(
+        "campus s20",
+        campusCodes({"S2"}),
+        campusCodes({"S2", "S20"}),
+        false
+        ));
+    QVERIFY(Policy::eventMatchesCampus(
+        "campus s2",
+        campusCodes({"S2"}),
+        campusCodes({"S2", "S20"}),
+        false
+        ));
+
+    const std::vector<CalendarEventCampusCode> kelvinCurrentCodes{
+        {"\xE2\x84\xAA", "k"}
+    };
+    const std::vector<CalendarEventCampusCode> asciiKnownCodes{
+        {"K", "k"}
+    };
+    QVERIFY(!Policy::eventMatchesCampus(
+        "k",
+        kelvinCurrentCodes,
+        asciiKnownCodes,
+        false
+        ));
 }
 
 QTEST_APPLESS_MAIN(NextApplicationCalendarEventTests)
