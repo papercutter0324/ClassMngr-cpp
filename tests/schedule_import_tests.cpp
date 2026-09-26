@@ -3557,6 +3557,106 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
 
 void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
 {
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_large_conflict.xlsx"
+            )
+        );
+    QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+    const auto workbook = parseScheduleImportWorkbook(
+        file.readAll(),
+        ScheduleImportKind::Normal
+        );
+    const QString parseError =
+        workbook.has_value() ? QString() : workbook.error();
+    QVERIFY2(workbook.has_value(), qPrintable(parseError));
+
+    int currentSheetIndex = -1;
+    for (int index = 0; index < workbook->sheets.size(); ++index)
+    {
+        if (workbook->sheets[index].name == QStringLiteral("Current"))
+        {
+            currentSheetIndex = index;
+            break;
+        }
+    }
+    QVERIFY(currentSheetIndex >= 0);
+    const ScheduleImportSheet& currentSheet =
+        workbook->sheets[currentSheetIndex];
+
+    int aliceIndex = -1;
+    for (int index = 0; index < currentSheet.users.size(); ++index)
+    {
+        if (currentSheet.users[index].name == QStringLiteral("Alice"))
+        {
+            aliceIndex = index;
+            break;
+        }
+    }
+    QVERIFY(aliceIndex >= 0);
+    const ScheduleImportUserBlock& alice = currentSheet.users[aliceIndex];
+
+    QList<ScheduleImportClassCandidate> herculesCandidates;
+    for (const ScheduleImportClassCandidate& candidate : alice.classes)
+    {
+        if (
+            candidate.classGrade == QStringLiteral("E4")
+            && candidate.classLevel == QStringLiteral("Hercules")
+            )
+        {
+            herculesCandidates.append(candidate);
+        }
+    }
+    QCOMPARE(herculesCandidates.size(), 2);
+
+    const QString kimName = QString::fromUtf8(
+        "\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D"
+        );
+    const QString leeName = QString::fromUtf8(
+        "\xEC\x9D\xB4\xEC\x84\xA0\xEC\x83\x9D"
+        );
+    int kimCandidateIndex = -1;
+    int leeCandidateIndex = -1;
+    for (int index = 0; index < herculesCandidates.size(); ++index)
+    {
+        const ScheduleImportClassCandidate& candidate =
+            herculesCandidates[index];
+        if (candidate.teacherKr == kimName)
+        {
+            kimCandidateIndex = index;
+        }
+        else if (candidate.teacherKr == leeName)
+        {
+            leeCandidateIndex = index;
+        }
+    }
+    QVERIFY(kimCandidateIndex >= 0);
+    QVERIFY(leeCandidateIndex >= 0);
+    const ScheduleImportClassCandidate& kimCandidate =
+        herculesCandidates[kimCandidateIndex];
+    const ScheduleImportClassCandidate& leeCandidate =
+        herculesCandidates[leeCandidateIndex];
+    QVERIFY(kimCandidate.teacherKey != leeCandidate.teacherKey);
+    QCOMPARE(kimCandidate.teacherKey, kimName);
+    QCOMPARE(kimCandidate.rooms, QStringList{QStringLiteral("413")});
+    QCOMPARE(kimCandidate.times.size(), 2);
+    QCOMPARE(kimCandidate.times[0].day, QStringLiteral("Monday"));
+    QCOMPARE(kimCandidate.times[0].startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(kimCandidate.times[0].endTime, QStringLiteral("4:55 PM"));
+    QCOMPARE(kimCandidate.times[1].day, QStringLiteral("Wednesday"));
+    QCOMPARE(kimCandidate.times[1].startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(kimCandidate.times[1].endTime, QStringLiteral("4:55 PM"));
+    QCOMPARE(leeCandidate.teacherKey, leeName);
+    QCOMPARE(leeCandidate.rooms, QStringList{QStringLiteral("512")});
+    QCOMPARE(leeCandidate.times.size(), 2);
+    QCOMPARE(leeCandidate.times[0].day, QStringLiteral("Tuesday"));
+    QCOMPARE(leeCandidate.times[0].startTime, QStringLiteral("5:00 PM"));
+    QCOMPARE(leeCandidate.times[0].endTime, QStringLiteral("5:55 PM"));
+    QCOMPARE(leeCandidate.times[1].day, QStringLiteral("Thursday"));
+    QCOMPARE(leeCandidate.times[1].startTime, QStringLiteral("5:00 PM"));
+    QCOMPARE(leeCandidate.times[1].endTime, QStringLiteral("5:55 PM"));
+
     const QString connectionName =
         QStringLiteral("schedule-import-duplicate-target-%1")
             .arg(QUuid::createUuid().toString());
@@ -3569,33 +3669,140 @@ void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+        QSqlQuery query(database);
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO teachers "
+                "(teacher_kr, room_number, notes) VALUES (?, ?, ?)"
+                )
+            );
+        query.addBindValue(kimName);
+        query.addBindValue(QStringLiteral("413"));
+        query.addBindValue(QStringLiteral("Retain Kim teacher row"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        const int kimTeacherId = query.lastInsertId().toInt();
+        QVERIFY(kimTeacherId > 0);
+
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO teachers "
+                "(teacher_kr, room_number, notes) VALUES (?, ?, ?)"
+                )
+            );
+        query.addBindValue(leeName);
+        query.addBindValue(QStringLiteral("512"));
+        query.addBindValue(QStringLiteral("Retain Lee teacher row"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        const int leeTeacherId = query.lastInsertId().toInt();
+        QVERIFY(leeTeacherId > 0);
+
+        constexpr int targetClassId = 8801;
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO classes (id, name) "
+                "VALUES (%1, 'Retained Hercules destination')"
+                ).arg(targetClassId)
+            );
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level, "
+                "reading_book, essay_book, class_color, font_color, notes, "
+                "time_filler_activities) "
+                "VALUES (?, ?, 'E4', 'Hercules', 'Keep Reading', "
+                "'Keep Essay', '#123456', '#FFFFFF', 'Keep class info', "
+                "'Keep filler')"
+                )
+            );
+        query.addBindValue(targetClassId);
+        query.addBindValue(kimTeacherId);
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Monday', '9:00 AM', '9:55 AM')"
+                ).arg(targetClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_intensive_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Wednesday', '10:00 AM', '10:55 AM')"
+                ).arg(targetClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO intensive_slot_states "
+                "(day, start_time, state) "
+                "VALUES ('Wednesday', '10:00 AM', 'Available')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('myInfo/name', 'Retained profile')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) "
+                "VALUES ('schedule-import-snapshot', 'preserve-me')"
+                )
+            );
 
         ScheduleImportPlan plan;
-        plan.candidates = {
-            ScheduleImportClassCandidate{},
-            ScheduleImportClassCandidate{}
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = QStringLiteral("Alice Updated");
+        plan.updateProfileName = true;
+        plan.unknownCellsAcknowledged = true;
+        plan.diagnostics = alice.diagnostics;
+        plan.candidates = herculesCandidates;
+        plan.teachers = {
+            {
+                kimCandidate.teacherKey,
+                ScheduleImportTeacherAction::Reuse,
+                kimTeacherId,
+                QStringLiteral("413")
+            },
+            {
+                leeCandidate.teacherKey,
+                ScheduleImportTeacherAction::Reuse,
+                leeTeacherId,
+                QStringLiteral("512")
+            }
         };
         plan.classes = {
             {
                 0,
                 ScheduleImportClassAction::UpdateExisting,
-                42
+                targetClassId
             },
             {
                 1,
                 ScheduleImportClassAction::UpdateExisting,
-                42
+                targetClassId
             }
         };
 
+        const QStringList before = persistedScheduleImportSnapshot(database);
         ScheduleImportRepository repository(database);
         const auto imported = repository.apply(plan);
         QVERIFY(!imported.has_value());
-        QVERIFY(
-            imported.error().contains(
-                QStringLiteral("unique existing target")
+        QCOMPARE(
+            imported.error(),
+            QStringLiteral(
+                "Each updated class must have a unique existing target."
                 )
             );
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
