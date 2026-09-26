@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-09-23
+- Last updated: 2026-09-26
 - Current milestone: Phase 2 Application-contract slices are continuing;
   calendar-import planning and the existing-signature read cutover are
   complete. Sub Prep now has session-backed Platform reads for selected-class
@@ -46,6 +46,16 @@
 | 13 | 14-Phase-13-Post-Release-Maintenance.md | Not started | Heavy | 12 |
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
+
+## Phase progress logs
+
+Each phase document should contain only its most recent progress entry. When a
+new entry is added, move the previous entry to a sibling file named from the
+phase plan and ending in `-Progress-Log.md` (for example,
+`03-Phase-2-Progress-Log.md`), then link to that archive in the phase document.
+Preserve historical entries in their original order. This includes
+verified-slice reports and dated exit-gate snapshots; keep requirements,
+decisions, and current status in the phase document.
 
 ## Cross-cutting memory remediation
 
