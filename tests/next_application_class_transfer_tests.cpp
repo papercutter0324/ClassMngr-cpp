@@ -93,30 +93,36 @@ ClassTransferProjectionInput validInput()
     return input;
 }
 
+TeacherId reviewTeacherId(int value);
+ClassId reviewClassId(int value);
+
 ClassTransferReviewDecisionRequest validReviewRequest()
 {
     ClassTransferReviewDecisionRequest request;
     request.classes = {
-        {0, {41, 42}},
-        {1, {41, 43}},
+        {0, {reviewClassId(41), reviewClassId(42)}},
+        {1, {reviewClassId(41), reviewClassId(43)}},
         {2, {}}
     };
     request.teachers = {
-        {"teacher-ambiguous", {11, 12}},
-        {"teacher-two", {12, 13}},
-        {"teacher-unique", {14}},
+        {"teacher-ambiguous", {reviewTeacherId(11), reviewTeacherId(12)}},
+        {"teacher-two", {reviewTeacherId(12), reviewTeacherId(13)}},
+        {"teacher-unique", {reviewTeacherId(14)}},
         {"teacher-new", {}}
     };
     request.classResolutions = {
-        {0, ClassTransferReviewClassAction::Replace, 41},
-        {1, ClassTransferReviewClassAction::Create, -1},
-        {2, ClassTransferReviewClassAction::Skip, -1}
+        {0, ClassTransferReviewClassAction::Replace, reviewClassId(41)},
+        {1, ClassTransferReviewClassAction::Create, std::nullopt},
+        {2, ClassTransferReviewClassAction::Skip, std::nullopt}
     };
     request.teacherResolutions = {
-        {"teacher-ambiguous", ClassTransferReviewTeacherAction::Create, -1},
-        {"teacher-two", ClassTransferReviewTeacherAction::KeepExisting, 13},
-        {"teacher-unique", ClassTransferReviewTeacherAction::ReplaceExisting, 14},
-        {"teacher-new", ClassTransferReviewTeacherAction::Create, -1}
+        {"teacher-ambiguous", ClassTransferReviewTeacherAction::Create,
+         std::nullopt},
+        {"teacher-two", ClassTransferReviewTeacherAction::KeepExisting,
+         reviewTeacherId(13)},
+        {"teacher-unique", ClassTransferReviewTeacherAction::ReplaceExisting,
+         reviewTeacherId(14)},
+        {"teacher-new", ClassTransferReviewTeacherAction::Create, std::nullopt}
     };
     return request;
 }
@@ -163,6 +169,16 @@ TeacherId matchingTeacherId(std::string value)
 ClassId matchingClassId(std::string value)
 {
     return *ClassId::fromString(std::move(value));
+}
+
+TeacherId reviewTeacherId(const int value)
+{
+    return *TeacherId::fromString(std::to_string(value));
+}
+
+ClassId reviewClassId(const int value)
+{
+    return *ClassId::fromString(std::to_string(value));
 }
 
 template <typename Value>
@@ -667,6 +683,33 @@ void NextApplicationClassTransferTests::contractHasNoExternalOwnersOrRawSourceAc
 
 void NextApplicationClassTransferTests::reviewDecisionsPreserveMatchChoiceSemantics()
 {
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewClassCandidate>()
+                     .matchingClassIds),
+        std::vector<ClassId>>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewTeacherCandidate>()
+                     .matchingTeacherIds),
+        std::vector<TeacherId>>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewClassResolution>()
+                     .targetClassId),
+        std::optional<ClassId>>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewTeacherResolution>()
+                     .targetTeacherId),
+        std::optional<TeacherId>>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewDecisionIssue>()
+                     .targetClassId),
+        std::optional<ClassId>>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassTransferReviewDecisionIssue>()
+                     .targetTeacherId),
+        std::optional<TeacherId>>);
+    static_assert(!std::is_convertible_v<int, ClassId>);
+    static_assert(!std::is_convertible_v<int, TeacherId>);
+
     const auto request = validReviewRequest();
     const auto result = validateClassTransferReviewDecisions(request);
     QVERIFY(result.accepted());
@@ -675,7 +718,7 @@ void NextApplicationClassTransferTests::reviewDecisionsPreserveMatchChoiceSemant
     auto uniqueTeacherCreate = request;
     uniqueTeacherCreate.teacherResolutions[2].action =
         ClassTransferReviewTeacherAction::Create;
-    uniqueTeacherCreate.teacherResolutions[2].targetTeacherId = -1;
+    uniqueTeacherCreate.teacherResolutions[2].targetTeacherId.reset();
     const auto uniqueResult =
         validateClassTransferReviewDecisions(uniqueTeacherCreate);
     QVERIFY(!uniqueResult.accepted());
@@ -687,13 +730,15 @@ void NextApplicationClassTransferTests::reviewDecisionsPreserveMatchChoiceSemant
     auto ambiguousTeacherReuse = request;
     ambiguousTeacherReuse.teacherResolutions[0].action =
         ClassTransferReviewTeacherAction::KeepExisting;
-    ambiguousTeacherReuse.teacherResolutions[0].targetTeacherId = 12;
+    ambiguousTeacherReuse.teacherResolutions[0].targetTeacherId =
+        reviewTeacherId(12);
     QVERIFY(validateClassTransferReviewDecisions(ambiguousTeacherReuse).accepted());
 
     auto ambiguousTeacherReplacement = request;
     ambiguousTeacherReplacement.teacherResolutions[0].action =
         ClassTransferReviewTeacherAction::ReplaceExisting;
-    ambiguousTeacherReplacement.teacherResolutions[0].targetTeacherId = 11;
+    ambiguousTeacherReplacement.teacherResolutions[0].targetTeacherId =
+        reviewTeacherId(11);
     QVERIFY(validateClassTransferReviewDecisions(
         ambiguousTeacherReplacement).accepted());
 }
@@ -740,28 +785,42 @@ void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDup
         ));
 
     request = validReviewRequest();
-    request.classResolutions[0].targetClassId = -1;
+    request.classResolutions[0].targetClassId.reset();
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::ReplaceClassMissingTarget
         ));
 
     request = validReviewRequest();
-    request.classResolutions[0].targetClassId = 99;
+    request.classResolutions[0].targetClassId = reviewClassId(99);
+    const auto classTargetResult =
+        validateClassTransferReviewDecisions(request);
     QVERIFY(hasReviewIssue(
-        validateClassTransferReviewDecisions(request),
+        classTargetResult,
         IssueCode::ClassTargetNotInMatchSet
         ));
+    const auto classTargetIssue = std::find_if(
+        classTargetResult.issues.cbegin(),
+        classTargetResult.issues.cend(),
+        [](const ClassTransferReviewDecisionIssue& issue)
+        {
+            return issue.code == IssueCode::ClassTargetNotInMatchSet;
+        });
+    QVERIFY(classTargetIssue != classTargetResult.issues.cend());
+    QVERIFY(classTargetIssue->targetClassId.has_value());
+    QCOMPARE(classTargetIssue->targetClassId->value(), std::string("99"));
+    QVERIFY(!classTargetIssue->targetTeacherId.has_value());
 
     request = validReviewRequest();
-    request.classResolutions[1].targetClassId = 41;
+    request.classResolutions[1].targetClassId = reviewClassId(41);
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::NonReplaceClassHasTarget
         ));
 
     request = validReviewRequest();
-    request.classResolutions[1] = {1, ClassAction::Replace, 41};
+    request.classResolutions[1] = {
+        1, ClassAction::Replace, reviewClassId(41)};
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::DuplicateClassReplacementTarget
@@ -775,22 +834,35 @@ void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDup
         ));
 
     request = validReviewRequest();
-    request.teacherResolutions[1].targetTeacherId = -1;
+    request.teacherResolutions[1].targetTeacherId.reset();
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::TeacherActionMissingTarget
         ));
 
     request = validReviewRequest();
-    request.teacherResolutions[1].targetTeacherId = 99;
+    request.teacherResolutions[1].targetTeacherId = reviewTeacherId(99);
+    const auto teacherTargetResult =
+        validateClassTransferReviewDecisions(request);
     QVERIFY(hasReviewIssue(
-        validateClassTransferReviewDecisions(request),
+        teacherTargetResult,
         IssueCode::TeacherTargetNotInMatchSet
         ));
+    const auto teacherTargetIssue = std::find_if(
+        teacherTargetResult.issues.cbegin(),
+        teacherTargetResult.issues.cend(),
+        [](const ClassTransferReviewDecisionIssue& issue)
+        {
+            return issue.code == IssueCode::TeacherTargetNotInMatchSet;
+        });
+    QVERIFY(teacherTargetIssue != teacherTargetResult.issues.cend());
+    QVERIFY(teacherTargetIssue->targetTeacherId.has_value());
+    QCOMPARE(teacherTargetIssue->targetTeacherId->value(), std::string("99"));
+    QVERIFY(!teacherTargetIssue->targetClassId.has_value());
 
     request = validReviewRequest();
     request.teacherResolutions[0] = {
-        "teacher-ambiguous", TeacherAction::Create, 11};
+        "teacher-ambiguous", TeacherAction::Create, reviewTeacherId(11)};
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::CreateTeacherHasTarget
@@ -798,9 +870,10 @@ void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDup
 
     request = validReviewRequest();
     request.teacherResolutions[0] = {
-        "teacher-ambiguous", TeacherAction::ReplaceExisting, 12};
+        "teacher-ambiguous", TeacherAction::ReplaceExisting,
+        reviewTeacherId(12)};
     request.teacherResolutions[1] = {
-        "teacher-two", TeacherAction::ReplaceExisting, 12};
+        "teacher-two", TeacherAction::ReplaceExisting, reviewTeacherId(12)};
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::DuplicateTeacherReplacementTarget

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
 #include <algorithm>
@@ -733,13 +734,13 @@ enum class ClassTransferReviewTeacherAction
 struct ClassTransferReviewClassCandidate final
 {
     int packageClassIndex = -1;
-    std::vector<int> matchingClassIds;
+    std::vector<Domain::ClassId> matchingClassIds;
 };
 
 struct ClassTransferReviewTeacherCandidate final
 {
     std::string teacherKey;
-    std::vector<int> matchingTeacherIds;
+    std::vector<Domain::TeacherId> matchingTeacherIds;
 };
 
 struct ClassTransferReviewClassResolution final
@@ -747,7 +748,7 @@ struct ClassTransferReviewClassResolution final
     int packageClassIndex = -1;
     ClassTransferReviewClassAction action =
         ClassTransferReviewClassAction::Unselected;
-    int targetClassId = -1;
+    std::optional<Domain::ClassId> targetClassId = std::nullopt;
 };
 
 struct ClassTransferReviewTeacherResolution final
@@ -755,7 +756,7 @@ struct ClassTransferReviewTeacherResolution final
     std::string teacherKey;
     ClassTransferReviewTeacherAction action =
         ClassTransferReviewTeacherAction::Unselected;
-    int targetTeacherId = -1;
+    std::optional<Domain::TeacherId> targetTeacherId = std::nullopt;
 };
 
 struct ClassTransferReviewDecisionRequest final
@@ -794,7 +795,8 @@ struct ClassTransferReviewDecisionIssue final
     ClassTransferReviewDecisionIssueCode code;
     int packageClassIndex = -1;
     std::string teacherKey;
-    int targetId = -1;
+    std::optional<Domain::ClassId> targetClassId = std::nullopt;
+    std::optional<Domain::TeacherId> targetTeacherId = std::nullopt;
 };
 
 struct ClassTransferReviewDecisionResult final
@@ -818,6 +820,31 @@ validateClassTransferReviewDecisions(
     using TeacherAction = ClassTransferReviewTeacherAction;
 
     ClassTransferReviewDecisionResult result;
+    const auto addClassTargetIssue = [
+        &result
+    ](
+        const IssueCode code,
+        const int packageClassIndex,
+        const std::optional<Domain::ClassId>& target
+        )
+    {
+        Issue issue{code, packageClassIndex};
+        issue.targetClassId = target;
+        result.issues.push_back(std::move(issue));
+    };
+    const auto addTeacherTargetIssue = [
+        &result
+    ](
+        const IssueCode code,
+        const std::string& teacherKey,
+        const std::optional<Domain::TeacherId>& target
+        )
+    {
+        Issue issue{code, -1, teacherKey};
+        issue.targetTeacherId = target;
+        result.issues.push_back(std::move(issue));
+    };
+
     std::map<int, const ClassTransferReviewClassCandidate*> classCandidates;
     for (const auto& candidate : request.classes)
     {
@@ -874,7 +901,7 @@ validateClassTransferReviewDecisions(
     };
 
     std::map<int, const ClassTransferReviewClassResolution*> classResolutions;
-    std::map<int, std::vector<int>> classTargetClaimants;
+    std::map<Domain::ClassId, std::vector<int>> classTargetClaimants;
     for (const auto& resolution : request.classResolutions)
     {
         if (resolution.packageClassIndex < 0)
@@ -916,51 +943,43 @@ validateClassTransferReviewDecisions(
 
         if (resolution.action == ClassAction::Replace)
         {
-            if (resolution.targetClassId <= 0)
+            if (!resolution.targetClassId)
             {
-                result.issues.push_back(
-                    Issue{IssueCode::ReplaceClassMissingTarget,
-                          resolution.packageClassIndex,
-                          {},
-                          resolution.targetClassId}
-                    );
+                addClassTargetIssue(
+                    IssueCode::ReplaceClassMissingTarget,
+                    resolution.packageClassIndex,
+                    resolution.targetClassId);
                 continue;
             }
             const auto& matchIds = candidate->second->matchingClassIds;
             if (std::find(
                     matchIds.cbegin(),
                     matchIds.cend(),
-                    resolution.targetClassId
+                    *resolution.targetClassId
                     ) == matchIds.cend())
             {
-                result.issues.push_back(
-                    Issue{IssueCode::ClassTargetNotInMatchSet,
-                          resolution.packageClassIndex,
-                          {},
-                          resolution.targetClassId}
-                    );
+                addClassTargetIssue(
+                    IssueCode::ClassTargetNotInMatchSet,
+                    resolution.packageClassIndex,
+                    resolution.targetClassId);
                 continue;
             }
-            auto& claimants = classTargetClaimants[resolution.targetClassId];
+            auto& claimants = classTargetClaimants[*resolution.targetClassId];
             if (!claimants.empty())
             {
-                result.issues.push_back(
-                    Issue{IssueCode::DuplicateClassReplacementTarget,
-                          resolution.packageClassIndex,
-                          {},
-                          resolution.targetClassId}
-                    );
+                addClassTargetIssue(
+                    IssueCode::DuplicateClassReplacementTarget,
+                    resolution.packageClassIndex,
+                    resolution.targetClassId);
             }
             claimants.push_back(resolution.packageClassIndex);
         }
-        else if (resolution.targetClassId != -1)
+        else if (resolution.targetClassId)
         {
-            result.issues.push_back(
-                Issue{IssueCode::NonReplaceClassHasTarget,
-                      resolution.packageClassIndex,
-                      {},
-                      resolution.targetClassId}
-                );
+            addClassTargetIssue(
+                IssueCode::NonReplaceClassHasTarget,
+                resolution.packageClassIndex,
+                resolution.targetClassId);
         }
     }
 
@@ -977,7 +996,8 @@ validateClassTransferReviewDecisions(
 
     std::map<std::string, const ClassTransferReviewTeacherResolution*>
         teacherResolutions;
-    std::map<int, std::vector<std::string>> teacherReplacementClaimants;
+    std::map<Domain::TeacherId, std::vector<std::string>>
+        teacherReplacementClaimants;
     for (const auto& resolution : request.teacherResolutions)
     {
         if (resolution.teacherKey.empty())
@@ -1021,61 +1041,51 @@ validateClassTransferReviewDecisions(
         {
             if (matchIds.size() == 1)
             {
-                result.issues.push_back(
-                    Issue{IssueCode::UniqueTeacherCannotBeCreated,
-                          -1,
-                          resolution.teacherKey,
-                          resolution.targetTeacherId}
-                    );
+                addTeacherTargetIssue(
+                    IssueCode::UniqueTeacherCannotBeCreated,
+                    resolution.teacherKey,
+                    resolution.targetTeacherId);
             }
-            if (resolution.targetTeacherId != -1)
+            if (resolution.targetTeacherId)
             {
-                result.issues.push_back(
-                    Issue{IssueCode::CreateTeacherHasTarget,
-                          -1,
-                          resolution.teacherKey,
-                          resolution.targetTeacherId}
-                    );
+                addTeacherTargetIssue(
+                    IssueCode::CreateTeacherHasTarget,
+                    resolution.teacherKey,
+                    resolution.targetTeacherId);
             }
             continue;
         }
 
-        if (resolution.targetTeacherId <= 0)
+        if (!resolution.targetTeacherId)
         {
-            result.issues.push_back(
-                Issue{IssueCode::TeacherActionMissingTarget,
-                      -1,
-                      resolution.teacherKey,
-                      resolution.targetTeacherId}
-                );
+            addTeacherTargetIssue(
+                IssueCode::TeacherActionMissingTarget,
+                resolution.teacherKey,
+                resolution.targetTeacherId);
             continue;
         }
         if (std::find(
                 matchIds.cbegin(),
                 matchIds.cend(),
-                resolution.targetTeacherId
+                *resolution.targetTeacherId
                 ) == matchIds.cend())
         {
-            result.issues.push_back(
-                Issue{IssueCode::TeacherTargetNotInMatchSet,
-                      -1,
-                      resolution.teacherKey,
-                      resolution.targetTeacherId}
-                );
+            addTeacherTargetIssue(
+                IssueCode::TeacherTargetNotInMatchSet,
+                resolution.teacherKey,
+                resolution.targetTeacherId);
             continue;
         }
         if (resolution.action == TeacherAction::ReplaceExisting)
         {
             auto& claimants = teacherReplacementClaimants[
-                resolution.targetTeacherId];
+                *resolution.targetTeacherId];
             if (!claimants.empty())
             {
-                result.issues.push_back(
-                    Issue{IssueCode::DuplicateTeacherReplacementTarget,
-                          -1,
-                          resolution.teacherKey,
-                          resolution.targetTeacherId}
-                    );
+                addTeacherTargetIssue(
+                    IssueCode::DuplicateTeacherReplacementTarget,
+                    resolution.teacherKey,
+                    resolution.targetTeacherId);
             }
             claimants.push_back(resolution.teacherKey);
         }

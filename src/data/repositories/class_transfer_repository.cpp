@@ -1,5 +1,6 @@
 #include "class_transfer_repository.h"
 
+#include "core/result.h"
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 #include "data/repositories/class_info_repository.h"
@@ -19,6 +20,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <string>
 #include <unordered_set>
 
@@ -56,12 +58,101 @@ TypedId applicationId(const int legacyId)
     return *TypedId::fromString(std::to_string(legacyId));
 }
 
+template <typename TypedId>
+Result<TypedId> typedReviewId(
+    const int legacyId,
+    const QString& description
+    )
+{
+    if (legacyId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("The %1 contains an invalid destination ID.")
+                .arg(description));
+    }
+    return *TypedId::fromString(std::to_string(legacyId));
+}
+
+QString reviewIssueMessage(
+    const ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode code
+    );
+
+template <typename TypedId>
+Result<std::optional<TypedId>> typedReviewTarget(
+    const int legacyId,
+    const QString& description,
+    const ClassMngr::Next::Application::ClassTransferReviewClassAction action
+    )
+{
+    if (legacyId == -1)
+    {
+        return std::optional<TypedId>{};
+    }
+    using Action =
+        ClassMngr::Next::Application::ClassTransferReviewClassAction;
+    using IssueCode =
+        ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode;
+    if (legacyId <= 0)
+    {
+        if (action == Action::Invalid || action == Action::Unselected)
+        {
+            return std::optional<TypedId>{};
+        }
+        return std::unexpected(reviewIssueMessage(
+            action == Action::Replace
+                ? IssueCode::ReplaceClassMissingTarget
+                : IssueCode::NonReplaceClassHasTarget));
+    }
+    const Result<TypedId> typedId = typedReviewId<TypedId>(
+        legacyId, description);
+    if (!typedId)
+    {
+        return std::unexpected(typedId.error());
+    }
+    return std::optional<TypedId>{*typedId};
+}
+
+template <typename TypedId>
+Result<std::optional<TypedId>> typedReviewTarget(
+    const int legacyId,
+    const QString& description,
+    const ClassMngr::Next::Application::ClassTransferReviewTeacherAction action
+    )
+{
+    if (legacyId == -1)
+    {
+        return std::optional<TypedId>{};
+    }
+    using Action =
+        ClassMngr::Next::Application::ClassTransferReviewTeacherAction;
+    using IssueCode =
+        ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode;
+    if (legacyId <= 0)
+    {
+        if (action == Action::Invalid || action == Action::Unselected)
+        {
+            return std::optional<TypedId>{};
+        }
+        return std::unexpected(reviewIssueMessage(
+            action == Action::Create
+                ? IssueCode::CreateTeacherHasTarget
+                : IssueCode::TeacherActionMissingTarget));
+    }
+    const Result<TypedId> typedId = typedReviewId<TypedId>(
+        legacyId, description);
+    if (!typedId)
+    {
+        return std::unexpected(typedId.error());
+    }
+    return std::optional<TypedId>{*typedId};
+}
+
 std::string decisionKey(const QString& value)
 {
     return value.trimmed().isEmpty() ? std::string{} : value.toStdString();
 }
 
-ClassMngr::Next::Application::ClassTransferReviewDecisionRequest
+Result<ClassMngr::Next::Application::ClassTransferReviewDecisionRequest>
 reviewDecisionRequest(
     const ClassTransferPackage& package,
     const ClassImportPreview& preview,
@@ -69,6 +160,8 @@ reviewDecisionRequest(
     )
 {
     using namespace ClassMngr::Next::Application;
+    using ClassId = ClassMngr::Next::Domain::ClassId;
+    using TeacherId = ClassMngr::Next::Domain::TeacherId;
     ClassTransferReviewDecisionRequest request;
 
     for (int index = 0; index < package.classes.size(); ++index)
@@ -87,10 +180,16 @@ reviewDecisionRequest(
         {
             candidate.matchingClassIds.reserve(
                 static_cast<std::size_t>(previewEntry->matchingClassIds.size())
-                );
+            );
             for (const int classId : previewEntry->matchingClassIds)
             {
-                candidate.matchingClassIds.push_back(classId);
+                const Result<ClassId> typedId = typedReviewId<ClassId>(
+                    classId, QObject::tr("class import preview"));
+                if (!typedId)
+                {
+                    return std::unexpected(typedId.error());
+                }
+                candidate.matchingClassIds.push_back(*typedId);
             }
         }
         request.classes.push_back(std::move(candidate));
@@ -112,10 +211,16 @@ reviewDecisionRequest(
         {
             candidate.matchingTeacherIds.reserve(
                 static_cast<std::size_t>(previewEntry->matchingTeacherIds.size())
-                );
+            );
             for (const int teacherId : previewEntry->matchingTeacherIds)
             {
-                candidate.matchingTeacherIds.push_back(teacherId);
+                const Result<TeacherId> typedId = typedReviewId<TeacherId>(
+                    teacherId, QObject::tr("teacher import preview"));
+                if (!typedId)
+                {
+                    return std::unexpected(typedId.error());
+                }
+                candidate.matchingTeacherIds.push_back(*typedId);
             }
         }
         request.teachers.push_back(std::move(candidate));
@@ -140,10 +245,19 @@ reviewDecisionRequest(
             action = ReviewAction::Skip;
             break;
         }
+        const Result<std::optional<ClassId>> targetId =
+            typedReviewTarget<ClassId>(
+                resolution.targetClassId,
+                QObject::tr("class import plan"),
+                action);
+        if (!targetId)
+        {
+            return std::unexpected(targetId.error());
+        }
         request.classResolutions.push_back({
             resolution.packageClassIndex,
             action,
-            resolution.targetClassId
+            *targetId
         });
     }
 
@@ -166,10 +280,19 @@ reviewDecisionRequest(
             action = ReviewAction::ReplaceExisting;
             break;
         }
+        const Result<std::optional<TeacherId>> targetId =
+            typedReviewTarget<TeacherId>(
+                resolution.targetTeacherId,
+                QObject::tr("teacher import plan"),
+                action);
+        if (!targetId)
+        {
+            return std::unexpected(targetId.error());
+        }
         request.teacherResolutions.push_back({
             decisionKey(resolution.teacherKey),
             action,
-            resolution.targetTeacherId
+            *targetId
         });
     }
 
@@ -757,9 +880,15 @@ Result<ValidatedPlan> validatePlan(
         return std::unexpected(previewResult.error());
     }
 
+    const auto request = reviewDecisionRequest(package, *previewResult, plan);
+    if (!request)
+    {
+        return std::unexpected(request.error());
+    }
+
     const auto decision =
         ClassMngr::Next::Application::validateClassTransferReviewDecisions(
-            reviewDecisionRequest(package, *previewResult, plan)
+            *request
             );
     if (!decision.accepted())
     {
