@@ -895,6 +895,8 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
             VALUES ('Alex', 'NET', '010-9999-9999', '03-07', 'Canadian', 'alex@example.com')
         )"));
 
+        // This source-generated plan is synthetic evidence, not workbook or
+        // historical-production-workbook parity evidence.
         TeacherImportPlan plan;
         plan.templateId = QStringLiteral("sectioned-contact-list-v1");
         plan.sourceDate = QDate(2026, 7, 9);
@@ -916,28 +918,61 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
             QFAIL(qPrintable(imported.error()));
         }
         QCOMPARE(imported->koreanTeachers.created, 1);
+        QCOMPARE(imported->koreanTeachers.updated, 0);
+        QCOMPARE(imported->koreanTeachers.unchanged, 0);
+        QCOMPARE(imported->nativeEnglishTeachers.created, 0);
         QCOMPARE(imported->nativeEnglishTeachers.updated, 1);
+        QCOMPARE(imported->nativeEnglishTeachers.unchanged, 0);
         QCOMPARE(imported->gsTeamMembers.created, 1);
+        QCOMPARE(imported->gsTeamMembers.updated, 0);
+        QCOMPARE(imported->gsTeamMembers.unchanged, 0);
+
+        QSqlQuery persisted(database);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT teacher_kr, teacher_en, preferred_romanization, preferred_name, "
+            "room_number, birthday, phone_number, wifi_name, wifi_password, "
+            "internet_type, zoom_id, zoom_password, projection_type, notes "
+            "FROM teachers")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("홍길동"));
+        QCOMPARE(persisted.value(1).toString(), QString());
+        QCOMPARE(persisted.value(2).toString(), QString());
+        QCOMPARE(persisted.value(3).toString(), QString());
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("413"));
+        QCOMPARE(persisted.value(5).toString(), QString());
+        QCOMPARE(persisted.value(6).toString(), QString());
+        QCOMPARE(persisted.value(7).toString(), QString());
+        QCOMPARE(persisted.value(8).toString(), QString());
+        QCOMPARE(persisted.value(9).toString(), QStringLiteral("WiFi"));
+        QCOMPARE(persisted.value(10).toString(), QString());
+        QCOMPARE(persisted.value(11).toString(), QString());
+        QCOMPARE(persisted.value(12).toString(), QStringLiteral("HDMI"));
+        QCOMPARE(persisted.value(13).toString(), QString());
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT name, position, phone_number, birthday, nationality, email "
+            "FROM native_english_teachers")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QStringLiteral("Alex"));
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("Team Leader"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("010-9999-9999"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("03-07"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("Canadian"));
+        QCOMPARE(persisted.value(5).toString(), QStringLiteral("alex@example.com"));
+        QVERIFY(!persisted.next());
+
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT name, korean_name, position, phone_number, birthday FROM gs_team")));
+        QVERIFY(persisted.next());
+        QCOMPARE(persisted.value(0).toString(), QString());
+        QCOMPARE(persisted.value(1).toString(), QStringLiteral("김하늘"));
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("Branch Manager"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("010-1111-2222"));
+        QCOMPARE(persisted.value(4).toString(), QStringLiteral("05-09"));
+        QVERIFY(!persisted.next());
 
         QSqlQuery counts(database);
-        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM teachers")));
-        QVERIFY(counts.next());
-        QCOMPARE(counts.value(0).toInt(), 1);
-        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM native_english_teachers")));
-        QVERIFY(counts.next());
-        QCOMPARE(counts.value(0).toInt(), 1);
-        QVERIFY(counts.exec(QStringLiteral("SELECT COUNT(*) FROM gs_team")));
-        QVERIFY(counts.next());
-        QCOMPARE(counts.value(0).toInt(), 1);
-
-        QVERIFY(counts.exec(QStringLiteral(
-            "SELECT position, phone_number, nationality, email FROM native_english_teachers")));
-        QVERIFY(counts.next());
-        QCOMPARE(counts.value(0).toString(), QStringLiteral("Team Leader"));
-        QCOMPARE(counts.value(1).toString(), QStringLiteral("010-9999-9999"));
-        QCOMPARE(counts.value(2).toString(), QStringLiteral("Canadian"));
-        QCOMPARE(counts.value(3).toString(), QStringLiteral("alex@example.com"));
-
         TeacherImportPlan older = plan;
         older.templateId = QStringLiteral("alternate-template-v2");
         older.sourceDate = QDate(2026, 1, 1);
