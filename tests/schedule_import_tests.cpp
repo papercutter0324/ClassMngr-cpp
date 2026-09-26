@@ -1635,6 +1635,46 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         QCOMPARE(applied->schedulesCleared, 2);
         QCOMPARE(applied->ignoredCells, user.diagnostics.size());
 
+        for (int index = 0; index < plan.candidates.size(); ++index)
+        {
+            int expectedClassId = index == 1 ? 43 : -1;
+            if (expectedClassId < 0)
+            {
+                query.prepare(
+                    QStringLiteral(
+                        "SELECT class_id FROM class_info "
+                        "WHERE class_grade=? AND class_level=?"
+                        )
+                    );
+                query.addBindValue(plan.candidates[index].classGrade);
+                query.addBindValue(plan.candidates[index].classLevel);
+                QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+                QVERIFY(query.next());
+                expectedClassId = query.value(0).toInt();
+                QVERIFY(expectedClassId > 0);
+                QVERIFY(!query.next());
+            }
+
+            query.prepare(
+                QStringLiteral(
+                    "SELECT day, start_time, end_time FROM class_times "
+                    "WHERE class_id=? ORDER BY id"
+                    )
+                );
+            query.addBindValue(expectedClassId);
+            QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+            const QList<ClassTime>& expectedTimes =
+                plan.candidates[index].times;
+            for (const ClassTime& expected : expectedTimes)
+            {
+                QVERIFY(query.next());
+                QCOMPARE(query.value(0).toString(), expected.day);
+                QCOMPARE(query.value(1).toString(), expected.startTime);
+                QCOMPARE(query.value(2).toString(), expected.endTime);
+            }
+            QVERIFY(!query.next());
+        }
+
         QStringList persistedTeachers;
         int parkTeacherId = -1;
         const QString parkName =
@@ -2614,6 +2654,22 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
         execOrFail(
             query,
             QStringLiteral(
+                "SELECT id, day, start_time, end_time "
+                "FROM class_intensive_times WHERE class_id=%1"
+                )
+                .arg(absentClass)
+            );
+        QVERIFY(query.next());
+        const QStringList absentRowsBefore{
+            query.value(0).toString(),
+            query.value(1).toString(),
+            query.value(2).toString(),
+            query.value(3).toString()
+        };
+        QVERIFY(!query.next());
+        execOrFail(
+            query,
+            QStringLiteral(
                 "INSERT INTO class_times "
                 "(class_id, day, start_time, end_time) "
                 "VALUES (%1, 'Friday', '4:00 PM', '4:55 PM')"
@@ -2675,6 +2731,23 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
         execOrFail(
             query,
             QStringLiteral(
+                "SELECT day, start_time, end_time "
+                "FROM class_intensive_times WHERE class_id=%1 ORDER BY id"
+                )
+                .arg(importedClass)
+            );
+        for (const ClassTime& expected : candidate.times)
+        {
+            QVERIFY(query.next());
+            QCOMPARE(query.value(0).toString(), expected.day);
+            QCOMPARE(query.value(1).toString(), expected.startTime);
+            QCOMPARE(query.value(2).toString(), expected.endTime);
+        }
+        QVERIFY(!query.next());
+
+        execOrFail(
+            query,
+            QStringLiteral(
                 "SELECT COUNT(*) FROM class_intensive_times "
                 "WHERE class_id=%1"
                 )
@@ -2682,6 +2755,23 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
             );
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 1);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT id, day, start_time, end_time "
+                "FROM class_intensive_times WHERE class_id=%1"
+                )
+                .arg(absentClass)
+        );
+        QVERIFY(query.next());
+        const QStringList absentRowsAfter{
+            query.value(0).toString(),
+            query.value(1).toString(),
+            query.value(2).toString(),
+            query.value(3).toString()
+        };
+        QCOMPARE(absentRowsAfter, absentRowsBefore);
+        QVERIFY(!query.next());
 
         plan.intensiveMode =
             ScheduleImportIntensiveMode::ReplaceWithNew;

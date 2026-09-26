@@ -890,14 +890,19 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         existingInfo.size()
         );
 
-    const auto currentState = validateScheduleImportState(
+    const ScheduleImportStateValidationRequest currentRequest =
         stateValidationRequest(
             plan,
             *validatedPlan,
             *existingTeachers,
             *existingClasses,
             existingInfo
-            )
+            );
+    const auto projectedScheduleRows =
+        projectScheduleImportStateSchedules(currentRequest);
+    const auto currentState = validateScheduleImportState(
+        currentRequest,
+        projectedScheduleRows
         );
     if (currentState)
     {
@@ -1023,6 +1028,9 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         plan.kind == ScheduleImportKind::Intensive
         && plan.intensiveMode
             == ScheduleImportIntensiveMode::UpdateExisting;
+    std::vector<std::optional<int>> insertedClassIdsByCandidate(
+        static_cast<std::size_t>(plan.candidates.size())
+        );
     QHash<int, QList<ClassTime>> finalTimes;
     for (int index = 0; index < plan.candidates.size(); ++index)
     {
@@ -1037,22 +1045,6 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
             )
         {
             ++summary.classesSkipped;
-            if (
-                !preservesAbsentIntensiveClasses
-                && resolution.targetClassId > 0
-                && existingInfo.contains(resolution.targetClassId)
-                )
-            {
-                finalTimes.insert(
-                    resolution.targetClassId,
-                    selectedTimes(
-                        existingInfo.value(
-                            resolution.targetClassId
-                            ),
-                        plan.kind
-                        )
-                    );
-            }
             continue;
         }
 
@@ -1102,6 +1094,15 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
             }
             classId =
                 query.lastInsertId().toInt();
+            if (classId <= 0)
+            {
+                return std::unexpected(
+                    QObject::tr("A class could not be created.")
+                    );
+            }
+            insertedClassIdsByCandidate[
+                static_cast<std::size_t>(index)
+                ] = classId;
             ++summary.classesCreated;
         }
         else
@@ -1151,8 +1152,62 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
                     )
                 );
         }
+    }
 
-        finalTimes.insert(classId, candidate.times);
+    // Resolve the typed Application projection only after CreateNew rows have
+    // received their database IDs. This same projection was used above for
+    // app-less overlap validation and remains the sole source of persisted
+    // schedule-row selection.
+    for (const ScheduleImportStateProjectedSchedule& projectedSchedule :
+         projectedScheduleRows)
+    {
+        if (projectedSchedule.persistence
+            == ScheduleImportStateProjectedSchedule::Persistence::
+                KeepExistingRows)
+        {
+            continue;
+        }
+
+        int classId = -1;
+        if (const auto* existingId = std::get_if<Domain::ClassId>(
+                &projectedSchedule.classReference
+                ))
+        {
+            classId = legacyId(*existingId).value_or(-1);
+        }
+        else
+        {
+            const auto candidateIndex = std::get<
+                ScheduleImportStateCandidateIndex
+                >(projectedSchedule.classReference).value;
+            if (candidateIndex < insertedClassIdsByCandidate.size()
+                && insertedClassIdsByCandidate[candidateIndex])
+            {
+                classId = *insertedClassIdsByCandidate[candidateIndex];
+            }
+        }
+
+        if (classId <= 0)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "A projected schedule has no persisted class target."
+                    )
+                );
+        }
+
+        QList<ClassTime> times;
+        for (const ScheduleImportStateTime& time : projectedSchedule.times)
+        {
+            times.push_back(
+                {
+                    qString(time.dayLabel),
+                    qString(time.startLabel),
+                    qString(time.endLabel)
+                }
+                );
+        }
+        finalTimes.insert(classId, std::move(times));
     }
 
     int finalScheduleRowCount = 0;
