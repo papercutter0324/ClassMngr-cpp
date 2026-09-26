@@ -1332,6 +1332,9 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
 void ScheduleImportTests::
 previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
 {
+    // Differential expectations were checked against legacy 48fc5c5c using the
+    // same seeded database and schedule_review.xlsx. The fixture was added in
+    // f5fdcc4a after that baseline; this is common-input differential evidence.
     QFile file(
         QStringLiteral(
             CLASSMNGR_SOURCE_DIR
@@ -1356,6 +1359,10 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
     QCOMPARE(workbook->sheets[0].users.size(), 1);
     const ScheduleImportUserBlock user = workbook->sheets[0].users[0];
     QCOMPARE(user.name, QStringLiteral("Alice"));
+    QCOMPARE(user.headerCell, QStringLiteral("A1"));
+    QVERIFY(user.diagnostics.isEmpty());
+    QCOMPARE(workbook->sheets[1].name, QStringLiteral("Alternate"));
+    QVERIFY(workbook->sheets[1].visible);
     QCOMPARE(user.classes.size(), 3);
 
     const ScheduleImportClassCandidate& first = user.classes[0];
@@ -1364,6 +1371,9 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
     QCOMPARE(first.rooms, QStringList{QStringLiteral("415")});
     QCOMPARE(first.classGrade, QStringLiteral("M3"));
     QCOMPARE(first.classLevel, QStringLiteral("Song's"));
+    QVERIFY(first.importedColors.isEmpty());
+    QCOMPARE(first.sourceCells, (QStringList{QStringLiteral("B2"), QStringLiteral("F2")}));
+    QVERIFY(first.meetingPatternError.isEmpty());
     QCOMPARE(first.times.size(), 2);
     QCOMPARE(first.times[0].day, QStringLiteral("Monday"));
     QCOMPARE(first.times[0].startTime, QStringLiteral("4:00 PM"));
@@ -1378,6 +1388,9 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
     QCOMPARE(target.rooms, QStringList{QStringLiteral("416")});
     QCOMPARE(target.classGrade, QStringLiteral("E4"));
     QCOMPARE(target.classLevel, QStringLiteral("Hercules"));
+    QCOMPARE(target.importedColors, QStringList{QStringLiteral("#6D9EEB")});
+    QCOMPARE(target.sourceCells, (QStringList{QStringLiteral("C3"), QStringLiteral("E3")}));
+    QVERIFY(target.meetingPatternError.isEmpty());
     QCOMPARE(target.times.size(), 2);
     QCOMPARE(target.times[0].day, QStringLiteral("Tuesday"));
     QCOMPARE(target.times[0].startTime, QStringLiteral("5:00 PM"));
@@ -1392,6 +1405,9 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
     QCOMPARE(third.rooms, QStringList{QStringLiteral("413")});
     QCOMPARE(third.classGrade, QStringLiteral("E4"));
     QCOMPARE(third.classLevel, QStringLiteral("Theseus"));
+    QVERIFY(third.importedColors.isEmpty());
+    QCOMPARE(third.sourceCells, (QStringList{QStringLiteral("B4"), QStringLiteral("D4")}));
+    QVERIFY(third.meetingPatternError.isEmpty());
     QCOMPARE(third.times.size(), 2);
     QCOMPARE(third.times[0].day, QStringLiteral("Monday"));
     QCOMPARE(third.times[0].startTime, QStringLiteral("6:00 PM"));
@@ -1548,6 +1564,20 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         QVERIFY2(preview.has_value(), qPrintable(previewError));
         QCOMPARE(preview->kind, ScheduleImportKind::Normal);
         QCOMPARE(preview->user.classes.size(), user.classes.size());
+        QCOMPARE(preview->teachers.size(), 3);
+        const QList<QList<int>> expectedTeacherMatches{
+            {}, {choiTeacherId}, {kimTeacherId}
+        };
+        const QList<int> expectedAffectedClassCounts{0, 1, 2};
+        for (int index = 0; index < preview->teachers.size(); ++index)
+        {
+            const ScheduleImportTeacherPreview& teacher = preview->teachers[index];
+            QCOMPARE(teacher.teacherKey, user.classes[index].teacherKey);
+            QCOMPARE(teacher.teacherKr, user.classes[index].teacherKr);
+            QCOMPARE(teacher.importedRooms, user.classes[index].rooms);
+            QCOMPARE(teacher.matchingTeacherIds, expectedTeacherMatches[index]);
+            QCOMPARE(teacher.affectedClassCount, expectedAffectedClassCounts[index]);
+        }
         QCOMPARE(preview->classes.size(), 3);
         const ScheduleImportClassPreview& noMatch = preview->classes[0];
         QCOMPARE(noMatch.candidateIndex, 0);
@@ -1567,6 +1597,12 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
             match.matchConfidence,
             ScheduleImportClassMatchConfidence::Confident
             );
+        const ScheduleImportClassPreview& thirdNoMatch = preview->classes[2];
+        QCOMPARE(thirdNoMatch.candidateIndex, 2);
+        QVERIFY(thirdNoMatch.matchingClassIds.isEmpty());
+        QCOMPARE(thirdNoMatch.suggestedClassId, -1);
+        QVERIFY(!thirdNoMatch.exactMatch);
+        QCOMPARE(thirdNoMatch.matchConfidence, ScheduleImportClassMatchConfidence::None);
         QCOMPARE(preview->inventory.classCount, 3);
         QVERIFY(preview->inventory.hasRegularHours);
         QVERIFY(!preview->inventory.hasIntensiveHours);
@@ -1634,7 +1670,8 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         QCOMPARE(applied->classesUpdated, 1);
         QCOMPARE(applied->classesSkipped, 0);
         QCOMPARE(applied->schedulesCleared, 2);
-        QCOMPARE(applied->ignoredCells, user.diagnostics.size());
+        QCOMPARE(applied->ignoredCells, 0);
+        QVERIFY(!applied->profileNameUpdated);
 
         for (int index = 0; index < plan.candidates.size(); ++index)
         {
@@ -1716,9 +1753,10 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         execOrFail(
             query,
             QStringLiteral(
-                "SELECT c.name, ci.teacher_id, ci.class_grade, ci.class_level, "
+                "SELECT c.name, t.teacher_kr, ci.class_grade, ci.class_level, "
                 "ci.class_color, ci.font_color "
                 "FROM classes c JOIN class_info ci ON ci.class_id=c.id "
+                "JOIN teachers t ON t.id=ci.teacher_id "
                 "ORDER BY c.name"
                 )
             );
@@ -1727,7 +1765,7 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
             persistedClasses.append(
                 query.value(0).toString()
                 + QLatin1Char('|')
-                + QString::number(query.value(1).toInt())
+                + query.value(1).toString()
                 + QLatin1Char('|')
                 + query.value(2).toString()
                 + QLatin1Char('|')
@@ -1742,15 +1780,15 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
             persistedClasses,
             QStringList({
                 QStringLiteral("A weaker Hercules candidate|%1|E4|Hercules|#FFFFFF|#000000")
-                    .arg(kimTeacherId),
+                    .arg(third.teacherKr),
                 QStringLiteral("B exact Hercules candidate|%1|E4|Hercules|#223344|#FFFFFF")
-                    .arg(choiTeacherId),
+                    .arg(target.teacherKr),
                 QStringLiteral("E4 Theseus|%1|E4|Theseus|#556677|#000000")
-                    .arg(kimTeacherId),
+                    .arg(third.teacherKr),
                 QStringLiteral("M3 Song's|%1|M3|Song's|#778899|#000000")
-                    .arg(parkTeacherId),
+                    .arg(first.teacherKr),
                 QStringLiteral("Unrelated retained class|%1|M2|Atlas|#1A2B3C|#FFFFFF")
-                    .arg(kimTeacherId)
+                    .arg(third.teacherKr)
             })
             );
 
