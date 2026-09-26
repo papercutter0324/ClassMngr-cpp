@@ -2731,3 +2731,14 @@ separate on a host with Xvfb and loopback access.
   `ClassMngrNextApplicationScheduleImportReviewDecisionsTests`, and
   `ClassMngrScheduleImportDialogTests`. This adds required checked-fixture
   regression evidence, not an independent historical-output oracle.
+
+### Phase 2 Schedule Import duplicate-target fixture regression - F78 verified
+
+- Source/test commit 68ab0faa replaces the synthetic empty-candidate duplicate-target test with permanent schedule_large_conflict.xlsx coverage. It loads Current-sheet Alice E4 Hercules candidates, verifies the two candidates are distinct, directs both to one seeded existing destination, asserts the exact duplicate-target error, and compares persisted teachers, classes, class information, regular and intensive schedules, and app settings before and after rejection.
+- Executor verification passed ClassMngrScheduleImportTests. Independent fresh Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; CMake validated 917 handwritten source owners and the focused Schedule Import, review-decision, and dialog targets passed (3/3). git diff --check passed; no full suite was run. The optional external workbook sample was skipped because CLASSMNGR_SCHEDULE_IMPORT_SAMPLE was unset.
+- F78 is checked-fixture regression coverage, not independent historical parity. Gate 1 and Gate 2 remain Partial; workspace boundary and audited src/next isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027. Protected cmake/sources.cmake remains excluded at SHA-256 9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF.
+
+### Phase 2 Class Transfer validated weekly interval contract - F79 selected
+
+- Convert the public app-less ClassTransferScheduleCandidate from an unchecked aggregate into a factory-created value from category, parsed weekday index, and start/end minute-of-day. Validate category and numeric bounds. Preserve end-at-or-before-start as next-day rollover, including equal endpoints as 24 hours and Sunday endpoints beyond the weekly boundary.
+- Keep legacy QString parsing and exact adapter diagnostics in the repository. Focused CTests: ClassMngrNextApplicationClassTransferTests and ClassMngrClassTransferTests. This advances Gate 1 only if verified; Gate 2 remains Partial. Sub Prep stays capped at 2026-2027.

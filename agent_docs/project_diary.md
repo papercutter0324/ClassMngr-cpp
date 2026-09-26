@@ -1057,3 +1057,8 @@ Prep's queried interval to the current and following calendar years at most.
 - Existing `Domain::ScheduleTime` deliberately models same-day end-after-start intervals; it cannot stand in for Class Transfer's weekly intervals, where end-at-or-before-start means an overnight meeting and Sunday may overlap early Monday. Keep these semantics explicit in a separate typed policy.
 - Keep ordered policy decisions and typed conflict references in the Qt-free layer; leave parsing of legacy text, class labels, localized diagnostics, and rendered-message deduplication in the repository adapter.
 - Verify both the pure overlap ordering and the repository conversion path. The checked conflict fixture now locks the combined category diagnostic and no-write behavior, while adapter cases cover Sunday wrap and equal endpoints; this is regression evidence and must not be described as historical parity without a separate legacy oracle.
+
+## Phase 2 Schedule Import duplicate-target fixture rejection - 2026-09-26
+
+- Derive multiple review candidates from the checked workbook and direct them to the same seeded destination to exercise the real apply validation path. Assert the exact rejection and compare a complete persisted-state snapshot to prove no writes occurred.
+- Keep checked-fixture regression separate from historical baseline parity claims; a permanent workbook alone does not establish an independently sourced legacy-output oracle.

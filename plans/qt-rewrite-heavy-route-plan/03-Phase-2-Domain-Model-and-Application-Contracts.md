@@ -5671,3 +5671,49 @@ unless it exposes a production defect. Verify with
 `ClassMngrScheduleImportDialogTests`. This is a selected slice, not implementation
 evidence. Sub Prep remains capped at the current and following calendar years,
 2026-2027.
+
+## Verified F78 Schedule Import duplicate-target fixture regression - commit 68ab0faa
+
+The repository apply test derives two distinct Alice E4 Hercules candidates
+from the permanent schedule_large_conflict.xlsx workbook, assigns both to one
+seeded existing destination, and asserts the exact duplicate-target rejection
+before writes. The persisted-state snapshot covering teachers, classes, class
+information, regular and intensive schedules, and app settings is identical
+before and after rejection.
+
+Executor verification passed ClassMngrScheduleImportTests. Independent fresh
+Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51.36257, and Qt 6.12.0; CMake validated 917 handwritten source
+owners. ClassMngrScheduleImportTests,
+ClassMngrNextApplicationScheduleImportReviewDecisionsTests, and
+ClassMngrScheduleImportDialogTests passed (3/3). git diff --check passed; no
+full suite was run. The optional external workbook sample was skipped because
+CLASSMNGR_SCHEDULE_IMPORT_SAMPLE was unset.
+
+F78 adds checked-fixture regression coverage, not an independently sourced
+historical-output oracle. Gate 1 remains Partial; Gate 2 gains fixture-backed
+duplicate-target rejection evidence and remains Partial. Workspace boundary
+and audited src/next dependency isolation remain Satisfied. Phase 2 remains In
+Progress with its exit gate Open. Sub Prep remains capped at 2026-2027.
+Protected cmake/sources.cmake remains excluded at SHA-256
+9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF.
+
+### Cumulative exit-gate status after F78
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F77 adds the Qt-free weekly Class Transfer overlap policy. F78 adds no app-less behavior; broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F78 verifies fixture-derived duplicate-target rejection and unchanged persisted state. This is checked-fixture regression coverage, not historical baseline parity; broader parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F78 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited src/next sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F78 changes tests only. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited v2 dependency
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+Next selected bounded slice: F79 makes Class Transfer weekly schedule intervals
+validated app-less values through a factory from parsed weekday and
+minute-of-day inputs. Preserve end-at-or-before-start overnight rollover,
+equal endpoints as 24 hours, and Sunday endpoints beyond the weekly boundary.
+Keep legacy QString parsing and diagnostics in the repository adapter. Verify
+with ClassMngrNextApplicationClassTransferTests and
+ClassMngrClassTransferTests. This is selected work, not implementation
+evidence. Sub Prep remains capped at 2026-2027.
