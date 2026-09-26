@@ -8,25 +8,28 @@
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
 - Last updated: 2026-09-26
-- Previous code slice: F67 makes `Application::validateScheduleImportState` reject a
-  `CreateNew` class decision carrying a target while accepting a targetless decision; the
-  repository maps the error. App-less state-validation and review-decision tests passed, but
-  `PlanValidator` rejects the input upstream, so the production suite does not reach the new
-  branch. Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds each validated
-  914 handwritten owners and passed the exact three CTests 3/3; no full suite. Source commit:
-  `4081cc0fcbfb504766e8e10f98839f9eeffbf6ce`.
-- Latest code slice: F68 extracts campus-token matching into the Qt-free
-  `Application::CalendarEventCampusVisibilityPolicy`; the existing Qt feature adapter
-  retains QString trimming, code normalization, and one-to-one case-fold preprocessing.
-  App-less policy tests and typed-summary/legacy adapter regressions cover defaults,
-  punctuation, S2/S20, lower-case boundaries, Kelvin U+212A, and dotless i U+0131.
-  Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds each validated 915
-  handwritten owners and passed the exact application, cache, and calendar-import CTests
-  3/3; `git diff --check` passed, no full suite. Unicode cases are not an exhaustive
-  equivalence proof. Gate 1 gains direct app-less behavior evidence; Gate 2 remains Partial
-  without checked-in baseline fixture parity. Workspace boundary and audited `src/next`
-  dependency isolation remain Satisfied. Source commit: `3ee0b1c6`. Phase 2 exit gate remains
-  Open. Sub Prep remains capped at 2026-2027, the current and following calendar years.
+- Previous code slice: F68 extracts campus-token matching into the Qt-free
+  `Application::CalendarEventCampusVisibilityPolicy`; the Qt feature edge retains
+  QString trimming, code normalization, and one-to-one case-fold preprocessing.
+  App-less policy and typed-summary/legacy adapter tests cover defaults, punctuation,
+  S2/S20, lower-case boundaries, Kelvin U+212A, and dotless i U+0131. Two fresh Windows
+  x64 Debug Ninja/MSVC 19.51/Qt 6.12 builds validated 915 handwritten owners and passed
+  the application, cache, and calendar-import CTests 3/3; `git diff --check` passed,
+  no full suite. Unicode cases are not exhaustive. Gate 1 gained app-less behavior;
+  Gate 2 remained Partial without baseline fixture parity. Source commit: `3ee0b1c6`.
+- Latest code slice: F69 extracts final Schedule Import state projection into Qt-free
+  Application code. Typed `ClassId | candidate-index` references and explicit
+  `ReplaceRows`/`KeepExistingRows` dispositions let one projection feed overlap
+  validation and repository persistence; generated IDs are resolved after inserts.
+  Intensive UpdateExisting preserves untouched row identities. App-less projection
+  tests and production fixture, overlap, skip, pre-write, and rollback coverage passed.
+  Two fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees validated 916
+  handwritten source owners and passed the state-validation and production Schedule
+  Import CTests 2/2; `git diff --check` passed, no full suite. Gate 1 gains direct
+  projection evidence and Gate 2 gains fixture-backed persisted-row parity; both remain
+  Partial. Workspace boundary and audited `src/next` dependency isolation remain
+  Satisfied. Source commit: `95aaefa4`. Phase 2 exit gate remains Open. Sub Prep remains
+  limited to the current and following calendar years, 2026-2027.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5241,3 +5244,45 @@ with its exit gate Open. F62's CreateNew sentinel-conversion observability
 limitation and F67's upstream-unreachable production branch remain distinct
 and unresolved. Next entry: select F69. Sub Prep remains capped at the current
 and following calendar years, 2026-2027.
+
+## Verified F69 Schedule Import state projection - commit `95aaefa4`
+
+Qt-free [`Application::projectScheduleImportStateSchedules`](../../src/next/application/schedule_import_state_projection.h)
+projects the final normal or intensive schedule rows using typed
+`Domain::ClassId | ScheduleImportStateCandidateIndex` references. Each row also
+carries an explicit `ReplaceRows` or `KeepExistingRows` persistence disposition.
+The repository computes this projection once, passes the same rows to overlap
+validation, and resolves candidate indexes to generated class IDs only after
+inserting new classes. Intensive `UpdateExisting` keeps untouched existing rows
+and their identities; normal import, `ReplaceWithNew`, and Skip retain replacement
+and preservation behavior.
+
+App-less tests cover typed references, source meeting order, overlap, intensive
+modes, and skip dispositions. Production tests assert persisted-row parity for
+checked-in [`schedule_review.xlsx`](../../tests/fixtures/imports/schedule_review.xlsx),
+intensive replacement and untouched-row identity; the checked-in overlap fixture
+and existing skipped exact-match, pre-write, and rollback cases remain covered.
+Two independent fresh Windows x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 trees
+validated 916 handwritten source owners and passed
+`ClassMngrNextApplicationScheduleImportStateValidationTests` and
+`ClassMngrScheduleImportTests` (2/2). `git diff --check` passed; no full suite was
+run.
+
+#### Exit-gate status after F69
+
+This cumulative audit applies the formal exit criteria through F69. Both focused
+targets were independently built and passed; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F69 directly tests the Qt-free final schedule-row projection, typed class/candidate references, source meeting order, overlap, intensive modes, and skip dispositions. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F69 adds persisted-row parity for the checked-in `schedule_review.xlsx` fixture. Separate production assertions cover intensive row replacement and untouched-row identity; checked-in `schedule_overlap_conflict.xlsx` verifies pre-write overlap rejection. Broader baseline fixture parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F69 does not change that criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | The audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F69 keeps the projection Qt-free and resolves generated IDs at the repository boundary. |
+
+Gate 1 and Gate 2 remain Partial; Workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress with its exit
+gate Open. F62's CreateNew sentinel-conversion observability limitation and
+F67's upstream-unreachable production validation branch remain distinct. Next
+entry: select F70 from the remaining Phase 2 gaps. Sub Prep remains limited to
+the current and following calendar years, 2026-2027.

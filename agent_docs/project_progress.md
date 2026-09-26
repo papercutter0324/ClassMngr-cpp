@@ -1116,3 +1116,33 @@ protected user change to `cmake/sources.cmake` remains excluded; its SHA-256
 is `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 Next: select F69 from three independent Investigator reviews and keep
 source/documentation commits separate.
+
+## Current Phase 2 position - 2026-09-26 (F69)
+
+F69 source/test commit `95aaefa4` (`Extract Schedule Import state projection`)
+adds a Qt-free Application projection for the final schedule rows. It uses
+typed references to existing `ClassId` values or new candidate indices, with
+explicit `ReplaceRows` and `KeepExistingRows` dispositions. Repository apply
+computes the projection once, passes it to overlap validation, and resolves
+new candidate IDs only after their class rows are inserted before persisting
+from that same projection. Intensive `UpdateExisting` keeps untouched row IDs
+intact; normal/replacement imports and skipped targets retain their existing
+behavior.
+
+Executor and independent Tester used separate fresh Windows x64 Debug
+Ninja/MSVC 19.51.36257/Qt 6.12 trees. Each validated 916 handwritten source
+owners and passed `ClassMngrNextApplicationScheduleImportStateValidationTests`
+and `ClassMngrScheduleImportTests` (2/2). Coverage includes persisted
+`schedule_review.xlsx` rows, `schedule_overlap_conflict.xlsx` rejection before
+writes, intensive preservation/replacement, skipped exact match, and rollback
+after failure. `git diff --check` passed; no full suite was run.
+
+Gate 1 gains direct app-less schedule-state projection evidence and Gate 2
+gains fixture-backed persisted-row parity; both remain Partial. Workspace
+boundary and audited `src/next` dependency isolation remain Satisfied. Phase 2
+and its exit gate remain Open. Sub Prep remains capped at the current and
+following calendar years (2026-2027). The protected user change to
+`cmake/sources.cmake` remains excluded; its SHA-256 is
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+Next: finish the separate plan/mapping documentation commit, then compare the
+remaining exit-gate gaps for F70.

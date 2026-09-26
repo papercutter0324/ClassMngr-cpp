@@ -15,8 +15,9 @@ and calendar-dialog edit-draft and constructor/input ownership boundaries,
 theme and language preference bridges are implemented, as are the custom-color
 palette caller boundary, Calendar Import planning/signature-query/application
 use-case seams with the shared six-field signature identity carried as a typed
-value end-to-end, the partial Schedule Import state-validation and repository
-pre-write cutovers, F60 typed review-decision targets, F62 apply-boundary action/sentinel
+value end-to-end, the Schedule Import state-validation, repository pre-write, and F69 final-row
+projection/persistence cutovers, F60 typed review-decision targets, F62
+apply-boundary action/sentinel
 characterization, F63 production no-suggestion sentinel assertion, F64's
 typed student-name pair at the roster score-import join, and F65's verified
 legacy profile startup/migration path through FileController, the shared
@@ -3945,3 +3946,26 @@ validated 915 handwritten source owners and passed the exact
 behavior evidence and adapter regression checks, not checked-in baseline
 fixture parity. The campus-token policy extraction does not complete broader
 typed calendar UI/page migration, which remains open. Phase 2 remains open.
+
+## Verified F69 Schedule Import final-state projection - commit `95aaefa4`
+
+[`Application::projectScheduleImportStateSchedules`](../../src/next/application/schedule_import_state_projection.h)
+now defines which normal or intensive rows belong to the final state using typed
+`Domain::ClassId | ScheduleImportStateCandidateIndex` references and explicit
+`ReplaceRows`/`KeepExistingRows` dispositions. The repository builds one projection,
+uses it for overlap validation, then resolves new-candidate references after class
+inserts before persistence. This preserves untouched intensive `UpdateExisting`
+row identities while keeping normal, `ReplaceWithNew`, and Skip behavior.
+
+App-less coverage checks typed references, source order, overlap, intensive modes,
+and skip dispositions. Production Schedule Import coverage checks persisted-row
+parity against the checked-in `schedule_review.xlsx` fixture, replaced intensive
+rows, untouched-row identity, the checked-in overlap fixture, and existing skip,
+pre-write rejection, and rollback behavior. Independent fresh Windows x64 Debug
+Ninja/MSVC 19.51.36257/Qt 6.12 trees validated 916 handwritten source owners and
+passed `ClassMngrNextApplicationScheduleImportStateValidationTests` and
+`ClassMngrScheduleImportTests` (2/2). No full suite was run. This slice adds direct
+projection evidence to Gate 1 and fixture-backed persisted-row parity to Gate 2;
+both remain Partial and Phase 2's exit gate remains Open. Sub Prep remains limited
+to the current and following calendar years, 2026-2027. Next entry: select F70
+from the remaining Phase 2 gaps.

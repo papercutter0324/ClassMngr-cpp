@@ -992,3 +992,15 @@ Prep's queried interval to the current and following calendar years at most.
   Test letters adjacent to campus tokens and Unicode neighbors such as Kelvin
   sign and dotless i; ordinary visible-by-default results can otherwise hide
   a broken match assertion.
+
+## Phase 2 Schedule Import shared state projection - 2026-09-26
+
+- Use `std::variant<ClassId, CandidateIndex>` for persisted and not-yet-created
+  classes instead of encoding candidates as fake negative database IDs. Keep
+  new-ID lookup at the repository edge after insert. When validation and
+  persistence must agree, compute one schedule projection and pass that same
+  result through both paths; mark untouched intensive rows `KeepExistingRows`
+  so validation includes them without rewriting their row identities.
+- In Qt tests, do not place a braced container initializer directly in a
+  `QCOMPARE` argument: its commas are parsed as macro separators. Assign it to
+  a local first, then compare the local values.

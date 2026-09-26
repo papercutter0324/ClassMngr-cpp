@@ -2487,3 +2487,43 @@ separate on a host with Xvfb and loopback access.
   `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
 - Next: select F69 from three independent Investigator reviews. Keep source
   and documentation commits separate.
+
+### Phase 2 Schedule Import shared state projection - 2026-09-26 (F69)
+
+- Source/test commit: `95aaefa4` (`Extract Schedule Import state projection`).
+  The Qt-free `schedule_import_state_projection.h` owns the final set of
+  schedule rows, their order, typed existing-class/candidate references, and
+  whether persistence replaces or keeps existing rows. Repository apply uses
+  one projection vector for overlap validation and persistence; generated
+  class IDs are resolved only after inserts. Intensive UpdateExisting checks
+  untouched existing schedules for overlap but leaves their persisted row IDs
+  unchanged.
+- Changed source/test files: `cmake/next.cmake`,
+  `src/data/repositories/schedule_import_repository.cpp`,
+  `src/next/application/schedule_import_state_projection.h`,
+  `src/next/application/schedule_import_state_validation.h`,
+  `tests/next_application_schedule_import_state_validation_tests.cpp`, and
+  `tests/schedule_import_tests.cpp`.
+- Executor tree `build/f69x64` and independent Tester tree
+  `build/f69_projection_independent_verification` each used a fresh Windows
+  x64 Debug Ninja/MSVC 19.51.36257/Qt 6.12 build, validated 916 handwritten
+  source owners, and passed exactly
+  `ClassMngrNextApplicationScheduleImportStateValidationTests` and
+  `ClassMngrScheduleImportTests` (2/2). These suites assert persisted
+  `schedule_review.xlsx` rows, checked-in overlap rejection before writes,
+  intensive replacement/preservation including untouched row identity, skip
+  preservation, and rollback. `git diff --check` passed; no full suite was run.
+- During verification, a `QCOMPARE` around a braced `QStringList` exposed its
+  commas to the macro. The assertion now builds a local `QStringList` before
+  comparing; both fresh trees passed afterward.
+- Gate 1 gains app-less projection behavior and Gate 2 gains checked-in
+  fixture-backed persisted-row parity; both remain Partial. Workspace
+  boundary and audited `src/next` isolation remain Satisfied. Phase 2 exit
+  gate remains Open. Sub Prep is still limited to the current and following
+  calendar years (2026-2027). Protected `cmake/sources.cmake` stayed excluded
+  at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+- Source/test commit is complete. The Archivist is updating the Phase 2 plan
+  and legacy mapping in the separate documentation slice; root will commit
+  those along with these canonical deployment notes. Next: compare the
+  remaining exit-gate gaps for F70 with three fresh Investigator lanes.
