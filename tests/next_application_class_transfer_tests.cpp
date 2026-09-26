@@ -1,4 +1,5 @@
 #include "next/application/class_summary_projection.h"
+#include "next/application/class_transfer_matching_policy.h"
 #include "next/application/class_transfer_projection.h"
 #include "next/application/schedule_view_projection.h"
 
@@ -154,6 +155,16 @@ void verifyInvalidValidation(
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
 }
 
+TeacherId matchingTeacherId(std::string value)
+{
+    return *TeacherId::fromString(std::move(value));
+}
+
+ClassId matchingClassId(std::string value)
+{
+    return *ClassId::fromString(std::move(value));
+}
+
 template <typename Value>
 concept HasRawSourceAccessor = requires(const Value& value)
 {
@@ -179,6 +190,9 @@ private slots:
     void contractHasNoExternalOwnersOrRawSourceAccessors();
     void reviewDecisionsPreserveMatchChoiceSemantics();
     void reviewDecisionMatrixRejectsIncompleteDuplicateAndInvalidChoices();
+    void teacherMatchingUsesBothOrEitherNameAndRequiresOneName();
+    void classMatchingRequiresCourseAndTeacherIdentityOrUnassignedFallback();
+    void classAndTeacherMatchListsRetainDestinationOrder();
     void existingNextContractsRemainUsable();
 };
 
@@ -791,6 +805,169 @@ void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDup
         validateClassTransferReviewDecisions(request),
         IssueCode::DuplicateTeacherReplacementTarget
         ));
+}
+
+void NextApplicationClassTransferTests::teacherMatchingUsesBothOrEitherNameAndRequiresOneName()
+{
+    const ClassTransferMatchingTeacherNames bothNames{"alex kim", "김 알렉스"};
+    QVERIFY(classTransferTeacherNamesMatch(
+        bothNames, {"alex kim", "김 알렉스"}));
+    QVERIFY(!classTransferTeacherNamesMatch(
+        bothNames, {"alex kim", "김 민수"}));
+
+    const ClassTransferMatchingTeacherNames englishOnly{"alex kim", {}};
+    QVERIFY(classTransferTeacherNamesMatch(
+        englishOnly, {"alex kim", "김 민수"}));
+    QVERIFY(!classTransferTeacherNamesMatch(
+        englishOnly, {"alex lee", "김 알렉스"}));
+
+    const ClassTransferMatchingTeacherNames koreanOnly{{}, "김 알렉스"};
+    QVERIFY(classTransferTeacherNamesMatch(
+        koreanOnly, {"alex lee", "김 알렉스"}));
+    QVERIFY(!classTransferTeacherNamesMatch(
+        koreanOnly, {"alex kim", "김 민수"}));
+    QVERIFY(!classTransferTeacherNamesMatch(
+        {{}, {}}, {"alex kim", "김 알렉스"}));
+}
+
+void NextApplicationClassTransferTests::classMatchingRequiresCourseAndTeacherIdentityOrUnassignedFallback()
+{
+    const auto sourceNames = ClassTransferMatchingTeacherNames{
+        "alex kim", "김 알렉스"};
+    const ClassTransferMatchingRequest request{
+        .sourceTeachers = {
+            {"teacher-1", sourceNames}
+        },
+        .destinationTeachers = {},
+        .sourceClasses = {
+            {0, "teacher-1", "e4", "perseus"},
+            {1, "teacher-1", "", "perseus"},
+            {2, "teacher-1", "e4", ""},
+            {3, "missing-teacher", "e4", "perseus"}
+        },
+        .destinationClasses = {
+            {
+                matchingClassId("course-and-teacher-match"),
+                "e4",
+                "perseus",
+                ClassTransferMatchingDestinationTeacher{
+                    matchingTeacherId("teacher-id-1"), sourceNames}
+            },
+            {
+                matchingClassId("teacher-identity-mismatch"),
+                "e4",
+                "perseus",
+                ClassTransferMatchingDestinationTeacher{
+                    matchingTeacherId("teacher-id-2"),
+                    {"alex kim", "김 민수"}}
+            },
+            {
+                matchingClassId("assigned-placeholder"),
+                "e4",
+                "perseus",
+                ClassTransferMatchingDestinationTeacher{
+                    matchingTeacherId("teacher-id-unloaded"), {{}, {}}}
+            },
+            {
+                matchingClassId("grade-mismatch"),
+                "e5",
+                "perseus",
+                ClassTransferMatchingDestinationTeacher{
+                    matchingTeacherId("teacher-id-1"), sourceNames}
+            },
+            {
+                matchingClassId("level-mismatch"),
+                "e4",
+                "apollo",
+                ClassTransferMatchingDestinationTeacher{
+                    matchingTeacherId("teacher-id-1"), sourceNames}
+            },
+            {
+                matchingClassId("unassigned-match"),
+                "e4",
+                "perseus",
+                std::nullopt
+            }
+        }
+    };
+
+    const auto result = matchClassTransferCandidates(request);
+    QCOMPARE(result.classes.size(), std::size_t(4));
+    QCOMPARE(result.classes[0].matchingClassIds.size(), std::size_t(1));
+    QCOMPARE(
+        result.classes[0].matchingClassIds[0].value(),
+        std::string("course-and-teacher-match")
+        );
+    QVERIFY(std::none_of(
+        result.classes[0].matchingClassIds.cbegin(),
+        result.classes[0].matchingClassIds.cend(),
+        [](const ClassId& id)
+        {
+            return id.value() == "assigned-placeholder";
+        }
+        ));
+    QVERIFY(result.classes[1].matchingClassIds.empty());
+    QVERIFY(result.classes[2].matchingClassIds.empty());
+    QCOMPARE(result.classes[3].matchingClassIds.size(), std::size_t(1));
+    QCOMPARE(
+        result.classes[3].matchingClassIds[0].value(),
+        std::string("unassigned-match")
+        );
+}
+
+void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinationOrder()
+{
+    const ClassTransferMatchingTeacherNames names{"alex kim", "김 알렉스"};
+    const ClassTransferMatchingRequest request{
+        .sourceTeachers = {
+            {"teacher-1", names}
+        },
+        .destinationTeachers = {
+            {matchingTeacherId("teacher-later"), names},
+            {matchingTeacherId("teacher-earlier"), names}
+        },
+        .sourceClasses = {
+            {0, "teacher-1", "e4", "perseus"}
+        },
+        .destinationClasses = {
+            {
+                matchingClassId("class-later"),
+                "e4",
+                "perseus",
+                ClassTransferMatchingDestinationTeacher{
+                    matchingTeacherId("teacher-later"), names}
+            },
+            {
+                matchingClassId("class-earlier"),
+                "e4",
+                "perseus",
+                ClassTransferMatchingDestinationTeacher{
+                    matchingTeacherId("teacher-earlier"), names}
+            }
+        }
+    };
+
+    const auto result = matchClassTransferCandidates(request);
+    QCOMPARE(result.teachers.size(), std::size_t(1));
+    QCOMPARE(result.teachers[0].matchingTeacherIds.size(), std::size_t(2));
+    QCOMPARE(
+        result.teachers[0].matchingTeacherIds[0].value(),
+        std::string("teacher-later")
+        );
+    QCOMPARE(
+        result.teachers[0].matchingTeacherIds[1].value(),
+        std::string("teacher-earlier")
+        );
+    QCOMPARE(result.classes.size(), std::size_t(1));
+    QCOMPARE(result.classes[0].matchingClassIds.size(), std::size_t(2));
+    QCOMPARE(
+        result.classes[0].matchingClassIds[0].value(),
+        std::string("class-later")
+        );
+    QCOMPARE(
+        result.classes[0].matchingClassIds[1].value(),
+        std::string("class-earlier")
+        );
 }
 
 void NextApplicationClassTransferTests::existingNextContractsRemainUsable()

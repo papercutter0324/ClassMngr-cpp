@@ -7,6 +7,7 @@
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/classroom.h"
+#include "next/application/class_transfer_matching_policy.h"
 #include "next/application/class_transfer_projection.h"
 
 #include <QHash>
@@ -17,6 +18,9 @@
 #include <QStringList>
 
 #include <algorithm>
+#include <map>
+#include <string>
+#include <unordered_set>
 
 namespace
 {
@@ -41,11 +45,15 @@ struct ValidatedPlan
 constexpr int MinutesPerDay = 24 * 60;
 constexpr int MinutesPerWeek = 7 * MinutesPerDay;
 
-QString normalized(
-    const QString& value
-    )
+QString normalized(const QString& value)
 {
     return value.simplified().toCaseFolded();
+}
+
+template <typename TypedId>
+TypedId applicationId(const int legacyId)
+{
+    return *TypedId::fromString(std::to_string(legacyId));
 }
 
 std::string decisionKey(const QString& value)
@@ -215,51 +223,6 @@ QString reviewIssueMessage(
             "Two different package teachers cannot replace the same local teacher.");
     }
     return QObject::tr("The class import choices are invalid.");
-}
-
-bool teacherMatches(
-    const Teacher& source,
-    const Teacher& destination
-    )
-{
-    const QString sourceEnglish = normalized(source.teacherEn);
-    const QString sourceKorean = normalized(source.teacherKr);
-    const QString destinationEnglish = normalized(destination.teacherEn);
-    const QString destinationKorean = normalized(destination.teacherKr);
-
-    if (!sourceEnglish.isEmpty() && !sourceKorean.isEmpty())
-    {
-        return sourceEnglish == destinationEnglish
-            && sourceKorean == destinationKorean;
-    }
-
-    if (!sourceEnglish.isEmpty())
-    {
-        return sourceEnglish == destinationEnglish;
-    }
-
-    if (!sourceKorean.isEmpty())
-    {
-        return sourceKorean == destinationKorean;
-    }
-
-    return false;
-}
-
-const ClassTransferTeacher* packageTeacher(
-    const ClassTransferPackage& package,
-    const QString& key
-    )
-{
-    for (const ClassTransferTeacher& teacher : package.teachers)
-    {
-        if (teacher.key == key)
-        {
-            return &teacher;
-        }
-    }
-
-    return nullptr;
 }
 
 QList<ClassTransferEvaluation> loadEvaluations(
@@ -607,42 +570,95 @@ Result<ClassImportPreview> buildPreview(
         return std::unexpected(destinationClasses.error());
     }
 
-    ClassImportPreview preview;
+    using namespace ClassMngr::Next::Application;
 
-    for (const ClassTransferTeacher& packageEntry : package.teachers)
+    ClassTransferMatchingRequest matchingRequest;
+    matchingRequest.sourceTeachers.reserve(
+        static_cast<std::size_t>(package.teachers.size())
+        );
+    for (const ClassTransferTeacher& source : package.teachers)
     {
-        ClassImportTeacherPreview teacherPreview;
-        teacherPreview.teacherKey = packageEntry.key;
-
-        for (const Teacher& destination : *destinationTeachers)
-        {
-            if (teacherMatches(packageEntry.teacher, destination))
+        matchingRequest.sourceTeachers.push_back({
+            source.key.toStdString(),
             {
-                teacherPreview.matchingTeacherIds.append(destination.id);
+                normalized(source.teacher.teacherEn).toStdString(),
+                normalized(source.teacher.teacherKr).toStdString()
             }
-        }
+        });
+    }
 
-        preview.teachers.append(teacherPreview);
+    std::map<ClassMngr::Next::Domain::TeacherId, int> legacyTeacherIds;
+    matchingRequest.destinationTeachers.reserve(
+        static_cast<std::size_t>(destinationTeachers->size())
+        );
+    for (const Teacher& destination : *destinationTeachers)
+    {
+        const auto typedId = applicationId<
+            ClassMngr::Next::Domain::TeacherId>(destination.id);
+        legacyTeacherIds.emplace(typedId, destination.id);
+        matchingRequest.destinationTeachers.push_back({
+            typedId,
+            {
+                normalized(destination.teacherEn).toStdString(),
+                normalized(destination.teacherKr).toStdString()
+            }
+        });
     }
 
     for (int index = 0; index < package.classes.size(); ++index)
     {
         const ClassTransferClass& source = package.classes[index];
-        ClassImportClassPreview classPreview;
-        classPreview.packageClassIndex = index;
+        matchingRequest.sourceClasses.push_back({
+            static_cast<std::size_t>(index),
+            source.teacherKey.toStdString(),
+            normalized(source.info.classGrade).toStdString(),
+            normalized(source.info.classLevel).toStdString()
+        });
+    }
 
-        const QString sourceGrade = normalized(source.info.classGrade);
-        const QString sourceLevel = normalized(source.info.classLevel);
+    std::unordered_set<std::string> sourceTeacherKeys;
+    sourceTeacherKeys.reserve(matchingRequest.sourceTeachers.size());
+    for (const auto& teacher : matchingRequest.sourceTeachers)
+    {
+        sourceTeacherKeys.insert(teacher.sourceKey);
+    }
 
-        if (sourceGrade.isEmpty() || sourceLevel.isEmpty())
+    const auto hasSourceTeacherForCourse = [&](
+        const std::string& grade,
+        const std::string& level)
+    {
+        return std::any_of(
+            matchingRequest.sourceClasses.cbegin(),
+            matchingRequest.sourceClasses.cend(),
+            [&](const ClassTransferMatchingSourceClass& sourceClass)
+            {
+                if (sourceClass.grade.empty() || sourceClass.level.empty()
+                    || sourceClass.grade != grade
+                    || sourceClass.level != level)
+                {
+                    return false;
+                }
+                return sourceTeacherKeys.contains(
+                    sourceClass.teacherSourceKey);
+            }
+            );
+    };
+
+    std::map<ClassMngr::Next::Domain::ClassId, int> legacyClassIds;
+    const bool hasCompleteSourceClass = std::any_of(
+        matchingRequest.sourceClasses.cbegin(),
+        matchingRequest.sourceClasses.cend(),
+        [](const ClassTransferMatchingSourceClass& sourceClass)
         {
-            preview.classes.append(classPreview);
-            continue;
+            return !sourceClass.grade.empty() && !sourceClass.level.empty();
         }
+        );
 
-        const ClassTransferTeacher* sourceTeacher =
-            packageTeacher(package, source.teacherKey);
-
+    if (hasCompleteSourceClass)
+    {
+        matchingRequest.destinationClasses.reserve(
+            static_cast<std::size_t>(destinationClasses->size())
+            );
         for (const Classroom& destination : *destinationClasses)
         {
             const Result<ClassInfo> destinationInfo =
@@ -652,40 +668,77 @@ Result<ClassImportPreview> buildPreview(
                 return std::unexpected(destinationInfo.error());
             }
 
-            if (normalized(destinationInfo->classGrade) != sourceGrade
-                || normalized(destinationInfo->classLevel) != sourceLevel)
+            const QString grade = normalized(destinationInfo->classGrade);
+            const QString level = normalized(destinationInfo->classLevel);
+            std::optional<ClassTransferMatchingDestinationTeacher>
+                destinationTeacher;
+            if (destinationInfo->teacherId > 0)
             {
-                continue;
-            }
-
-            bool sameTeacher = false;
-
-            if (!sourceTeacher)
-            {
-                sameTeacher = destinationInfo->teacherId <= 0;
-            }
-            else if (destinationInfo->teacherId > 0)
-            {
-                const Result<Teacher> destinationTeacher =
-                    teacherRepository.getTeacher(destinationInfo->teacherId);
-                if (!destinationTeacher)
+                const auto typedTeacherId = applicationId<
+                    ClassMngr::Next::Domain::TeacherId>(
+                        destinationInfo->teacherId);
+                ClassTransferMatchingTeacherNames names;
+                if (hasSourceTeacherForCourse(
+                        grade.toStdString(), level.toStdString()))
                 {
-                    return std::unexpected(destinationTeacher.error());
+                    const Result<Teacher> teacher =
+                        teacherRepository.getTeacher(destinationInfo->teacherId);
+                    if (!teacher)
+                    {
+                        return std::unexpected(teacher.error());
+                    }
+
+                    names = {
+                        normalized(teacher->teacherEn).toStdString(),
+                        normalized(teacher->teacherKr).toStdString()
+                    };
                 }
 
-                sameTeacher = teacherMatches(
-                    sourceTeacher->teacher,
-                    *destinationTeacher
-                    );
+                destinationTeacher = ClassTransferMatchingDestinationTeacher{
+                    typedTeacherId,
+                    std::move(names)
+                };
             }
 
-            if (sameTeacher)
-            {
-                classPreview.matchingClassIds.append(destination.id);
-            }
+            const auto typedId = applicationId<
+                ClassMngr::Next::Domain::ClassId>(destination.id);
+            legacyClassIds.emplace(typedId, destination.id);
+            matchingRequest.destinationClasses.push_back({
+                typedId,
+                grade.toStdString(),
+                level.toStdString(),
+                std::move(destinationTeacher)
+            });
         }
+    }
 
-        preview.classes.append(classPreview);
+    const ClassTransferMatchingResult matches =
+        matchClassTransferCandidates(matchingRequest);
+    ClassImportPreview preview;
+    preview.teachers.reserve(static_cast<qsizetype>(matches.teachers.size()));
+    for (std::size_t index = 0; index < matches.teachers.size(); ++index)
+    {
+        ClassImportTeacherPreview teacherPreview;
+        teacherPreview.teacherKey = package.teachers[
+            static_cast<qsizetype>(index)].key;
+        for (const auto& id : matches.teachers[index].matchingTeacherIds)
+        {
+            teacherPreview.matchingTeacherIds.append(legacyTeacherIds.at(id));
+        }
+        preview.teachers.append(std::move(teacherPreview));
+    }
+
+    preview.classes.reserve(static_cast<qsizetype>(matches.classes.size()));
+    for (const auto& match : matches.classes)
+    {
+        ClassImportClassPreview classPreview;
+        classPreview.packageClassIndex = static_cast<int>(
+            match.packageClassIndex);
+        for (const auto& id : match.matchingClassIds)
+        {
+            classPreview.matchingClassIds.append(legacyClassIds.at(id));
+        }
+        preview.classes.append(std::move(classPreview));
     }
 
     return preview;

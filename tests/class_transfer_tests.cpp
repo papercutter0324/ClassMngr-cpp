@@ -203,6 +203,7 @@ private slots:
     void jsonRoundTripPreservesCompletePackage();
     void importsCompleteClassesAndDeduplicatesTeacher();
     void previewMatchesCourseAndTeacherIgnoringSchedule();
+    void previewPreservesQtNameAndCourseNormalization();
     void replacementRetainsIdAndClearsOldChildren();
     void teacherReplacementImportsCompleteSnapshot();
     void scheduleConflictLeavesDestinationUnchanged();
@@ -773,6 +774,70 @@ void ClassTransferTests::codecRejectsMalformedAndUnsupportedPackages()
     QVERIFY(!ClassTransferJsonCodec::fromJson(json).has_value());
 }
 
+void ClassTransferTests::previewPreservesQtNameAndCourseNormalization()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    Teacher sourceTeacher = completeTeacher();
+    sourceTeacher.teacherEn = QStringLiteral("  ALEX\tKIM  ");
+    const int sourceTeacherId = createdTeacherId(service, sourceTeacher);
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacherId,
+        QStringLiteral("Source Class"),
+        QStringLiteral(" E4\t"),
+        QStringLiteral("  PERSEUS  "),
+        QStringLiteral("Monday"),
+        QStringLiteral("Incoming Student")
+        );
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int matchingTeacher = createdTeacherId(
+        service,
+        completeTeacher(QStringLiteral("alex kim"))
+        );
+    const int matchingClass = addCompleteClass(
+        service,
+        matchingTeacher,
+        QStringLiteral("Matching Class"),
+        QStringLiteral("e4"),
+        QStringLiteral("perseus"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Existing Student")
+        );
+    const int otherTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Other Teacher")));
+    const int wrongTeacherClass = addCompleteClass(
+        service,
+        otherTeacher,
+        QStringLiteral("Wrong Teacher Class"),
+        QStringLiteral("e4"),
+        QStringLiteral("perseus"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Other Student")
+        );
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY(preview.has_value());
+    QCOMPARE(
+        preview->teachers.first().matchingTeacherIds,
+        QList<int>({matchingTeacher})
+        );
+    QCOMPARE(
+        preview->classes.first().matchingClassIds,
+        QList<int>({matchingClass})
+        );
+    QVERIFY(!preview->classes.first().matchingClassIds.contains(
+        wrongTeacherClass));
+}
+
 void ClassTransferTests::
     permanentConflictFixturePresentsReviewAndRejectsScheduleCollision()
 {
@@ -931,10 +996,10 @@ void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults
     const auto preview = service.previewClassImport(*package);
     QVERIFY2(preview.has_value(), preview ? "" : qPrintable(preview.error()));
     QCOMPARE(preview->teachers.size(), 1);
-    QVERIFY(preview->teachers.first().matchingTeacherIds.isEmpty());
+    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<int>{});
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
-    QVERIFY(preview->classes.first().matchingClassIds.isEmpty());
+    QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{});
 
     ClassService classes(service.databaseSession(), &service);
     TeacherService teachers(service.databaseSession(), &service);

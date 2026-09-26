@@ -709,9 +709,9 @@ using ClassTransferSnapshot = ClassTransferProjection;
 using TransferProjection = ClassTransferProjection;
 
 // Class Transfer review is validated against the match set produced by the
-// current preview. Keeping these inputs and decisions as standard-C++ values
-// lets the dialog and the apply boundary share the same choice rules without
-// moving matching or persistence into the Application layer.
+// matching policy. Keeping these inputs and decisions as standard-C++ values
+// lets the dialog and apply boundary share the same choice rules; persistence
+// remains owned by the repository.
 enum class ClassTransferReviewClassAction
 {
     Create,
