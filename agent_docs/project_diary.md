@@ -1106,3 +1106,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Teacher Import match cardinality - 2026-09-27
 
 - A Qt-free count classifier can centralize the zero/unique/multiple decision while leaving identity semantics at the repository. Integrate it in every import namespace and pin exact per-namespace ambiguity diagnostics and rollback; include counts above two in the pure-policy test to establish the 2+ boundary.
+
+## Phase 2 Teacher Import transaction boundary - 2026-09-27
+
+- For a multi-namespace import use case, put reads, writes, latest-source metadata, commit, and rollback behind one transaction-bound persistence port. Test a late metadata-write failure after successful row writes to prove atomic rollback across every affected table and setting. Keep SQL and localized adapter diagnostics outside the Qt-free Application contract.
