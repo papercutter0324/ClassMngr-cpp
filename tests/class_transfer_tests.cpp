@@ -226,6 +226,7 @@ private slots:
     void replacementRetainsIdAndClearsOldChildren();
     void teacherReplacementImportsCompleteSnapshot();
     void scheduleConflictLeavesDestinationUnchanged();
+    void schedulePreflightParsesSundayOvernightAndEqualEndpoints();
     void importedClassesConflictAtomically();
     void databaseFailureRollsBackAllWrites();
     void incompleteCourseSignatureDoesNotMatch();
@@ -656,6 +657,126 @@ void ClassTransferTests::scheduleConflictLeavesDestinationUnchanged()
              QStringLiteral("Destination Student"));
 }
 
+void ClassTransferTests::
+    schedulePreflightParsesSundayOvernightAndEqualEndpoints()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Source Teacher")));
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QString(),
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    const auto sourcePackage = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(sourcePackage.has_value());
+    ClassTransferPackage package = *sourcePackage;
+    package.classes.first().info.classTimes.first() = {
+        QStringLiteral("Sunday"),
+        QStringLiteral(" 11:00 pm "),
+        QStringLiteral("1:00 AM")
+    };
+    package.classes.first().info.intensiveTimes.first().day =
+        QStringLiteral("Tuesday");
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Destination Teacher")));
+    const int destinationClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Destination Class"),
+        QStringLiteral("E6"),
+        QStringLiteral("Gaia"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Destination Student")
+        );
+    QVERIFY(destinationClass > 0);
+
+    Result<ClassInfo> destinationInfo = service.loadClassInfo(destinationClass);
+    QVERIFY(destinationInfo);
+    destinationInfo->classTimes.first() = {
+        QStringLiteral("Monday"),
+        QStringLiteral("12:30 am"),
+        QStringLiteral("1:30 AM")
+    };
+    destinationInfo->intensiveTimes.first().day = QStringLiteral("Wednesday");
+    QVERIFY(service.saveClassInfo(*destinationInfo));
+
+    const int teachersBefore = service.getAllTeachers()
+        .value_or(QList<Teacher>{}).size();
+    const int classesBefore = service.getClasses()
+        .value_or(QList<Classroom>{}).size();
+    const auto overnightResult = service.importClasses(
+        package,
+        createAllPlan(package)
+        );
+    QVERIFY(!overnightResult.has_value());
+    QCOMPARE(
+        overnightResult.error(),
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Theseus \u2014 Sunday  11:00 pm \u20131:00 AM "
+            "conflicts with E6 Gaia \u2014 Monday 12:30 am\u20131:30 AM"
+            )
+        );
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
+    QCOMPARE(service.loadClassInfo(destinationClass)->classTimes.first().day,
+             QStringLiteral("Monday"));
+    QCOMPARE(service.loadClassInfo(destinationClass)->classTimes.first().startTime,
+             QStringLiteral("12:30 am"));
+
+    package.classes.first().info.classTimes.first() = {
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:00 PM")
+    };
+    package.classes.first().info.intensiveTimes.first().day =
+        QStringLiteral("Friday");
+    destinationInfo = service.loadClassInfo(destinationClass);
+    QVERIFY(destinationInfo);
+    destinationInfo->classTimes.first() = {
+        QStringLiteral("Tuesday"),
+        QStringLiteral("3:30 PM"),
+        QStringLiteral("4:30 PM")
+    };
+    QVERIFY(service.saveClassInfo(*destinationInfo));
+
+    const auto equalEndpointResult = service.importClasses(
+        package,
+        createAllPlan(package)
+        );
+    QVERIFY(!equalEndpointResult.has_value());
+    QCOMPARE(
+        equalEndpointResult.error(),
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Theseus \u2014 Monday 4:00 PM\u20134:00 PM "
+            "conflicts with E6 Gaia \u2014 Tuesday 3:30 PM\u20134:30 PM"
+            )
+        );
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
+    QCOMPARE(service.loadClassInfo(destinationClass)->classTimes.first().day,
+             QStringLiteral("Tuesday"));
+    QCOMPARE(service.loadClassInfo(destinationClass)->classTimes.first().startTime,
+             QStringLiteral("3:30 PM"));
+}
+
 void ClassTransferTests::importedClassesConflictAtomically()
 {
     QTemporaryDir directory;
@@ -972,7 +1093,14 @@ void ClassTransferTests::
     const auto result = service.importClasses(
         *package, dialog.importPlan());
     QVERIFY(!result.has_value());
-    QVERIFY(result.error().contains(QStringLiteral("Schedule conflicts")));
+    const QString expectedConflict = QStringLiteral(
+        "Schedule conflicts prevent this import:\n\n"
+        "Regular schedule: E4 Perseus \u2014 Monday 4:00 PM\u20134:50 PM "
+        "conflicts with E4 Perseus \u2014 Monday 4:00 PM\u20134:50 PM\n"
+        "Intensive schedule: E4 Perseus \u2014 Monday 10:00 AM\u201310:55 AM "
+        "conflicts with E4 Perseus \u2014 Monday 10:00 AM\u201310:55 AM"
+        );
+    QCOMPARE(result.error(), expectedConflict);
     QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
              teachersBefore);
     QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),

@@ -23,6 +23,7 @@
 #include <optional>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 namespace
 {
@@ -36,6 +37,7 @@ struct ScheduledTime
 {
     QString classLabel;
     ClassTime time;
+    ClassMngr::Next::Application::ClassTransferScheduleCandidate candidate;
 };
 
 struct ValidatedPlan
@@ -45,7 +47,6 @@ struct ValidatedPlan
 };
 
 constexpr int MinutesPerDay = 24 * 60;
-constexpr int MinutesPerWeek = 7 * MinutesPerDay;
 
 QString normalized(const QString& value)
 {
@@ -547,27 +548,11 @@ bool intervalForTime(
 
     if (interval->end <= interval->start)
     {
-        interval->end += MinutesPerDay;
+        interval->end += static_cast<int>(
+            ClassMngr::Next::Application::kClassTransferMinutesPerDay);
     }
 
     return true;
-}
-
-bool intervalsOverlap(
-    const TimeInterval& first,
-    const TimeInterval& second
-    )
-{
-    for (int offset : {-MinutesPerWeek, 0, MinutesPerWeek})
-    {
-        if (first.start < second.end + offset
-            && second.start + offset < first.end)
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 QString timeDescription(
@@ -587,7 +572,8 @@ Status appendAndValidateTimes(
     QList<ScheduledTime>* destination,
     const QString& classLabel,
     const QList<ClassTime>& times,
-    const QString& scheduleLabel
+    const QString& scheduleLabel,
+    const ClassMngr::Next::Application::TransferTimeCategory category
     )
 {
     for (const ClassTime& time : times)
@@ -608,7 +594,15 @@ Status appendAndValidateTimes(
                 );
         }
 
-        destination->append({classLabel, time});
+        destination->append({
+            classLabel,
+            time,
+            {
+                category,
+                interval.start,
+                interval.end
+            }
+        });
     }
 
     return {};
@@ -616,16 +610,50 @@ Status appendAndValidateTimes(
 
 QStringList findScheduleConflicts(
     const QList<ScheduledTime>& imported,
-    const QList<ScheduledTime>& existing,
-    const QString& scheduleLabel
+    const QList<ScheduledTime>& existing
     )
 {
-    QStringList conflicts;
+    using ClassTransferScheduleCandidate =
+        ClassMngr::Next::Application::ClassTransferScheduleCandidate;
+    using ClassTransferScheduleConflict =
+        ClassMngr::Next::Application::ClassTransferScheduleConflict;
+    using TransferTimeCategory =
+        ClassMngr::Next::Application::TransferTimeCategory;
 
-    const auto addConflict = [&conflicts, &scheduleLabel](
-        const ScheduledTime& first,
-        const ScheduledTime& second)
+    std::vector<ClassTransferScheduleCandidate> incomingCandidates;
+    incomingCandidates.reserve(static_cast<std::size_t>(imported.size()));
+    for (const ScheduledTime& item : imported)
     {
+        incomingCandidates.push_back(item.candidate);
+    }
+
+    std::vector<ClassTransferScheduleCandidate> existingCandidates;
+    existingCandidates.reserve(static_cast<std::size_t>(existing.size()));
+    for (const ScheduledTime& item : existing)
+    {
+        existingCandidates.push_back(item.candidate);
+    }
+
+    QStringList regularConflicts;
+    QStringList intensiveConflicts;
+    for (const ClassTransferScheduleConflict& conflict :
+         ClassMngr::Next::Application::findClassTransferScheduleConflicts(
+             incomingCandidates,
+             existingCandidates))
+    {
+        const ScheduledTime& first = imported.at(
+            static_cast<qsizetype>(conflict.incomingIndex));
+        const ScheduledTime& second = conflict.otherIsIncoming
+            ? imported.at(static_cast<qsizetype>(conflict.otherIndex))
+            : existing.at(static_cast<qsizetype>(conflict.otherIndex));
+        const QString scheduleLabel =
+            first.candidate.category == TransferTimeCategory::Regular
+            ? QObject::tr("Regular schedule")
+            : QObject::tr("Intensive schedule");
+        QStringList& categoryConflicts =
+            first.candidate.category == TransferTimeCategory::Regular
+            ? regularConflicts
+            : intensiveConflicts;
         const QString message = QObject::tr("%1: %2 conflicts with %3")
             .arg(
                 scheduleLabel,
@@ -633,41 +661,15 @@ QStringList findScheduleConflicts(
                 timeDescription(second)
                 );
 
-        if (!conflicts.contains(message))
+        if (!categoryConflicts.contains(message))
         {
-            conflicts.append(message);
-        }
-    };
-
-    for (int first = 0; first < imported.size(); ++first)
-    {
-        TimeInterval firstInterval;
-        intervalForTime(imported[first].time, &firstInterval);
-
-        for (int second = first + 1; second < imported.size(); ++second)
-        {
-            TimeInterval secondInterval;
-            intervalForTime(imported[second].time, &secondInterval);
-
-            if (intervalsOverlap(firstInterval, secondInterval))
-            {
-                addConflict(imported[first], imported[second]);
-            }
-        }
-
-        for (const ScheduledTime& destination : existing)
-        {
-            TimeInterval destinationInterval;
-            intervalForTime(destination.time, &destinationInterval);
-
-            if (intervalsOverlap(firstInterval, destinationInterval))
-            {
-                addConflict(imported[first], destination);
-            }
+            categoryConflicts.append(message);
         }
     }
 
-    return conflicts;
+    regularConflicts.append(intensiveConflicts);
+
+    return regularConflicts;
 }
 
 Result<ClassImportPreview> buildPreview(
@@ -913,8 +915,10 @@ Status preflightSchedules(
     const ValidatedPlan& plan
     )
 {
-    QList<ScheduledTime> importedRegular;
-    QList<ScheduledTime> importedIntensive;
+    using TransferTimeCategory =
+        ClassMngr::Next::Application::TransferTimeCategory;
+
+    QList<ScheduledTime> importedSchedules;
     QSet<int> replacedClassIds;
 
     for (auto iterator = plan.classes.cbegin();
@@ -938,10 +942,11 @@ Status preflightSchedules(
         const ClassTransferClass& transferClass = package.classes[index];
         const QString label = transferClassLabel(transferClass);
         Status status = appendAndValidateTimes(
-            &importedRegular,
+            &importedSchedules,
             label,
             transferClass.info.classTimes,
-            QObject::tr("regular")
+            QObject::tr("regular"),
+            TransferTimeCategory::Regular
             );
 
         if (!status)
@@ -950,10 +955,11 @@ Status preflightSchedules(
         }
 
         status = appendAndValidateTimes(
-            &importedIntensive,
+            &importedSchedules,
             label,
             transferClass.info.intensiveTimes,
-            QObject::tr("intensive")
+            QObject::tr("intensive"),
+            TransferTimeCategory::Intensive
             );
 
         if (!status)
@@ -964,8 +970,7 @@ Status preflightSchedules(
 
     ClassRepository classRepository(database);
     ClassInfoRepository classInfoRepository(database);
-    QList<ScheduledTime> existingRegular;
-    QList<ScheduledTime> existingIntensive;
+    QList<ScheduledTime> existingSchedules;
 
     const Result<QList<Classroom>> destinationClasses =
         classRepository.getClasses();
@@ -990,10 +995,11 @@ Status preflightSchedules(
 
         const QString label = destinationClassLabel(classroom, *info);
         Status status = appendAndValidateTimes(
-            &existingRegular,
+            &existingSchedules,
             label,
             info->classTimes,
-            QObject::tr("regular")
+            QObject::tr("regular"),
+            TransferTimeCategory::Regular
             );
 
         if (!status)
@@ -1002,10 +1008,11 @@ Status preflightSchedules(
         }
 
         status = appendAndValidateTimes(
-            &existingIntensive,
+            &existingSchedules,
             label,
             info->intensiveTimes,
-            QObject::tr("intensive")
+            QObject::tr("intensive"),
+            TransferTimeCategory::Intensive
             );
 
         if (!status)
@@ -1014,13 +1021,10 @@ Status preflightSchedules(
         }
     }
 
-    QStringList conflicts = findScheduleConflicts(
-        importedRegular, existingRegular, QObject::tr("Regular schedule"));
-    conflicts.append(findScheduleConflicts(
-        importedIntensive,
-        existingIntensive,
-        QObject::tr("Intensive schedule")
-        ));
+    const QStringList conflicts = findScheduleConflicts(
+        importedSchedules,
+        existingSchedules
+        );
 
     if (!conflicts.isEmpty())
     {

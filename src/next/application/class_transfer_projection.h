@@ -66,6 +66,109 @@ enum class TransferTimeCategory
     Intensive
 };
 
+// The repository adapter owns legacy weekday and time parsing. Once parsed,
+// schedule intervals use absolute minutes from Monday at 00:00; an overnight
+// interval may end after the final minute of the week.
+struct ClassTransferScheduleCandidate final
+{
+    TransferTimeCategory category = TransferTimeCategory::Regular;
+    std::int64_t startMinuteOfWeek = 0;
+    std::int64_t endMinuteOfWeek = 0;
+
+    friend bool operator==(
+        const ClassTransferScheduleCandidate&,
+        const ClassTransferScheduleCandidate&
+        ) = default;
+};
+
+struct ClassTransferScheduleConflict final
+{
+    std::size_t incomingIndex = 0;
+    std::size_t otherIndex = 0;
+    bool otherIsIncoming = false;
+
+    friend bool operator==(
+        const ClassTransferScheduleConflict&,
+        const ClassTransferScheduleConflict&
+        ) = default;
+};
+
+inline constexpr std::int64_t kClassTransferMinutesPerDay = 24 * 60;
+inline constexpr std::int64_t kClassTransferMinutesPerWeek =
+    7 * kClassTransferMinutesPerDay;
+
+[[nodiscard]] inline bool classTransferScheduleIntervalsOverlap(
+    const ClassTransferScheduleCandidate& first,
+    const ClassTransferScheduleCandidate& second
+    ) noexcept
+{
+    for (std::int64_t weekOffset = -1; weekOffset <= 1; ++weekOffset)
+    {
+        const std::int64_t offset =
+            weekOffset * kClassTransferMinutesPerWeek;
+        if (first.startMinuteOfWeek
+                < second.endMinuteOfWeek + offset
+            && second.startMinuteOfWeek + offset
+                < first.endMinuteOfWeek)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Conflict order is stable: Regular before Intensive; within a category,
+// each incoming schedule is compared with later incoming schedules first,
+// then existing schedules in their supplied order. Existing schedules are
+// never compared with each other.
+[[nodiscard]] inline std::vector<ClassTransferScheduleConflict>
+findClassTransferScheduleConflicts(
+    const std::vector<ClassTransferScheduleCandidate>& incoming,
+    const std::vector<ClassTransferScheduleCandidate>& existing
+    )
+{
+    std::vector<ClassTransferScheduleConflict> conflicts;
+
+    for (const TransferTimeCategory category : {
+             TransferTimeCategory::Regular,
+             TransferTimeCategory::Intensive
+         })
+    {
+        for (std::size_t first = 0; first < incoming.size(); ++first)
+        {
+            if (incoming[first].category != category)
+            {
+                continue;
+            }
+
+            for (std::size_t second = first + 1;
+                 second < incoming.size();
+                 ++second)
+            {
+                if (incoming[second].category == category
+                    && classTransferScheduleIntervalsOverlap(
+                        incoming[first], incoming[second]))
+                {
+                    conflicts.push_back({first, second, true});
+                }
+            }
+
+            for (std::size_t second = 0; second < existing.size(); ++second)
+            {
+                if (existing[second].category == category
+                    && classTransferScheduleIntervalsOverlap(
+                        incoming[first], existing[second]))
+                {
+                    conflicts.push_back({first, second, false});
+                }
+            }
+        }
+    }
+
+    return conflicts;
+}
+
 // Reader/staging value. It contains only the source key and bounded flat
 // text needed for matching and writing; it does not retain a source object or
 // an external owner.

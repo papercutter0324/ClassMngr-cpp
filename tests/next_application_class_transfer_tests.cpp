@@ -161,6 +161,19 @@ void verifyInvalidValidation(
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
 }
 
+ClassTransferScheduleCandidate transferSchedule(
+    const TransferTimeCategory category,
+    const std::int64_t startMinuteOfWeek,
+    const std::int64_t endMinuteOfWeek
+    )
+{
+    return ClassTransferScheduleCandidate{
+        category,
+        startMinuteOfWeek,
+        endMinuteOfWeek
+    };
+}
+
 TeacherId matchingTeacherId(std::string value)
 {
     return *TeacherId::fromString(std::move(value));
@@ -209,6 +222,9 @@ private slots:
     void teacherMatchingUsesBothOrEitherNameAndRequiresOneName();
     void classMatchingRequiresCourseAndTeacherIdentityOrUnassignedFallback();
     void classAndTeacherMatchListsRetainDestinationOrder();
+    void scheduleOverlapPolicyUsesHalfOpenIntervalsAndStableCategoryOrder();
+    void scheduleOverlapPolicyWrapsSundayOvernightIntoMonday();
+    void scheduleOverlapPolicyTreatsEqualEndpointsAsTwentyFourHours();
     void existingNextContractsRemainUsable();
 };
 
@@ -1040,7 +1056,146 @@ void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinati
     QCOMPARE(
         result.classes[0].matchingClassIds[1].value(),
         std::string("class-earlier")
+    );
+}
+
+void NextApplicationClassTransferTests::
+    scheduleOverlapPolicyUsesHalfOpenIntervalsAndStableCategoryOrder()
+{
+    constexpr std::int64_t mondayNine = 9 * 60;
+    constexpr std::int64_t mondayTen = 10 * 60;
+    constexpr std::int64_t mondayNineThirty = 9 * 60 + 30;
+    constexpr std::int64_t mondayTenThirty = 10 * 60 + 30;
+    constexpr std::int64_t mondayEleven = 11 * 60;
+
+    const std::vector<ClassTransferScheduleCandidate> incoming{
+        transferSchedule(TransferTimeCategory::Regular, mondayNine, mondayTen),
+        transferSchedule(TransferTimeCategory::Regular, mondayTen, mondayEleven),
+        transferSchedule(
+            TransferTimeCategory::Regular,
+            mondayNineThirty,
+            mondayTenThirty
+            ),
+        transferSchedule(TransferTimeCategory::Intensive, mondayNine, mondayTen)
+    };
+    const std::vector<ClassTransferScheduleCandidate> existing{
+        transferSchedule(
+            TransferTimeCategory::Regular,
+            mondayNine + 45,
+            mondayTen + 15
+            ),
+        transferSchedule(
+            TransferTimeCategory::Intensive,
+            mondayNine,
+            mondayTen
+            )
+    };
+
+    const auto conflicts = findClassTransferScheduleConflicts(
+        incoming,
+        existing
         );
+
+    // Monday 9–10 and 10–11 only touch. Conflicts are ordered by incoming
+    // row, later incoming first, then existing; categories stay isolated.
+    const std::vector<ClassTransferScheduleConflict> expected{
+        {0, 2, true},
+        {0, 0, false},
+        {1, 2, true},
+        {1, 0, false},
+        {2, 0, false},
+        {3, 1, false}
+    };
+    QCOMPARE(conflicts.size(), expected.size());
+    for (std::size_t index = 0; index < expected.size(); ++index)
+    {
+        QCOMPARE(conflicts[index].incomingIndex, expected[index].incomingIndex);
+        QCOMPARE(conflicts[index].otherIndex, expected[index].otherIndex);
+        QCOMPARE(
+            conflicts[index].otherIsIncoming,
+            expected[index].otherIsIncoming
+            );
+    }
+}
+
+void NextApplicationClassTransferTests::
+    scheduleOverlapPolicyWrapsSundayOvernightIntoMonday()
+{
+    constexpr std::int64_t sundayElevenPm =
+        6 * kClassTransferMinutesPerDay + 23 * 60;
+    constexpr std::int64_t mondayOneAm =
+        7 * kClassTransferMinutesPerDay + 60;
+    constexpr std::int64_t mondayTwelveThirtyAm = 30;
+    constexpr std::int64_t mondayOneThirtyAm = 90;
+    constexpr std::int64_t mondayTwoAm = 120;
+
+    const std::vector<ClassTransferScheduleCandidate> incoming{
+        transferSchedule(
+            TransferTimeCategory::Regular,
+            sundayElevenPm,
+            mondayOneAm
+            ),
+        transferSchedule(
+            TransferTimeCategory::Regular,
+            mondayTwelveThirtyAm,
+            mondayOneThirtyAm
+            )
+    };
+    const std::vector<ClassTransferScheduleCandidate> existing{
+        transferSchedule(
+            TransferTimeCategory::Regular,
+            60,
+            mondayTwoAm
+            )
+    };
+
+    const auto conflicts = findClassTransferScheduleConflicts(
+        incoming,
+        existing
+        );
+    const std::vector<ClassTransferScheduleConflict> expected{
+        {0, 1, true},
+        {1, 0, false}
+    };
+    QCOMPARE(conflicts.size(), expected.size());
+    for (std::size_t index = 0; index < expected.size(); ++index)
+    {
+        QCOMPARE(conflicts[index].incomingIndex, expected[index].incomingIndex);
+        QCOMPARE(conflicts[index].otherIndex, expected[index].otherIndex);
+        QCOMPARE(
+            conflicts[index].otherIsIncoming,
+            expected[index].otherIsIncoming
+            );
+    }
+}
+
+void NextApplicationClassTransferTests::
+    scheduleOverlapPolicyTreatsEqualEndpointsAsTwentyFourHours()
+{
+    // The repository parser turns Monday 4:00 PM–4:00 PM into this 24-hour
+    // interval by advancing the end by one day when end <= start.
+    const ClassTransferScheduleCandidate fullDay = transferSchedule(
+        TransferTimeCategory::Regular,
+        16 * 60,
+        kClassTransferMinutesPerDay + 16 * 60
+        );
+    const ClassTransferScheduleCandidate crossingEnd = transferSchedule(
+        TransferTimeCategory::Regular,
+        kClassTransferMinutesPerDay + 15 * 60 + 30,
+        kClassTransferMinutesPerDay + 16 * 60 + 30
+        );
+    const ClassTransferScheduleCandidate touchingEnd = transferSchedule(
+        TransferTimeCategory::Regular,
+        kClassTransferMinutesPerDay + 16 * 60,
+        kClassTransferMinutesPerDay + 17 * 60
+        );
+
+    QVERIFY(classTransferScheduleIntervalsOverlap(fullDay, crossingEnd));
+    QVERIFY(!classTransferScheduleIntervalsOverlap(fullDay, touchingEnd));
+    QVERIFY(findClassTransferScheduleConflicts(
+        {fullDay},
+        {touchingEnd}
+        ).empty());
 }
 
 void NextApplicationClassTransferTests::existingNextContractsRemainUsable()
