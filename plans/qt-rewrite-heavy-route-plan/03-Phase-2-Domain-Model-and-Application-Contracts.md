@@ -67,13 +67,19 @@
   source owners and passed four focused CTests plus the roster import test (5/5);
   no full suite. Gate 1 gains app-less policy evidence; Gate 2 gains no historical
   baseline parity. Source commit: `3139bdf4`.
-- Latest code slice: F76 adds checked-fixture Class Transfer evaluation coverage:
+- Earlier code slice: F76 adds checked-fixture Class Transfer evaluation coverage:
   a named 11-column Fixture Evaluation is persisted and all 25 rows are compared
   with literal expected values on create and replacement; the destination-only
   evaluation-clearing assertion remains. Independent fresh Windows x64 Debug
   verification validated 917 source owners and passed ClassMngrClassTransferTests
   (1/1); no full suite. Gate 2 gains checked-fixture evidence, not historical
   parity. Source commit: `7a8b80c6`.
+- Latest code slice: F79 makes Class Transfer weekly schedule candidates
+  validated app-less values, keeping legacy weekday parsing and diagnostics in
+  the repository adapter. Fresh Executor and independent Tester builds each
+  validated 917 source owners and passed both focused Class Transfer CTests
+  (2/2); no full suite. Gate 1 gains app-less interval-validation evidence but
+  remains Partial; Gate 2 remains Partial. Source commit: `947edd93`.
 - Current note: Replace implicit behavior and UI-coupled service calls with explicit contracts. The typed Domain slice, workspace persistence/state contracts, current-selection state owner, import-job lifecycle contract, report/export-job lifecycle contract, document-content session contract and partial PdfViewerPage/NavigationController integration, legacy application mapping document, Qt-free legacy workspace gateway seam, concrete ApplicationServices workspace port, FileController open/close/create/initial-setup/save/save-as/export integration, Qt runtime worker/cancellation bridge, bounded resource/platform document resolver, typed Sidebar/MainWindow catalog cutover, language preference bridge, schedule-output direct-theme boundary, calendar database-query/worker ownership separation, narrow typed calendar cache/model boundary, narrow typed upcoming-events retrieval and next-ten prefetch read cutovers, typed calendar activation reads, the typed non-repeat save, repeat-occurrence save, new-repeat series-create, single-event delete, repeat-series suffix-delete, this-and-following repeat-series edit/save, calendar-dialog edit-draft, and calendar-dialog constructor/input ownership seams, typed Calendar Import planning, signature queries, ordered batch save, and use case are implemented, with signatures flowing as typed values through parser, query, plan, and use-case boundaries. `CalendarEventCache` retains typed `CalendarEventSummary` values and exposes date-scoped and range-scoped typed projections; `eventsForDate`/`eventsInRange` remain legacy compatibility paths for other callers, while `CalendarPage::ensureNextTenEvents` uses the typed range projection. `CalendarEventModel` consumes the typed projection and summary values for QML rows, converting dates, times, and `QVariant` only at the UI boundary; `calendar_page_events.cpp` passes typed summary values directly into `CalendarEventEditDraft` on activation and creates drafts for new events; edit and mutation paths no longer round-trip through a legacy `CalendarEvent` record, consumes drafts for all typed save/series-create/edit requests, and retains typed next-ten retrieval, typed by-ID activation reads, typed non-repeat save and delete, typed repeat-occurrence save, typed new-repeat series creation, typed repeat-series suffix-delete, and typed this-and-following repeat-series edit/save calls. `CalendarEventDialog` stores and returns the draft while legacy conversion remains private to its implementation. `repeatedCalendarEvents` generation and existing typed edit/save/delete/dialog paths remain preserved; defaults, validation, inline errors, warnings, repeat/delete/mutation routing, `schedule_use_24h`, invalidation/refresh, edit-dialog ownership, schedule settings, other legacy callers, and integer-ID semantics remain unchanged. Sidebar owns a copied/move-assigned `Application::DocumentCatalogProjection` without a legacy `DocumentCatalog` pointer, include, or dependency; MainWindow requests locale-specific projections through `Platform::ApplicationServicesDocumentCatalogPort` and passes them by value. The application layer remains Qt-free. Broader typed calendar UI/page migration, generic settings persistence, remaining feature-service migrations, and broader document-service migration remain open. Invalid-UTF-8 boundary coverage and live UI integration are non-blocking and not directly covered; no live MainWindow projection-failure/retranslation integration test exists. Sub Prep interval coverage remains limited to the current and following calendar years at most.
 
 #### Progress update - 2026-09-19 (initial domain-contract slice)
@@ -5717,3 +5723,56 @@ Keep legacy QString parsing and diagnostics in the repository adapter. Verify
 with ClassMngrNextApplicationClassTransferTests and
 ClassMngrClassTransferTests. This is selected work, not implementation
 evidence. Sub Prep remains capped at 2026-2027.
+
+## Verified F79 Class Transfer schedule-candidate validation - commit 947edd93
+
+`ClassTransferScheduleCandidate` is now created through a factory that accepts
+the schedule category, parsed weekday, and minute-of-day bounds. It rejects
+invalid categories, weekdays, and clock values before producing the weekly
+interval. End-at-or-before-start still rolls into the next day, equal endpoints
+represent 24 hours, and Sunday rollover can extend beyond the weekly endpoint.
+The repository adapter retains legacy Qt weekday parsing and the exact
+malformed-day diagnostic.
+
+App-less tests cover invalid category/day/clock values, week-start behavior,
+equal endpoints, and Sunday rollover; the adapter test asserts the legacy
+malformed-day message. Executor and independent fresh Tester Windows x64 Debug
+builds used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0. Each
+validated 917 handwritten source owners and passed
+`ClassMngrNextApplicationClassTransferTests` and `ClassMngrClassTransferTests`
+(2/2); Tester also passed `git diff --check`. No full suite was run. Protected
+`cmake/sources.cmake` remained excluded at SHA-256
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+
+F79 adds app-less interval-validation evidence to Gate 1, which remains Partial.
+Gate 2 remains Partial; F78's checked-fixture duplicate-target regression is
+not historical-output parity. Workspace boundary and audited `src/next`
+dependency isolation remain Satisfied. Phase 2 remains In Progress with its
+exit gate Open. Sub Prep remains capped at 2026-2027.
+
+#### Cumulative exit-gate status after F79
+
+This audit applies the formal exit criteria through F79. Both focused CTests
+passed independently; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F79 adds a validated Qt-free Class Transfer interval value and boundary tests. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F78 adds fixture-derived duplicate-target rejection with unchanged persisted state; F79 verifies the legacy malformed-day adapter diagnostic and interval behavior. These are checked-regression results, not independently sourced historical-output parity. Broader parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator acceptance and focused app-less coverage remain satisfied; F79 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F79's policy remains Qt-free. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited v2 dependency
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+Next selected bounded slice: F80 extracts the sparse update rule for Korean
+Teacher Import into a Qt-free app-less policy and exercises it through the
+`sectioned_review.xlsx` fixture dialog-plan/repository path. Preserve the matched
+TeacherId and KoreanTeacherKey; merge nonempty trimmed room, birthday, and phone
+values; preserve stored values for blank inputs; report unchanged when the
+result equals the existing values; and leave unrelated profile fields alone.
+Seed a matching Korean teacher with suffix D, then assert one update and one
+create, retained identity, merged and manually maintained fields, no duplicate,
+and the source date. Verify the app-less policy and focused
+`ClassMngrTeacherImportTests` and `ClassMngrTeacherImportDialogTests`. This is
+selected work, not implementation evidence; checked-fixture regression is not
+historical-output parity. Sub Prep remains capped at 2026-2027.

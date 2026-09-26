@@ -1062,3 +1062,8 @@ Prep's queried interval to the current and following calendar years at most.
 
 - Derive multiple review candidates from the checked workbook and direct them to the same seeded destination to exercise the real apply validation path. Assert the exact rejection and compare a complete persisted-state snapshot to prove no writes occurred.
 - Keep checked-fixture regression separate from historical baseline parity claims; a permanent workbook alone does not establish an independently sourced legacy-output oracle.
+
+## Phase 2 Class Transfer validated weekly interval values - 2026-09-26
+
+- Keep interval construction behind a Qt-free factory that validates category, weekday, and minute-of-day bounds. The factory owns equal-endpoint rollover and Sunday week overflow; the repository remains responsible for parsing and legacy diagnostics.
+- A checked-fixture regression test is useful adapter evidence, but does not establish historical baseline parity without an independent legacy-output oracle.

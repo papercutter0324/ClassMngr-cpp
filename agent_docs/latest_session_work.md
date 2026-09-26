@@ -2740,5 +2740,12 @@ separate on a host with Xvfb and loopback access.
 
 ### Phase 2 Class Transfer validated weekly interval contract - F79 selected
 
-- Convert the public app-less ClassTransferScheduleCandidate from an unchecked aggregate into a factory-created value from category, parsed weekday index, and start/end minute-of-day. Validate category and numeric bounds. Preserve end-at-or-before-start as next-day rollover, including equal endpoints as 24 hours and Sunday endpoints beyond the weekly boundary.
-- Keep legacy QString parsing and exact adapter diagnostics in the repository. Focused CTests: ClassMngrNextApplicationClassTransferTests and ClassMngrClassTransferTests. This advances Gate 1 only if verified; Gate 2 remains Partial. Sub Prep stays capped at 2026-2027.
+- Source/test commit 947edd93 makes public app-less ClassTransferScheduleCandidate construction go through a factory from category, parsed weekday index, and start/end minute-of-day. It validates category/day/clock bounds and preserves end-at-or-before-start as next-day rollover, equal endpoints as 24 hours, and Sunday endpoints beyond the weekly boundary. The repository keeps QString parsing and exact legacy diagnostics.
+- Executor fresh Windows x64 Debug configure used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; configure validated 917 handwritten source owners, all 313 build actions passed, and ClassMngrNextApplicationClassTransferTests plus ClassMngrClassTransferTests passed (2/2). Independent fresh-tree verification overlaid the protected worktree manifest at its exact SHA-256, validated 917 owners, built and passed the same two targets, and git diff --check passed. No full suite was run.
+- Gate 1 gains app-less validated interval behavior and remains Partial; Gate 2 remains Partial. Workspace boundary and audited src/next isolation remain Satisfied. Phase 2 exit remains Open. Sub Prep stays capped at 2026-2027. The protected cmake/sources.cmake remains excluded at the recorded SHA-256.
+
+### Phase 2 Korean Teacher Import sparse-update contract - F80 selected
+
+- Add a Qt-free policy for the existing Korean teacher update rule: retain matched TeacherId and KoreanTeacherKey, apply nonempty trimmed room/birthday/phone values, preserve current values for blank imported fields, report unchanged when the result is identical, and leave unrelated profile fields untouched.
+- Exercise it through the checked-in sectioned_review.xlsx dialog-plan/repository path. Seed a Korean teacher whose name includes the ignored D suffix; assert one update plus one create, retained identity, imported and preserved values, no duplicate row, and source-date behavior.
+- Focused acceptance: the app-less update-policy CTest, ClassMngrTeacherImportTests, and ClassMngrTeacherImportDialogTests. This selected slice advances both Gate 1 and Gate 2 if verified; workbook coverage remains checked-fixture regression, not historical-output parity. Sub Prep stays capped at 2026-2027.
