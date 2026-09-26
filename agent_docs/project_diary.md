@@ -1094,3 +1094,7 @@ Prep's queried interval to the current and following calendar years at most.
 
 - A source-generated workbook helper that exists in the legacy baseline can support a synthetic baseline comparison when both revisions consume the same pinned bytes and deterministic seed. Pin semantic parse, preview, apply, and full persisted-state outputs; label the result synthetic rather than historical production-workbook parity.
 - Normal Schedule Import apply replaces the regular schedule snapshot: unrelated teacher/class metadata and settings remain while prior regular time rows are cleared. Tests should make that full-snapshot behavior explicit in expected state.
+
+## Phase 2 GS Team sparse update policy - 2026-09-27
+
+- Keep Qt normalization at the repository boundary and pass normalized fields into the Qt-free merge policy. The policy preserves the matched row ID, blank fields, and no-op/change result; the adapter should skip SQL for unchanged rows. A database trigger is a direct way to prove the no-op issued no UPDATE.
