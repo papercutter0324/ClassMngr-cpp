@@ -1056,3 +1056,4 @@ Prep's queried interval to the current and following calendar years at most.
 
 - Existing `Domain::ScheduleTime` deliberately models same-day end-after-start intervals; it cannot stand in for Class Transfer's weekly intervals, where end-at-or-before-start means an overnight meeting and Sunday may overlap early Monday. Keep these semantics explicit in a separate typed policy.
 - Keep ordered policy decisions and typed conflict references in the Qt-free layer; leave parsing of legacy text, class labels, localized diagnostics, and rendered-message deduplication in the repository adapter.
+- Verify both the pure overlap ordering and the repository conversion path. The checked conflict fixture now locks the combined category diagnostic and no-write behavior, while adapter cases cover Sunday wrap and equal endpoints; this is regression evidence and must not be described as historical parity without a separate legacy oracle.

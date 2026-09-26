@@ -2690,19 +2690,44 @@ separate on a host with Xvfb and loopback access.
   remains Open. Sub Prep remains capped at 2026-2027; protected
   `cmake/sources.cmake` stays unstaged at the recorded SHA-256.
 
-### Phase 2 weekly Class Transfer schedule-overlap policy - F77 selected
+### Phase 2 weekly Class Transfer schedule-overlap policy - F77 verified
 
-- Move the overlap decision from `ClassTransferRepository::preflightSchedules`
-  helpers into a Qt-free Application policy; leave time parsing, class labels,
-  localized errors, and duplicate rendered-message suppression at the
-  repository adapter. Use an existing source-owned header.
-- Preserve half-open intervals, end-at-or-before-start overnight ranges,
-  Sunday-to-Monday weekly wrap, regular/intensive category separation,
-  imported-to-imported and imported-to-existing order, Skip/replacement
-  filtering, and pre-write rejection. `Domain::ScheduleTime` cannot represent
-  this rule because it only supports same-day end-after-start intervals.
-- Tests should cover ordinary overlaps, touching boundaries, overnight/week-wrap,
-  invalid imported entries, categories, filters, deterministic conflict order,
-  and adapter diagnostics/no-write through the checked-in conflict fixture.
-  Focused targets: `ClassMngrNextApplicationClassTransferTests` and
-  `ClassMngrClassTransferTests`.
+- Source/test commit `dd3bbc01` adds `ClassTransferScheduleCandidate` and an
+  ordered, Qt-free weekly overlap policy in the existing
+  `class_transfer_projection.h`. The repository adapter keeps legacy weekday
+  and clock parsing, class labels, localized diagnostics, and duplicate
+  rendered-message suppression.
+- The app-less policy tests cover half-open/touching intervals, regular versus
+  intensive separation, incoming/existing order, Sunday overnight wrap, and
+  equal endpoints as 24 hours. Repository tests cover parsed Sunday overnight
+  and equal-endpoint conflicts with exact diagnostics and pre-write/no-write
+  assertions; the checked-in conflict fixture asserts the exact combined
+  regular/intensive diagnostic and unchanged destination state.
+- Independent fresh verification used a temporary snapshot based on archive
+  commit `4aa2d7bd` plus the current F77 files (Windows x64 Debug, CMake 4.4.2,
+  Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0). Configure validated 917
+  handwritten source owners.
+  `ClassMngrNextApplicationClassTransferTests` and
+  `ClassMngrClassTransferTests` built and passed (2/2); `git diff --check`
+  passed. Configure reported nonfatal Vulkan-header, `vswhere.exe`, and long
+  object-path warnings. No full suite was run.
+- F77 adds app-less Domain/Application behavior evidence to Gate 1 and
+  checked-fixture conflict evidence to Gate 2; both remain Partial. The
+  checked fixture is regression coverage, not an independently sourced
+  historical output oracle. Workspace boundary and audited `src/next`
+  isolation remain Satisfied; Phase 2 remains In Progress with its exit gate
+  Open. Sub Prep remains capped at 2026-2027. Protected
+  `cmake/sources.cmake` remains excluded at SHA-256
+  `9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+
+### Phase 2 Schedule Import duplicate-target fixture coverage - F78 selected
+
+- Use permanent `schedule_large_conflict.xlsx` in the repository apply test.
+  Assign both imported classes to the same existing class, assert apply rejects
+  the plan before writes, and compare seeded teacher, class, class-info,
+  schedule, and settings snapshots. Keep production code unchanged unless the
+  fixture path exposes a defect.
+- Focused targets: `ClassMngrScheduleImportTests`,
+  `ClassMngrNextApplicationScheduleImportReviewDecisionsTests`, and
+  `ClassMngrScheduleImportDialogTests`. This adds required checked-fixture
+  regression evidence, not an independent historical-output oracle.

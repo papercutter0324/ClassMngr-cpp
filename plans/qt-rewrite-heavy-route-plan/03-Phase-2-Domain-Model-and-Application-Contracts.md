@@ -5627,3 +5627,47 @@ Skip/replacement filtering; deterministic conflict ordering; existing
 repository error rendering and deduplication; and the checked-in conflict-fixture
 adapter guard. This is a selected slice, not implementation evidence. Sub Prep
 remains capped at the current and following calendar years, 2026-2027.
+
+## Verified F77 Class Transfer weekly schedule-overlap policy - commit `dd3bbc01`
+
+[`class_transfer_projection.h`](../../src/next/application/class_transfer_projection.h)
+now contains a Qt-free weekly overlap policy. The repository adapter retains
+legacy weekday/time parsing, localized diagnostic rendering, and duplicate
+message suppression. The policy preserves half-open intervals, touching-time
+nonconflicts, overnight intervals including Sunday-to-Monday week wrap, equal
+endpoints as 24-hour intervals, regular/intensive category separation, and
+deterministic incoming/existing conflict order.
+
+App-less and production adapter tests cover those boundaries, exact diagnostics,
+and conflict rejection before writes. The checked-in conflict fixture asserts
+the exact combined diagnostic. Independent fresh Windows x64 Debug verification
+used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0; CMake validated
+917 handwritten source owners, and `ClassMngrNextApplicationClassTransferTests`
+and `ClassMngrClassTransferTests` passed (2/2). `git diff --check` passed; no
+full suite was run. Protected `cmake/sources.cmake` remained excluded at SHA-256
+`9B15C799FCD0637A4486C54CCAF5D313072A92396F35E575639AD85824347CFF`.
+
+#### Cumulative exit-gate status after F77
+
+This audit applies the formal exit criteria through F77. Both focused CTests
+passed independently; no full suite was run.
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior | Partial | F77 adds Qt-free weekly overlap policy evidence with ordering and interval-boundary tests. Broader Domain and Application behavior remains incomplete. |
+| Baseline parity | Partial | F77 verifies exact checked-fixture conflict diagnostics and no-write behavior, adding checked-fixture regression evidence but no historical baseline parity. Broader parity remains incomplete. |
+| Workspace boundary | Satisfied | The formal `WorkspaceGateway::createWorkspace`/`WorkspaceCoordinator` acceptance and focused app-less coverage remain satisfied; F77 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct `DataService`, `MainWindow`, `PageManager`, and widget-pointer dependencies; F77's overlap policy remains Qt-free. |
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and audited v2 dependency
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+Next selected bounded slice: F78 tests Schedule Import apply rejection when both
+classes from the permanent [`schedule_large_conflict.xlsx`](../../tests/fixtures/imports/schedule_large_conflict.xlsx)
+fixture are assigned to the same existing class. Assert rejection before writes
+by comparing seeded database snapshots. Keep the slice to focused test changes
+unless it exposes a production defect. Verify with
+`ClassMngrScheduleImportTests`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`, and
+`ClassMngrScheduleImportDialogTests`. This is a selected slice, not implementation
+evidence. Sub Prep remains capped at the current and following calendar years,
+2026-2027.
