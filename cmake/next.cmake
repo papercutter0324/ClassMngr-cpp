@@ -42,6 +42,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/academic_calendar_schedule_preferences.h
     src/next/application/calendar_event_campus_visibility_policy.h
+    src/next/application/calendar_event_start_of_term_policy.h
     src/next/application/calendar_event_delete_port.h
     src/next/application/calendar_event_delete_all_port.h
     src/next/application/calendar_event_edit_draft.h

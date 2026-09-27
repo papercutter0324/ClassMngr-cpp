@@ -79,19 +79,3 @@ inline QString normalizedCalendarEventTimeStatus(
         ? trimmed
         : QStringLiteral("Timed");
 }
-
-inline bool isStartOfTermCalendarEvent(
-    const CalendarEvent& event
-    )
-{
-    const QString title =
-        event.title.simplified().toLower();
-
-    return normalizedCalendarEventType(event.eventType) == QStringLiteral("Other")
-        && (
-            title == QStringLiteral("new semester")
-            || title == QStringLiteral("start of term")
-            || title == QStringLiteral("term start")
-            || title == QStringLiteral("term starts")
-            );
-}

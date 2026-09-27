@@ -1,8 +1,11 @@
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "features/calendar/academic_calendar_event_parser.h"
 #include "features/calendar/calendar_workbook_reader.h"
+#include "next/application/calendar_event_start_of_term_policy.h"
 
 #include <QtTest>
+
+#include <string>
 
 namespace
 {
@@ -75,7 +78,15 @@ void CalendarImportTests::importsNewSemesterLegendEntries()
     QCOMPARE(parsed.events.size(), 1);
     QCOMPARE(parsed.events.first().title, QStringLiteral("New Semester"));
     QCOMPARE(parsed.events.first().eventType, QStringLiteral("Other"));
-    QVERIFY(isStartOfTermCalendarEvent(parsed.events.first()));
+    const std::string title =
+        parsed.events.first().title.toUtf8().toStdString();
+    const std::string eventType =
+        parsed.events.first().eventType.toUtf8().toStdString();
+    QVERIFY(ClassMngr::Next::Application::
+        CalendarEventStartOfTermPolicy::isStartOfTermEvent(
+            title,
+            eventType
+            ));
     QCOMPARE(parsed.events.first().startDate, QDate(2026, 7, 6));
 }
 

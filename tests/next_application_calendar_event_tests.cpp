@@ -4,6 +4,7 @@
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_save_port.h"
+#include "next/application/calendar_event_start_of_term_policy.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 
@@ -261,6 +262,7 @@ private slots:
     void recordsAndProjectionAreCopyableEqualAndIndependentlyReleasable();
     void contractHasNoMutablePointerOrRichRecordSurface();
     void campusVisibilityPolicyMatchesNormalizedLiteralCampusTokens();
+    void startOfTermPolicyMatchesCalendarClassificationAndHideSwitch();
 };
 
 void NextApplicationCalendarEventTests::valid96ScaleEventsRetainTypedMetadataAndBounds()
@@ -2012,6 +2014,69 @@ campusVisibilityPolicyMatchesNormalizedLiteralCampusTokens()
         asciiKnownCodes,
         false
         ));
+}
+
+void NextApplicationCalendarEventTests::
+startOfTermPolicyMatchesCalendarClassificationAndHideSwitch()
+{
+    using Policy = CalendarEventStartOfTermPolicy;
+
+    for (const std::string_view alias : {
+        "new semester",
+        "start of term",
+        "term start",
+        "term starts"
+    })
+    {
+        QVERIFY(Policy::isStartOfTermEvent(alias, "Other"));
+        QVERIFY(Policy::shouldHideEvent(alias, "Other", true));
+        QVERIFY(!Policy::shouldHideEvent(alias, "Other", false));
+    }
+
+    QVERIFY(Policy::isStartOfTermEvent(
+        " \tNEW\n  SEMESTER\r ",
+        " Other\t "
+        ));
+    QVERIFY(Policy::isStartOfTermEvent(
+        "\xC2\xA0" "StArT\xE2\x80\x83oF\xE2\x80\x83TeRm" "\xC2\xA0",
+        "Other"
+        ));
+    QVERIFY(Policy::isStartOfTermEvent(
+        "new" "\xC2\x85" "semester",
+        "Other"
+        ));
+
+    for (const std::string_view knownType : {
+        "Vacation",
+        "Holiday",
+        "Workshop",
+        "CM",
+        "Meeting"
+    })
+    {
+        QVERIFY(!Policy::isStartOfTermEvent("term starts", knownType));
+    }
+    QVERIFY(Policy::isStartOfTermEvent("term starts", " Other "));
+    QVERIFY(Policy::isStartOfTermEvent("term starts", "Unrecognized type"));
+    QVERIFY(Policy::isStartOfTermEvent("term starts", "other"));
+    QVERIFY(!Policy::shouldHideEvent(
+        "new semester",
+        "Vacation" "\xC2\x85",
+        true
+        ));
+
+    for (const std::string_view nonmatch : {
+        "",
+        "new semester celebration",
+        "new semestsr",
+        "term starting",
+        "term-start"
+    })
+    {
+        QVERIFY(!Policy::isStartOfTermEvent(nonmatch, "Other"));
+        QVERIFY(!Policy::shouldHideEvent(nonmatch, "Other", true));
+    }
+    QVERIFY(!Policy::shouldHideEvent("staff meeting", "Meeting", true));
 }
 
 QTEST_APPLESS_MAIN(NextApplicationCalendarEventTests)

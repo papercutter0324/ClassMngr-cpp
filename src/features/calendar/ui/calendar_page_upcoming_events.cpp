@@ -5,6 +5,7 @@
 #include "core/fontmanager.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "domain/models/calendar_event.h"
+#include "next/application/calendar_event_start_of_term_policy.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
@@ -40,6 +41,8 @@ using CalendarEventProjection =
     ClassMngr::Next::Application::CalendarEventProjection;
 using CalendarEventSummary =
     ClassMngr::Next::Application::CalendarEventSummary;
+using CalendarEventStartOfTermPolicy =
+    ClassMngr::Next::Application::CalendarEventStartOfTermPolicy;
 
 constexpr int UpcomingEventsNext30Days = 30;
 constexpr int UpcomingEventColumnSpacing = 16;
@@ -91,23 +94,6 @@ int legacyId(
     return validId && id > 0
         ? id
         : -1;
-}
-
-bool isStartOfTermCalendarEvent(
-    const CalendarEventSummary& event
-    )
-{
-    const QString title =
-        projectionText(event.title).simplified().toLower();
-
-    return normalizedCalendarEventType(projectionText(event.eventType))
-            == QStringLiteral("Other")
-        && (
-            title == QStringLiteral("new semester")
-            || title == QStringLiteral("start of term")
-            || title == QStringLiteral("term start")
-            || title == QStringLiteral("term starts")
-            );
 }
 
 int upcomingEventTagVerticalPadding(
@@ -1263,10 +1249,11 @@ bool CalendarPage::calendarEventVisible(
     const CalendarEventDisplayOptions& options
     ) const
 {
-    if (
-        options.hideStartOfTermEvents
-        && isStartOfTermCalendarEvent(event)
-        )
+    if (CalendarEventStartOfTermPolicy::shouldHideEvent(
+                event.title,
+                event.eventType,
+                options.hideStartOfTermEvents
+                ))
     {
         return false;
     }

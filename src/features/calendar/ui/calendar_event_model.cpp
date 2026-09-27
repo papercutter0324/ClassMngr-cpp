@@ -1,8 +1,8 @@
 #include "calendar_event_model.h"
 
 #include "calendar_event_cache.h"
-#include "domain/models/calendar_event.h"
 #include "features/calendar/calendar_event_campus_filter.h"
+#include "next/application/calendar_event_start_of_term_policy.h"
 
 #include <QDateTime>
 #include <QVariantMap>
@@ -13,6 +13,8 @@ namespace
 {
 using CalendarEventSummary =
     ClassMngr::Next::Application::CalendarEventSummary;
+using CalendarEventStartOfTermPolicy =
+    ClassMngr::Next::Application::CalendarEventStartOfTermPolicy;
 
 QString projectionText(
     const std::string& value
@@ -22,23 +24,6 @@ QString projectionText(
         value.data(),
         static_cast<qsizetype>(value.size())
         );
-}
-
-bool isStartOfTermCalendarEvent(
-    const CalendarEventSummary& event
-    )
-{
-    const QString title =
-        projectionText(event.title).simplified().toLower();
-
-    return normalizedCalendarEventType(projectionText(event.eventType))
-            == QStringLiteral("Other")
-        && (
-            title == QStringLiteral("new semester")
-            || title == QStringLiteral("start of term")
-            || title == QStringLiteral("term start")
-            || title == QStringLiteral("term starts")
-            );
 }
 }
 
@@ -112,8 +97,11 @@ QVariantList CalendarEventModel::eventsForDate(
     for (const CalendarEventSummary& event : projection.events())
     {
         if (
-            m_hideStartOfTermEvents
-            && isStartOfTermCalendarEvent(event)
+            CalendarEventStartOfTermPolicy::shouldHideEvent(
+                event.title,
+                event.eventType,
+                m_hideStartOfTermEvents
+                )
             )
         {
             continue;
