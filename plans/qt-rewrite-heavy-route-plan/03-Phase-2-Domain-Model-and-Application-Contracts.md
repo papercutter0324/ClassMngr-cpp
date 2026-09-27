@@ -10,15 +10,16 @@
 - Last updated: 2026-09-27
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F104 is verified at commit `6057bc9e`; it adds the app-less
-  Calendar delete-all boundary and seeded repository parity. F105 is selected
-  to route repeat-series suffix editing through an app-less use case with
-  request validation. Gates 1 and 2 remain Partial; workspace create and the
-  audited direct `src/next` isolation are Satisfied, while strict transitive
-  ApplicationServices-to-DataService read isolation remains unresolved.
-  Historical production-workbook provenance is a tracked risk, not a separate
-  literal exit criterion. Sub Prep's window remains derived from its reference
-  year through December 31 of the following year; 2026-2027 is illustrative.
+- Current note: F105 is verified at commit `d45fb405`; repeat-series suffix
+  edit now validates at the Application boundary before calling Platform.
+  F106 is selected for seeded baseline/current repository parity of suffix
+  selection and persisted updates. Gates 1 and 2 remain Partial; workspace
+  create and audited direct `src/next` isolation are Satisfied, while strict
+  transitive ApplicationServices-to-DataService read isolation remains
+  unresolved. Historical production-workbook provenance is a tracked risk,
+  not a separate literal exit criterion. Sub Prep's window remains derived
+  from its reference year through December 31 of the following year;
+  2026-2027 is illustrative.
 
 ## Objective
 
@@ -165,27 +166,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Next selected bounded slice (F105)
+## Next selected bounded slice (F106)
 
-Add an app-less `CalendarEventSeriesEditUseCase` around the existing
-`CalendarEventSeriesEditPort`. Validate `CalendarEventSeriesEditRequest` in
-Application before calling the port exactly once; return validation and port
-errors unchanged. Route only Calendar's “This and following” edit branch
-through this use case. Keep the existing Application planner, Platform
-service/query/save orchestration and Qt conversions, and UI warning/cache
-invalidation at their current boundaries. The Platform adapter retains its
-validation guard for direct callers. Add fake-port tests for exact request
-forwarding, success/error propagation, and invalid-request rejection with zero
-port calls.
+Add a seeded repository test for repeat-series suffix selection and persisted
+updates. Seed an earlier occurrence in the same series, the selected
+occurrence and a following occurrence, plus another series and an unrelated
+event on an overlapping date. Load the suffix from the selected start date,
+apply deterministic field/date updates to only those returned rows, then
+compare the complete before/after snapshots and observations across baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F105
+`d45fb405`, compiling each revision's own repository source closure. Assert
+the earlier and unrelated rows remain unchanged, selected/following IDs and
+order are preserved, row count stays constant, and `sqlite_sequence` is
+unchanged. This is repository query/update parity only; it does not claim
+Calendar UI or planner-transformation parity or historical-workbook parity.
 
-Verify `ClassMngrNextApplicationCalendarEventTests`,
-`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
-`ClassMngr`; run only the two focused CTests and no full suite. F105 advances
-Gate 1 through app-less request validation and execution; Gate 2 remains
-Partial and receives no new parity claim. The existing repeat-series planner
-and Platform tests continue to cover suffix transformation and adapter
-behavior. Workspace create and audited direct `src/next` isolation remain
-Satisfied; strict transitive ApplicationServices-to-DataService read
-isolation remains unresolved. Phase 2 exit remains Open. This slice does not
-change Sub Prep's derived window: January 1 of the reference date's year
-through December 31 of the following year, at most.
+Verify `ClassMngrCalendarEventRepositoryTests` and run only that focused CTest;
+no full suite. F106 adds one persisted state-transition fixture to Gate 2,
+which remains Partial. Gate 1 remains Partial. Workspace create and audited
+direct `src/next` isolation remain Satisfied; strict transitive
+ApplicationServices-to-DataService read isolation remains unresolved. Phase 2
+exit remains Open. This Calendar slice does not widen Sub Prep's window, which
+remains January 1 of the reference date's year through December 31 of the
+following year, at most.

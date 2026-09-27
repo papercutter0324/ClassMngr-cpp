@@ -1166,3 +1166,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar delete-all boundary - 2026-09-27
 
 - Keep availability separate from the confirmed destructive operation. The Application use case forwards the availability check and delete command independently; the UI owns confirmation/cancel and feedback. Seeded cross-revision parity should report only repository behavior, including row count and sequence state.
+
+## Phase 2 Calendar repeat-series edit boundary - 2026-09-27
+
+- Validate typed repeat-series edit requests in Application before invoking the port. Keep Platform's validation guard for direct callers, the existing planner and service orchestration in their current layers, and UI warnings/cache invalidation at the UI edge.

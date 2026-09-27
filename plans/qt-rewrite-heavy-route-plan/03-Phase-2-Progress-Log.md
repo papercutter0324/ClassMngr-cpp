@@ -6530,3 +6530,34 @@ remaining feature-service migrations, document-service migration, and live
 MainWindow projection-failure/retranslation integration remain open. Sub Prep
 is bounded to January 1 of the reference year through December 31 of the
 following year; 2026-2027 is illustrative, not fixed.
+
+## Verified F105 Calendar repeat-series edit use case - commit `d45fb405`
+
+F105 commit `d45fb405` (`Phase2 - route repeat-series edit through
+Application`) adds the Qt-free `CalendarEventSeriesEditUseCase`, validates the
+typed request before invoking the port, and routes only the Calendar “This and
+following” edit branch through Application. The Platform adapter retains its
+direct-caller validation guard, service/query/save orchestration, and Qt
+conversion. The UI retains warning presentation and success-only cache
+invalidation.
+
+A clean Ninja/MSVC 19.51/Qt 6.12 Debug configure validated 938 handwritten
+source owners. The Application and Platform Calendar Event test targets and
+`ClassMngr` built in 353 actions. The two focused CTests passed 2/2. App-less
+tests pin exact request forwarding, one port call, validation rejection with
+zero port calls, and structured port-error propagation. `git diff --check`
+passed; no full suite ran. F105 adds no baseline parity claim.
+
+### Cumulative exit-gate status after F105
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F105 adds request validation and execution through an app-less use case; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F105 adds no parity evidence; broader validation, conflict, import-planning, and state-transition parity remains open. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook provenance remains a tracked risk, not a separate written
+exit criterion. Sub Prep's interval remains January 1 of the reference year
+through December 31 of the following year, at most; 2026-2027 is illustrative.
