@@ -6600,3 +6600,48 @@ exit criterion. Sub Prep remains bounded to January 1 of the reference year
 through December 31 of the following year; 2026-2027 is illustrative. F107 is
 selected to move Calendar event-summary lookup by ID behind an app-less query
 contract and the existing UI event-activation path.
+
+## Verified F107 Calendar event lookup through Application - commit `dbdcd721bd68bcaa30191bc93e7576de590fb650`
+
+The Calendar activation path now uses the Qt-free
+`CalendarEventByIdQueryUseCase` and typed `CalendarEventByIdQueryPort`. The
+use case rejects blank, whitespace-only, and over-limit IDs without calling
+the port; valid IDs are forwarded once and success or structured failure is
+returned. `ApplicationServicesCalendarEventPort::loadEventById` converts the
+typed ID to the legacy positive integer and retains existing service lookup
+and error mapping. `CalendarPage::handleCalendarEventActivated` returns on
+lookup failure before opening the dialog.
+F107 changes no Calendar range-worker/display behavior or Sub Prep
+implementation, and adds no parity claim.
+
+App-less tests cover exact ID forwarding, success and structured failure,
+invalid requests with zero calls, and acceptance at the exact length limit.
+Fresh Ninja/MSVC VS 2026 x64 / Qt 6.12 Debug verification built
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngr`. The two focused CTests passed 2/2; no full suite ran. The focused
+tests do not assert the UI-level failure/dialog-closed behavior; Tester
+verified the return-before-open path by source inspection. `git diff --check`
+passed. Configure emitted unrelated object-path length warnings, but all
+three requested targets built.
+
+### Cumulative exit-gate status after F107
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F107 adds the Calendar event-by-ID query; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F107 adds no parity evidence; broader repository and behavior parity remains open. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook provenance remains a tracked risk, not a separate written
+exit criterion. F108 is selected for seeded repeat-series suffix-delete
+repository state-transition parity: full rows before/after; preservation of
+earlier same-series, overlapping other-series, and standalone rows; selected
+and following removals; final count; and unchanged `sqlite_sequence`. The same
+fixture will run against baseline and current revisions using each revision's
+own repository source closure. This is repository parity only, with no UI or
+historical-workbook claim; F108 advances Gate 2 while it remains Partial. Sub
+Prep remains bounded to January 1 of the reference date's year through
+December 31 of the following year at most; 2026-2027 is illustrative.

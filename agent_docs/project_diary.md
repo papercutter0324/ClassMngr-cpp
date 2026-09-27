@@ -1174,3 +1174,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar repeat-series repository parity - 2026-09-28
 
 - For suffix-update parity, seed and pin every row before and after, including unrelated events on the selected date; assert ID order, row count, and `sqlite_sequence`. Exercise the same batch-save fixture against each revision's own repository source closure. When the baseline lacks an unrelated newer API, omit only its incompatible test from the temporary harness and keep the parity fixture byte-for-byte the same.
+
+## Phase 2 Calendar event-by-ID query - 2026-09-28
+
+- Keep the app-less lookup request bounded and typed, with exact identifier forwarding and structured result propagation. Retain legacy numeric conversion and service/error handling in Platform; verify UI failure behavior separately from the Qt-free Application and Platform tests. The Sub Prep date window remains January 1 of the reference year through December 31 of the next year at most.
