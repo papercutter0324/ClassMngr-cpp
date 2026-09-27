@@ -17,7 +17,9 @@
   `src/next` isolation audit are Satisfied. Strict transitive
   ApplicationServices-to-DataService read isolation remains unresolved.
   Historical production-workbook provenance is a tracked risk, not a separate
-  literal exit criterion. Sub Prep remains capped at 2026-2027.
+  literal exit criterion. Sub Prep's calendar window is derived from its
+  reference date: January 1 of that date's year through December 31 of the
+  following year. 2026-2027 is an example, not a fixed range.
 
 ## Objective
 
@@ -187,4 +189,6 @@ the three test targets. F103 should advance Gate 1 and Gate 2, though both
 remain Partial; workspace create and
 the direct `src/next` isolation audit remain Satisfied. Strict transitive
 ApplicationServices-to-DataService read isolation remains unresolved. Phase 2
-exit remains Open. Sub Prep remains capped at 2026-2027.
+exit remains Open. Sub Prep's calendar window is derived from its reference
+date: January 1 of that date's year through December 31 of the following year.
+2026-2027 is an example, not a fixed range.
