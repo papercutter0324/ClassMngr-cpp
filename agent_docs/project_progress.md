@@ -1407,7 +1407,7 @@ F96 adds baseline/current synthetic Teacher Import database rollback parity for 
 
 F97 commit `36ebb09a960fa82f633701ec83fba35bcd7f3599` moves Calendar repeat-series suffix-edit date and field propagation into a Qt-free Application planner and routes the platform adapter through it. App-less tests cover ordered occurrences and IDs, date offset/duration, request fields, trimmed series ID, empty input, invalid dates, and range overflow. Independent verification built `ClassMngrNextApplicationCalendarEventTests`, `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and `ClassMngr`; both focused CTests passed, including a platform-boundary recheck after adding empty-query and no-save failure cases. Gate 1 advances but remains Partial; Gate 2 remains Partial. Phase 2 exit remains Open; Sub Prep remains capped at 2026-2027.
 
-## Current Phase 2 position - 2026-09-27 (F102 verified; F103 selected)
+## Current Phase 2 position - 2026-09-27 (F103 verified; F104 selected)
 
 F102 commit `ef418996` moves repeat-series suffix-delete request validation into a Qt-free Application use case, used only by “This and following.” Ordinary deletion and delete-all remain separate. Compatibility behavior is preserved, including diagnostics, ID bytes, date conversion, service/error mappings, warnings, and success-only cache invalidation.
 
@@ -1415,4 +1415,6 @@ Fresh independent archive verification built 358/358 actions and passed the thre
 
 Post-F102 audits leave Gate 1 and Gate 2 Partial and the workspace-create criterion Satisfied. The direct `src/next` isolation audit is Satisfied; strict transitive ApplicationServices-to-DataService read isolation remains unresolved. Historical production-workbook provenance is tracked risk rather than a separate written exit criterion. Phase 2 remains In Progress with its exit gate Open.
 
-F103 is selected to add an app-less single-event delete use case and seeded baseline/current repository deletion comparison. Keep repeat-series suffix delete and delete-all separate, preserve typed IDs in Application, and keep legacy integer parsing and service/error/exception mapping in Platform. Assert target removal, sibling/unrelated preservation, and unchanged sequence using each revision's own sources. Gate 1 and Gate 2 should advance but remain Partial. Sub Prep remains capped at 2026-2027.
+F103 commit 61e3d797 adds the Qt-free single-event delete boundary. Independent focused verification passed 3/3 CTests; the seeded baseline/current repository fixture matched target removal, sibling and unrelated row preservation, row count 2, and unchanged sqlite_sequence. This is repository parity only. Gate 1 and Gate 2 advance but remain Partial; the workspace-create criterion and audited direct src/next isolation remain Satisfied. Strict transitive ApplicationServices-to-DataService reads remain unresolved.
+
+F104 is selected to add an app-less Calendar delete-all use case, route the availability guard and confirmed reset operation through it, and compare seeded delete-all repository behavior against baseline. Phase 2 remains In Progress with exit Open. Sub Prep covers January 1 of the reference year through December 31 of the following year; 2026-2027 is illustrative, not fixed.
