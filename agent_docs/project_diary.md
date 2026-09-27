@@ -1132,3 +1132,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar repeat planning - 2026-09-27
 
 - Preserve monthly recurrence by advancing from the previous occurrence and clamping to that month's last day (Jan 31 → Feb 28/29 → Mar 28/29). Treat the until date as an inclusive occurrence-start cutoff, preserve the seed's fixed day duration and fields, clear per-occurrence IDs, and reject plans outside supported date or count bounds in the Qt-free Application policy.
+
+## Phase 2 synthetic rollback differential - 2026-09-27
+
+- For cross-revision database rollback evidence, execute the same deterministic plan and failure injection against each revision's own repository and schema sources. Normalize the failure stage and affected persisted state; omit backend-specific error text. State exactly which failure path was exercised, since one synthetic rollback case does not establish workbook parity or behavior for other failure stages.
