@@ -6645,3 +6645,56 @@ own repository source closure. This is repository parity only, with no UI or
 historical-workbook claim; F108 advances Gate 2 while it remains Partial. Sub
 Prep remains bounded to January 1 of the reference date's year through
 December 31 of the following year at most; 2026-2027 is illustrative.
+
+## Verified F108 Calendar repeat-series suffix-delete repository parity - commit `d99b226e19917f3c855a0c49fa7891c537c4415d`
+
+F108 commit `d99b226e19917f3c855a0c49fa7891c537c4415d` (tree
+`e69e6b09fdc46e5be34bcbe4140645b2763001d1`) changes only
+`tests/calendar_event_repository_tests.cpp`. It verifies repeat-series suffix
+deletion against baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` (tree
+`03338fb728365d20502adddcab161b27a7933948`).
+
+Fresh isolated Git archives ran the focused
+`ClassMngrCalendarEventRepositoryTests` CTest successfully (1/1) on current.
+The Debug, `BUILD_TESTING=ON` environment used CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51 x64, and Qt 6.12.0. The narrow harness compiled each revision's own
+`calendar_event_repository.cpp`, `sql_query_utils.cpp`,
+`database_transaction.cpp`, and headers against an identical seeded five-row
+database and request. Normalized outputs were byte-identical, with SHA-256
+`FEC97B681F9D52E7C623AA14E245F3D4BB70FB6315425148632C0E905CC76E08`.
+
+Both revisions removed the selected and following series-1 rows and preserved
+the earlier occurrence, other series, and standalone event in all fields. The
+row count changed from five to three; `sqlite_sequence` remained five. This is
+synthetic repository state-transition parity only. No full baseline suite ran;
+no UI or historical-workbook parity is established.
+
+### Cumulative exit-gate status after F108
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F107 adds the Calendar event-by-ID query; broader Application behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F108 adds synthetic repeat-series suffix-delete state-transition parity; broader parity remains open. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook provenance remains a tracked risk, not a literal exit
+criterion. Broader Calendar UI/contracts, generic settings persistence,
+remaining feature-service migrations, document-service migration, and live
+MainWindow projection-failure/retranslation integration remain open. Sub Prep
+is bounded to January 1 of the reference date's year through December 31 of
+the following year, at most; 2026-2027 is illustrative.
+
+### Next selected bounded slice (F109)
+
+Add deterministic seeded repeat-series batch-creation parity in
+`tests/calendar_event_repository_tests.cpp`. Use the same explicit occurrence
+facts against baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current
+HEAD, compiling each revision's own repository/schema/source closure. Compare
+returned IDs in occurrence order, full persisted event rows and order across
+all fields, and the repeat-series ID; preserve a seeded unrelated row and
+compare the final count and `sqlite_sequence`. Label this synthetic repository
+batch parity. Existing Application planner and Platform tests cover current
+planning and adapter behavior; this slice establishes no UI or
+historical-workbook evidence.

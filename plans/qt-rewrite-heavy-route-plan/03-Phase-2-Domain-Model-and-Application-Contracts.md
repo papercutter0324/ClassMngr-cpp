@@ -10,15 +10,14 @@
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F107 is verified at commit `dbdcd721bd68bcaa30191bc93e7576de590fb650`: Calendar event activation now
-  uses the app-less by-ID query; Platform converts the typed ID to the legacy
-  positive integer. The two focused CTests passed 2/2; the UI failure path was
-  verified by Tester source inspection, not directly asserted by those tests.
-  F108 is selected for repeat-series suffix-delete repository state parity.
-  Gates 1 and 2 remain Partial; workspace create and audited direct `src/next`
-  isolation are Satisfied; strict transitive ApplicationServices-to-DataService
-  read isolation remains unresolved. Exit remains Open. Historical production-
-  workbook provenance is a tracked risk, not a separate literal criterion.
+- Current note: F109 is verified at commit `26d604fb` against current
+  production revision `d99b226e19917f3c855a0c49fa7891c537c4415d` and baseline
+  `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; F110 is selected. Gates 1 and 2
+  remain Partial; workspace create and audited direct `src/next` isolation are
+  Satisfied. Strict transitive ApplicationServices-to-DataService read
+  isolation remains unresolved. Exit remains Open. Historical
+  production-workbook provenance is a tracked risk, not a literal exit
+  criterion.
   Sub Prep remains January 1 of the reference date's year through December 31
   of the following year at most; 2026-2027 is illustrative.
 
@@ -167,56 +166,53 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F107)
+## Latest verified progress (F109)
 
-Commit `dbdcd721bd68bcaa30191bc93e7576de590fb650` (`Phase2 - route Calendar event lookup through Application`)
-routes `CalendarPage::handleCalendarEventActivated` through the Qt-free
-`CalendarEventByIdQueryUseCase` and typed query port. Application rejects blank,
-whitespace-only, and over-limit IDs without a port call, forwards valid IDs
-once, and returns success or structured failure. Platform converts the typed
-ID to the legacy positive integer and preserves existing service lookup and
-error mapping. On lookup failure the UI returns before opening the dialog.
-F107 changes no Calendar range-worker/display behavior or Sub Prep
-implementation, and adds no parity claim.
+Commit `26d604fb` (`Phase2 - add repeat-series creation parity fixture`) adds
+146 lines only to `tests/calendar_event_repository_tests.cpp`. It compares
+current production revision `d99b226e19917f3c855a0c49fa7891c537c4415d` with
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`.
 
-Fresh Ninja/MSVC VS 2026 x64 / Qt 6.12 Debug verification built
-`ClassMngrNextApplicationCalendarEventTests`,
-`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
-`ClassMngr`. Only the two focused CTests ran; both passed (2/2). They cover
-exact forwarding, success/failure propagation, invalid-ID rejection, and the
-exact length limit. They do not directly assert the UI-level failure/dialog
-behavior; Tester verified its return-before-open path by source inspection.
-`git diff --check` passed; no full suite ran. Configure reported unrelated
-object-path length warnings, and all requested targets built.
+Tester archived the current production tree and overlaid only the changed test
+file; the focused CTest passed 1/1 and the direct test passed. A separate
+harness compiled each revision's own repository, schema manager, transaction,
+SQL helpers, headers, and CalendarEvent model with the same seed and three
+explicit events. Returned IDs `[2,3,4]`, all persisted columns, the unrelated
+event, final count, and `sqlite_sequence` value 4 matched. Normalized output
+SHA-256: `DB5EC63C24300360F3639131C501D9AC65A9867942D5A14CCCBA3BAAD7420E59`.
+This establishes synthetic repository state-transition parity only; no UI or
+historical-workbook parity is claimed.
 
-### Cumulative exit-gate status after F107
+### Cumulative exit-gate status after F109
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | F107 adds the Calendar event-by-ID query; broader behavior remains incomplete. |
-| Baseline parity (Gate 2) | Partial | F107 adds no parity evidence; broader repository and behavior parity remains open. |
+| App-less Domain/Application behavior (Gate 1) | Partial | F109 adds no Application behavior; broader app-less behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F109 adds synthetic repeat-series creation state-transition parity; broader parity remains open. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
 
 Phase 2 remains In Progress with its exit gate Open. Historical
-production-workbook provenance remains a tracked risk, not a separate written
-exit criterion. Broader Calendar UI/contracts, generic settings persistence,
+production-workbook provenance remains a tracked risk, not a literal exit
+criterion. Broader Calendar UI/contracts, generic settings persistence,
 remaining feature-service migrations, document-service migration, and live
 MainWindow projection-failure/retranslation integration remain open. Sub Prep
 is bounded to January 1 of the reference date's year through December 31 of
 the following year, at most; 2026-2027 is illustrative.
 
-### Next selected bounded slice (F108)
+### Next selected bounded slice (F110)
 
-Add seeded repository state-transition parity for repeat-series suffix
-deletion. Strengthen the fixture beyond title-only assertions: pin every full
-row before and after; preserve earlier occurrences in the same series plus
-overlapping other-series and standalone rows; assert removal of the selected
-and following occurrences, the final row count, and unchanged `sqlite_sequence`.
-Run the identical fixture against baseline and current revisions, compiling
-each revision's own repository source closure. This is repository state-
-transition parity only; make no UI or historical-workbook parity claim.
-F108 advances Gate 2, which remains Partial; Gate 1 remains Partial. The
-workspace-create and audited direct `src/next` isolation findings remain
-Satisfied, strict transitive ApplicationServices-to-DataService read
-isolation remains unresolved, and Phase 2 exit remains Open.
+Move per-event Calendar visibility composition into a Qt-free Application
+predicate used by both `CalendarEventModel` and the upcoming-events filter.
+Keep Qt text/campus normalization and preference/directory loading at the
+feature boundary; the upcoming-events active-event-type filter remains before
+the predicate. Preserve start-term hiding before show-all, and hide only
+start-term aliases whose effective type is `Other`. Show-all bypasses only the
+campus check. Missing current/known campus metadata or no recognized campus
+token remains visible; a known non-current token hides, while a current token
+allows the event, including mixed current/other tokens. Preserve event order;
+`event.campusId` remains unused. Keep existing component policies and tests.
+Add an app-less composed matrix in
+`tests/next_application_calendar_event_tests.cpp`, register the Application
+header in `cmake/next.cmake`, and build `CalendarEventModel` and `ClassMngr` to
+verify both callers.

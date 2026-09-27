@@ -1178,3 +1178,11 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar event-by-ID query - 2026-09-28
 
 - Keep the app-less lookup request bounded and typed, with exact identifier forwarding and structured result propagation. Retain legacy numeric conversion and service/error handling in Platform; verify UI failure behavior separately from the Qt-free Application and Platform tests. The Sub Prep date window remains January 1 of the reference year through December 31 of the next year at most.
+
+## F108 - compare repository state, including retained sequence state
+
+A delete-path parity fixture should compare the complete ordered surviving rows and the database sequence alongside removed rows and the final count. Deleting selected events can leave `sqlite_sequence` unchanged; pin that behavior rather than assuming it tracks row count. Build both sides from each revision's own repository source closure and identical seed/request, then limit the claim to that repository transition.
+
+## F109 - make baseline inputs independent of new planners
+
+For repository parity of generated records, pass identical explicit facts to each revision's own repository implementation. Do not let a current-only Application planner manufacture the baseline input. Compare returned IDs in order, every persisted column, seeded unrelated rows, row count, and `sqlite_sequence`; label the result as repository-level parity.
