@@ -9,6 +9,8 @@
 #include "next/application/calendar_event_start_of_term_policy.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_create_use_case.h"
+#include "next/application/calendar_event_series_delete_port.h"
+#include "next/application/calendar_event_series_delete_use_case.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_edit_plan.h"
 
@@ -272,6 +274,25 @@ public:
     }
 };
 
+class FakeCalendarEventSeriesDeletePort final
+    : public CalendarEventSeriesDeletePort
+{
+public:
+    int deleteCalls = 0;
+    std::optional<CalendarEventSeriesDeleteRequest> receivedRequest;
+    CalendarEventSeriesDeleteResult response =
+        CalendarEventSeriesDeleteResult::success();
+
+    CalendarEventSeriesDeleteResult deleteRepeatSeriesFromDate(
+        const CalendarEventSeriesDeleteRequest& request
+        ) override
+    {
+        ++deleteCalls;
+        receivedRequest = request;
+        return response;
+    }
+};
+
 class FakeCalendarEventSavePort final : public CalendarEventSavePort
 {
 public:
@@ -333,6 +354,10 @@ private slots:
     void repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce();
     void repeatSeriesCreateUseCasePropagatesPortFailure();
     void repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort();
+    void seriesDeleteRequestValidationIsCanonicalAndQtFree();
+    void repeatSeriesDeleteUseCaseForwardsRequestAndResultOnce();
+    void repeatSeriesDeleteUseCasePropagatesPortFailure();
+    void repeatSeriesDeleteUseCaseRejectsInvalidRequestWithoutCallingPort();
     void seriesEditRequestBoundsAndDatesRemainTyped();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
@@ -2221,6 +2246,145 @@ repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort()
             )
         );
     QVERIFY(!result.error().recoverable);
+}
+
+void NextApplicationCalendarEventTests::
+seriesDeleteRequestValidationIsCanonicalAndQtFree()
+{
+    using ValidationResult = decltype(
+        std::declval<const CalendarEventSeriesDeleteRequest&>().validate()
+        );
+    static_assert(std::is_same_v<ValidationResult, Result<void>>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesDeleteRequest>().repeatSeriesId),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesDeleteRequest>().startDate),
+        std::string
+        >);
+
+    const CalendarEventSeriesDeleteRequest leapDayRequest{
+        "series-delete-leap-day",
+        "2024-02-29"
+    };
+    QVERIFY(leapDayRequest.validate());
+    const CalendarEventSeriesDeleteRequest maximumIdRequest{
+        std::string(kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength, 'r'),
+        "2026-12-08"
+    };
+    QVERIFY(maximumIdRequest.validate());
+
+    const std::string diagnostic =
+        "Calendar repeat-series delete request must contain a non-blank "
+        "bounded series identifier and a valid ISO start date.";
+    const std::vector<CalendarEventSeriesDeleteRequest> invalidRequests{
+        {" \t", "2026-12-08"},
+        {
+            std::string(
+                kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength + 1,
+                'r'
+                ),
+            "2026-12-08"
+        },
+        {"series-delete-malformed-date", "2026-2-08"},
+        {"series-delete-impossible-date", "2026-02-30"}
+    };
+    for (const CalendarEventSeriesDeleteRequest& request : invalidRequests)
+    {
+        const Result<void> validation = request.validate();
+        QVERIFY(!validation);
+        QCOMPARE(validation.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(validation.error().message, diagnostic);
+        QVERIFY(!validation.error().recoverable);
+    }
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesDeleteUseCaseForwardsRequestAndResultOnce()
+{
+    using UseCaseResult = decltype(
+        CalendarEventSeriesDeleteUseCase::execute(
+            std::declval<CalendarEventSeriesDeletePort&>(),
+            std::declval<const CalendarEventSeriesDeleteRequest&>()
+            )
+        );
+    static_assert(std::is_same_v<UseCaseResult, Result<void>>);
+
+    const CalendarEventSeriesDeleteRequest request{
+        " \tseries-delete-original-bytes \n",
+        "2024-02-29"
+    };
+    FakeCalendarEventSeriesDeletePort port;
+    const CalendarEventSeriesDeleteResult result =
+        CalendarEventSeriesDeleteUseCase::execute(port, request);
+
+    QVERIFY(result);
+    QCOMPARE(port.deleteCalls, 1);
+    QVERIFY(port.receivedRequest.has_value());
+    QVERIFY(*port.receivedRequest == request);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesDeleteUseCasePropagatesPortFailure()
+{
+    FakeCalendarEventSeriesDeletePort port;
+    port.response = CalendarEventSeriesDeleteResult::failure({
+        .code = ErrorCode::Conflict,
+        .message = "The selected repeat-series suffix could not be deleted.",
+        .recoverable = true
+    });
+
+    const CalendarEventSeriesDeleteResult result =
+        CalendarEventSeriesDeleteUseCase::execute(
+            port,
+            {"series-delete-failure", "2026-12-08"}
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(port.deleteCalls, 1);
+    QVERIFY(port.receivedRequest.has_value());
+    QCOMPARE(result.error().code, ErrorCode::Conflict);
+    QCOMPARE(
+        result.error().message,
+        std::string("The selected repeat-series suffix could not be deleted.")
+        );
+    QVERIFY(result.error().recoverable);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesDeleteUseCaseRejectsInvalidRequestWithoutCallingPort()
+{
+    FakeCalendarEventSeriesDeletePort port;
+    const std::string diagnostic =
+        "Calendar repeat-series delete request must contain a non-blank "
+        "bounded series identifier and a valid ISO start date.";
+    const std::vector<CalendarEventSeriesDeleteRequest> invalidRequests{
+        {"", "2026-12-08"},
+        {" \t", "2026-12-08"},
+        {
+            std::string(
+                kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength + 1,
+                'r'
+                ),
+            "2026-12-08"
+        },
+        {"series-delete-malformed-date", "2026/12/08"},
+        {"series-delete-impossible-date", "2026-04-31"}
+    };
+
+    for (const CalendarEventSeriesDeleteRequest& request : invalidRequests)
+    {
+        const CalendarEventSeriesDeleteResult result =
+            CalendarEventSeriesDeleteUseCase::execute(port, request);
+
+        QVERIFY(!result);
+        QCOMPARE(port.deleteCalls, 0);
+        QVERIFY(!port.receivedRequest.has_value());
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(result.error().message, diagnostic);
+        QVERIFY(!result.error().recoverable);
+    }
 }
 
 void NextApplicationCalendarEventTests::

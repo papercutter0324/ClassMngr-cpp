@@ -8,7 +8,6 @@
 #include <QDate>
 #include <QString>
 
-#include <cctype>
 #include <exception>
 #include <string>
 #include <utility>
@@ -48,13 +47,12 @@ public:
         const Application::CalendarEventSeriesDeleteRequest& request
         ) override
     {
-        if (!validRequest(request))
+        const Domain::Result<void> validation = request.validate();
+        if (!validation)
         {
             return failure(
-                Domain::ErrorCode::InvalidInput,
-                "Calendar repeat-series delete request must contain a "
-                "non-blank bounded series identifier and a valid ISO start "
-                "date."
+                validation.error().code,
+                validation.error().message
                 );
         }
 
@@ -122,61 +120,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static bool validRequest(
-        const Application::CalendarEventSeriesDeleteRequest& request
-        ) noexcept
-    {
-        if (request.repeatSeriesId.empty()
-            || request.repeatSeriesId.size()
-                > Application::kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength
-            || isBlank(request.repeatSeriesId)
-            || request.startDate.size()
-                != Application::kCalendarEventSeriesDeleteIsoDateLength)
-        {
-            return false;
-        }
-
-        for (std::size_t index = 0; index < request.startDate.size(); ++index)
-        {
-            const char character = request.startDate.at(index);
-            if ((index == 4 || index == 7) && character == '-')
-            {
-                continue;
-            }
-
-            if (character < '0' || character > '9')
-            {
-                return false;
-            }
-        }
-
-        const QDate date = QDate::fromString(
-            QString::fromUtf8(
-                request.startDate.data(),
-                static_cast<qsizetype>(request.startDate.size())
-                ),
-            Qt::ISODate
-            );
-        return date.isValid()
-            && date.toString(Qt::ISODate).toUtf8().toStdString()
-                == request.startDate;
-    }
-
-    [[nodiscard]] static bool isBlank(
-        const std::string& value
-        ) noexcept
-    {
-        for (const unsigned char character : value)
-        {
-            if (std::isspace(character) == 0)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     [[nodiscard]] static Application::CalendarEventSeriesDeleteResult
     failure(
         const Domain::ErrorCode code,

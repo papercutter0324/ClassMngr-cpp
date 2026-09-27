@@ -62,6 +62,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_series_edit_port.h
     src/next/application/calendar_event_series_edit_plan.h
     src/next/application/calendar_event_series_delete_port.h
+    src/next/application/calendar_event_series_delete_use_case.h
     src/next/application/calendar_event_display_preferences.h
     src/next/application/calendar_event_type_color_preferences.h
     src/next/application/custom_color_palette_preferences.h

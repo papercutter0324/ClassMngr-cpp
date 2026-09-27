@@ -1909,17 +1909,31 @@ deletesValidRepeatSeriesSuffix()
 void NextPlatformApplicationServicesCalendarEventPortTests::
 reportsInvalidRepeatSeriesDeleteRequestStructurally()
 {
+    const std::string diagnostic =
+        "Calendar repeat-series delete request must contain a non-blank "
+        "bounded series identifier and a valid ISO start date.";
+    ApplicationServices unavailableServices;
+    ApplicationServicesCalendarEventSeriesDeletePort unavailablePort(
+        unavailableServices
+        );
+    const auto invalidBeforeServiceLookup =
+        unavailablePort.deleteRepeatSeriesFromDate({
+            "   ",
+            "2026-12-08"
+        });
+    verifyFailure(invalidBeforeServiceLookup, ErrorCode::InvalidInput);
+    QCOMPARE(invalidBeforeServiceLookup.error().message, diagnostic);
+
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
 
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
-    verifyFailure(
-        port.deleteRepeatSeriesFromDate({
-            "   ",
-            "2026-12-08"
-        }),
-        ErrorCode::InvalidInput
-        );
+    const auto blankSeriesId = port.deleteRepeatSeriesFromDate({
+        "   ",
+        "2026-12-08"
+    });
+    verifyFailure(blankSeriesId, ErrorCode::InvalidInput);
+    QCOMPARE(blankSeriesId.error().message, diagnostic);
     verifyFailure(
         port.deleteRepeatSeriesFromDate({
             "series-delete-invalid",
@@ -1934,6 +1948,13 @@ reportsInvalidRepeatSeriesDeleteRequestStructurally()
                 'r'
                 ),
             "2026-12-08"
+        }),
+        ErrorCode::InvalidInput
+        );
+    verifyFailure(
+        port.deleteRepeatSeriesFromDate({
+            "series-delete-impossible-date",
+            "2026-04-31"
         }),
         ErrorCode::InvalidInput
         );
