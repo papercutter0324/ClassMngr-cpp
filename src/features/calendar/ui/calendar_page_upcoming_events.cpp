@@ -5,7 +5,7 @@
 #include "core/fontmanager.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "domain/models/calendar_event.h"
-#include "next/application/calendar_event_start_of_term_policy.h"
+#include "next/application/calendar_event_visibility_policy.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
@@ -41,8 +41,8 @@ using CalendarEventProjection =
     ClassMngr::Next::Application::CalendarEventProjection;
 using CalendarEventSummary =
     ClassMngr::Next::Application::CalendarEventSummary;
-using CalendarEventStartOfTermPolicy =
-    ClassMngr::Next::Application::CalendarEventStartOfTermPolicy;
+using CalendarEventVisibilityPolicy =
+    ClassMngr::Next::Application::CalendarEventVisibilityPolicy;
 
 constexpr int UpcomingEventsNext30Days = 30;
 constexpr int UpcomingEventColumnSpacing = 16;
@@ -1249,20 +1249,18 @@ bool CalendarPage::calendarEventVisible(
     const CalendarEventDisplayOptions& options
     ) const
 {
-    if (CalendarEventStartOfTermPolicy::shouldHideEvent(
-                event.title,
-                event.eventType,
-                options.hideStartOfTermEvents
-                ))
-    {
-        return false;
-    }
-
-    return CalendarEventCampusFilter::eventMatchesCampus(
+    return CalendarEventVisibilityPolicy::shouldShowEvent(
         event,
-        options.currentCampusCodes,
-        options.allCampusCodes,
-        options.showAllCampuses
+        options.hideStartOfTermEvents,
+        [&]()
+        {
+            return CalendarEventCampusFilter::eventMatchesCampus(
+                event,
+                options.currentCampusCodes,
+                options.allCampusCodes,
+                options.showAllCampuses
+                );
+        }
         );
 }
 QWidget* CalendarPage::createUpcomingEventRow(

@@ -12,6 +12,7 @@
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_save_use_case.h"
 #include "next/application/calendar_event_start_of_term_policy.h"
+#include "next/application/calendar_event_visibility_policy.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_create_use_case.h"
 #include "next/application/calendar_event_series_delete_port.h"
@@ -464,6 +465,7 @@ private slots:
     void contractHasNoMutablePointerOrRichRecordSurface();
     void campusVisibilityPolicyMatchesNormalizedLiteralCampusTokens();
     void startOfTermPolicyMatchesCalendarClassificationAndHideSwitch();
+    void calendarEventVisibilityPolicyComposesStartTermAndCampusRules();
 };
 
 void NextApplicationCalendarEventTests::valid96ScaleEventsRetainTypedMetadataAndBounds()
@@ -3241,6 +3243,170 @@ startOfTermPolicyMatchesCalendarClassificationAndHideSwitch()
         QVERIFY(!Policy::shouldHideEvent(nonmatch, "Other", true));
     }
     QVERIFY(!Policy::shouldHideEvent("staff meeting", "Meeting", true));
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventVisibilityPolicyComposesStartTermAndCampusRules()
+{
+    using CampusPolicy = CalendarEventCampusVisibilityPolicy;
+    using VisibilityPolicy = CalendarEventVisibilityPolicy;
+
+    struct Case final
+    {
+        std::string title;
+        std::string eventType;
+        std::vector<CalendarEventCampusCode> currentCodes;
+        std::vector<CalendarEventCampusCode> knownCodes;
+        bool hideStartOfTermEvents = false;
+        bool showAllCampuses = false;
+        bool expectedVisible = false;
+    };
+
+    const std::vector<Case> cases{
+        {
+            "new semester",
+            "Other",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SEMESTER"}),
+            true,
+            true,
+            false
+        },
+        {
+            "new semester",
+            "Unrecognized type",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SEMESTER"}),
+            true,
+            true,
+            false
+        },
+        {
+            "new semester",
+            "Other",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SEMESTER"}),
+            true,
+            false,
+            false
+        },
+        {
+            "new semester",
+            "Other",
+            campusCodes({"SEMESTER"}),
+            campusCodes({"BDG", "SEMESTER"}),
+            false,
+            false,
+            true
+        },
+        {
+            "meeting (snu)",
+            "Meeting",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SNU"}),
+            false,
+            false,
+            false
+        },
+        {
+            "meeting (snu) (bdg)",
+            "Meeting",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SNU"}),
+            false,
+            false,
+            true
+        },
+        {
+            "meeting (snu)",
+            "Meeting",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SNU"}),
+            false,
+            true,
+            true
+        },
+        {
+            "meeting (xyz)",
+            "Meeting",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SNU"}),
+            false,
+            false,
+            true
+        },
+        {
+            "meeting (snu)",
+            "Meeting",
+            {},
+            campusCodes({"BDG", "SNU"}),
+            false,
+            false,
+            true
+        },
+        {
+            "meeting (snu)",
+            "Meeting",
+            campusCodes({"BDG"}),
+            {},
+            false,
+            false,
+            true
+        },
+        {
+            "new semester",
+            "Vacation",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SEMESTER"}),
+            true,
+            false,
+            false
+        },
+        {
+            "new semester",
+            "Vacation",
+            campusCodes({"BDG"}),
+            campusCodes({"BDG", "SEMESTER"}),
+            true,
+            true,
+            true
+        }
+    };
+
+    for (const Case& testCase : cases)
+    {
+        CalendarEventSummary event = calendarEventSummary("visibility-case");
+        event.title = testCase.title;
+        event.eventType = testCase.eventType;
+
+        // The lowercase title models the feature adapter's preprocessed
+        // title; normalization remains outside the Qt-free policy.
+        bool campusCheckCalled = false;
+        const bool visible = VisibilityPolicy::shouldShowEvent(
+            event,
+            testCase.hideStartOfTermEvents,
+            [&]()
+            {
+                campusCheckCalled = true;
+                return CampusPolicy::eventMatchesCampus(
+                    testCase.title,
+                    testCase.currentCodes,
+                    testCase.knownCodes,
+                    testCase.showAllCampuses
+                    );
+            }
+            );
+
+        QCOMPARE(visible, testCase.expectedVisible);
+        QCOMPARE(
+            campusCheckCalled,
+            !CalendarEventStartOfTermPolicy::shouldHideEvent(
+                event.title,
+                event.eventType,
+                testCase.hideStartOfTermEvents
+                )
+            );
+    }
 }
 
 QTEST_APPLESS_MAIN(NextApplicationCalendarEventTests)

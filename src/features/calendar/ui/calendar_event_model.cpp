@@ -2,7 +2,7 @@
 
 #include "calendar_event_cache.h"
 #include "features/calendar/calendar_event_campus_filter.h"
-#include "next/application/calendar_event_start_of_term_policy.h"
+#include "next/application/calendar_event_visibility_policy.h"
 
 #include <QDateTime>
 #include <QVariantMap>
@@ -13,8 +13,8 @@ namespace
 {
 using CalendarEventSummary =
     ClassMngr::Next::Application::CalendarEventSummary;
-using CalendarEventStartOfTermPolicy =
-    ClassMngr::Next::Application::CalendarEventStartOfTermPolicy;
+using CalendarEventVisibilityPolicy =
+    ClassMngr::Next::Application::CalendarEventVisibilityPolicy;
 
 QString projectionText(
     const std::string& value
@@ -96,25 +96,19 @@ QVariantList CalendarEventModel::eventsForDate(
 
     for (const CalendarEventSummary& event : projection.events())
     {
-        if (
-            CalendarEventStartOfTermPolicy::shouldHideEvent(
-                event.title,
-                event.eventType,
-                m_hideStartOfTermEvents
-                )
-            )
-        {
-            continue;
-        }
-
-        if (
-            !CalendarEventCampusFilter::eventMatchesCampus(
+        if (!CalendarEventVisibilityPolicy::shouldShowEvent(
                 event,
-                m_currentCampusCodes,
-                m_allCampusCodes,
-                m_showAllCampuses
-                )
-            )
+                m_hideStartOfTermEvents,
+                [&]()
+                {
+                    return CalendarEventCampusFilter::eventMatchesCampus(
+                        event,
+                        m_currentCampusCodes,
+                        m_allCampusCodes,
+                        m_showAllCampuses
+                        );
+                }
+                ))
         {
             continue;
         }
