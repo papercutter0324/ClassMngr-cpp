@@ -10,15 +10,15 @@
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F111 is verified at commit `3152ce36`; non-null-session
-  `SettingsService` operations no longer fall back to DataService. Transitive
-  isolation has advanced only for this service; `isAvailable()` can still be
-  true when a separate DataService is open. F112 is selected for
-  session-authoritative CalendarService content reads. Gates 1 and 2 remain
-  Partial; workspace create and audited direct `src/next` isolation are
-  Satisfied. Strict transitive ApplicationServices-to-DataService isolation
-  remains unresolved. Exit remains Open. Historical production-workbook
-  provenance is a tracked risk, not a literal exit criterion.
+- Current note: F112 is verified at commit `677f2451`; the six CalendarService
+  content reads now use a non-null session without DataService fallback, while
+  sessionless legacy reads remain. Broader Calendar UI/contracts remain open;
+  F112 isolates CalendarService reads only. F113 is selected for Sub Prep print and
+  roster-output read isolation. Gates 1 and 2 remain Partial; workspace create
+  and audited direct `src/next` isolation are Satisfied. Strict transitive
+  ApplicationServices-to-DataService isolation remains unresolved. Exit
+  remains Open. Historical production-workbook provenance is a tracked risk,
+  not a literal exit criterion.
   Sub Prep remains January 1 of the reference date's year through December 31
   of the following year at most; 2026-2027 is illustrative.
 
@@ -167,59 +167,47 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F111)
+## Latest verified progress (F112)
 
-Commit `3152ce36` (`Phase2 - isolate session-bound settings reads`) changes
-only `src/app/services/feature_services.cpp` and
-`tests/data_service_lifecycle_tests.cpp`. An independent fresh archive of
-base `5653bf8c032ed553fc60324444428135e5f1b8dc` overlaid only those two paths.
+Commit `677f2451` independently passed verification. All six CalendarService
+content reads—`eventsForDate`, `eventsInRange`,
+`eventDateIntervalsInRange`, `upcomingEvents`, `event`, and
+`repeatSeriesFromDate`—are now authoritative to a non-null session. If its
+calendar repository is unavailable, the read fails/unavailable without a
+DataService fallback. All six DataService-only behaviors remain for
+sessionless legacy construction; writes and deletes are unchanged. This closes
+these CalendarService read fallbacks only.
 
-`ClassMngrDataServiceLifecycleTests` and
-`ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`
-passed focused CTest 2/2 on Windows x64 Debug with CMake 4.4.2, Ninja 1.13.2,
-MSVC 19.51, and Qt 6.12. A non-null bound `SettingsService` session now fails
-`load`, `save`, and `saveAll` without a repository instead of falling back to
-DataService; the sessionless DataService-only path retains read/write behavior.
-`loadOrDefault` still routes through `load`. The closed-session/separate-open-
-DataService test confirms no content mutation, and the normal preferences
-adapter test passed.
-
-`SettingsService::isAvailable()` can still return true when the separate
-DataService is open, even though bound-session operations fail; availability
-does not establish read isolation. This slice covers SettingsService only;
-Calendar, Teacher, Class, Schedule, Roster, and Sub Prep fallbacks remain. No
-full suite or baseline parity run.
-
-### Cumulative exit-gate status after F111
+### Cumulative exit-gate status after F112
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
 | App-less Domain/Application behavior (Gate 1) | Partial | F110 adds the composed Calendar visibility predicate; broader app-less behavior remains incomplete. |
 | Baseline parity (Gate 2) | Partial | F109 adds synthetic repeat-series creation state-transition parity; broader parity remains open. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
-| v2 dependency isolation | Partial transitive progress | Direct audited `src/next` isolation remains Satisfied; F111 isolates SettingsService operations for non-null sessions, but other service fallbacks and the strict transitive edge remain unresolved. |
+| v2 dependency isolation | Partial transitive progress | Direct audited `src/next` isolation remains Satisfied; F111 and F112 isolate targeted SettingsService and CalendarService reads, but other service fallbacks and the strict transitive edge remain unresolved. |
 
 Phase 2 remains In Progress with its exit gate Open. Historical
 production-workbook provenance remains a tracked risk, not a literal exit
-criterion. Broader Calendar UI/contracts, CalendarService isolation,
-remaining feature-service migrations, document-service migration, and live
+criterion. The `SettingsService::isAvailable()` limitation from F111 remains:
+it can return true when a separate DataService is open. Other feature-service
+fallbacks, Sub Prep output reads, document-service migration, and live
 MainWindow projection-failure/retranslation integration remain open. Sub Prep
 is bounded to January 1 of the reference date's year through December 31 of
 the following year, at most; 2026-2027 is illustrative.
 
-### Next selected bounded slice (F112)
+### Next selected bounded slice (F113)
 
-In `src/app/services/feature_services.cpp`, make these six `CalendarService`
-content reads authoritative to a non-null session: `eventsForDate`,
-`eventsInRange`, `eventDateIntervalsInRange`, `upcomingEvents`, `event`, and
-`repeatSeriesFromDate`. If that session lacks the calendar repository, fail or
-report unavailable without reading DataService. Preserve all six DataService-
-only behaviors for sessionless legacy construction; leave writes and deletes
-unchanged.
+Isolate Sub Prep's operation-scoped print-source and roster-output reads from
+DataService when called with a non-null session. A missing required repository
+must fail/unavailable without a fallback read; retain DataService-only
+behavior for sessionless legacy construction. Preserve the existing selected
+class/day/mode scope, bounded print projection, requested roster columns, and
+row/cell/text limits.
 
-Add one lifecycle regression with a closed bound `DatabaseSession` and a
-separately open, seeded DataService: none of the six dual-bound reads may
-expose its event data, while legacy-only `CalendarService` reads still do.
-Retain the focused normal ApplicationServices Calendar adapter CTest. This
-slice does not close other service-family fallbacks or establish global
-isolation.
+Add lifecycle coverage with a closed bound `DatabaseSession` and a separately
+open, seeded DataService: neither source path may expose its seeded content,
+while legacy sessionless reads continue to work. Retain focused
+ApplicationServices print-source and roster-output adapter coverage. This is
+Sub Prep read isolation only; it does not close other service-family fallbacks
+or establish global isolation.

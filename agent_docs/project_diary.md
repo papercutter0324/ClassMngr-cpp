@@ -1194,3 +1194,7 @@ A Qt-free predicate can compose independent display policies while Qt adapters r
 ## F111 - distinguish session-bound from legacy-only service construction
 
 To prove a session-bound operation cannot fall back through a compatibility facade, bind it to a closed session while a separate DataService is open, then assert both the result and persisted state. Keep the sessionless compatibility construction tested separately. Report service availability state independently from content-read isolation when they use different ownership rules.
+
+## F112 - isolate the complete CalendarService read surface
+
+Exercise every CalendarService content-read method with a closed bound session and a separately open DataService, then repeat through the legacy-only constructor. Keep writes and deletes out of the read-isolation slice. If MSVC reports an invalid generated-file path in a fresh build, rerun from a short temporary path and report the retry evidence without asserting an unproven root cause.
