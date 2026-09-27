@@ -1120,3 +1120,7 @@ Prep's queried interval to the current and following calendar years at most.
 
 - Pin generated workbook bytes and compare semantic output on baseline/current when extending parity from repository plans through validation, explicit review, and apply. A successful parse-to-apply case strengthens one path only; rejection parity and historical production-workbook evidence remain separate gaps.
 - After a parity-only slice, select bounded app-less behavior to keep Gate 1 progress moving. The Calendar start-of-term predicate is a compact candidate when its normalization, event-type fallback, option semantics, and recognized phrases can be preserved and tested independently of Qt.
+
+## Phase 2 Qt-free Calendar text policy - 2026-09-27
+
+- When moving Qt text classification into a Qt-free policy, match the source framework's full whitespace behavior at the byte-decoding boundary. Qt 6.12 treats U+0085/NEL as whitespace; omitting it changed both title simplification and event-type trimming. A direct framework-versus-policy probe plus app-less regressions caught the mismatch before commit. For ASCII aliases, verify whether non-ASCII lowercase mappings can affect the exact target letters rather than carrying an unbounded Unicode-table dependency.

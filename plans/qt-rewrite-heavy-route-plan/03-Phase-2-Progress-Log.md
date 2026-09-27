@@ -5965,3 +5965,53 @@ baseline. The current full test source needs a narrow legacy harness because
 Partial, and Gate 1 remains Partial. Calendar start-of-term classification is
 a later Gate 1 candidate, not selected here. This is selected work, not
 implementation or test evidence. Sub Prep remains capped at 2026-2027.
+
+## Verified F92 Teacher Import generated-workbook baseline parity - commit `3f6ef73d`
+
+Commit `3f6ef73d64c81b8e6e5f6ee665dc85e9b976408e` changes only
+`tests/teacher_import_tests.cpp`. F92 pins baseline-present helper
+`testWorkbookData()` output: a source-generated XLSX of 3,422 bytes with SHA-256
+`9cdccb43d7fe5e5e1abb83630ede8b18e6dd2c4824dbb288dc81d60371496daa`. The test
+validates and parses those bytes, explicitly selects the sole Korean M1
+candidate, creates and applies an import plan, then checks the seeded results
+and preserved manual and unrelated values. The baseline/current semantic
+transcript SHA-256 matches at
+`095d595311aaee2444d67a893d45a2d0f97fe366c2a667f90bdd690205a2bdb4`.
+
+Fresh focused CTest passed 1/1. The test executable reported 21 passed, 0
+failed, 1 optional external-sample skip; the selected scenario's 3 assertions
+passed. This is source-generated synthetic workbook evidence, not parity with
+a historical production workbook. Invalid-date validation parity and
+repository rollback parity remained open.
+
+### Cumulative exit-gate status after F92
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F92 changes tests only and adds no app-less contract behavior; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F92 compares a valid baseline-present source-generated workbook flow through validation, parsing, review selection, plan creation, and apply. It does not establish historical production-workbook parity; invalid-date validation and repository rollback parity remain open. |
+| Workspace boundary | Satisfied | The formal documented WorkspaceGateway/WorkspaceCoordinator acceptance remains satisfied; F92 changes no workspace behavior. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Two post-F92 audits find audited `src/next` sources free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F92 changes tests only. |
+
+Gate 1 and Gate 2 remained Partial; the workspace boundary and audited
+`src/next` isolation remained Satisfied. Phase 2 remained In Progress with its
+exit gate Open. Broader calendar UI/contracts, generic settings persistence,
+remaining feature-service migrations, document-service migration,
+invalid-UTF-8 coverage, and live MainWindow projection-failure/retranslation
+integration remained open. Sub Prep remained capped at 2026-2027.
+
+Next selected bounded slice (2026-09-27): F93 extracts the duplicated
+start-of-term calendar-event classification used by `CalendarEventModel` and
+the `CalendarPage` upcoming-event filter into an app-less policy. Preserve the
+current rule: simplify and lowercase the title; normalize event type with
+unknown values mapped to `Other`; classify only `Other` events whose normalized
+title is exactly one of `new semester`, `start of term`, `term start`, and
+`term starts`; hide matches only when the hide preference is true. Acceptance:
+one policy owns classification; app-less tests cover normalization, all four
+exact titles, nonmatches, and both preference states, while both production
+consumers suppress matches only when hiding is enabled. Use
+`NextApplicationCalendarEventTests` in
+`tests/next_application_calendar_event_tests.cpp`. This adds bounded Gate 1
+evidence but leaves Gate 1 Partial and does not complete Phase 2. This is
+selected work, not implementation or test evidence. Sub Prep remains capped at
+2026-2027.
