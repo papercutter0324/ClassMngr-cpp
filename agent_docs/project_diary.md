@@ -1190,3 +1190,7 @@ For repository parity of generated records, pass identical explicit facts to eac
 ## F110 - keep per-event visibility composable and order-preserving
 
 A Qt-free predicate can compose independent display policies while Qt adapters retain preference loading and Unicode normalization. Keep list filtering at the caller so it can preserve cache order and avoid another materialized projection; verify both existing consumers still apply their separate prefilters and append visible rows in order.
+
+## F111 - distinguish session-bound from legacy-only service construction
+
+To prove a session-bound operation cannot fall back through a compatibility facade, bind it to a closed session while a separate DataService is open, then assert both the result and persisted state. Keep the sessionless compatibility construction tested separately. Report service availability state independently from content-read isolation when they use different ownership rules.

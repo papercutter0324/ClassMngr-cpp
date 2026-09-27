@@ -6749,3 +6749,55 @@ Add an app-less composed matrix in
 `tests/next_application_calendar_event_tests.cpp`, register the Application
 header in `cmake/next.cmake`, and build `CalendarEventModel` and `ClassMngr` to
 verify both callers.
+
+## Verified F110 Calendar event visibility policy - commit `2656ef9c`
+
+Commit `2656ef9c` (`Phase2 - add Calendar event visibility policy`) changes
+exactly five paths: new
+`src/next/application/calendar_event_visibility_policy.h`,
+`cmake/next.cmake`, `src/features/calendar/ui/calendar_event_model.cpp`,
+`src/features/calendar/ui/calendar_page_upcoming_events.cpp`, and
+`tests/next_application_calendar_event_tests.cpp`. An independent fresh
+archive of base `d59f0be4` overlaid only those five files.
+
+The build compiled `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrCalendarEventCacheTests`, and `ClassMngr`; focused CTest passed 2/2
+on Windows x64 Debug with Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0, and CMake
+4.4.2. A Qt-free app-less 12-case composition matrix pins start-term hide
+precedence (only aliases with effective type `Other` hide, and show-all does
+not bypass that rule), lazy campus checks, show-all bypassing campus filtering
+only, visibility with missing/unmatched metadata or no recognized campus
+token, hiding non-current-only tokens, and allowing current tokens including
+mixed current/other tokens. Both callers preserve input order; the upcoming-
+events active-type gate remains first, and Qt title/campus normalization
+remains at the feature boundary. The page translation unit compiled, but no
+dedicated CalendarPage visibility CTest asserted runtime page output. No full
+suite ran.
+
+### Cumulative exit-gate status after F110
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F110 adds a composed Calendar visibility predicate; broader app-less behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F109 adds synthetic repeat-series creation state-transition parity; broader parity remains open. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook provenance remains a tracked risk, not a literal exit
+criterion. Broader Calendar UI/contracts, generic settings persistence,
+remaining feature-service migrations, document-service migration, and live
+MainWindow projection-failure/retranslation integration remain open. Sub Prep
+is bounded to January 1 of the reference date's year through December 31 of
+the following year, at most; 2026-2027 is illustrative.
+
+### Next selected bounded slice (F111)
+
+Make a non-null-session `SettingsService` authoritative for `load`, `save`, and
+`saveAll`, with no DataService fallback, while preserving the legacy
+DataService-only constructor and behavior. Cover a non-null closed session
+alongside a separately open DataService (no fallback reads or writes), legacy
+DataService-only reads/writes, normal open `ApplicationServices` session
+preferences, and defaults/errors. Other feature-service fallback families
+remain open. This is partial strict-isolation progress, not a global audit
+pass.

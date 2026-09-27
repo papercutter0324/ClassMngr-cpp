@@ -1432,3 +1432,13 @@ F110 commit `2656ef9c` extracts Calendar's per-event visibility composition into
 F111 is selected: make non-null-session `SettingsService` operations authoritative for load/save/saveAll, while preserving DataService-only legacy construction. Verify that a closed bound session does not fall through to a separately open DataService, that the legacy-only constructor still reads/writes, and that normal ApplicationServices preferences still work. This removes the settings fallback from session-bound callers only; Calendar, Teacher, Class, Schedule, Roster, and other service-family fallbacks remain under audit.
 
 Gate 1 and Gate 2 remain Partial; the workspace-create boundary and audited direct `src/next` isolation remain Satisfied. Strict transitive `ApplicationServices`-to-`DataService` read isolation remains unresolved. Phase 2 exit remains Open. Sub Prep remains bounded to the reference date's year through December 31 of the following year at most.
+
+## Current Position - 2026-09-28 (F111 verified; F112 under mapping)
+
+F111 commit `3152ce36` makes a bound-session `SettingsService` authoritative for load/save/saveAll and preserves the sessionless DataService-only path. Fresh independent Windows x64 Debug verification overlaid only `feature_services.cpp` and `data_service_lifecycle_tests.cpp` on base `5653bf8c`; `ClassMngrDataServiceLifecycleTests` and `ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests` passed 2/2. The test used a closed bound session and separate open DataService, verified no fallback read/write or mutation, and verified legacy-only access still works. This reduces the settings-service transitive read edge only; other service families remain.
+
+The separate open-DataService test observes `SettingsService::isAvailable()` as true while bound-session operations fail. This reflects the existing availability check, which still considers DataService open state; it is recorded as an availability limitation, not a content-read path. No full suite or baseline parity run.
+
+F112 is under mapping: isolate CalendarService content reads used by Next Platform adapters (by-ID, range, date intervals, repeat series), retaining legacy DataService-only behavior. Scope and focused acceptance are pending the current call-site/test-seam review.
+
+Gate 1 and Gate 2 remain Partial; workspace create and audited direct `src/next` isolation remain Satisfied. Strict transitive `ApplicationServices`-to-`DataService` isolation remains unresolved. Phase 2 exit remains Open. Sub Prep remains bounded to the reference date's year through December 31 of the following year at most.
