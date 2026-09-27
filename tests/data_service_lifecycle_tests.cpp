@@ -227,6 +227,7 @@ private slots:
     void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
     void settingsServiceDoesNotFallBackFromClosedSession();
+    void calendarServiceDoesNotFallBackFromClosedSession();
     void closeAndSwitchReleaseEveryRepository();
     void schemaFailureClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
@@ -1415,6 +1416,101 @@ settingsServiceDoesNotFallBackFromClosedSession()
     QCOMPARE(
         legacyOnly.load(batchWriteKey)->toString(),
         QStringLiteral("legacy batch")
+    );
+}
+
+void DataServiceLifecycleTests::
+calendarServiceDoesNotFallBackFromClosedSession()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService legacyDataService;
+    QVERIFY(legacyDataService.openDatabase(
+        directory.filePath(QStringLiteral("legacy-calendar.db"))
+        ).has_value());
+
+    const QDate eventDate(2026, 10, 15);
+    const QString repeatSeriesId =
+        QStringLiteral("f112-calendar-isolation-series");
+    CalendarEvent seededEvent;
+    seededEvent.title = QStringLiteral("F112 Calendar Isolation Event");
+    seededEvent.eventType = QStringLiteral("Workshop");
+    seededEvent.repeatSeriesId = repeatSeriesId;
+    seededEvent.startDate = eventDate;
+    seededEvent.startTime = QTime(9, 0);
+    seededEvent.endDate = eventDate;
+    seededEvent.endTime = QTime(10, 0);
+    const Result<int> createdEvent =
+        legacyDataService.saveCalendarEvent(seededEvent);
+    QVERIFY(createdEvent);
+
+    DatabaseSession closedSession;
+    QVERIFY(!closedSession.isOpen());
+    QVERIFY(closedSession.calendarEventRepository() == nullptr);
+
+    CalendarService sessionBound(&closedSession, &legacyDataService);
+    CalendarService legacyOnly(&legacyDataService);
+    QVERIFY(sessionBound.isAvailable());
+    QVERIFY(legacyOnly.isAvailable());
+
+    QVERIFY(!sessionBound.eventsForDate(eventDate));
+    QVERIFY(!sessionBound.eventsInRange(eventDate, eventDate));
+    QVERIFY(!sessionBound.eventDateIntervalsInRange(eventDate, eventDate));
+    QVERIFY(!sessionBound.upcomingEvents(eventDate, 10));
+    QVERIFY(!sessionBound.event(*createdEvent));
+    QVERIFY(!sessionBound.repeatSeriesFromDate(repeatSeriesId, eventDate));
+
+    const Result<QList<CalendarEvent>> legacyEventsForDate =
+        legacyOnly.eventsForDate(eventDate);
+    QVERIFY(legacyEventsForDate);
+    QCOMPARE(legacyEventsForDate->size(), 1);
+    QCOMPARE(
+        legacyEventsForDate->first().title,
+        QStringLiteral("F112 Calendar Isolation Event")
+        );
+
+    const Result<QList<CalendarEvent>> legacyEventsInRange =
+        legacyOnly.eventsInRange(eventDate, eventDate);
+    QVERIFY(legacyEventsInRange);
+    QCOMPARE(legacyEventsInRange->size(), 1);
+    QCOMPARE(
+        legacyEventsInRange->first().title,
+        QStringLiteral("F112 Calendar Isolation Event")
+        );
+
+    const Result<QList<CalendarEventDateInterval>> legacyIntervals =
+        legacyOnly.eventDateIntervalsInRange(eventDate, eventDate);
+    QVERIFY(legacyIntervals);
+    QCOMPARE(legacyIntervals->size(), 1);
+    QCOMPARE(legacyIntervals->first().eventType, QStringLiteral("Workshop"));
+    QCOMPARE(legacyIntervals->first().startDate, eventDate);
+    QCOMPARE(legacyIntervals->first().endDate, eventDate);
+
+    const Result<QList<CalendarEvent>> legacyUpcoming =
+        legacyOnly.upcomingEvents(eventDate, 10);
+    QVERIFY(legacyUpcoming);
+    QCOMPARE(legacyUpcoming->size(), 1);
+    QCOMPARE(
+        legacyUpcoming->first().title,
+        QStringLiteral("F112 Calendar Isolation Event")
+        );
+
+    const Result<CalendarEvent> legacyEvent = legacyOnly.event(*createdEvent);
+    QVERIFY(legacyEvent);
+    QCOMPARE(legacyEvent->title, QStringLiteral("F112 Calendar Isolation Event"));
+
+    const Result<QList<CalendarEvent>> legacyRepeatSeries =
+        legacyOnly.repeatSeriesFromDate(repeatSeriesId, eventDate);
+    QVERIFY(legacyRepeatSeries);
+    QCOMPARE(legacyRepeatSeries->size(), 1);
+    QCOMPARE(
+        legacyRepeatSeries->first().repeatSeriesId,
+        repeatSeriesId
+        );
+    QCOMPARE(
+        legacyRepeatSeries->first().title,
+        QStringLiteral("F112 Calendar Isolation Event")
         );
 }
 

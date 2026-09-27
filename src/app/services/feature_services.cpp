@@ -1013,10 +1013,13 @@ Result<bool> ScheduleService::isTestingClass(int classId) const
 
 Result<QList<CalendarEvent>> CalendarService::eventsForDate(const QDate& date) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->loadCalendarEventsForDate(date);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->loadCalendarEventsForDate(date);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->loadCalendarEventsForDate(date)
@@ -1028,10 +1031,13 @@ Result<QList<CalendarEvent>> CalendarService::eventsInRange(
     const QDate& endDate
     ) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->loadCalendarEventsInRange(startDate, endDate);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->loadCalendarEventsInRange(startDate, endDate);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->loadCalendarEventsInRange(startDate, endDate)
@@ -1044,24 +1050,26 @@ CalendarService::eventDateIntervalsInRange(
     const QDate& endDate
     ) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->loadCalendarEventDateIntervalsInRange(
-            startDate,
-            endDate
-            );
-    }
-
-    if (!dataService())
-    {
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->loadCalendarEventDateIntervalsInRange(
+                startDate,
+                endDate
+                );
+        }
         return std::unexpected(unavailableError());
     }
 
-    return dataService()->loadCalendarEventDateIntervalsInRange(
-        startDate,
-        endDate
-        );
+    return dataService()
+        ? dataService()->loadCalendarEventDateIntervalsInRange(
+            startDate,
+            endDate
+            )
+        : Result<QList<CalendarEventDateInterval>>(
+            std::unexpected(unavailableError())
+            );
 }
 
 Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
@@ -1069,10 +1077,13 @@ Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
     int limit
     ) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->loadUpcomingCalendarEvents(fromDate, limit);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->loadUpcomingCalendarEvents(fromDate, limit);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->loadUpcomingCalendarEvents(fromDate, limit)
@@ -1081,10 +1092,13 @@ Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
 
 Result<CalendarEvent> CalendarService::event(int eventId) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->getCalendarEvent(eventId);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->getCalendarEvent(eventId);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->getCalendarEvent(eventId)
@@ -1096,11 +1110,14 @@ Result<QList<CalendarEvent>> CalendarService::repeatSeriesFromDate(
     const QDate& startDate
     ) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->loadCalendarEventsForRepeatSeriesFromDate(
-            repeatSeriesId, startDate);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->loadCalendarEventsForRepeatSeriesFromDate(
+                repeatSeriesId, startDate);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->loadCalendarEventsForRepeatSeriesFromDate(
