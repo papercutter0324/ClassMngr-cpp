@@ -10,8 +10,8 @@
 - Last updated: 2026-09-27
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F100 is selected for seeded Schedule Import replacement
-  rollback parity across baseline and current repositories. Gate 1 and Gate 2
+- Current note: F101 is selected for a Qt-free Calendar event save use case
+  plus seeded baseline/current repository parity. Gate 1 and Gate 2
   remain Partial; the formal workspace create criterion and audited `src/next`
   isolation are Satisfied. Historical production-workbook evidence remains
   open. Sub Prep remains capped at 2026-2027.
@@ -161,23 +161,25 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Next selected bounded slice (F100)
+## Next selected bounded slice (F101)
 
-Add seeded Schedule Import replacement rollback parity comparing baseline
-`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with current F99
-`794ed7c0a5de8252a1687a1be8e4612c856cf00e`. Run the same fixed seed, plan, and
-failure trigger through each revision's own repository, schema, and transaction
-closure. Update teacher and `class_info`, clear the target's regular schedule
-rows, insert an earlier replacement row, then fail a later `class_times` row
-(for example, Wednesday).
+Add a Qt-free `CalendarEventSaveUseCase` around the existing
+`CalendarEventSaveRequest` and `CalendarEventSavePort`; register it in
+`cmake/next.cmake` and route the normal-save and “this occurrence only” UI
+branches through it. Keep the single-occurrence repeat ID detachment and leave
+“this and following” on the series-edit path. Add app-less fake-port coverage
+for exact request forwarding, one call, returned result ID, port-error
+propagation, and invalid-request rejection without a port call.
 
-For each run, require the injected failure and assert the post-failure state
-matches its pre-operation snapshot for `teachers`, `classes`, `class_info`,
-`class_times`, `class_intensive_times`, `intensive_slot_states`,
-`app_settings`, and `sqlite_sequence`; compare normalized baseline/current
-snapshots as well. Add or strengthen the current focused
-`ClassMngrScheduleImportTests` case and use a narrow baseline/current harness.
-Two independent explorers verified transaction order and found no blocker.
-Gate 2 remains Partial; Gate 1 remains Partial. This is selected work, not
-implementation or parity evidence. Phase 2 exit remains Open. Sub Prep remains
-capped at 2026-2027.
+Pair that Gate 1 slice with seeded baseline/current parity for Calendar event
+repository create and update. Compare baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with current F100
+`2738216a026ffdb935c1327aff70c0f95cc2af6f`, building each revision's own
+repository, model, schema, and transaction sources. Compare returned IDs and
+normalized event columns: `id`, title, `event_type`, `time_status`, SQL-NULL
+`repeat_series_id`, `all_day`, start/end dates, and start/end times. Include
+`sqlite_sequence` if comparing generated IDs. Use the owning app-less,
+platform-port, repository-test, and `ClassMngr` targets. This is selected work,
+not implementation or parity evidence; do not claim workbook or historical
+production-data provenance. Gate 1 and Gate 2 remain Partial, and Phase 2 exit
+remains Open. Sub Prep remains capped at 2026-2027.

@@ -1148,3 +1148,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar repeated-series creation use case - 2026-09-27
 
 - When a UI directly combines an existing pure planner with a persistence port, move that orchestration into Application so success, planner rejection, and port failure can be tested through a fake port. Keep Qt conversions, user feedback, and cache invalidation at the UI boundary.
+
+## Phase 2 Calendar single-event save boundary - 2026-09-27
+
+- Put request validation and save-port result propagation in an app-less use case, then keep Qt mapping and feedback in the UI/platform edges. A one-occurrence repeat save deliberately clears that event's series ID; the suffix-edit path preserves the series and stays separate. Compare seeded create/update rows as persistence parity, not workbook provenance.

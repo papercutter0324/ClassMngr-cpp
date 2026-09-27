@@ -6282,3 +6282,35 @@ Two independent explorers verified transaction order and found no blocker.
 Gate 2 remains Partial; Gate 1 remains Partial. This is selected work, not
 implementation or parity evidence. Phase 2 exit remains Open. Sub Prep remains
 capped at 2026-2027.
+
+## Verified F100 seeded Schedule Import replacement rollback parity - commit `2738216a`
+
+Commit `2738216a026ffdb935c1327aff70c0f95cc2af6f` changes only
+`tests/schedule_import_tests.cpp`. A fresh MSVC 19.51, Qt 6.12, Ninja build
+passed; the exact selected Qt Test slot passed 3/3 and focused CTest passed
+1/1.
+
+Independent baseline/current harness builds compiled each revision's own
+source closure (17/17 and 15/15 build actions). Baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F99
+`794ed7c0a5de8252a1687a1be8e4612c856cf00e` both reached the injected
+`class_times.wednesday_insert.injected` failure after earlier schedule and
+teacher/class-info writes. Each returned to its pre-operation snapshot,
+including `sqlite_sequence` and unrelated seeded state. Their normalized
+outputs match at SHA-256
+`B9B52658A6E5CA61A0C0173351CBC966BE5DD9A4FBB1F1D9EE4E4162672CE062`.
+
+### Cumulative exit-gate status after F100
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F99 adds the Calendar repeat-series create use case; broader application behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F100 adds seeded Schedule Import transaction rollback parity; historical production-workbook evidence and broader parity remain open. |
+| Workspace boundary | Satisfied | The formal workspace create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook evidence, broader Calendar UI/contracts, generic settings
+persistence, remaining feature-service migrations, document-service migration,
+and live MainWindow projection-failure/retranslation integration remain open.
+Sub Prep remains capped at 2026-2027.
