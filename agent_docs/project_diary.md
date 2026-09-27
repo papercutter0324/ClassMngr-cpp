@@ -1124,3 +1124,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Qt-free Calendar text policy - 2026-09-27
 
 - When moving Qt text classification into a Qt-free policy, match the source framework's full whitespace behavior at the byte-decoding boundary. Qt 6.12 treats U+0085/NEL as whitespace; omitting it changed both title simplification and event-type trimming. A direct framework-versus-policy probe plus app-less regressions caught the mismatch before commit. For ASCII aliases, verify whether non-ASCII lowercase mappings can affect the exact target letters rather than carrying an unbounded Unicode-table dependency.
+
+## Phase 2 negative validation differential - 2026-09-27
+
+- For a baseline-present invalid input, compile each revision's own validator path against one pinned byte sequence and compare the full semantic result. A direct rerun of both saved executables can independently confirm the captured output. Keep validation rejection evidence distinct from repository no-write or rollback claims when the path exits before persistence.

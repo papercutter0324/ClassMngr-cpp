@@ -6015,3 +6015,53 @@ consumers suppress matches only when hiding is enabled. Use
 evidence but leaves Gate 1 Partial and does not complete Phase 2. This is
 selected work, not implementation or test evidence. Sub Prep remains capped at
 2026-2027.
+
+## Verified F93 Calendar start-of-term policy - commit `c73f1469`
+
+Commit `c73f1469` (`Phase2 - Extract Calendar start-of-term application policy
+(F93)`) changes seven paths. The new Qt-free `CalendarEventStartOfTermPolicy`
+is registered in `cmake/next.cmake`; both `CalendarEventModel` and
+`CalendarPage` consumers use it. The redundant legacy Domain helper is removed
+and the Calendar Import assertion is migrated. App-less tests cover all four
+aliases, title case and space simplification, known and unknown type fallback,
+hybrid nonmatches, the hide switch, and U+0085/NEL whitespace for title and
+type.
+
+Independent fresh Windows x64 Debug verification from base `c999a235` plus
+only the seven paths built `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrCalendarEventCacheTests`, `ClassMngrCalendarImportTests`, and
+`ClassMngr` (358 actions; MSVC 19.51.36257, CMake 4.4.2, Ninja 1.13.2, Qt
+6.12.0). Focused CTest passed 3/3. A direct Qt 6.12 probe confirmed legacy and
+policy agreement for NEL-separated `new semester` and trailing NEL after
+`Vacation`. No full suite was run; `git diff --check` passed.
+
+### Cumulative exit-gate status after F93
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F93 adds a Qt-free start-of-term policy and routes both Calendar consumers through it; broader Calendar UI and contract coverage remain incomplete. |
+| Baseline parity (Gate 2) | Partial | F92 compares a baseline-present, source-generated valid workbook flow through validation, parsing, M1 review selection, plan creation, and apply. Historical production-workbook evidence remains missing; F94 is limited to invalid-date validation parity. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator criterion remains satisfied. Audits separately note a broader FileController integration gap outside that written criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Two independent post-F93 audits find audited `src/next` sources free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies. |
+
+Gate 1 and Gate 2 remain Partial; the formal workspace criterion and audited
+`src/next` isolation remain Satisfied. Phase 2 remains In Progress with its
+exit gate Open. Open scope includes broader Calendar UI/contracts, generic
+settings persistence, remaining feature-service migrations, document-service
+migration, invalid-UTF-8 coverage, and live MainWindow projection-failure/
+retranslation integration. Sub Prep remains capped at 2026-2027.
+
+Next selected bounded slice (2026-09-27): F94 compares baseline-present
+synthetic invalid-date Teacher Import workbook validation. Use identical bytes
+from `testWorkbookData("invalid-date")` through each revision's own validator;
+pin the byte hash if stable, `RecognizedButInvalid`, the discovered M1 section,
+and the exact A1 diagnostic `Cell A1 must contain a version date such as
+26.07.09ver.`. This is negative validation parity only: the current validator
+makes no repository calls, and the UI disables import for an invalid result.
+Do not claim repository snapshot/no-write or transactional rollback parity.
+Focus current `ClassMngrTeacherImportTests`; because the current test file
+references `next/application/import_review_session.h`, which is absent at
+baseline, a narrow baseline harness may be needed. No full suite. Gate 2 remains
+Partial and historical production-workbook evidence remains missing. This is
+selected work, not implementation or test evidence. Sub Prep remains capped at
+2026-2027.
