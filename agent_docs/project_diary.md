@@ -1186,3 +1186,7 @@ A delete-path parity fixture should compare the complete ordered surviving rows 
 ## F109 - make baseline inputs independent of new planners
 
 For repository parity of generated records, pass identical explicit facts to each revision's own repository implementation. Do not let a current-only Application planner manufacture the baseline input. Compare returned IDs in order, every persisted column, seeded unrelated rows, row count, and `sqlite_sequence`; label the result as repository-level parity.
+
+## F110 - keep per-event visibility composable and order-preserving
+
+A Qt-free predicate can compose independent display policies while Qt adapters retain preference loading and Unicode normalization. Keep list filtering at the caller so it can preserve cache order and avoid another materialized projection; verify both existing consumers still apply their separate prefilters and append visible rows in order.

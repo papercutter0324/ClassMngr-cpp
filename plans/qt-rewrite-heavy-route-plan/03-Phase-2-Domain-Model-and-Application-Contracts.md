@@ -10,14 +10,12 @@
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F109 is verified at commit `26d604fb` against current
-  production revision `d99b226e19917f3c855a0c49fa7891c537c4415d` and baseline
-  `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; F110 is selected. Gates 1 and 2
-  remain Partial; workspace create and audited direct `src/next` isolation are
-  Satisfied. Strict transitive ApplicationServices-to-DataService read
-  isolation remains unresolved. Exit remains Open. Historical
-  production-workbook provenance is a tracked risk, not a literal exit
-  criterion.
+- Current note: F110 is verified at commit `2656ef9c`; F111 is selected for a
+  bounded SettingsService isolation slice. Gates 1 and 2 remain Partial;
+  workspace create and audited direct `src/next` isolation are Satisfied.
+  Strict transitive ApplicationServices-to-DataService read isolation remains
+  unresolved. Exit remains Open. Historical production-workbook provenance is
+  a tracked risk, not a literal exit criterion.
   Sub Prep remains January 1 of the reference date's year through December 31
   of the following year at most; 2026-2027 is illustrative.
 
@@ -166,28 +164,35 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F109)
+## Latest verified progress (F110)
 
-Commit `26d604fb` (`Phase2 - add repeat-series creation parity fixture`) adds
-146 lines only to `tests/calendar_event_repository_tests.cpp`. It compares
-current production revision `d99b226e19917f3c855a0c49fa7891c537c4415d` with
-baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`.
+Commit `2656ef9c` (`Phase2 - add Calendar event visibility policy`) changes
+exactly five paths: new
+`src/next/application/calendar_event_visibility_policy.h`,
+`cmake/next.cmake`, `src/features/calendar/ui/calendar_event_model.cpp`,
+`src/features/calendar/ui/calendar_page_upcoming_events.cpp`, and
+`tests/next_application_calendar_event_tests.cpp`. An independent fresh
+archive of base `d59f0be4` overlaid only those five files.
 
-Tester archived the current production tree and overlaid only the changed test
-file; the focused CTest passed 1/1 and the direct test passed. A separate
-harness compiled each revision's own repository, schema manager, transaction,
-SQL helpers, headers, and CalendarEvent model with the same seed and three
-explicit events. Returned IDs `[2,3,4]`, all persisted columns, the unrelated
-event, final count, and `sqlite_sequence` value 4 matched. Normalized output
-SHA-256: `DB5EC63C24300360F3639131C501D9AC65A9867942D5A14CCCBA3BAAD7420E59`.
-This establishes synthetic repository state-transition parity only; no UI or
-historical-workbook parity is claimed.
+The build compiled `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrCalendarEventCacheTests`, and `ClassMngr`; focused CTest passed 2/2
+on Windows x64 Debug with Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0, and CMake
+4.4.2. A Qt-free app-less 12-case composition matrix pins start-term hide
+precedence (only aliases with effective type `Other` hide, and show-all does
+not bypass that rule), lazy campus checks, show-all bypassing campus filtering
+only, visibility with missing/unmatched metadata or no recognized campus
+token, hiding non-current-only tokens, and allowing current tokens including
+mixed current/other tokens. Both callers preserve input order; the upcoming-
+events active-type gate remains first, and Qt title/campus normalization
+remains at the feature boundary. The page translation unit compiled, but no
+dedicated CalendarPage visibility CTest asserted runtime page output. No full
+suite ran.
 
-### Cumulative exit-gate status after F109
+### Cumulative exit-gate status after F110
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | F109 adds no Application behavior; broader app-less behavior remains incomplete. |
+| App-less Domain/Application behavior (Gate 1) | Partial | F110 adds a composed Calendar visibility predicate; broader app-less behavior remains incomplete. |
 | Baseline parity (Gate 2) | Partial | F109 adds synthetic repeat-series creation state-transition parity; broader parity remains open. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
@@ -200,19 +205,13 @@ MainWindow projection-failure/retranslation integration remain open. Sub Prep
 is bounded to January 1 of the reference date's year through December 31 of
 the following year, at most; 2026-2027 is illustrative.
 
-### Next selected bounded slice (F110)
+### Next selected bounded slice (F111)
 
-Move per-event Calendar visibility composition into a Qt-free Application
-predicate used by both `CalendarEventModel` and the upcoming-events filter.
-Keep Qt text/campus normalization and preference/directory loading at the
-feature boundary; the upcoming-events active-event-type filter remains before
-the predicate. Preserve start-term hiding before show-all, and hide only
-start-term aliases whose effective type is `Other`. Show-all bypasses only the
-campus check. Missing current/known campus metadata or no recognized campus
-token remains visible; a known non-current token hides, while a current token
-allows the event, including mixed current/other tokens. Preserve event order;
-`event.campusId` remains unused. Keep existing component policies and tests.
-Add an app-less composed matrix in
-`tests/next_application_calendar_event_tests.cpp`, register the Application
-header in `cmake/next.cmake`, and build `CalendarEventModel` and `ClassMngr` to
-verify both callers.
+Make a non-null-session `SettingsService` authoritative for `load`, `save`, and
+`saveAll`, with no DataService fallback, while preserving the legacy
+DataService-only constructor and behavior. Cover a non-null closed session
+alongside a separately open DataService (no fallback reads or writes), legacy
+DataService-only reads/writes, normal open `ApplicationServices` session
+preferences, and defaults/errors. Other feature-service fallback families
+remain open. This is partial strict-isolation progress, not a global audit
+pass.
