@@ -59,6 +59,7 @@ private slots:
     void staleSelectedClassPreservesPersistedSnapshotBeforeWrites();
     void conflictsRollBackBeforeWrites();
     void writeFailureRollsBackEveryChange();
+    void seededWriteFailureRollsBackEveryChange();
     void validatesExternalWorkbookWhenProvided();
 };
 
@@ -413,7 +414,10 @@ QString foreignTeacherName()
         );
 }
 
-QStringList persistedScheduleImportSnapshot(QSqlDatabase& database)
+QStringList persistedScheduleImportSnapshot(
+    QSqlDatabase& database,
+    bool includeSQLiteSequence = false
+    )
 {
     const QList<QString> statements{
         QStringLiteral("SELECT * FROM teachers ORDER BY id"),
@@ -445,6 +449,37 @@ QStringList persistedScheduleImportSnapshot(QSqlDatabase& database)
             QStringList columns;
             const QSqlRecord record = query.record();
             for (int column = 0; column < record.count(); ++column)
+            {
+                const QVariant value = query.value(column);
+                columns.append(
+                    value.isNull()
+                        ? QStringLiteral("<NULL>")
+                        : value.toString()
+                    );
+            }
+            rows.append(
+                statement + QChar(0x1e) + columns.join(QChar(0x1f))
+                );
+        }
+        if (rows.size() == statementRowStart)
+        {
+            rows.append(statement + QChar(0x1e) + QStringLiteral("<empty>"));
+        }
+    }
+
+    if (includeSQLiteSequence)
+    {
+        const QString statement =
+            QStringLiteral(
+                "SELECT name, seq FROM sqlite_sequence ORDER BY name"
+                );
+        QSqlQuery query(database);
+        execOrFail(query, statement);
+        const int statementRowStart = rows.size();
+        while (query.next())
+        {
+            QStringList columns;
+            for (int column = 0; column < query.record().count(); ++column)
             {
                 const QVariant value = query.value(column);
                 columns.append(
@@ -5456,6 +5491,218 @@ void ScheduleImportTests::writeFailureRollsBackEveryChange()
             );
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::seededWriteFailureRollsBackEveryChange()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-seeded-rollback-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        query.prepare(
+            QStringLiteral(
+                "INSERT INTO teachers "
+                "(teacher_kr, teacher_en, room_number, notes) "
+                "VALUES (?, 'Existing English Name', '413', 'Keep teacher notes')"
+                )
+            );
+        query.addBindValue(sentinelTeacherName());
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        const int teacherId = query.lastInsertId().toInt();
+        QVERIFY(teacherId > 0);
+
+        constexpr int targetClassId = 9201;
+        constexpr int unrelatedClassId = 9202;
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO classes (id, name) VALUES "
+                "(%1, 'Target class before import'), "
+                "(%2, 'Unrelated class remains')"
+                )
+                .arg(targetClassId)
+                .arg(unrelatedClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level, "
+                "reading_book, essay_book, class_color, font_color, notes, "
+                "time_filler_activities) VALUES "
+                "(%1, %2, 'E5', 'Zeus', 'Keep Target Reading', "
+                "'Keep Target Essay', '#123456', '#FFFFFF', "
+                "'Keep target notes', 'Keep target filler'), "
+                "(%3, %2, 'E5', 'Zeus', 'Keep Other Reading', "
+                "'Keep Other Essay', '#654321', '#000000', "
+                "'Keep unrelated notes', 'Keep unrelated filler')"
+                )
+                .arg(targetClassId)
+                .arg(teacherId)
+                .arg(unrelatedClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) VALUES "
+                "(%1, 'Tuesday', '4:00 PM', '4:55 PM'), "
+                "(%1, 'Thursday', '4:00 PM', '4:55 PM'), "
+                "(%2, 'Friday', '11:00 AM', '11:55 AM')"
+                )
+                .arg(targetClassId)
+                .arg(unrelatedClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_intensive_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Wednesday', '2:00 PM', '2:55 PM')"
+                )
+                .arg(targetClassId)
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO intensive_slot_states "
+                "(day, start_time, state) "
+                "VALUES ('Sunday', '3:00 PM', 'lunch')"
+                )
+            );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO app_settings (key, value) VALUES "
+                "('myInfo/name', 'Existing profile'), "
+                "('schedule-import-rollback', 'preserve setting')"
+                )
+            );
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "CREATE TRIGGER reject_seeded_wednesday_time "
+                "BEFORE INSERT ON class_times "
+                "WHEN NEW.day = 'Wednesday' "
+                "AND EXISTS (SELECT 1 FROM class_times "
+                "WHERE class_id=%1 AND day='Monday' "
+                "AND start_time='8:00 AM') "
+                "AND NOT EXISTS (SELECT 1 FROM class_times "
+                "WHERE class_id=%1 AND day IN ('Tuesday', 'Thursday')) "
+                "AND NOT EXISTS (SELECT 1 FROM class_times "
+                "WHERE class_id=%2 AND day='Friday') "
+                "AND EXISTS (SELECT 1 FROM teachers "
+                "WHERE id=%3 AND room_number='414') "
+                "AND EXISTS (SELECT 1 FROM class_info "
+                "WHERE class_id=%1 AND teacher_id=%3 "
+                "AND class_level='Apollo' "
+                "AND class_color='#AABBCC' AND font_color='#112233') "
+                "BEGIN "
+                "SELECT RAISE(ABORT, "
+                "'F100_INJECTED_WEDNESDAY_INSERT_FAILURE'); "
+                "END"
+                )
+                .arg(targetClassId)
+                .arg(unrelatedClassId)
+                .arg(teacherId)
+            );
+
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = sentinelTeacherName();
+        candidate.teacherKr = sentinelTeacherName();
+        candidate.rooms = {QStringLiteral("414")};
+        candidate.classGrade = QStringLiteral("E5");
+        candidate.classLevel = QStringLiteral("Apollo");
+        candidate.times = {
+            {
+                QStringLiteral("Monday"),
+                QStringLiteral("8:00 AM"),
+                QStringLiteral("8:55 AM")
+            },
+            {
+                QStringLiteral("Wednesday"),
+                QStringLiteral("9:00 AM"),
+                QStringLiteral("9:55 AM")
+            }
+        };
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Normal;
+        plan.selectedUserName = QStringLiteral("Updated profile");
+        plan.updateProfileName = true;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = {candidate};
+        plan.teachers = {
+            {
+                candidate.teacherKey,
+                ScheduleImportTeacherAction::UpdateRoom,
+                teacherId,
+                QStringLiteral("414")
+            }
+        };
+        plan.classes = {
+            {
+                0,
+                ScheduleImportClassAction::UpdateExisting,
+                targetClassId,
+                QStringLiteral("#AABBCC"),
+                QStringLiteral("#112233")
+            }
+        };
+
+        const QStringList before =
+            persistedScheduleImportSnapshot(database, true);
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+
+        QString normalizedFailure = QStringLiteral("success");
+        if (!imported.has_value()
+            && imported.error().contains(
+                QStringLiteral("F100_INJECTED_WEDNESDAY_INSERT_FAILURE")
+                ))
+        {
+            // The fixture raises this unique marker only for the later
+            // Wednesday class_times insert, independent of localized context.
+            normalizedFailure = QStringLiteral(
+                "class_times.wednesday_insert.injected"
+                );
+        }
+        QCOMPARE(
+            normalizedFailure,
+            QStringLiteral("class_times.wednesday_insert.injected")
+            );
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database, true),
+            before
+            );
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT name FROM classes WHERE id=%1"
+                ).arg(unrelatedClassId)
+            );
+        QVERIFY(query.next());
+        QCOMPARE(
+            query.value(0).toString(),
+            QStringLiteral("Unrelated class remains")
+            );
+        QVERIFY(!query.next());
+
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
