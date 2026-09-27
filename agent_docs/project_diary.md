@@ -1136,3 +1136,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 synthetic rollback differential - 2026-09-27
 
 - For cross-revision database rollback evidence, execute the same deterministic plan and failure injection against each revision's own repository and schema sources. Normalize the failure stage and affected persisted state; omit backend-specific error text. State exactly which failure path was exercised, since one synthetic rollback case does not establish workbook parity or behavior for other failure stages.
+
+## Phase 2 Calendar suffix-edit policy - 2026-09-27
+
+- Move repeat-series edit date shifting and field propagation into a Qt-free Application planner fed by an ordered value snapshot. Keep the platform adapter responsible for query order and Qt/domain conversion. Preserve Technical failure behavior for invalid or unrepresentable dates so the adapter does not attempt persistence.

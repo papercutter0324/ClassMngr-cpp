@@ -10,12 +10,12 @@
 - Last updated: 2026-09-27
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F96 adds baseline/current synthetic Teacher Import database
-  rollback parity at the latest-date write stage. F97 is selected to move
-  Calendar repeat-series suffix planning into a Qt-free Application contract.
-  Gate 1 and Gate 2 remain Partial; the formal workspace criterion and audited
-  `src/next` isolation are Satisfied. Historical production-workbook evidence
-  and broader migrations remain open. Sub Prep remains capped at 2026-2027.
+- Current note: F97 adds a Qt-free Calendar repeat-series edit planner and
+  routes the platform port through it. F98 is selected for source-generated
+  malformed-UTF-8 Teacher Import workbook parity. Gate 1 and Gate 2 remain
+  Partial; the formal workspace criterion and audited `src/next` isolation are
+  Satisfied. Historical production-workbook evidence remains open. Sub Prep
+  remains capped at 2026-2027.
 
 ## Objective
 
@@ -162,59 +162,56 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Verified F96 Teacher Import database rollback parity
+## Verified F97 Calendar repeat-series edit planner - commit `36ebb09a`
 
-F96 selection compared the fixed synthetic rollback scenario in current test
-`rollsBackAllTeacherWritesWhenLatestDateSaveFails`; the baseline test lacks
-this case. The plan contains one Korean teacher, one Native English teacher,
-and one GS Team member, with failure injected during
-`teacher_import/latest_source_date` insertion.
+Commit `36ebb09a960fa82f633701ec83fba35bcd7f3599` adds
+`src/next/application/calendar_event_series_edit_plan.h`, registers it in
+`cmake/next.cmake`, and routes
+`src/next/platform/application_services_calendar_event_series_edit_port.h`
+through the Qt-free planner. The planner preserves query order and event IDs,
+common start-date offset and requested duration, request fields, trimmed series
+ID, empty-input success, and Technical failures for invalid source or shifted
+dates.
 
-F96 compared baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with
-current `7865963815efa256b797b85af27b9a33107e8f70` using the same external
-harness, which compiled each tree's own Teacher Import repository, schema
-manager, transaction, and SQL utilities. Independent fresh Release/Ninja builds
-and runs passed, and the archived source trees were verified against Git.
+Independent fresh Ninja builds produced
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngr`. Both focused CTests passed; an independent platform recheck also
+passed for empty suffix and no-save failure cases. `git diff --check` passed;
+no full suite was run.
 
-Both runs failed at `latest_date_write` and left `teachers`,
-`native_english_teachers`, `gs_team`, and the latest-date setting empty. Their
-normalized JSON outputs matched at SHA-256
-`b53d70bf33fa0e20451a2582eb8e1a6f904e5907196c6fad4696543b95b230f3`. This is
-synthetic database rollback evidence only; it does not establish workbook,
-historical production-data, or other failure-stage parity.
-
-### Cumulative exit-gate status after F96
+### Cumulative exit-gate status after F97
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | F95 adds Qt-free Calendar repeat occurrence planning; broader application behavior remains incomplete. |
-| Baseline parity (Gate 2) | Partial | F92 and F94 cover generated workbook paths; F96 adds one synthetic database rollback case. Historical production-workbook evidence and broader parity remain open. |
+| App-less Domain/Application behavior (Gate 1) | Partial | F95 adds repeat occurrence planning and F97 adds repeat-series edit planning; broader application behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F92 and F94 compare source-generated workbook paths; F96 adds one synthetic database rollback case. Historical production-workbook evidence and broader parity remain open; F97 adds no parity evidence. |
 | Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator criterion remains satisfied; the broader FileController integration gap remains outside that criterion. |
 | v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies. |
 
 Phase 2 remains In Progress with its exit gate Open. Historical
 production-workbook evidence, other rollback failure stages, broader Calendar
 UI/contracts, generic settings persistence, remaining feature-service
-migrations, document-service migration, invalid-UTF-8 coverage, and live
-MainWindow projection-failure/retranslation integration remain open. Sub Prep
-remains capped at 2026-2027.
+migrations, document-service migration, and live MainWindow
+projection-failure/retranslation integration remain open. Sub Prep remains
+capped at 2026-2027.
 
-### Next selected bounded slice (F97)
+### Next selected bounded slice (F98)
 
-Move repeat-series suffix-edit transformation from
-`src/next/platform/application_services_calendar_event_series_edit_port.h`
-into a Qt-free Application planner invoked after the platform adapter query.
-Reuse `CalendarEventSeriesEditRequest`; pass ordered value-only occurrence
-inputs with event IDs and canonical start dates; return planned updates.
-Preserve inclusive cutoff and query order, common date offset from selected to
-edited start, common requested duration, IDs, title, type, time status, all-day
-and time fields, trimmed series ID propagation, and empty-result success.
-Invalid source or shifted dates map to the existing Technical/save failure
-behavior.
+Add source-generated malformed-UTF-8 Teacher Import workbook parity using
+identical bytes from the shared `testWorkbookData`/`storedZip` helpers. In the
+`xl/sharedStrings.xml` member, replace the `M` in the second shared-string
+marker `<t>M1</t>` with raw `0xFF` at member offset 223, then rebuild the ZIP
+CRC. First characterize each revision's behavior, then compare normalized
+status, template, source date, discovered sections, counts, and ordered
+semantic preview; omit localized names and diagnostics. Add a pinned current
+regression and a narrow baseline/current harness that compiles each revision's
+own reader, validator, registry, template, and name helper. Use baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current
+`36ebb09a960fa82f633701ec83fba35bcd7f3599`.
 
-Add app-less tests for suffix inclusion/exclusion, offsets and duration, field,
-ID and order propagation, empty input, and date overflow. Retain platform
-integration tests and build the Application target, platform target, and
-`ClassMngr`. F97 advances Gate 1 but Gate 1 and Gate 2 remain Partial. This is
-selected work, not implementation evidence. Phase 2 exit remains Open. Sub
-Prep remains capped at 2026-2027.
+This is source-generated malformed-workbook parity only; historical
+production-workbook evidence remains open. F98 is selected to advance Gate 2;
+Gate 2 and Gate 1 remain Partial. This is selected work, not implementation
+evidence.
+Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027.
