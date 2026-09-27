@@ -6,6 +6,7 @@
 #include "calendar_event_model.h"
 #include "core/application_services.h"
 #include "domain/models/calendar_event.h"
+#include "next/application/calendar_event_by_id_query_use_case.h"
 #include "next/application/calendar_event_series_create_use_case.h"
 #include "next/application/calendar_event_series_edit_use_case.h"
 #include "next/application/calendar_event_delete_use_case.h"
@@ -182,10 +183,17 @@ void CalendarPage::handleCalendarEventActivated(
         return;
     }
 
+    const ClassMngr::Next::Application::CalendarEventByIdQueryRequest request{
+        std::to_string(eventId)
+    };
     ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort port(
         *m_services
         );
-    const auto projectedEvent = port.projectionById(eventId);
+    const auto projectedEvent =
+        ClassMngr::Next::Application::CalendarEventByIdQueryUseCase::execute(
+            port,
+            request
+            );
     if (!projectedEvent)
     {
         return;

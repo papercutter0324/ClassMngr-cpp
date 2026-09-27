@@ -47,6 +47,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_delete_use_case.h
     src/next/application/calendar_event_delete_all_port.h
     src/next/application/calendar_event_delete_all_use_case.h
+    src/next/application/calendar_event_by_id_query_port.h
+    src/next/application/calendar_event_by_id_query_use_case.h
     src/next/application/calendar_event_edit_draft.h
     src/next/application/calendar_event_import_plan.h
     src/next/application/calendar_event_import_signature.h

@@ -1,4 +1,6 @@
 #include "next/application/calendar_event_campus_visibility_policy.h"
+#include "next/application/calendar_event_by_id_query_port.h"
+#include "next/application/calendar_event_by_id_query_use_case.h"
 #include "next/application/calendar_event_delete_port.h"
 #include "next/application/calendar_event_delete_use_case.h"
 #include "next/application/calendar_event_delete_all_port.h"
@@ -373,6 +375,27 @@ public:
     }
 };
 
+class FakeCalendarEventByIdQueryPort final
+    : public CalendarEventByIdQueryPort
+{
+public:
+    int loadCalls = 0;
+    std::optional<CalendarEventId> receivedEventId;
+    CalendarEventByIdQueryResult response =
+        CalendarEventByIdQueryResult::success(
+            calendarEventSummary("event-default")
+            );
+
+    CalendarEventByIdQueryResult loadEventById(
+        const CalendarEventId& eventId
+        ) override
+    {
+        ++loadCalls;
+        receivedEventId = eventId;
+        return response;
+    }
+};
+
 }
 
 class NextApplicationCalendarEventTests final : public QObject
@@ -386,6 +409,9 @@ private slots:
     void eventClassificationAndRepeatSeriesFieldsRemainBounded();
     void optionalReferencesAndMetadataAreRetained();
     void emptyProjectionAndMissingLookupAreExplicit();
+    void calendarEventByIdQueryUseCaseForwardsIdAndResultOnce();
+    void calendarEventByIdQueryUseCasePropagatesPortFailure();
+    void calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort();
     void orderingAndSafeValueLookupsAreDeterministic();
     void duplicateAndInvalidValuesReturnStructuredInputErrors();
     void exactCapsAreAcceptedAndOverflowIsRejected();
@@ -726,6 +752,89 @@ void NextApplicationCalendarEventTests::emptyProjectionAndMissingLookupAreExplic
     const CalendarEventProjection defaultProjection;
     QVERIFY(defaultProjection.empty());
     QVERIFY(defaultProjection == projection);
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventByIdQueryUseCaseForwardsIdAndResultOnce()
+{
+    const CalendarEventByIdQueryRequest request{"0042"};
+    const CalendarEventSummary expected = calendarEventSummary("0042");
+    FakeCalendarEventByIdQueryPort port;
+    port.response = CalendarEventByIdQueryResult::success(expected);
+
+    const CalendarEventByIdQueryResult result =
+        CalendarEventByIdQueryUseCase::execute(port, request);
+
+    QVERIFY(result);
+    QCOMPARE(port.loadCalls, 1);
+    QVERIFY(port.receivedEventId.has_value());
+    QCOMPARE(port.receivedEventId->value(), std::string("0042"));
+    QVERIFY(result.value() == expected);
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventByIdQueryUseCasePropagatesPortFailure()
+{
+    const CalendarEventByIdQueryRequest request{"missing-event"};
+    FakeCalendarEventByIdQueryPort port;
+    port.response = CalendarEventByIdQueryResult::failure({
+        .code = ErrorCode::NotFound,
+        .message = "The calendar event was not found.",
+        .recoverable = true
+    });
+
+    const CalendarEventByIdQueryResult result =
+        CalendarEventByIdQueryUseCase::execute(port, request);
+
+    QVERIFY(!result);
+    QCOMPARE(port.loadCalls, 1);
+    QVERIFY(port.receivedEventId.has_value());
+    QCOMPARE(port.receivedEventId->value(), std::string("missing-event"));
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QCOMPARE(
+        result.error().message,
+        std::string("The calendar event was not found.")
+        );
+    QVERIFY(result.error().recoverable);
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
+{
+    FakeCalendarEventByIdQueryPort port;
+    const std::vector<CalendarEventByIdQueryRequest> invalidRequests = {
+        {""},
+        {" \t\r\n"},
+        {std::string(kCalendarEventByIdQueryMaxIdentifierLength + 1, 'x')}
+    };
+
+    for (const CalendarEventByIdQueryRequest& request : invalidRequests)
+    {
+        const CalendarEventByIdQueryResult result =
+            CalendarEventByIdQueryUseCase::execute(port, request);
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Calendar event identifier must be non-blank and bounded.")
+            );
+        QVERIFY(!result.error().recoverable);
+    }
+
+    const CalendarEventByIdQueryRequest exactLimitRequest{
+        std::string(kCalendarEventByIdQueryMaxIdentifierLength, 'x')
+    };
+    const CalendarEventByIdQueryResult exactLimitResult =
+        CalendarEventByIdQueryUseCase::execute(port, exactLimitRequest);
+
+    QVERIFY(exactLimitResult);
+    QCOMPARE(port.loadCalls, 1);
+    QVERIFY(port.receivedEventId.has_value());
+    QCOMPARE(
+        port.receivedEventId->value(),
+        exactLimitRequest.eventId
+        );
 }
 
 void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterministic()

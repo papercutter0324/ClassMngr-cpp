@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_delete_port.h"
 #include "next/application/calendar_event_delete_all_port.h"
 #include "next/application/calendar_event_import_save_port.h"
@@ -612,7 +613,7 @@ projectsByIdAsOwnedTypedMetadata()
     QVERIFY(eventId > 0);
 
     ApplicationServicesCalendarEventPort port(services);
-    const auto result = port.projectionById(eventId);
+    const auto result = port.loadEventById(calendarEventId(eventId));
 
     QVERIFY(result);
     const CalendarEventSummary& projected = result.value();
@@ -2164,12 +2165,24 @@ reportsUnavailableAndInvalidRangesStructurally()
         unavailablePort.projectionById(1),
         ErrorCode::NotFound
         );
+    verifyFailure(
+        unavailablePort.loadEventById(calendarEventId(1)),
+        ErrorCode::NotFound
+        );
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     ApplicationServicesCalendarEventPort port(services);
     verifyFailure(
         port.projectionById(0),
+        ErrorCode::InvalidInput
+        );
+    verifyFailure(
+        port.loadEventById(calendarEventId(0)),
+        ErrorCode::InvalidInput
+        );
+    verifyFailure(
+        port.loadEventById(*CalendarEventId::fromString("not-a-number")),
         ErrorCode::InvalidInput
         );
     verifyFailure(
@@ -2566,6 +2579,11 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     using ByIdResult = decltype(
         std::declval<const Port&>().projectionById(1)
         );
+    using ByIdQueryResult = decltype(
+        std::declval<Port&>().loadEventById(
+            std::declval<const CalendarEventId&>()
+            )
+        );
     using ImportSignatureQueryResult = decltype(
         std::declval<const ImportSignatureQueryPort&>()
             .loadSignaturesInRange(
@@ -2606,6 +2624,11 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         ByIdResult,
         Domain::Result<CalendarEventSummary>
         >);
+    static_assert(std::is_same_v<
+        ByIdQueryResult,
+        CalendarEventByIdQueryResult
+        >);
+    static_assert(std::is_base_of_v<CalendarEventByIdQueryPort, Port>);
     static_assert(std::is_same_v<
         ImportSignatureQueryResult,
         CalendarEventImportSignatureQueryResult

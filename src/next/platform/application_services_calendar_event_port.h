@@ -2,6 +2,7 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_projection.h"
 
 #include <QByteArray>
@@ -9,11 +10,13 @@
 #include <QList>
 #include <QString>
 
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace ClassMngr::Next::Platform
@@ -24,6 +27,7 @@ namespace ClassMngr::Next::Platform
 // caller-owned; no CalendarService, CalendarEvent, or other legacy pointer
 // crosses this boundary.
 class ApplicationServicesCalendarEventPort final
+    : public Application::CalendarEventByIdQueryPort
 {
 public:
     explicit ApplicationServicesCalendarEventPort(
@@ -57,6 +61,30 @@ public:
         {
             return false;
         }
+    }
+
+    [[nodiscard]] Application::CalendarEventByIdQueryResult loadEventById(
+        const Domain::CalendarEventId& eventId
+        ) override
+    {
+        const std::string& value = eventId.value();
+        int legacyEventId = 0;
+        const auto parsed = std::from_chars(
+            value.data(),
+            value.data() + value.size(),
+            legacyEventId
+            );
+        if (parsed.ec != std::errc{}
+            || parsed.ptr != value.data() + value.size()
+            || legacyEventId <= 0)
+        {
+            return failureSummary(
+                Domain::ErrorCode::InvalidInput,
+                "Calendar event identifier must be positive."
+                );
+        }
+
+        return projectionById(legacyEventId);
     }
 
     [[nodiscard]] Domain::Result<Application::CalendarEventSummary>
