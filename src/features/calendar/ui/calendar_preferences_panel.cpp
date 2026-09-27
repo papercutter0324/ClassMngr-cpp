@@ -6,6 +6,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "features/calendar/calendar_event_import_service.h"
+#include "next/application/calendar_event_delete_all_use_case.h"
 #include "next/platform/application_services_calendar_event_delete_all_port.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -176,7 +177,8 @@ void CalendarPreferencesPanel::resetCalendarEvents()
 
     ClassMngr::Next::Platform::ApplicationServicesCalendarEventDeleteAllPort
         deleteAllPort(*m_services);
-    if (!deleteAllPort.isAvailable())
+    if (!ClassMngr::Next::Application::CalendarEventDeleteAllUseCase::
+            isAvailable(deleteAllPort))
     {
         return;
     }
@@ -196,7 +198,10 @@ void CalendarPreferencesPanel::resetCalendarEvents()
         return;
     }
 
-    const auto deleted = deleteAllPort.deleteAllEvents();
+    const auto deleted =
+        ClassMngr::Next::Application::CalendarEventDeleteAllUseCase::execute(
+            deleteAllPort
+            );
     if (!deleted)
     {
         const std::string& message = deleted.error().message;

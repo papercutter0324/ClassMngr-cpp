@@ -127,6 +127,7 @@ private slots:
     void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
     void repeatSeriesDeleteRemovesSelectedAndFollowingOnly();
     void singleEventDeleteRemovesOnlySelectedEventAndPreservesSequence();
+    void deleteAllCalendarEventsRemovesSeededRowsAndPreservesSequence();
     void singleEventCreateAndUpdateDetachOnlySelectedOccurrence();
     void writeFailuresAreReturnedAndBatchRollsBack();
 };
@@ -849,6 +850,131 @@ singleEventDeleteRemovesOnlySelectedEventAndPreservesSequence()
             )));
         QVERIFY(sequenceQuery.next());
         QCOMPARE(sequenceQuery.value(0).toInt(), sequenceBeforeDelete);
+        QVERIFY(!sequenceQuery.next());
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+deleteAllCalendarEventsRemovesSeededRowsAndPreservesSequence()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_delete_all_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        const Result<int> firstCreated = repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("First Event"),
+                QDate(2026, 7, 8),
+                QTime(9, 0),
+                QDate(2026, 7, 8),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-delete-all")
+                )
+            );
+        QVERIFY(firstCreated);
+        const int firstId = firstCreated.value();
+
+        const Result<int> secondCreated = repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Second Event"),
+                QDate(2026, 7, 15),
+                QTime(9, 0),
+                QDate(2026, 7, 15),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-delete-all")
+                )
+            );
+        QVERIFY(secondCreated);
+        const int secondId = secondCreated.value();
+
+        const Result<int> thirdCreated = repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Third Event"),
+                QDate(2026, 7, 22),
+                QTime(11, 0),
+                QDate(2026, 7, 22),
+                QTime(12, 0)
+                )
+            );
+        QVERIFY(thirdCreated);
+        const int thirdId = thirdCreated.value();
+
+        const auto eventsBefore = repository.loadCalendarEventsInRange(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            );
+        QVERIFY(eventsBefore.has_value());
+        QCOMPARE(eventsBefore->size(), 3);
+        QVERIFY(repository.getCalendarEvent(firstId).has_value());
+        QVERIFY(repository.getCalendarEvent(secondId).has_value());
+        QVERIFY(repository.getCalendarEvent(thirdId).has_value());
+        QVERIFY(!calendarEventRowSnapshot(database, firstId).isEmpty());
+        QVERIFY(!calendarEventRowSnapshot(database, secondId).isEmpty());
+        QVERIFY(!calendarEventRowSnapshot(database, thirdId).isEmpty());
+
+        QSqlQuery countQuery(database);
+        QVERIFY(countQuery.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM calendar_events"
+            )));
+        QVERIFY(countQuery.next());
+        QCOMPARE(countQuery.value(0).toInt(), 3);
+        QVERIFY(!countQuery.next());
+
+        QSqlQuery sequenceQuery(database);
+        QVERIFY(sequenceQuery.exec(QStringLiteral(
+            "SELECT seq FROM sqlite_sequence WHERE name='calendar_events'"
+            )));
+        QVERIFY(sequenceQuery.next());
+        const qint64 sequenceBeforeDelete =
+            sequenceQuery.value(0).toLongLong();
+        QVERIFY(sequenceBeforeDelete >= thirdId);
+        QVERIFY(!sequenceQuery.next());
+
+        const Status deleted = repository.deleteAllCalendarEvents();
+        QVERIFY(deleted);
+
+        QVERIFY(!repository.getCalendarEvent(firstId).has_value());
+        QVERIFY(!repository.getCalendarEvent(secondId).has_value());
+        QVERIFY(!repository.getCalendarEvent(thirdId).has_value());
+        QVERIFY(calendarEventRowSnapshot(database, firstId).isEmpty());
+        QVERIFY(calendarEventRowSnapshot(database, secondId).isEmpty());
+        QVERIFY(calendarEventRowSnapshot(database, thirdId).isEmpty());
+
+        const auto eventsAfter = repository.loadCalendarEventsInRange(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            );
+        QVERIFY(eventsAfter.has_value());
+        QVERIFY(eventsAfter->isEmpty());
+
+        QVERIFY(countQuery.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM calendar_events"
+            )));
+        QVERIFY(countQuery.next());
+        QCOMPARE(countQuery.value(0).toInt(), 0);
+        QVERIFY(!countQuery.next());
+
+        QVERIFY(sequenceQuery.exec(QStringLiteral(
+            "SELECT seq FROM sqlite_sequence WHERE name='calendar_events'"
+            )));
+        QVERIFY(sequenceQuery.next());
+        QCOMPARE(
+            sequenceQuery.value(0).toLongLong(),
+            sequenceBeforeDelete
+            );
         QVERIFY(!sequenceQuery.next());
     }
 

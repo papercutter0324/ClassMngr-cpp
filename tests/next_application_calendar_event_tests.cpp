@@ -2,6 +2,7 @@
 #include "next/application/calendar_event_delete_port.h"
 #include "next/application/calendar_event_delete_use_case.h"
 #include "next/application/calendar_event_delete_all_port.h"
+#include "next/application/calendar_event_delete_all_use_case.h"
 #include "next/application/calendar_event_edit_draft.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_projection.h"
@@ -312,6 +313,28 @@ public:
     }
 };
 
+class FakeCalendarEventDeleteAllPort final : public CalendarEventDeleteAllPort
+{
+public:
+    mutable int availabilityCalls = 0;
+    bool available = true;
+    int deleteCalls = 0;
+    CalendarEventDeleteAllResult response =
+        CalendarEventDeleteAllResult::success();
+
+    bool isAvailable() const override
+    {
+        ++availabilityCalls;
+        return available;
+    }
+
+    CalendarEventDeleteAllResult deleteAllEvents() override
+    {
+        ++deleteCalls;
+        return response;
+    }
+};
+
 class FakeCalendarEventSavePort final : public CalendarEventSavePort
 {
 public:
@@ -359,6 +382,9 @@ private slots:
     void importSaveRequestRejectsUpdatesAndInvalidEvents();
     void importSaveRequestContractHasNoQtOrLegacySurface();
     void deleteAllPortContractUsesStructuredQtFreeResult();
+    void deleteAllUseCaseForwardsAvailability();
+    void deleteAllUseCaseDeletesOnceAndReturnsSuccess();
+    void deleteAllUseCasePropagatesPortFailure();
     void editDraftBoundsAndTimeStatusPolicyIsExplicit();
     void editDraftIsCopyableEqualAndIndependentlyReleasable();
     void editDraftContractHasNoQtOrLegacySurface();
@@ -1657,6 +1683,67 @@ deleteAllPortContractUsesStructuredQtFreeResult()
     static_assert(!std::is_copy_constructible_v<Port>);
 
     QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+deleteAllUseCaseForwardsAvailability()
+{
+    FakeCalendarEventDeleteAllPort port;
+
+    QVERIFY(CalendarEventDeleteAllUseCase::isAvailable(port));
+    QCOMPARE(port.availabilityCalls, 1);
+    QCOMPARE(port.deleteCalls, 0);
+
+    port.available = false;
+    QVERIFY(!CalendarEventDeleteAllUseCase::isAvailable(port));
+    QCOMPARE(port.availabilityCalls, 2);
+    QCOMPARE(port.deleteCalls, 0);
+}
+
+void NextApplicationCalendarEventTests::
+deleteAllUseCaseDeletesOnceAndReturnsSuccess()
+{
+    using UseCaseResult = decltype(
+        CalendarEventDeleteAllUseCase::execute(
+            std::declval<CalendarEventDeleteAllPort&>()
+            )
+        );
+    static_assert(std::is_same_v<
+        UseCaseResult,
+        CalendarEventDeleteAllResult
+        >);
+
+    FakeCalendarEventDeleteAllPort port;
+    const CalendarEventDeleteAllResult result =
+        CalendarEventDeleteAllUseCase::execute(port);
+
+    QVERIFY(result);
+    QCOMPARE(port.deleteCalls, 1);
+    QCOMPARE(port.availabilityCalls, 0);
+}
+
+void NextApplicationCalendarEventTests::
+deleteAllUseCasePropagatesPortFailure()
+{
+    FakeCalendarEventDeleteAllPort port;
+    port.response = CalendarEventDeleteAllResult::failure({
+        .code = ErrorCode::Technical,
+        .message = "Calendar events could not be reset.",
+        .recoverable = false
+    });
+
+    const CalendarEventDeleteAllResult result =
+        CalendarEventDeleteAllUseCase::execute(port);
+
+    QVERIFY(!result);
+    QCOMPARE(port.deleteCalls, 1);
+    QCOMPARE(port.availabilityCalls, 0);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QCOMPARE(
+        result.error().message,
+        std::string("Calendar events could not be reset.")
+        );
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextApplicationCalendarEventTests::
