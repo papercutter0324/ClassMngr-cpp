@@ -10,15 +10,15 @@
 - Last updated: 2026-09-27
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F104 is selected to add an app-less Calendar delete-all use
-  case and seeded repository parity. F103 advances Gate 1 and Gate 2, though
-  both remain Partial; workspace create and direct `src/next` isolation are
-  Satisfied. Strict transitive ApplicationServices-to-DataService read
-  isolation remains unresolved. Historical production-workbook provenance is
-  a tracked risk, not a separate literal exit criterion. Sub Prep's calendar
-  window is derived from its reference date: January 1 of that date's year
-  through December 31 of the following year. 2026-2027 is an example, not a
-  fixed range.
+- Current note: F104 is verified at commit `6057bc9e`; it adds the app-less
+  Calendar delete-all boundary and seeded repository parity. F105 is selected
+  to route repeat-series suffix editing through an app-less use case with
+  request validation. Gates 1 and 2 remain Partial; workspace create and the
+  audited direct `src/next` isolation are Satisfied, while strict transitive
+  ApplicationServices-to-DataService read isolation remains unresolved.
+  Historical production-workbook provenance is a tracked risk, not a separate
+  literal exit criterion. Sub Prep's window remains derived from its reference
+  year through December 31 of the following year; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -165,31 +165,27 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Next selected bounded slice (F104)
+## Next selected bounded slice (F105)
 
-Add an app-less `CalendarEventDeleteAllUseCase` around the existing
-`CalendarEventDeleteAllPort`. Let Application own availability through
-`isAvailable(port)`. Route `CalendarPreferencesPanel::resetCalendarEvents()`
-through the use case for both its pre-confirm availability guard and its
-post-confirm delete-all operation; return before prompting when unavailable.
-Preserve confirmation and cancel
-behavior, failure warning, and success status-label update plus
-`calendarPreferencesChanged(true)`. Keep Platform service/error mapping in
-Platform. Add fake-port coverage for availability forwarding, one deletion
-call, success, and structured-error propagation.
+Add an app-less `CalendarEventSeriesEditUseCase` around the existing
+`CalendarEventSeriesEditPort`. Validate `CalendarEventSeriesEditRequest` in
+Application before calling the port exactly once; return validation and port
+errors unchanged. Route only Calendar's “This and following” edit branch
+through this use case. Keep the existing Application planner, Platform
+service/query/save orchestration and Qt conversions, and UI warning/cache
+invalidation at their current boundaries. The Platform adapter retains its
+validation guard for direct callers. Add fake-port tests for exact request
+forwarding, success/error propagation, and invalid-request rejection with zero
+port calls.
 
-Pair this Gate 1 slice with a seeded baseline/current repository
-`deleteAllCalendarEvents` scenario, using each revision's own source closure:
-baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F103
-`61e3d7973edf59e28d542fdc2f64a2ad1da94540`. Assert all seeded event rows are
-removed, the final count is zero, and sequence behavior matches. This is
-fixture-scoped repository parity only. Verify
-`ClassMngrNextApplicationCalendarEventTests`,
-`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
-`ClassMngrCalendarEventRepositoryTests`, and `ClassMngr`; run only the three
-focused CTests, no full suite. F104 should advance Gate 1 and Gate 2, though
-both remain Partial. Workspace create and direct `src/next` isolation are
-Satisfied; strict transitive ApplicationServices-to-DataService read isolation
-remains unresolved. Phase 2 exit remains Open. Sub Prep's calendar window is
-derived from its reference date: January 1 of that date's year through
-December 31 of the following year. 2026-2027 is an example, not a fixed range.
+Verify `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngr`; run only the two focused CTests and no full suite. F105 advances
+Gate 1 through app-less request validation and execution; Gate 2 remains
+Partial and receives no new parity claim. The existing repeat-series planner
+and Platform tests continue to cover suffix transformation and adapter
+behavior. Workspace create and audited direct `src/next` isolation remain
+Satisfied; strict transitive ApplicationServices-to-DataService read
+isolation remains unresolved. Phase 2 exit remains Open. This slice does not
+change Sub Prep's derived window: January 1 of the reference date's year
+through December 31 of the following year, at most.

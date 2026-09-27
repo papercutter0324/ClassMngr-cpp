@@ -1162,3 +1162,7 @@ Prep's queried interval to the current and following calendar years at most.
 
 - Keep ordinary event deletion and repeat-series suffix deletion as separate Application contracts. Preserve typed IDs across the use case boundary; keep legacy integer parsing and service/error/exception conversion in Platform. Seeded repository parity establishes repository behavior only, not UI or historical-workbook parity.
 - For differential SQLite evidence, run the same fixture through each revision's own QtTest repository target when a standalone harness fails before database setup. Assert seeded sibling and unrelated snapshots are nonempty before comparing full rows, row count, and sequence state.
+
+## Phase 2 Calendar delete-all boundary - 2026-09-27
+
+- Keep availability separate from the confirmed destructive operation. The Application use case forwards the availability check and delete command independently; the UI owns confirmation/cancel and feedback. Seeded cross-revision parity should report only repository behavior, including row count and sequence state.

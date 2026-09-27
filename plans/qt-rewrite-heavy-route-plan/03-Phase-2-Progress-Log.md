@@ -6492,3 +6492,41 @@ Satisfied; strict transitive ApplicationServices-to-DataService read isolation
 remains unresolved. Phase 2 exit remains Open. Sub Prep's calendar window is
 derived from its reference date: January 1 of that date's year through
 December 31 of the following year. 2026-2027 is an example, not a fixed range.
+
+## Verified F104 Calendar delete-all use case and repository parity - commit `6057bc9e`
+
+F104 commit `6057bc9e` (`Phase2 - route Calendar reset through Application`)
+adds the Qt-free `CalendarEventDeleteAllUseCase`, routes the Calendar
+preferences availability guard and confirmed delete-all operation through it,
+and adds app-less and seeded repository coverage. The UI retains confirmation,
+cancel behavior, warning presentation, and success status/signal behavior;
+Platform retains service and error mapping.
+
+Independent fresh Ninja/MSVC/Qt verification built
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrCalendarEventRepositoryTests`, and `ClassMngr`; the three focused
+CTests passed 3/3. A local focused rerun also passed 3/3. No full suite ran.
+The seeded delete-all fixture passed against baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F103
+`61e3d7973edf59e28d542fdc2f64a2ad1da94540`, each using its own repository
+source closure. Both removed all three seeded rows, returned count zero, and
+preserved `sqlite_sequence` at 3. This is fixture-scoped repository parity,
+not UI or historical-workbook parity.
+
+### Cumulative exit-gate status after F104
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F104 adds the Calendar delete-all operation and availability use case; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F104 adds seeded delete-all repository parity; validation, conflict, import-planning, and state-transition parity remains broader work. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook provenance remains a tracked risk, not a separate written
+exit criterion. Broader Calendar UI/contracts, generic settings persistence,
+remaining feature-service migrations, document-service migration, and live
+MainWindow projection-failure/retranslation integration remain open. Sub Prep
+is bounded to January 1 of the reference year through December 31 of the
+following year; 2026-2027 is illustrative, not fixed.
