@@ -152,6 +152,7 @@ private slots:
     void nextEventQueryFindsEarliestFutureStartDate();
     void schemaCreatesEndDateIndex();
     void savesAndLoadsRepeatSeriesId();
+    void repeatSeriesBatchCreationPersistsOrderedRowsAndPreservesUnrelatedEvent();
     void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
     void repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows();
     void repeatSeriesDeleteRemovesSelectedAndFollowingOnly();
@@ -589,6 +590,151 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
             repository.getCalendarEvent(eventId)->repeatSeriesId,
             QString()
             );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+repeatSeriesBatchCreationPersistsOrderedRowsAndPreservesUnrelatedEvent()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_series_create_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        const auto rowSnapshot = [&database](const int eventId)
+        {
+            QSqlQuery query(database);
+            query.prepare(R"(
+                SELECT
+                    id,
+                    title,
+                    event_type,
+                    time_status,
+                    repeat_series_id,
+                    all_day,
+                    start_date,
+                    start_time,
+                    end_date,
+                    end_time
+                FROM calendar_events
+                WHERE id=?
+            )");
+            query.addBindValue(eventId);
+            if (!query.exec() || !query.next())
+            {
+                return QVariantList{};
+            }
+
+            QVariantList row;
+            for (int column = 0; column < 10; ++column)
+            {
+                row.append(query.value(column));
+            }
+            return row;
+        };
+        const Result<int> unrelatedCreated = repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Unrelated event"),
+                QDate(2026, 7, 2),
+                QTime(13, 0),
+                QDate(2026, 7, 2),
+                QTime(14, 0),
+                QStringLiteral("Holiday"),
+                QStringLiteral("unrelated-series")
+                )
+            );
+        QVERIFY(unrelatedCreated);
+        QCOMPARE(*unrelatedCreated, 1);
+
+        const QVariantList unrelatedBefore = rowSnapshot(*unrelatedCreated);
+        QVERIFY(!unrelatedBefore.isEmpty());
+
+        const auto occurrenceForDate = [](const QDate& date)
+        {
+            CalendarEvent occurrence;
+            occurrence.title = QStringLiteral("Weekly Review");
+            occurrence.eventType = QStringLiteral("Workshop");
+            occurrence.timeStatus = QStringLiteral("Timed");
+            occurrence.repeatSeriesId = QStringLiteral("weekly-review");
+            occurrence.allDay = false;
+            occurrence.startDate = date;
+            occurrence.startTime = QTime(9, 15);
+            occurrence.endDate = date;
+            occurrence.endTime = QTime(10, 45);
+            return occurrence;
+        };
+        const QList<CalendarEvent> occurrences = {
+            occurrenceForDate(QDate(2026, 7, 1)),
+            occurrenceForDate(QDate(2026, 7, 8)),
+            occurrenceForDate(QDate(2026, 7, 15))
+        };
+
+        const Result<QList<int>> createdIds =
+            repository.saveCalendarEvents(occurrences);
+        QVERIFY(createdIds);
+        QCOMPARE(*createdIds, QList<int>({2, 3, 4}));
+
+        const auto expectedOccurrenceRow = [](const int eventId,
+                                              const QString& date)
+        {
+            return QVariantList{
+                eventId,
+                QStringLiteral("Weekly Review"),
+                QStringLiteral("Workshop"),
+                QStringLiteral("Timed"),
+                QStringLiteral("weekly-review"),
+                0,
+                date,
+                QStringLiteral("09:15"),
+                date,
+                QStringLiteral("10:45")
+            };
+        };
+        const QList<QVariantList> expectedOccurrenceRows = {
+            expectedOccurrenceRow(2, QStringLiteral("2026-07-01")),
+            expectedOccurrenceRow(3, QStringLiteral("2026-07-08")),
+            expectedOccurrenceRow(4, QStringLiteral("2026-07-15"))
+        };
+        QList<QVariantList> actualOccurrenceRows;
+        for (const int eventId : *createdIds)
+        {
+            const QVariantList row = rowSnapshot(eventId);
+            QVERIFY(!row.isEmpty());
+            actualOccurrenceRows.append(row);
+        }
+        QCOMPARE(actualOccurrenceRows, expectedOccurrenceRows);
+
+        QCOMPARE(
+            rowSnapshot(*unrelatedCreated),
+            unrelatedBefore
+            );
+
+        QSqlQuery countQuery(database);
+        QVERIFY(countQuery.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM calendar_events"
+            )));
+        QVERIFY(countQuery.next());
+        QCOMPARE(countQuery.value(0).toInt(), 4);
+        QVERIFY(!countQuery.next());
+
+        QSqlQuery sequenceQuery(database);
+        QVERIFY(sequenceQuery.exec(QStringLiteral(
+            "SELECT seq FROM sqlite_sequence WHERE name='calendar_events'"
+            )));
+        QVERIFY(sequenceQuery.next());
+        QCOMPARE(sequenceQuery.value(0).toInt(), 4);
+        QVERIFY(!sequenceQuery.next());
     }
 
     QSqlDatabase::removeDatabase(connectionName);
