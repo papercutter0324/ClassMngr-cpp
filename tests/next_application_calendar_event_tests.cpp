@@ -15,6 +15,7 @@
 #include "next/application/calendar_event_series_delete_port.h"
 #include "next/application/calendar_event_series_delete_use_case.h"
 #include "next/application/calendar_event_series_edit_port.h"
+#include "next/application/calendar_event_series_edit_use_case.h"
 #include "next/application/calendar_event_series_edit_plan.h"
 
 #include <QtTest/QtTest>
@@ -296,6 +297,25 @@ public:
     }
 };
 
+class FakeCalendarEventSeriesEditPort final
+    : public CalendarEventSeriesEditPort
+{
+public:
+    int editCalls = 0;
+    std::optional<CalendarEventSeriesEditRequest> receivedRequest;
+    CalendarEventSeriesEditResult response =
+        CalendarEventSeriesEditResult::success();
+
+    CalendarEventSeriesEditResult editRepeatSeriesFromDate(
+        const CalendarEventSeriesEditRequest& request
+        ) override
+    {
+        ++editCalls;
+        receivedRequest = request;
+        return response;
+    }
+};
+
 class FakeCalendarEventDeletePort final : public CalendarEventDeletePort
 {
 public:
@@ -408,6 +428,9 @@ private slots:
     void seriesEditRequestBoundsAndDatesRemainTyped();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
+    void repeatSeriesEditUseCaseForwardsRequestAndResultOnce();
+    void repeatSeriesEditUseCasePropagatesPortFailure();
+    void repeatSeriesEditUseCaseRejectsInvalidRequestWithoutCallingPort();
     void seriesEditPlanPreservesOrderAndPropagatesRequestFields();
     void seriesEditPlanHandlesEmptyAndAllDaySuffixes();
     void seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates();
@@ -2704,6 +2727,68 @@ seriesEditRequestContractHasNoQtOrLegacySurface()
         >);
 
     QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesEditUseCaseForwardsRequestAndResultOnce()
+{
+    auto request = validSeriesEditRequest();
+    request.repeatSeriesId = " \t series-1 \t";
+    FakeCalendarEventSeriesEditPort port;
+
+    const CalendarEventSeriesEditResult result =
+        CalendarEventSeriesEditUseCase::execute(port, request);
+
+    QVERIFY(result);
+    QCOMPARE(port.editCalls, 1);
+    QVERIFY(port.receivedRequest.has_value());
+    QVERIFY(*port.receivedRequest == request);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesEditUseCasePropagatesPortFailure()
+{
+    FakeCalendarEventSeriesEditPort port;
+    port.response = CalendarEventSeriesEditResult::failure({
+        .code = ErrorCode::Technical,
+        .message = "Calendar series edit failed.",
+        .recoverable = false
+    });
+
+    const CalendarEventSeriesEditResult result =
+        CalendarEventSeriesEditUseCase::execute(
+            port,
+            validSeriesEditRequest()
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(port.editCalls, 1);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QCOMPARE(result.error().message, std::string("Calendar series edit failed."));
+    QVERIFY(!result.error().recoverable);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesEditUseCaseRejectsInvalidRequestWithoutCallingPort()
+{
+    auto request = validSeriesEditRequest();
+    request.repeatSeriesId = " \t ";
+    FakeCalendarEventSeriesEditPort port;
+
+    const CalendarEventSeriesEditResult result =
+        CalendarEventSeriesEditUseCase::execute(port, request);
+
+    QVERIFY(!result);
+    QCOMPARE(port.editCalls, 0);
+    QVERIFY(!port.receivedRequest.has_value());
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "Calendar repeat-series identifier must be non-blank and bounded."
+            )
+        );
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextApplicationCalendarEventTests::

@@ -7,6 +7,7 @@
 #include "core/application_services.h"
 #include "domain/models/calendar_event.h"
 #include "next/application/calendar_event_series_create_use_case.h"
+#include "next/application/calendar_event_series_edit_use_case.h"
 #include "next/application/calendar_event_delete_use_case.h"
 #include "next/application/calendar_event_series_delete_use_case.h"
 #include "next/application/calendar_event_save_use_case.h"
@@ -801,7 +802,11 @@ void CalendarPage::openCalendarDialog(
                     *m_services
                     );
             const auto typedSaved =
-                editPort.editRepeatSeriesFromDate(request);
+                ClassMngr::Next::Application::
+                    CalendarEventSeriesEditUseCase::execute(
+                        editPort,
+                        request
+                        );
             if (!typedSaved)
             {
                 DialogServices::showWarning(
