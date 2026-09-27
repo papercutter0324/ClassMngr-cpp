@@ -1157,3 +1157,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar suffix-delete validation boundary - 2026-09-27
 
 - Keep repeat-series suffix-delete validation in the Application request/use case and reuse the domain canonical-date policy. Preserve adapter validation before service lookup, the current diagnostic, the original series-ID bytes, and the existing Qt date conversion. Leave single-event deletion on its own typed port until a concrete shared scope contract is needed.
+
+## Phase 2 Calendar single-event deletion boundary - 2026-09-27
+
+- Keep ordinary event deletion and repeat-series suffix deletion as separate Application contracts. Preserve typed IDs across the use case boundary; keep legacy integer parsing and service/error/exception conversion in Platform. Seeded repository parity establishes repository behavior only, not UI or historical-workbook parity.

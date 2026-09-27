@@ -6360,3 +6360,66 @@ production-workbook evidence, broader Calendar UI/contracts, generic settings
 persistence, remaining feature-service migrations, document-service migration,
 and live MainWindow projection-failure/retranslation integration remain open.
 Sub Prep remains capped at 2026-2027.
+
+### Selected next slice (F102)
+
+Move repeat-series suffix-delete ID/date validation from the Qt adapter into a
+Qt-free Application request/use case. Route only “This and following” through
+it; preserve the current diagnostic, validation-before-service order, series
+ID bytes, Qt date conversion, warning behavior, and success-only invalidation.
+Keep ordinary deletion separate. Test request forwarding, one call, invalid
+input with no port call, and port-error propagation. This validation-only slice
+adds no new parity claim.
+
+## Verified F102 Calendar suffix-delete validation - commit `ef418996`
+
+F102 adds Qt-free request validation and a use case for repeat-series suffix
+deletion. Only “This and following” routes through it; ordinary deletion and
+delete-all remain separate. Existing diagnostics, ID bytes, date conversion,
+service/error mappings, warning behavior, and success-only cache invalidation
+are preserved.
+
+An independent short-path archive based on `c08c0f93` plus the seven intended
+F102 paths built 358/358 actions; focused repository, Application, and Platform
+CTest passed 3/3. A max-boundary assertion rebuilt in four Ninja actions and
+the Application CTest passed 1/1. Protected `cmake/sources.cmake` SHA-256
+matched `5E798E0A643F499D8E8F6F3AD3732E1C87BF1301429257E6E431B32B75EBE3EC`.
+`git diff --check` passed with line-ending warnings. No full suite or parity
+claim was made.
+
+### Cumulative exit-gate status after F102
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F102 adds repeat-series suffix-delete validation to Application; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F102 adds no persistence parity; earlier seeded cases remain bounded evidence. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook provenance remains a tracked risk, not a separately
+written exit criterion. Broader Calendar UI/contracts, generic settings
+persistence, remaining feature-service migrations, document-service migration,
+and live MainWindow projection-failure/retranslation integration remain open.
+Sub Prep remains capped at 2026-2027.
+
+### Selected next slice (F103)
+
+Add a Qt-free `CalendarEventDeleteUseCase` around `CalendarEventDeletePort` and
+route only ordinary single-event deletion through it. Keep the F102 suffix
+delete and delete-all paths separate. Preserve exact typed-ID forwarding and
+port-result propagation; leave legacy positive-integer parsing, its exact
+diagnostic, and service/error/exception mapping in Platform. Add app-less
+fake-port tests for exact ID, one call, success, and error propagation.
+
+Pair it with seeded single-event repository deletion parity using baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F102 `ef418996`, each
+compiled from its own source closure. Assert target removal, unchanged sibling
+and unrelated rows, and unchanged sequence. This is repository behavior, not
+UI or historical-workbook parity. Focused targets are
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrCalendarEventRepositoryTests`, and `ClassMngr`; run focused CTest for
+the three test targets. F103 should advance Gate 1 and Gate 2, though both
+remain Partial. Sub Prep remains
+capped at 2026-2027.
