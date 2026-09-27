@@ -1442,3 +1442,7 @@ The separate open-DataService test observes `SettingsService::isAvailable()` as 
 F112 is under mapping: isolate CalendarService content reads used by Next Platform adapters (by-ID, range, date intervals, repeat series), retaining legacy DataService-only behavior. Scope and focused acceptance are pending the current call-site/test-seam review.
 
 Gate 1 and Gate 2 remain Partial; workspace create and audited direct `src/next` isolation remain Satisfied. Strict transitive `ApplicationServices`-to-`DataService` isolation remains unresolved. Phase 2 exit remains Open. Sub Prep remains bounded to the reference date's year through December 31 of the following year at most.
+
+## Current Position - 2026-09-28 (F112 in progress)
+
+F112 now isolates the six CalendarService content reads used by Next Platform adapters: events-for-date, range events, date intervals, upcoming events, by-ID, and repeat-series reads. A non-null session must fail closed when its repository is unavailable; sessionless DataService-only construction keeps its legacy reads. Calendar writes/deletes are outside this slice. The focused test will use a closed bound session plus an unrelated open DataService, verify all six reads do not expose its seeded event, and confirm the legacy-only service still does. Global DataService transitive isolation remains unresolved.

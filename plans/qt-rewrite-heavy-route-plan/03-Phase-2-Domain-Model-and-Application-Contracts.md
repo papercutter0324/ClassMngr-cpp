@@ -13,12 +13,12 @@
 - Current note: F111 is verified at commit `3152ce36`; non-null-session
   `SettingsService` operations no longer fall back to DataService. Transitive
   isolation has advanced only for this service; `isAvailable()` can still be
-  true when a separate DataService is open. CalendarService read isolation is
-  the next candidate under mapping. Gates 1 and 2 remain Partial; workspace
-  create and audited direct `src/next` isolation are Satisfied. Strict
-  transitive ApplicationServices-to-DataService isolation remains unresolved.
-  Exit remains Open. Historical production-workbook provenance is a tracked
-  risk, not a literal exit criterion.
+  true when a separate DataService is open. F112 is selected for
+  session-authoritative CalendarService content reads. Gates 1 and 2 remain
+  Partial; workspace create and audited direct `src/next` isolation are
+  Satisfied. Strict transitive ApplicationServices-to-DataService isolation
+  remains unresolved. Exit remains Open. Historical production-workbook
+  provenance is a tracked risk, not a literal exit criterion.
   Sub Prep remains January 1 of the reference date's year through December 31
   of the following year at most; 2026-2027 is illustrative.
 
@@ -207,7 +207,19 @@ MainWindow projection-failure/retranslation integration remain open. Sub Prep
 is bounded to January 1 of the reference date's year through December 31 of
 the following year, at most; 2026-2027 is illustrative.
 
-### Next candidate (under mapping)
+### Next selected bounded slice (F112)
 
-CalendarService read isolation is the next candidate. Its bounded scope and
-acceptance remain under mapping while the current pair finishes.
+In `src/app/services/feature_services.cpp`, make these six `CalendarService`
+content reads authoritative to a non-null session: `eventsForDate`,
+`eventsInRange`, `eventDateIntervalsInRange`, `upcomingEvents`, `event`, and
+`repeatSeriesFromDate`. If that session lacks the calendar repository, fail or
+report unavailable without reading DataService. Preserve all six DataService-
+only behaviors for sessionless legacy construction; leave writes and deletes
+unchanged.
+
+Add one lifecycle regression with a closed bound `DatabaseSession` and a
+separately open, seeded DataService: none of the six dual-bound reads may
+expose its event data, while legacy-only `CalendarService` reads still do.
+Retain the focused normal ApplicationServices Calendar adapter CTest. This
+slice does not close other service-family fallbacks or establish global
+isolation.
