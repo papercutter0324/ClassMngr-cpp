@@ -10,16 +10,15 @@
 - Last updated: 2026-09-27
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F103 is selected for a Qt-free single-event Calendar delete
-  use case and seeded repository deletion parity. F102 advances Gate 1,
-  which remains Partial; Gate 2 remains Partial; the workspace create
-  criterion and direct
-  `src/next` isolation audit are Satisfied. Strict transitive
-  ApplicationServices-to-DataService read isolation remains unresolved.
-  Historical production-workbook provenance is a tracked risk, not a separate
-  literal exit criterion. Sub Prep's calendar window is derived from its
-  reference date: January 1 of that date's year through December 31 of the
-  following year. 2026-2027 is an example, not a fixed range.
+- Current note: F104 is selected to add an app-less Calendar delete-all use
+  case and seeded repository parity. F103 advances Gate 1 and Gate 2, though
+  both remain Partial; workspace create and direct `src/next` isolation are
+  Satisfied. Strict transitive ApplicationServices-to-DataService read
+  isolation remains unresolved. Historical production-workbook provenance is
+  a tracked risk, not a separate literal exit criterion. Sub Prep's calendar
+  window is derived from its reference date: January 1 of that date's year
+  through December 31 of the following year. 2026-2027 is an example, not a
+  fixed range.
 
 ## Objective
 
@@ -166,29 +165,31 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Next selected bounded slice (F103)
+## Next selected bounded slice (F104)
 
-Add a Qt-free `CalendarEventDeleteUseCase` around the existing
-`CalendarEventDeletePort` and route only the ordinary single-event delete
-branch in `calendar_page_events.cpp` through it. Keep F102's repeat-series
-suffix delete and delete-all paths separate. Preserve exact typed-ID
-forwarding and port-result propagation. Keep legacy positive-integer parsing,
-its exact diagnostic, and service/error/exception mapping in Platform; do not
-carry the old database representation into Application. Add app-less fake-port
-tests for exact ID forwarding, one call, success, and error propagation.
+Add an app-less `CalendarEventDeleteAllUseCase` around the existing
+`CalendarEventDeleteAllPort`. Let Application own availability through
+`isAvailable(port)`. Route `CalendarPreferencesPanel::resetCalendarEvents()`
+through the use case for both its pre-confirm availability guard and its
+post-confirm delete-all operation; return before prompting when unavailable.
+Preserve confirmation and cancel
+behavior, failure warning, and success status-label update plus
+`calendarPreferencesChanged(true)`. Keep Platform service/error mapping in
+Platform. Add fake-port coverage for availability forwarding, one deletion
+call, success, and structured-error propagation.
 
-Pair this Gate 1 slice with seeded single-event repository deletion parity
-between baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F102
-`ef418996`, compiling each revision's own source closure. Assert the target is
-removed, sibling and unrelated events remain unchanged, and sequence state is
-unchanged. This is seeded repository behavior, not UI or historical-workbook
-parity. Verify `ClassMngrNextApplicationCalendarEventTests`,
+Pair this Gate 1 slice with a seeded baseline/current repository
+`deleteAllCalendarEvents` scenario, using each revision's own source closure:
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F103
+`61e3d7973edf59e28d542fdc2f64a2ad1da94540`. Assert all seeded event rows are
+removed, the final count is zero, and sequence behavior matches. This is
+fixture-scoped repository parity only. Verify
+`ClassMngrNextApplicationCalendarEventTests`,
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
-`ClassMngrCalendarEventRepositoryTests`, and `ClassMngr`; run focused CTest for
-the three test targets. F103 should advance Gate 1 and Gate 2, though both
-remain Partial; workspace create and
-the direct `src/next` isolation audit remain Satisfied. Strict transitive
-ApplicationServices-to-DataService read isolation remains unresolved. Phase 2
-exit remains Open. Sub Prep's calendar window is derived from its reference
-date: January 1 of that date's year through December 31 of the following year.
-2026-2027 is an example, not a fixed range.
+`ClassMngrCalendarEventRepositoryTests`, and `ClassMngr`; run only the three
+focused CTests, no full suite. F104 should advance Gate 1 and Gate 2, though
+both remain Partial. Workspace create and direct `src/next` isolation are
+Satisfied; strict transitive ApplicationServices-to-DataService read isolation
+remains unresolved. Phase 2 exit remains Open. Sub Prep's calendar window is
+derived from its reference date: January 1 of that date's year through
+December 31 of the following year. 2026-2027 is an example, not a fixed range.
