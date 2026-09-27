@@ -5,6 +5,7 @@
 #include "next/application/calendar_event_projection.h"
 #include "next/application/calendar_event_repeat_occurrence_plan.h"
 #include "next/application/calendar_event_save_port.h"
+#include "next/application/calendar_event_save_use_case.h"
 #include "next/application/calendar_event_start_of_term_policy.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_create_use_case.h"
@@ -271,6 +272,24 @@ public:
     }
 };
 
+class FakeCalendarEventSavePort final : public CalendarEventSavePort
+{
+public:
+    int saveCalls = 0;
+    std::optional<CalendarEventSaveRequest> receivedRequest;
+    CalendarEventSaveResult response =
+        CalendarEventSaveResult::success(calendarEventId("saved-event"));
+
+    CalendarEventSaveResult saveEvent(
+        const CalendarEventSaveRequest& request
+        ) override
+    {
+        ++saveCalls;
+        receivedRequest = request;
+        return response;
+    }
+};
+
 }
 
 class NextApplicationCalendarEventTests final : public QObject
@@ -289,6 +308,9 @@ private slots:
     void exactCapsAreAcceptedAndOverflowIsRejected();
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
+    void calendarEventSaveUseCaseForwardsRequestAndResultOnce();
+    void calendarEventSaveUseCasePropagatesPortFailure();
+    void calendarEventSaveUseCaseRejectsInvalidRequestWithoutCallingPort();
     void timingErrorsKeepFeatureMessagesAndValidationPrecedence();
     void calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText();
     void timingAcceptsFullGregorianRangeAndCrossDayClocks();
@@ -954,6 +976,77 @@ saveRequestAllDayAndTimeStatusPolicyIsExplicit()
     unknownWithTime.startTime = "09:00";
     unknownWithTime.endTime = "10:00";
     QVERIFY(!unknownWithTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventSaveUseCaseForwardsRequestAndResultOnce()
+{
+    using UseCaseResult = decltype(CalendarEventSaveUseCase::execute(
+        std::declval<CalendarEventSavePort&>(),
+        std::declval<const CalendarEventSaveRequest&>()
+        ));
+    static_assert(std::is_same_v<UseCaseResult, CalendarEventSaveResult>);
+
+    CalendarEventSaveRequest request = validSaveRequest();
+    request.id = calendarEventId("event-42");
+    request.title = "Detached occurrence update";
+
+    FakeCalendarEventSavePort port;
+    const CalendarEventId savedId = calendarEventId("event-42");
+    port.response = CalendarEventSaveResult::success(savedId);
+
+    const CalendarEventSaveResult result =
+        CalendarEventSaveUseCase::execute(port, request);
+
+    QVERIFY(result);
+    QCOMPARE(port.saveCalls, 1);
+    QVERIFY(port.receivedRequest.has_value());
+    QVERIFY(*port.receivedRequest == request);
+    QVERIFY(result.value() == savedId);
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventSaveUseCasePropagatesPortFailure()
+{
+    FakeCalendarEventSavePort port;
+    port.response = CalendarEventSaveResult::failure({
+        .code = ErrorCode::Conflict,
+        .message = "The calendar event changed before it could be saved.",
+        .recoverable = true
+    });
+
+    const CalendarEventSaveResult result =
+        CalendarEventSaveUseCase::execute(port, validSaveRequest());
+
+    QVERIFY(!result);
+    QCOMPARE(port.saveCalls, 1);
+    QCOMPARE(result.error().code, ErrorCode::Conflict);
+    QCOMPARE(
+        result.error().message,
+        std::string("The calendar event changed before it could be saved.")
+        );
+    QVERIFY(result.error().recoverable);
+}
+
+void NextApplicationCalendarEventTests::
+calendarEventSaveUseCaseRejectsInvalidRequestWithoutCallingPort()
+{
+    FakeCalendarEventSavePort port;
+    CalendarEventSaveRequest request = validSaveRequest();
+    request.title = "   ";
+
+    const CalendarEventSaveResult result =
+        CalendarEventSaveUseCase::execute(port, request);
+
+    QVERIFY(!result);
+    QCOMPARE(port.saveCalls, 0);
+    QVERIFY(!port.receivedRequest.has_value());
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Calendar event text fields must be non-blank and bounded.")
+        );
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextApplicationCalendarEventTests::

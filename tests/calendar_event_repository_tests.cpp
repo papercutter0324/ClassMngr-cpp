@@ -3,6 +3,7 @@
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QSqlRecord>
 #include <QtTest>
 
 namespace
@@ -73,6 +74,42 @@ QStringList titles(
 
     return values;
 }
+
+QVariantList calendarEventRowSnapshot(
+    QSqlDatabase& database,
+    const int eventId
+    )
+{
+    QSqlQuery query(database);
+    query.prepare(R"(
+        SELECT
+            id,
+            title,
+            event_type,
+            time_status,
+            repeat_series_id,
+            all_day,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        FROM calendar_events
+        WHERE id=?
+    )");
+    query.addBindValue(eventId);
+    if (!query.exec() || !query.next())
+    {
+        return {};
+    }
+
+    QVariantList row;
+    const QSqlRecord record = query.record();
+    for (int column = 0; column < record.count(); ++column)
+    {
+        row.append(query.value(column));
+    }
+    return row;
+}
 }
 
 class CalendarEventRepositoryTests : public QObject
@@ -89,6 +126,7 @@ private slots:
     void savesAndLoadsRepeatSeriesId();
     void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
     void repeatSeriesDeleteRemovesSelectedAndFollowingOnly();
+    void singleEventCreateAndUpdateDetachOnlySelectedOccurrence();
     void writeFailuresAreReturnedAndBatchRollsBack();
 };
 
@@ -706,6 +744,160 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 QStringLiteral("Standalone")
             })
             );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+singleEventCreateAndUpdateDetachOnlySelectedOccurrence()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_single_save_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        const Result<int> selectedCreated = repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Original occurrence"),
+                QDate(2026, 9, 10),
+                QTime(9, 0),
+                QDate(2026, 9, 10),
+                QTime(10, 0),
+                QStringLiteral("Meeting"),
+                QStringLiteral("shared-series")
+                )
+            );
+        QVERIFY(selectedCreated);
+        const int selectedId = selectedCreated.value();
+        QVERIFY(selectedId > 0);
+
+        const Result<int> siblingCreated = repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Sibling occurrence"),
+                QDate(2026, 9, 17),
+                QTime(9, 0),
+                QDate(2026, 9, 17),
+                QTime(10, 0),
+                QStringLiteral("Meeting"),
+                QStringLiteral("shared-series")
+                )
+            );
+        QVERIFY(siblingCreated);
+        const int siblingId = siblingCreated.value();
+
+        const Result<int> unrelatedCreated = repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Unrelated event"),
+                QDate(2026, 9, 18),
+                QTime(11, 0),
+                QDate(2026, 9, 18),
+                QTime(12, 0),
+                QStringLiteral("Workshop"),
+                QStringLiteral("other-series")
+                )
+            );
+        QVERIFY(unrelatedCreated);
+        const int unrelatedId = unrelatedCreated.value();
+
+        const QVariantList siblingBefore =
+            calendarEventRowSnapshot(database, siblingId);
+        const QVariantList unrelatedBefore =
+            calendarEventRowSnapshot(database, unrelatedId);
+        QCOMPARE(siblingBefore.size(), 10);
+        QCOMPARE(unrelatedBefore.size(), 10);
+
+        CalendarEvent createdEvent = makeEvent(
+            QStringLiteral("Created standalone event"),
+            QDate(2026, 9, 19),
+            QTime(13, 15),
+            QDate(2026, 9, 19),
+            QTime(14, 0),
+            QStringLiteral("  Vacation  ")
+            );
+        const Result<int> created = repository.saveCalendarEvent(createdEvent);
+        QVERIFY(created);
+        const int createdId = created.value();
+        QVERIFY(createdId > 0);
+        QVERIFY(createdId != selectedId);
+        QVERIFY(createdId != siblingId);
+        QVERIFY(createdId != unrelatedId);
+
+        const QVariantList createdRow =
+            calendarEventRowSnapshot(database, createdId);
+        QCOMPARE(createdRow.size(), 10);
+        QCOMPARE(createdRow.at(0).toInt(), createdId);
+        QCOMPARE(createdRow.at(1).toString(),
+                 QStringLiteral("Created standalone event"));
+        QCOMPARE(createdRow.at(2).toString(), QStringLiteral("Vacation"));
+        QCOMPARE(createdRow.at(3).toString(), QStringLiteral("Timed"));
+        QVERIFY(createdRow.at(4).isNull());
+        QCOMPARE(createdRow.at(5).toInt(), 0);
+        QCOMPARE(createdRow.at(6).toString(), QStringLiteral("2026-09-19"));
+        QCOMPARE(createdRow.at(7).toString(), QStringLiteral("13:15"));
+        QCOMPARE(createdRow.at(8).toString(), QStringLiteral("2026-09-19"));
+        QCOMPARE(createdRow.at(9).toString(), QStringLiteral("14:00"));
+
+        CalendarEvent detachedUpdate = makeEvent(
+            QStringLiteral("Updated detached occurrence"),
+            QDate(2026, 9, 11),
+            QTime(15, 30),
+            QDate(2026, 9, 11),
+            QTime(16, 15),
+            QStringLiteral("  Holiday  ")
+            );
+        detachedUpdate.id = selectedId;
+        const Result<int> updated =
+            repository.saveCalendarEvent(detachedUpdate);
+        QVERIFY(updated);
+        QCOMPARE(updated.value(), selectedId);
+
+        const QVariantList selectedAfter =
+            calendarEventRowSnapshot(database, selectedId);
+        QCOMPARE(selectedAfter.size(), 10);
+        QCOMPARE(selectedAfter.at(0).toInt(), selectedId);
+        QCOMPARE(selectedAfter.at(1).toString(),
+                 QStringLiteral("Updated detached occurrence"));
+        QCOMPARE(selectedAfter.at(2).toString(), QStringLiteral("Holiday"));
+        QCOMPARE(selectedAfter.at(3).toString(), QStringLiteral("Timed"));
+        QVERIFY(selectedAfter.at(4).isNull());
+        QCOMPARE(selectedAfter.at(5).toInt(), 0);
+        QCOMPARE(selectedAfter.at(6).toString(), QStringLiteral("2026-09-11"));
+        QCOMPARE(selectedAfter.at(7).toString(), QStringLiteral("15:30"));
+        QCOMPARE(selectedAfter.at(8).toString(), QStringLiteral("2026-09-11"));
+        QCOMPARE(selectedAfter.at(9).toString(), QStringLiteral("16:15"));
+        QCOMPARE(calendarEventRowSnapshot(database, siblingId), siblingBefore);
+        QCOMPARE(calendarEventRowSnapshot(database, unrelatedId), unrelatedBefore);
+        QCOMPARE(calendarEventRowSnapshot(database, createdId), createdRow);
+
+        QSqlQuery sequenceQuery(database);
+        QVERIFY(sequenceQuery.exec(QStringLiteral(
+            "SELECT seq FROM sqlite_sequence WHERE name='calendar_events'"
+            )));
+        QVERIFY(sequenceQuery.next());
+        const int sequenceAfterCreate = sequenceQuery.value(0).toInt();
+        QVERIFY(sequenceAfterCreate >= createdId);
+        QVERIFY(!sequenceQuery.next());
+
+        const Result<int> updatedAgain =
+            repository.saveCalendarEvent(detachedUpdate);
+        QVERIFY(updatedAgain);
+        QCOMPARE(updatedAgain.value(), selectedId);
+        QVERIFY(sequenceQuery.exec(QStringLiteral(
+            "SELECT seq FROM sqlite_sequence WHERE name='calendar_events'"
+            )));
+        QVERIFY(sequenceQuery.next());
+        QCOMPARE(sequenceQuery.value(0).toInt(), sequenceAfterCreate);
+        QVERIFY(!sequenceQuery.next());
     }
 
     QSqlDatabase::removeDatabase(connectionName);

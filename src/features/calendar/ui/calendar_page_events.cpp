@@ -7,6 +7,7 @@
 #include "core/application_services.h"
 #include "domain/models/calendar_event.h"
 #include "next/application/calendar_event_series_create_use_case.h"
+#include "next/application/calendar_event_save_use_case.h"
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
@@ -812,7 +813,11 @@ void CalendarPage::openCalendarDialog(
                 ApplicationServicesCalendarEventSavePort savePort(
                     *m_services
                     );
-            const auto typedSaved = savePort.saveEvent(request);
+            const auto typedSaved =
+                ClassMngr::Next::Application::CalendarEventSaveUseCase::execute(
+                    savePort,
+                    request
+                    );
             if (!typedSaved)
             {
                 DialogServices::showWarning(
@@ -832,7 +837,11 @@ void CalendarPage::openCalendarDialog(
                 ApplicationServicesCalendarEventSavePort savePort(
                     *m_services
                     );
-            const auto typedSaved = savePort.saveEvent(request);
+            const auto typedSaved =
+                ClassMngr::Next::Application::CalendarEventSaveUseCase::execute(
+                    savePort,
+                    request
+                    );
             if (!typedSaved)
             {
                 DialogServices::showWarning(
