@@ -1170,3 +1170,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar repeat-series edit boundary - 2026-09-27
 
 - Validate typed repeat-series edit requests in Application before invoking the port. Keep Platform's validation guard for direct callers, the existing planner and service orchestration in their current layers, and UI warnings/cache invalidation at the UI edge.
+
+## Phase 2 Calendar repeat-series repository parity - 2026-09-28
+
+- For suffix-update parity, seed and pin every row before and after, including unrelated events on the selected date; assert ID order, row count, and `sqlite_sequence`. Exercise the same batch-save fixture against each revision's own repository source closure. When the baseline lacks an unrelated newer API, omit only its incompatible test from the temporary harness and keep the parity fixture byte-for-byte the same.

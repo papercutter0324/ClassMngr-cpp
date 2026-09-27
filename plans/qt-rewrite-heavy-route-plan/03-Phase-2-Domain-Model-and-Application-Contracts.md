@@ -7,19 +7,19 @@
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-27
+- Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F105 is verified at commit `d45fb405`; repeat-series suffix
-  edit now validates at the Application boundary before calling Platform.
-  F106 is selected for seeded baseline/current repository parity of suffix
-  selection and persisted updates. Gates 1 and 2 remain Partial; workspace
-  create and audited direct `src/next` isolation are Satisfied, while strict
-  transitive ApplicationServices-to-DataService read isolation remains
-  unresolved. Historical production-workbook provenance is a tracked risk,
-  not a separate literal exit criterion. Sub Prep's window remains derived
-  from its reference year through December 31 of the following year;
-  2026-2027 is illustrative.
+- Current note: F106 is verified at commit `bcc2e85e`; the repeat-series
+  suffix query and batch persisted updates match the baseline fixture's
+  complete seeded state. F107 is selected to route Calendar event-summary
+  lookup by ID through an app-less query contract. Gates 1 and 2 remain
+  Partial; workspace create and audited direct `src/next` isolation are
+  Satisfied, while strict transitive ApplicationServices-to-DataService read
+  isolation remains unresolved. Historical production-workbook provenance
+  is a tracked risk, not a separate literal exit criterion. Sub Prep's window
+  remains derived from its reference year through December 31 of the
+  following year; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -166,26 +166,25 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Next selected bounded slice (F106)
+## Next selected bounded slice (F107)
 
-Add a seeded repository test for repeat-series suffix selection and persisted
-updates. Seed an earlier occurrence in the same series, the selected
-occurrence and a following occurrence, plus another series and an unrelated
-event on an overlapping date. Load the suffix from the selected start date,
-apply deterministic field/date updates to only those returned rows, then
-compare the complete before/after snapshots and observations across baseline
-`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current F105
-`d45fb405`, compiling each revision's own repository source closure. Assert
-the earlier and unrelated rows remain unchanged, selected/following IDs and
-order are preserved, row count stays constant, and `sqlite_sequence` is
-unchanged. This is repository query/update parity only; it does not claim
-Calendar UI or planner-transformation parity or historical-workbook parity.
+Add an app-less typed Application query contract for loading one Calendar
+event summary by ID, then route only `CalendarPage::handleCalendarEventActivated`
+through it. The Application boundary validates the bounded request ID and
+forwards it once. Keep legacy integer conversion, service availability, and
+error mapping in the Platform adapter; preserve the current UI behavior of
+leaving the dialog closed when lookup fails. Add fake-port coverage for exact
+ID forwarding, success and structured-error propagation, and invalid-request
+rejection with zero port calls. This closes the remaining direct Calendar
+event-details lookup path through a testable Application contract without
+changing Calendar range-worker queries or display behavior.
 
-Verify `ClassMngrCalendarEventRepositoryTests` and run only that focused CTest;
-no full suite. F106 adds one persisted state-transition fixture to Gate 2,
-which remains Partial. Gate 1 remains Partial. Workspace create and audited
-direct `src/next` isolation remain Satisfied; strict transitive
-ApplicationServices-to-DataService read isolation remains unresolved. Phase 2
-exit remains Open. This Calendar slice does not widen Sub Prep's window, which
-remains January 1 of the reference date's year through December 31 of the
-following year, at most.
+Verify `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngr`; run only the two focused CTests and no full suite. F107 advances
+Gate 1, which remains Partial. Gate 2 remains Partial with no new parity
+claim. Workspace create and audited direct `src/next` isolation remain
+Satisfied; strict transitive ApplicationServices-to-DataService read
+isolation remains unresolved. Phase 2 exit remains Open. This Calendar slice
+does not widen Sub Prep's window, which remains January 1 of the reference
+date's year through December 31 of the following year, at most.

@@ -6561,3 +6561,42 @@ Phase 2 remains In Progress with its exit gate Open. Historical
 production-workbook provenance remains a tracked risk, not a separate written
 exit criterion. Sub Prep's interval remains January 1 of the reference year
 through December 31 of the following year, at most; 2026-2027 is illustrative.
+
+## Verified F106 Calendar repeat-series repository parity - commit `bcc2e85e`
+
+F106 commit `bcc2e85e` adds a seeded repository fixture to
+`tests/calendar_event_repository_tests.cpp`. It pins five complete rows before
+the edit, loads the suffix from the selected occurrence, and verifies ordered
+IDs for the selected and following occurrences. It applies deterministic
+title, date, and time changes to those rows in one `saveCalendarEvents` batch,
+then pins all five persisted rows again. The earlier occurrence, other series,
+and unrelated event remain unchanged; selected/following IDs and order,
+row count, and `sqlite_sequence` remain stable.
+
+The current `ClassMngrCalendarEventRepositoryTests` target built in the
+independent Ninja/MSVC 19.51/Qt 6.12 Debug tree and its focused CTest passed
+1/1. A temporary baseline harness compiled the same fixture against the
+repository, schema, transaction, and SQL helper sources archived from baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; each archived source blob was
+verified against Git. The baseline test source omitted only the later-added
+`loadCalendarEventDateIntervalsInRange` test and used its matching MOC include;
+the F106 fixture itself was unchanged. Baseline CTest passed 1/1. This is
+repository query/update parity only; no UI or planner-transformation or
+historical-workbook parity is claimed. `git diff --check` passed; no full suite
+ran.
+
+### Cumulative exit-gate status after F106
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F105 adds repeat-series request validation and execution through Application; broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F106 adds one repeat-series query/update persisted-state fixture; broader validation, conflict, import-planning, and state-transition parity remains open. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for audited direct `src/next` references | Strict transitive ApplicationServices-to-DataService read isolation remains unresolved. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook provenance remains a tracked risk, not a separate written
+exit criterion. Sub Prep remains bounded to January 1 of the reference year
+through December 31 of the following year; 2026-2027 is illustrative. F107 is
+selected to move Calendar event-summary lookup by ID behind an app-less query
+contract and the existing UI event-activation path.
