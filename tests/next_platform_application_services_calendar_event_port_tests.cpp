@@ -257,6 +257,9 @@ private slots:
     void reportsUnavailableSeriesCreateServiceStructurally();
     void reportsSeriesCreateBatchFailureWithoutPartialRows();
     void editsValidRepeatSeriesSuffixWithTypedParity();
+    void acceptsEmptyRepeatSeriesEditSuffixAsNoOp();
+    void reportsInvalidRepeatSeriesSourceDateBeforePersistence();
+    void reportsRepeatSeriesDateOverflowBeforePersistence();
     void propagatesAllDayAndUnknownTimePolicy();
     void reportsInvalidRepeatSeriesEditRequestStructurally();
     void reportsUnavailableRepeatSeriesEditServiceStructurally();
@@ -1469,6 +1472,170 @@ editsValidRepeatSeriesSuffixWithTypedParity()
         QCOMPARE(event.startTime, QTime(13, 15));
         QCOMPARE(event.endTime, QTime(14, 45));
     }
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+acceptsEmptyRepeatSeriesEditSuffixAsNoOp()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    const QString repeatSeriesId = QStringLiteral("series-empty-edit-suffix");
+    CalendarEvent event = makeEvent(
+        QStringLiteral("Before selected suffix"),
+        QDate(2026, 12, 1),
+        QDate(2026, 12, 1)
+        );
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    event.repeatSeriesId = repeatSeriesId;
+    const int eventId = saveEvent(*legacyService, event);
+    QVERIFY(eventId > 0);
+
+    const auto before = legacyService->repeatSeriesFromDate(
+        repeatSeriesId,
+        QDate(2026, 12, 8)
+        );
+    QVERIFY(before);
+    QVERIFY(before->isEmpty());
+
+    ApplicationServicesCalendarEventSeriesEditPort port(services);
+    auto request = validSeriesEditRequest();
+    request.repeatSeriesId = repeatSeriesId.toUtf8().toStdString();
+    const auto edited = port.editRepeatSeriesFromDate(request);
+
+    QVERIFY(edited);
+    const auto after = legacyService->repeatSeriesFromDate(
+        repeatSeriesId,
+        QDate(2026, 12, 8)
+        );
+    QVERIFY(after);
+    QVERIFY(after->isEmpty());
+
+    const auto unchanged = legacyService->event(eventId);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->title, QStringLiteral("Before selected suffix"));
+    QCOMPARE(unchanged->startDate, QDate(2026, 12, 1));
+    QCOMPARE(unchanged->endDate, QDate(2026, 12, 1));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsInvalidRepeatSeriesSourceDateBeforePersistence()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    const QString repeatSeriesId = QStringLiteral("series-invalid-source-date");
+    CalendarEvent event = makeEvent(
+        QStringLiteral("Invalid source date"),
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 10)
+        );
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    event.repeatSeriesId = repeatSeriesId;
+    const int eventId = saveEvent(*legacyService, event);
+    QVERIFY(eventId > 0);
+
+    QSqlQuery corruptSourceDate(
+        services.dataService()->databaseSession()->database()
+        );
+    corruptSourceDate.prepare(QStringLiteral(
+        "UPDATE calendar_events SET start_date=? WHERE id=?"
+        ));
+    corruptSourceDate.addBindValue(QStringLiteral("2026-12-40"));
+    corruptSourceDate.addBindValue(eventId);
+    QVERIFY(corruptSourceDate.exec());
+
+    const auto selected = legacyService->repeatSeriesFromDate(
+        repeatSeriesId,
+        QDate(2026, 12, 8)
+        );
+    QVERIFY(selected);
+    QCOMPARE(selected->size(), 1);
+    QVERIFY(!selected->front().startDate.isValid());
+
+    QSqlQuery rejectPersistence(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(rejectPersistence.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_series_edit "
+        "BEFORE UPDATE ON calendar_events "
+        "BEGIN SELECT RAISE(ABORT, 'series edit persistence was invoked'); END"
+        )));
+
+    ApplicationServicesCalendarEventSeriesEditPort port(services);
+    auto request = validSeriesEditRequest();
+    request.repeatSeriesId = repeatSeriesId.toUtf8().toStdString();
+    const auto edited = port.editRepeatSeriesFromDate(request);
+
+    verifyFailure(edited, ErrorCode::Technical);
+    QCOMPARE(
+        edited.error().message,
+        std::string(
+            "A calendar repeat-series occurrence has an invalid start date."
+            )
+        );
+    const auto unchanged = legacyService->event(eventId);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->title, QStringLiteral("Invalid source date"));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsRepeatSeriesDateOverflowBeforePersistence()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* legacyService = services.calendarService();
+    QVERIFY(legacyService);
+
+    const QString repeatSeriesId = QStringLiteral("series-edit-date-overflow");
+    CalendarEvent event = makeEvent(
+        QStringLiteral("At supported date boundary"),
+        QDate(9999, 12, 31),
+        QDate(9999, 12, 31)
+        );
+    event.allDay = true;
+    event.repeatSeriesId = repeatSeriesId;
+    const int eventId = saveEvent(*legacyService, event);
+    QVERIFY(eventId > 0);
+
+    QSqlQuery rejectPersistence(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(rejectPersistence.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_series_edit "
+        "BEFORE UPDATE ON calendar_events "
+        "BEGIN SELECT RAISE(ABORT, 'series edit persistence was invoked'); END"
+        )));
+
+    ApplicationServicesCalendarEventSeriesEditPort port(services);
+    auto request = validSeriesEditRequest();
+    request.repeatSeriesId = repeatSeriesId.toUtf8().toStdString();
+    request.startDate = "9999-12-30";
+    request.editedStartDate = "9999-12-30";
+    request.editedEndDate = "9999-12-31";
+    request.startTime.reset();
+    request.endTime.reset();
+    request.allDay = true;
+    const auto edited = port.editRepeatSeriesFromDate(request);
+
+    verifyFailure(edited, ErrorCode::Technical);
+    QCOMPARE(
+        edited.error().message,
+        std::string(
+            "A calendar repeat-series edit would move an occurrence outside the supported date range."
+            )
+        );
+    const auto unchanged = legacyService->event(eventId);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->title, QStringLiteral("At supported date boundary"));
+    QCOMPARE(unchanged->startDate, QDate(9999, 12, 31));
+    QCOMPARE(unchanged->endDate, QDate(9999, 12, 31));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

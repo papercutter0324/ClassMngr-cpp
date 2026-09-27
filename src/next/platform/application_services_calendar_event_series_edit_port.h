@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "next/application/calendar_event_series_edit_port.h"
+#include "next/application/calendar_event_series_edit_plan.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -13,13 +14,14 @@
 #include <exception>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for editing a repeat-series suffix. The legacy service
-// owns recurrence selection and persistence; this adapter only copies the
-// bounded request into legacy values and returns an owned typed result.
+// owns recurrence selection and persistence; the Application planner owns
+// the Qt-free occurrence transformation and this adapter applies its updates.
 class ApplicationServicesCalendarEventSeriesEditPort final
     : public Application::CalendarEventSeriesEditPort
 {
@@ -110,45 +112,99 @@ public:
                     );
             }
 
-            const int startDateOffset =
-                startDate.daysTo(editedStartDate);
-            const int durationDays =
-                editedStartDate.daysTo(editedEndDate);
-            const QTime editedStartTime = request.startTime.has_value()
-                ? legacyTime(*request.startTime)
-                : QTime();
-            const QTime editedEndTime = request.endTime.has_value()
-                ? legacyTime(*request.endTime)
-                : QTime();
-            if ((request.startTime.has_value()
-                 && !editedStartTime.isValid())
-                || (request.endTime.has_value()
-                    && !editedEndTime.isValid()))
+            std::vector<Application::CalendarEventSeriesEditOccurrenceSnapshot>
+                occurrences;
+            occurrences.reserve(
+                static_cast<std::size_t>(seriesEvents->size())
+                );
+            for (const CalendarEvent& seriesEvent : *seriesEvents)
+            {
+                occurrences.push_back({
+                    .eventId = seriesEvent.id,
+                    .startDate = seriesEvent.startDate
+                        .toString(Qt::ISODate)
+                        .toStdString()
+                });
+            }
+
+            const Application::CalendarEventSeriesEditPlanResult plan =
+                Application::planCalendarEventSeriesEditSuffix(
+                    request,
+                    occurrences
+                    );
+            if (!plan)
             {
                 return failure(
-                    Domain::ErrorCode::InvalidInput,
-                    "Calendar repeat-series edit times must be valid."
+                    plan.error().code,
+                    plan.error().message
+                    );
+            }
+
+            const std::vector<
+                Application::CalendarEventSeriesEditOccurrenceUpdate>& updates =
+                plan.value();
+            if (updates.size()
+                != static_cast<std::size_t>(seriesEvents->size()))
+            {
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    "Calendar repeat-series edit plan did not match its source events."
                     );
             }
 
             QList<CalendarEvent> updatedEvents;
             updatedEvents.reserve(seriesEvents->size());
-            for (const CalendarEvent& seriesEvent : *seriesEvents)
+            for (std::size_t index = 0; index < updates.size(); ++index)
             {
+                const CalendarEvent& seriesEvent = seriesEvents->at(
+                    static_cast<qsizetype>(index)
+                    );
+                const Application::CalendarEventSeriesEditOccurrenceUpdate& update =
+                    updates.at(index);
+                if (update.eventId != seriesEvent.id)
+                {
+                    return failure(
+                        Domain::ErrorCode::Technical,
+                        "Calendar repeat-series edit plan changed an occurrence identity."
+                        );
+                }
+
                 CalendarEvent updatedEvent = seriesEvent;
-                updatedEvent.title = legacyText(request.title);
-                updatedEvent.eventType = legacyText(request.eventType);
-                updatedEvent.timeStatus = legacyText(request.timeStatus);
-                updatedEvent.allDay = request.allDay;
-                updatedEvent.startTime = editedStartTime;
-                updatedEvent.endTime = editedEndTime;
-                updatedEvent.repeatSeriesId = repeatSeriesId;
-                updatedEvent.startDate = seriesEvent.startDate.addDays(
-                    startDateOffset
-                    );
-                updatedEvent.endDate = updatedEvent.startDate.addDays(
-                    durationDays
-                    );
+                updatedEvent.title = legacyText(update.title);
+                updatedEvent.eventType = legacyText(update.eventType);
+                updatedEvent.timeStatus = legacyText(update.timeStatus);
+                updatedEvent.allDay = update.allDay;
+                updatedEvent.startTime = update.startTime.has_value()
+                    ? legacyTime(*update.startTime)
+                    : QTime();
+                updatedEvent.endTime = update.endTime.has_value()
+                    ? legacyTime(*update.endTime)
+                    : QTime();
+                updatedEvent.repeatSeriesId = legacyText(
+                    update.repeatSeriesId
+                    ).trimmed();
+                updatedEvent.startDate = legacyDate(update.startDate);
+                updatedEvent.endDate = legacyDate(update.endDate);
+                if (!updatedEvent.startDate.isValid()
+                    || !updatedEvent.endDate.isValid())
+                {
+                    return failure(
+                        Domain::ErrorCode::Technical,
+                        "Calendar repeat-series edit produced an invalid occurrence date."
+                        );
+                }
+
+                if ((update.startTime.has_value()
+                     && !updatedEvent.startTime.isValid())
+                    || (update.endTime.has_value()
+                        && !updatedEvent.endTime.isValid()))
+                {
+                    return failure(
+                        Domain::ErrorCode::InvalidInput,
+                        "Calendar repeat-series edit times must be valid."
+                        );
+                }
+
                 updatedEvents.append(std::move(updatedEvent));
             }
 

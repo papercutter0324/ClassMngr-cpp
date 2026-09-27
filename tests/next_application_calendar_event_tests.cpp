@@ -8,6 +8,7 @@
 #include "next/application/calendar_event_start_of_term_policy.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
+#include "next/application/calendar_event_series_edit_plan.h"
 
 #include <QtTest/QtTest>
 
@@ -290,6 +291,9 @@ private slots:
     void seriesEditRequestBoundsAndDatesRemainTyped();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
+    void seriesEditPlanPreservesOrderAndPropagatesRequestFields();
+    void seriesEditPlanHandlesEmptyAndAllDaySuffixes();
+    void seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates();
     void recordsAndProjectionAreCopyableEqualAndIndependentlyReleasable();
     void contractHasNoMutablePointerOrRichRecordSurface();
     void campusVisibilityPolicyMatchesNormalizedLiteralCampusTokens();
@@ -2141,6 +2145,120 @@ seriesEditRequestContractHasNoQtOrLegacySurface()
         >);
 
     QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+seriesEditPlanPreservesOrderAndPropagatesRequestFields()
+{
+    CalendarEventSeriesEditRequest request = validSeriesEditRequest();
+    request.repeatSeriesId = "  series-1 \t";
+    request.startDate = "2026-09-20";
+    request.editedStartDate = "2026-09-22";
+    request.editedEndDate = "2026-09-25";
+    request.title = "Updated workshop";
+    request.eventType = "Workshop";
+    request.timeStatus = "Timed";
+    request.startTime = "08:30";
+    request.endTime = "10:15";
+    request.allDay = false;
+
+    const std::vector<CalendarEventSeriesEditOccurrenceSnapshot> occurrences{
+        {42, "2026-09-21"},
+        {7, "2026-10-01"},
+        {9, "2026-09-25"}
+    };
+    const CalendarEventSeriesEditPlanResult plan =
+        planCalendarEventSeriesEditSuffix(request, occurrences);
+
+    QVERIFY(plan);
+    QCOMPARE(plan.value().size(), std::size_t(3));
+    QCOMPARE(plan.value().at(0).eventId, 42);
+    QCOMPARE(plan.value().at(0).startDate, std::string("2026-09-23"));
+    QCOMPARE(plan.value().at(0).endDate, std::string("2026-09-26"));
+    QCOMPARE(plan.value().at(1).eventId, 7);
+    QCOMPARE(plan.value().at(1).startDate, std::string("2026-10-03"));
+    QCOMPARE(plan.value().at(1).endDate, std::string("2026-10-06"));
+    QCOMPARE(plan.value().at(2).eventId, 9);
+    QCOMPARE(plan.value().at(2).startDate, std::string("2026-09-27"));
+    QCOMPARE(plan.value().at(2).endDate, std::string("2026-09-30"));
+
+    for (const CalendarEventSeriesEditOccurrenceUpdate& update : plan.value())
+    {
+        QCOMPARE(update.repeatSeriesId, std::string("series-1"));
+        QCOMPARE(update.title, request.title);
+        QCOMPARE(update.eventType, request.eventType);
+        QCOMPARE(update.timeStatus, request.timeStatus);
+        QCOMPARE(update.startTime, request.startTime);
+        QCOMPARE(update.endTime, request.endTime);
+        QCOMPARE(update.allDay, request.allDay);
+    }
+}
+
+void NextApplicationCalendarEventTests::
+seriesEditPlanHandlesEmptyAndAllDaySuffixes()
+{
+    CalendarEventSeriesEditRequest request = validSeriesEditRequest();
+    request.repeatSeriesId = "series-empty";
+
+    const auto emptyPlan = planCalendarEventSeriesEditSuffix(request, {});
+    QVERIFY(emptyPlan);
+    QVERIFY(emptyPlan.value().empty());
+
+    request.allDay = true;
+    request.startTime.reset();
+    request.endTime.reset();
+    const auto allDayPlan = planCalendarEventSeriesEditSuffix(
+        request,
+        {{18, "2026-09-21"}}
+        );
+
+    QVERIFY(allDayPlan);
+    QCOMPARE(allDayPlan.value().size(), std::size_t(1));
+    QVERIFY(allDayPlan.value().front().allDay);
+    QVERIFY(!allDayPlan.value().front().startTime.has_value());
+    QVERIFY(!allDayPlan.value().front().endTime.has_value());
+}
+
+void NextApplicationCalendarEventTests::
+seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates()
+{
+    const CalendarEventSeriesEditRequest request = validSeriesEditRequest();
+    const auto invalidSource = planCalendarEventSeriesEditSuffix(
+        request,
+        {{42, "2026-02-30"}}
+        );
+    QVERIFY(!invalidSource);
+    QCOMPARE(invalidSource.error().code, ErrorCode::Technical);
+    QVERIFY(!invalidSource.error().message.empty());
+    QVERIFY(!invalidSource.error().recoverable);
+
+    CalendarEventSeriesEditRequest upperBoundaryRequest = request;
+    upperBoundaryRequest.startDate = "9999-12-30";
+    upperBoundaryRequest.editedStartDate = "9999-12-30";
+    upperBoundaryRequest.editedEndDate = "9999-12-31";
+    upperBoundaryRequest.allDay = true;
+    upperBoundaryRequest.startTime.reset();
+    upperBoundaryRequest.endTime.reset();
+    const auto upperOverflow = planCalendarEventSeriesEditSuffix(
+        upperBoundaryRequest,
+        {{42, "9999-12-31"}}
+        );
+    QVERIFY(!upperOverflow);
+    QCOMPARE(upperOverflow.error().code, ErrorCode::Technical);
+
+    CalendarEventSeriesEditRequest lowerBoundaryRequest = request;
+    lowerBoundaryRequest.startDate = "0001-01-02";
+    lowerBoundaryRequest.editedStartDate = "0001-01-01";
+    lowerBoundaryRequest.editedEndDate = "0001-01-01";
+    lowerBoundaryRequest.allDay = true;
+    lowerBoundaryRequest.startTime.reset();
+    lowerBoundaryRequest.endTime.reset();
+    const auto lowerOverflow = planCalendarEventSeriesEditSuffix(
+        lowerBoundaryRequest,
+        {{17, "0001-01-01"}}
+        );
+    QVERIFY(!lowerOverflow);
+    QCOMPARE(lowerOverflow.error().code, ErrorCode::Technical);
 }
 
 void NextApplicationCalendarEventTests::recordsAndProjectionAreCopyableEqualAndIndependentlyReleasable()
