@@ -7,6 +7,7 @@
 #include "core/application_services.h"
 #include "domain/models/calendar_event.h"
 #include "next/application/calendar_event_series_create_use_case.h"
+#include "next/application/calendar_event_delete_use_case.h"
 #include "next/application/calendar_event_series_delete_use_case.h"
 #include "next/application/calendar_event_save_use_case.h"
 #include "next/platform/application_services_calendar_event_port.h"
@@ -748,7 +749,9 @@ void CalendarPage::openCalendarDialog(
                 ApplicationServicesCalendarEventDeletePort deletePort(
                     *m_services
                     );
-            const auto typedDeleted = deletePort.deleteEvent(*draft.id);
+            const auto typedDeleted =
+                ClassMngr::Next::Application::CalendarEventDeleteUseCase::
+                    execute(deletePort, *draft.id);
             if (!typedDeleted)
             {
                 deleteError = projectionText(typedDeleted.error().message);

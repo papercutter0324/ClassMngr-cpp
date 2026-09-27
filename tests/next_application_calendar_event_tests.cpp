@@ -1,4 +1,6 @@
 #include "next/application/calendar_event_campus_visibility_policy.h"
+#include "next/application/calendar_event_delete_port.h"
+#include "next/application/calendar_event_delete_use_case.h"
 #include "next/application/calendar_event_delete_all_port.h"
 #include "next/application/calendar_event_edit_draft.h"
 #include "next/application/calendar_event_import_save_port.h"
@@ -293,6 +295,23 @@ public:
     }
 };
 
+class FakeCalendarEventDeletePort final : public CalendarEventDeletePort
+{
+public:
+    int deleteCalls = 0;
+    std::optional<CalendarEventId> receivedEventId;
+    CalendarEventDeleteResult response = CalendarEventDeleteResult::success();
+
+    CalendarEventDeleteResult deleteEvent(
+        const CalendarEventId& eventId
+        ) override
+    {
+        ++deleteCalls;
+        receivedEventId = eventId;
+        return response;
+    }
+};
+
 class FakeCalendarEventSavePort final : public CalendarEventSavePort
 {
 public:
@@ -358,6 +377,8 @@ private slots:
     void repeatSeriesDeleteUseCaseForwardsRequestAndResultOnce();
     void repeatSeriesDeleteUseCasePropagatesPortFailure();
     void repeatSeriesDeleteUseCaseRejectsInvalidRequestWithoutCallingPort();
+    void singleEventDeleteUseCaseForwardsIdAndResultOnce();
+    void singleEventDeleteUseCasePropagatesPortFailure();
     void seriesEditRequestBoundsAndDatesRemainTyped();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
@@ -2385,6 +2406,54 @@ repeatSeriesDeleteUseCaseRejectsInvalidRequestWithoutCallingPort()
         QCOMPARE(result.error().message, diagnostic);
         QVERIFY(!result.error().recoverable);
     }
+}
+
+void NextApplicationCalendarEventTests::
+singleEventDeleteUseCaseForwardsIdAndResultOnce()
+{
+    using UseCaseResult = decltype(
+        CalendarEventDeleteUseCase::execute(
+            std::declval<CalendarEventDeletePort&>(),
+            std::declval<const CalendarEventId&>()
+            )
+        );
+    static_assert(std::is_same_v<UseCaseResult, Result<void>>);
+
+    const CalendarEventId requestedId = calendarEventId("0042");
+    FakeCalendarEventDeletePort port;
+    const CalendarEventDeleteResult result =
+        CalendarEventDeleteUseCase::execute(port, requestedId);
+
+    QVERIFY(result);
+    QCOMPARE(port.deleteCalls, 1);
+    QVERIFY(port.receivedEventId.has_value());
+    QCOMPARE(*port.receivedEventId, requestedId);
+}
+
+void NextApplicationCalendarEventTests::
+singleEventDeleteUseCasePropagatesPortFailure()
+{
+    FakeCalendarEventDeletePort port;
+    port.response = CalendarEventDeleteResult::failure({
+        .code = ErrorCode::Technical,
+        .message = "Calendar event could not be deleted.",
+        .recoverable = false
+    });
+
+    const CalendarEventId requestedId = calendarEventId("event-delete-failure");
+    const CalendarEventDeleteResult result =
+        CalendarEventDeleteUseCase::execute(port, requestedId);
+
+    QVERIFY(!result);
+    QCOMPARE(port.deleteCalls, 1);
+    QVERIFY(port.receivedEventId.has_value());
+    QCOMPARE(*port.receivedEventId, requestedId);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QCOMPARE(
+        result.error().message,
+        std::string("Calendar event could not be deleted.")
+        );
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextApplicationCalendarEventTests::
