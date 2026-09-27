@@ -11,12 +11,11 @@
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F94 adds source-generated invalid-date Teacher Import validation
-  parity; Gate 1 and Gate 2 remain Partial. The formal workspace criterion and
-  audited `src/next` isolation are Satisfied. Historical production-workbook
-  evidence, broader Gate 1 work, repository rollback parity, and remaining
-  migrations remain open. Three F95 feasibility lanes are researching
-  recurrence occurrence planning; F95 selection is pending. Sub Prep remains
-  capped at 2026-2027.
+  parity. F95 is selected for Qt-free Calendar repeat occurrence planning.
+  Gate 1 and Gate 2 remain Partial; the formal workspace criterion and audited
+  `src/next` isolation are Satisfied. Historical production-workbook evidence,
+  repository rollback parity, and broader migrations remain open. Sub Prep
+  remains capped at 2026-2027.
 
 ## Objective
 
@@ -197,6 +196,26 @@ historical production-workbook evidence, repository rollback parity, broader
 Calendar UI/contracts, generic settings persistence, remaining feature-service
 migrations, document-service migration, invalid-UTF-8 coverage, and live
 MainWindow projection-failure/retranslation integration. Three independent
-F95 feasibility lanes are researching recurrence occurrence planning; F95
-selection is pending those reports and is not yet selected or implemented. Sub
-Prep remains capped at 2026-2027.
+feasibility lanes found no narrower Gate 1 seam; their selected contract is
+below.
+
+### Next selected bounded slice (F95)
+
+Add a Qt-free Application frequency and repeat planner. It accepts a
+validated `CalendarEventSaveRequest` seed, a new series ID, frequency, and
+canonical ISO until date, then returns the validated
+`CalendarEventSeriesCreateRequest` consumed by
+`ApplicationServicesCalendarEventSeriesCreatePort`. Preserve daily/weekly
+cadence, chained month-end clamping (Jan 31 to Feb 28/29 to Mar 28/29), an
+inclusive start-date cutoff, fixed start-to-end day duration, copied fields,
+cleared occurrence IDs, and the 366-occurrence limit. Return structured errors
+for malformed dates, ranges, and frequencies; do not carry forward defensive
+singleton/weekly fallbacks. Keep the legacy Domain estimator separate to avoid
+layer inversion; its duplicate date-sequence logic remains for later review.
+
+Test daily, weekly, and monthly sequences, cutoff, duration, fields and IDs,
+invalid inputs, and 366/367 boundaries in
+`ClassMngrNextApplicationCalendarEventTests`; build `ClassMngr` to verify UI
+mapping. F95 adds bounded Gate 1 behavior; Gates 1 and 2 remain Partial. The
+formal workspace criterion and audited v2 isolation remain Satisfied. Phase 2
+exit remains Open. Sub Prep remains capped at 2026-2027.
